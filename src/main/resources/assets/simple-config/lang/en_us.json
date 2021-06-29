@@ -1,0 +1,19 @@
+{
+  "simple-config.config.category.client": "Client",
+  "simple-config.config.category.common": "Common",
+  "simple-config.config.category.server": "Server",
+
+  "simple-config.config.title": "%s — Config",
+
+  "simple-config.config.msg.updated_by_operator": "Server config for mod \"%s\" has been updated by operator \"%s\"",
+  "simple-config.config.msg.tried_to_update_by_non_operator": "Player \"%s\" tried to update Server config for mod \"%s\" without operator privileges",
+  "simple-config.config.msg.error_updating_by_operator": "Unexpected error updating Server config for mod \"%s\" by operator \"%s\":\\n%s",
+  "simple-config.config.msg.error_updating_from_server": "Unexpected error updating Server config for mod \"%s\":\\n%s",
+
+  "simple-config.config.client.add_pause_menu_button": "Add Pause Menu Button",
+  "simple-config.config.client.add_pause_menu_button.help": "Adds a button to the pause menu to open the mods list",
+  "simple-config.config.client.menu_button_position": "Menu Button Position",
+
+  "simple-config.config.enum.menu_button_position.split_options_button": "Split Options Button",
+  "simple-config.config.enum.menu_button_position.left_of_options_button": "Left"
+}

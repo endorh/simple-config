@@ -1,0 +1,33 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="LGPL"
+#issueTrackerURL="${issue_tracker}"
+
+[[mods]]
+    modId="simple-config"
+    version="${version}"
+    displayName="${display}"
+    #updateJSONURL="${update_json}"
+    #displayURL="${page}"
+    logoFile="${logo_file}"
+    credits="${credits}"
+    authors="${authors}"
+    description='''${description}'''
+[[dependencies.simple-config]]
+    modId="forge"
+    mandatory=true
+    versionRange="[36,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.simple-config]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.5,1.17)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.simple-config]]
+    modId="cloth-config"
+    versionRange="[${cloth_config_api_version},)"
+    mandatory=true
+    ordering="NONE"
+    side="CLIENT"
