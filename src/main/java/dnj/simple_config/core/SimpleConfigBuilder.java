@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
-public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<SimpleConfigBuilder> {
+public class SimpleConfigBuilder
+  extends AbstractSimpleConfigEntryHolderBuilder<SimpleConfigBuilder> {
 	protected final String modId;
 	protected final ModConfig.Type type;
 	
@@ -38,11 +39,10 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 	protected Consumer<SimpleConfig> baker = null;
 	protected Consumer<SimpleConfig> saver = null;
 	protected BiConsumer<SimpleConfig, ConfigBuilder> decorator = null;
-	protected boolean requireRestart;
-	protected Entry<?, ?> last = null;
 	protected final Class<?> configClass;
-	
 	protected String path;
+	
+	protected boolean debugTranslations = false;
 	
 	public SimpleConfigBuilder(String modId, Type type) { this(modId, type, null); }
 	
@@ -76,18 +76,24 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			throw new IllegalArgumentException("Config entry names cannot contain dots");
 	}
 	
-	@Override
-	public void addEntry(Entry<?, ?> entry) {
+	@Override public SimpleConfigBuilder restart() {
+		super.restart();
+		categories.values().forEach(CategoryBuilder::restart);
+		return this;
+	}
+	
+	@Override public void addEntry(Entry<?, ?, ?, ?> entry) {
 		checkName(entry.name);
 		if (entries.containsKey(entry.name))
 			throw new IllegalArgumentException("Duplicate config value: " + entry.name);
 		entries.put(entry.name, entry);
-		entry.requireRestart = requireRestart;
+		if (requireRestart)
+			entry.restart();
 		last = entry;
 		guiOrder.add(entry);
 	}
 	
-	@Override public Entry<?, ?> getEntry(String name) {
+	@Override public Entry<?, ?, ?, ?> getEntry(String name) {
 		return entries.get(name);
 	}
 	
@@ -103,7 +109,7 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 		return translation(name) + ".help";
 	}
 	
-	@Override protected void translate(Entry<?, ?> entry) {
+	@Override protected void translate(Entry<?, ?, ?, ?> entry) {
 		entry.translate(translation(entry.name));
 		entry.tooltip(tooltip(entry.name));
 	}
@@ -113,6 +119,8 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			throw new IllegalArgumentException("Duplicated config category: \"" + cat.name + "\"");
 		categories.put(cat.name, cat);
 		cat.setParent(this);
+		if (requireRestart)
+			cat.restart();
 		return this;
 	}
 	
@@ -122,17 +130,31 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 		groups.put(group.name, group);
 		guiOrder.add(group);
 		group.setParent(defaultCategory);
+		if (requireRestart)
+			group.restart();
 		return this;
 	}
 	
-	public static class CategoryBuilder extends AbstractSimpleConfigComponentBuilder<CategoryBuilder> {
+	/**
+	 * Displays all translation keys in the Config GUI
+	 * to aid in writing them<br>
+	 * @deprecated Not deprecated, it's just a reminder to
+	 * remove the method before releasing
+	 */
+	@Deprecated
+	public SimpleConfigBuilder debugTranslations() {
+		debugTranslations = true;
+		return this;
+	}
+	
+	public static class CategoryBuilder
+	  extends AbstractSimpleConfigEntryHolderBuilder<CategoryBuilder> {
 		
 		protected SimpleConfigBuilder parent;
 		protected final String name;
 		protected String title;
 		protected Class<?> configClass;
 		
-		protected boolean requireRestart;
 		protected @Nullable Consumer<Category> baker = null;
 		
 		protected String path;
@@ -160,17 +182,18 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			return this;
 		}
 		
-		@Override
-		public void addEntry(Entry<?, ?> entry) {
+		@Override public void addEntry(Entry<?, ?, ?, ?> entry) {
 			checkName(entry.name);
 			if (entries.containsKey(entry.name))
 				throw new IllegalArgumentException("Duplicate config value: " + entry.name);
 			entries.put(entry.name, entry);
-			entry.requireRestart = requireRestart;
+			if (requireRestart)
+				entry.restart();
+			last = entry;
 			guiOrder.add(entry);
 		}
 		
-		@Override public Entry<?, ?> getEntry(String name) {
+		@Override public Entry<?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
@@ -186,7 +209,7 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			return translation(name) + ".help";
 		}
 		
-		protected void translate(Entry<?, ?> entry) {
+		protected void translate(Entry<?, ?, ?, ?> entry) {
 			entry.translate(translation(entry.name));
 			entry.tooltip(tooltip(entry.name));
 		}
@@ -198,6 +221,8 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			guiOrder.add(group);
 			if (parent != null)
 				group.setParent(this);
+			if (requireRestart)
+				group.restart();
 			return this;
 		}
 		
@@ -207,7 +232,7 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			final Map<GroupBuilder, Group> built = new HashMap<>();
 			final Map<String, Group> groups = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			for (Entry<?, ?> entry : entries.values()) {
+			for (Entry<?, ?, ?, ?> entry : entries.values()) {
 				translate(entry);
 				entry.setParent(cat);
 				entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
@@ -228,7 +253,7 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 		}
 	}
 	
-	public static class GroupBuilder extends AbstractSimpleConfigComponentBuilder<GroupBuilder>
+	public static class GroupBuilder extends AbstractSimpleConfigEntryHolderBuilder<GroupBuilder>
 	  implements IAbstractGUIEntry {
 		protected CategoryBuilder category;
 		protected final String name;
@@ -236,8 +261,6 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 		protected String title;
 		protected String tooltip;
 		protected final boolean expanded;
-		protected boolean requireRestart = false;
-		protected Entry<?, ?> last = null;
 		
 		protected String path;
 		
@@ -275,21 +298,23 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 				nested.setParent(this);
 			groups.put(nested.name, nested);
 			guiOrder.add(nested);
+			if (requireRestart)
+				nested.restart();
 			return this;
 		}
 		
-		@Override
-		public void addEntry(Entry<?, ?> entry) {
+		@Override public void addEntry(Entry<?, ?, ?, ?> entry) {
 			checkName(entry.name);
 			if (entries.containsKey(entry.name))
 				throw new IllegalArgumentException("Duplicate config value: " + entry.name);
 			entries.put(entry.name, entry);
-			entry.requireRestart = requireRestart;
-			guiOrder.add(entry);
+			if (requireRestart)
+				entry.restart();
 			last = entry;
+			guiOrder.add(entry);
 		}
 		
-		@Override public Entry<?, ?> getEntry(String name) {
+		@Override public Entry<?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
@@ -305,7 +330,7 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			return translation(name) + ".help";
 		}
 		
-		protected void translate(Entry<?, ?> entry) {
+		protected void translate(Entry<?, ?, ?, ?> entry) {
 			entry.translate(translation(entry.name));
 			entry.tooltip(tooltip(entry.name));
 		}
@@ -331,7 +356,7 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 			final Map<GroupBuilder, Group> builtGroups = new HashMap<>();
 			final Map<String, Group> groupMap = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			for (Entry<?, ?> entry : entries.values()) {
+			for (Entry<?, ?, ?, ?> entry : entries.values()) {
 				translate(entry);
 				entry.setParent(group);
 				entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
@@ -354,25 +379,28 @@ public class SimpleConfigBuilder extends AbstractSimpleConfigComponentBuilder<Si
 	}
 	
 	@SuppressWarnings("UnusedReturnValue")
-	public SimpleConfig build() { return build(FMLJavaModLoadingContext.get().getModEventBus()); }
+	public SimpleConfig buildAndRegister() { return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus()); }
 	
 	protected void preBuildHook() {
 		SimpleConfigClassParser.decorateBuilder(this);
 	}
 	
 	@SuppressWarnings("UnusedReturnValue")
-	public SimpleConfig build(IEventBus eventBus) {
+	public SimpleConfig buildAndRegister(IEventBus eventBus) {
 		preBuildHook();
 		if (type == Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
 			        ? (SimpleConfig::syncToClients)
 			        : (SimpleConfig::syncToServer);
+		} else {
+			saver = SimpleConfig::checkRestart;
 		}
-		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
+		final SimpleConfig config = new SimpleConfig(
+		  modId, type, title, baker, saver, configClass, debugTranslations);
 		final Map<GroupBuilder, Group> built = new HashMap<>();
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-		for (Entry<?, ?> entry : entries.values()) {
+		for (Entry<?, ?, ?, ?> entry : entries.values()) {
 			translate(entry);
 			entry.setParent(config);
 			entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));

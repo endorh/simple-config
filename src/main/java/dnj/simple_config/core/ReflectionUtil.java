@@ -2,10 +2,14 @@ package dnj.simple_config.core;
 
 import com.google.gson.internal.Primitives;
 import dnj.simple_config.core.SimpleConfigClassParser.ConfigClassParseException;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.*;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.*;
 
 class ReflectionUtil {
 	
@@ -17,10 +21,24 @@ class ReflectionUtil {
 	}
 	
 	/**
+	 * Get the full field type name, suitable for error messages
+	 */
+	public static String getFieldTypeName(Field field) {
+		return field.getGenericType().getTypeName();
+	}
+	
+	/**
 	 * Get the full method name, suitable for error messages
 	 */
 	public static String getMethodName(Method method) {
 		return method.getDeclaringClass().getName() + "#" + method.getName();
+	}
+	
+	/**
+	 * Get the full method type name, suitable for error messages
+	 */
+	public static String getMethodTypeName(Method method) {
+		return method.getGenericReturnType().getTypeName();
 	}
 	
 	/**
@@ -65,30 +83,89 @@ class ReflectionUtil {
 	}
 	
 	/**
-	 * Check if the actual first-layer type parameters of the
-	 * declared class for the field match the given types
+	 * Check if the actual type parameters of the declared class
+	 * for the field match the given types<br>
+	 *
+	 * If the type parameters have themselves more type parameters,
+	 * those are checked too, in the order they would be written<br>
+	 *
+	 * For example calling with types
+	 * <pre>{@code
+	 *    checkTypeParameters(type,
+	 *       Function.class, List.class, Long.class, List.class, null)
+	 * }</pre>
+	 * would match a type of {@code Function<List<Long>, List<?>>}
 	 * @param types Expected types, where null means don't care
-	 *              and the length is also checked
 	 */
-	public static boolean checkTypeParameters(Field field, Class<?>... types) {
-		return checkTypeParameters((ParameterizedType) field.getGenericType(), types);
+	public static boolean checkType(Field field, Class<?> type, Class<?>... types) {
+		return Primitives.wrap(field.getType()).equals(Primitives.wrap(type))
+		       && (field.getGenericType() instanceof ParameterizedType
+		           ? checkTypeParameters((ParameterizedType) field.getGenericType(), types)
+		           : types.length == 0);
+	}
+	
+	/**
+	 * Check if the actual type parameters of the declared return type
+	 * for the method match the given types, in the order they would be written<br>
+	 *
+	 * If the type parameters have themselves more type parameters,
+	 * those are checked too, in the order they would be written<br>
+	 *
+	 * For example calling with types
+	 * <pre>{@code
+	 *    checkTypeParameters(type,
+	 *       Function.class, List.class, Long.class, List.class, null)
+	 * }</pre>
+	 * would match a type of {@code Function<List<Long>, List<?>>}
+	 * @param types Expected types, where null means don't care
+	 */
+	public static boolean checkType(Method method, Class<?> type, Class<?>... types) {
+		return Primitives.wrap(method.getReturnType()).equals(Primitives.wrap(type))
+		       && (method.getGenericReturnType() instanceof ParameterizedType
+		           ? checkTypeParameters((ParameterizedType) method.getGenericReturnType(), types)
+		           : types.length == 0);
 	}
 	
 	
 	/**
-	 * Check if the actual first-layer type parameters of the passed type
-	 * match the expected
+	 * Check if the actual type parameters of the passed type
+	 * match the expected<br>
+	 *
+	 * If the type parameters have themselves more type parameters,
+	 * those are checked too, in the order they would be written<br>
+	 *
+	 * For example calling with types
+	 * <pre>{@code
+	 *    checkTypeParameters(type,
+	 *       Function.class, List.class, Long.class, List.class, null)
+	 * }</pre>
+	 * would match a type of {@code Function<List<Long>, List<?>>}
 	 * @param types Expected types, where null means don't care
-	 *              and the length is also checked
 	 */
 	public static boolean checkTypeParameters(ParameterizedType type, Class<?>... types) {
+		return checkTypeParameters(type, 0, types) == types.length;
+	}
+	
+	// Warning: Uses ParameterizedTypeImpl, which could be subject to change
+	//          in future Java versions
+	private static int checkTypeParameters(ParameterizedType type, int start, Class<?>... types) {
 		final Type[] actualTypes = type.getActualTypeArguments();
-		if (actualTypes.length != types.length) return false;
-		for (int i = 0; i < types.length; i++) {
-			if (types[i] != null && !types[i].equals(actualTypes[i]))
-				return false;
+		int j = start;
+		for (Type actual : actualTypes) {
+			if (j >= types.length) return -1;
+			if (types[j] != null) {
+				if (actual instanceof Class<?> && !types[j].equals(actual))
+					return -1;
+				if (actual instanceof ParameterizedTypeImpl && !types[j].equals(((ParameterizedTypeImpl) actual).getRawType()))
+					return -1;
+				if (actual instanceof ParameterizedType) {
+					j = checkTypeParameters((ParameterizedType) actual, j + 1, types) - 1;
+					if (j < 0) return -1;
+				}
+			}
+			j++;
 		}
-		return true;
+		return j;
 	}
 	
 	/**

@@ -58,7 +58,7 @@ def mc_version = "1.16.5",
     forge_version = "${mc_version}-${forge}"
 
 //noinspection GroovyUnusedAssignment
-def cloth_config_api_version = "4.11.19"
+def cloth_config_api_version = "4.11.26" // 4.11.19
 
 // Jar attributes
 archivesBaseName = "${mod_id}-${mc_version}"

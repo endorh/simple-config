@@ -3,6 +3,8 @@ package dnj.simple_config.core;
 import com.google.common.base.CaseFormat;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
 import dnj.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
+import dnj.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
+import dnj.simple_config.gui.NestedListEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -19,14 +21,16 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,19 +38,16 @@ import java.awt.*;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// TODO: Generify adding a backing and GUI type parameters
+// TODO: Make Groups be Entries
 /**
  * An abstract config entry, which may or may not produce an entry in
  * the actual config and/or the config GUI<br>
- * Entries should not be accessed at all by API users after
+ * Entries should not be accessed by API users after
  * their config has been registered. Doing so will result in
  * undefined behaviour.<br>
  * In particular, users can not modify the default
@@ -56,38 +57,41 @@ import java.util.stream.Collectors;
  * and {@link Entry#buildGUIEntry} to generate the appropriate
  * entries in both ends
  *
- * @param <T> The type of the value held by the entry
+ * @param <V> The type of the value held by the entry
+ * @param <Config> The type of the associated config entry
+ * @param <Gui> The type of the associated GUI config entry
+ * @param <Self> The actual subtype of this entry to be
+ *              returned by builder-like methods
  */
-public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
+public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, Self>>
+  implements IGUIEntry, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
 	protected String name = null;
-	protected String translation = null;
-	protected String tooltip = null;
-	protected String comment = null;
+	protected @Nullable String translation = null;
+	protected @Nullable String tooltip = null;
+	protected @Nullable String comment = null;
 	protected boolean requireRestart = false;
-	@Nullable protected Function<T, Optional<ITextComponent>> errorSupplier = null;
-	@Nullable protected Function<T, Optional<ITextComponent[]>> tooltipSupplier = null;
-	protected final T value;
+	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
+	protected @Nullable Function<V, Optional<ITextComponent[]>> tooltipSupplier = null;
+	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
+	protected @Nullable Function<Gui, Optional<ITextComponent[]>> guiTooltipSupplier = null;
+	protected @Nullable BiConsumer<Gui, ISimpleConfigEntryHolder> saver = null;
+	protected final V value;
 	protected @Nullable Field backingField;
-	protected AbstractSimpleConfigEntryHolder parent;
-	
-	protected void setParent(AbstractSimpleConfigEntryHolder config) {
-		this.parent = config;
-	}
+	protected ISimpleConfigEntryHolder parent;
+	protected boolean dirty = false;
 	
 	// Builder methods
+	@SuppressWarnings("unused")
 	public static class Builders {
+		// Basic types
+		public static BooleanEntry bool(boolean value) {
+			return new BooleanEntry(value);
+		}
 		public static StringEntry string(String value) {
 			return new StringEntry(value);
 		}
 		public static <E extends Enum<E>> EnumEntry<E> enum_(E value) {
 			return new EnumEntry<>(value);
-		}
-		public static ColorEntry color(Color value) { return color(value, false); }
-		public static ColorEntry color(Color value, boolean alpha) {
-			return alpha? new AlphaColorEntry(value) : new ColorEntry(value);
-		}
-		public static BooleanEntry bool(boolean value) {
-			return new BooleanEntry(value);
 		}
 		public static LongEntry number(long value) {
 			return number(value, (Long) null, null);
@@ -118,6 +122,15 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 				throw new IllegalArgumentException("Fraction values must be within [0, 1], passed " + value);
 			return number(value, 0D, 1D);
 		}
+		
+		public static ColorEntry color(Color value) {
+			return color(value, false);
+		}
+		public static ColorEntry color(Color value, boolean alpha) {
+			return alpha? new AlphaColorEntry(value) : new ColorEntry(value);
+		}
+		
+		// String serializable entries
 		public static <T> SerializableEntry<T> entry(T value, Function<T, String> serializer, Function<String, Optional<T>> deserializer) {
 			return new SerializableEntry<>(value, serializer, deserializer);
 		}
@@ -125,85 +138,225 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			return new SerializableConfigEntry<>(value);
 		}
 		
+		// Convenience Minecraft entries
+		public static ItemEntry item(@Nullable Item value) {
+			return new ItemEntry(value);
+		}
+		
 		// List entries
 		public static StringListEntry list(List<String> value) {
 			return new StringListEntry(value);
 		}
 		public static LongListEntry list(List<Long> value, Long min, Long max) {
-			return new LongListEntry(value, null, min, max);
+			return new LongListEntry(value, min, max);
 		}
 		public static DoubleListEntry list(List<Double> value, Double min, Double max) {
-			return new DoubleListEntry(value, null, min, max);
+			return new DoubleListEntry(value, min, max);
 		}
 		
-		public static ItemEntry item(@Nullable Item value) {
-			return new ItemEntry(value);
+		// List of other entries
+		public static <V, C, G, E extends Entry<V, C, G, E>>
+		EntryListEntry<V, C, G, E> list(Entry<V, C, G, E> entry) {
+			return list(entry, new ArrayList<>());
+		}
+		public static <V, C, G, E extends Entry<V, C, G, E>>
+		EntryListEntry<V, C, G, E> list(Entry<V, C, G, E> entry, List<V> value) {
+			return new EntryListEntry<>(value, entry);
 		}
 	}
 	
-	public Entry(T value) {
+	protected Entry(V value) {
 		this.value = value;
 	}
 	
+	protected void setParent(ISimpleConfigEntryHolder config) {
+		this.parent = config;
+	}
+	
 	@SuppressWarnings("unchecked")
-	protected E castThis() {
-		return (E) this;
+	protected Self self() {
+		return (Self) this;
 	}
 	
-	protected E name(String name) {
+	protected Self name(String name) {
 		this.name = name;
-		return castThis();
+		return self();
 	}
 	
 	@SuppressWarnings("UnusedReturnValue")
-	protected E translate(String translation) {
+	protected Self translate(String translation) {
 		this.translation = translation;
-		return castThis();
+		return self();
 	}
 	
 	@SuppressWarnings("UnusedReturnValue")
-	protected E tooltip(String translation) {
+	protected Self tooltip(String translation) {
 		this.tooltip = translation;
-		return castThis();
+		return self();
 	}
 	
-	public E tooltip(Function<T, Optional<ITextComponent[]>> tooltipSupplier) {
+	@Override public Self guiTooltipOpt(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier) {
+		this.guiTooltipSupplier = tooltipSupplier;
+		return self();
+	}
+	
+	@Override public Self tooltipOpt(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
 		this.tooltipSupplier = tooltipSupplier;
-		return castThis();
+		return self();
 	}
 	
-	@SuppressWarnings("UnusedReturnValue")
-	public E error(Function<T, Optional<ITextComponent>> errorSupplier) {
+	@Override public Self guiError(Function<Gui, Optional<ITextComponent>> errorSupplier) {
+		this.guiErrorSupplier = errorSupplier;
+		return self();
+	}
+	
+	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
-		return castThis();
+		return self();
 	}
 	
-	public E restart(boolean requireRestart) {
+	/**
+	 * Flag this entry as requiring a restart to be effective
+	 */
+	public Self restart() {
+		return restart(true);
+	}
+	
+	/**
+	 * Flag this entry as requiring a restart to be effective
+	 */
+	public Self restart(boolean requireRestart) {
 		this.requireRestart = requireRestart;
-		return castThis();
+		return self();
+	}
+	
+	protected Self withSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
+		this.saver = saver;
+		return self();
+	}
+	
+	protected boolean debugTranslations() {
+		return parent != null && parent.getRoot().debugTranslations;
 	}
 	
 	protected ITextComponent getDisplayName() {
-		if (translation != null)
+		if (debugTranslations()) {
+			if (translation != null)
+				return new StringTextComponent(translation);
+			else return new StringTextComponent(name);
+		}
+		if (translation != null && I18n.hasKey(translation))
 			return new TranslationTextComponent(translation);
 		return new StringTextComponent(name);
 	}
 	
-	protected Consumer<T> saveConsumer(AbstractSimpleConfigEntryHolder c) {
-		return t -> {
-			if (!t.equals(c.get(name)))
-				c.markDirty().set(name, t);
+	/**
+	 * Transform value to Gui type
+	 */
+	protected Gui forGui(V value) {
+		//noinspection unchecked
+		return (Gui) value;
+	}
+	
+	/**
+	 * Transform value from Gui type
+	 */
+	protected @Nullable V fromGui(@Nullable Gui value) {
+		//noinspection unchecked
+		return (V) value;
+	}
+	
+	/**
+	 * Transform value from Gui type
+	 */
+	protected V fromGuiOrDefault(Gui value) {
+		final V v = fromGui(value);
+		return v != null ? v : this.value;
+	}
+	
+	/**
+	 * Transform value to Config type
+	 */
+	protected Config forConfig(V value) {
+		//noinspection unchecked
+		return (Config) value;
+	}
+	
+	/**
+	 * Transform value from Config type
+	 */
+	protected @Nullable V fromConfig(@Nullable Config value) {
+		//noinspection unchecked
+		return (V) value;
+	}
+	
+	/**
+	 * Transform value from Config type
+	 */
+	protected V fromConfigOrDefault(Config value) {
+		final V v = self().fromConfig(value);
+		return v != null ? v : this.value;
+	}
+	
+	protected void markDirty() {
+		markDirty(true);
+	}
+	
+	protected void markDirty(boolean dirty) {
+		this.dirty = dirty;
+		if (dirty) parent.markDirty();
+	}
+	
+	protected Consumer<Gui> saveConsumer(ISimpleConfigEntryHolder c) {
+		if (saver != null)
+			return g -> saver.accept(g, c);
+		final String n = name; // Use the current name
+		return g -> {
+			// The save consumer shouldn't run with invalid values in the first place
+			final V v = fromGuiOrDefault(g);
+			if (!c.get(n).equals(v)) {
+				markDirty();
+				c.markDirty().set(n, v);
+			}
 		};
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected Optional<ITextComponent[]> supplyTooltip(T value) {
-		if (tooltipSupplier != null)
-			return tooltipSupplier.apply(value);
+	protected Optional<ITextComponent[]> supplyTooltip(Gui value) {
+		if (debugTranslations())
+			return supplyDebugTooltip(value);
+		Optional<ITextComponent[]> o;
+		if (guiTooltipSupplier != null) {
+			o = guiTooltipSupplier.apply(value);
+			if (o.isPresent()) return o;
+		}
+		final V v = fromGui(value);
+		if (tooltipSupplier != null) {
+			if (v != null) {
+				o = tooltipSupplier.apply(v);
+				if (o.isPresent()) return o;
+			}
+		}
 		if (tooltip != null && I18n.hasKey(tooltip))
 			return Optional.of(
-			  Arrays.stream(I18n.format(tooltip).split("\n"))
+			  Arrays.stream(I18n.format(tooltip, v).split("\n"))
 			    .map(StringTextComponent::new).toArray(ITextComponent[]::new));
+		return Optional.empty();
+	}
+	
+	protected Optional<ITextComponent> supplyError(Gui value) {
+		Optional<ITextComponent> o;
+		if (guiErrorSupplier != null) {
+			o = guiErrorSupplier.apply(value);
+			if (o.isPresent()) return o;
+		}
+		if (errorSupplier != null) {
+			final V v = fromGui(value);
+			if (v != null) {
+				o = errorSupplier.apply(v);
+				if (o.isPresent()) return o;
+			}
+		}
 		return Optional.empty();
 	}
 	
@@ -227,18 +380,21 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 		return builder;
 	}
 	
-	public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+	/**
+	 * Build the associated config entry for this entry, if any
+	 */
+	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.empty();
 	}
 	
 	/**
-	 * Generate an {@link AbstractConfigListEntry} to be added to the GUI
+	 * Generate an {@link AbstractConfigListEntry} to be added to the GUI, if any
 	 * @param builder Entry builder
 	 * @param config Config holder
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-	  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder config
+	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder config
 	) {
 		return Optional.empty();
 	}
@@ -249,7 +405,7 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Override public void buildGUI(
-	  ConfigCategory category, ConfigEntryBuilder entryBuilder, AbstractSimpleConfigEntryHolder config
+	  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
 	) {
 		buildGUIEntry(entryBuilder, config).ifPresent(category::addEntry);
 	}
@@ -258,87 +414,157 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 	 * Get the value held by this entry
 	 *
 	 * @param spec Config spec to look into
-	 * @throws InvalidConfigValueTypeException if the found value type does not match the expected
+	 * @throws ClassCastException if the found value type does not match the expected
 	 */
-	public T get(ConfigValue<?> spec) {
-		try {
-			//noinspection unchecked
-			return (T) spec.get();
-		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(name, e);
+	protected V get(ConfigValue<?> spec) {
+		//noinspection unchecked
+		return fromConfigOrDefault(((ConfigValue<Config>) spec).get());
+	}
+	
+	/**
+	 * Set the value held by this entry
+	 *
+	 * @param spec Config spec to update
+	 * @throws ClassCastException if the found value type does not match the expected
+	 */
+	protected void set(ConfigValue<?> spec, V value) {
+		//noinspection unchecked
+		((ConfigValue<Config>) spec).set(forConfig(value));
+	}
+	
+	protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {}
+	protected Optional<ITextComponent[]> supplyDebugTooltip(Gui value) {
+		List<ITextComponent> lines = new ArrayList<>();
+		if (translation != null) {
+			lines.add(new StringTextComponent("Translation key:"));
+			final String status = I18n.hasKey(translation) ? "(✔ present)" : "(✘ missing)";
+			lines.add(new StringTextComponent("   " + translation + " " + status));
+		} else lines.add(new StringTextComponent("Error: couldn't map translation key"));
+		if (tooltip != null) {
+			lines.add(new StringTextComponent("Tooltip key:"));
+			final String status = I18n.hasKey(tooltip)? "(✔ present)" : "(not present)";
+			lines.add(new StringTextComponent("   " + tooltip + " " + status));
+		} else lines.add(new StringTextComponent("Error: couldn't map tooltip translation key"));
+		if (guiTooltipSupplier != null)
+			lines.add(new StringTextComponent(" + Has GUI tooltip supplier"));
+		if (tooltipSupplier != null)
+			lines.add(new StringTextComponent(" + Has tooltip supplier"));
+		if (guiErrorSupplier != null)
+			lines.add(new StringTextComponent(" + Has GUI error supplier"));
+		if (errorSupplier != null)
+			lines.add(new StringTextComponent(" + Has error supplier"));
+		addTranslationsDebugInfo(lines);
+		lines.add(new StringTextComponent(" "));
+		lines.add(new StringTextComponent(" ⚠ Translation debug mode active"));
+		lines.add(new StringTextComponent("     Remember to remove the call to .debugTranslations()"));
+		return Optional.of(lines.toArray(new ITextComponent[0]));
+	}
+	
+	
+	// Subclasses follow ----------------------------------------------
+	
+	public static class EmptyEntry extends Entry<Void, Void, Void, EmptyEntry> {
+		public EmptyEntry() {
+			super(null);
 		}
 	}
 	
-	public <S> void set(ConfigValue<S> spec, T value) {
-		try {
-			//noinspection unchecked
-			spec.set((S) value);
-		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(name, e);
-		}
-	}
-	
-	public static class BooleanEntry extends Entry<Boolean, BooleanEntry> {
-		protected Function<Boolean, ITextComponent> yesNoSupplier = null;
+	public static class TextEntry extends EmptyEntry {
+		private static final Logger LOGGER = LogManager.getLogger();
+		protected @Nullable Supplier<ITextComponent> translation = null; // Lazy
 		
-		public BooleanEntry(boolean value) {
-			super(value);
+		public TextEntry(@Nullable Supplier<ITextComponent> supplier) {
+			this.translation = supplier;
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-			return Optional.of(decorate(builder).define(name, value.booleanValue()));
+		public TextEntry() {
+			if (super.translation != null)
+				this.translation = () -> new TranslationTextComponent(super.translation);
 		}
 		
-		public BooleanEntry displayAs(Function<Boolean, ITextComponent> displayAdapter) {
-			this.yesNoSupplier = displayAdapter;
+		@Override protected EmptyEntry translate(String translation) {
+			if (this.translation == null) {
+				super.translate(translation);
+				if (super.translation != null)
+					this.translation = () -> new TranslationTextComponent(super.translation);
+			}
 			return this;
 		}
 		
 		@OnlyIn(Dist.CLIENT)
 		@Override
 		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+		) {
+			if (translation != null) {
+				final TextDescriptionBuilder valBuilder = builder
+				  .startTextDescription(translation.get());
+				return Optional.of(decorate(valBuilder).build());
+			} else {
+				LOGGER.warn("Malformed text entry in config with name " + name);
+				return Optional.empty();
+			}
+		}
+	}
+	
+	public static class BooleanEntry extends Entry<Boolean, Boolean, Boolean, BooleanEntry> {
+		protected Function<Boolean, ITextComponent> yesNoSupplier = null;
+		
+		public BooleanEntry(boolean value) {
+			super(value);
+		}
+		
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+			return Optional.of(decorate(builder).define(name, value.booleanValue()));
+		}
+		
+		/**
+		 * Set a Yes/No supplier for this entry
+		 */
+		public BooleanEntry displayAs(Function<Boolean, ITextComponent> displayAdapter) {
+			this.yesNoSupplier = displayAdapter;
+			return this;
+		}
+		
+		@OnlyIn(Dist.CLIENT)
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final BooleanToggleBuilder valBuilder = builder
 			  .startBooleanToggle(getDisplayName(), c.get(name))
 			  .setDefaultValue(value)
 			  .setSaveConsumer(saveConsumer(c))
-			  .setTooltipSupplier(this::supplyTooltip)
 			  .setYesNoTextSupplier(yesNoSupplier)
-			  .setErrorSupplier(errorSupplier);
+			  .setTooltipSupplier(this::supplyTooltip)
+			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}
 	
-	public static abstract class RangedEntry<T, E extends RangedEntry<T, E>> extends Entry<T, E> {
-		public T min;
-		public T max;
+	public static abstract class RangedEntry
+	  <V, Config, Gui, This extends RangedEntry<V, Config, Gui, This>> extends Entry<V, Config, Gui, This> {
+		public V min;
+		public V max;
 		protected boolean asSlider = false;
 		
-		public RangedEntry(T value, T min, T max) {
+		public RangedEntry(V value, V min, V max) {
 			super(value);
 			this.min = min;
 			this.max = max;
 		}
 		
-		@SuppressWarnings("unchecked")
-		protected E castThis() {
-			return (E) this;
-		}
-		
-		E min(T min) {
+		public This min(V min) {
 			this.min = min;
-			return castThis();
+			return self();
 		}
 		
-		E max(T max) {
+		public This max(V max) {
 			this.max = max;
-			return castThis();
+			return self();
 		}
 	}
 	
-	public static class LongEntry extends RangedEntry<Long, LongEntry> {
+	public static class LongEntry extends RangedEntry<Long, Long, Long, LongEntry> {
 		public LongEntry(long value, Long min, Long max) {
 			super(value,
 			      min == null ? Long.MIN_VALUE : min,
@@ -352,15 +578,13 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			return this;
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
 			return Optional.of(decorate(builder).defineInRange(name, value, min, max));
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			if (!asSlider) {
 				final LongFieldBuilder valBuilder = builder
@@ -369,7 +593,7 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 				  .setMin(min).setMax(max)
 				  .setSaveConsumer(saveConsumer(c))
 				  .setTooltipSupplier(this::supplyTooltip)
-				  .setErrorSupplier(errorSupplier);
+				  .setErrorSupplier(this::supplyError);
 				return Optional.of(decorate(valBuilder).build());
 			} else {
 				final LongSliderBuilder valBuilder = builder
@@ -378,28 +602,26 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 				  .setSaveConsumer(saveConsumer(c))
 				  .setTooltipSupplier(this::supplyTooltip)
 				  .setTooltipSupplier(this::supplyTooltip)
-				  .setErrorSupplier(errorSupplier);
+				  .setErrorSupplier(this::supplyError);
 				return Optional.of(decorate(valBuilder).build());
 			}
 		}
 	}
 	
-	public static class DoubleEntry extends RangedEntry<Double, DoubleEntry> {
+	public static class DoubleEntry extends RangedEntry<Double, Double, Double, DoubleEntry> {
 		public DoubleEntry(double value, Double min, Double max) {
 			super(value,
 			      min == null ? Double.NEGATIVE_INFINITY : min,
 			      max == null ? Double.POSITIVE_INFINITY : max);
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
 			return Optional.of(decorate(builder).defineInRange(name, value, min, max));
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			if (!asSlider) {
 				final DoubleFieldBuilder valBuilder = builder
@@ -408,49 +630,47 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 				  .setMin(min).setMax(max)
 				  .setSaveConsumer(saveConsumer(c))
 				  .setTooltipSupplier(this::supplyTooltip)
-				  .setErrorSupplier(errorSupplier);
+				  .setErrorSupplier(this::supplyError);
 				return Optional.of(decorate(valBuilder).build());
-			} else //noinspection CommentedOutCode
-			{
-				throw new NotImplementedException(
-				  "Double slider entries are not implemented");
+			} else {
 				/*
 				final DoubleSliderBuilder valBuilder = builder
-				  .startDoubleSlider(getDisplayName(), config.get(name), min, max)
+				  .startDoubleSlider(getDisplayName(), c.get(name))
 				  .setDefaultValue(value)
+				  .setMin(min).setMax(max)
 				  .setSaveConsumer(saveConsumer(c))
-				  .setTooltip(getTooltip())
-				  .setErrorSupplier(errorSupplier);
-				return decorate(valBuilder).build();
+				  .setTooltipSupplier(this::supplyTooltip)
+				  .setErrorSupplier(this::supplyError);
+				return Optional.of(decorate(valBuilder).build());
 				*/
+				throw new NotImplementedException(
+				  "Double slider entries are not implemented");
 			}
 		}
 	}
 	
-	public static class StringEntry extends Entry<String, StringEntry> {
+	public static class StringEntry extends Entry<String, String, String, StringEntry> {
 		public StringEntry(String value) {super(value);}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
 			return Optional.of(decorate(builder).define(name, value));
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final TextFieldBuilder valBuilder = builder
 			  .startTextField(getDisplayName(), c.get(name))
 			  .setDefaultValue(value)
 			  .setSaveConsumer(saveConsumer(c))
 			  .setTooltipSupplier(this::supplyTooltip)
-			  .setErrorSupplier(errorSupplier);
+			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}
 	
-	public static class EnumEntry<E extends Enum<E>> extends Entry<E, EnumEntry<E>> {
+	public static class EnumEntry<E extends Enum<E>> extends Entry<E, E, E, EnumEntry<E>> {
 		public Class<E> enumClass;
 		
 		public EnumEntry(E value) {
@@ -458,19 +678,32 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			enumClass = value.getDeclaringClass();
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
 			return Optional.of(decorate(builder).defineEnum(name, value));
 		}
 		
+		@Override protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
+			super.addTranslationsDebugInfo(tooltip);
+			if (parent != null) {
+				tooltip.add(new StringTextComponent(" + Enum translation keys:"));
+				for (E elem : enumClass.getEnumConstants())
+					tooltip.add(new StringTextComponent(
+					  "   > " + getEnumTranslationKey(elem, parent.getRoot())));
+			}
+		}
+		
+		protected String getEnumTranslationKey(E item, SimpleConfig config) {
+			return config.modId + ".config.enum." +
+			CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, enumClass.getSimpleName()) +
+			"." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, item.name());
+		}
+		
 		@OnlyIn(Dist.CLIENT)
-		public ITextComponent enumName(E item, SimpleConfig config) {
+		protected ITextComponent enumName(E item, SimpleConfig config) {
 			if (item instanceof ITranslatedEnum)
 				return ((ITranslatedEnum) item).getDisplayName();
-			final String key =
-			  config.modId + ".config.enum." +
-			  CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, enumClass.getSimpleName()) +
-			  "." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, item.name());
+			final String key = getEnumTranslationKey(item, config);
+			// if (debugTranslations()) return new StringTextComponent(key);
 			if (I18n.hasKey(key))
 				return new TranslationTextComponent(key);
 			return new StringTextComponent(item.name());
@@ -478,14 +711,15 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 		
 		@OnlyIn(Dist.CLIENT)
 		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final EnumSelectorBuilder<E> valBuilder = builder
 			  .startEnumSelector(getDisplayName(), enumClass, c.get(name))
 			  .setDefaultValue(value)
 			  .setSaveConsumer(saveConsumer(c))
-			  .setTooltipSupplier(this::supplyTooltip);
+			  .setTooltipSupplier(this::supplyTooltip)
+			  .setErrorSupplier(this::supplyError);
 			//noinspection unchecked
 			valBuilder.setEnumNameProvider(e -> enumName((E) e, c.getRoot()));
 			return Optional.of(decorate(valBuilder).build());
@@ -496,135 +730,356 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 		ITextComponent getDisplayName();
 	}
 	
-	public static abstract class ListEntry<T, E extends ListEntry<T, E>> extends Entry<List<T>, E> {
-		public Predicate<T> validator;
+	public static abstract class ListEntry
+	  <V, Config, Gui, Self extends ListEntry<V, Config, Gui, Self>> extends Entry<List<V>, List<Config>, List<Gui>, Self> {
+		public Function<V, Optional<ITextComponent>> validator = t -> Optional.empty();
 		protected boolean expand;
 		
-		public ListEntry(@Nullable List<T> value) {
-			this(value, null);
-		}
-		
-		public ListEntry(
-		  @Nullable List<T> value, @Nullable Predicate<T> validator
-		) {
+		public ListEntry(@Nullable List<V> value) {
 			super(value != null? value : new ArrayList<>());
-			this.validator = validator != null? validator : t -> true;
 		}
 		
-		@SuppressWarnings("unchecked")
-		protected E castThis() {
-			return (E) this;
+		/**
+		 * Set a validator for the elements of this list entry<br>
+		 * You may also use {@link ListEntry#setValidator(Function)}
+		 * to provide users with more explicative error messages<br>
+		 * You may also use {@link IErrorEntry#error(Function)} to
+		 * validate instead the whole list
+		 * @param validator Element validator. Should return true for all valid elements
+		 */
+		public Self setValidator(Predicate<V> validator) {
+			return this.setValidator((Function<V, Optional<ITextComponent>>)
+			  c -> validator.test(c)? Optional.empty() :
+			       Optional.of(new TranslationTextComponent(
+			    "simple-config.config.error.list_element_does_not_match_validator", c)));
 		}
 		
-		public E setValidator(Predicate<T> validator) {
+		/**
+		 * Set an error message supplier for the elements of this list entry<br>
+		 * You may also use {@link IErrorEntry#error(Function)} to check
+		 * instead the whole list
+		 * @param validator Error message supplier. Empty return values indicate
+		 *                  correct values
+		 */
+		public Self setValidator(Function<V, Optional<ITextComponent>> validator) {
 			this.validator = validator;
-			return castThis();
+			return self();
 		}
 		
-		public E expand() {
+		/**
+		 * Expand this list automatically in the GUI
+		 */
+		public Self expand() {
 			return expand(true);
 		}
-		public E expand(boolean expand) {
+		
+		/**
+		 * Expand this list automatically in the GUI
+		 */
+		public Self expand(boolean expand) {
 			this.expand = expand;
-			return castThis();
+			return self();
+		}
+		
+		@Override protected List<Gui> forGui(List<V> list) {
+			return list.stream().map(this::elemForGui).collect(Collectors.toList());
+		}
+		@Override protected @Nullable List<V> fromGui(@Nullable List<Gui> list) {
+			if (list == null) return null;
+			return list.stream().map(this::elemFromGui).collect(Collectors.toList());
+		}
+		@Override protected List<Config> forConfig(List<V> list) {
+			return list.stream().map(this::elemForConfig).collect(Collectors.toList());
+		}
+		@Override protected @Nullable List<V> fromConfig(@Nullable List<Config> list) {
+			if (list == null) return null;
+			return list.stream().map(this::elemFromConfig).collect(Collectors.toList());
+		}
+		
+		protected Gui elemForGui(V value) {
+			//noinspection unchecked
+			return (Gui) value;
+		}
+		protected V elemFromGui(Gui value) {
+			//noinspection unchecked
+			return (V) value;
+		}
+		protected Config elemForConfig(V value) {
+			//noinspection unchecked
+			return (Config) value;
+		}
+		protected V elemFromConfig(Config value) {
+			//noinspection unchecked
+			return (V) value;
 		}
 		
 		protected boolean validateElement(Object o) {
 			try {
 				//noinspection unchecked
-				T t = (T) o;
-				return validator.test(t);
+				return !validator.apply(elemFromConfig((Config) o)).isPresent();
 			} catch (ClassCastException ignored) {
 				return false;
 			}
 		}
 		
-		// TODO: Make validators return Optional<ITextComponent> too
-		protected Optional<ITextComponent> supplyError(List<T> value) {
-			for (int i = 0; i < value.size(); i++) {
-				T elem = value.get(i);
-				if (!validator.test(elem))
-					return Optional.of(new TranslationTextComponent(
-					  "config.simple-config.error.list_element_does_not_match_validator", i));
-			}
-			return errorSupplier != null ? errorSupplier.apply(value) : Optional.empty();
+		protected static ITextComponent addIndex(ITextComponent message, int index) {
+			return message.copyRaw().appendString(", ").append(new TranslationTextComponent(
+			  "simple-config.config.error.at_index",
+			  new StringTextComponent(String.format("%d", index + 1)).mergeStyle(TextFormatting.AQUA)));
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(
-		  ForgeConfigSpec.Builder builder
+		@Override protected Optional<ITextComponent> supplyError(List<Gui> value) {
+			for (int i = 0; i < value.size(); i++) {
+				Config elem = elemForConfig(elemFromGui(value.get(i)));
+				final Optional<ITextComponent> error = validator.apply(elemFromConfig(elem));
+				if (error.isPresent()) return Optional.of(addIndex(error.get(), i));
+			}
+			return super.supplyError(value);
+		}
+		
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(
+		  Builder builder
 		) {
-			return Optional.of(decorate(builder).defineList(
-			  name, value, this::validateElement));
+			return Optional.of(decorate(builder).defineList(name, value, this::validateElement));
 		}
 	}
 	
-	public static abstract class RangedListEntry<T extends Comparable<T>, E extends RangedListEntry<T, E>> extends ListEntry<T, E> {
-		public T min;
-		public T max;
+	public static class EntryListEntry
+	  <V, C, G, E extends Entry<V, C, G, E>>
+	  extends ListEntry<V, C, G, EntryListEntry<V, C, G, E>> {
+		protected static final String TOOLTIP_KEY_SUFFIX = ".help";
+		protected static final String SUB_ELEMENTS_KEY_SUFFIX = ".sub";
+		
+		protected final Entry<V, C, G, E> entry;
+		protected ListEntryEntryHolder<V, C, G, E> holder;
+		
+		public static class ListEntryEntryHolder<V, C, G, E extends Entry<V, C, G, E>>
+		  implements ISimpleConfigEntryHolder {
+			private static final Logger LOGGER = LogManager.getLogger();
+			protected final Entry<V, C, G, E> entry;
+			protected List<V> value = null;
+			protected final List<V> buffer = new ArrayList<>();
+			
+			protected String nameFor(G element) {
+				buffer.add(entry.fromGuiOrDefault(element));
+				return String.valueOf(buffer.size() - 1);
+			}
+			
+			protected void onDelete(int index) {
+				buffer.remove(index);
+			}
+			
+			protected void clear() {
+				buffer.clear();
+				value = null;
+			}
+			
+			public ListEntryEntryHolder(Entry<V, C, G, E> entry) {
+				this.entry = entry;
+			}
+			
+			protected void setValue(List<V> value) {
+				this.value = value;
+			}
+			
+			@Override public SimpleConfig getRoot() {
+				return entry.parent.getRoot();
+			}
+			
+			@Override public void markDirty(boolean dirty) {
+				entry.parent.markDirty(dirty);
+			}
+			
+			@Override public <T> T get(String path) {
+				// V must be T
+				try {
+					//noinspection unchecked
+					return (T) buffer.get(Integer.parseInt(path));
+				} catch (NumberFormatException e) {
+					throw new NoSuchConfigEntryError(entry.name + "." + path);
+				} catch (ClassCastException e) {
+					throw new InvalidConfigValueTypeException(entry.name + "." + path, e);
+				}
+			}
+			
+			@Override public <T> void set(String path, T value) {
+				// T must be V
+				try {
+					//noinspection unchecked
+					this.buffer.set(Integer.parseInt(path), (V) value);
+				} catch (NumberFormatException e) {
+					throw new NoSuchConfigEntryError(entry.name + "." + path);
+				} catch (ClassCastException e) {
+					throw new InvalidConfigValueTypeException(entry.name + "." + path, e);
+				}
+			}
+		}
+		
+		public EntryListEntry(@Nullable List<V> value, Entry<V, C, G, E> entry) {
+			super(value);
+			this.entry = entry.withSaver((g, c) -> {});
+			if (translation != null)
+				this.translate(translation);
+			if (tooltip != null)
+				this.tooltip(tooltip);
+		}
+		
+		@Override protected EntryListEntry<V, C, G, E> translate(String translation) {
+			super.translate(translation);
+			if (translation != null)
+				entry.translate(translation + SUB_ELEMENTS_KEY_SUFFIX);
+			return self();
+		}
+		
+		@Override protected EntryListEntry<V, C, G, E> tooltip(String translation) {
+			super.tooltip(translation);
+			if (tooltip != null)
+				if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX))
+					entry.tooltip(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
+					              + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
+				else entry.tooltip(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
+			return self();
+		}
+		
+		@Override protected void setParent(ISimpleConfigEntryHolder config) {
+			super.setParent(config);
+			this.entry.setParent(config);
+			this.holder = new ListEntryEntryHolder<>(entry);
+		}
+		
+		@Override protected C elemForConfig(V value) {
+			return entry.forConfig(value);
+		}
+		@Override protected V elemFromConfig(C value) {
+			return entry.fromConfig(value);
+		}
+		@Override protected G elemForGui(V value) {
+			return entry.forGui(value);
+		}
+		@Override protected V elemFromGui(G value) {
+			return entry.fromGui(value);
+		}
+		
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+			return Optional.of(decorate(builder).defineList(name, forConfig(value), v -> {
+				try {
+					//noinspection unchecked
+					return !entry.supplyError(elemForGui(elemFromConfig((C) v))).isPresent();
+				} catch (ClassCastException e) {
+					return false;
+				}
+			}));
+		}
+		
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+		) {
+			holder.setValue(c.get(name));
+			holder.clear();
+			final NestedListEntry<G, AbstractConfigListEntry<G>> e =
+			  new NestedListEntry<>(
+			    getDisplayName(), forGui(c.get(name)), expand,
+			    () -> this.supplyTooltip(forGui(c.get(name))),
+			    saveConsumer(c).andThen(g -> holder.clear()),
+			    () -> forGui(value), builder.getResetButtonKey(),
+			    true, false,
+			    (g, en) -> {
+					 entry.name(holder.nameFor(g));
+					 //noinspection unchecked
+					 return (AbstractConfigListEntry<G>) entry.buildGUIEntry(
+						builder, holder
+					 ).orElseThrow(() -> new IllegalStateException(
+						"Sub entry in list entry did not generate a GUI entry"));
+				 }, holder::onDelete);
+			e.setRequiresRestart(requireRestart);
+			e.setTooltipSupplier(() -> this.supplyTooltip(e.getValue()));
+			e.setErrorSupplier(() -> this.supplyError(e.getValue()));
+			return Optional.of(e);
+		}
+	}
+	
+	public static abstract class RangedListEntry
+	  <V extends Comparable<V>, Config, Gui, Self extends RangedListEntry<V, Config, Gui, Self>> extends ListEntry<V, Config, Gui, Self> {
+		public V min;
+		public V max;
 		
 		public RangedListEntry(
-		  @Nullable List<T> value, @Nullable Predicate<T> validator,
-		  @Nonnull T min, @Nonnull T max
+		  @Nullable List<V> value, @Nonnull V min, @Nonnull V max
 		) {
-			super(value, clamp(validator, min, max));
+			super(value);
 			this.min = min;
 			this.max = max;
 		}
 		
-		public E min(@Nonnull T min) {
+		/**
+		 * Set the minimum allowed value for the elements of this list entry
+		 */
+		public Self min(@Nonnull V min) {
 			this.min = min;
 			setValidator(clamp(validator, min, max));
-			return castThis();
+			return self();
 		}
 		
-		public E max(@Nonnull T max) {
+		/**
+		 * Set the maximum allowed value for the elements of this list entry
+		 */
+		public Self max(@Nonnull V max) {
 			this.max = max;
 			setValidator(clamp(validator, min, max));
-			return castThis();
+			return self();
 		}
 		
-		public static <T extends Comparable<T>> Predicate<T> clamp(
-		  @Nullable Predicate<T> validator, T min, T max
+		@Override public Self setValidator(Function<V, Optional<ITextComponent>> validator) {
+			return super.setValidator(clamp(validator, min, max));
+		}
+		
+		protected Function<V, Optional<ITextComponent>> clamp(
+		  @Nullable Function<V, Optional<ITextComponent>> validator, V min, V max
 		) {
-			final Predicate<T> nonNullValidator = validator != null? validator : t -> true;
-			return t -> t.compareTo(min) >= 0 && t.compareTo(max) <= 0 && nonNullValidator.test(t);
+			return t -> {
+				if (t.compareTo(min) < 0)
+					return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_small", min));
+				if (t.compareTo(max) > 0)
+					return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_large", max));
+				return validator != null? validator.apply(t) : Optional.empty();
+			};
 		}
 	}
 	
-	public static class LongListEntry extends RangedListEntry<Long, LongListEntry> {
+	public static class LongListEntry extends RangedListEntry<Long, Number, Long, LongListEntry> {
 		public LongListEntry(@Nullable List<Long> value) {
-			this(value, null, null, null);
-		}
-		public LongListEntry(@Nullable List<Long> value, @Nullable Long min, @Nullable Long max) {
-			this(value, null, min, max);
-		}
-		public LongListEntry(@Nullable List<Long> value, @Nullable Predicate<Long> validator) {
-			this(value, validator, null, null);
+			this(value, null, null);
 		}
 		public LongListEntry(
-		  @Nullable List<Long> value, @Nullable Predicate<Long> validator,
-		  @Nullable Long min, @Nullable Long max
+		  @Nullable List<Long> value, @Nullable Long min, @Nullable Long max
 		) {
-			super(value, validator, min != null? min : Long.MIN_VALUE, max != null? max : Long.MAX_VALUE);
+			super(value, min != null? min : Long.MIN_VALUE, max != null? max : Long.MAX_VALUE);
 		}
 		
-		@Override public List<Long> get(ConfigValue<?> spec) {
-			// Sometimes Forge returns lists of subtypes, but Cloth can't cast them
+		@Override protected Long elemFromConfig(Number value) {
+			return value.longValue();
+		}
+		
+		@Override protected List<Long> get(ConfigValue<?> spec) {
+			// Sometimes Forge returns lists of subtypes, so we cast them
 			//noinspection unchecked
-			return ((List<Number>) (List<?>) super.get(spec))
-			  .stream().map(Number::longValue).collect(Collectors.toList());
+			return ((ConfigValue<List<Number>>) spec).get().stream().map(Number::longValue)
+			  .collect(Collectors.toList());
+			
+			// //noinspection unchecked
+			// return ((List<Number>) (List<?>) super.get(spec))
+			//   .stream().map(Number::longValue).collect(Collectors.toList());
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final LongListBuilder valBuilder = builder
 			  .startLongList(getDisplayName(), c.get(name))
 			  .setDefaultValue(value)
 			  .setMin(min).setMax(max)
+			  .setExpanded(expand)
 			  .setSaveConsumer(saveConsumer(c))
 			  .setTooltipSupplier(this::supplyTooltip)
 			  .setErrorSupplier(this::supplyError);
@@ -632,40 +1087,37 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 		}
 	}
 	
-	public static class DoubleListEntry extends RangedListEntry<Double, DoubleListEntry> {
+	public static class DoubleListEntry extends RangedListEntry<Double, Number, Double, DoubleListEntry> {
 		public DoubleListEntry(@Nullable List<Double> value) {
-			this(value, null, null, null);
-		}
-		public DoubleListEntry(@Nullable List<Double> value, @Nullable Double min, @Nullable Double max) {
-			this(value, null, min, max);
-		}
-		public DoubleListEntry(@Nullable List<Double> value, @Nullable Predicate<Double> validator) {
-			this(value, validator, null, null);
+			this(value, null, null);
 		}
 		public DoubleListEntry(
-		  @Nullable List<Double> value, @Nullable Predicate<Double> validator,
+		  @Nullable List<Double> value,
 		  @Nullable Double min, @Nullable Double max
 		) {
-			super(value, validator, min != null? min : Double.NEGATIVE_INFINITY, max != null? max : Double.POSITIVE_INFINITY);
+			super(value, min != null? min : Double.NEGATIVE_INFINITY, max != null? max : Double.POSITIVE_INFINITY);
 		}
 		
-		@Override
-		public List<Double> get(ConfigValue<?> spec) {
-			// Sometimes forge returns lists of subtypes, but Cloth can't cast them
+		@Override protected Double elemFromConfig(Number value) {
+			return value.doubleValue();
+		}
+		
+		@Override protected List<Double> get(ConfigValue<?> spec) {
+			// Sometimes forge returns lists of subtypes, so we cast them
 			//noinspection unchecked
 			return ((List<Number>) (List<?>) super.get(spec))
 			  .stream().map(Number::doubleValue).collect(Collectors.toList());
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final DoubleListBuilder valBuilder = builder
 			  .startDoubleList(getDisplayName(), c.get(name))
 			  .setDefaultValue(value)
 			  .setMin(min).setMax(max)
+			  .setExpanded(expand)
 			  .setSaveConsumer(saveConsumer(c))
 			  .setTooltipSupplier(this::supplyTooltip)
 			  .setErrorSupplier(this::supplyError);
@@ -673,104 +1125,23 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 		}
 	}
 	
-	public static class StringListEntry extends ListEntry<String, StringListEntry> {
+	public static class StringListEntry extends ListEntry<String, String, String, StringListEntry> {
 		public StringListEntry(List<String> value) {
 			super(value);
 		}
-		public StringListEntry(@Nullable List<String> value, @Nullable Predicate<String> validator) {
-			super(value, validator);
-		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final StringListBuilder valBuilder = builder
 			  .startStrList(getDisplayName(), c.get(name))
 			  .setDefaultValue(value)
-			  .setSaveConsumer(l -> {
-				  if (!l.equals(c.get(name))) c.markDirty().set(name, l);
-			  })
+			  .setExpanded(expand)
+			  .setSaveConsumer(saveConsumer(c))
 			  .setTooltipSupplier(this::supplyTooltip)
 			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
-		}
-	}
-	
-	public static class EmptyEntry extends Entry<Void, EmptyEntry> {
-		public EmptyEntry() {
-			super(null);
-		}
-	}
-	
-	public static class TextEntry extends EmptyEntry {
-		public final Supplier<ITextComponent> translation;
-		
-		public TextEntry(Supplier<ITextComponent> supplier) {
-			this.translation = supplier;
-		}
-		
-		public TextEntry() {
-			this.translation = () -> new TranslationTextComponent(super.translation);
-		}
-		
-		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
-		) {
-			final TextDescriptionBuilder valBuilder = builder
-			  .startTextDescription(translation.get());
-			return Optional.of(decorate(valBuilder).build());
-		}
-	}
-	
-	/**
-	 * Doesn't have a GUI<br>
-	 * To create your custom type of entry with GUI,
-	 * extend this class or {@link Entry} directly
-	 *
-	 * @param <T> Type of the value
-	 */
-	@SuppressWarnings("unused")
-	public static class SerializableEntry<T> extends Entry<T, SerializableEntry<T>> {
-		public Function<T, String> serializer;
-		public Function<String, Optional<T>> deserializer;
-		
-		@SuppressWarnings("unused")
-		public SerializableEntry(
-		  T value,
-		  Function<T, String> serializer,
-		  Function<String, Optional<T>> deserializer
-		) {
-			super(value);
-			this.serializer = serializer;
-			this.deserializer = deserializer;
-		}
-		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-			return Optional.of(
-			  builder.define(
-				 name, serializer.apply(value),
-				 s -> deserializer.apply((String) s).isPresent()));
-		}
-		
-		@Override
-		public T get(ConfigValue<?> spec) {
-			return deserializer.apply((String) spec.get()).orElse(null);
-		}
-		
-		@Override
-		public <S> void set(ConfigValue<S> spec, T value) {
-			try {
-				//noinspection unchecked
-				final ConfigValue<String> str = (ConfigValue<String>) spec;
-				str.set(serializer.apply(value));
-			} catch (ClassCastException e) {
-				throw new InvalidConfigValueTypeException(name, e);
-			}
 		}
 	}
 	
@@ -779,54 +1150,98 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 	}
 	
 	public interface IConfigEntrySerializer<T> {
-		String serialize(T value);
-		Optional<T> deserialize(String value);
+		String serializeConfigEntry(T value);
+		Optional<T> deserializeConfigEntry(String value);
+	}
+	
+	/**
+	 * Doesn't have a GUI<br>
+	 * To create your custom type of entry with GUI,
+	 * extend this class or {@link Entry} directly
+	 *
+	 * @param <V> Type of the value
+	 */
+	@SuppressWarnings("unused")
+	public static class SerializableEntry<V> extends Entry<V, String, String, SerializableEntry<V>> {
+		public Function<V, String> serializer;
+		public Function<String, Optional<V>> deserializer;
+		
+		public SerializableEntry(
+		  V value, IConfigEntrySerializer<V> serializer
+		) {
+			this(value, serializer::serializeConfigEntry, serializer::deserializeConfigEntry);
+		}
+		
+		@SuppressWarnings("unused")
+		public SerializableEntry(
+		  V value,
+		  Function<V, String> serializer,
+		  Function<String, Optional<V>> deserializer
+		) {
+			super(value);
+			this.serializer = serializer;
+			this.deserializer = deserializer;
+		}
+		
+		@Override protected String forGui(V value) {
+			return serializer.apply(value);
+		}
+		
+		@Override protected @Nullable V fromGui(@Nullable String value) {
+			return value != null? deserializer.apply(value).orElse(null) : null;
+		}
+		
+		@Override protected String forConfig(V value) {
+			return serializer.apply(value);
+		}
+		
+		@Override protected @Nullable V fromConfig(@Nullable String value) {
+			return value != null? deserializer.apply(value).orElse(null) : null;
+		}
+		
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+			return Optional.of(
+			  builder.define(
+			    name, serializer.apply(value),
+				 s -> s instanceof String && deserializer.apply((String) s).isPresent()));
+		}
+		
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+		) {
+			final TextFieldBuilder valBuilder = builder
+			  .startTextField(getDisplayName(), forGui(c.get(name)))
+			  .setDefaultValue(forGui(value))
+			  .setSaveConsumer(saveConsumer(c))
+			  .setTooltipSupplier(this::supplyTooltip)
+			  .setErrorSupplier(this::supplyError);
+			return Optional.of(decorate(valBuilder).build());
+		}
 	}
 	
 	public static class SerializableConfigEntry<T extends ISerializableConfigEntry<T>> extends SerializableEntry<T> {
 		public SerializableConfigEntry(T value) {
 			super(value, null, null);
 			final IConfigEntrySerializer<T> serializer = value.getConfigSerializer();
-			this.serializer = serializer::serialize;
-			this.deserializer = serializer::deserialize;
+			this.serializer = serializer::serializeConfigEntry;
+			this.deserializer = serializer::deserializeConfigEntry;
 		}
 	}
 	
-	// Colors are stored as Strings in the config, but used as Integers in the GUI
-	public static class ColorEntry extends Entry<Color, ColorEntry> {
+	public static class ColorEntry extends Entry<Color, String, Integer, ColorEntry> {
 		public ColorEntry(Color value) {
 			super(value);
 		}
 		
-		@Override
-		public Color get(ConfigValue<?> spec) {
-			try {
-				//noinspection unchecked
-				final Color c = fromHex(((ConfigValue<String>) spec).get());
-				return c != null? c : value;
-			} catch (ClassCastException e) {
-				throw new InvalidConfigValueTypeException(name, e);
-			}
+		@Override protected String forConfig(Color value) {
+			return String.format("#%06X", value.getRGB() & 0xFFFFFF);
 		}
-		
-		@Override
-		public <S> void set(ConfigValue<S> spec, Color value) {
-			try {
-				//noinspection unchecked
-				((ConfigValue<String>) spec).set(asHex(value));
-			} catch (ClassCastException e) {
-				throw new InvalidConfigValueTypeException(name, e);
-			}
-		}
-		
-		public static String asHex(Color color) {
-			return String.format("#%06X", color.getRGB() & 0xFFFFFF);
-		}
-		
 		protected static final Pattern COLOR_PATTERN = Pattern.compile(
 		  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3}|[0-9a-f]{6})\\s*");
-		public static @Nullable Color fromHex(String color) {
-			final Matcher m = COLOR_PATTERN.matcher(color);
+		@Override protected @Nullable Color fromConfig(String value) {
+			if (value == null)
+				return null;
+			final Matcher m = COLOR_PATTERN.matcher(value);
 			if (m.matches()) {
 				String c = m.group("color");
 				if (c.length() == 3)
@@ -835,6 +1250,14 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			}
 			return null;
 		}
+		
+		@Override protected Integer forGui(Color value) {
+			return value.getRGB() & 0xFFFFFF;
+		}
+		@Override protected @Nullable Color fromGui(@Nullable Integer value) {
+			return value != null? new Color(value) : null;
+		}
+		
 		protected static String doubleChars(String s) {
 			StringBuilder r = new StringBuilder();
 			for (char ch : s.toCharArray())
@@ -842,27 +1265,21 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			return r.toString();
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
 			return Optional.of(decorate(builder).define(
-			  name, asHex(value), s -> (s instanceof String? fromHex((String) s) : null) != null));
+			  name, forConfig(value), s -> s instanceof String && fromConfig((String) s) != null));
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
-			final int prev = c.<Color>get(name).getRGB() & 0xFFFFFF;
 			final ColorFieldBuilder valBuilder = builder
-			  .startColorField(getDisplayName(), prev)
-			  .setDefaultValue(value.getRGB() & 0xFFFFFF)
-			  .setSaveConsumer(i -> {
-			  	  if (i != prev) c.markDirty().set(name, new Color(i));
-			  })
-			  .setTooltipSupplier(i -> supplyTooltip(new Color(i)));
-			if (errorSupplier != null)
-				valBuilder.setErrorSupplier(i -> errorSupplier.apply(new Color(i)));
+			  .startColorField(getDisplayName(), forGui(c.get(name)))
+			  .setDefaultValue(forGui(value))
+			  .setSaveConsumer(saveConsumer(c))
+			  .setTooltipSupplier(this::supplyTooltip)
+			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}
@@ -872,35 +1289,15 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			super(value);
 		}
 		
-		@Override
-		public Color get(ConfigValue<?> spec) {
-			try {
-				//noinspection unchecked
-				final Color c = fromHex(((ConfigValue<String>) spec).get());
-				return c != null? c : value;
-			} catch (ClassCastException e) {
-				throw new InvalidConfigValueTypeException(name, e);
-			}
+		@Override protected String forConfig(Color value) {
+			return String.format("#%08X", value.getRGB());
 		}
-		
-		@Override
-		public <S> void set(ConfigValue<S> spec, Color value) {
-			try {
-				//noinspection unchecked
-				((ConfigValue<String>) spec).set(asHex(value));
-			} catch (ClassCastException e) {
-				throw new InvalidConfigValueTypeException(name, e);
-			}
-		}
-		
-		public static String asHex(Color color) {
-			return String.format("#%08X", color.getRGB());
-		}
-		
 		protected static final Pattern ALPHA_COLOR_PATTERN = Pattern.compile(
 		  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\s*");
-		public static @Nullable Color fromHex(String s) {
-			final Matcher m = ALPHA_COLOR_PATTERN.matcher(s);
+		@Override protected @Nullable Color fromConfig(@Nullable String value) {
+			if (value == null)
+				return null;
+			final Matcher m = ALPHA_COLOR_PATTERN.matcher(value);
 			if (m.matches()) {
 				String c = m.group("color");
 				if (c.length() < 6)
@@ -910,33 +1307,34 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			return null;
 		}
 		
-		@Override
-		public Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		@Override protected Integer forGui(Color value) {
+			return value.getRGB();
+		}
+		@Override protected Color fromGui(@Nullable Integer value) {
+			return value != null? new Color(value, true) : null;
+		}
+		
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
 			return Optional.of(decorate(builder).define(
-			  name, asHex(value), s -> (s instanceof String? fromHex((String) s) : null) != null));
+			  name, forConfig(value), s -> s instanceof String && fromConfig((String) s) != null));
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder,
-		  AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final int prev = c.<Color>get(name).getRGB();
 			final ColorFieldBuilder valBuilder = builder
 			  .startAlphaColorField(getDisplayName(), prev)
-			  .setDefaultValue(value.getRGB())
-			  .setSaveConsumer(i -> {
-				  if (i != prev) c.markDirty().set(name, new Color(i));
-			  })
-			  .setTooltipSupplier(i -> supplyTooltip(new Color(i)));
-			if (errorSupplier != null)
-				valBuilder.setErrorSupplier(i -> errorSupplier.apply(new Color(i, true)));
+			  .setDefaultValue(forGui(value))
+			  .setSaveConsumer(saveConsumer(c))
+			  .setTooltipSupplier(this::supplyTooltip)
+			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}
 	
-	public static class ItemEntry extends Entry<Item, ItemEntry> {
+	public static class ItemEntry extends Entry<Item, String, Item, ItemEntry> {
 		protected final ItemStack stack;
 		protected Ingredient filter = null;
 		protected ITag<Item> tag = null;
@@ -970,6 +1368,7 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 		protected Set<Item> getValidItems() {
 			if (tag != null) {
 				// Tags cannot be used until a world is loaded
+				// Until a world is loaded we simply don't apply any restrictions
 				try {
 					filter = Ingredient.fromTag(tag);
 					validItems = Arrays.stream(filter.getMatchingStacks()).map(ItemStack::getItem)
@@ -982,20 +1381,15 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			return validItems != null? validItems : Registry.ITEM.stream().collect(Collectors.toSet());
 		}
 		
-		@Override public Item get(ConfigValue<?> spec) {
-			try {
-				//noinspection unchecked
-				final Item item = fromId(((ConfigValue<String>) spec).get());
-				return item != null? item : value;
-			} catch (InvalidConfigValueTypeException e) {
-				return value;
-			}
+		@Override protected String forConfig(Item value) {
+			//noinspection ConstantConditions
+			return value.getRegistryName().toString();
 		}
 		
-		@Override public <S> void set(ConfigValue<S> spec, Item value) {
-			try {
-				((ConfigValue<String>) spec).set(value.getRegistryName().toString());
-			} catch (InvalidConfigValueTypeException ignored) {}
+		@Override protected @Nullable Item fromConfig(@Nullable String value) {
+			if (value == null) return null;
+			final Item i = fromId(value);
+			return i != null ? i : this.value;
 		}
 		
 		protected @Nullable Item fromId(String itemId) {
@@ -1005,17 +1399,18 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			return getValidItems().contains(item)? item : null;
 		}
 		
-		@Override public Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-			if (parent.root.type != Type.SERVER && tag != null)
+		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+			if (parent.getRoot().type != net.minecraftforge.fml.config.ModConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry \"" + name + "\"");
+			assert value.getRegistryName() != null;
 			return Optional.of(decorate(builder).define(
 			  name, value.getRegistryName().toString(), s ->
-				 (s instanceof String ? fromId((String) s) : null) != null));
+				 s instanceof String && fromId((String) s) != null));
 		}
 		
-		@Override public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
-		  ConfigEntryBuilder builder, AbstractSimpleConfigEntryHolder c
+		@Override protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			final DropdownMenuBuilder<Item> valBuilder = builder
 			  .startDropdownMenu(
@@ -1028,7 +1423,7 @@ public abstract class Entry<T, E extends Entry<T, E>> implements IGUIEntry {
 			    ).collect(Collectors.toCollection(LinkedHashSet::new)))
 			  .setSaveConsumer(saveConsumer(c))
 			  .setTooltipSupplier(this::supplyTooltip)
-			  .setErrorSupplier(errorSupplier);
+			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}

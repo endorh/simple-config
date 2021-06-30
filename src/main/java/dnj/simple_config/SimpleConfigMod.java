@@ -1,13 +1,12 @@
 package dnj.simple_config;
 
-import dnj.simple_config.core.SimpleConfigBuilder;
 import dnj.simple_config.core.SimpleConfig;
+import dnj.simple_config.core.SimpleConfigSync;
 import dnj.simple_config.core.annotation.ConfigEntry;
 import dnj.simple_config.demo.DemoConfigCategory;
 import dnj.simple_config.demo.DemoServerConfig;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig.Type;
@@ -15,8 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static dnj.simple_config.SimpleConfigMod.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
-import static dnj.simple_config.core.Entry.Builders.*;
-import static dnj.simple_config.core.SimpleConfig.category;
 
 @Mod(SimpleConfigMod.MOD_ID)
 public class SimpleConfigMod {
@@ -29,11 +26,12 @@ public class SimpleConfigMod {
 	public SimpleConfigMod() {
 		//noinspection CodeBlock2Expr
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			new SimpleConfigBuilder(MOD_ID, Type.CLIENT, ModConfig.class)
+			SimpleConfig.builder(MOD_ID, Type.CLIENT, ModConfig.class)
 			  .n(DemoConfigCategory.getDemoCategory())
 			  .setGUIDecorator((config, builder) -> builder.setDefaultBackgroundTexture(
 			    new ResourceLocation("textures/block/bookshelf.png")))
-			  .build();
+			  .debugTranslations()
+			  .buildAndRegister();
 		});
 		DemoServerConfig.registerServerConfig();
 	}

@@ -10,9 +10,14 @@ import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -29,12 +34,15 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
  * Simple config class. Requires Cloth Config API (Forge)
  */
 public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
+	
+	private static final Map<Pair<String, ModConfig.Type>, SimpleConfig> INSTANCES = synchronizedMap(new HashMap<>());
 	
 	public final ModConfig.Type type;
 	public final String modId;
@@ -61,7 +69,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	@OnlyIn(Dist.CLIENT)
 	protected BiConsumer<SimpleConfig, ConfigBuilder> decorator;
 	
-	private static final Map<Pair<String, ModConfig.Type>, SimpleConfig> INSTANCES = new HashMap<>();
+	protected final boolean debugTranslations;
 	
 	@SuppressWarnings("UnusedReturnValue")
 	public static SimpleConfig getInstance(String modId, ModConfig.Type type) {
@@ -82,6 +90,14 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		SimpleConfigSync.registerPackets();
 	}
 	
+	public static SimpleConfigBuilder builder(String modId, ModConfig.Type type) {
+		return new SimpleConfigBuilder(modId, type);
+	}
+	public static SimpleConfigBuilder builder(
+	  String modId, ModConfig.Type type, Class<?> configClass
+	) {
+		return new SimpleConfigBuilder(modId, type, configClass);
+	}
 	public static GroupBuilder group(String name) {
 		return group(name, false);
 	}
@@ -100,7 +116,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected SimpleConfig(
 	  String modId, ModConfig.Type type, String defaultTitle,
 	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
-	  @Nullable Object configClass
+	  @Nullable Object configClass, boolean debugTranslations
 	) {
 		this.modId = modId;
 		this.type = type;
@@ -108,17 +124,20 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.baker = baker;
 		this.saver = saver;
 		this.configClass = configClass;
+		this.debugTranslations = debugTranslations;
 		root = this;
 		
 		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
-		if (!INSTANCES.containsKey(key))
-			INSTANCES.put(key, this);
-		else throw new IllegalStateException(
-		  "Cannot create more than one config per type per mod");
+		synchronized (INSTANCES) {
+			if (!INSTANCES.containsKey(key))
+				INSTANCES.put(key, this);
+			else throw new IllegalStateException(
+			  "Cannot create more than one config per type per mod");
+		}
 	}
 	
 	protected void build(
-	  Map<String, Entry<?, ?>> entries,
+	  Map<String, Entry<?, ?, ?, ?>> entries,
 	  Map<String, Category> categories,
 	  Map<String, Group> groups,
 	  Map<String, ConfigValue<?>> specValues,
@@ -156,7 +175,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 				cat.bakeFields();
 			for (Group group : groups.values())
 				group.bakeFields();
-			for (Entry<?, ?> entry : entries.values())
+			for (Entry<?, ?, ?, ?> entry : entries.values())
 				if (entry.backingField != null)
 					entry.backingField.set(null, get(entry.name));
 		} catch (IllegalAccessException e) {
@@ -180,6 +199,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		bake();
 		if (saver != null)
 			saver.accept(this);
+		markDirty(false);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -188,6 +208,20 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			decorator.accept(this, builder);
 	}
 	
+	/**
+	 * Called on client only configs
+	 */
+	@OnlyIn(Dist.CLIENT)
+	protected void checkRestart() {
+		if (anyDirtyRequiresRestart()) {
+			final ClientPlayerEntity player = Minecraft.getInstance().player;
+			if (player != null) {
+				player.sendMessage(new TranslationTextComponent(
+				  "simple-config.config.msg.client_changes_require_restart"
+				).mergeStyle(TextFormatting.GOLD), Util.DUMMY_UUID);
+			}
+		}
+	}
 	protected void syncToClients() {
 		new SSimpleConfigSyncPacket(this).send();
 	}
@@ -274,7 +308,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 		
 		protected void build(
-		  Map<String, Entry<?, ?>> entries, Map<String, Group> groups,
+		  Map<String, Entry<?, ?, ?, ?>> entries, Map<String, Group> groups,
 		  Map<String, ConfigValue<?>> specValues,
 		  List<IGUIEntry> order
 		) {
@@ -304,7 +338,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		protected void bakeFields() throws IllegalAccessException {
 			for (Group group : groups.values())
 				group.bakeFields();
-			for (Entry<?, ?> entry : entries.values())
+			for (Entry<?, ?, ?, ?> entry : entries.values())
 				if (entry.backingField != null)
 					entry.backingField.set(null, get(entry.name));
 		}
@@ -365,7 +399,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 		
 		protected void build(
-		  Map<String, Entry<?, ?>> entries, Map<String, ConfigValue<?>> specValues,
+		  Map<String, Entry<?, ?, ?, ?>> entries, Map<String, ConfigValue<?>> specValues,
 		  Map<String, Group> groups, List<IGUIEntry> guiOrder
 		) {
 			if (this.entries != null)
@@ -377,6 +411,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			this.order = guiOrder;
 		}
 		
+		@SuppressWarnings("unused")
 		public Category getCategory() {
 			return category;
 		}
@@ -407,7 +442,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			if (!order.isEmpty()) {
 				for (IGUIEntry entry : order) {
 					if (entry instanceof Entry) {
-						((Entry<?, ?>) entry).buildGUIEntry(entryBuilder, this).ifPresent(group::add);
+						((Entry<?, ?, ?, ?>) entry).buildGUIEntry(entryBuilder, this).ifPresent(group::add);
 					} else if (entry instanceof Group) {
 						group.add(((Group) entry).buildGUI(entryBuilder));
 					}
@@ -416,13 +451,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			return group.build();
 		}
 		
-		@OnlyIn(Dist.CLIENT)
-		public void buildGUI(ConfigCategory category, ConfigEntryBuilder entryBuilder) {
-			category.addEntry(buildGUI(entryBuilder));
-		}
-		
 		@Override public void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder, AbstractSimpleConfigEntryHolder config
+		  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
 		) {
 			category.addEntry(buildGUI(entryBuilder));
 		}
@@ -430,7 +460,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		protected void bakeFields() throws IllegalAccessException {
 			for (Group group : groups.values())
 				group.bakeFields();
-			for (Entry<?, ?> entry : entries.values())
+			for (Entry<?, ?, ?, ?> entry : entries.values())
 				if (entry.backingField != null)
 					entry.backingField.set(null, get(entry.name));
 		}
@@ -477,6 +507,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	public interface IAbstractGUIEntry {}
 	public interface IGUIEntry extends IAbstractGUIEntry {
-		void buildGUI(ConfigCategory category, ConfigEntryBuilder entryBuilder, AbstractSimpleConfigEntryHolder config);
+		void buildGUI(ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config);
 	}
 }

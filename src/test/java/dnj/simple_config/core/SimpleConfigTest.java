@@ -51,7 +51,7 @@ public class SimpleConfigTest {
 		                   .add("ok_that_was_enough", number(0, -100, 100).slider())))
 		      ).n(group("empty_group", true)))
 		  .setBaker(SimpleConfigTest::onBakeTestConfig)
-		  .build();
+		  .buildAndRegister();
 	}
 	
 	public static void onBakeTestConfig(SimpleConfig config) {

@@ -10,6 +10,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Util;
+import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -65,7 +66,7 @@ public class SimpleConfigSync {
 		// Get all required private members
 		final String errorFmt =
 		  "Could not access %s by reflection\n" +
-		  "SimpleConfig won't be able to sync server config updates ingame";
+		  "SimpleConfig won't be able to sync server config modifications ingame";
 		boolean success = false;
 		String member = null;
 		Field fileMap = null;
@@ -178,7 +179,7 @@ public class SimpleConfigSync {
 	);
 	static int ID_COUNT = 0;
 	
-	public static void registerPackets() {
+	protected static void registerPackets() {
 		registerMessage(
 		  SSimpleConfigSyncPacket.class,
 		  SSimpleConfigSyncPacket::write,
@@ -246,13 +247,15 @@ public class SimpleConfigSync {
 		public final String modId;
 		public final String fileName;
 		public final byte[] fileData;
+		public final boolean requireRestart;
 		
 		public CSimpleConfigSyncPacket(
-		  String modId, String fileName, byte[] fileData
+		  String modId, String fileName, byte[] fileData, boolean requireRestart
 		) {
 			this.modId = modId;
 			this.fileName = fileName;
 			this.fileData = fileData;
+			this.requireRestart = requireRestart;
 		}
 		
 		public CSimpleConfigSyncPacket(SimpleConfig config) {
@@ -260,6 +263,7 @@ public class SimpleConfigSync {
 			final Pair<String, byte[]> pair = tryGetConfigData(modId);
 			fileName = pair.getLeft();
 			fileData = pair.getRight();
+			requireRestart = config.anyDirtyRequiresRestart();
 		}
 		
 		public void onServer(Context ctx) {
@@ -294,9 +298,14 @@ public class SimpleConfigSync {
 			
 			LOGGER.warn("Server config for mod \"" + modName + "\" " +
 			            "has been updated by operator \"" + senderName + "\"");
-			broadcastToOperators(new TranslationTextComponent(
+			IFormattableTextComponent msg = new TranslationTextComponent(
 			  "simple-config.config.msg.updated_by_operator",
-			  modName, senderName).mergeStyle(TextFormatting.GOLD));
+			  modName, senderName).mergeStyle(TextFormatting.GOLD);
+			if (requireRestart)
+				msg = msg.appendString("\n").append(new TranslationTextComponent(
+				  "simple-config.config.msg.server_changes_require_restart"
+				).mergeStyle(TextFormatting.GOLD));
+			broadcastToOperators(msg);
 			new SSimpleConfigSyncPacket(modId, fileName, fileData).sendExcept(sender);
 		}
 		
@@ -310,13 +319,15 @@ public class SimpleConfigSync {
 			buf.writeString(modId);
 			buf.writeString(fileName);
 			buf.writeByteArray(fileData);
+			buf.writeBoolean(requireRestart);
 		}
 		
 		public static CSimpleConfigSyncPacket read(PacketBuffer buf) {
-			final String modId = buf.readString(32767);
-			final String fileName = buf.readString(32767);
-			final byte[] fileData = buf.readByteArray();
-			return new CSimpleConfigSyncPacket(modId, fileName, fileData);
+			return new CSimpleConfigSyncPacket(
+			  buf.readString(32767),
+			  buf.readString(32767),
+			  buf.readByteArray(),
+			  buf.readBoolean());
 		}
 		
 		public void send() {

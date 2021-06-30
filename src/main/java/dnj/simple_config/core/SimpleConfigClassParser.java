@@ -1,6 +1,5 @@
 package dnj.simple_config.core;
 
-import com.google.gson.internal.Primitives;
 import dnj.simple_config.core.Entry.*;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
@@ -12,13 +11,19 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static dnj.simple_config.core.ReflectionUtil.checkTypeParameters;
-import static dnj.simple_config.core.ReflectionUtil.getFieldName;
+import static dnj.simple_config.core.ReflectionUtil.*;
 import static java.util.Collections.synchronizedMap;
 
 public class SimpleConfigClassParser {
@@ -29,7 +34,7 @@ public class SimpleConfigClassParser {
 	
 	@FunctionalInterface
 	public interface FieldEntryParser<T extends Annotation> {
-		@Nullable Entry<?, ?> tryParse(T annotation, Field field, Object value);
+		@Nullable Entry<?, ?, ?, ?> tryParse(T annotation, Field field, Object value);
 	}
 	
 	public static <T extends Annotation> void registerFieldParser(
@@ -63,59 +68,81 @@ public class SimpleConfigClassParser {
 		
 		// Lists
 		registerFieldParser(ConfigEntry.List.class, List.class, (a, field, value) ->
-		  !checkTypeParameters(field, String.class) ? null :
+		  !checkType(field, String.class) ? null :
 		  decorateListEntry(new StringListEntry((List<String>) value), field));
 		
 		registerFieldParser(ConfigEntry.List.class, List.class, (a, field, value) ->
-		  !checkTypeParameters(field, Long.class) ? null :
+		  !checkType(field, List.class, Long.class) ? null :
 		  decorateListEntry(new LongListEntry((List<Long>) value), field));
 		registerFieldParser(ConfigEntry.List.Long.class, List.class, (a, field, value) ->
-		  !checkTypeParameters(field, Long.class) ? null :
+		  !checkType(field, List.class, Long.class) ? null :
 		  decorateListEntry(new LongListEntry((List<Long>) value, a.min(), a.max()), field));
 		
 		registerFieldParser(ConfigEntry.List.class, List.class, (a, field, value) ->
-		  !checkTypeParameters(field, Double.class) ? null :
+		  !checkType(field, List.class, Double.class) ? null :
 		  decorateListEntry(new DoubleListEntry((List<Double>) value), field));
 		registerFieldParser(ConfigEntry.List.Double.class, List.class, (a, field, value) ->
-		  !checkTypeParameters(field, Double.class) ? null :
+		  !checkType(field, List.class, Double.class) ? null :
 		  decorateListEntry(new DoubleListEntry((List<Double>) value, a.min(), a.max()), field));
 	}
 	
-	protected static @Nullable <T, E extends ListEntry<T, E>> E decorateListEntry(
+	protected static @Nullable <T, E extends ListEntry<T, ?, ?, E>> E decorateListEntry(
 	  E entry, Field field
 	) {
 		final Class<?> cl = field.getDeclaringClass();
-		final Method validate = ReflectionUtil
-		  .tryGetMethod(cl, field.getName(), "validate",
-		                ReflectionUtil.getTypeParameter(field, 0));
+		final Method validate = tryGetMethod(cl, field.getName(), "validate", getTypeParameter(field, 0));
 		if (validate != null) {
-			if (!Boolean.class.isAssignableFrom(Primitives.wrap(validate.getReturnType())))
-				throw new ConfigClassParseException(
-				  "Non-boolean return type in config list element validator method " + cl.getName() + "#" + validate.getName());
-			final String error = "Reflection error invoking config list element validator method %s";
-			entry.setValidator(e -> ReflectionUtil.invoke(validate, null, error, e));
+			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
+			if (checkType(validate, Boolean.class)) {
+				entry.setValidator((Predicate<T>) e -> invoke(
+				  validate, null, errorMsg, e));
+			} else if (checkType(validate, Optional.class, ITextComponent.class)) {
+				entry.setValidator((Function<T, Optional<ITextComponent>>) e -> invoke(
+				  validate, null, errorMsg, e));
+			} else throw new ConfigClassParseException(
+			  "Unsupported return type in config list element validator method " + getMethodName(validate) +
+			  "\n  Return type must be either \"boolean\" or \"Optional<ITextComponent>\"");
 		}
 		return entry;
 	}
 	
-	protected static @Nullable <T> Entry<T, ?> decorateEntry(
-	  Entry<T, ?> entry, Class<?> cl, Field field
+	protected static <T> void decorateEntry(
+	  Entry<T, ?, ?, ?> entry, Class<?> cl, Field field
 	) {
-		final Method error = ReflectionUtil.tryGetMethod(cl, field.getName(), "error", field.getType());
-		if (error != null) {
-			final Class<?> ret = error.getReturnType();
-			if (!Optional.class.isAssignableFrom(ret)
-			    || !ITextComponent.class.isAssignableFrom(ReflectionUtil.getTypeParameter(error, 0)))
+		final Method m = tryGetMethod(cl, field.getName(), "error", field.getType());
+		if (m != null) {
+			if (!checkType(m, Optional.class, ITextComponent.class))
 				throw new ConfigClassParseException(
-				  "Invalid return type in config field error supplier method " + ReflectionUtil
-					 .getMethodName(error)
-				  + ": " + ret.getTypeName() + "\n  Error suppliers must return Optional<ITextComponent>");
+				  "Invalid return type in config field error supplier method " + getMethodName(m)
+				  + ": " + getMethodTypeName(m) + "\n  Error suppliers must return Optional<ITextComponent>");
 			final String errorMsg = "Reflection error invoking config element error supplier method %s";
-			entry.errorSupplier = v -> ReflectionUtil.invoke(error, null, errorMsg, v);
+			entry.error(v -> invoke(m, null, errorMsg, v));
 		}
+		addTooltip(entry, cl, field);
 		if (field.isAnnotationPresent(RequireRestart.class))
 			entry.restart(true);
-		return entry;
+	}
+	
+	protected static <T> void addTooltip(
+	  Entry<T, ?, ?, ?> entry, Class<?> cl, Field field
+	) {
+		boolean a = true;
+		Method m = tryGetMethod(cl, field.getName(), "tooltip", field.getType());
+		if (m == null) {
+			m = tryGetMethod(cl, field.getName(), "tooltip");
+			a = false;
+		}
+		if (m != null) {
+			if (!checkType(m, Optional.class, ITextComponent[].class))
+				throw new ConfigClassParseException(
+				  "Invalid return type in config field error supplier method " + getMethodName(m)
+				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return Optional<ITextComponent[]>");
+			final String errorMsg = "Reflection error invoking config element tooltip supplier method %s";
+			final Method mm = m;
+			entry.tooltipOpt(
+			  a ? v -> invoke(mm, null, errorMsg, v)
+			    : v -> invoke(mm, null, errorMsg));
+		}
 	}
 	
 	protected static void decorateBuilder(SimpleConfigBuilder root) {
@@ -127,7 +154,7 @@ public class SimpleConfigClassParser {
 	
 	protected static void decorateAbstractBuilder(
 	  SimpleConfigBuilder root, Class<?> configClass,
-	  AbstractSimpleConfigComponentBuilder<?> builder
+	  AbstractSimpleConfigEntryHolderBuilder<?> builder
 	) {
 		final String className = configClass.getName();
 		parseFields:for (Field field : configClass.getDeclaredFields()) {
@@ -159,6 +186,7 @@ public class SimpleConfigClassParser {
 				} else throw new ConfigClassParseException(
 				  "Unsupported text supplier in config field " + getFieldName(field) + " of type " + fieldTypeName
 				  + "\n  Should be either ITextComponent or Supplier<ITextComponent>");
+				addTooltip(builder.last, configClass, field);
 				continue;
 			}
 			if (builder.hasEntry(name)) {
@@ -184,7 +212,7 @@ public class SimpleConfigClassParser {
 							if (clazz.isInstance(value) || clazz.isAssignableFrom(fieldClass)) {
 								Annotation annotation = field.getAnnotation(annotationClass);
 								//noinspection unchecked
-								final Entry<?, ?> entry =
+								final Entry<?, ?, ?, ?> entry =
 								  ((FieldEntryParser<Annotation>) parsers.get(clazz))
 								    .tryParse(annotation, field, value);
 								if (entry != null) {
@@ -242,10 +270,13 @@ public class SimpleConfigClassParser {
 	}
 	
 	protected static boolean hasAnyConfigAnnotation(Field field) {
-		for (Class<? extends Annotation> clazz : PARSERS.keySet())
-			if (field.isAnnotationPresent(clazz))
-				return false;
-		return field.isAnnotationPresent(Text.class) || field.isAnnotationPresent(RequireRestart.class);
+		synchronized (PARSERS) {
+			for (Class<? extends Annotation> clazz : PARSERS.keySet())
+				if (field.isAnnotationPresent(clazz))
+					return false;
+		}
+		return field.isAnnotationPresent(Text.class)
+		       || field.isAnnotationPresent(RequireRestart.class);
 	}
 	
 	public static class ConfigClassParseException extends RuntimeException {

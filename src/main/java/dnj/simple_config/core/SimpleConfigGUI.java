@@ -85,11 +85,8 @@ public class SimpleConfigGUI {
 			  "There's not any config GUI registered for mod id: \"" + modId + "\"");
 		final ConfigBuilder builder = ConfigBuilder.create()
 		  .setParentScreen(parent)
-		  .setSavingRunnable(() -> configs.stream().filter(c -> c.dirty)
-		    .forEach(c -> {
-			    c.save();
-			    c.markDirty(false);
-		    }))
+		  .setSavingRunnable(() -> configs.stream()
+		    .filter(c -> c.dirty).forEach(SimpleConfig::save))
 		  .setTitle(new TranslationTextComponent(
 		    "simple-config.config.title", SimpleConfig.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(new ResourceLocation(

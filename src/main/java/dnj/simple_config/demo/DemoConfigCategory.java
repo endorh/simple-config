@@ -1,7 +1,9 @@
 package dnj.simple_config.demo;
 
+import com.mojang.datafixers.util.Pair;
 import dnj.simple_config.SimpleConfigMod;
 import dnj.simple_config.core.Entry.ITranslatedEnum;
+import dnj.simple_config.core.Entry.SerializableEntry;
 import dnj.simple_config.core.SimpleConfig.Category;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import dnj.simple_config.core.annotation.ConfigEntry;
@@ -33,9 +35,9 @@ import static java.util.Arrays.asList;
 //   it's a pretty bad example of a simple config due to
 //   its disorder.
 // When implementing your config please stick to defining
-//   it whole on either the builder or the backing class.
+//   it entirely on either the builder or the backing class.
 //   Defining it in the builder doesn't prevent you from
-//   having a backing class.
+//   having a backing class, and it's the recommended option.
 /**
  * Demo API usage
  */
@@ -60,14 +62,32 @@ public abstract class DemoConfigCategory {
 		  //   config.⟨mod-id⟩.demo.some_bool
 		  // and its tooltip is mapped to (if the translation exists)
 		  //   config.⟨mod-id⟩.demo.some_bool.help
-		  .add("some_bool", bool(true))
+		  .add("some_bool", bool(true).restart())
 		  .text("second_text")
+		  // You can create list of other entries
+		  .add("list", list(
+		    color(Color.BLACK),
+			 asList(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW)
+		  ).expand())
+		  // Of course, this can be nested, but try to keep your
+		  //   config... simple for your users
+		  // If you find yourself needing multiple nested lists in
+		  //   your config, you probably instead want a custom
+		  //   JsonReloadListener to extend your mod through datapacks
+		  // Of course, every sub-entry may be configured with
+		  //   error/tooltip suppliers as a regular entry
+		  .add("list_list", list(
+		    list(
+		      color(Color.BLACK).tooltip1(c -> stc("color %s", c))
+		    ).tooltip1(c -> stc("sublist %s", c)),
+		    asList(asList(Color.RED, Color.GREEN), asList(Color.BLUE, Color.YELLOW))
+		  ).tooltip1(c -> stc("list %s", c)))
 		  // Entries may be decorated before being added to the config,
 		  // adding an error supplier, or flagging them to require a restart
 		  // It is also possible to provide a dynamic tooltip supplier which
 		  // depends on the value, when a static tooltip is not sufficient
 		  .add("lower_case_string", string("lowercase")
-		    .error(s -> !s.equals(s.toLowerCase(Locale.ROOT))
+		    .guiError(s -> !s.equals(s.toLowerCase(Locale.ROOT))
 		                ? Optional.of(ttc(pref("error.non_lowercase")))
 		                : Optional.empty())
 		    .restart(true))
@@ -103,6 +123,11 @@ public abstract class DemoConfigCategory {
 		       .add("speed_meters_per_second", number(2.4, 0D, null))
 		       // A fractional entry is an alias for number(value, 0.0, 1.0)
 		       .add("loot_rate", fractional(0.2)))
+		  .add("serializable", new SerializableEntry<>(
+		    Pair.of(0.0, 1.0), p -> p.getFirst().toString() + "," + p.getSecond().toString(),
+		    s -> Optional.of(Pair.of(
+		      Double.parseDouble(s.split(",")[0]),
+		      Double.parseDouble(s.split(",")[1])))))
 		  // A baker method can be added (optionally) to each category/config
 		  // The baker method runs whenever the config changes externally or through the GUI
 		  // The config baker runs before the category ones
@@ -219,6 +244,18 @@ public abstract class DemoConfigCategory {
 			// This example entry accepts only even values
 			return v % 2 != 0 ? Optional.of(ttc(pref("error.demo.not_even"))) : Optional.empty();
 		}
+		// A '$tooltip' method can also be added to provide dynamic or complex
+		//   tooltips to entries, but using the builder for this is recommended
+		// Note that static tooltips can be added directly in the translations JSON
+		//   under the same key of the field followed by '.help', and they support
+		//   newlines automatically
+		private static Optional<ITextComponent[]> score$tooltip() {
+			// Here we have to split the lines manually...
+			return Optional.of(new ITextComponent[] {
+			  ttc(pref("tooltip.score.1")),
+			  ttc(pref("tooltip.score.2"))
+			});
+		}
 		
 		// Text fields can be final, since they won't be updated
 		@Text private static final ITextComponent _1 = ttc(pref("some_other_text"));
@@ -264,6 +301,20 @@ public abstract class DemoConfigCategory {
 				// Setting the ranges in the annotation helps provide a
 				//   more precise error message to the user
 				return element % 2 == 0;
+			}
+			
+			@ConfigEntry.List.Double(min = 0, max = 1)
+			public static List<Double> double_list = asList(0.1, 0.2, 0.3, 0.4);
+			// The validator method can also return an Optional<ITextComponent>
+			//   to supply better error messages
+			private static Optional<ITextComponent> double_list$validate(double element) {
+				// Here we limit the number of decimals to 1 for no reason
+				//   If we *really* needed them to have just one decimal
+				//   the correct approach would probably be using the baker
+				//   method to round them, this is just an example
+				return Double.compare(element, Math.round(element * 10D) / 10D) != 0
+				       ? Optional.of(ttc(pref("error.too_many_decimals")))
+				       : Optional.empty();
 			}
 		}
 	}

@@ -6,9 +6,9 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
 import java.util.Map;
 
-public abstract class AbstractSimpleConfigEntryHolder {
+public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
 	protected Map<String, ConfigValue<?>> specValues;
-	protected Map<String, Entry<?, ?>> entries;
+	protected Map<String, Entry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
 	
 	// Configs are loaded all the time, so cyclic references aren't a problem
@@ -18,7 +18,7 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	/**
 	 * Get the root config of this entry holder
 	 */
-	public SimpleConfig getRoot() {
+	@Override public SimpleConfig getRoot() {
 		return root;
 	}
 	
@@ -26,7 +26,7 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	 * Mark this entry holder as dirty<br>
 	 * When the config screen is saved, only config files containing dirty entries are updated
 	 */
-	public AbstractSimpleConfigEntryHolder markDirty() {
+	@Override public AbstractSimpleConfigEntryHolder markDirty() {
 		markDirty(true);
 		return this;
 	}
@@ -36,9 +36,21 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	 * The clean state is propagated to all of the children<br>
 	 * Subclasses should propagate the dirty state to their parents
 	 */
-	public void markDirty(boolean dirty) {
+	@Override public void markDirty(boolean dirty) {
 		this.dirty = dirty;
-		if (!dirty) children.values().forEach(c -> c.markDirty(false));
+		if (!dirty) {
+			children.values().forEach(c -> c.markDirty(false));
+			entries.values().forEach(e -> e.markDirty(false));
+		}
+	}
+	
+	/**
+	 * Check if any dirty entry requires a restart
+	 */
+	public boolean anyDirtyRequiresRestart() {
+		return entries.values().stream().anyMatch(e -> e.dirty && e.requireRestart)
+		       || children.values().stream().anyMatch(
+		         AbstractSimpleConfigEntryHolder::anyDirtyRequiresRestart);
 	}
 	
 	/**
@@ -84,14 +96,14 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	 * @see AbstractSimpleConfigEntryHolder#get(String)
 	 * @see AbstractSimpleConfigEntryHolder#set(String, Object)
 	 */
-	protected <T> Entry<T, ?> getEntry(String path) {
-		Entry<?, ?> entry = entries.get(path);
+	protected <T> Entry<T, ?, ?, ?> getEntry(String path) {
+		Entry<?, ?, ?, ?> entry = entries.get(path);
 		if (entry == null)
 			entry = getSubEntry(path);
 		if (entry == null) // Unnecessary, since getSubEntry already throws
 			throw new NoSuchConfigEntryError(path);
 		//noinspection unchecked
-		return (Entry<T, ?>) entry;
+		return (Entry<T, ?, ?, ?>) entry;
 	}
 	
 	/**
@@ -103,7 +115,7 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	 * @param <T> Expected type of the entry
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
-	protected <T> Entry<T, ?> getSubEntry(String path) {
+	protected <T> Entry<T, ?, ?, ?> getSubEntry(String path) {
 		final String[] split = path.split("\\.", 2);
 		if (children.containsKey(split[0]))
 			return children.get(split[0]).getEntry(split[1]);
@@ -122,8 +134,12 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	 * @see AbstractSimpleConfigEntryHolder#getFloat(String)
 	 * @see AbstractSimpleConfigEntryHolder#getDouble(String)
 	 */
-	public <T> T get(String path) {
-		return this.<T>getEntry(path).get(getSpecValue(path));
+	@Override public <T> T get(String path) {
+		try {
+			return this.<T>getEntry(path).get(getSpecValue(path));
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(path, e);
+		}
 	}
 	
 	/**
@@ -134,62 +150,11 @@ public abstract class AbstractSimpleConfigEntryHolder {
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
 	 */
-	public <V> void set(String path, V value) {
-		this.<V>getEntry(path).set(getSpecValue(path), value);
-	}
-	
-	/**
-	 * Get a boolean config value
-	 * @param path Name or dot-separated path to the value
-	 * @throws NoSuchConfigEntryError if the value is not found
-	 * @throws InvalidConfigValueTypeException if the value type is not boolean
-	 * @see AbstractSimpleConfigEntryHolder#get(String)
-	 */
-	public boolean getBoolean(String path) {
-		return this.<Boolean>getSpecValue(path).get();
-	}
-	
-	/**
-	 * Get an int config value
-	 * @param path Name or dot-separated path to the value
-	 * @throws NoSuchConfigEntryError if the value is not found
-	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see AbstractSimpleConfigEntryHolder#get(String)
-	 */
-	public int getInt(String path) {
-		return this.<Long>get(path).intValue();
-	}
-	
-	/**
-	 * Get a long config value
-	 * @param path Name or dot-separated path to the value
-	 * @throws NoSuchConfigEntryError if the value is not found
-	 * @throws InvalidConfigValueTypeException if the value type is not long
-	 * @see AbstractSimpleConfigEntryHolder#get(String)
-	 */
-	public long getLong(String path) {
-		return this.<Long>get(path);
-	}
-	
-	/**
-	 * Get a float config value
-	 * @param path Name or dot-separated path to the value
-	 * @throws NoSuchConfigEntryError if the value is not found
-	 * @throws InvalidConfigValueTypeException if the value type is not float
-	 * @see AbstractSimpleConfigEntryHolder#get(String)
-	 */
-	public float getFloat(String path) {
-		return this.<Double>get(path).floatValue();
-	}
-	
-	/**
-	 * Get a double config value
-	 * @param path Name or dot-separated path to the value
-	 * @throws NoSuchConfigEntryError if the value is not found
-	 * @throws InvalidConfigValueTypeException if the value type is not double
-	 * @see AbstractSimpleConfigEntryHolder#get(String)
-	 */
-	public double getDouble(String path) {
-		return this.<Double>get(path);
+	@Override public <V> void set(String path, V value) {
+		try {
+			this.<V>getEntry(path).set(getSpecValue(path), value);
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(path, e);
+		}
 	}
 }
