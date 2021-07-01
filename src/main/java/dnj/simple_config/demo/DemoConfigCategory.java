@@ -2,8 +2,8 @@ package dnj.simple_config.demo;
 
 import com.mojang.datafixers.util.Pair;
 import dnj.simple_config.SimpleConfigMod;
-import dnj.simple_config.core.AbstractConfigEntry.ITranslatedEnum;
-import dnj.simple_config.core.AbstractConfigEntry.SerializableEntry;
+import dnj.simple_config.core.entry.EnumEntry.ITranslatedEnum;
+import dnj.simple_config.core.entry.SerializableEntry;
 import dnj.simple_config.core.SimpleConfigCategory;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import dnj.simple_config.core.annotation.Entry;

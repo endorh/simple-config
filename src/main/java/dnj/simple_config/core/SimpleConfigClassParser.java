@@ -1,9 +1,9 @@
 package dnj.simple_config.core;
 
-import dnj.simple_config.core.AbstractConfigEntry.*;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import dnj.simple_config.core.annotation.*;
+import dnj.simple_config.core.entry.*;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,9 +53,9 @@ public class SimpleConfigClassParser {
 	
 	static {
 		registerFieldParser(Entry.class, Boolean.class, (a, field, value) ->
-		  new BooleanEntry(value != null? (Boolean) value : false));
+		  new BooleanEntry(value != null ? (Boolean) value : false));
 		registerFieldParser(Entry.class, String.class, (a, field, value) ->
-		  new StringEntry(value != null? (String) value : ""));
+		  new StringEntry(value != null ? (String) value : ""));
 		registerFieldParser(Entry.class, Enum.class, (a, field, value) -> {
 			if (value == null)
 				value = field.getType().getEnumConstants()[0];
@@ -64,7 +64,8 @@ public class SimpleConfigClassParser {
 		});
 		registerFieldParser(Entry.Long.class, Long.class, (a, field, value) -> {
 			final LongEntry e = new LongEntry((Long) value, a.min(), a.max());
-			e.asSlider = a.slider();
+			if (a.slider())
+				e.slider();
 			return e;
 		});
 		registerFieldParser(Entry.Double.class, Double.class, (a, field, value) ->

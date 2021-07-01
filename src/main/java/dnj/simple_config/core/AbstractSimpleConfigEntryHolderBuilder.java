@@ -1,6 +1,6 @@
 package dnj.simple_config.core;
 
-import dnj.simple_config.core.AbstractConfigEntry.TextEntry;
+import dnj.simple_config.core.entry.TextEntry;
 import dnj.simple_config.core.SimpleConfig.IAbstractGUIEntry;
 import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import net.minecraft.util.text.ITextComponent;

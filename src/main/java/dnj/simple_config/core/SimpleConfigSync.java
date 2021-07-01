@@ -55,7 +55,6 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 	
 	private static final Field ConfigTracker$fileMap;
 	private static final Field ConfigTracker$configSets;
-	private static final Method ModConfig$setConfigData;
 	private static final Method ModConfig$fireEvent;
 	private static final Constructor<Reloading> Reloading$$init;
 	private static final boolean reflectionSucceeded;
@@ -72,7 +71,6 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 		String member = null;
 		Field fileMap = null;
 		Field configSets = null;
-		Method setConfigData = null;
 		Method fireEvent = null;
 		Constructor<Reloading> reloading = null;
 		try {
@@ -82,9 +80,6 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 			member = "ConfigTracker$configSets field";
 			configSets = ConfigTracker.class.getDeclaredField("configSets");
 			configSets.setAccessible(true);
-			member = "ModConfig$setConfigData method";
-			setConfigData = ModConfig.class.getDeclaredMethod("setConfigData", CommentedConfig.class);
-			setConfigData.setAccessible(true);
 			member = "ModConfig$fireEvent method";
 			fireEvent = ModConfig.class.getDeclaredMethod("fireEvent", ModConfigEvent.class);
 			fireEvent.setAccessible(true);
@@ -97,7 +92,6 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 		} finally {
 			ConfigTracker$fileMap = fileMap;
 			ConfigTracker$configSets = configSets;
-			ModConfig$setConfigData = setConfigData;
 			ModConfig$fireEvent = fireEvent;
 			Reloading$$init = reloading;
 			reflectionSucceeded = success;
@@ -133,15 +127,6 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 			throw new ConfigUpdateReflectionError(e);
 		}
 	}
-	private static void trySetConfigData(final ModConfig config, final CommentedConfig configData) {
-		if (!reflectionSucceeded)
-			throw new ConfigUpdateReflectionError();
-		try {
-			ModConfig$setConfigData.invoke(config, configData);
-		} catch (InvocationTargetException | IllegalAccessException e) {
-			throw new ConfigUpdateReflectionError(e);
-		}
-	}
 	private static void tryFireEvent(final ModConfig config, final ModConfigEvent event) {
 		if (!reflectionSucceeded)
 			throw new ConfigUpdateReflectionError();
@@ -164,8 +149,13 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 		final ModConfig modConfig = getFileMap().get(fileName);
 		if (modConfig == null)
 			return;
-		trySetConfigData(modConfig, TomlFormat.instance().createParser().parse(
-		  new ByteArrayInputStream(fileData)));
+		
+		// The entry sets should match between clients and server
+		final CommentedConfig sentConfig = TomlFormat.instance().createParser()
+		  .parse(new ByteArrayInputStream(fileData));
+		
+		modConfig.getConfigData().putAll(sentConfig);
+		
 		tryFireEvent(modConfig, newReloading(modConfig));
 	}
 	
