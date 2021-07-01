@@ -1,7 +1,5 @@
 package dnj.simple_config.core;
 
-import dnj.simple_config.core.SimpleConfig.Category;
-import dnj.simple_config.core.SimpleConfig.Group;
 import dnj.simple_config.core.SimpleConfig.IAbstractGUIEntry;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -26,6 +24,22 @@ import java.util.stream.Collectors;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
+/**
+ * Create a {@link SimpleConfig} using a chained method call<br>
+ * Use {@link SimpleConfigBuilder#add(String, AbstractConfigEntry)}
+ * to add entries to the config (in order)<br>
+ * Use {@link SimpleConfigBuilder#n(CategoryBuilder)} to add
+ * subcategories to the config, each with its own tab<br>
+ * Use {@link SimpleConfigBuilder#n(GroupBuilder)} to add
+ * subgroups to the config, each under a dropdown entry in the GUI.
+ * Groups may contain other groups.<br><br>
+ * You may create categories and groups with the
+ * {@link SimpleConfig#category(String, Class)} and
+ * {@link SimpleConfig#group(String, boolean)} methods<br>
+ * You may create entries to add using the builder methods under
+ * {@link AbstractConfigEntry.Builders}<br>
+ * Entries can be further configured with their own builder methods
+ */
 public class SimpleConfigBuilder
   extends AbstractSimpleConfigEntryHolderBuilder<SimpleConfigBuilder> {
 	protected final String modId;
@@ -44,9 +58,9 @@ public class SimpleConfigBuilder
 	
 	protected boolean debugTranslations = false;
 	
-	public SimpleConfigBuilder(String modId, Type type) { this(modId, type, null); }
+	protected SimpleConfigBuilder(String modId, Type type) { this(modId, type, null); }
 	
-	public SimpleConfigBuilder(String modId, Type type, @Nullable Class<?> configClass) {
+	protected SimpleConfigBuilder(String modId, Type type, @Nullable Class<?> configClass) {
 		this.modId = modId;
 		this.type = type;
 		this.configClass = configClass;
@@ -71,7 +85,7 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
-	public static void checkName(String name) {
+	protected static void checkName(String name) {
 		if (name.contains("."))
 			throw new IllegalArgumentException("Config entry names cannot contain dots");
 	}
@@ -82,7 +96,7 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
-	@Override public void addEntry(Entry<?, ?, ?, ?> entry) {
+	@Override protected void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry) {
 		checkName(entry.name);
 		if (entries.containsKey(entry.name))
 			throw new IllegalArgumentException("Duplicate config value: " + entry.name);
@@ -93,11 +107,11 @@ public class SimpleConfigBuilder
 		guiOrder.add(entry);
 	}
 	
-	@Override public Entry<?, ?, ?, ?> getEntry(String name) {
+	@Override protected AbstractConfigEntry<?, ?, ?, ?> getEntry(String name) {
 		return entries.get(name);
 	}
 	
-	@Override public boolean hasEntry(String name) {
+	@Override protected boolean hasEntry(String name) {
 		return entries.containsKey(name);
 	}
 	
@@ -109,7 +123,7 @@ public class SimpleConfigBuilder
 		return translation(name) + ".help";
 	}
 	
-	@Override protected void translate(Entry<?, ?, ?, ?> entry) {
+	@Override protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
 		entry.translate(translation(entry.name));
 		entry.tooltip(tooltip(entry.name));
 	}
@@ -147,6 +161,15 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
+	/**
+	 * Builder for a {@link SimpleConfigCategory}<br>
+	 * Use {@link CategoryBuilder#add(String, AbstractConfigEntry)}
+	 * to add new entries to the category<br>
+	 * Use {@link CategoryBuilder#n(GroupBuilder)} to add
+	 * subgroups to the category, which may contain further groups<br><br>
+	 * Create subgroups using {@link SimpleConfig#group(String, boolean)},
+	 * and entries with the methods under {@link AbstractConfigEntry.Builders}
+	 */
 	public static class CategoryBuilder
 	  extends AbstractSimpleConfigEntryHolderBuilder<CategoryBuilder> {
 		
@@ -155,7 +178,7 @@ public class SimpleConfigBuilder
 		protected String title;
 		protected Class<?> configClass;
 		
-		protected @Nullable Consumer<Category> baker = null;
+		protected @Nullable Consumer<SimpleConfigCategory> baker = null;
 		
 		protected String path;
 		
@@ -177,12 +200,12 @@ public class SimpleConfigBuilder
 				group.setParent(this);
 		}
 		
-		public CategoryBuilder setBaker(Consumer<Category> baker) {
+		public CategoryBuilder setBaker(Consumer<SimpleConfigCategory> baker) {
 			this.baker = baker;
 			return this;
 		}
 		
-		@Override public void addEntry(Entry<?, ?, ?, ?> entry) {
+		@Override protected void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry) {
 			checkName(entry.name);
 			if (entries.containsKey(entry.name))
 				throw new IllegalArgumentException("Duplicate config value: " + entry.name);
@@ -193,11 +216,11 @@ public class SimpleConfigBuilder
 			guiOrder.add(entry);
 		}
 		
-		@Override public Entry<?, ?, ?, ?> getEntry(String name) {
+		@Override protected AbstractConfigEntry<?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
-		@Override public boolean hasEntry(String name) {
+		@Override protected boolean hasEntry(String name) {
 			return entries.containsKey(name);
 		}
 		
@@ -209,7 +232,7 @@ public class SimpleConfigBuilder
 			return translation(name) + ".help";
 		}
 		
-		protected void translate(Entry<?, ?, ?, ?> entry) {
+		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
 			entry.translate(translation(entry.name));
 			entry.tooltip(tooltip(entry.name));
 		}
@@ -226,20 +249,20 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		public Category build(SimpleConfig parent, ForgeConfigSpec.Builder specBuilder) {
+		protected SimpleConfigCategory build(SimpleConfig parent, ForgeConfigSpec.Builder specBuilder) {
 			specBuilder.push(name);
-			final Category cat = new Category(parent, name, title, baker);
-			final Map<GroupBuilder, Group> built = new HashMap<>();
-			final Map<String, Group> groups = new LinkedHashMap<>();
+			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, baker);
+			final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
+			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			for (Entry<?, ?, ?, ?> entry : entries.values()) {
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
 				translate(entry);
 				entry.setParent(cat);
 				entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
 			}
 			final List<IGUIEntry> order = new ArrayList<>();
 			for (GroupBuilder group : this.groups.values()) {
-				final Group g = group.build(cat, specBuilder);
+				final SimpleConfigGroup g = group.build(cat, specBuilder);
 				built.put(group, g);
 				groups.put(group.name, g);
 			}
@@ -253,6 +276,16 @@ public class SimpleConfigBuilder
 		}
 	}
 	
+	/**
+	 * Builder for a {@link SimpleConfigGroup}<br>
+	 * Use {@link GroupBuilder#add(String, AbstractConfigEntry)}
+	 * to add new entries to the group<br>
+	 * Use {@link GroupBuilder#n(GroupBuilder)} to add
+	 * subgroups to this group<br><br>
+	 *
+	 * You may create new entries with the methods under
+	 * {@link AbstractConfigEntry.Builders}
+	 */
 	public static class GroupBuilder extends AbstractSimpleConfigEntryHolderBuilder<GroupBuilder>
 	  implements IAbstractGUIEntry {
 		protected CategoryBuilder category;
@@ -264,12 +297,12 @@ public class SimpleConfigBuilder
 		
 		protected String path;
 		
-		public GroupBuilder(String name, boolean expanded) {
+		protected GroupBuilder(String name, boolean expanded) {
 			this.name = name;
 			this.expanded = expanded;
 		}
 		
-		public void setParent(CategoryBuilder parent) {
+		protected void setParent(CategoryBuilder parent) {
 			this.category = parent;
 			this.path = parent.path + "." + name;
 			final String modId = parent.parent.modId;
@@ -280,7 +313,7 @@ public class SimpleConfigBuilder
 				group.setParent(this);
 		}
 		
-		public void setParent(GroupBuilder parent) {
+		protected void setParent(GroupBuilder parent) {
 			this.category = parent.category;
 			this.path = parent.path + "." + name;
 			final String modId = parent.category.parent.modId;
@@ -303,7 +336,7 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		@Override public void addEntry(Entry<?, ?, ?, ?> entry) {
+		@Override protected void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry) {
 			checkName(entry.name);
 			if (entries.containsKey(entry.name))
 				throw new IllegalArgumentException("Duplicate config value: " + entry.name);
@@ -314,11 +347,11 @@ public class SimpleConfigBuilder
 			guiOrder.add(entry);
 		}
 		
-		@Override public Entry<?, ?, ?, ?> getEntry(String name) {
+		@Override protected AbstractConfigEntry<?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
-		@Override public boolean hasEntry(String name) {
+		@Override protected boolean hasEntry(String name) {
 			return entries.containsKey(name);
 		}
 		
@@ -330,40 +363,40 @@ public class SimpleConfigBuilder
 			return translation(name) + ".help";
 		}
 		
-		protected void translate(Entry<?, ?, ?, ?> entry) {
+		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
 			entry.translate(translation(entry.name));
 			entry.tooltip(tooltip(entry.name));
 		}
 		
-		protected Group build(Group parent, ForgeConfigSpec.Builder specBuilder) {
+		protected SimpleConfigGroup build(SimpleConfigGroup parent, ForgeConfigSpec.Builder specBuilder) {
 			return build(null, parent, specBuilder);
 		}
 		
-		protected Group build(Category parent, ForgeConfigSpec.Builder specBuilder) {
+		protected SimpleConfigGroup build(SimpleConfigCategory parent, ForgeConfigSpec.Builder specBuilder) {
 			return build(parent, null, specBuilder);
 		}
 		
-		private Group build(
-		  @Nullable Category parent, @Nullable Group groupParent,
+		private SimpleConfigGroup build(
+		  @Nullable SimpleConfigCategory parent, @Nullable SimpleConfigGroup groupParent,
 		  ForgeConfigSpec.Builder specBuilder
 		) {
 			assert parent != null || groupParent != null;
 			specBuilder.push(name);
-			final Group group;
+			final SimpleConfigGroup group;
 			if (parent != null)
-				group = new Group(parent, name, title, tooltip, expanded);
-			else group = new Group(groupParent, name, title, tooltip, expanded);
-			final Map<GroupBuilder, Group> builtGroups = new HashMap<>();
-			final Map<String, Group> groupMap = new LinkedHashMap<>();
+				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded);
+			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded);
+			final Map<GroupBuilder, SimpleConfigGroup> builtGroups = new HashMap<>();
+			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			for (Entry<?, ?, ?, ?> entry : entries.values()) {
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
 				translate(entry);
 				entry.setParent(group);
 				entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
 			}
 			for (String name : groups.keySet()) {
 				GroupBuilder builder = groups.get(name);
-				Group subGroup = builder.build(group, specBuilder);
+				SimpleConfigGroup subGroup = builder.build(group, specBuilder);
 				groupMap.put(name, subGroup);
 				builtGroups.put(builder, subGroup);
 			}
@@ -378,15 +411,30 @@ public class SimpleConfigBuilder
 		}
 	}
 	
-	@SuppressWarnings("UnusedReturnValue")
+	/**
+	 * Build the actual config and register it within the Forge system<br><br>
+	 * <b>If your mod uses a different language than Java</b> you will need to
+	 * also pass in your mod event bus as an argument to
+	 * {@link SimpleConfigBuilder#buildAndRegister(IEventBus)}
+	 */
 	public SimpleConfig buildAndRegister() { return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus()); }
 	
+	/**
+	 * Applies the final decorations before the config building<br>
+	 * Parses the backing classes
+	 */
 	protected void preBuildHook() {
 		SimpleConfigClassParser.decorateBuilder(this);
 	}
 	
+	/**
+	 * Build the actual config and register it within the Forge system<br><br>
+	 * <i>If your mod uses Java as its language</i> you don't need to pass
+	 * the mod event bus
+	 * @param modEventBus Your mod's language provider's mod event bus
+	 */
 	@SuppressWarnings("UnusedReturnValue")
-	public SimpleConfig buildAndRegister(IEventBus eventBus) {
+	public SimpleConfig buildAndRegister(IEventBus modEventBus) {
 		preBuildHook();
 		if (type == Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
@@ -397,22 +445,22 @@ public class SimpleConfigBuilder
 		}
 		final SimpleConfig config = new SimpleConfig(
 		  modId, type, title, baker, saver, configClass, debugTranslations);
-		final Map<GroupBuilder, Group> built = new HashMap<>();
+		final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-		for (Entry<?, ?, ?, ?> entry : entries.values()) {
+		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
 			translate(entry);
 			entry.setParent(config);
 			entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
 		}
-		final Map<String, Category> categoryMap = new LinkedHashMap<>();
-		final Map<String, Group> groupMap = new LinkedHashMap<>();
+		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
+		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 		final List<IGUIEntry> order = new ArrayList<>();
 		for (CategoryBuilder cat : categories.values())
 			categoryMap.put(cat.name, cat.build(config, specBuilder));
-		Category defaultCategory = this.defaultCategory.build(config, specBuilder);
+		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, specBuilder);
 		for (GroupBuilder group : groups.values()) {
-			final Group g = group.build(defaultCategory, specBuilder);
+			final SimpleConfigGroup g = group.build(defaultCategory, specBuilder);
 			built.put(group, g);
 			groupMap.put(group.name, g);
 		}
@@ -426,9 +474,9 @@ public class SimpleConfigBuilder
 		ModLoadingContext.get().registerConfig(type, config.spec);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			config.decorator = decorator;
-			SimpleConfigGUI.registerConfig(config);
+			SimpleConfigGUIManager.registerConfig(config);
 		});
-		eventBus.register(config);
+		modEventBus.register(config);
 		return config;
 	}
 }

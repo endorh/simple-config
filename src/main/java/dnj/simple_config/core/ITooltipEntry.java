@@ -7,7 +7,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Interface for {@link Entry} providing methods to set the tooltip
+ * Interface for {@link AbstractConfigEntry} providing methods to set the tooltip
  * supplier accepting broader signatures
  * @param <V> The type of the entry
  * @param <Gui> The GUI type of the entry

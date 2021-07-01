@@ -1,8 +1,7 @@
 package dnj.simple_config;
 
 import dnj.simple_config.core.SimpleConfig;
-import dnj.simple_config.core.SimpleConfigSync;
-import dnj.simple_config.core.annotation.ConfigEntry;
+import dnj.simple_config.core.annotation.Entry;
 import dnj.simple_config.demo.DemoConfigCategory;
 import dnj.simple_config.demo.DemoServerConfig;
 import net.minecraft.util.ResourceLocation;
@@ -30,15 +29,19 @@ public class SimpleConfigMod {
 			  .n(DemoConfigCategory.getDemoCategory())
 			  .setGUIDecorator((config, builder) -> builder.setDefaultBackgroundTexture(
 			    new ResourceLocation("textures/block/bookshelf.png")))
-			  .debugTranslations()
 			  .buildAndRegister();
 		});
 		DemoServerConfig.registerServerConfig();
 	}
 	
+	/**
+	 * Config backing class
+	 */
 	public static class ModConfig {
-		@ConfigEntry public static boolean add_pause_menu_button = true;
-		@ConfigEntry public static MenuButtonPosition menu_button_position = SPLIT_OPTIONS_BUTTON;
+		@Entry
+		public static boolean add_pause_menu_button = true;
+		@Entry
+		public static MenuButtonPosition menu_button_position = SPLIT_OPTIONS_BUTTON;
 	}
 	
 	@SuppressWarnings("unused")

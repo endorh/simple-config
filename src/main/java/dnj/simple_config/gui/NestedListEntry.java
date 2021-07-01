@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("UnstableApiUsage")
 @OnlyIn(Dist.CLIENT)
-public final class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
+public class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
   extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListEntry<T, Inner>> {
 	protected final List<ReferenceProvider<?>> referencableEntries = Lists.newArrayList();
 	protected final Consumer<Integer> deleteConsumer;

@@ -2,16 +2,19 @@ package dnj.simple_config.core;
 
 import com.google.gson.internal.Primitives;
 import dnj.simple_config.core.SimpleConfigClassParser.ConfigClassParseException;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.*;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.*;
 
-class ReflectionUtil {
+/**
+ * Several reflection utilities used to parse config backing classes<br>
+ * Mainly contains helpers to check generic types or find methods/fields<br>
+ * Use at your own risk
+ */
+@Internal public class ReflectionUtil {
 	
 	/**
 	 * Get the full field name, suitable for error messages
@@ -173,7 +176,7 @@ class ReflectionUtil {
 	 * primitives
 	 * @return The found method made accessible or null if not found
 	 */
-	protected static @Nullable Method tryGetMethod(
+	public static @Nullable Method tryGetMethod(
 	  Class<?> clazz, String name, Class<?>... parameterTypes
 	) { return tryGetMethod(clazz, name, null, parameterTypes); }
 	
@@ -183,7 +186,7 @@ class ReflectionUtil {
 	 * @param suffix Appended after a '$' to the name of the method
 	 * @return The found method made accessible or null if not found
 	 */
-	protected static @Nullable Method tryGetMethod(
+	public static @Nullable Method tryGetMethod(
 	  Class<?> clazz, String name, String suffix, Class<?>... parameterTypes
 	) {
 		final String methodName = suffix != null ? name + "$" + suffix : name;

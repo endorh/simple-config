@@ -31,11 +31,12 @@ import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.synchronizedSet;
 
 /**
- * Handles the creation of config GUIs for the registered mods
+ * Handle the creation of config GUIs for the registered mods<br>
+ * Mod configs are automatically registered upon building
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
-public class SimpleConfigGUI {
+public class SimpleConfigGUIManager {
 	// Mod loading is asynchronous
 	protected static final Map<String, Set<SimpleConfig>> modConfigs = synchronizedMap(new HashMap<>());
 	
@@ -46,7 +47,8 @@ public class SimpleConfigGUI {
 	 * Modify the behaviour that adds a side button to the pause menu
 	 * to open the mod list screen<br>
 	 * This is exposed so mods which add their own buttons to the pause
-	 * menu can toggle this off to avoid interferences<br>
+	 * menu and have already this mod as a dependency can toggle this
+	 * off to avoid interferences<br>
 	 * If your mod doesn't mess with the pause menu, you should not
 	 * call this method
 	 */

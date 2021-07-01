@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Interface for {@link Entry} providing methods to set
+ * Interface for {@link AbstractConfigEntry} providing methods to set
  * the error supplier accepting broader signatures
  * @param <V> The type of the entry
  * @param <Gui> The GUI type of the entry
@@ -49,8 +49,10 @@ public interface IErrorEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>> {
 	 * You may also use {@link IErrorEntry#error(Function)}
 	 * to provide users with an explicative error message
 	 * @param validator Should return true for all valid elements
+	 * @deprecated Use {@link IErrorEntry#error(Function)} instead
+	 *             to provide users with clearer error messages
 	 */
-	default Self check(Predicate<V> validator) {
+	@Deprecated default Self check(Predicate<V> validator) {
 		return error(v -> validator.test(v)? Optional.empty() : Optional.of(
 		  new TranslationTextComponent("simple-config.config.error.invalid_value_generic")));
 	}

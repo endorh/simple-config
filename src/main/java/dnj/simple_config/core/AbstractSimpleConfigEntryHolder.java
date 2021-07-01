@@ -8,7 +8,7 @@ import java.util.Map;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
 	protected Map<String, ConfigValue<?>> specValues;
-	protected Map<String, Entry<?, ?, ?, ?>> entries;
+	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
 	
 	// Configs are loaded all the time, so cyclic references aren't a problem
@@ -96,14 +96,14 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @see AbstractSimpleConfigEntryHolder#get(String)
 	 * @see AbstractSimpleConfigEntryHolder#set(String, Object)
 	 */
-	protected <T> Entry<T, ?, ?, ?> getEntry(String path) {
-		Entry<?, ?, ?, ?> entry = entries.get(path);
+	protected <T> AbstractConfigEntry<T, ?, ?, ?> getEntry(String path) {
+		AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(path);
 		if (entry == null)
 			entry = getSubEntry(path);
 		if (entry == null) // Unnecessary, since getSubEntry already throws
 			throw new NoSuchConfigEntryError(path);
 		//noinspection unchecked
-		return (Entry<T, ?, ?, ?>) entry;
+		return (AbstractConfigEntry<T, ?, ?, ?>) entry;
 	}
 	
 	/**
@@ -115,7 +115,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @param <T> Expected type of the entry
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
-	protected <T> Entry<T, ?, ?, ?> getSubEntry(String path) {
+	protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
 		final String[] split = path.split("\\.", 2);
 		if (children.containsKey(split[0]))
 			return children.get(split[0]).getEntry(split[1]);

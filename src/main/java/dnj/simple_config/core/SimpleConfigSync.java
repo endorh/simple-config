@@ -28,6 +28,7 @@ import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -50,7 +51,7 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 /**
  * Handle synchronization of {@link SimpleConfig} data with server config
  */
-public class SimpleConfigSync {
+@Internal class SimpleConfigSync {
 	
 	private static final Field ConfigTracker$fileMap;
 	private static final Field ConfigTracker$configSets;
@@ -159,7 +160,7 @@ public class SimpleConfigSync {
 			throw new ConfigUpdateReflectionError(e);
 		}
 	}
-	public static void tryUpdateConfig(final String fileName, final byte[] fileData) {
+	private static void tryUpdateConfig(final String fileName, final byte[] fileData) {
 		final ModConfig modConfig = getFileMap().get(fileName);
 		if (modConfig == null)
 			return;
@@ -170,14 +171,14 @@ public class SimpleConfigSync {
 	
 	// Network channel ------------------------------------------------
 	
-	private static final String CHANNEL_PROTOCOL_VERSION = "1";
-	static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+	protected static final String CHANNEL_PROTOCOL_VERSION = "1";
+	protected static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
 	  prefix("config"),
 	  () -> CHANNEL_PROTOCOL_VERSION,
 	  CHANNEL_PROTOCOL_VERSION::equals,
 	  CHANNEL_PROTOCOL_VERSION::equals
 	);
-	static int ID_COUNT = 0;
+	private static int ID_COUNT = 0;
 	
 	protected static void registerPackets() {
 		registerMessage(
@@ -243,7 +244,7 @@ public class SimpleConfigSync {
 		}
 	}
 	
-	public static class CSimpleConfigSyncPacket {
+	protected static class CSimpleConfigSyncPacket {
 		public final String modId;
 		public final String fileName;
 		public final byte[] fileData;
@@ -335,7 +336,7 @@ public class SimpleConfigSync {
 		}
 	}
 	
-	public static class SSimpleConfigSyncPacket {
+	protected static class SSimpleConfigSyncPacket {
 		public final String modId;
 		public final String fileName;
 		public final byte[] fileData;

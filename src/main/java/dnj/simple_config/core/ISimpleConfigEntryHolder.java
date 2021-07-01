@@ -3,6 +3,11 @@ package dnj.simple_config.core;
 import dnj.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import dnj.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 
+/**
+ * Abstract container for config entries<br>
+ * Has a {@link SimpleConfig} as root, and can retrieve/set config values
+ * and be marked as dirty
+ */
 public interface ISimpleConfigEntryHolder {
 	
 	/**

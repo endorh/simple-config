@@ -6,17 +6,12 @@ import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import dnj.simple_config.core.SimpleConfigSync.CSimpleConfigSyncPacket;
 import dnj.simple_config.core.SimpleConfigSync.SSimpleConfigSyncPacket;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
-import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
-import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,7 +22,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -38,7 +35,9 @@ import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * Simple config class. Requires Cloth Config API (Forge)
+ * Simple config class. Requires Cloth Config API (Forge) for the GUI menu<br>
+ * Create and register your config with {@link SimpleConfig#builder(String, Type)}
+ * or {@link SimpleConfig#builder(String, Type, Class)}
  */
 public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
@@ -51,11 +50,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	/**
 	 * Should not be modified
 	 */
-	protected Map<String, Category> categories = null;
+	protected Map<String, SimpleConfigCategory> categories = null;
 	/**
 	 * Should not be modified
 	 */
-	protected Map<String, Group> groups = null;
+	protected Map<String, SimpleConfigGroup> groups = null;
 	/**
 	 * Order used in the config screen
 	 */
@@ -72,7 +71,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected final boolean debugTranslations;
 	
 	@SuppressWarnings("UnusedReturnValue")
-	public static SimpleConfig getInstance(String modId, ModConfig.Type type) {
+	protected static SimpleConfig getInstance(
+	  String modId, @SuppressWarnings("SameParameterValue") ModConfig.Type type
+	) {
 		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
 		if (!INSTANCES.containsKey(key)) {
 			throw new IllegalStateException(
@@ -90,30 +91,73 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		SimpleConfigSync.registerPackets();
 	}
 	
+	/**
+	 * Create a {@link SimpleConfig} builder<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntry)}<br>
+	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
+	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
+	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+	 * @param modId Your mod id
+	 * @param type A {@link ModConfig.Type}, usually either CLIENT or SERVER
+	 */
 	public static SimpleConfigBuilder builder(String modId, ModConfig.Type type) {
 		return new SimpleConfigBuilder(modId, type);
 	}
+	
+	/**
+	 * Create a {@link SimpleConfig} builder<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntry)}<br>
+	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
+	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
+	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+	 * @param modId Your mod id
+	 * @param type A {@link ModConfig.Type}, usually either CLIENT or SERVER
+	 * @param configClass Backing class for the config. It will be parsed
+	 *                    for static backing fields and config annotations
+	 */
 	public static SimpleConfigBuilder builder(
 	  String modId, ModConfig.Type type, Class<?> configClass
 	) {
 		return new SimpleConfigBuilder(modId, type, configClass);
 	}
+	
+	/**
+	 * Create a config group
+	 * @param name Group name, suitable for the config file (without spaces)
+	 */
 	public static GroupBuilder group(String name) {
 		return group(name, false);
 	}
+	
+	/**
+	 * Create a config group
+	 * @param name Group name, suitable for the config file (without spaces)
+	 * @param expand Whether or not to expand this group in the GUI automatically
+	 *               (default: no)
+	 */
 	public static GroupBuilder group(String name, boolean expand) {
 		return new GroupBuilder(name, expand);
 	}
 	
+	/**
+	 * Create a config category
+	 * @param name Category name, suitable for the config file (without spaces)
+	 */
 	public static CategoryBuilder category(String name) {
 		return new CategoryBuilder(name);
 	}
 	
+	/**
+	 * Create a config category
+	 * @param name Category name, suitable for the config file (without spaces)
+	 * @param configClass Backing class for the category, which will be parsed
+	 *                    for static backing fields and config annotations
+	 */
 	public static CategoryBuilder category(String name, Class<?> configClass) {
 		return new CategoryBuilder(name, configClass);
 	}
 	
-	protected SimpleConfig(
+	@Internal protected SimpleConfig(
 	  String modId, ModConfig.Type type, String defaultTitle,
 	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
 	  @Nullable Object configClass, boolean debugTranslations
@@ -136,10 +180,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
-	protected void build(
-	  Map<String, Entry<?, ?, ?, ?>> entries,
-	  Map<String, Category> categories,
-	  Map<String, Group> groups,
+	/**
+	 * Setup the config
+	 */
+	@Internal protected void build(
+	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
+	  Map<String, SimpleConfigCategory> categories,
+	  Map<String, SimpleConfigGroup> groups,
 	  Map<String, ConfigValue<?>> specValues,
 	  List<IGUIEntry> order,
 	  ForgeConfigSpec spec
@@ -158,6 +205,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.children = unmodifiableMap(children);
 	}
 	
+	/**
+	 * Get the display name of the mod, or just its mod id if not found
+	 */
 	public static String getModNameOrId(String modId) {
 		final Optional<ModInfo> first = ModList.get().getMods().stream()
 		  .filter(m -> modId.equals(m.getModId())).findFirst();
@@ -171,11 +221,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 */
 	protected void bakeFields() {
 		try {
-			for (Category cat : categories.values())
+			for (SimpleConfigCategory cat : categories.values())
 				cat.bakeFields();
-			for (Group group : groups.values())
+			for (SimpleConfigGroup group : groups.values())
 				group.bakeFields();
-			for (Entry<?, ?, ?, ?> entry : entries.values())
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
 				if (entry.backingField != null)
 					entry.backingField.set(null, get(entry.name));
 		} catch (IllegalAccessException e) {
@@ -184,24 +234,32 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
+	/**
+	 * Run the baker, and then the categories' bakers
+	 */
 	public void bake() {
 		bakeFields();
 		if (baker != null)
 			baker.accept(this);
-		for (Category cat : categories.values())
+		for (SimpleConfigCategory cat : categories.values())
 			if (cat.baker != null)
 				cat.baker.accept(cat);
 	}
 	
+	/**
+	 * Bake the config and save it, which performs different actions
+	 * depending on the type of the config.
+	 */
 	public void save() {
-		// TODO: If the change requires a restart suggest a command for operators in the chat
-		//       or at least post a warning
 		bake();
 		if (saver != null)
 			saver.accept(this);
 		markDirty(false);
 	}
 	
+	/**
+	 * Decorate a GUI builder
+	 */
 	@OnlyIn(Dist.CLIENT)
 	public void decorate(ConfigBuilder builder) {
 		if (decorator != null)
@@ -209,7 +267,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	/**
-	 * Called on client only configs
+	 * Notify the user if they're in a world and just
+	 * changed entries flagged as requiring a restart
 	 */
 	@OnlyIn(Dist.CLIENT)
 	protected void checkRestart() {
@@ -229,6 +288,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		new CSimpleConfigSyncPacket(this).send();
 	}
 	
+	/**
+	 * Handle external config modification events
+	 */
 	@SubscribeEvent
 	public void onModConfigEvent(final ModConfig.ModConfigEvent event) {
 		final ModConfig c = event.getConfig();
@@ -248,7 +310,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * @throws NoSuchConfigCategoryError if the category is not found
 	 */
 	@SuppressWarnings("unused")
-	public Category getCategory(String name) {
+	public SimpleConfigCategory getCategory(String name) {
 		if (!categories.containsKey(name))
 			throw new NoSuchConfigCategoryError(name);
 		return categories.get(name);
@@ -260,7 +322,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * @throws NoSuchConfigGroupError if the group is not found
 	 */
 	@SuppressWarnings("unused")
-	public Group getGroup(String path) {
+	public SimpleConfigGroup getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
@@ -280,204 +342,12 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	public void buildGUI(ConfigBuilder configBuilder) {
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
+			final me.shedaniel.clothconfig2.api.ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder, this);
 		}
-		for (Category cat : categories.values()) {
+		for (SimpleConfigCategory cat : categories.values()) {
 			cat.buildGUI(configBuilder, entryBuilder);
-		}
-	}
-	
-	public static class Category extends AbstractSimpleConfigEntryHolder {
-		public final SimpleConfig parent;
-		public final String name;
-		public final String title;
-		protected final @Nullable Consumer<Category> baker;
-		protected Map<String, Group> groups;
-		protected List<IGUIEntry> order;
-		
-		public Category(
-		  SimpleConfig parent, String name, String title, @Nullable Consumer<Category> baker
-		) {
-			this.parent = parent;
-			this.name = name;
-			this.title = title;
-			this.baker = baker;
-			root = parent;
-		}
-		
-		protected void build(
-		  Map<String, Entry<?, ?, ?, ?>> entries, Map<String, Group> groups,
-		  Map<String, ConfigValue<?>> specValues,
-		  List<IGUIEntry> order
-		) {
-			if (this.entries != null)
-				throw new IllegalStateException("Called build() twice");
-			this.entries = entries;
-			this.groups = groups;
-			children = groups;
-			this.specValues = specValues;
-			this.order = order;
-		}
-		
-		@Override public void markDirty(boolean dirty) {
-			super.markDirty(dirty);
-			if (dirty) parent.markDirty(true);
-		}
-		
-		@OnlyIn(Dist.CLIENT)
-		public void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
-			ConfigCategory category = builder.getOrCreateCategory(getTitle());
-			if (!order.isEmpty()) {
-				for (IGUIEntry entry : order)
-					entry.buildGUI(category, entryBuilder, this);
-			}
-		}
-		
-		protected void bakeFields() throws IllegalAccessException {
-			for (Group group : groups.values())
-				group.bakeFields();
-			for (Entry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					entry.backingField.set(null, get(entry.name));
-		}
-		
-		/**
-		 * Get a config group
-		 * @param path Name or dot-separated path to the group
-		 * @throws NoSuchConfigGroupError if the group is not found
-		 */
-		@SuppressWarnings("unused")
-		public Group getGroup(String path) {
-			if (path.contains(".")) {
-				final String[] split = path.split("\\.", 2);
-				if (groups.containsKey(split[0]))
-					return groups.get(split[0]).getGroup(split[1]);
-			} else if (groups.containsKey(path))
-				return groups.get(path);
-			throw new NoSuchConfigGroupError(path);
-		}
-		
-		public ITextComponent getTitle() {
-			return new TranslationTextComponent(title);
-		}
-	}
-	
-	public static class Group extends AbstractSimpleConfigEntryHolder implements IGUIEntry {
-		public final Category category;
-		public final @Nullable Group parentGroup;
-		public final String name;
-		public final String title;
-		public final String tooltip;
-		protected Map<String, Group> groups;
-		protected List<IGUIEntry> order;
-		private final boolean expanded;
-		
-		public Group(
-		  Group parent, String name, String title, String tooltip, boolean expanded
-		) {
-			this.category = parent.category;
-			this.parentGroup = parent;
-			this.name = name;
-			this.title = title;
-			this.tooltip = tooltip;
-			this.expanded = expanded;
-			root = category.root;
-		}
-		
-		public Group(
-		  Category parent, String name, String title, String tooltip, boolean expanded
-		) {
-			this.category = parent;
-			this.parentGroup = null;
-			this.name = name;
-			this.title = title;
-			this.tooltip = tooltip;
-			this.expanded = expanded;
-			root = category.root;
-		}
-		
-		protected void build(
-		  Map<String, Entry<?, ?, ?, ?>> entries, Map<String, ConfigValue<?>> specValues,
-		  Map<String, Group> groups, List<IGUIEntry> guiOrder
-		) {
-			if (this.entries != null)
-				throw new IllegalStateException("Called build() twice");
-			this.entries = entries;
-			this.specValues = specValues;
-			this.groups = groups;
-			children = groups;
-			this.order = guiOrder;
-		}
-		
-		@SuppressWarnings("unused")
-		public Category getCategory() {
-			return category;
-		}
-		
-		@Override public void markDirty(boolean dirty) {
-			super.markDirty(dirty);
-			if (dirty) (parentGroup != null? parentGroup : category).markDirty(true);
-		}
-		
-		public ITextComponent getTitle() {
-			return new TranslationTextComponent(title);
-		}
-		
-		public Optional<ITextComponent[]> getTooltip() {
-			if (tooltip != null && I18n.hasKey(tooltip))
-				return Optional.of(
-				  Arrays.stream(I18n.format(tooltip).split("\n"))
-					 .map(StringTextComponent::new).toArray(ITextComponent[]::new));
-			return Optional.empty();
-		}
-		
-		@OnlyIn(Dist.CLIENT)
-		public SubCategoryListEntry buildGUI(ConfigEntryBuilder entryBuilder) {
-			final SubCategoryBuilder group = entryBuilder
-			  .startSubCategory(getTitle())
-			  .setExpanded(expanded)
-			  .setTooltip(getTooltip());
-			if (!order.isEmpty()) {
-				for (IGUIEntry entry : order) {
-					if (entry instanceof Entry) {
-						((Entry<?, ?, ?, ?>) entry).buildGUIEntry(entryBuilder, this).ifPresent(group::add);
-					} else if (entry instanceof Group) {
-						group.add(((Group) entry).buildGUI(entryBuilder));
-					}
-				}
-			}
-			return group.build();
-		}
-		
-		@Override public void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
-		) {
-			category.addEntry(buildGUI(entryBuilder));
-		}
-		
-		protected void bakeFields() throws IllegalAccessException {
-			for (Group group : groups.values())
-				group.bakeFields();
-			for (Entry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					entry.backingField.set(null, get(entry.name));
-		}
-		
-		/**
-		 * Get a config subgroup
-		 * @param path Name or dot-separated path to the group
-		 * @throws NoSuchConfigGroupError if the group is not found
-		 */
-		public Group getGroup(String path) {
-			if (path.contains(".")) {
-				final String[] split = path.split("\\.", 2);
-				if (groups.containsKey(split[0]))
-					return groups.get(split[0]).getGroup(split[1]);
-			} else if (groups.containsKey(path))
-				return groups.get(path);
-			throw new NoSuchConfigGroupError(path);
 		}
 	}
 	
@@ -507,6 +377,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	public interface IAbstractGUIEntry {}
 	public interface IGUIEntry extends IAbstractGUIEntry {
-		void buildGUI(ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config);
+		void buildGUI(me.shedaniel.clothconfig2.api.ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config);
 	}
 }

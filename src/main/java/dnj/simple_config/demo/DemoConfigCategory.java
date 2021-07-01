@@ -2,12 +2,12 @@ package dnj.simple_config.demo;
 
 import com.mojang.datafixers.util.Pair;
 import dnj.simple_config.SimpleConfigMod;
-import dnj.simple_config.core.Entry.ITranslatedEnum;
-import dnj.simple_config.core.Entry.SerializableEntry;
-import dnj.simple_config.core.SimpleConfig.Category;
+import dnj.simple_config.core.AbstractConfigEntry.ITranslatedEnum;
+import dnj.simple_config.core.AbstractConfigEntry.SerializableEntry;
+import dnj.simple_config.core.SimpleConfigCategory;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
-import dnj.simple_config.core.annotation.ConfigEntry;
-import dnj.simple_config.core.annotation.ConfigGroup;
+import dnj.simple_config.core.annotation.Entry;
+import dnj.simple_config.core.annotation.Group;
 import dnj.simple_config.core.annotation.RequireRestart;
 import dnj.simple_config.core.annotation.Text;
 import net.minecraft.item.Items;
@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static dnj.simple_config.core.Entry.Builders.*;
+import static dnj.simple_config.core.AbstractConfigEntry.Builders.*;
 import static dnj.simple_config.core.SimpleConfig.category;
 import static dnj.simple_config.core.SimpleConfig.group;
 import static dnj.simple_config.demo.DemoConfigCategory.RockPaperScissors.ROCK;
@@ -135,7 +135,7 @@ public abstract class DemoConfigCategory {
 	}
 	
 	// Sometimes baking isn't as simple as setting a few fields
-	public static void bakeDemoCategory(Category demo) {
+	public static void bakeDemoCategory(SimpleConfigCategory demo) {
 		// The baker always runs after all backing fields have been baked
 		// So we may safely use them to create composite values, or transform them
 		complex_string = string + "\n" + lower_case_string;
@@ -165,7 +165,8 @@ public abstract class DemoConfigCategory {
 	//   like in this showcase
 	
 	// Within the config class you may define new config values with annotations
-	@ConfigEntry public static String string = "Hello, World!";
+	@Entry
+	public static String string = "Hello, World!";
 	// Or you may simply declare backing fields for values already defined in the builder
 	// Fields already defined in the builder shouldn't have annotations
 	public static String lower_case_string;
@@ -175,7 +176,8 @@ public abstract class DemoConfigCategory {
 	public static String complex_string;
 	
 	// A common pattern is creating enums for settings with a few choices
-	@ConfigEntry public static RockPaperScissors your_choice = ROCK;
+	@Entry
+	public static RockPaperScissors your_choice = ROCK;
 	public enum RockPaperScissors {
 		ROCK, PAPER, SCISSORS
 		
@@ -190,7 +192,8 @@ public abstract class DemoConfigCategory {
 	
 	// Enum values missing their initializer will default to the first
 	//   enum constant, in this case UPRIGHT
-	@ConfigEntry public static Placement preferred_placement;
+	@Entry
+	public static Placement preferred_placement;
 	
 	// Additionally, enums may implement ITranslatedEnum instead, providing their own translations
 	public enum Placement implements ITranslatedEnum {
@@ -211,11 +214,12 @@ public abstract class DemoConfigCategory {
 	// For instance, this group's label and tooltip would be mapped to the keys
 	//   config.⟨mod-id⟩.group.client.demo.simple_group
 	//   config.⟨mod-id⟩.group.client.demo.simple_group.help (Tooltip, if defined)
-	@ConfigGroup(expand = true)
+	@Group(expand = true)
 	public static abstract class simple_group {
 		// Types that don't require extra parameters to declare their entries
 		// use the @ConfigEntry annotation directly
-		@ConfigEntry public static boolean some_bool = false;
+		@Entry
+		public static boolean some_bool = false;
 		
 		// You may also add text entries from the backing class
 		//   using the @Text annotation. The field may be either:
@@ -234,7 +238,7 @@ public abstract class DemoConfigCategory {
 		
 		// Fields whose entries require extra parameters have their
 		//   own annotations under @ConfigEntry, such as @ConfigEntry.Long
-		@ConfigEntry.Long(min = 0, max = 10L, slider = true)
+		@Entry.Long(min = 0, max = 10L, slider = true)
 		public static long score = 10L;
 		// Every field can declare an error supplier, appending the suffix '$error' to its name
 		//   This can also be done in the builder, by using the '.error(...)' method on the entry
@@ -262,7 +266,7 @@ public abstract class DemoConfigCategory {
 		// Generated entries may also have the @RequireRestart annotation
 		//   to flag them as requiring a world restart to be effective
 		//   Likewise, this can also be done in the builder
-		@ConfigEntry.Double(min = 0, max = 1) @RequireRestart
+		@Entry.Double(min = 0, max = 1) @RequireRestart
 		public static double ore_gen_chance = 1;
 		
 		// Fields without annotations that are also not defined in the builder are ignored
@@ -280,14 +284,15 @@ public abstract class DemoConfigCategory {
 		        .setClickEvent(new ClickEvent(
 		          ClickEvent.Action.COPY_TO_CLIPBOARD, ignored_field))));
 		
-		@ConfigGroup public static abstract class nested_group {
-			@ConfigEntry.Color
+		@Group
+		public static abstract class nested_group {
+			@Entry.Color
 			public static Color no_alpha_color = Color.BLUE;
-			@ConfigEntry.Color(alpha = true)
+			@Entry.Color(alpha = true)
 			public static Color alpha_color = Color.YELLOW;
 			
 			// Some list types are also supported out of the box
-			@ConfigEntry.List.Long(min = 0L)
+			@Entry.List.Long(min = 0L)
 			// Leaving uninitialized is the same as an empty list
 			// The default value can also be set in a static initializer
 			public static List<Long> long_list = asList(0L, 2L);
@@ -303,7 +308,7 @@ public abstract class DemoConfigCategory {
 				return element % 2 == 0;
 			}
 			
-			@ConfigEntry.List.Double(min = 0, max = 1)
+			@Entry.List.Double(min = 0, max = 1)
 			public static List<Double> double_list = asList(0.1, 0.2, 0.3, 0.4);
 			// The validator method can also return an Optional<ITextComponent>
 			//   to supply better error messages

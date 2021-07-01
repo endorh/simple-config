@@ -19,10 +19,7 @@ import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -34,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.awt.*;
+import java.awt.Color;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.*;
@@ -43,7 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// TODO: Make Groups be Entries
 /**
  * An abstract config entry, which may or may not produce an entry in
  * the actual config and/or the config GUI<br>
@@ -53,8 +49,8 @@ import java.util.stream.Collectors;
  * In particular, users can not modify the default
  * value/bounds/validators of an entry after the registering phase
  * has ended.<br>
- * Subclasses may override {@link Entry#buildConfigEntry}
- * and {@link Entry#buildGUIEntry} to generate the appropriate
+ * Subclasses may override {@link AbstractConfigEntry#buildConfigEntry}
+ * and {@link AbstractConfigEntry#buildGUIEntry} to generate the appropriate
  * entries in both ends
  *
  * @param <V> The type of the value held by the entry
@@ -63,7 +59,7 @@ import java.util.stream.Collectors;
  * @param <Self> The actual subtype of this entry to be
  *              returned by builder-like methods
  */
-public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, Self>>
+public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
   implements IGUIEntry, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
 	protected String name = null;
 	protected @Nullable String translation = null;
@@ -155,17 +151,17 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 		
 		// List of other entries
-		public static <V, C, G, E extends Entry<V, C, G, E>>
-		EntryListEntry<V, C, G, E> list(Entry<V, C, G, E> entry) {
+		public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
+		EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry) {
 			return list(entry, new ArrayList<>());
 		}
-		public static <V, C, G, E extends Entry<V, C, G, E>>
-		EntryListEntry<V, C, G, E> list(Entry<V, C, G, E> entry, List<V> value) {
+		public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
+		EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry, List<V> value) {
 			return new EntryListEntry<>(value, entry);
 		}
 	}
 	
-	protected Entry(V value) {
+	protected AbstractConfigEntry(V value) {
 		this.value = value;
 	}
 	
@@ -401,7 +397,7 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 	
 	/**
 	 * Add entry to the GUI<br>
-	 * Subclasses should instead override {@link Entry#buildGUIEntry} in most cases
+	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry} in most cases
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Override public void buildGUI(
@@ -432,38 +428,53 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		((ConfigValue<Config>) spec).set(forConfig(value));
 	}
 	
-	protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {}
+	@OnlyIn(Dist.CLIENT)
+	protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
+		if (guiTooltipSupplier != null)
+			tooltip.add(new StringTextComponent(" + Has GUI tooltip supplier").mergeStyle(TextFormatting.GRAY));
+		if (tooltipSupplier != null)
+			tooltip.add(new StringTextComponent(" + Has tooltip supplier").mergeStyle(TextFormatting.GRAY));
+		if (guiErrorSupplier != null)
+			tooltip.add(new StringTextComponent(" + Has GUI error supplier").mergeStyle(TextFormatting.GRAY));
+		if (errorSupplier != null)
+			tooltip.add(new StringTextComponent(" + Has error supplier").mergeStyle(TextFormatting.GRAY));
+	}
+	@OnlyIn(Dist.CLIENT)
+	protected void addTranslationsDebugSuffix(List<ITextComponent> tooltip) {
+		tooltip.add(new StringTextComponent(" "));
+		tooltip.add(new StringTextComponent(" ⚠ Translation debug mode active").mergeStyle(TextFormatting.GOLD));
+		tooltip.add(new StringTextComponent("     Remember to remove the call to .debugTranslations()").mergeStyle(TextFormatting.GOLD));
+	}
+	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> supplyDebugTooltip(Gui value) {
 		List<ITextComponent> lines = new ArrayList<>();
+		lines.add(new StringTextComponent("Translation key:").mergeStyle(TextFormatting.GRAY));
 		if (translation != null) {
-			lines.add(new StringTextComponent("Translation key:"));
-			final String status = I18n.hasKey(translation) ? "(✔ present)" : "(✘ missing)";
-			lines.add(new StringTextComponent("   " + translation + " " + status));
-		} else lines.add(new StringTextComponent("Error: couldn't map translation key"));
+			final IFormattableTextComponent status =
+			  I18n.hasKey(translation)
+			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
+			lines.add(new StringTextComponent("   " + translation + " ")
+			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
+		} else lines.add(new StringTextComponent("   Error: couldn't map translation key").mergeStyle(TextFormatting.RED));
+		lines.add(new StringTextComponent("Tooltip key:").mergeStyle(TextFormatting.GRAY));
 		if (tooltip != null) {
-			lines.add(new StringTextComponent("Tooltip key:"));
-			final String status = I18n.hasKey(tooltip)? "(✔ present)" : "(not present)";
-			lines.add(new StringTextComponent("   " + tooltip + " " + status));
-		} else lines.add(new StringTextComponent("Error: couldn't map tooltip translation key"));
-		if (guiTooltipSupplier != null)
-			lines.add(new StringTextComponent(" + Has GUI tooltip supplier"));
-		if (tooltipSupplier != null)
-			lines.add(new StringTextComponent(" + Has tooltip supplier"));
-		if (guiErrorSupplier != null)
-			lines.add(new StringTextComponent(" + Has GUI error supplier"));
-		if (errorSupplier != null)
-			lines.add(new StringTextComponent(" + Has error supplier"));
+			final IFormattableTextComponent status =
+			  I18n.hasKey(tooltip)
+			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(not present)").mergeStyle(TextFormatting.GOLD);
+			lines.add(new StringTextComponent("   " + tooltip + " ")
+			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
+		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").mergeStyle(TextFormatting.RED));
 		addTranslationsDebugInfo(lines);
-		lines.add(new StringTextComponent(" "));
-		lines.add(new StringTextComponent(" ⚠ Translation debug mode active"));
-		lines.add(new StringTextComponent("     Remember to remove the call to .debugTranslations()"));
+		addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new ITextComponent[0]));
 	}
 	
 	
 	// Subclasses follow ----------------------------------------------
 	
-	public static class EmptyEntry extends Entry<Void, Void, Void, EmptyEntry> {
+	public static class EmptyEntry extends AbstractConfigEntry<Void, Void, Void, EmptyEntry> {
 		public EmptyEntry() {
 			super(null);
 		}
@@ -492,13 +503,50 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 		
 		@OnlyIn(Dist.CLIENT)
-		@Override
-		public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+		@Override protected Optional<ITextComponent[]> supplyDebugTooltip(Void value) {
+			List<ITextComponent> lines = new ArrayList<>();
+			lines.add(new StringTextComponent("Text entry").mergeStyle(TextFormatting.GRAY));
+			if (translation != null) {
+				lines.add(new StringTextComponent(" + Provides its own translation").mergeStyle(TextFormatting.GRAY));
+			} else if (super.translation != null) {
+				lines.add(new StringTextComponent("Translation key:").mergeStyle(TextFormatting.GRAY));
+				final IFormattableTextComponent status =
+				  I18n.hasKey(super.translation)
+				  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
+				  : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
+				lines.add(new StringTextComponent("   " + super.translation + " ")
+				            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
+			} else {
+				lines.add(new StringTextComponent("Translation key:").mergeStyle(TextFormatting.GRAY));
+				lines.add(new StringTextComponent("   Error: couldn't map translation key").mergeStyle(TextFormatting.RED));
+			}
+			if (tooltip != null) {
+				if (!name.startsWith("_text$") || I18n.hasKey(tooltip)) {
+					lines.add(new StringTextComponent("Tooltip key:").mergeStyle(TextFormatting.GRAY));
+					final IFormattableTextComponent status =
+					  I18n.hasKey(tooltip)
+					  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
+					  : new StringTextComponent("(not present)").mergeStyle(TextFormatting.GOLD);
+					lines.add(new StringTextComponent("   " + tooltip + " ")
+					            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
+				}
+			} else {
+				lines.add(new StringTextComponent("Tooltip key:").mergeStyle(TextFormatting.GRAY));
+				lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").mergeStyle(TextFormatting.RED));
+			}
+			addTranslationsDebugInfo(lines);
+			addTranslationsDebugSuffix(lines);
+			return Optional.of(lines.toArray(new ITextComponent[0]));
+		}
+		
+		@OnlyIn(Dist.CLIENT)
+		@Override public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
 		  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 		) {
 			if (translation != null) {
 				final TextDescriptionBuilder valBuilder = builder
-				  .startTextDescription(translation.get());
+				  .startTextDescription(translation.get())
+				  .setTooltipSupplier(() -> this.supplyTooltip(null));
 				return Optional.of(decorate(valBuilder).build());
 			} else {
 				LOGGER.warn("Malformed text entry in config with name " + name);
@@ -507,7 +555,8 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 	}
 	
-	public static class BooleanEntry extends Entry<Boolean, Boolean, Boolean, BooleanEntry> {
+	public static class BooleanEntry extends
+	                                 AbstractConfigEntry<Boolean, Boolean, Boolean, BooleanEntry> {
 		protected Function<Boolean, ITextComponent> yesNoSupplier = null;
 		
 		public BooleanEntry(boolean value) {
@@ -542,7 +591,8 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 	}
 	
 	public static abstract class RangedEntry
-	  <V, Config, Gui, This extends RangedEntry<V, Config, Gui, This>> extends Entry<V, Config, Gui, This> {
+	  <V, Config, Gui, This extends RangedEntry<V, Config, Gui, This>> extends
+	                                                                   AbstractConfigEntry<V, Config, Gui, This> {
 		public V min;
 		public V max;
 		protected boolean asSlider = false;
@@ -649,7 +699,8 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 	}
 	
-	public static class StringEntry extends Entry<String, String, String, StringEntry> {
+	public static class StringEntry extends
+	                                AbstractConfigEntry<String, String, String, StringEntry> {
 		public StringEntry(String value) {super(value);}
 		
 		@Override protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
@@ -670,7 +721,8 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 	}
 	
-	public static class EnumEntry<E extends Enum<E>> extends Entry<E, E, E, EnumEntry<E>> {
+	public static class EnumEntry<E extends Enum<E>> extends
+	                                                 AbstractConfigEntry<E, E, E, EnumEntry<E>> {
 		public Class<E> enumClass;
 		
 		public EnumEntry(E value) {
@@ -682,13 +734,25 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 			return Optional.of(decorate(builder).defineEnum(name, value));
 		}
 		
+		@OnlyIn(Dist.CLIENT)
 		@Override protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
 			super.addTranslationsDebugInfo(tooltip);
 			if (parent != null) {
-				tooltip.add(new StringTextComponent(" + Enum translation keys:"));
-				for (E elem : enumClass.getEnumConstants())
-					tooltip.add(new StringTextComponent(
-					  "   > " + getEnumTranslationKey(elem, parent.getRoot())));
+				if (value instanceof ITranslatedEnum)
+					tooltip.add(new StringTextComponent(" + Enum provides its own translations").mergeStyle(TextFormatting.GRAY));
+				tooltip.add(new StringTextComponent(" + Enum translation keys:").mergeStyle(TextFormatting.GRAY));
+				for (E elem : enumClass.getEnumConstants()) {
+					final String key = getEnumTranslationKey(elem, parent.getRoot());
+					final IFormattableTextComponent status =
+					  I18n.hasKey(key)
+					  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
+					  : (value instanceof ITranslatedEnum)
+					    ? new StringTextComponent("(not present)").mergeStyle(TextFormatting.DARK_GRAY)
+					    : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
+					tooltip.add(new StringTextComponent("   > ").mergeStyle(TextFormatting.GRAY)
+					              .append(new StringTextComponent(key).mergeStyle(TextFormatting.DARK_AQUA))
+					              .appendString(" ").append(status));
+				}
 			}
 		}
 		
@@ -731,7 +795,8 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 	}
 	
 	public static abstract class ListEntry
-	  <V, Config, Gui, Self extends ListEntry<V, Config, Gui, Self>> extends Entry<List<V>, List<Config>, List<Gui>, Self> {
+	  <V, Config, Gui, Self extends ListEntry<V, Config, Gui, Self>> extends
+	                                                                 AbstractConfigEntry<List<V>, List<Config>, List<Gui>, Self> {
 		public Function<V, Optional<ITextComponent>> validator = t -> Optional.empty();
 		protected boolean expand;
 		
@@ -845,18 +910,18 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 	}
 	
 	public static class EntryListEntry
-	  <V, C, G, E extends Entry<V, C, G, E>>
+	  <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
 	  extends ListEntry<V, C, G, EntryListEntry<V, C, G, E>> {
 		protected static final String TOOLTIP_KEY_SUFFIX = ".help";
 		protected static final String SUB_ELEMENTS_KEY_SUFFIX = ".sub";
 		
-		protected final Entry<V, C, G, E> entry;
+		protected final AbstractConfigEntry<V, C, G, E> entry;
 		protected ListEntryEntryHolder<V, C, G, E> holder;
 		
-		public static class ListEntryEntryHolder<V, C, G, E extends Entry<V, C, G, E>>
+		public static class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
 		  implements ISimpleConfigEntryHolder {
 			private static final Logger LOGGER = LogManager.getLogger();
-			protected final Entry<V, C, G, E> entry;
+			protected final AbstractConfigEntry<V, C, G, E> entry;
 			protected List<V> value = null;
 			protected final List<V> buffer = new ArrayList<>();
 			
@@ -874,7 +939,7 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 				value = null;
 			}
 			
-			public ListEntryEntryHolder(Entry<V, C, G, E> entry) {
+			public ListEntryEntryHolder(AbstractConfigEntry<V, C, G, E> entry) {
 				this.entry = entry;
 			}
 			
@@ -915,7 +980,7 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 			}
 		}
 		
-		public EntryListEntry(@Nullable List<V> value, Entry<V, C, G, E> entry) {
+		public EntryListEntry(@Nullable List<V> value, AbstractConfigEntry<V, C, G, E> entry) {
 			super(value);
 			this.entry = entry.withSaver((g, c) -> {});
 			if (translation != null)
@@ -1157,12 +1222,13 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 	/**
 	 * Doesn't have a GUI<br>
 	 * To create your custom type of entry with GUI,
-	 * extend this class or {@link Entry} directly
+	 * extend this class or {@link AbstractConfigEntry} directly
 	 *
 	 * @param <V> Type of the value
 	 */
 	@SuppressWarnings("unused")
-	public static class SerializableEntry<V> extends Entry<V, String, String, SerializableEntry<V>> {
+	public static class SerializableEntry<V> extends
+	                                         AbstractConfigEntry<V, String, String, SerializableEntry<V>> {
 		public Function<V, String> serializer;
 		public Function<String, Optional<V>> deserializer;
 		
@@ -1228,7 +1294,7 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 	}
 	
-	public static class ColorEntry extends Entry<Color, String, Integer, ColorEntry> {
+	public static class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry> {
 		public ColorEntry(Color value) {
 			super(value);
 		}
@@ -1334,7 +1400,7 @@ public abstract class Entry<V, Config, Gui, Self extends Entry<V, Config, Gui, S
 		}
 	}
 	
-	public static class ItemEntry extends Entry<Item, String, Item, ItemEntry> {
+	public static class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry> {
 		protected final ItemStack stack;
 		protected Ingredient filter = null;
 		protected ITag<Item> tag = null;

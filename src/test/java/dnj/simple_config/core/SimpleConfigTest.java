@@ -1,8 +1,6 @@
 package dnj.simple_config.core;
 
 import dnj.simple_config.SimpleConfigMod;
-import dnj.simple_config.core.SimpleConfig.Category;
-import dnj.simple_config.core.SimpleConfig.Group;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
@@ -14,7 +12,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dnj.simple_config.core.Entry.Builders.*;
+import static dnj.simple_config.core.AbstractConfigEntry.Builders.*;
 import static dnj.simple_config.core.SimpleConfig.category;
 import static dnj.simple_config.core.SimpleConfig.group;
 
@@ -56,10 +54,10 @@ public class SimpleConfigTest {
 	
 	public static void onBakeTestConfig(SimpleConfig config) {
 		LOGGER.debug("Baking test config");
-		final Group test_group = config.getGroup("test_group");
-		final Group nested_group = test_group.getGroup("nested_group");
-		final Category test_category = config.getCategory("test_category");
-		final Group some_group = test_category.getGroup("some_group");
+		final SimpleConfigGroup test_group = config.getGroup("test_group");
+		final SimpleConfigGroup nested_group = test_group.getGroup("nested_group");
+		final SimpleConfigCategory test_category = config.getCategory("test_category");
+		final SimpleConfigGroup some_group = test_category.getGroup("some_group");
 		final float test = some_group.getFloat("test");
 	}
 	

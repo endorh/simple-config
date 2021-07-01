@@ -1,12 +1,13 @@
 package dnj.simple_config.core;
 
-import dnj.simple_config.core.Entry.*;
+import dnj.simple_config.core.AbstractConfigEntry.*;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import dnj.simple_config.core.annotation.*;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -34,10 +35,15 @@ public class SimpleConfigClassParser {
 	
 	@FunctionalInterface
 	public interface FieldEntryParser<T extends Annotation> {
-		@Nullable Entry<?, ?, ?, ?> tryParse(T annotation, Field field, Object value);
+		@Nullable
+		AbstractConfigEntry<?, ?, ?, ?> tryParse(T annotation, Field field, Object value);
 	}
 	
-	public static <T extends Annotation> void registerFieldParser(
+	/**
+	 * Technically, you may register new field parsers before you mod's config
+	 * is registered, but this is discouraged. Using the builder will probably be easier.
+	 */
+	@Internal public static <T extends Annotation> void registerFieldParser(
 	  Class<T> annotationClass, Class<?> fieldClass, FieldEntryParser<T> parser
 	) {
 		synchronized (PARSERS) {
@@ -46,42 +52,42 @@ public class SimpleConfigClassParser {
 	}
 	
 	static {
-		registerFieldParser(ConfigEntry.class, Boolean.class, (a, field, value) ->
+		registerFieldParser(Entry.class, Boolean.class, (a, field, value) ->
 		  new BooleanEntry(value != null? (Boolean) value : false));
-		registerFieldParser(ConfigEntry.class, String.class, (a, field, value) ->
+		registerFieldParser(Entry.class, String.class, (a, field, value) ->
 		  new StringEntry(value != null? (String) value : ""));
-		registerFieldParser(ConfigEntry.class, Enum.class, (a, field, value) -> {
+		registerFieldParser(Entry.class, Enum.class, (a, field, value) -> {
 			if (value == null)
 				value = field.getType().getEnumConstants()[0];
 			//noinspection rawtypes
 			return new EnumEntry((Enum) value);
 		});
-		registerFieldParser(ConfigEntry.Long.class, Long.class, (a, field, value) -> {
+		registerFieldParser(Entry.Long.class, Long.class, (a, field, value) -> {
 			final LongEntry e = new LongEntry((Long) value, a.min(), a.max());
 			e.asSlider = a.slider();
 			return e;
 		});
-		registerFieldParser(ConfigEntry.Double.class, Double.class, (a, field, value) ->
+		registerFieldParser(Entry.Double.class, Double.class, (a, field, value) ->
 		  new DoubleEntry((Double) value, a.min(), a.max()));
-		registerFieldParser(ConfigEntry.Color.class, Color.class, (a, field, value) ->
+		registerFieldParser(Entry.Color.class, Color.class, (a, field, value) ->
 		  a.alpha() ? new AlphaColorEntry((Color) value) : new ColorEntry((Color) value));
 		
 		// Lists
-		registerFieldParser(ConfigEntry.List.class, List.class, (a, field, value) ->
-		  !checkType(field, String.class) ? null :
+		registerFieldParser(Entry.List.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, String.class) ? null :
 		  decorateListEntry(new StringListEntry((List<String>) value), field));
 		
-		registerFieldParser(ConfigEntry.List.class, List.class, (a, field, value) ->
+		registerFieldParser(Entry.List.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Long.class) ? null :
 		  decorateListEntry(new LongListEntry((List<Long>) value), field));
-		registerFieldParser(ConfigEntry.List.Long.class, List.class, (a, field, value) ->
+		registerFieldParser(Entry.List.Long.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Long.class) ? null :
 		  decorateListEntry(new LongListEntry((List<Long>) value, a.min(), a.max()), field));
 		
-		registerFieldParser(ConfigEntry.List.class, List.class, (a, field, value) ->
+		registerFieldParser(Entry.List.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Double.class) ? null :
 		  decorateListEntry(new DoubleListEntry((List<Double>) value), field));
-		registerFieldParser(ConfigEntry.List.Double.class, List.class, (a, field, value) ->
+		registerFieldParser(Entry.List.Double.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Double.class) ? null :
 		  decorateListEntry(new DoubleListEntry((List<Double>) value, a.min(), a.max()), field));
 	}
@@ -107,7 +113,7 @@ public class SimpleConfigClassParser {
 	}
 	
 	protected static <T> void decorateEntry(
-	  Entry<T, ?, ?, ?> entry, Class<?> cl, Field field
+	  AbstractConfigEntry<T, ?, ?, ?> entry, Class<?> cl, Field field
 	) {
 		final Method m = tryGetMethod(cl, field.getName(), "error", field.getType());
 		if (m != null) {
@@ -124,7 +130,7 @@ public class SimpleConfigClassParser {
 	}
 	
 	protected static <T> void addTooltip(
-	  Entry<T, ?, ?, ?> entry, Class<?> cl, Field field
+	  AbstractConfigEntry<T, ?, ?, ?> entry, Class<?> cl, Field field
 	) {
 		boolean a = true;
 		Method m = tryGetMethod(cl, field.getName(), "tooltip", field.getType());
@@ -212,7 +218,7 @@ public class SimpleConfigClassParser {
 							if (clazz.isInstance(value) || clazz.isAssignableFrom(fieldClass)) {
 								Annotation annotation = field.getAnnotation(annotationClass);
 								//noinspection unchecked
-								final Entry<?, ?, ?, ?> entry =
+								final AbstractConfigEntry<?, ?, ?, ?> entry =
 								  ((FieldEntryParser<Annotation>) parsers.get(clazz))
 								    .tryParse(annotation, field, value);
 								if (entry != null) {
@@ -235,7 +241,7 @@ public class SimpleConfigClassParser {
 		}
 		for (Class<?> clazz : configClass.getDeclaredClasses()) {
 			final String name = clazz.getSimpleName();
-			if (clazz.isAnnotationPresent(ConfigCateg.class)
+			if (clazz.isAnnotationPresent(Category.class)
 			    || root.categories.containsKey(name)
 			) {
 				if (builder != root)
@@ -253,13 +259,13 @@ public class SimpleConfigClassParser {
 					root.n(catBuilder);
 				}
 				decorateAbstractBuilder(root, clazz, catBuilder);
-			} else if (clazz.isAnnotationPresent(ConfigGroup.class)
+			} else if (clazz.isAnnotationPresent(Group.class)
 			           || builder.groups.containsKey(name)) {
 				GroupBuilder gBuilder;
 				if (builder.groups.containsKey(name)) {
 					gBuilder = builder.groups.get(name);
 				} else {
-					ConfigGroup a = clazz.getAnnotation(ConfigGroup.class);
+					Group a = clazz.getAnnotation(Group.class);
 					boolean expand = a != null && a.expand();
 					gBuilder = new GroupBuilder(name, expand);
 					builder.n(gBuilder);
