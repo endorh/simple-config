@@ -131,7 +131,8 @@ public class SimpleConfigClassParser {
 	}
 	
 	protected static void decorateBuilder(SimpleConfigBuilder root) {
-		decorateAbstractBuilder(root, root.configClass, root);
+		if (root.configClass != null)
+			decorateAbstractBuilder(root, root.configClass, root);
 		for (CategoryBuilder catBuilder : root.categories.values())
 			if (catBuilder.configClass != null)
 				decorateAbstractBuilder(root, catBuilder.configClass, catBuilder);

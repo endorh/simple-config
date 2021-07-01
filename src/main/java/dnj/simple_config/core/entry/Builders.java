@@ -41,31 +41,58 @@ public class Builders {
 		return new EnumEntry<>(value);
 	}
 	
+	/**
+	 * Unbound long value
+	 */
 	public static LongEntry number(long value) {
 		return number(value, (Long) null, null);
 	}
-	public static LongEntry number(long value, Integer max) {
-		return number(value, 0L, (long) max);
+	/**
+	 * Non-negative long between 0 and {@code max} (inclusive)
+	 */
+	public static LongEntry number(long value, @Nullable Integer max) {
+		return number(value, 0L, max != null? max.longValue() : null);
 	}
-	public static LongEntry number(long value, Long max) {
+	/**
+	 * Non-negative long between 0 and {@code max} (inclusive)
+	 */
+	public static LongEntry number(long value, @Nullable Long max) {
 		return number(value, 0L, max);
 	}
-	public static LongEntry number(long value, Integer min, Integer max) {
-		return new LongEntry(value, (long) min, (long) max);
+	/**
+	 * Long value between {@code min} and {@code max} (inclusive)
+	 */
+	public static LongEntry number(long value, @Nullable Integer min, @Nullable Integer max) {
+		return new LongEntry(value, min != null? min.longValue() : null, max != null? max.longValue() : null);
 	}
-	public static LongEntry number(long value, Long min, Long max) {
+	/**
+	 * Long value between {@code min} and {@code max} (inclusive)
+	 */
+	public static LongEntry number(long value, @Nullable Long min, @Nullable Long max) {
 		return new LongEntry(value, min, max);
 	}
+	/**
+	 * Unbound double value
+	 */
 	public static DoubleEntry number(double value) {
 		return number(value, null, null);
 	}
-	public static DoubleEntry number(double value, Number max) {
+	/**
+	 * Non-negative double value between 0 and {@code max} (inclusive)
+	 */
+	public static DoubleEntry number(double value, @Nullable Number max) {
 		return number(value, 0D, max);
 	}
-	public static DoubleEntry number(double value, Number min, Number max) {
+	/**
+	 * Double value between {@code min} and {@code max} inclusive
+	 */
+	public static DoubleEntry number(double value, @Nullable Number min, @Nullable Number max) {
 		return new DoubleEntry(value, min != null ? min.doubleValue() : null, max != null ? max.doubleValue() : null);
 	}
 	
+	/**
+	 * Double value between 0 and 1
+	 */
 	public static DoubleEntry fractional(double value) {
 		if (0D > value || value > 1D)
 			throw new IllegalArgumentException(
@@ -73,19 +100,32 @@ public class Builders {
 		return number(value, 0D, 1D);
 	}
 	
+	/**
+	 * Color without alpha component
+	 */
 	public static ColorEntry color(Color value) {
 		return color(value, false);
 	}
+	/**
+	 * Color with or without alpha component
+	 */
 	public static ColorEntry color(Color value, boolean alpha) {
 		return alpha ? new AlphaColorEntry(value) : new ColorEntry(value);
 	}
 	
 	// String serializable entries
+	
+	/**
+	 * Entry of a String serializable object
+	 */
 	public static <T> SerializableEntry<T> entry(
 	  T value, Function<T, String> serializer, Function<String, Optional<T>> deserializer
 	) {
 		return new SerializableEntry<>(value, serializer, deserializer);
 	}
+	/**
+	 * Entry of a String serializable object
+	 */
 	public static <T extends ISerializableConfigEntry<T>> SerializableEntry<T> entry(T value) {
 		return new SerializableConfigEntry<>(value);
 	}
@@ -99,18 +139,32 @@ public class Builders {
 	public static StringListEntry list(java.util.List<String> value) {
 		return new StringListEntry(value);
 	}
+	/**
+	 * Long list with elements between {@code min} and {@code max} (inclusive)
+	 */
 	public static LongListEntry list(java.util.List<Long> value, Long min, Long max) {
 		return new LongListEntry(value, min, max);
 	}
+	/**
+	 * Double list with elements between {@code min} and {@code max} (inclusive)
+	 */
 	public static DoubleListEntry list(java.util.List<Double> value, Double min, Double max) {
 		return new DoubleListEntry(value, min, max);
 	}
 	
 	// List of other entries
+	/**
+	 * List of other entries. Defaults to empty list<br>
+	 * Non-persistent entries cannot be nested
+	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
 	EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry) {
 		return list(entry, new ArrayList<>());
 	}
+	/**
+	 * List of other entries<br>
+	 * Non-persistent entries cannot be nested
+	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
 	EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry, List<V> value) {
 		return new EntryListEntry<>(value, entry);
