@@ -25,6 +25,7 @@ public class SimpleConfigMod {
 			  // Change the background texture
 			  .setGUIDecorator((config, builder) -> builder.setDefaultBackgroundTexture(
 			    new ResourceLocation("textures/block/bookshelf.png")))
+			  .debugTranslations()
 			  .buildAndRegister();
 		});
 		// Register the demo server config as well

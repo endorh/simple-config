@@ -23,6 +23,7 @@ public abstract class DemoServerConfig {
 		       .add("string", string("string"))
 		       .add("magic_gem", item(Items.EMERALD).from(Tags.Items.GEMS)))
 		  .setBaker(DemoServerConfig::bakeServerConfig)
+		  .debugTranslations()
 		  .buildAndRegister();
 	}
 	

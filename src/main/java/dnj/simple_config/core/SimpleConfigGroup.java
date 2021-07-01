@@ -74,14 +74,32 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		if (dirty) (parentGroup != null ? parentGroup : category).markDirty(true);
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent getTitle() {
 		if (root.debugTranslations)
-			return new StringTextComponent(title);
+			return getDebugTitle();
 		if (!I18n.hasKey(title)) {
 			final String[] split = title.split("\\.");
 			return new StringTextComponent(split[split.length - 1]);
 		}
 		return new TranslationTextComponent(title);
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected ITextComponent getDebugTitle() {
+		if (title != null) {
+			IFormattableTextComponent status =
+			  I18n.hasKey(title) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			if (tooltip != null) {
+				status = status.append(
+				  I18n.hasKey(tooltip)
+				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+			}
+			TextFormatting format =
+			  I18n.hasKey(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			return new StringTextComponent("").append(status.append(new StringTextComponent(title)).mergeStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -140,6 +158,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		return group.build();
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override public void buildGUI(
 	  me.shedaniel.clothconfig2.api.ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
 	) {

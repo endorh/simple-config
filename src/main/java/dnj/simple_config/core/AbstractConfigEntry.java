@@ -217,15 +217,30 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return parent != null && parent.getRoot().debugTranslations;
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent getDisplayName() {
-		if (debugTranslations()) {
-			if (translation != null)
-				return new StringTextComponent(translation);
-			else return new StringTextComponent(name);
-		}
+		if (debugTranslations())
+			return getDebugDisplayName();
 		if (translation != null && I18n.hasKey(translation))
 			return new TranslationTextComponent(translation);
 		return new StringTextComponent(name);
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected ITextComponent getDebugDisplayName() {
+		if (translation != null) {
+			IFormattableTextComponent status =
+			  I18n.hasKey(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			if (tooltip != null) {
+				status = status.append(
+				  I18n.hasKey(tooltip)
+				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+			}
+			TextFormatting format =
+			  I18n.hasKey(translation)? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).mergeStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}
 	
 	/**
