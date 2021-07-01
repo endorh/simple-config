@@ -4,6 +4,7 @@ import dnj.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import dnj.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
@@ -59,15 +60,12 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @param <T> Expected type of the entry
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
-	protected <T> ConfigValue<T> getSpecValue(String path) {
+	protected @Nullable <T> ConfigValue<T> getSpecValue(String path) {
 		try {
-			ConfigValue<?> value = specValues.get(path);
-			if (value == null)
-				value = getSubSpecValue(path);
-			if (value == null)
-				throw new NoSuchConfigEntryError(path);
-			//noinspection unchecked
-			return (ConfigValue<T>) value;
+			if (specValues.containsKey(path))
+				//noinspection unchecked
+				return (ConfigValue<T>) specValues.get(path);
+			else return getSubSpecValue(path);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(path, e);
 		}

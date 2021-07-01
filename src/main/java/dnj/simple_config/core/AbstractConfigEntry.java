@@ -1,26 +1,30 @@
 package dnj.simple_config.core;
 
+import dnj.simple_config.SimpleConfigMod;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
 import dnj.simple_config.core.entry.*;
 import dnj.simple_config.core.entry.SerializableEntry.SerializableConfigEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.impl.builders.*;
+import me.shedaniel.clothconfig2.impl.builders.FieldBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.item.Item;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.awt.Color;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * An abstract config entry, which may or may not produce an entry in
@@ -57,91 +61,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @Nullable Field backingField;
 	protected ISimpleConfigEntryHolder parent;
 	protected boolean dirty = false;
-	
-	// Builder methods
-	@SuppressWarnings("unused")
-	public static class Builders {
-		// Basic types
-		public static BooleanEntry bool(boolean value) {
-			return new BooleanEntry(value);
-		}
-		public static StringEntry string(String value) {
-			return new StringEntry(value);
-		}
-		public static <E extends Enum<E>> EnumEntry<E> enum_(E value) {
-			return new EnumEntry<>(value);
-		}
-		public static LongEntry number(long value) {
-			return number(value, (Long) null, null);
-		}
-		public static LongEntry number(long value, Integer max) {
-			return number(value, 0L, (long) max);
-		}
-		public static LongEntry number(long value, Long max) {
-			return number(value, 0L, max);
-		}
-		public static LongEntry number(long value, Integer min, Integer max) {
-			return new LongEntry(value, (long) min, (long) max);
-		}
-		public static LongEntry number(long value, Long min, Long max) {
-			return new LongEntry(value, min, max);
-		}
-		public static DoubleEntry number(double value) {
-			return number(value, null, null);
-		}
-		public static DoubleEntry number(double value, Number max) {
-			return number(value, 0D, max);
-		}
-		public static DoubleEntry number(double value, Number min, Number max) {
-			return new DoubleEntry(value, min != null? min.doubleValue() : null, max != null? max.doubleValue() : null);
-		}
-		public static DoubleEntry fractional(double value) {
-			if (0D > value || value > 1D)
-				throw new IllegalArgumentException("Fraction values must be within [0, 1], passed " + value);
-			return number(value, 0D, 1D);
-		}
-		
-		public static ColorEntry color(Color value) {
-			return color(value, false);
-		}
-		public static ColorEntry color(Color value, boolean alpha) {
-			return alpha? new AlphaColorEntry(value) : new ColorEntry(value);
-		}
-		
-		// String serializable entries
-		public static <T> SerializableEntry<T> entry(T value, Function<T, String> serializer, Function<String, Optional<T>> deserializer) {
-			return new SerializableEntry<>(value, serializer, deserializer);
-		}
-		public static <T extends ISerializableConfigEntry<T>> SerializableEntry<T> entry(T value) {
-			return new SerializableConfigEntry<>(value);
-		}
-		
-		// Convenience Minecraft entries
-		public static ItemEntry item(@Nullable Item value) {
-			return new ItemEntry(value);
-		}
-		
-		// List entries
-		public static StringListEntry list(List<String> value) {
-			return new StringListEntry(value);
-		}
-		public static LongListEntry list(List<Long> value, Long min, Long max) {
-			return new LongListEntry(value, min, max);
-		}
-		public static DoubleListEntry list(List<Double> value, Double min, Double max) {
-			return new DoubleListEntry(value, min, max);
-		}
-		
-		// List of other entries
-		public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
-		EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry) {
-			return list(entry, new ArrayList<>());
-		}
-		public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
-		EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry, List<V> value) {
-			return new EntryListEntry<>(value, entry);
-		}
-	}
 	
 	protected AbstractConfigEntry(V value) {
 		this.value = value;
@@ -214,7 +133,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	protected boolean debugTranslations() {
-		return parent != null && parent.getRoot().debugTranslations;
+		return SimpleConfigMod.Config.advanced.translation_debug_mode;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -289,6 +208,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected V fromConfigOrDefault(Config value) {
 		final V v = self().fromConfig(value);
 		return v != null ? v : this.value;
+	}
+	
+	/**
+	 * Subclasses may override to prevent nesting at build time
+	 */
+	protected boolean canBeNested() {
+		return true;
 	}
 	
 	protected void markDirty() {
@@ -381,6 +307,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	/**
+	 * Build the config for this entry<br>
+	 * Subclasses should instead override {@link AbstractConfigEntry#buildConfigEntry(Builder)}
+	 * in most cases
+	 */
+	protected void buildConfig(
+	  ForgeConfigSpec.Builder builder, Map<String, ConfigValue<?>> specValues
+	) {
+		buildConfigEntry(builder).ifPresent(e -> specValues.put(name, e));
+	}
+	
+	/**
 	 * Generate an {@link AbstractConfigListEntry} to be added to the GUI, if any
 	 * @param builder Entry builder
 	 * @param config Config holder
@@ -397,7 +334,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry} in most cases
 	 */
 	@OnlyIn(Dist.CLIENT)
-	@Override public void buildGUI(
+	@Override @Internal public void buildGUI(
 	  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
 	) {
 		buildGUIEntry(entryBuilder, config).ifPresent(category::addEntry);
@@ -440,10 +377,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			tooltip.add(new StringTextComponent(" + Has error supplier").mergeStyle(TextFormatting.GRAY));
 	}
 	@OnlyIn(Dist.CLIENT)
-	protected void addTranslationsDebugSuffix(List<ITextComponent> tooltip) {
+	protected static void addTranslationsDebugSuffix(List<ITextComponent> tooltip) {
 		tooltip.add(new StringTextComponent(" "));
-		tooltip.add(new StringTextComponent(" ⚠ Translation debug mode active").mergeStyle(TextFormatting.GOLD));
-		tooltip.add(new StringTextComponent("     Remember to remove the call to .debugTranslations()").mergeStyle(TextFormatting.GOLD));
+		tooltip.add(new StringTextComponent(" ⚠ Simple Config translation debug mode active").mergeStyle(TextFormatting.GOLD));
 	}
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> supplyDebugTooltip(Gui value) {

@@ -12,7 +12,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dnj.simple_config.core.AbstractConfigEntry.Builders.*;
+import static dnj.simple_config.core.entry.Builders.*;
 import static dnj.simple_config.core.SimpleConfig.category;
 import static dnj.simple_config.core.SimpleConfig.group;
 
@@ -62,7 +62,6 @@ public class SimpleConfigTest {
 	}
 	
 	public enum TestEnum {
-		ENUM,
-		OTHER_ENUM;
+		ENUM, OTHER_ENUM
 	}
 }

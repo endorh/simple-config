@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static dnj.simple_config.core.AbstractConfigEntry.Builders.*;
+import static dnj.simple_config.core.entry.Builders.*;
 import static dnj.simple_config.core.SimpleConfig.category;
 import static dnj.simple_config.core.SimpleConfig.group;
 import static dnj.simple_config.demo.DemoConfigCategory.RockPaperScissors.ROCK;

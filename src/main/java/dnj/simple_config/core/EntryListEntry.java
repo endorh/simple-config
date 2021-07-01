@@ -33,6 +33,11 @@ public class EntryListEntry
 	
 	public EntryListEntry(@Nullable List<V> value, AbstractConfigEntry<V, C, G, E> entry) {
 		super(value);
+		if (!entry.canBeNested()) {
+			throw new IllegalArgumentException(
+			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
+			  "nested in a list entry");
+		}
 		this.entry = entry.withSaver((g, c) -> {});
 		if (translation != null)
 			this.translate(translation);

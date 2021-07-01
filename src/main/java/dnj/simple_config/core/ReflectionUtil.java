@@ -1,7 +1,8 @@
 package dnj.simple_config.core;
 
 import com.google.gson.internal.Primitives;
-import dnj.simple_config.core.SimpleConfigClassParser.ConfigClassParseException;
+import dnj.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
+import dnj.simple_config.core.SimpleConfigClassParser.SimpleConfigClassParseException;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
@@ -68,24 +69,6 @@ import java.util.Arrays;
 	}
 	
 	/**
-	 * Try to invoke method<br>
-	 * Convenient for lambdas
-	 * @param errorMsg Error message added to the exception on error<br>
-	 *                 Will be formatted with the method name
-	 * @throws ConfigClassParseException on error
-	 */
-	public static <T> T invoke(Method method, Object self, String errorMsg, Object... args) {
-		try {
-			//noinspection unchecked
-			return (T) method.invoke(self, args);
-		} catch (InvocationTargetException | IllegalAccessException | ClassCastException e) {
-			throw new ConfigClassParseException(
-			  String.format(errorMsg, getMethodName(method)) +
-			  "\n  Details: " + e.getMessage(), e);
-		}
-	}
-	
-	/**
 	 * Check if the actual type parameters of the declared class
 	 * for the field match the given types<br>
 	 *
@@ -149,8 +132,8 @@ import java.util.Arrays;
 		return checkTypeParameters(type, 0, types) == types.length;
 	}
 	
-	// Warning: Uses ParameterizedTypeImpl, which could be subject to change
-	//          in future Java versions
+	// Warning: Uses internal proprietary API ParameterizedTypeImpl,
+	//          which could be subject to change in future Java versions
 	private static int checkTypeParameters(ParameterizedType type, int start, Class<?>... types) {
 		final Type[] actualTypes = type.getActualTypeArguments();
 		int j = start;

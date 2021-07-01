@@ -24,7 +24,10 @@ import java.lang.annotation.Target;
  * optional error message<br>
  * Likewise, a sibling method with the suffix '{@code $tooltip}'
  * returning instead an {@code Optional<ITextComponent[]>} with
- * an optional tooltip may be defined as well<br><br>
+ * an optional tooltip may be defined as well<br>
+ * <b>Remember that entries get automatically mapped tooltip
+ * translation keys</b>. Use dynamic tooltips only when
+ * necessary<br><br>
  *
  * <b>You're encouraged</b> to generate your entries with
  * the {@link SimpleConfigBuilder} methods
@@ -35,6 +38,7 @@ import java.lang.annotation.Target;
  * @see Entry.Long
  * @see Entry.Double
  * @see Entry.Color
+ * @see Entry.NonPersistent
  * @see Entry.List
  * @see Entry.List.Long
  * @see Entry.List.Double
@@ -55,7 +59,10 @@ public @interface Entry {
 	 * optional error message<br>
 	 * Likewise, a sibling method with the suffix '{@code $tooltip}'
 	 * returning instead an {@code Optional<ITextComponent[]>} with
-	 * an optional tooltip may be defined as well<br><br>
+	 * an optional tooltip may be defined as well<br>
+	 * <b>Remember that entries get automatically mapped tooltip
+	 * translation keys</b>. Use dynamic tooltips only when
+	 * necessary<br><br>
 	 *
 	 * <b>You're encouraged</b> to generate your entries with
 	 * the {@link SimpleConfigBuilder} methods
@@ -98,7 +105,10 @@ public @interface Entry {
 	 * optional error message<br>
 	 * Likewise, a sibling method with the suffix '{@code $tooltip}'
 	 * returning instead an {@code Optional<ITextComponent[]>} with
-	 * an optional tooltip may be defined as well<br><br>
+	 * an optional tooltip may be defined as well<br>
+	 * <b>Remember that entries get automatically mapped tooltip
+	 * translation keys</b>. Use dynamic tooltips only when
+	 * necessary<br><br>
 	 *
 	 * <b>You're encouraged</b> to generate your entries with
 	 * the {@link SimpleConfigBuilder} methods
@@ -137,7 +147,10 @@ public @interface Entry {
 	 * optional error message<br>
 	 * Likewise, a sibling method with the suffix '{@code $tooltip}'
 	 * returning instead an {@code Optional<ITextComponent[]>} with
-	 * an optional tooltip may be defined as well<br><br>
+	 * an optional tooltip may be defined as well<br>
+	 * <b>Remember that entries get automatically mapped tooltip
+	 * translation keys</b>. Use dynamic tooltips only when
+	 * necessary<br><br>
 	 *
 	 * <b>You're encouraged</b> to generate your entries with
 	 * the {@link SimpleConfigBuilder} methods
@@ -155,6 +168,36 @@ public @interface Entry {
 		 */
 		boolean alpha() default false;
 	}
+	
+	/**
+	 * Mark a <b>static</b> field as a non persistent config entry<br>
+	 * Non persistent config entries have a GUI entry but no file config entry<br>
+	 * The only supported non persistent field type is {@code boolean} or {@code Boolean}
+	 * A config entry with the name and type of this field will
+	 * be created on this context.<br><br>
+	 *
+	 * A sibling method with the same name followed by '{@code $error}'
+	 * may be defined, accepting the type of this field and
+	 * returning an {@code Optional<ITextComponent>} with an
+	 * optional error message<br>
+	 * Likewise, a sibling method with the suffix '{@code $tooltip}'
+	 * returning instead an {@code Optional<ITextComponent[]>} with
+	 * an optional tooltip may be defined as well<br>
+	 * <b>Remember that entries get automatically mapped tooltip
+	 * translation keys</b>. Use dynamic tooltips only when
+	 * necessary<br><br>
+	 *
+	 * <b>You're encouraged</b> to generate your entries with
+	 * the {@link SimpleConfigBuilder} methods
+	 * instead, because it provides more options and is less prone
+	 * to errors<br>
+	 * However, for simpler configs, you might want to check out other
+	 * annotations for different entry types<br>
+	 * @see Entry
+	 */
+	@Target(ElementType.FIELD)
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface NonPersistent {}
 	
 	/**
 	 * Mark a <b>static</b> field as a list config entry<br>
@@ -179,7 +222,10 @@ public @interface Entry {
 	 * optional error message<br>
 	 * Likewise, a sibling method with the suffix '{@code $tooltip}'
 	 * returning instead an {@code Optional<ITextComponent[]>} with
-	 * an optional tooltip may be defined as well<br><br>
+	 * an optional tooltip may be defined as well<br>
+	 * <b>Remember that entries get automatically mapped tooltip
+	 * translation keys</b>. Use dynamic tooltips only when
+	 * necessary<br><br>
 	 *
 	 * <b>You're encouraged</b> to generate your entries with
 	 * the {@link SimpleConfigBuilder} methods
@@ -210,7 +256,10 @@ public @interface Entry {
 		 * optional error message<br>
 		 * Likewise, a sibling method with the suffix '{@code $tooltip}'
 		 * returning instead an {@code Optional<ITextComponent[]>} with
-		 * an optional tooltip may be defined as well<br><br>
+		 * an optional tooltip may be defined as well<br>
+		 * <b>Remember that entries get automatically mapped tooltip
+		 * translation keys</b>. Use dynamic tooltips only when
+		 * necessary<br><br>
 		 *
 		 * <b>You're encouraged</b> to generate your entries with
 		 * the {@link SimpleConfigBuilder} methods
@@ -253,7 +302,10 @@ public @interface Entry {
 		 * optional error message<br>
 		 * Likewise, a sibling method with the suffix '{@code $tooltip}'
 		 * returning instead an {@code Optional<ITextComponent[]>} with
-		 * an optional tooltip may be defined as well<br><br>
+		 * an optional tooltip may be defined as well<br>
+		 * <b>Remember that entries get automatically mapped tooltip
+		 * translation keys</b>. Use dynamic tooltips only when
+		 * necessary<br><br>
 		 *
 		 * <b>You're encouraged</b> to generate your entries with
 		 * the {@link SimpleConfigBuilder} methods

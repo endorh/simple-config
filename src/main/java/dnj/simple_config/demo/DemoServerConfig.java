@@ -9,7 +9,7 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static dnj.simple_config.core.AbstractConfigEntry.Builders.*;
+import static dnj.simple_config.core.entry.Builders.*;
 import static dnj.simple_config.core.SimpleConfig.category;
 
 public abstract class DemoServerConfig {
@@ -23,7 +23,6 @@ public abstract class DemoServerConfig {
 		       .add("string", string("string"))
 		       .add("magic_gem", item(Items.EMERALD).from(Tags.Items.GEMS)))
 		  .setBaker(DemoServerConfig::bakeServerConfig)
-		  .debugTranslations()
 		  .buildAndRegister();
 	}
 	

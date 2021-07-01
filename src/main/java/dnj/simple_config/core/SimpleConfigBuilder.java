@@ -2,7 +2,9 @@ package dnj.simple_config.core;
 
 import dnj.simple_config.core.SimpleConfig.IAbstractGUIEntry;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
+import dnj.simple_config.core.entry.Builders;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -37,7 +39,7 @@ import static java.util.Collections.unmodifiableMap;
  * {@link SimpleConfig#category(String, Class)} and
  * {@link SimpleConfig#group(String, boolean)} methods<br>
  * You may create entries to add using the builder methods under
- * {@link AbstractConfigEntry.Builders}<br>
+ * {@link Builders}<br>
  * Entries can be further configured with their own builder methods
  */
 public class SimpleConfigBuilder
@@ -56,8 +58,6 @@ public class SimpleConfigBuilder
 	protected final Class<?> configClass;
 	protected String path;
 	
-	protected boolean debugTranslations = false;
-	
 	protected SimpleConfigBuilder(String modId, Type type) { this(modId, type, null); }
 	
 	protected SimpleConfigBuilder(String modId, Type type, @Nullable Class<?> configClass) {
@@ -74,11 +74,24 @@ public class SimpleConfigBuilder
 		defaultCategory.title = modId + ".config.category." + path;
 	}
 	
+	/**
+	 * Set the baker method for this config<br>
+	 * You may also define a '{@code bake}' static method
+	 * in the config class accepting a {@link SimpleConfig}
+	 * and it will be set automatically as the baker (but you
+	 * may not define it and also call this method)
+	 */
 	public SimpleConfigBuilder setBaker(Consumer<SimpleConfig> baker) {
 		this.baker = baker;
 		return this;
 	}
 	
+	/**
+	 * Configure a decorator to modify the Cloth Config API's {@link ConfigBuilder}
+	 * just before a config GUI is built<br>
+	 * In particular, you may want to call {@link ConfigBuilder#setDefaultBackgroundTexture(ResourceLocation)}
+	 * to change the background of your config
+	 */
 	@OnlyIn(Dist.CLIENT)
 	public SimpleConfigBuilder setGUIDecorator(BiConsumer<SimpleConfig, ConfigBuilder> decorator) {
 		this.decorator = decorator;
@@ -150,25 +163,13 @@ public class SimpleConfigBuilder
 	}
 	
 	/**
-	 * Displays all translation keys in the Config GUI
-	 * to aid in writing them<br>
-	 * @deprecated Not deprecated, it's just a reminder to
-	 * remove the method before releasing
-	 */
-	@Deprecated
-	public SimpleConfigBuilder debugTranslations() {
-		debugTranslations = true;
-		return this;
-	}
-	
-	/**
 	 * Builder for a {@link SimpleConfigCategory}<br>
 	 * Use {@link CategoryBuilder#add(String, AbstractConfigEntry)}
 	 * to add new entries to the category<br>
 	 * Use {@link CategoryBuilder#n(GroupBuilder)} to add
 	 * subgroups to the category, which may contain further groups<br><br>
 	 * Create subgroups using {@link SimpleConfig#group(String, boolean)},
-	 * and entries with the methods under {@link AbstractConfigEntry.Builders}
+	 * and entries with the methods under {@link Builders}
 	 */
 	public static class CategoryBuilder
 	  extends AbstractSimpleConfigEntryHolderBuilder<CategoryBuilder> {
@@ -200,6 +201,13 @@ public class SimpleConfigBuilder
 				group.setParent(this);
 		}
 		
+		/**
+		 * Set the baker method for this config category<br>
+		 * You may also define a '{@code bake}' static method
+		 * in the backing class accepting a {@link SimpleConfig}
+		 * and it will be set automatically as the baker (but you
+		 * may not define it and also call this method)
+		 */
 		public CategoryBuilder setBaker(Consumer<SimpleConfigCategory> baker) {
 			this.baker = baker;
 			return this;
@@ -258,7 +266,7 @@ public class SimpleConfigBuilder
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
 				translate(entry);
 				entry.setParent(cat);
-				entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
+				entry.buildConfig(specBuilder, specValues);
 			}
 			final List<IGUIEntry> order = new ArrayList<>();
 			for (GroupBuilder group : this.groups.values()) {
@@ -284,7 +292,7 @@ public class SimpleConfigBuilder
 	 * subgroups to this group<br><br>
 	 *
 	 * You may create new entries with the methods under
-	 * {@link AbstractConfigEntry.Builders}
+	 * {@link Builders}
 	 */
 	public static class GroupBuilder extends AbstractSimpleConfigEntryHolderBuilder<GroupBuilder>
 	  implements IAbstractGUIEntry {
@@ -392,7 +400,7 @@ public class SimpleConfigBuilder
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
 				translate(entry);
 				entry.setParent(group);
-				entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
+				entry.buildConfig(specBuilder, specValues);
 			}
 			for (String name : groups.keySet()) {
 				GroupBuilder builder = groups.get(name);
@@ -416,6 +424,7 @@ public class SimpleConfigBuilder
 	 * <b>If your mod uses a different language than Java</b> you will need to
 	 * also pass in your mod event bus as an argument to
 	 * {@link SimpleConfigBuilder#buildAndRegister(IEventBus)}
+	 * @return The built config, which is also received by the baker
 	 */
 	public SimpleConfig buildAndRegister() { return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus()); }
 	
@@ -432,6 +441,7 @@ public class SimpleConfigBuilder
 	 * <i>If your mod uses Java as its language</i> you don't need to pass
 	 * the mod event bus
 	 * @param modEventBus Your mod's language provider's mod event bus
+	 * @return The built config, which is also received by the baker
 	 */
 	@SuppressWarnings("UnusedReturnValue")
 	public SimpleConfig buildAndRegister(IEventBus modEventBus) {
@@ -443,15 +453,14 @@ public class SimpleConfigBuilder
 		} else {
 			saver = SimpleConfig::checkRestart;
 		}
-		final SimpleConfig config = new SimpleConfig(
-		  modId, type, title, baker, saver, configClass, debugTranslations);
+		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
 		final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
 			translate(entry);
 			entry.setParent(config);
-			entry.buildConfigEntry(specBuilder).ifPresent(e -> specValues.put(entry.name, e));
+			entry.buildConfig(specBuilder, specValues);
 		}
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();

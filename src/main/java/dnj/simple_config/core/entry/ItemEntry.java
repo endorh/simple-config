@@ -16,6 +16,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.fml.config.ModConfig.Type;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -32,7 +33,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		this.stack = new ItemStack(this.value);
 	}
 	
-	public dnj.simple_config.core.entry.ItemEntry from(Ingredient filter) {
+	public ItemEntry from(Ingredient filter) {
 		this.filter = filter;
 		if (filter != null) {
 			if (!filter.test(stack))
@@ -44,11 +45,11 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		return this;
 	}
 	
-	public dnj.simple_config.core.entry.ItemEntry from(Item... items) {
+	public ItemEntry from(Item... items) {
 		return from(Ingredient.fromItems(items));
 	}
 	
-	public dnj.simple_config.core.entry.ItemEntry from(ITag<Item> tag) {
+	public ItemEntry from(ITag<Item> tag) {
 		this.tag = tag;
 		return this;
 	}
@@ -76,8 +77,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	}
 	
 	@Override
-	protected @Nullable
-	Item fromConfig(@Nullable String value) {
+	protected @Nullable Item fromConfig(@Nullable String value) {
 		if (value == null) return null;
 		final Item i = fromId(value);
 		return i != null ? i : this.value;
@@ -93,8 +93,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		if (parent.getRoot().type != net.minecraftforge.fml.config.ModConfig.Type.SERVER &&
-		    tag != null)
+		if (parent.getRoot().type != Type.SERVER && tag != null)
 			throw new IllegalArgumentException(
 			  "Cannot use tag item filters in non-server config entry \"" + name + "\"");
 		assert value.getRegistryName() != null;

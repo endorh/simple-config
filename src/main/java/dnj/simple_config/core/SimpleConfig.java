@@ -6,6 +6,7 @@ import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import dnj.simple_config.core.SimpleConfigSync.CSimpleConfigSyncPacket;
 import dnj.simple_config.core.SimpleConfigSync.SSimpleConfigSyncPacket;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
@@ -67,8 +68,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected final @Nullable Object configClass;
 	@OnlyIn(Dist.CLIENT)
 	protected BiConsumer<SimpleConfig, ConfigBuilder> decorator;
-	
-	protected final boolean debugTranslations;
 	
 	@SuppressWarnings("UnusedReturnValue")
 	protected static SimpleConfig getInstance(
@@ -160,7 +159,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	@Internal protected SimpleConfig(
 	  String modId, ModConfig.Type type, String defaultTitle,
 	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
-	  @Nullable Object configClass, boolean debugTranslations
+	  @Nullable Object configClass
 	) {
 		this.modId = modId;
 		this.type = type;
@@ -168,7 +167,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.baker = baker;
 		this.saver = saver;
 		this.configClass = configClass;
-		this.debugTranslations = debugTranslations;
 		root = this;
 		
 		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
@@ -208,7 +206,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	/**
 	 * Get the display name of the mod, or just its mod id if not found
 	 */
-	public static String getModNameOrId(String modId) {
+	protected static String getModNameOrId(String modId) {
 		final Optional<ModInfo> first = ModList.get().getMods().stream()
 		  .filter(m -> modId.equals(m.getModId())).findFirst();
 		if (first.isPresent())
@@ -217,7 +215,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	/**
-	 * Bakes all the backing fields
+	 * Bakes all the backing fields<br>
 	 */
 	protected void bakeFields() {
 		try {
@@ -229,13 +227,31 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 				if (entry.backingField != null)
 					entry.backingField.set(null, get(entry.name));
 		} catch (IllegalAccessException e) {
-			throw new IllegalStateException(
+			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
 		}
 	}
 	
 	/**
-	 * Run the baker, and then the categories' bakers
+	 * Commits any changes in the backing fields to the actual config file
+	 */
+	public void commitFields() {
+		try {
+			for (SimpleConfigCategory cat : categories.values())
+				cat.commitFields();
+			for (SimpleConfigGroup group : groups.values())
+				group.commitFields();
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+				if (entry.backingField != null)
+					set(entry.name, entry.backingField.get(null));
+		} catch (IllegalAccessException e) {
+			throw new ConfigReflectiveOperationException(
+			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);
+		}
+	}
+	
+	/**
+	 * Bake the fields, run the baker, and then the categories' bakers
 	 */
 	public void bake() {
 		bakeFields();
@@ -261,7 +277,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Decorate a GUI builder
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public void decorate(ConfigBuilder builder) {
+	protected void decorate(ConfigBuilder builder) {
 		if (decorator != null)
 			decorator.accept(this, builder);
 	}
@@ -292,7 +308,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Handle external config modification events
 	 */
 	@SubscribeEvent
-	public void onModConfigEvent(final ModConfig.ModConfigEvent event) {
+	protected void onModConfigEvent(final ModConfig.ModConfigEvent event) {
 		final ModConfig c = event.getConfig();
 		final ModConfig.Type type = c.getType();
 		final Pair<String, ModConfig.Type> key = Pair.of(c.getModId(), type);
@@ -309,7 +325,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * @param name Name of the category
 	 * @throws NoSuchConfigCategoryError if the category is not found
 	 */
-	@SuppressWarnings("unused")
 	public SimpleConfigCategory getCategory(String name) {
 		if (!categories.containsKey(name))
 			throw new NoSuchConfigCategoryError(name);
@@ -321,7 +336,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the group
 	 * @throws NoSuchConfigGroupError if the group is not found
 	 */
-	@SuppressWarnings("unused")
 	public SimpleConfigGroup getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
@@ -332,17 +346,17 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		throw new NoSuchConfigGroupError(path);
 	}
 	
-	public ITextComponent getTitle() {
+	protected ITextComponent getTitle() {
 		if (I18n.hasKey(defaultTitle))
 			return new TranslationTextComponent(defaultTitle);
 		return new TranslationTextComponent("simple-config.config.category." + type.name().toLowerCase());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	public void buildGUI(ConfigBuilder configBuilder) {
+	protected void buildGUI(ConfigBuilder configBuilder) {
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
-			final me.shedaniel.clothconfig2.api.ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
+			final ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder, this);
 		}
@@ -375,8 +389,15 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
-	public interface IAbstractGUIEntry {}
-	public interface IGUIEntry extends IAbstractGUIEntry {
-		void buildGUI(me.shedaniel.clothconfig2.api.ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config);
+	public static class ConfigReflectiveOperationException extends RuntimeException {
+		public ConfigReflectiveOperationException(String message, Exception cause) {
+			super(message, cause);
+		}
+	}
+	
+	protected interface IAbstractGUIEntry {}
+	protected interface IGUIEntry extends IAbstractGUIEntry {
+		@Internal void buildGUI(
+		  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config);
 	}
 }

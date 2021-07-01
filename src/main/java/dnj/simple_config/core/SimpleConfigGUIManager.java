@@ -2,7 +2,7 @@ package dnj.simple_config.core;
 
 import dnj.simple_config.SimpleConfigMod;
 import dnj.simple_config.SimpleConfigMod.MenuButtonPosition;
-import dnj.simple_config.SimpleConfigMod.ModConfig;
+import dnj.simple_config.SimpleConfigMod.Config;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
@@ -144,7 +144,7 @@ public class SimpleConfigGUIManager {
 	 */
 	@SubscribeEvent
 	public static void onGuiInit(InitGuiEvent.Post event) {
-		if (!addButton || !ModConfig.add_pause_menu_button)
+		if (!addButton || !Config.add_pause_menu_button)
 			return;
 		final Screen gui = event.getGui();
 		if (gui instanceof IngameMenuScreen) {
@@ -152,7 +152,7 @@ public class SimpleConfigGUIManager {
 			int w = 20, h = 20, x = gui.width / 2 - 102 - w - 4, y = gui.height / 4 + 96 + -16;
 			
 			final Optional<Button> opt = getOptionsButton(gui, event.getWidgetList());
-			if (ModConfig.menu_button_position == MenuButtonPosition.SPLIT_OPTIONS_BUTTON
+			if (Config.menu_button_position == MenuButtonPosition.SPLIT_OPTIONS_BUTTON
 			    && opt.isPresent()) {
 				Button options = opt.get();
 				options.setWidth(options.getWidth() - 20 - 4);

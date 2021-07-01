@@ -1,8 +1,11 @@
 package dnj.simple_config.core;
 
+import dnj.simple_config.SimpleConfigMod.Config;
+import dnj.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
 import dnj.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -10,6 +13,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -32,7 +36,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
 	
-	protected SimpleConfigCategory(
+	@Internal protected SimpleConfigCategory(
 	  SimpleConfig parent, String name, String title, @Nullable Consumer<SimpleConfigCategory> baker
 	) {
 		this.parent = parent;
@@ -42,7 +46,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		root = parent;
 	}
 	
-	protected void build(
+	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries, Map<String, SimpleConfigGroup> groups,
 	  Map<String, ConfigValue<?>> specValues,
 	  List<IGUIEntry> order
@@ -59,23 +63,6 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	@Override public void markDirty(boolean dirty) {
 		super.markDirty(dirty);
 		if (dirty) parent.markDirty(true);
-	}
-	
-	@OnlyIn(Dist.CLIENT)
-	public void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
-		me.shedaniel.clothconfig2.api.ConfigCategory category = builder.getOrCreateCategory(getTitle());
-		if (!order.isEmpty()) {
-			for (IGUIEntry entry : order)
-				entry.buildGUI(category, entryBuilder, this);
-		}
-	}
-	
-	protected void bakeFields() throws IllegalAccessException {
-		for (SimpleConfigGroup group : groups.values())
-			group.bakeFields();
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-			if (entry.backingField != null)
-				entry.backingField.set(null, get(entry.name));
 	}
 	
 	/**
@@ -95,8 +82,50 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		throw new NoSuchConfigGroupError(path);
 	}
 	
+	@OnlyIn(Dist.CLIENT)
+	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
+		ConfigCategory category = builder.getOrCreateCategory(getTitle());
+		if (!order.isEmpty()) {
+			for (IGUIEntry entry : order)
+				entry.buildGUI(category, entryBuilder, this);
+		}
+	}
+	
+	/**
+	 * Bakes all the backing fields<br>
+	 */
+	protected void bakeFields() {
+		try {
+			for (SimpleConfigGroup group : groups.values())
+				group.bakeFields();
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+				if (entry.backingField != null)
+					entry.backingField.set(null, get(entry.name));
+		} catch (IllegalAccessException e) {
+			throw new ConfigReflectiveOperationException(
+			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
+		}
+	}
+	
+	/**
+	 * Commits any changes in the backing fields to the actual config file<br>
+	 * You may also call this method on the root {@link SimpleConfig}
+	 */
+	public void commitFields() {
+		try {
+			for (SimpleConfigGroup group : groups.values())
+				group.commitFields();
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+				if (entry.backingField != null)
+					set(entry.name, entry.backingField.get(null));
+		} catch (IllegalAccessException e) {
+			throw new ConfigReflectiveOperationException(
+			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);
+		}
+	}
+	
 	protected ITextComponent getTitle() {
-		if (parent.debugTranslations)
+		if (Config.advanced.translation_debug_mode)
 			return new StringTextComponent(title);
 		return new TranslationTextComponent(title);
 	}

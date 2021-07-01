@@ -1,7 +1,10 @@
 package dnj.simple_config.core;
 
+import dnj.simple_config.SimpleConfigMod.Config;
+import dnj.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
 import dnj.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
@@ -10,14 +13,14 @@ import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
 public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implements IGUIEntry {
 	public final SimpleConfigCategory category;
-	public final @Nullable
-	SimpleConfigGroup parentGroup;
+	public final @Nullable SimpleConfigGroup parentGroup;
 	public final String name;
 	public boolean expanded;
 	protected final String title;
@@ -25,7 +28,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
 	
-	protected SimpleConfigGroup(
+	@Internal protected SimpleConfigGroup(
 	  SimpleConfigGroup parent, String name, String title,
 	  String tooltip, boolean expanded
 	) {
@@ -38,7 +41,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		root = category.root;
 	}
 	
-	protected SimpleConfigGroup(
+	@Internal protected SimpleConfigGroup(
 	  SimpleConfigCategory parent, String name, String title,
 	  String tooltip, boolean expanded
 	) {
@@ -51,7 +54,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		root = category.root;
 	}
 	
-	protected void build(
+	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries, Map<String, ConfigValue<?>> specValues,
 	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder
 	) {
@@ -64,9 +67,28 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		this.order = guiOrder;
 	}
 	
-	@SuppressWarnings("unused")
+	/**
+	 * Get the parent category of this group
+	 */
 	public SimpleConfigCategory getCategory() {
 		return category;
+	}
+	
+	
+	/**
+	 * Get a config subgroup
+	 *
+	 * @param path Name or dot-separated path to the group
+	 * @throws NoSuchConfigGroupError if the group is not found
+	 */
+	public SimpleConfigGroup getGroup(String path) {
+		if (path.contains(".")) {
+			final String[] split = path.split("\\.", 2);
+			if (groups.containsKey(split[0]))
+				return groups.get(split[0]).getGroup(split[1]);
+		} else if (groups.containsKey(path))
+			return groups.get(path);
+		throw new NoSuchConfigGroupError(path);
 	}
 	
 	@Override public void markDirty(boolean dirty) {
@@ -76,7 +98,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent getTitle() {
-		if (root.debugTranslations)
+		if (Config.advanced.translation_debug_mode)
 			return getDebugTitle();
 		if (!I18n.hasKey(title)) {
 			final String[] split = title.split("\\.");
@@ -123,15 +145,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 			lines.add(new StringTextComponent("   " + tooltip + " ")
 			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
 		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").mergeStyle(TextFormatting.RED));
-		lines.add(new StringTextComponent(" "));
-		lines.add(new StringTextComponent(" ⚠ Translation debug mode active").mergeStyle(TextFormatting.GOLD));
-		lines.add(new StringTextComponent("     Remember to remove the call to .debugTranslations()").mergeStyle(TextFormatting.GOLD));
+		AbstractConfigEntry.addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new ITextComponent[0]));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> getTooltip() {
-		if (root.debugTranslations)
+		if (Config.advanced.translation_debug_mode)
 			return getDebugTooltip();
 		if (tooltip != null && I18n.hasKey(tooltip))
 			return Optional.of(
@@ -159,33 +179,43 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public void buildGUI(
-	  me.shedaniel.clothconfig2.api.ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
+	@Override @Internal public void buildGUI(
+	  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
 	) {
 		category.addEntry(buildGUI(entryBuilder));
 	}
 	
-	protected void bakeFields() throws IllegalAccessException {
-		for (SimpleConfigGroup group : groups.values())
-			group.bakeFields();
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-			if (entry.backingField != null)
-				entry.backingField.set(null, get(entry.name));
+	/**
+	 * Bakes all the backing fields<br>
+	 */
+	protected void bakeFields() {
+		try {
+			for (SimpleConfigGroup group : groups.values())
+				group.bakeFields();
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+				if (entry.backingField != null)
+					entry.backingField.set(null, get(entry.name));
+		} catch (IllegalAccessException e) {
+			throw new ConfigReflectiveOperationException(
+			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
+		}
 	}
 	
 	/**
-	 * Get a config subgroup
-	 *
-	 * @param path Name or dot-separated path to the group
-	 * @throws NoSuchConfigGroupError if the group is not found
+	 * Commits any changes in the backing fields to the actual config file<br>
+	 * You may also call this method on the root {@link SimpleConfig}
+	 * or on the parent {@link SimpleConfigCategory} of this group
 	 */
-	public SimpleConfigGroup getGroup(String path) {
-		if (path.contains(".")) {
-			final String[] split = path.split("\\.", 2);
-			if (groups.containsKey(split[0]))
-				return groups.get(split[0]).getGroup(split[1]);
-		} else if (groups.containsKey(path))
-			return groups.get(path);
-		throw new NoSuchConfigGroupError(path);
+	public void commitFields() throws IllegalAccessException {
+		try {
+			for (SimpleConfigGroup group : groups.values())
+				group.commitFields();
+			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+				if (entry.backingField != null)
+					set(entry.name, entry.backingField.get(null));
+		} catch (IllegalAccessException e) {
+			throw new ConfigReflectiveOperationException(
+			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);
+		}
 	}
 }

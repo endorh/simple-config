@@ -5,9 +5,18 @@
 
   "simple-config.config.title": "%s — Config",
 
+
+  "simple-config.config.category.client.demo": "Demo (Client)",
+  "simple-config.config.category.server.demo": "Demo (Server)",
+
+  "simple-config.config.group.client.advanced": "Advanced",
+  "simple-config.config.group.client.advanced.help": "Advanced Options",
+
   "simple-config.config.client.add_pause_menu_button": "Add Pause Menu Button",
   "simple-config.config.client.add_pause_menu_button.help": "Adds a button to the pause menu to open the mods list",
   "simple-config.config.client.menu_button_position": "Menu Button Position",
+  "simple-config.config.client.advanced.translation_debug_mode": "Enable Translation Debug Mode",
+  "simple-config.config.client.advanced.translation_debug_mode.help": "Display config translation keys",
 
   "simple-config.config.enum.menu_button_position.split_options_button": "Split Options Button",
   "simple-config.config.enum.menu_button_position.left_of_options_button": "Left",
@@ -19,6 +28,7 @@
   "simple-config.config.msg.client_changes_require_restart": "Some of your last config changes may require a restart to be effective",
   "simple-config.config.msg.server_changes_require_restart": "Some of the config changes may require a restart to be effective",
 
+  "simple-config.config.help.not_persistent_entry": "Not persistent",
   "simple-config.config.error.invalid_value_generic": "Invalid value! %s",
   "simple-config.config.error.at_index": "at index %s"
 }
