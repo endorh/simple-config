@@ -20,16 +20,16 @@ import java.util.stream.Collectors;
 public abstract class ListEntry
   <V, Config, Gui, Self extends ListEntry<V, Config, Gui, Self>>
   extends AbstractConfigEntry<List<V>, List<Config>, List<Gui>, Self> {
-	public Function<V, Optional<ITextComponent>> validator = t -> Optional.empty();
+	protected Function<V, Optional<ITextComponent>> validator = t -> Optional.empty();
 	protected boolean expand;
 	
 	public ListEntry(@Nullable List<V> value) {
-		super(value != null ? value : new ArrayList<>());
+		super(value != null ? value : new ArrayList<>(), List.class);
 	}
 	
 	/**
 	 * Set a validator for the elements of this list entry<br>
-	 * You may also use {@link dnj.simple_config.core.entry.ListEntry#setValidator(Function)}
+	 * You may also use {@link dnj.simple_config.core.entry.ListEntry#elemError(Function)}
 	 * to provide users with more explicative error messages<br>
 	 * You may also use {@link IErrorEntry#error(Function)} to
 	 * validate instead the whole list
@@ -37,11 +37,10 @@ public abstract class ListEntry
 	 * @param validator Element validator. Should return true for all valid elements
 	 */
 	public Self setValidator(Predicate<V> validator) {
-		return this.setValidator(
-		  (Function<V, Optional<ITextComponent>>)
-			 c -> validator.test(c) ? Optional.empty() :
-			      Optional.of(new TranslationTextComponent(
-				     "simple-config.config.error.list_element_does_not_match_validator", c)));
+		return this.elemError(
+		  c -> validator.test(c) ? Optional.empty() :
+		       Optional.of(new TranslationTextComponent(
+			      "simple-config.config.error.list_element_does_not_match_validator", c)));
 	}
 	
 	/**
@@ -52,7 +51,7 @@ public abstract class ListEntry
 	 * @param validator Error message supplier. Empty return values indicate
 	 *                  correct values
 	 */
-	public Self setValidator(Function<V, Optional<ITextComponent>> validator) {
+	public Self elemError(Function<V, Optional<ITextComponent>> validator) {
 		this.validator = validator;
 		return self();
 	}

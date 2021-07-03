@@ -2,8 +2,8 @@ package dnj.simple_config.core.entry;
 
 import dnj.simple_config.core.AbstractConfigEntry;
 
-public class EmptyEntry extends AbstractConfigEntry<Void, Void, Void, EmptyEntry> {
+public class EmptyEntry<Self extends EmptyEntry<Self>> extends AbstractConfigEntry<Void, Void, Void, Self> {
 	public EmptyEntry() {
-		super(null);
+		super(null, Void.class);
 	}
 }

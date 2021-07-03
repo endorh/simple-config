@@ -101,8 +101,6 @@ public class SimpleConfigGUIManager {
 				default: return 3;
 			}
 		})).collect(Collectors.toList());
-		for (SimpleConfig config : orderedConfigs)
-			config.decorate(builder);
 		final Minecraft mc = Minecraft.getInstance();
 		final boolean isOperator = mc.player != null && mc.player.hasPermissionLevel(2);
 		for (SimpleConfig config : orderedConfigs) {
@@ -110,7 +108,6 @@ public class SimpleConfigGUIManager {
 				config.buildGUI(builder);
 			}
 		}
-		builder.transparentBackground();
 		return builder.build();
 	}
 	

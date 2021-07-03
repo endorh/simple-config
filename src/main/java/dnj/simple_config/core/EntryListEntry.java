@@ -4,6 +4,8 @@ import dnj.simple_config.core.entry.ListEntry;
 import dnj.simple_config.gui.NestedListEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
@@ -103,8 +105,9 @@ public class EntryListEntry
 		}));
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		holder.setValue(c.get(name));
@@ -118,8 +121,7 @@ public class EntryListEntry
 			 true, false,
 			 (g, en) -> {
 				 entry.name(holder.nameFor(g));
-				 //noinspection unchecked
-				 return (AbstractConfigListEntry<G>) entry.buildGUIEntry(
+				 return entry.buildGUIEntry(
 					builder, holder
 				 ).orElseThrow(() -> new IllegalStateException(
 					"Sub entry in list entry did not generate a GUI entry"));

@@ -2,15 +2,16 @@ package dnj.simple_config.core;
 
 import dnj.simple_config.SimpleConfigMod;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
-import dnj.simple_config.core.entry.*;
-import dnj.simple_config.core.entry.SerializableEntry.SerializableConfigEntry;
+import dnj.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.FieldBuilder;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.item.Item;
-import net.minecraft.util.text.*;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -19,12 +20,11 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
-import java.awt.Color;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.*;
+
+import static dnj.simple_config.core.ReflectionUtil.setBackingField;
 
 /**
  * An abstract config entry, which may or may not produce an entry in
@@ -47,6 +47,7 @@ import java.util.function.Function;
  */
 public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
   implements IGUIEntry, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
+	protected final Class<?> typeClass;
 	protected String name = null;
 	protected @Nullable String translation = null;
 	protected @Nullable String tooltip = null;
@@ -61,9 +62,22 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @Nullable Field backingField;
 	protected ISimpleConfigEntryHolder parent;
 	protected boolean dirty = false;
+	protected List<Object> nameArgs = new ArrayList<>();
+	protected List<Object> tooltipArgs = new ArrayList<>();
+	protected @Nullable AbstractConfigListEntry<Gui> guiEntry = null;
 	
-	protected AbstractConfigEntry(V value) {
+	protected AbstractConfigEntry(V value, Class<?> typeClass) {
 		this.value = value;
+		this.typeClass = typeClass;
+	}
+	
+	/**
+	 * Used in error messages
+	 */
+	protected String getPath() {
+		if (parent instanceof AbstractSimpleConfigEntryHolder) {
+			return ((AbstractSimpleConfigEntryHolder) parent).getPath() + "." + name;
+		} else return name;
 	}
 	
 	protected void setParent(ISimpleConfigEntryHolder config) {
@@ -92,12 +106,12 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return self();
 	}
 	
-	@Override public Self guiTooltipOpt(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier) {
+	@Override public Self guiTooltip(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier) {
 		this.guiTooltipSupplier = tooltipSupplier;
 		return self();
 	}
 	
-	@Override public Self tooltipOpt(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
+	@Override public Self tooltip(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
 		this.tooltipSupplier = tooltipSupplier;
 		return self();
 	}
@@ -109,6 +123,63 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
+		return self();
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected String fillArgs(String translation, V value, List<Object> args) {
+		final Object[] arr = args.stream().map(a -> {
+			if (a instanceof Function) {
+				try {
+					//noinspection unchecked
+					return ((Function<V, ?>) a).apply(value);
+				} catch (ClassCastException e) {
+					throw new InvalidConfigValueTypeException(
+					  getPath(), e, "A translation argument provider expected an invalid value type");
+				}
+			} else if (a instanceof Supplier) {
+				return ((Supplier<?>) a).get();
+			} else return a;
+		}).toArray();
+		return I18n.format(translation, arr);
+	}
+	
+	/**
+	 * Set the arguments that will be passed to the tooltip translation key<br>
+	 * As a special case, {@code Function}s and {@code Supplier}s passed
+	 * will be invoked before being passed as arguments, with the entry value
+	 * as argument
+	 */
+	public Self tooltipArgs(Object... args) {
+		for (Object o : args) { // Check function types to fail fast
+			if (o instanceof Function) {
+				try {
+					//noinspection unchecked
+					((Function<V, ?>) o).apply(value);
+				} catch (ClassCastException e) {
+					throw new InvalidConfigValueTypeException(
+					  getPath(), e, "A translation argument provider expected an invalid value type");
+				}
+			}
+		}
+		tooltipArgs.clear();
+		tooltipArgs.addAll(Arrays.asList(args));
+		return self();
+	}
+	
+	/**
+	 * Set the arguments that will be passed to the name translation key<br>
+	 * As a special case, {@code Supplier}s passed
+	 * will be invoked before being passed as arguments
+	 */
+	public Self nameArgs(Object... args) {
+		for (Object arg : args) {
+			if (arg instanceof Function)
+				throw new IllegalArgumentException(
+				  "Name args cannot be functions that depend on the value, since names aren't refreshed");
+		}
+		nameArgs.clear();
+		nameArgs.addAll(Arrays.asList(args));
 		return self();
 	}
 	
@@ -141,7 +212,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (debugTranslations())
 			return getDebugDisplayName();
 		if (translation != null && I18n.hasKey(translation))
-			return new TranslationTextComponent(translation);
+			return new StringTextComponent(fillArgs(translation, null, nameArgs));
 		return new StringTextComponent(name);
 	}
 	
@@ -231,6 +302,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			return g -> saver.accept(g, c);
 		final String n = name; // Use the current name
 		return g -> {
+			guiEntry = null; // Discard the entry
 			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
 			if (!c.get(n).equals(v)) {
@@ -258,7 +330,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		}
 		if (tooltip != null && I18n.hasKey(tooltip))
 			return Optional.of(
-			  Arrays.stream(I18n.format(tooltip, v).split("\n"))
+			  Arrays.stream(fillArgs(tooltip, v, tooltipArgs).split("\n"))
 			    .map(StringTextComponent::new).toArray(ITextComponent[]::new));
 		return Optional.empty();
 	}
@@ -299,6 +371,18 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return builder;
 	}
 	
+	protected Predicate<Object> configValidator() {
+		return o -> {
+			try {
+				//noinspection unchecked
+				Config c = (Config) o;
+				return fromConfig(c) != null && !supplyError(forGui(fromConfig(c))).isPresent();
+			} catch (ClassCastException e) {
+				return false;
+			}
+		};
+	}
+	
 	/**
 	 * Build the associated config entry for this entry, if any
 	 */
@@ -323,7 +407,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * @param config Config holder
 	 */
 	@OnlyIn(Dist.CLIENT)
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder config
 	) {
 		return Optional.empty();
@@ -337,7 +421,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	@Override @Internal public void buildGUI(
 	  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
 	) {
-		buildGUIEntry(entryBuilder, config).ifPresent(category::addEntry);
+		buildGUIEntry(entryBuilder, config).ifPresent(e -> {
+			this.guiEntry = e;
+			category.addEntry(e);
+		});
 	}
 	
 	/**
@@ -360,6 +447,22 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected void set(ConfigValue<?> spec, V value) {
 		//noinspection unchecked
 		((ConfigValue<Config>) spec).set(forConfig(value));
+	}
+	
+	protected Gui getGUI(ISimpleConfigEntryHolder c) {
+		return guiEntry != null? guiEntry.getValue() : forGui(c.get(name));
+	}
+	
+	protected void commitField(ISimpleConfigEntryHolder c) throws IllegalAccessException {
+		if (backingField != null) {
+			c.set(name, backingField.get(null));
+		}
+	}
+	
+	protected void bakeField(ISimpleConfigEntryHolder c) throws IllegalAccessException {
+		if (backingField != null) {
+			setBackingField(backingField, c.get(name));
+		}
 	}
 	
 	/**

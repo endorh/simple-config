@@ -11,6 +11,8 @@ import java.lang.annotation.Target;
  *
  * This annotation has no effects in backing fields of
  * entries defined in the builder
+ *
+ * @see Entry
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

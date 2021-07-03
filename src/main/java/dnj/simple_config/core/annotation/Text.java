@@ -31,6 +31,8 @@ import java.lang.annotation.Target;
  * to errors<br>
  * Declaring text entries in the backing class forces you to define
  * dummy fields
+ *
+ * @see Entry
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

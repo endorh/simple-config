@@ -4,6 +4,7 @@ import dnj.simple_config.core.SimpleConfig.IAbstractGUIEntry;
 import dnj.simple_config.core.SimpleConfig.IGUIEntry;
 import dnj.simple_config.core.entry.Builders;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -52,11 +53,14 @@ public class SimpleConfigBuilder
 	protected final Map<String, CategoryBuilder> categories = new LinkedHashMap<>();
 	protected final CategoryBuilder defaultCategory;
 	
-	protected Consumer<SimpleConfig> baker = null;
-	protected Consumer<SimpleConfig> saver = null;
-	protected BiConsumer<SimpleConfig, ConfigBuilder> decorator = null;
-	protected final Class<?> configClass;
 	protected String path;
+	
+	protected final @Nullable Class<?> configClass;
+	protected @Nullable Consumer<SimpleConfig> baker = null;
+	protected @Nullable Consumer<SimpleConfig> saver = null;
+	protected @Nullable BiConsumer<SimpleConfig, ConfigBuilder> decorator = null;
+	protected @Nullable ResourceLocation background = null;
+	protected boolean transparent = true;
 	
 	protected SimpleConfigBuilder(String modId, Type type) { this(modId, type, null); }
 	
@@ -87,10 +91,37 @@ public class SimpleConfigBuilder
 	}
 	
 	/**
+	 * Set the default background for all categories
+	 * @see SimpleConfigBuilder#setBackground(ResourceLocation)
+	 * @see SimpleConfigBuilder#setGUIDecorator(BiConsumer)
+	 */
+	public SimpleConfigBuilder setBackground(String resourceName) {
+		return setBackground(new ResourceLocation(resourceName));
+	}
+	
+	/**
+	 * Set the default background for all categories
+	 * @see SimpleConfigBuilder#setBackground(String)
+	 * @see SimpleConfigBuilder#setGUIDecorator(BiConsumer)
+	 */
+	public SimpleConfigBuilder setBackground(ResourceLocation background) {
+		this.background = background;
+		return this;
+	}
+	
+	/**
+	 * Use the solid background too when ingame<br>
+	 * By default, config GUIs are transparent when ingame
+	 */
+	public SimpleConfigBuilder solidIngameBackground() {
+		this.transparent = false;
+		return this;
+	}
+	
+	/**
 	 * Configure a decorator to modify the Cloth Config API's {@link ConfigBuilder}
-	 * just before a config GUI is built<br>
-	 * In particular, you may want to call {@link ConfigBuilder#setDefaultBackgroundTexture(ResourceLocation)}
-	 * to change the background of your config
+	 * just when a config GUI is being built<br>
+	 * @see SimpleConfigBuilder#setBackground(ResourceLocation)
 	 */
 	@OnlyIn(Dist.CLIENT)
 	public SimpleConfigBuilder setGUIDecorator(BiConsumer<SimpleConfig, ConfigBuilder> decorator) {
@@ -183,6 +214,9 @@ public class SimpleConfigBuilder
 		
 		protected String path;
 		
+		protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategory> decorator;
+		protected @Nullable ResourceLocation background;
+		
 		protected CategoryBuilder(String name) {
 			this(name, null);
 		}
@@ -210,6 +244,35 @@ public class SimpleConfigBuilder
 		 */
 		public CategoryBuilder setBaker(Consumer<SimpleConfigCategory> baker) {
 			this.baker = baker;
+			return this;
+		}
+		
+		/**
+		 * Set the background texture to be used
+		 * @see CategoryBuilder#setBackground(ResourceLocation)
+		 * @see CategoryBuilder#setGUIDecorator(BiConsumer)
+		 */
+		public CategoryBuilder setBackground(String resourceName) {
+			return setBackground(new ResourceLocation(resourceName));
+		}
+		
+		/**
+		 * Set the background texture to be used
+		 * @see CategoryBuilder#setBackground(String)
+		 * @see CategoryBuilder#setGUIDecorator(BiConsumer)
+		 */
+		public CategoryBuilder setBackground(ResourceLocation background) {
+			this.background = background;
+			return this;
+		}
+		
+		/**
+		 * Set a decorator that will run when creating the category GUI<br>
+		 * @see CategoryBuilder#setBackground(ResourceLocation)
+		 */
+		@OnlyIn(Dist.CLIENT)
+		public CategoryBuilder setGUIDecorator(BiConsumer<SimpleConfigCategory, ConfigCategory> decorator) {
+			this.decorator = decorator;
 			return this;
 		}
 		
@@ -280,6 +343,10 @@ public class SimpleConfigBuilder
 			  unmodifiableMap(entries), unmodifiableMap(groups),
 			  unmodifiableMap(specValues), unmodifiableList(order));
 			specBuilder.pop();
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+				cat.decorator = decorator;
+				cat.background = background;
+			});
 			return cat;
 		}
 	}
@@ -302,6 +369,7 @@ public class SimpleConfigBuilder
 		protected String title;
 		protected String tooltip;
 		protected final boolean expanded;
+		protected @Nullable Consumer<SimpleConfigGroup> baker = null;
 		
 		protected String path;
 		
@@ -341,6 +409,11 @@ public class SimpleConfigBuilder
 			guiOrder.add(nested);
 			if (requireRestart)
 				nested.restart();
+			return this;
+		}
+		
+		public GroupBuilder setBaker(Consumer<SimpleConfigGroup> baker) {
+			this.baker = baker;
 			return this;
 		}
 		
@@ -392,8 +465,8 @@ public class SimpleConfigBuilder
 			specBuilder.push(name);
 			final SimpleConfigGroup group;
 			if (parent != null)
-				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded);
-			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded);
+				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded, baker);
+			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded, baker);
 			final Map<GroupBuilder, SimpleConfigGroup> builtGroups = new HashMap<>();
 			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
@@ -483,6 +556,8 @@ public class SimpleConfigBuilder
 		ModLoadingContext.get().registerConfig(type, config.spec);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			config.decorator = decorator;
+			config.background = background;
+			config.transparent = transparent;
 			SimpleConfigGUIManager.registerConfig(config);
 		});
 		modEventBus.register(config);

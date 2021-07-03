@@ -1,13 +1,15 @@
 package dnj.simple_config.core;
 
 import com.google.gson.internal.Primitives;
-import dnj.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
-import dnj.simple_config.core.SimpleConfigClassParser.SimpleConfigClassParseException;
+import dnj.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 
 /**
@@ -189,6 +191,39 @@ import java.util.Arrays;
 				return m;
 			} catch (NoSuchMethodException ignored1) {}
 			return null;
+		}
+	}
+	
+	/**
+	 * Attempt to set a field to a value, casting numeric primitive values if necessary
+	 */
+	protected static <V> void setBackingField(Field field, V value) throws IllegalAccessException {
+		final Class<?> type = Primitives.unwrap(field.getType());
+		try {
+			if (type.isPrimitive()) {
+				if (type == boolean.class) {
+					field.set(null, value);
+				} else if (type == char.class) {
+					field.set(null, value);
+				} else {
+					Number n = (Number) value;
+					if (type == byte.class) {
+						field.set(null, n.byteValue());
+					} else if (type == short.class) {
+						field.set(null, n.shortValue());
+					} else if (type == int.class) {
+						field.set(null, n.intValue());
+					} else if (type == long.class) {
+						field.set(null, n.longValue());
+					} else if (type == float.class) {
+						field.set(null, n.floatValue());
+					} else if (type == double.class) {
+						field.set(null, n.doubleValue());
+					} else throw new IllegalStateException("Unknown primitive type: " + type.getTypeName());
+				}
+			} else field.set(null, value);
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(field.getName(), e);
 		}
 	}
 }

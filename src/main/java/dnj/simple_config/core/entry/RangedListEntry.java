@@ -12,8 +12,8 @@ import java.util.function.Function;
 public abstract class RangedListEntry
   <V extends Comparable<V>, Config, Gui, Self extends RangedListEntry<V, Config, Gui, Self>>
   extends ListEntry<V, Config, Gui, Self> {
-	public V min;
-	public V max;
+	protected V min;
+	protected V max;
 	
 	public RangedListEntry(
 	  @Nullable List<V> value, @Nonnull V min, @Nonnull V max
@@ -24,26 +24,36 @@ public abstract class RangedListEntry
 	}
 	
 	/**
-	 * Set the minimum allowed value for the elements of this list entry
+	 * Set the minimum allowed value for the elements of this list entry (inclusive)
 	 */
 	public Self min(@Nonnull V min) {
 		this.min = min;
-		setValidator(clamp(validator, min, max));
+		elemError(clamp(validator, min, max));
 		return self();
 	}
 	
 	/**
-	 * Set the maximum allowed value for the elements of this list entry
+	 * Set the maximum allowed value for the elements of this list entry (inclusive)
 	 */
 	public Self max(@Nonnull V max) {
 		this.max = max;
-		setValidator(clamp(validator, min, max));
+		elemError(clamp(validator, min, max));
+		return self();
+	}
+	
+	/**
+	 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
+	 */
+	public Self range(V min, V max) {
+		this.min = min;
+		this.max = max;
+		elemError(clamp(validator, min, max));
 		return self();
 	}
 	
 	@Override
-	public Self setValidator(Function<V, Optional<ITextComponent>> validator) {
-		return super.setValidator(clamp(validator, min, max));
+	public Self elemError(Function<V, Optional<ITextComponent>> validator) {
+		return super.elemError(clamp(validator, min, max));
 	}
 	
 	protected Function<V, Optional<ITextComponent>> clamp(

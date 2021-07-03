@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
   extends AbstractConfigEntry<V, Void, Gui, Self> {
-	public GUIOnlyEntry(V value) {
-		super(value);
+	public GUIOnlyEntry(V value, Class<?> typeClass) {
+		super(value, typeClass);
 	}
 	
 	@Override protected Void forConfig(V value) {
@@ -63,7 +63,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	protected final void buildConfig(Builder builder, Map<String, ConfigValue<?>> specValues) {
 		if (parent.getRoot().type != Type.CLIENT) {
 			throw new IllegalArgumentException(
-			  "Attempt to declare non persistent config entry " + name + " on a server config");
+			  "Attempt to declare non persistent config entry " + getPath() + " on a server config");
 		}
 		specValues.put(name, null);
 	}
@@ -77,7 +77,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	protected Consumer<Gui> saveConsumer(ISimpleConfigEntryHolder c) {
 		return g -> {
 			markDirty();
-			c.markDirty().set(name, fromGui(g));
+			c.markDirty().set(name, fromGuiOrDefault(g));
 		};
 	}
 }

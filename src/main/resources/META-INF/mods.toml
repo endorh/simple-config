@@ -25,9 +25,9 @@ license="LGPL"
     versionRange="[1.16.5,1.17)"
     ordering="NONE"
     side="BOTH"
-[[dependencies.simple-config]]
-    modId="cloth-config"
-    versionRange="[${cloth_config_api_version},)"
-    mandatory=true
-    ordering="NONE"
-    side="CLIENT"
+#[[dependencies.simple-config]]
+#    modId="cloth-config"
+#    versionRange="[${cloth_config_api_version},)"
+#    mandatory=true
+#    ordering="NONE"
+#    side="CLIENT"

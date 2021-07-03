@@ -1,23 +1,21 @@
 package dnj.simple_config.core;
 
+import com.google.gson.internal.Primitives;
 import dnj.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
 import dnj.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import dnj.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import dnj.simple_config.core.annotation.*;
-import dnj.simple_config.core.entry.*;
+import dnj.simple_config.core.entry.Builders;
+import dnj.simple_config.core.entry.ListEntry;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
-import java.awt.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -28,25 +26,31 @@ import static java.util.Collections.synchronizedMap;
 public class SimpleConfigClassParser {
 	
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected static final Map<Class<? extends Annotation>, Map<Class<?>, FieldEntryParser<?>>>
+	protected static final Map<Class<? extends Annotation>, Map<Class<?>, List<FieldEntryParser<?, ?>>>>
 	  PARSERS = synchronizedMap(new HashMap<>());
 	
 	@FunctionalInterface
-	public interface FieldEntryParser<T extends Annotation> {
+	public interface FieldEntryParser<T extends Annotation, V> {
 		@Nullable
-		AbstractConfigEntry<?, ?, ?, ?> tryParse(T annotation, Field field, Object value);
+		AbstractConfigEntry<?, ?, ?, ?> tryParse(T annotation, Field field, V value);
 	}
 	
 	/**
 	 * Technically, you may register new field parsers before you mod's config
 	 * is registered, but this is discouraged. Using the builder will probably be easier.
 	 */
-	@Internal public static <T extends Annotation> void registerFieldParser(
-	  Class<T> annotationClass, Class<?> fieldClass, FieldEntryParser<T> parser
+	@Internal public static <T extends Annotation, V> void registerFieldParser(
+	  Class<T> annotationClass, Class<V> fieldClass, FieldEntryParser<T, V> parser
 	) {
 		synchronized (PARSERS) {
-			PARSERS.computeIfAbsent(annotationClass, a -> synchronizedMap(new HashMap<>())).put(fieldClass, parser);
+			PARSERS.computeIfAbsent(annotationClass, a -> synchronizedMap(new HashMap<>()))
+			  .computeIfAbsent(fieldClass, c -> new ArrayList<>()).add(parser);
 		}
+	}
+	
+	static {
+		// Trigger classloading
+		Builders.nonPersistentBool(true);
 	}
 	
 	/**
@@ -60,10 +64,10 @@ public class SimpleConfigClassParser {
 		if (validate != null) {
 			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
 			if (checkType(validate, Boolean.class)) {
-				entry.setValidator((Predicate<T>) e -> invoke(
+				entry.setValidator(e -> invoke(
 				  validate, null, errorMsg, e));
 			} else if (checkType(validate, Optional.class, ITextComponent.class)) {
-				entry.setValidator((Function<T, Optional<ITextComponent>>) e -> invoke(
+				entry.elemError(e -> invoke(
 				  validate, null, errorMsg, e));
 			} else throw new SimpleConfigClassParseException(
 			  "Unsupported return type in config list element validator method " + getMethodName(validate) +
@@ -105,12 +109,29 @@ public class SimpleConfigClassParser {
 				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return Optional<ITextComponent[]>");
 			final String errorMsg = "Reflection error invoking config element tooltip supplier method %s";
 			final Method mm = m;
-			entry.tooltipOpt(
+			entry.tooltip(
 			  a ? v -> invoke(mm, null, errorMsg, v)
 			    : v -> invoke(mm, null, errorMsg));
 		}
 	}
 	
+	/**
+	 * Get the minimum annotated value in this field
+	 */
+	public static Number getMin(Field field) {
+		return field.isAnnotationPresent(Min.class)
+		       ? field.getAnnotation(Min.class).value()
+		       : Double.NEGATIVE_INFINITY;
+	}
+	
+	/**
+	 * Get the maximum annotated value in this field
+	 */
+	public static Number getMax(Field field) {
+		return field.isAnnotationPresent(Max.class)
+		       ? field.getAnnotation(Max.class).value()
+		       : Double.POSITIVE_INFINITY;
+	}
 	
 	/**
 	 * Try to invoke method<br>
@@ -175,10 +196,11 @@ public class SimpleConfigClassParser {
 				addTooltip(builder.last, configClass, field);
 				continue;
 			}
-			if (builder.hasEntry(name)) {
-				final Class<?> entryClass = builder.getEntry(name).value.getClass();
-				final Class<?> fieldClass = field.getType();
-				if (entryClass != fieldClass && (!fieldClass.isPrimitive() || !entryClass.isInstance(value)))
+			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
+				final Class<?> entryClass = Primitives.unwrap(builder.getEntry(name).typeClass);
+				final Class<?> fieldClass = Primitives.unwrap(field.getType());
+				// Warning: This does not check if generics match
+				if (fieldClass != entryClass)
 					throw new SimpleConfigClassParseException(
 					  "Config field " + getFieldName(field) + " of type " + fieldTypeName + " does not " +
 					  "match its entry's type: " + entryClass.getTypeName());
@@ -192,20 +214,21 @@ public class SimpleConfigClassParser {
 			synchronized (PARSERS) {
 				for (Class<? extends Annotation> annotationClass : PARSERS.keySet()) {
 					if (field.isAnnotationPresent(annotationClass)) {
-						final Map<Class<?>, FieldEntryParser<?>> parsers = PARSERS.get(annotationClass);
+						final Map<Class<?>, List<FieldEntryParser<?, ?>>> parsers = PARSERS.get(annotationClass);
 						final Class<?> fieldClass = field.getType();
 						for (Class<?> clazz : parsers.keySet()) {
 							if (clazz.isInstance(value) || clazz.isAssignableFrom(fieldClass)) {
 								Annotation annotation = field.getAnnotation(annotationClass);
-								//noinspection unchecked
-								final AbstractConfigEntry<?, ?, ?, ?> entry =
-								  ((FieldEntryParser<Annotation>) parsers.get(clazz))
-								    .tryParse(annotation, field, value);
-								if (entry != null) {
-									entry.backingField = field;
-									decorateEntry(entry, configClass, field);
-									builder.add(field.getName(), entry);
-									continue parseFields;
+								for (FieldEntryParser<?, ?> parser : parsers.get(clazz)) {
+									//noinspection unchecked
+									final AbstractConfigEntry<?, ?, ?, ?> entry =
+									  ((FieldEntryParser<Annotation, Object>) parser).tryParse(annotation, field, value);
+									if (entry != null) {
+										entry.backingField = field;
+										decorateEntry(entry, configClass, field);
+										builder.add(field.getName(), entry);
+										continue parseFields;
+									}
 								}
 							}
 						}
@@ -237,6 +260,8 @@ public class SimpleConfigClassParser {
 						  "backing class: " + name + ", class: " + clazz.getName());
 				} else {
 					catBuilder = new CategoryBuilder(name);
+					if (clazz.isAnnotationPresent(RequireRestart.class))
+						catBuilder.restart();
 					root.n(catBuilder);
 				}
 				decorateAbstractBuilder(root, clazz, catBuilder);
@@ -249,6 +274,8 @@ public class SimpleConfigClassParser {
 					Group a = clazz.getAnnotation(Group.class);
 					boolean expand = a != null && a.expand();
 					gBuilder = new GroupBuilder(name, expand);
+					if (clazz.isAnnotationPresent(RequireRestart.class))
+						gBuilder.restart();
 					builder.n(gBuilder);
 				}
 				decorateAbstractBuilder(root, clazz, gBuilder);
@@ -267,8 +294,8 @@ public class SimpleConfigClassParser {
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config class " + className + ", but the config " +
-					  "already has a configured baker\nOnly the configured builder will " +
-					  "be used\nIf the configured builder is precisely this method, rename it " +
+					  "already has a configured baker\nOnly the configured baker will " +
+					  "be used\nIf the configured baker is precisely this method, rename it " +
 					  "to suppress this warning.");
 				}
 			}
@@ -284,8 +311,26 @@ public class SimpleConfigClassParser {
 					b.setBaker(c -> invoke(baker, null, errorMsg, c));
 				} else {
 					LOGGER.warn(
-					  "Found bake method in config category class " + className + ", but the config " +
-					  "already has a configured baker.\nOnly the configured builder will " +
+					  "Found bake method in config category class " + className + ", but the category " +
+					  "already has a configured baker.\nOnly the configured baker will " +
+					  "be used.\nIf the configured baker is precisely this method, rename it " +
+					  "to suppress this warning.");
+				}
+			}
+		} else if (builder instanceof GroupBuilder) {
+			final GroupBuilder b = (GroupBuilder) builder;
+			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigGroup.class);
+			if (baker != null) {
+				if (!Modifier.isStatic(baker.getModifiers()))
+					throw new SimpleConfigClassParseException(
+					  "Found non-static bake method in config group class " + className);
+				final String errorMsg = "Reflective error invoking config category baker method %s";
+				if (b.baker == null) {
+					b.setBaker(c -> invoke(baker, null, errorMsg, c));
+				} else {
+					LOGGER.warn(
+					  "Found bake method in config group class " + className + ", but the group " +
+					  "already has a configured baker.\nOnly the configured baker will " +
 					  "be used.\nIf the configured builder is precisely this method, rename it " +
 					  "to suppress this warning.");
 				}

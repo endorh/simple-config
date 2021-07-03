@@ -49,12 +49,13 @@ public interface IErrorEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>> {
 	 * You may also use {@link IErrorEntry#error(Function)}
 	 * to provide users with an explicative error message
 	 * @param validator Should return true for all valid elements
-	 * @deprecated Use {@link IErrorEntry#error(Function)} instead
+	 * @deprecated Use {@link IErrorEntry#error(Function)}
 	 *             to provide users with clearer error messages
 	 */
 	@Deprecated default Self check(Predicate<V> validator) {
 		return error(v -> validator.test(v)? Optional.empty() : Optional.of(
-		  new TranslationTextComponent("simple-config.config.error.invalid_value_generic")));
+		  new TranslationTextComponent(
+		    "simple-config.config.error.invalid_value_generic")));
 	}
 	
 	/**

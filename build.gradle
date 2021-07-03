@@ -18,7 +18,7 @@ buildscript {
 
 // Plugins
 plugins {
-    // id 'java-library'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'java'
     id 'maven-publish'
 }
@@ -29,7 +29,7 @@ import net.minecraftforge.gradle.common.task.SignJar
 
 def mod_id = "simple-config"
 group = "dnj.simple_config"
-version = "0.1.8"
+version = "0.1.23"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -58,7 +58,7 @@ def mc_version = "1.16.5",
     forge_version = "${mc_version}-${forge}"
 
 //noinspection GroovyUnusedAssignment
-def cloth_config_api_version = "4.11.26" // 4.11.19
+def cloth_config_api_version = "4.11.26"
 
 // Jar attributes
 archivesBaseName = "${mod_id}-${mc_version}"
@@ -108,7 +108,7 @@ println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getPro
 
 java {
     withSourcesJar()
-    withJavadocJar()
+    // withJavadocJar()
 }
 
 // Minecraft options --------------------------------------------------------------
@@ -206,11 +206,42 @@ dependencies {
 
     // Mod dependencies
     // Cloth Config API
-    // TODO: Should be api, and use the java-library plugin
     implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_api_version}")
 }
 
 // Tasks --------------------------------------------------------------------------
+
+shadowJar {
+    manifest {
+        attributes(jar_attributes)
+        attributes 'Maven-Artifact': "${maven_artifact}:deobf"
+    }
+
+    // Include only Cloth Config API in the shadow jar
+    dependencies {
+        //noinspection GroovyAssignabilityCheck
+        include dependency(fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_api_version}"))
+    }
+
+    // Exclude the packages we don't use
+    exclude "me/shedaniel/autoconfig/**"
+    exclude "me/shedaniel/cloth/**"
+    exclude "me/shedaniel/clothconfig/**"
+    exclude "me/shedaniel/clothconfig2/forge/**"
+    exclude "architectury_inject*/**"
+
+    // Relocate the root package
+    relocate "me.shedaniel", "dnj.simple_config.shadowed.me.shedaniel"
+
+    classifier '' // Replace default jar
+
+    // Preferred method to reobfuscate the jar file
+    finalizedBy 'reobfJar'
+}
+
+reobf {
+    shadowJar {}
+}
 
 classes.dependsOn extractNatives // Make sure the natives are extracted on compile
 
@@ -220,6 +251,9 @@ jar {
         attributes(jar_attributes)
         attributes 'Maven-Artifact': "${maven_artifact}:deobf"
     }
+
+    classifier 'clean'
+
     // Preferred method to reobfuscate the jar file
     finalizedBy 'reobfJar'
 }
@@ -233,6 +267,7 @@ task deobfJar(type: Jar, dependsOn: classes) {
 }
 
 artifacts {
+    archives shadowJar
     archives deobfJar
 }
 
@@ -255,10 +290,10 @@ processResources {
 publishing {
     publications {
         mod(MavenPublication) {
-            artifact jar
+            artifact shadowJar
             artifact sourcesJar
-            artifact javadocJar
-            artifact deobfJar
+            // artifact javadocJar
+            // artifact deobfJar
 
             pom {
                 name = display_name

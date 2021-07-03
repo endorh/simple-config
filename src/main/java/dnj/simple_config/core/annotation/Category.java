@@ -14,7 +14,9 @@ import java.lang.annotation.Target;
  * If the category builder declares a different backing class
  * for the category, there mustn't be an inner class with the
  * same name under the main config's backing class, that is,
- * a category can not have its backing class defined in two places
+ * a category can not have its backing class defined in two places<br>
+ * @see Group
+ * @see Entry
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

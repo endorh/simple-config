@@ -19,12 +19,12 @@ public class BooleanEntry
 	protected Function<Boolean, ITextComponent> yesNoSupplier = null;
 	
 	public BooleanEntry(boolean value) {
-		super(value);
+		super(value, Boolean.class);
 	}
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		return Optional.of(decorate(builder).define(name, value.booleanValue()));
+		return Optional.of(decorate(builder).define(name, value, configValidator()));
 	}
 	
 	/**
@@ -38,7 +38,7 @@ public class BooleanEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final BooleanToggleBuilder valBuilder = builder

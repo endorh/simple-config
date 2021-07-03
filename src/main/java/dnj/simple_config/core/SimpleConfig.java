@@ -11,6 +11,7 @@ import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -28,6 +29,8 @@ import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -67,7 +70,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected final @Nullable Consumer<SimpleConfig> baker;
 	protected final @Nullable Object configClass;
 	@OnlyIn(Dist.CLIENT)
-	protected BiConsumer<SimpleConfig, ConfigBuilder> decorator;
+	protected @Nullable BiConsumer<SimpleConfig, ConfigBuilder> decorator;
+	protected @Nullable ResourceLocation background;
+	protected boolean transparent;
 	
 	@SuppressWarnings("UnusedReturnValue")
 	protected static SimpleConfig getInstance(
@@ -79,6 +84,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			  "Attempted to get unregistered config for mod id \"" + modId + "\" of type " + type);
 		}
 		return INSTANCES.get(key);
+	}
+	
+	/**
+	 * Retrieve the actual path of this file, if found
+	 */
+	public Optional<Path> getFilePath() {
+		return SimpleConfigSync.getConfigFilePath(this);
 	}
 	
 	private static int TEXT_ENTRY_ID_GEN = 0;
@@ -204,6 +216,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	/**
+	 * Used in error messages
+	 */
+	@Override protected String getPath() {
+		return "SimpleConfig[" + modId + ", " + type.name() + "]";
+	}
+	
+	/**
 	 * Get the display name of the mod, or just its mod id if not found
 	 */
 	protected static String getModNameOrId(String modId) {
@@ -224,8 +243,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			for (SimpleConfigGroup group : groups.values())
 				group.bakeFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					entry.backingField.set(null, get(entry.name));
+				entry.bakeField(this);
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
@@ -242,8 +260,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					set(entry.name, entry.backingField.get(null));
+				entry.commitField(this);
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);
@@ -251,15 +268,16 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	/**
-	 * Bake the fields, run the baker, and then the categories' bakers
+	 * Bake the fields and run the bakers
 	 */
-	public void bake() {
+	@Override public void bake() {
 		bakeFields();
+		for (SimpleConfigCategory cat : categories.values())
+			cat.bake();
+		for (SimpleConfigGroup group : groups.values())
+			group.bake();
 		if (baker != null)
 			baker.accept(this);
-		for (SimpleConfigCategory cat : categories.values())
-			if (cat.baker != null)
-				cat.baker.accept(cat);
 	}
 	
 	/**
@@ -271,15 +289,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		if (saver != null)
 			saver.accept(this);
 		markDirty(false);
-	}
-	
-	/**
-	 * Decorate a GUI builder
-	 */
-	@OnlyIn(Dist.CLIENT)
-	protected void decorate(ConfigBuilder builder) {
-		if (decorator != null)
-			decorator.accept(this, builder);
 	}
 	
 	/**
@@ -327,7 +336,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 */
 	public SimpleConfigCategory getCategory(String name) {
 		if (!categories.containsKey(name))
-			throw new NoSuchConfigCategoryError(name);
+			throw new NoSuchConfigCategoryError(getPath() + "." + name);
 		return categories.get(name);
 	}
 	
@@ -354,15 +363,22 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder configBuilder) {
+		if (background != null)
+			configBuilder.setDefaultBackgroundTexture(background);
+		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
 			final ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
+			if (background != null)
+				category.setBackground(background);
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder, this);
 		}
 		for (SimpleConfigCategory cat : categories.values()) {
 			cat.buildGUI(configBuilder, entryBuilder);
 		}
+		if (decorator != null)
+			decorator.accept(this, configBuilder);
 	}
 	
 	public static class NoSuchConfigEntryError extends RuntimeException {
@@ -386,6 +402,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	public static class InvalidConfigValueTypeException extends RuntimeException {
 		public InvalidConfigValueTypeException(String name, ClassCastException cause) {
 			super("Invalid type requested for config value \"" + name + "\"", cause);
+		}
+		public InvalidConfigValueTypeException(String name, ClassCastException cause, String extra) {
+			super("Invalid type requested for config value \"" + name + "\"\n  " + extra, cause);
 		}
 	}
 	

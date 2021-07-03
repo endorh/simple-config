@@ -14,6 +14,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,13 +27,36 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	public EnumEntry(E value) {
-		super(value);
+		super(value, value.getDeclaringClass());
 		enumClass = value.getDeclaringClass();
 	}
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		return Optional.of(decorate(builder).defineEnum(name, value));
+		return Optional.of(decorate(builder).defineEnum(name, value, configValidator()));
+	}
+	
+	@Override
+	protected ITextComponent getDebugDisplayName() {
+		if (translation != null) {
+			IFormattableTextComponent status =
+			  I18n.hasKey(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			if (tooltip != null) {
+				status = status.append(
+				  I18n.hasKey(tooltip)
+				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+			}
+			boolean correct = value instanceof ITranslatedEnum
+			                  || Arrays.stream(enumClass.getEnumConstants())
+			                    .allMatch(e -> I18n.hasKey(getEnumTranslationKey(e, parent.getRoot())));
+			status = status.append(
+			  correct ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.LIGHT_PURPLE)
+			          : new StringTextComponent("✘ ").mergeStyle(TextFormatting.LIGHT_PURPLE));
+			TextFormatting format =
+			  I18n.hasKey(translation)? correct? TextFormatting.DARK_GREEN : TextFormatting.GOLD : TextFormatting.RED;
+			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).mergeStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -79,7 +103,7 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<E>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final EnumSelectorBuilder<E> valBuilder = builder

@@ -7,33 +7,33 @@ import me.shedaniel.clothconfig2.impl.builders.LongFieldBuilder;
 import me.shedaniel.clothconfig2.impl.builders.LongSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class LongEntry extends RangedEntry<Long, Long, Long, LongEntry> {
+public class LongEntry extends RangedEntry<Long, Number, Long, LongEntry> {
 	public LongEntry(long value, Long min, Long max) {
 		super(value,
 		      min == null ? Long.MIN_VALUE : min,
-		      max == null ? Long.MAX_VALUE : max);
+		      max == null ? Long.MAX_VALUE : max, Long.class);
 	}
 	
-	public LongEntry slider() { return slider(true); }
-	
-	public LongEntry slider(boolean slider) {
-		this.asSlider = slider;
-		return this;
+	public LongEntry min(long min) {
+		return super.min(min);
+	}
+	public LongEntry max(long max) {
+		return super.max(max);
 	}
 	
+	@Nullable
 	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		return Optional.of(decorate(builder).defineInRange(name, value, min, max));
+	protected Long fromConfig(@Nullable Number value) {
+		return value != null? value.longValue() : null;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Long>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		if (!asSlider) {
@@ -52,7 +52,8 @@ public class LongEntry extends RangedEntry<Long, Long, Long, LongEntry> {
 			  .setSaveConsumer(saveConsumer(c))
 			  .setTooltipSupplier(this::supplyTooltip)
 			  .setTooltipSupplier(this::supplyTooltip)
-			  .setErrorSupplier(this::supplyError);
+			  .setErrorSupplier(this::supplyError)
+			  .setTextGetter(sliderTextSupplier);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}

@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 
 public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry> {
 	public ColorEntry(Color value) {
-		super(value);
+		super(value, Color.class);
 	}
 	
 	@Override
@@ -64,13 +64,12 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		return Optional.of(decorate(builder).define(
-		  name, forConfig(value), s -> s instanceof String && fromConfig((String) s) != null));
+		return Optional.of(decorate(builder).define(name, forConfig(value), configValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final ColorFieldBuilder valBuilder = builder

@@ -14,34 +14,37 @@ import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.fml.config.ModConfig.Type;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry> {
-	protected final ItemStack stack;
-	protected Ingredient filter = null;
-	protected ITag<Item> tag = null;
-	protected Set<Item> validItems = null;
+	protected Predicate<Item> filter = null;
+	protected boolean usesTag = false;
 	
 	public ItemEntry(@Nullable Item value) {
-		super(value != null ? value : Items.AIR);
-		this.stack = new ItemStack(this.value);
+		super(value != null ? value : Items.AIR, Item.class);
 	}
 	
 	public ItemEntry from(Ingredient filter) {
+		return from(i -> filter.test(new ItemStack(i)));
+	}
+	
+	public ItemEntry from(Predicate<Item> filter) {
 		this.filter = filter;
-		if (filter != null) {
-			if (!filter.test(stack))
+		if (!usesTag && filter != null) {
+			if (!filter.test(value))
 				throw new IllegalArgumentException(
 				  "Filter for item config entry does not match the default value");
-			validItems = Arrays
-			  .stream(filter.getMatchingStacks()).map(ItemStack::getItem).collect(Collectors.toSet());
-		} else validItems = null;
+		}
 		return this;
 	}
 	
@@ -49,25 +52,20 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		return from(Ingredient.fromItems(items));
 	}
 	
+	/**
+	 * Restrict the selectable items to those of a tag<br>
+	 * This can only be done on server configs, since tags
+	 * are server-dependant
+	 */
 	public ItemEntry from(ITag<Item> tag) {
-		this.tag = tag;
-		return this;
+		this.usesTag = true;
+		return from(tag::contains);
 	}
 	
 	protected Set<Item> getValidItems() {
-		if (tag != null) {
-			// Tags cannot be used until a world is loaded
-			// Until a world is loaded we simply don't apply any restrictions
-			try {
-				filter = Ingredient.fromTag(tag);
-				validItems = Arrays.stream(filter.getMatchingStacks()).map(ItemStack::getItem)
-				  .collect(Collectors.toSet());
-			} catch (IllegalStateException e) {
-				filter = null;
-				validItems = null;
-			}
-		}
-		return validItems != null ? validItems : Registry.ITEM.stream().collect(Collectors.toSet());
+		final Predicate<Item> nonNullFilter = filter != null? filter : i -> true;
+		return Registry.ITEM.getEntries().stream().map(Entry::getValue)
+		  .filter(nonNullFilter).collect(Collectors.toSet());
 	}
 	
 	@Override
@@ -85,25 +83,27 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	
 	protected @Nullable
 	Item fromId(String itemId) {
+		if (itemId == null || itemId.isEmpty())
+			return null;
 		final ResourceLocation registryName = new ResourceLocation(itemId);
-		final Item item = Registry.ITEM.containsKey(registryName) ?
+		final Item item = Registry.ITEM.keySet().contains(registryName) ?
 		                  Registry.ITEM.getOrDefault(registryName) : null;
 		return getValidItems().contains(item) ? item : null;
 	}
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		if (parent.getRoot().type != Type.SERVER && tag != null)
+		if (parent.getRoot().type != Type.SERVER && usesTag)
 			throw new IllegalArgumentException(
-			  "Cannot use tag item filters in non-server config entry \"" + name + "\"");
+			  "Cannot use tag item filters in non-server config entry \"" + getPath() + "\"");
 		assert value.getRegistryName() != null;
 		return Optional.of(decorate(builder).define(
-		  name, value.getRegistryName().toString(), s ->
-			 s instanceof String && fromId((String) s) != null));
+		  name, value.getRegistryName().toString(), configValidator()));
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Item>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final DropdownMenuBuilder<Item> valBuilder = builder

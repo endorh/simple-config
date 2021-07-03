@@ -28,7 +28,13 @@
   "simple-config.config.msg.client_changes_require_restart": "Some of your last config changes may require a restart to be effective",
   "simple-config.config.msg.server_changes_require_restart": "Some of the config changes may require a restart to be effective",
 
+  "simple-config.config.format.slider": "Value: %s",
   "simple-config.config.help.not_persistent_entry": "Not persistent",
   "simple-config.config.error.invalid_value_generic": "Invalid value! %s",
-  "simple-config.config.error.at_index": "at index %s"
+  "simple-config.config.error.invalid_resource_location": "%s",
+  "simple-config.config.error.at_index": "at index %s",
+  "simple-config.config.error.invalid_nbt": "Invalid NBT! %s",
+
+  "simple-config.config.text.greeting_text": "This is a demo config with examples for mod developers",
+  "simple-config.config.client.demo.second_text": "You can use this %s to go to the Minecraft website"
 }

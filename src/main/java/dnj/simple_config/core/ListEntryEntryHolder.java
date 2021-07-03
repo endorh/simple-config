@@ -2,8 +2,7 @@ package dnj.simple_config.core;
 
 import dnj.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import dnj.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,29 +53,35 @@ public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G
 		entry.parent.markDirty(dirty);
 	}
 	
-	@Override
-	public <T> T get(String path) {
+	@Override public <T> T get(String path) {
 		// V must be T
 		try {
 			//noinspection unchecked
 			return (T) buffer.get(Integer.parseInt(path));
 		} catch (NumberFormatException e) {
-			throw new NoSuchConfigEntryError(entry.name + "." + path);
+			throw new NoSuchConfigEntryError(entry.getPath() + "." + path);
 		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(entry.name + "." + path, e);
+			throw new InvalidConfigValueTypeException(entry.getPath() + "." + path, e);
 		}
 	}
 	
-	@Override
-	public <T> void set(String path, T value) {
+	/**
+	 * @deprecated Use {@link ListEntryEntryHolder#set(String, Object)} instead
+	 * to benefit from an extra layer of primitive generics type safety
+	 */
+	@Internal @Deprecated @Override public <T> void doSet(String path, T value) {
 		// T must be V
 		try {
 			//noinspection unchecked
 			this.buffer.set(Integer.parseInt(path), (V) value);
 		} catch (NumberFormatException e) {
-			throw new NoSuchConfigEntryError(entry.name + "." + path);
+			throw new NoSuchConfigEntryError(entry.getPath() + "." + path);
 		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(entry.name + "." + path, e);
+			throw new InvalidConfigValueTypeException(entry.getPath() + "." + path, e);
 		}
+	}
+	
+	@Override public <Gui> Gui getGUI(String path) {
+		return null;
 	}
 }

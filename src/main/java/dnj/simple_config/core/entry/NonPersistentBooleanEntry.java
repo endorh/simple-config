@@ -5,6 +5,8 @@ import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.BooleanToggleBuilder;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -14,7 +16,7 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 	protected boolean actualValue = value;
 	
 	public NonPersistentBooleanEntry(Boolean value) {
-		super(value);
+		super(value, Boolean.class);
 	}
 	
 	@Override
@@ -36,8 +38,9 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 		return this;
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final BooleanToggleBuilder valBuilder = builder

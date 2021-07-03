@@ -1,5 +1,6 @@
 package dnj.simple_config.core.entry;
 
+import dnj.simple_config.core.AbstractConfigEntry;
 import dnj.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -17,49 +18,56 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class TextEntry extends EmptyEntry {
+public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected @Nullable Supplier<ITextComponent> translation = null; // Lazy
+	protected @Nullable Supplier<ITextComponent> translationSupplier = null; // Lazy
 	protected boolean own = false;
 	
 	public TextEntry(@Nullable Supplier<ITextComponent> supplier) {
-		this.translation = supplier;
+		super(null, Void.class);
+		translationSupplier = supplier;
 		own = supplier != null;
 	}
 	
 	public TextEntry() {
-		if (super.translation != null)
-			this.translation = () -> new TranslationTextComponent(super.translation);
+		super(null, Void.class);
 	}
 	
-	@Override
-	protected EmptyEntry translate(String translation) {
-		if (this.translation == null) {
-			super.translate(translation);
-			if (super.translation != null)
-				this.translation = () -> new TranslationTextComponent(super.translation);
-		}
-		return this;
+	/**
+	 * @deprecated Use {@link TextEntry#args(Object...)} instead
+	 */
+	@Override @Deprecated public TextEntry nameArgs(Object... args) {
+		return super.nameArgs(args);
+	}
+	
+	/**
+	 * Set the arguments that will be passed to the name translation key<br>
+	 * As a special case, {@code Supplier}s passed
+	 * will be invoked before being passed as arguments
+	 */
+	public TextEntry args(Object... args) {
+		return nameArgs(args);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override protected @Nullable ITextComponent getDisplayName() {
+	@Override protected ITextComponent getDisplayName() {
 		if (debugTranslations()) {
 			return getDebugDisplayName();
-		} else if (translation != null) {
-			return translation.get();
+		} else if (translationSupplier != null) {
+			return translationSupplier.get();
 		} else {
-			LOGGER.warn("Malformed text entry in config with name " + name);
-			return null;
+			if (translation == null)
+				LOGGER.warn("Malformed config text entry " + getPath());
+			return super.getDisplayName();
 		}
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected ITextComponent getDebugDisplayName() {
 		if (own) {
-			assert translation != null;
+			assert translationSupplier != null;
 			return new StringTextComponent("").append(
-			  translation.get().copyRaw().mergeStyle(TextFormatting.DARK_AQUA));
+			  translationSupplier.get().copyRaw().mergeStyle(TextFormatting.DARK_AQUA));
 		} else if (super.translation != null) {
 			IFormattableTextComponent status =
 			  I18n.hasKey(super.translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
@@ -77,7 +85,7 @@ public class TextEntry extends EmptyEntry {
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<ITextComponent[]> supplyDebugTooltip(Void value) {
+	protected Optional<ITextComponent[]> supplyDebugTooltip(Object value) {
 		List<ITextComponent> lines = new ArrayList<>();
 		lines.add(new StringTextComponent("Text entry").mergeStyle(TextFormatting.GRAY));
 		if (own) {
@@ -119,9 +127,14 @@ public class TextEntry extends EmptyEntry {
 		return Optional.of(lines.toArray(new ITextComponent[0]));
 	}
 	
+	@Override
+	protected Object getGUI(ISimpleConfigEntryHolder c) {
+		throw new IllegalArgumentException("Text entries do not have a value");
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	public Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Object>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final ITextComponent displayName = getDisplayName();
@@ -131,7 +144,7 @@ public class TextEntry extends EmptyEntry {
 			  .setTooltipSupplier(() -> this.supplyTooltip(null));
 			return Optional.of(decorate(valBuilder).build());
 		} else {
-			LOGGER.warn("Malformed text entry in config with name " + name);
+			LOGGER.warn("Malformed config text entry " + getPath());
 			return Optional.empty();
 		}
 	}

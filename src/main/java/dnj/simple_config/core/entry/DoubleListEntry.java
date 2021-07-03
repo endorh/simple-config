@@ -1,6 +1,5 @@
 package dnj.simple_config.core.entry;
 
-import dnj.simple_config.core.AbstractConfigEntry;
 import dnj.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -27,22 +26,28 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		      max != null ? max : Double.POSITIVE_INFINITY);
 	}
 	
+	public DoubleListEntry min(double min) {
+		return super.min(min);
+	}
+	public DoubleListEntry max(double max) {
+		return super.max(max);
+	}
+	
 	@Override
 	protected Double elemFromConfig(Number value) {
-		return value.doubleValue();
+		return value != null? value.doubleValue() : null;
 	}
 	
 	@Override
 	protected List<Double> get(ConfigValue<?> spec) {
-		// Sometimes Night Config returns lists of subtypes, so we cast them
 		//noinspection unchecked
 		return ((List<Number>) (List<?>) super.get(spec))
-		  .stream().map(Number::doubleValue).collect(Collectors.toList());
+		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<List<Double>>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final DoubleListBuilder valBuilder = builder

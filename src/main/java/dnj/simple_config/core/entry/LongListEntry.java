@@ -24,22 +24,28 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 		super(value, min != null ? min : Long.MIN_VALUE, max != null ? max : Long.MAX_VALUE);
 	}
 	
+	public LongListEntry min(long min) {
+		return super.min(min);
+	}
+	public LongListEntry max(long max) {
+		return super.max(max);
+	}
+	
 	@Override
 	protected Long elemFromConfig(Number value) {
-		return value.longValue();
+		return value != null? value.longValue() : null;
 	}
 	
 	@Override
 	protected List<Long> get(ConfigValue<?> spec) {
-		// Sometimes Night Config returns lists of subtypes, so we cast them
 		//noinspection unchecked
-		return ((ConfigValue<List<Number>>) spec).get().stream().map(Number::longValue)
+		return ((ConfigValue<List<Number>>) spec).get().stream().map(this::elemFromConfig)
 		  .collect(Collectors.toList());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<List<Long>>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final LongListBuilder valBuilder = builder

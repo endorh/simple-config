@@ -7,6 +7,7 @@ import dnj.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -35,6 +37,8 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected final @Nullable Consumer<SimpleConfigCategory> baker;
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
+	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategory> decorator;
+	protected @Nullable ResourceLocation background;
 	
 	@Internal protected SimpleConfigCategory(
 	  SimpleConfig parent, String name, String title, @Nullable Consumer<SimpleConfigCategory> baker
@@ -58,6 +62,10 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		children = groups;
 		this.specValues = specValues;
 		this.order = order;
+	}
+	
+	@Override protected String getPath() {
+		return parent != null? parent.getPath() + "." + name : name;
 	}
 	
 	@Override public void markDirty(boolean dirty) {
@@ -85,10 +93,24 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
 		ConfigCategory category = builder.getOrCreateCategory(getTitle());
+		if (background != null)
+			category.setBackground(background);
+		else if (parent.background != null)
+			category.setBackground(parent.background);
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder, this);
 		}
+		if (decorator != null)
+			decorator.accept(this, category);
+	}
+	
+	@Override
+	protected void bake() {
+		for (SimpleConfigGroup group : groups.values())
+			group.bake();
+		if (baker != null)
+			baker.accept(this);
 	}
 	
 	/**
@@ -99,8 +121,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 			for (SimpleConfigGroup group : groups.values())
 				group.bakeFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					entry.backingField.set(null, get(entry.name));
+				entry.bakeField(this);
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
@@ -116,8 +137,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					set(entry.name, entry.backingField.get(null));
+				entry.commitField(this);
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);

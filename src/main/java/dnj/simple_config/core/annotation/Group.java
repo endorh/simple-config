@@ -11,6 +11,8 @@ import java.lang.annotation.Target;
  * If the group is already defined in the config builder, this
  * annotation is unnecessary (and ignored), and the class will
  * be parsed for backing fields anyways
+ * @see Category
+ * @see Entry
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

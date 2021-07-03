@@ -17,6 +17,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implements IGUIEntry {
 	public final SimpleConfigCategory category;
@@ -27,10 +28,11 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	protected final String tooltip;
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
+	protected @Nullable Consumer<SimpleConfigGroup> baker;
 	
 	@Internal protected SimpleConfigGroup(
 	  SimpleConfigGroup parent, String name, String title,
-	  String tooltip, boolean expanded
+	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
 	) {
 		this.category = parent.category;
 		this.parentGroup = parent;
@@ -38,12 +40,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		this.title = title;
 		this.tooltip = tooltip;
 		this.expanded = expanded;
+		this.baker = baker;
 		root = category.root;
 	}
 	
 	@Internal protected SimpleConfigGroup(
 	  SimpleConfigCategory parent, String name, String title,
-	  String tooltip, boolean expanded
+	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
 	) {
 		this.category = parent;
 		this.parentGroup = null;
@@ -51,6 +54,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		this.title = title;
 		this.tooltip = tooltip;
 		this.expanded = expanded;
+		this.baker = baker;
 		root = category.root;
 	}
 	
@@ -65,6 +69,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		this.groups = groups;
 		children = groups;
 		this.order = guiOrder;
+	}
+	
+	@Override
+	protected String getPath() {
+		return parentGroup != null
+		       ? parentGroup.getPath() + "." + name
+		       : category != null ? category.getPath() + "." + name : name;
 	}
 	
 	/**
@@ -185,6 +196,14 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		category.addEntry(buildGUI(entryBuilder));
 	}
 	
+	@Override
+	protected void bake() {
+		for (SimpleConfigGroup group : groups.values())
+			group.bake();
+		if (baker != null)
+			baker.accept(this);
+	}
+	
 	/**
 	 * Bakes all the backing fields<br>
 	 */
@@ -193,8 +212,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 			for (SimpleConfigGroup group : groups.values())
 				group.bakeFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					entry.backingField.set(null, get(entry.name));
+				entry.bakeField(this);
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
@@ -211,8 +229,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				if (entry.backingField != null)
-					set(entry.name, entry.backingField.get(null));
+				entry.commitField(this);
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);

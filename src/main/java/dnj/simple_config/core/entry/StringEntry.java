@@ -14,16 +14,16 @@ import java.util.Optional;
 
 public class StringEntry
   extends AbstractConfigEntry<String, String, String, StringEntry> {
-	public StringEntry(String value) {super(value);}
+	public StringEntry(String value) { super(value, String.class); }
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		return Optional.of(decorate(builder).define(name, value));
+		return Optional.of(decorate(builder).define(name, value, configValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<String>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final TextFieldBuilder valBuilder = builder

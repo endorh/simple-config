@@ -16,17 +16,17 @@ import static dnj.simple_config.SimpleConfigMod.MenuButtonPosition.SPLIT_OPTIONS
 @Mod(SimpleConfigMod.MOD_ID)
 public class SimpleConfigMod {
 	public static final String MOD_ID = "simple-config";
+	// Storing the config instance is optional
+	public static SimpleConfig CLIENT_CONFIG;
 	
 	public SimpleConfigMod() {
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			// Create and register the client config for the mod
-			SimpleConfig.builder(MOD_ID, Type.CLIENT, Config.class)
+			CLIENT_CONFIG = SimpleConfig.builder(MOD_ID, Type.CLIENT, Config.class)
 			  // Hook here the demo category
 			  .n(DemoConfigCategory.getDemoCategory())
 			  // Change the background texture
-			  .setBaker(Config::bake)
-			  .setGUIDecorator((config, builder) -> builder.setDefaultBackgroundTexture(
-			    new ResourceLocation("textures/block/bookshelf.png")))
+			  .setBackground("textures/block/bookshelf.png")
 			  .buildAndRegister();
 		});
 		// Register the demo server config as well
@@ -47,10 +47,6 @@ public class SimpleConfigMod {
 		@Entry public static MenuButtonPosition menu_button_position = SPLIT_OPTIONS_BUTTON;
 		@Group public static class advanced {
 			@Entry.NonPersistent public static boolean translation_debug_mode = false;
-		}
-		
-		private static void bake(SimpleConfig config) {
-		
 		}
 	}
 	

@@ -39,6 +39,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.Optional;
 import java.util.Set;
@@ -234,6 +235,16 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 		}
 	}
 	
+	protected static Optional<Path> getConfigFilePath(SimpleConfig config) {
+		try {
+			return getConfigSets().get(config.type)
+			  .stream().filter(mc -> config.modId.equals(mc.getModId()))
+			  .findFirst().map(ModConfig::getFullPath);
+		} catch (ConfigUpdateReflectionError e) {
+			return Optional.empty();
+		}
+	}
+	
 	protected static class CSimpleConfigSyncPacket {
 		public final String modId;
 		public final String fileName;
@@ -273,6 +284,8 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 				broadcastToOperators(new TranslationTextComponent(
 				  "simple-config.config.msg.tried_to_update_by_non_operator",
 				  senderName, modName).mergeStyle(TextFormatting.RED));
+				// Send back a re-sync packet
+				new SSimpleConfigSyncPacket(modId, fileName, fileData).sendTo(sender);
 				return;
 			}
 			
@@ -399,6 +412,10 @@ import static dnj.simple_config.SimpleConfigMod.prefix;
 					.forEach(p -> p.connection.sendPacket(packet));
 			 }, NetworkDirection.PLAY_TO_CLIENT
 		  );
+		
+		public void sendTo(ServerPlayerEntity player) {
+			CHANNEL.sendTo(this, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+		}
 		
 		public void sendExcept(ServerPlayerEntity player) {
 			CHANNEL.send(EXCEPT.with(() -> player), this);

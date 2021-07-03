@@ -1,6 +1,5 @@
 package dnj.simple_config.core.entry;
 
-import dnj.simple_config.core.AbstractConfigEntry;
 import dnj.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -18,7 +17,7 @@ public class StringListEntry extends ListEntry<String, String, String, StringLis
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<List<String>>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final StringListBuilder valBuilder = builder

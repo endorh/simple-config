@@ -55,13 +55,12 @@ public class AlphaColorEntry extends ColorEntry {
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
-		return Optional.of(decorate(builder).define(
-		  name, forConfig(value), s -> s instanceof String && fromConfig((String) s) != null));
+		return Optional.of(decorate(builder).define(name, forConfig(value), configValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<?>> buildGUIEntry(
+	protected Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
 	) {
 		final int prev = c.<Color>get(name).getRGB();
