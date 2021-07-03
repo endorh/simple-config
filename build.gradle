@@ -28,8 +28,8 @@ import net.minecraftforge.gradle.common.task.SignJar
 // Mod info -----------------------------------------------------------------------
 
 def mod_id = "simple-config"
-group = "dnj.simple_config"
-version = "0.1.23"
+group = "endorh.simple_config"
+version = "0.2.0"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -231,7 +231,7 @@ shadowJar {
     exclude "architectury_inject*/**"
 
     // Relocate the root package
-    relocate "me.shedaniel", "dnj.simple_config.shadowed.me.shedaniel"
+    relocate "me.shedaniel", "endorh.simple_config.shadowed.me.shedaniel"
 
     classifier '' // Replace default jar
 
