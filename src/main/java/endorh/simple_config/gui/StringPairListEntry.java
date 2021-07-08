@@ -78,6 +78,11 @@ public class StringPairListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	}
 	
 	@Override
+	public boolean isRequiresRestart() {
+		return super.isRequiresRestart();
+	}
+	
+	@Override
 	public boolean isEdited() {
 		return !ignoreOrder ? super.isEdited() :
 		       !cells.stream().map(c -> c.getValue().getKey()).collect(Collectors.toSet())

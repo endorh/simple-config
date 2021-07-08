@@ -84,6 +84,7 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 		  .startIntList(getDisplayName(), forGui(get()))
 		  .setDefaultValue(forGui(value))
 		  .setMin(min).setMax(max)
+		  .setInsertInFront(insertInTop)
 		  .setExpanded(expand)
 		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)

@@ -2,6 +2,7 @@ package endorh.simple_config.core;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import endorh.simple_config.core.entry.IAbstractStringKeyEntry;
 import endorh.simple_config.gui.StringPairListEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -13,85 +14,107 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * String map entry<br>
+ * Special config entry containing a map of values of which the values
+ * are managed by another entry, as long as its serializable to NBT,
+ * and the keys by yet another that also implements
+ * {@link IAbstractStringKeyEntry}, that is, it's serializable as a string<br>
+ * Currently serializes in the config file as a {@link CompoundNBT}
  */
-public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-  extends AbstractConfigEntry<Map<String, V>, Map<String, V>, List<Pair<String, G>>,
-  StringMapEntry<V, C, G, E, B>> {
+public class StringToEntryMapEntry<K, V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
+  KE extends AbstractConfigEntry<K, ?, ?, KE> & IAbstractStringKeyEntry<K>,
+  KB extends AbstractConfigEntryBuilder<K, ?, ?, KE, KB>>
+  extends AbstractConfigEntry<Map<K, V>, Map<String, V>, List<Pair<String, G>>,
+  StringToEntryMapEntry<K, V, C, G, E, B, KE, KB>> {
 	protected final Map<String, E> entries = new HashMap<>();
 	protected final B entryBuilder;
 	protected final E entry;
 	protected final Class<?> entryTypeClass;
+	protected final KB keyEntryBuilder;
+	protected final KE keyEntry;
 	protected final StringMapEntryHolder<V, C, E> holder;
-	protected Function<String, Optional<ITextComponent>> keyErrorSupplier;
 	protected boolean expand;
 	
-	@Internal public StringMapEntry(
+	@Internal public StringToEntryMapEntry(
 	  ISimpleConfigEntryHolder parent, String name,
-	  Map<String, V> value, @Nonnull B entryBuilder
+	  Map<K, V> value, @Nonnull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
 		this.entryBuilder = entryBuilder;
 		entryTypeClass = entryBuilder.typeClass;
-		entry = entryBuilder.build(parent, name + "$ ");
+		this.keyEntryBuilder = keyEntryBuilder;
+		entry = entryBuilder.build(parent, name + "$ v");
+		keyEntry = keyEntryBuilder.build(parent, name + "$ k");
 		holder = new StringMapEntryHolder<>(parent.getRoot());
 		if (!entry.canBeNested())
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
 			  "nested in a map entry");
+		if (entry.value == null)
+			throw new IllegalArgumentException(
+			  "Unsupported value type for map config entry. The values " +
+			  "cannot be null");
+		try {
+			toNBT(entry.value);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException(
+			  "Unsupported value type for map config entry: "
+			  + entry.typeClass.getName() + "\n  Map config entry values" +
+			  "must be serializable as NBT", e);
+		}
 	}
 	
-	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	  extends AbstractConfigEntryBuilder<Map<String, V>, Map<String, V>,
-	  List<Pair<String, G>>, StringMapEntry<V, C, G, E, B>, Builder<V, C, G, E, B>> {
+	public static class Builder<K, V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
+	  KE extends AbstractConfigEntry<K, ?, ?, KE> & IAbstractStringKeyEntry<K>,
+	  KB extends AbstractConfigEntryBuilder<K, ?, ?, KE, KB>>
+	  extends AbstractConfigEntryBuilder<Map<K, V>, Map<String, V>,
+	  List<Pair<String, G>>, StringToEntryMapEntry<K, V, C, G, E, B, KE, KB>,
+	  Builder<K, V, C, G, E, B, KE, KB>> {
+		protected final KB keyEntryBuilder;
 		protected B entryBuilder;
-		protected Function<String, Optional<ITextComponent>> keyErrorSupplier;
 		protected boolean expand;
 		
-		public Builder(Map<String, V> value, B entryBuilder) {
+		public Builder(Map<K, V> value, KB keyEntryBuilder, B entryBuilder) {
 			super(value, Map.class);
 			this.entryBuilder = entryBuilder;
+			this.keyEntryBuilder = keyEntryBuilder;
 		}
 		
-		public Builder<V, C, G, E, B> keyError(Function<String, Optional<ITextComponent>> errorSupplier) {
-			this.keyErrorSupplier = errorSupplier;
-			return this;
-		}
-		
-		public Builder<V, C, G, E, B> expand() {
+		public Builder<K, V, C, G, E, B, KE, KB> expand() {
 			this.expand = true;
 			return this;
 		}
 		
 		@Override
-		protected StringMapEntry<V, C, G, E, B> buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			final StringMapEntry<V, C, G, E, B> e = new StringMapEntry<>(parent, name, value, entryBuilder);
-			e.keyErrorSupplier = keyErrorSupplier != null? keyErrorSupplier : k -> Optional.empty();
+		protected StringToEntryMapEntry<K, V, C, G, E, B, KE, KB> buildEntry(
+		  ISimpleConfigEntryHolder parent, String name
+		) {
+			final StringToEntryMapEntry<K, V, C, G, E, B, KE, KB> e = new StringToEntryMapEntry<>(
+			  parent, name, value, entryBuilder, keyEntryBuilder);
 			e.expand = expand;
 			return e;
 		}
 	}
 	
 	@Override
-	protected Map<String, V> get(ConfigValue<?> spec) {
+	protected Map<K, V> get(ConfigValue<?> spec) {
 		return fromConfigOrDefault(fromActualConfig((String)spec.get()));
 	}
 	
 	@Override
-	protected void set(ConfigValue<?> spec, Map<String, V> value) {
+	protected void set(ConfigValue<?> spec, Map<K, V> value) {
 		//noinspection unchecked
 		((ConfigValue<String>) spec).set(forActualConfig(forConfig(value)));
 	}
@@ -109,6 +132,24 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 		} catch (CommandSyntaxException | IllegalArgumentException e) {
 			return null;
 		}
+	}
+	
+	@Override
+	protected Map<String, V> forConfig(Map<K, V> value) {
+		final Map<String, V> m = new HashMap<>();
+		value.forEach((k, v) -> m.put(keyEntry.serializeStringKey(k), v));
+		return m;
+	}
+	
+	@Nullable
+	@Override
+	@Contract("null->null")
+	protected Map<K, V> fromConfig(@Nullable Map<String, V> value) {
+		if (value == null) return null;
+		// Invalid keys are ignored
+		final Map<K, V> m = new HashMap<>();
+		value.forEach((s, v) -> keyEntry.deserializeStringKey(s).ifPresent(k -> m.put(k, v)));
+		return m;
 	}
 	
 	protected static INBT toNBT(Object o) {
@@ -217,17 +258,23 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	}
 	
 	@Override
-	protected List<Pair<String, G>> forGui(Map<String, V> value) {
-		return value.entrySet().stream().map(e -> Pair.of(e.getKey(), entry.forGui(e.getValue())))
-		  .collect(Collectors.toList());
+	protected List<Pair<String, G>> forGui(Map<K, V> value) {
+		return value.entrySet().stream().map(
+		  e -> Pair.of(keyEntry.serializeStringKey(e.getKey()), entry.forGui(e.getValue()))
+		).collect(Collectors.toList());
 	}
 	
 	@Nullable
 	@Override
-	protected Map<String, V> fromGui(@Nullable List<Pair<String, G>> value) {
+	protected Map<K, V> fromGui(@Nullable List<Pair<String, G>> value) {
+		if (value == null)
+			return null;
 		try {
-			return value != null ? value.stream().collect(Collectors.toMap(
-			  Pair::getKey, p -> entry.fromGuiOrDefault(p.getValue()))) : null;
+			final Map<K, V> m = new HashMap<>();
+			value.forEach(
+			  p -> keyEntry.deserializeStringKey(p.getKey()).ifPresent(
+			    k -> m.put(k, entry.fromGuiOrDefault(p.getValue()))));
+			return m;
 		} catch (IllegalStateException e) { // Duplicate key
 			return null;
 		}
@@ -237,8 +284,14 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	protected Predicate<Object> configValidator() {
 		return o -> {
 			if (o instanceof String) {
-				final Map<String, V> m = fromConfig(fromActualConfig((String) o));
-				return m != null && !supplyError(forGui(m)).isPresent();
+				final Map<String, V> pre = fromActualConfig((String) o);
+				final Map<K, V> m = fromConfig(pre);
+				if (m == null)
+					return false;
+				// skip invalid keys
+				// if (pre.size() != m.size())
+				// 	return false;
+				return !supplyError(forGui(m)).isPresent();
 			} else return false;
 		};
 	}
@@ -267,14 +320,20 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	}
 	
 	protected Optional<ITextComponent> supplyPairError(Pair<String, G> p) {
-		Optional<ITextComponent> e = keyErrorSupplier.apply(p.getKey());
-		if (!e.isPresent())
-			e = entry.supplyError(p.getValue());
+		Optional<ITextComponent> e = keyEntry.stringKeyError(p.getKey());
 		if (e.isPresent())
 			return e;
-		if (getGUI().stream().filter(entry -> entry.getKey().equals(p.getKey())).count() > 1)
+		final Optional<K> opt = keyEntry.deserializeStringKey(p.getKey());
+		if (!opt.isPresent())
 			return Optional.of(new TranslationTextComponent(
-			  "simple-config.config.error.duplicate_key", p.getKey()));
+			  "simple-config.config.error.invalid_key_generic", keyEntry.typeClass.getSimpleName()));
+		K k = opt.get();
+		e = entry.supplyError(p.getValue());
+		if (e.isPresent())
+			return e;
+		if (getGUI().stream().filter(entry -> keyEntry.deserializeStringKey(entry.getKey()).equals(opt)).count() > 1)
+			return Optional.of(new TranslationTextComponent(
+			  "simple-config.config.error.duplicate_key", k));
 		return Optional.empty();
 	}
 	
@@ -288,7 +347,9 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 		  this::supplyError, this::supplyPairError,
 		  builder.getResetButtonKey(), true, false,
 		  (p, en) -> buildCell(builder, p != null? p.getValue() : null), true);
-		e.setRequiresRestart(requireRestart);
+		// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
+		// e.setRequiresRestart(requireRestart);
+		e.setRequiresRestart(false);
 		return Optional.of(e);
 	}
 }

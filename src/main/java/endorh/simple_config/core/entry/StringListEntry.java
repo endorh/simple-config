@@ -36,6 +36,7 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 		  .startStrList(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setExpanded(expand)
+		  .setInsertInFront(insertInTop)
 		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);

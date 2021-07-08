@@ -1,10 +1,13 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
+import endorh.simple_config.core.IStringKeyEntry;
 import endorh.simple_config.gui.DoubleSliderBuilder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.DoubleFieldBuilder;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -12,7 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, DoubleEntry> {
+public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, DoubleEntry>
+  implements IStringKeyEntry<Double> {
 	@Internal public DoubleEntry(
 	  ISimpleConfigEntryHolder parent, String name, double value
 	) {
@@ -81,6 +85,18 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 			  .setErrorSupplier(this::supplyError)
 			  .setTextGetter(sliderTextSupplier);
 			return Optional.of(decorate(valBuilder).build());
+		}
+	}
+	
+	@Override public ITextComponent getKeySerializationError(String key) {
+		return new TranslationTextComponent("text.cloth-config.error.not_valid_number_double");
+	}
+	
+	@Override public Optional<Double> deserializeStringKey(String key) {
+		try {
+			return Optional.of(Double.parseDouble(key));
+		} catch (NumberFormatException e) {
+			return Optional.empty();
 		}
 	}
 }

@@ -23,6 +23,7 @@ public abstract class AbstractListEntry
   <V, Config, Gui, Self extends AbstractListEntry<V, Config, Gui, Self>>
   extends AbstractConfigEntry<List<V>, List<Config>, List<Gui>, Self> {
 	protected Function<V, Optional<ITextComponent>> validator;
+	protected boolean insertInTop;
 	protected boolean expand;
 	
 	public AbstractListEntry(
@@ -36,6 +37,8 @@ public abstract class AbstractListEntry
 	  Self extends Builder<V, Config, Gui, Entry, Self>>
 	  extends AbstractConfigEntryBuilder<List<V>, List<Config>, List<Gui>, Entry, Self> {
 		protected Function<V, Optional<ITextComponent>> validator = v -> Optional.empty();
+		protected boolean insertInTop = false;
+		protected boolean expand = false;
 		
 		public Builder(List<V> value) {
 			super(value, List.class);
@@ -58,6 +61,31 @@ public abstract class AbstractListEntry
 		}
 		
 		/**
+		 * Elements added to the list in the GUI will appear at the top
+		 */
+		public Self insertInTop() {
+			return insertInTop(true);
+		}
+		
+		/**
+		 * Determine if elements added to the list in the GUI should
+		 * appear at the top of the list
+		 */
+		public Self insertInTop(boolean insertInTop) {
+			this.insertInTop = insertInTop;
+			return self();
+		}
+		
+		public Self expand() {
+			return expand(true);
+		}
+		
+		public Self expand(boolean expand) {
+			this.expand = expand;
+			return self();
+		}
+		
+		/**
 		 * Set an error message supplier for the elements of this list entry<br>
 		 * You may also use {@link IErrorEntry#error(Function)} to check
 		 * instead the whole list
@@ -74,6 +102,8 @@ public abstract class AbstractListEntry
 		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
 			final Entry e = super.build(parent, name);
 			e.validator = validator;
+			e.insertInTop = insertInTop;
+			e.expand = expand;
 			return e;
 		}
 	}
@@ -152,7 +182,7 @@ public abstract class AbstractListEntry
 	}
 	
 	@Override
-	protected Optional<ITextComponent> supplyError(List<Gui> value) {
+	public Optional<ITextComponent> supplyError(List<Gui> value) {
 		for (int i = 0; i < value.size(); i++) {
 			Config elem = elemForConfig(elemFromGui(value.get(i)));
 			final Optional<ITextComponent> error = validator.apply(elemFromConfig(elem));

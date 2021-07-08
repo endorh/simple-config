@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
+import endorh.simple_config.core.IStringKeyEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.EnumSelectorBuilder;
@@ -18,9 +19,11 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class EnumEntry<E extends Enum<E>>
-  extends AbstractConfigEntry<E, E, E, EnumEntry<E>> {
+  extends AbstractConfigEntry<E, E, E, EnumEntry<E>>
+  implements IStringKeyEntry<E> {
 	protected final Class<E> enumClass;
 	
 	@Internal public EnumEntry(ISimpleConfigEntryHolder parent, String name, E value) {
@@ -130,5 +133,19 @@ public class EnumEntry<E extends Enum<E>>
 		//noinspection unchecked
 		valBuilder.setEnumNameProvider(e -> enumName((E) e));
 		return Optional.of(decorate(valBuilder).build());
+	}
+	
+	@Override
+	public ITextComponent getKeySerializationError(String key) {
+		return new TranslationTextComponent(
+		  "simple-config.config.error.invalid_enum",
+		  Arrays.stream(enumClass.getEnumConstants()).map(Enum::name)
+		    .collect(Collectors.joining(", ")));
+	}
+	
+	@Override
+	public Optional<E> deserializeStringKey(String key) {
+		return Arrays.stream(enumClass.getEnumConstants())
+		  .filter(e -> e.name().equals(key)).findFirst();
 	}
 }

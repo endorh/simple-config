@@ -243,7 +243,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			return g -> saver.accept(g, parent);
 		final String n = name; // Use the current name
 		return g -> {
-			guiEntry = null; // Discard the entry
+			// guiEntry = null; // Discard the entry
 			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
 			if (!parent.get(n).equals(v)) {
@@ -276,7 +276,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return Optional.empty();
 	}
 	
-	protected Optional<ITextComponent> supplyError(Gui value) {
+	public Optional<ITextComponent> supplyError(Gui value) {
 		Optional<ITextComponent> o;
 		if (guiErrorSupplier != null) {
 			o = guiErrorSupplier.apply(value);
@@ -307,7 +307,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	@OnlyIn(Dist.CLIENT)
 	protected <F extends FieldBuilder<?, ?>> F decorate(F builder) {
 		try {
-			builder.requireRestart(requireRestart);
+			// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
+			// builder.requireRestart(requireRestart);
+			builder.requireRestart(false);
 		} catch (UnsupportedOperationException ignored) {}
 		return builder;
 	}

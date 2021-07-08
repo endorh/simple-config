@@ -82,6 +82,7 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		  .startDoubleList(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
+		  .setInsertInFront(insertInTop)
 		  .setExpanded(expand)
 		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)

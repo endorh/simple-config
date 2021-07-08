@@ -8,6 +8,7 @@ import endorh.simple_config.core.SimpleConfigSync.SSimpleConfigSyncPacket;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
@@ -30,7 +31,10 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 

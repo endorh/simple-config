@@ -198,11 +198,13 @@ public class DemoConfigCategory {
 		              Pair.of("string", 2), new StringIntPairSerializer())))
 		     .n(group("maps")
 		          // Map entries are also supported
-		          //   The only map key type currently supported is String
 		          // Map values may be any other entry that serializes
 		          //   in the config as any type serializable to NBT
 		          //   Currently, this includes every built-in entry type
 		          //   (except GUI only entries)
+		          // By default, map keys are strings, but all types that
+		          //   can be serialized as strings, including numbers,
+		          //   can be used as keys.
 		          // Currently, maps are serialized as NBT compounds in the
 		          //   config file.
 		          .add("map", map(
@@ -214,15 +216,11 @@ public class DemoConfigCategory {
 		          //   are valid entry types, without nesting limit
 		          // However, try to keep your config simple to use
 		          .add("list_map", map(
+		            resource(""),
 			         list(string("<name>"), asList("<name>")),
 			         ImmutableMap.of(
-				        "simple-config", asList("Dev", "Dev2"),
-				        "aerobatic-elytra", asList("Dev", "Dev3")))
-		            // Maps may define an error supplier for their keys
-		            //   For example, this map requires lowercase keys
-			         .keyError(k -> !k.equals(k.toLowerCase())
-			                        ? Optional.of(ttc(prefix("error.not_lowercase"), k))
-			                        : Optional.empty()))
+				        new ResourceLocation("overworld"), asList("Dev", "Dev2"),
+				        new ResourceLocation("the_nether"), asList("Dev", "Dev3"))))
 		          // The entries within a map can be decorated as usual
 		          .add("even_int_map_map", map(
 		            map(number(0)
@@ -230,7 +228,16 @@ public class DemoConfigCategory {
 		                ImmutableMap.of("", 0)
 		            ), ImmutableMap.of(
 		              "plains", ImmutableMap.of("Cornflower", 2, "Dandelion", 4),
-		              "birch forest", ImmutableMap.of("Poppy", 8, "Lily of the Valley", 4)))))
+		              "birch forest", ImmutableMap.of("Poppy", 8, "Lily of the Valley", 4))))
+		          // You may pass an entry builder for the key type as well,
+		          //   as long as its serializable as a string.
+		          // The key entry may have error suppliers, but its tooltip
+		          //   is currently ignored
+		          // In this example, we use int for both the keys and the values
+		          .add("int_to_int_map", map(
+		            number(0).min(0).max(1024),
+		            number(0).min(0).max(2048),
+		            ImmutableMap.of(0, 1, 1, 2, 2, 4, 3, 8))))
 		     .n(group("special")
 		          // Text entries can also receive format arguments if they
 		          //   are defined by name
@@ -480,6 +487,7 @@ public class DemoConfigCategory {
 			@Bind public static Map<String, String> map;
 			@Bind public static Map<String, List<String>> list_map;
 			@Bind public static Map<String, Map<String, Integer>> even_int_map_map;
+			@Bind public static Map<Integer, Integer> int_to_int_map;
 		}
 		
 		@Bind public static class special {

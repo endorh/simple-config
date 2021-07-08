@@ -83,6 +83,7 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 		  .startIntList(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
+		  .setInsertInFront(insertInTop)
 		  .setExpanded(expand)
 		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)

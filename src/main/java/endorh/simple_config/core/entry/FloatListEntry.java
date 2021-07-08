@@ -83,6 +83,7 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
 		  .setExpanded(expand)
+		  .setInsertInFront(insertInTop)
 		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);

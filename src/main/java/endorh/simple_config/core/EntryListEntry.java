@@ -14,13 +14,11 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Special config entry containing a list of values managed
  * by another entry<br>
- * Uses a <i>fake</i> entry holder ({@link ListEntryEntryHolder}) to
- * trick the nested entry into reading its values from a list<br>
- * It sounds hacky because it <b>is</b> hacky
  * @param <V> The type of the elements of the list
  * @param <C> The type of the elements of the list facing the config
  * @param <G> The type of the elements of the list facing the GUI
@@ -136,6 +134,11 @@ public class EntryListEntry
 		return g;
 	}
 	
+	@Override
+	protected Consumer<List<G>> saveConsumer() {
+		return super.saveConsumer().andThen(l -> holder.clear());
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
@@ -145,12 +148,13 @@ public class EntryListEntry
 		final NestedListEntry<G, AbstractConfigListEntry<G>> e =
 		  new NestedListEntry<>(
 		    getDisplayName(), forGui(get()), expand,
-		    () -> this.supplyTooltip(forGui(get())),
-		    saveConsumer().andThen(g -> holder.clear()),
+		    () -> this.supplyTooltip(getGUI()),
+		    saveConsumer(),
 		    () -> forGui(value), builder.getResetButtonKey(),
-		    true, false,
+		    true, insertInTop,
 		    (g, en) -> buildCell(builder, g));
-		e.setRequiresRestart(requireRestart);
+		// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
+		// e.setRequiresRestart(requireRestart);
 		e.setTooltipSupplier(() -> this.supplyTooltip(e.getValue()));
 		e.setErrorSupplier(() -> this.supplyError(e.getValue()));
 		return Optional.of(e);

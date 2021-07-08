@@ -32,6 +32,7 @@
   "simple-config.config.error.invalid_nbt": "Invalid NBT! %s",
   "simple-config.config.error.invalid_pattern": "Invalid Pattern! %s",
   "simple-config.config.error.duplicate_key": "Duplicate key! \"%s\"",
+  "simple-config.config.error.invalid_enum": "Invalid value! Must be %s",
 
   "simple-config.config.error.min_greater_than_max": "Min > Max!",
   "simple-config.config.error.not_even": "Not even! %s",
@@ -48,6 +49,7 @@
   "simple-config.config.client.demo.entries.basic.float_value": "Float value",
   "simple-config.config.client.demo.entries.basic.double_value": "Double value",
   "simple-config.config.client.demo.entries.basic.long_slider": "Long slider",
+  "simple-config.config.client.demo.entries.basic.long_slider.help": "All number types support sliders,\nas long as their bounds are finite",
   "simple-config.config.client.demo.entries.basic.float_slider": "Float slider",
   "simple-config.config.client.demo.entries.basic.string_value": "String value",
   "simple-config.config.client.demo.entries.basic.regex_value": "Regex pattern value",
@@ -79,6 +81,7 @@
   "simple-config.config.client.demo.entries.maps.list_map.help": "Of course, maps may contain lists",
   "simple-config.config.client.demo.entries.maps.even_int_map_map": "Map of maps of even integers",
   "simple-config.config.client.demo.entries.maps.even_int_map_map.help": "Of course, maps may contain other maps\nHowever, don't push it too far, or the config will stop being§o simple§r\nAdditionally, this map only allows even integers",
+  "simple-config.config.client.demo.entries.maps.int_to_int_map": "Int to int map",
   "simple-config.config.client.demo.entries.special": "Special",
   "simple-config.config.client.demo.entries.special.non_persistent_desc": "Boolean entries can be non persistent, appearing only in the GUI and being reset on every restart\nThis can be useful to enable special debug/profiling features you wouldn't wish to leave on accidentally",
   "simple-config.config.client.demo.entries.special.non_persistent_bool": "Non persistent bool",

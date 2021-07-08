@@ -82,6 +82,7 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 		  .startLongList(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
+		  .setInsertInFront(insertInTop)
 		  .setExpanded(expand)
 		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)

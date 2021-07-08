@@ -18,7 +18,8 @@ import java.util.Optional;
 
 public abstract class AbstractSerializableEntry
   <V, Self extends AbstractSerializableEntry<V, Self>>
-  extends AbstractConfigEntry<V, String, String, Self> {
+  extends AbstractConfigEntry<V, String, String, Self>
+  implements IAbstractStringKeyEntry<V> {
 	
 	public AbstractSerializableEntry(
 	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
@@ -70,7 +71,7 @@ public abstract class AbstractSerializableEntry
 	}
 	
 	@Override
-	protected Optional<ITextComponent> supplyError(String value) {
+	public Optional<ITextComponent> supplyError(String value) {
 		final Optional<ITextComponent> opt = super.supplyError(value);
 		if (!opt.isPresent() && fromGui(value) == null && value != null) {
 			return getErrorMessage(value);
@@ -94,5 +95,20 @@ public abstract class AbstractSerializableEntry
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);
 		return Optional.of(decorate(valBuilder).build());
+	}
+	
+	@Override
+	public String serializeStringKey(V key) {
+		return serialize(key);
+	}
+	
+	@Override
+	public Optional<V> deserializeStringKey(String key) {
+		return Optional.ofNullable(deserialize(key));
+	}
+	
+	@Override
+	public Optional<ITextComponent> stringKeyError(String key) {
+		return supplyError(key);
 	}
 }

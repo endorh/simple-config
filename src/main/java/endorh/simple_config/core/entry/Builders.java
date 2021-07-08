@@ -4,7 +4,7 @@ import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.EntryListEntry;
 import endorh.simple_config.core.EntryListEntry.Builder;
-import endorh.simple_config.core.StringMapEntry;
+import endorh.simple_config.core.StringToEntryMapEntry;
 import endorh.simple_config.core.annotation.Entry;
 import endorh.simple_config.core.annotation.HasAlpha;
 import endorh.simple_config.core.annotation.Slider;
@@ -358,10 +358,22 @@ public class Builders {
 		return new EntryListEntry.Builder<>(value, entry);
 	}
 	
+	public static <K, V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
+	  KE extends AbstractConfigEntry<K, ?, ?, KE> & IAbstractStringKeyEntry<K>,
+	  KB extends AbstractConfigEntryBuilder<K, ?, ?, KE, KB>>
+	StringToEntryMapEntry.Builder<K, V, C, G, E, B, KE, KB> map(
+	  KB keyEntry, B entry, Map<K, V> value
+	) {
+		return new StringToEntryMapEntry.Builder<>(value, keyEntry, entry);
+	}
+	
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	StringMapEntry.Builder<V, C, G, E, B> map(B entry, Map<String, V> value) {
-		return new StringMapEntry.Builder<>(value, entry);
+	StringToEntryMapEntry.Builder<String, V, C, G, E, B, StringEntry, StringEntry.Builder> map(
+	  B entry, Map<String, V> value
+	) {
+		return new StringToEntryMapEntry.Builder<>(value, string(""), entry);
 	}
 	
 	// Register reflection field parsers ------------------------------------------------------------

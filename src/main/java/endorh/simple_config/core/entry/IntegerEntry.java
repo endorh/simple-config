@@ -1,10 +1,13 @@
 package endorh.simple_config.core.entry;
 
+import endorh.simple_config.core.IStringKeyEntry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.IntFieldBuilder;
 import me.shedaniel.clothconfig2.impl.builders.IntSliderBuilder;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -12,7 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, IntegerEntry> {
+public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, IntegerEntry>
+  implements IStringKeyEntry<Integer> {
 	@Internal public IntegerEntry(
 	  ISimpleConfigEntryHolder parent, String name, int value
 	) {
@@ -79,5 +83,18 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 			  .setTextGetter(sliderTextSupplier);
 			return Optional.of(decorate(valBuilder).build());
 		}
+	}
+	
+	@Override
+	public Optional<Integer> deserializeStringKey(String key) {
+		try {
+			return Optional.of(Integer.parseInt(key));
+		} catch (NumberFormatException e) {
+			return Optional.empty();
+		}
+	}
+	
+	@Override public ITextComponent getKeySerializationError(String key) {
+		return new TranslationTextComponent("text.cloth-config.error.not_valid_number_int", key);
 	}
 }

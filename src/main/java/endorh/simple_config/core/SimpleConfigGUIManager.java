@@ -88,7 +88,12 @@ public class SimpleConfigGUIManager {
 		final ConfigBuilder builder = ConfigBuilder.create()
 		  .setParentScreen(parent)
 		  .setSavingRunnable(() -> configs.stream()
-		    .filter(c -> c.dirty).forEach(SimpleConfig::save))
+		    .filter(c -> c.dirty).forEach(c -> {
+			    if (c.anyDirtyRequiresRestart())
+				    c.markGUIRestart();
+			    c.save();
+			    c.removeGUI();
+		    }))
 		  .setTitle(new TranslationTextComponent(
 		    "simple-config.config.title", SimpleConfig.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(new ResourceLocation(

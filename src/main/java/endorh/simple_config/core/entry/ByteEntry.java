@@ -5,6 +5,8 @@ import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.IntFieldBuilder;
 import me.shedaniel.clothconfig2.impl.builders.IntSliderBuilder;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -13,7 +15,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @Deprecated
-public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEntry> {
+public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEntry>
+  implements IAbstractStringKeyEntry<Byte> {
 	@Internal public ByteEntry(
 	  ISimpleConfigEntryHolder parent, String name, byte value
 	) {
@@ -78,6 +81,32 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 			  .setErrorSupplier(this::supplyError)
 			  .setTextGetter(g -> sliderTextSupplier.apply(fromGui(g)));
 			return Optional.of(decorate(valBuilder).build());
+		}
+	}
+	
+	@Override
+	public Optional<Byte> deserializeStringKey(String key) {
+		try {
+			return Optional.of(Byte.parseByte(key));
+		} catch (NumberFormatException e) {
+			return Optional.empty();
+		}
+	}
+	
+	@Override
+	public Optional<ITextComponent> stringKeyError(String key) {
+		try {
+			final int i = Integer.parseInt(key);
+			if (i > max)
+				return Optional.of(new TranslationTextComponent(
+				  "text.cloth-config.error.too_large", max));
+			else if (i < min)
+				return Optional.of(new TranslationTextComponent(
+				  "text.cloth-config.error.too_small", min));
+			return supplyError(i);
+		} catch (NumberFormatException e) {
+			return Optional.of(new TranslationTextComponent(
+			  "text.cloth-config.error.not_valid_number_int"));
 		}
 	}
 }
