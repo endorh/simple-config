@@ -1,7 +1,7 @@
 package endorh.simple_config.core.annotation;
 
 
-import endorh.simple_config.core.entry.RangedEntry;
+import endorh.simple_config.core.entry.AbstractRangedEntry;
 import endorh.simple_config.core.entry.RangedListEntry;
 
 import java.lang.annotation.ElementType;
@@ -10,7 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * If this field generates a {@link RangedEntry}
+ * If this field generates a {@link AbstractRangedEntry}
  * or {@link RangedListEntry}, this annotation
  * sets its maximum value (inclusive)<br>
  * The value is converted from double to the correspondent type

@@ -56,7 +56,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	  List<IGUIEntry> order
 	) {
 		if (this.entries != null)
-			throw new IllegalStateException("Called build() twice");
+			throw new IllegalStateException("Called buildEntry() twice");
 		this.entries = entries;
 		this.groups = groups;
 		children = groups;
@@ -99,7 +99,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 			category.setBackground(parent.background);
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order)
-				entry.buildGUI(category, entryBuilder, this);
+				entry.buildGUI(category, entryBuilder);
 		}
 		if (decorator != null)
 			decorator.accept(this, category);

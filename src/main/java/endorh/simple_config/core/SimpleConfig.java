@@ -103,7 +103,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Create a {@link SimpleConfig} builder<br>
-	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntry)}<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntryBuilder)}<br>
 	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
 	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
@@ -116,7 +116,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Create a {@link SimpleConfig} builder<br>
-	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntry)}<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntryBuilder)}<br>
 	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
 	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
@@ -201,7 +201,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	  ForgeConfigSpec spec
 	) {
 		if (this.entries != null)
-			throw new IllegalStateException("Called build() twice");
+			throw new IllegalStateException("Called buildEntry() twice");
 		this.entries = entries;
 		this.categories = categories;
 		this.groups = groups;
@@ -371,7 +371,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			if (background != null)
 				category.setBackground(background);
 			for (IGUIEntry entry : order)
-				entry.buildGUI(category, entryBuilder, this);
+				entry.buildGUI(category, entryBuilder);
 		}
 		for (SimpleConfigCategory cat : categories.values()) {
 			cat.buildGUI(configBuilder, entryBuilder);
@@ -381,29 +381,29 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	public static class NoSuchConfigEntryError extends RuntimeException {
-		public NoSuchConfigEntryError(String name) {
-			super("Cannot find config entry with name \"" + name + "\"");
+		public NoSuchConfigEntryError(String path) {
+			super("Cannot find config entry \"" + path + "\"");
 		}
 	}
 	
 	public static class NoSuchConfigCategoryError extends RuntimeException {
-		public NoSuchConfigCategoryError(String name) {
-			super("Cannot find config category with name \"" + name + "\"");
+		public NoSuchConfigCategoryError(String path) {
+			super("Cannot find config category \"" + path + "\"");
 		}
 	}
 	
 	public static class NoSuchConfigGroupError extends RuntimeException {
-		public NoSuchConfigGroupError(String name) {
-			super("Cannot find config group with name \"" + name + "\"");
+		public NoSuchConfigGroupError(String path) {
+			super("Cannot find config group \"" + path + "\"");
 		}
 	}
 	
 	public static class InvalidConfigValueTypeException extends RuntimeException {
-		public InvalidConfigValueTypeException(String name, ClassCastException cause) {
-			super("Invalid type requested for config value \"" + name + "\"", cause);
+		public InvalidConfigValueTypeException(String path, ClassCastException cause) {
+			super("Invalid type requested for config value \"" + path + "\"", cause);
 		}
-		public InvalidConfigValueTypeException(String name, ClassCastException cause, String extra) {
-			super("Invalid type requested for config value \"" + name + "\"\n  " + extra, cause);
+		public InvalidConfigValueTypeException(String path, ClassCastException cause, String extra) {
+			super("Invalid type requested for config value \"" + path + "\"\n  " + extra, cause);
 		}
 	}
 	
@@ -413,9 +413,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
-	protected interface IAbstractGUIEntry {}
-	protected interface IGUIEntry extends IAbstractGUIEntry {
+	protected interface IGUIEntryBuilder {}
+	protected interface IGUIEntry extends IGUIEntryBuilder {
 		@Internal void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config);
+		  ConfigCategory category, ConfigEntryBuilder entryBuilder);
 	}
 }

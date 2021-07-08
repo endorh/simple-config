@@ -7,16 +7,42 @@ import me.shedaniel.clothconfig2.impl.builders.BooleanToggleBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.Optional;
 import java.util.function.Function;
 
 public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, NonPersistentBooleanEntry> {
-	protected Function<Boolean, ITextComponent> yesNoSupplier = null;
+	protected Function<Boolean, ITextComponent> yesNoSupplier;
 	protected boolean actualValue = value;
 	
-	public NonPersistentBooleanEntry(Boolean value) {
-		super(value, Boolean.class);
+	@Internal public NonPersistentBooleanEntry(
+	  ISimpleConfigEntryHolder parent, String name, Boolean value
+	) {
+		super(parent, name, value, Boolean.class);
+	}
+	
+	public static class Builder extends GUIOnlyEntry.Builder<Boolean, Boolean, NonPersistentBooleanEntry, Builder> {
+		protected Function<Boolean, ITextComponent> yesNoSupplier = null;
+		
+		public Builder(Boolean value) {
+			super(value, Boolean.class);
+		}
+		
+		/**
+		 * Set a Yes/No supplier for this entry
+		 */
+		public Builder displayAs(Function<Boolean, ITextComponent> displayAdapter) {
+			yesNoSupplier = displayAdapter;
+			return this;
+		}
+		
+		@Override
+		protected NonPersistentBooleanEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			final NonPersistentBooleanEntry e = new NonPersistentBooleanEntry(parent, name, value);
+			e.yesNoSupplier = yesNoSupplier;
+			return e;
+		}
 	}
 	
 	@Override
@@ -29,24 +55,15 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 		actualValue = value;
 	}
 	
-	/**
-	 * Set a Yes/No supplier for this entry
-	 */
-	public NonPersistentBooleanEntry displayAs(
-	  Function<Boolean, ITextComponent> displayAdapter) {
-		this.yesNoSupplier = displayAdapter;
-		return this;
-	}
-	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
 		final BooleanToggleBuilder valBuilder = builder
 		  .startBooleanToggle(getDisplayName(), actualValue)
 		  .setDefaultValue(value)
-		  .setSaveConsumer(saveConsumer(c))
+		  .setSaveConsumer(saveConsumer())
 		  .setYesNoTextSupplier(yesNoSupplier)
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);

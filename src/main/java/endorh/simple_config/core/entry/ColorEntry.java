@@ -1,14 +1,16 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.ColorFieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -17,42 +19,71 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry> {
-	public ColorEntry(Color value) {
-		super(value, Color.class);
+	protected final boolean alpha;
+	@Internal public ColorEntry(
+	  ISimpleConfigEntryHolder parent, String name, Color value, boolean alpha
+	) {
+		super(parent, name, value);
+		this.alpha = alpha;
+	}
+	
+	public static class Builder extends AbstractConfigEntryBuilder<Color, String, Integer, ColorEntry, Builder> {
+		protected boolean alpha;
+		
+		public Builder(Color value) {
+			super(value, Color.class);
+		}
+		
+		public Builder alpha() {
+			return alpha(true);
+		}
+		
+		public Builder alpha(boolean hasAlpha) {
+			alpha = hasAlpha;
+			return self();
+		}
+		
+		@Override
+		protected ColorEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			return new ColorEntry(parent, name, value, alpha);
+		}
 	}
 	
 	@Override
 	protected String forConfig(Color value) {
-		return String.format("#%06X", value.getRGB() & 0xFFFFFF);
+		return alpha? String.format("#%08X", value.getRGB()) :
+		       String.format("#%06X", value.getRGB() & 0xFFFFFF);
 	}
 	
 	protected static final Pattern COLOR_PATTERN = Pattern.compile(
 	  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3}|[0-9a-f]{6})\\s*");
+	protected static final Pattern ALPHA_COLOR_PATTERN = Pattern.compile(
+	  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\s*");
 	
 	@Override
 	protected @Nullable
 	Color fromConfig(String value) {
 		if (value == null)
 			return null;
-		final Matcher m = COLOR_PATTERN.matcher(value);
+		final Matcher m = (alpha? ALPHA_COLOR_PATTERN : COLOR_PATTERN).matcher(value);
 		if (m.matches()) {
 			String c = m.group("color");
-			if (c.length() == 3)
+			if (c.length() < 6)
 				c = doubleChars(c);
-			return new Color((int) Long.parseLong(c.toLowerCase(), 0x10));
+			return new Color((int) Long.parseLong(c.toLowerCase(), 0x10), alpha);
 		}
 		return null;
 	}
 	
 	@Override
 	protected Integer forGui(Color value) {
-		return value.getRGB() & 0xFFFFFF;
+		return alpha? value.getRGB() : value.getRGB() & 0xFFFFFF;
 	}
 	
 	@Override
 	protected @Nullable
 	Color fromGui(@Nullable Integer value) {
-		return value != null ? new Color(value) : null;
+		return value != null ? new Color(value, alpha) : null;
 	}
 	
 	protected static String doubleChars(String s) {
@@ -63,19 +94,20 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	}
 	
 	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(decorate(builder).define(name, forConfig(value), configValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
-		final ColorFieldBuilder valBuilder = builder
-		  .startColorField(getDisplayName(), forGui(c.get(name)))
+		ColorFieldBuilder valBuilder = builder
+		  .startAlphaColorField(getDisplayName(), forGui(get()))
+		  .setAlphaMode(alpha)
 		  .setDefaultValue(forGui(value))
-		  .setSaveConsumer(saveConsumer(c))
+		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);
 		return Optional.of(decorate(valBuilder).build());

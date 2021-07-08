@@ -3,6 +3,7 @@ package endorh.simple_config.demo;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.core.SimpleConfig;
 import endorh.simple_config.core.annotation.*;
+import endorh.simple_config.demo.DemoServerConfig.demo.demo_group;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Direction;
 import net.minecraft.util.text.ITextComponent;
@@ -44,7 +45,10 @@ public class DemoServerConfig {
 	//   Within categories or groups, the bake method must receive
 	//   the proper type, either SimpleConfigCategory or SimpleConfigGroup
 	protected static void bake(SimpleConfig config) {
-	
+		// The baker method may be used to translate units
+		//   or precompute frequently used values each time
+		//   the config changes
+		demo_group.speed_m_tick = demo_group.speed_m_s / 20F;
 	}
 	
 	// You may declare categories and groups as static inner classes
@@ -139,11 +143,16 @@ public class DemoServerConfig {
 			//   the builder are ignored
 			public static String summon_command = "/summon minecraft:sheep ~ ~ ~ {Color:6}";
 			
+			// This can be useful to have settings in different units
+			//   in the config.
+			@Entry @Min(0) public static float speed_m_s = 2F;
+			public static float speed_m_tick;
+			
 			// Text entries may be suppliers of ITextComponent instead
 			//   Fon example, the following text entry would change
 			//   if the mod modified the summon_command field
 			@Text private static final Supplier<ITextComponent> _2 = () ->
-			  ttc(prefix("some_complex_text"),
+			  ttc(prefix("text.some_complex_text"),
 			      stc(summon_command).modifyStyle(style -> style
 				     .setFormatting(TextFormatting.LIGHT_PURPLE)
 				     // If you're planning to have many clickable links,

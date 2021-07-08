@@ -1,7 +1,7 @@
 package endorh.simple_config.core;
 
-import endorh.simple_config.core.SimpleConfig.IAbstractGUIEntry;
 import endorh.simple_config.core.SimpleConfig.IGUIEntry;
+import endorh.simple_config.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simple_config.core.entry.Builders;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
@@ -19,7 +19,10 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -29,7 +32,7 @@ import static java.util.Collections.unmodifiableMap;
 
 /**
  * Create a {@link SimpleConfig} using a chained method call<br>
- * Use {@link SimpleConfigBuilder#add(String, AbstractConfigEntry)}
+ * Use {@link SimpleConfigBuilder#add(String, AbstractConfigEntryBuilder)}
  * to add entries to the config (in order)<br>
  * Use {@link SimpleConfigBuilder#n(CategoryBuilder)} to add
  * subcategories to the config, each with its own tab<br>
@@ -129,9 +132,11 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
-	protected static void checkName(String name) {
-		if (name.contains("."))
-			throw new IllegalArgumentException("Config entry names cannot contain dots");
+	@Override
+	protected void checkName(String name) {
+		super.checkName(name);
+		if (categories.containsKey(name))
+			throw new IllegalArgumentException("Duplicate config entry name: " + name);
 	}
 	
 	@Override public SimpleConfigBuilder restart() {
@@ -140,18 +145,17 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
-	@Override protected void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry) {
-		checkName(entry.name);
-		if (entries.containsKey(entry.name))
-			throw new IllegalArgumentException("Duplicate config value: " + entry.name);
-		entries.put(entry.name, entry);
+	@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry) {
+		checkName(name);
+		if (entries.containsKey(name))
+			throw new IllegalArgumentException("Duplicate config entry name: " + name);
+		entries.put(name, entry);
 		if (requireRestart)
 			entry.restart();
-		last = entry;
 		guiOrder.add(entry);
 	}
 	
-	@Override protected AbstractConfigEntry<?, ?, ?, ?> getEntry(String name) {
+	@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
 		return entries.get(name);
 	}
 	
@@ -195,7 +199,7 @@ public class SimpleConfigBuilder
 	
 	/**
 	 * Builder for a {@link SimpleConfigCategory}<br>
-	 * Use {@link CategoryBuilder#add(String, AbstractConfigEntry)}
+	 * Use {@link CategoryBuilder#add(String, AbstractConfigEntryBuilder)}
 	 * to add new entries to the category<br>
 	 * Use {@link CategoryBuilder#n(GroupBuilder)} to add
 	 * subgroups to the category, which may contain further groups<br><br>
@@ -223,6 +227,7 @@ public class SimpleConfigBuilder
 		
 		protected CategoryBuilder(String name, Class<?> configClass) {
 			this.name = name;
+			this.path = name;
 			this.configClass = configClass;
 		}
 		
@@ -276,18 +281,19 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		@Override protected void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry) {
-			checkName(entry.name);
-			if (entries.containsKey(entry.name))
-				throw new IllegalArgumentException("Duplicate config value: " + entry.name);
-			entries.put(entry.name, entry);
+		@Override protected void addEntry(
+		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
+		) {
+			checkName(name);
+			if (entries.containsKey(name))
+				throw new IllegalArgumentException("Duplicate config entry name: " + name);
+			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			last = entry;
 			guiOrder.add(entry);
 		}
 		
-		@Override protected AbstractConfigEntry<?, ?, ?, ?> getEntry(String name) {
+		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
@@ -326,21 +332,28 @@ public class SimpleConfigBuilder
 			final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
 			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
+			final Map<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>, AbstractConfigEntry<?, ?, ?, ?>> builtEntries = new HashMap<>();
+			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
+				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(cat, e.getKey());
+				builtEntries.put(e.getValue(), entry);
+				entriesByName.put(e.getKey(), entry);
 				translate(entry);
-				entry.setParent(cat);
 				entry.buildConfig(specBuilder, specValues);
 			}
-			final List<IGUIEntry> order = new ArrayList<>();
 			for (GroupBuilder group : this.groups.values()) {
 				final SimpleConfigGroup g = group.build(cat, specBuilder);
 				built.put(group, g);
 				groups.put(group.name, g);
 			}
-			guiOrder.stream().map(e -> e instanceof GroupBuilder ? built.get(e) : (IGUIEntry) e)
-			  .forEachOrdered(order::add);
+			final List<IGUIEntry> order = guiOrder.stream().map(
+			  e -> e instanceof GroupBuilder
+			       ? built.get(e)
+			       : e instanceof AbstractConfigEntryBuilder
+			         ? builtEntries.get(e)
+			         : (IGUIEntry) e).collect(Collectors.toList());
 			cat.build(
-			  unmodifiableMap(entries), unmodifiableMap(groups),
+			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
 			  unmodifiableMap(specValues), unmodifiableList(order));
 			specBuilder.pop();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
@@ -349,11 +362,16 @@ public class SimpleConfigBuilder
 			});
 			return cat;
 		}
+		
+		@Override
+		public String toString() {
+			return "Category[" + path + "]";
+		}
 	}
 	
 	/**
 	 * Builder for a {@link SimpleConfigGroup}<br>
-	 * Use {@link GroupBuilder#add(String, AbstractConfigEntry)}
+	 * Use {@link GroupBuilder#add(String, AbstractConfigEntryBuilder)}
 	 * to add new entries to the group<br>
 	 * Use {@link GroupBuilder#n(GroupBuilder)} to add
 	 * subgroups to this group<br><br>
@@ -362,7 +380,7 @@ public class SimpleConfigBuilder
 	 * {@link Builders}
 	 */
 	public static class GroupBuilder extends AbstractSimpleConfigEntryHolderBuilder<GroupBuilder>
-	  implements IAbstractGUIEntry {
+	  implements IGUIEntryBuilder {
 		protected CategoryBuilder category;
 		protected final String name;
 		
@@ -375,6 +393,7 @@ public class SimpleConfigBuilder
 		
 		protected GroupBuilder(String name, boolean expanded) {
 			this.name = name;
+			this.path = name;
 			this.expanded = expanded;
 		}
 		
@@ -417,18 +436,17 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		@Override protected void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry) {
-			checkName(entry.name);
-			if (entries.containsKey(entry.name))
-				throw new IllegalArgumentException("Duplicate config value: " + entry.name);
-			entries.put(entry.name, entry);
+		@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry) {
+			checkName(name);
+			if (entries.containsKey(name))
+				throw new IllegalArgumentException("Duplicate config entry name: " + name);
+			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			last = entry;
 			guiOrder.add(entry);
 		}
 		
-		@Override protected AbstractConfigEntry<?, ?, ?, ?> getEntry(String name) {
+		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
@@ -470,9 +488,13 @@ public class SimpleConfigBuilder
 			final Map<GroupBuilder, SimpleConfigGroup> builtGroups = new HashMap<>();
 			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
+			final Map<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>, AbstractConfigEntry<?, ?, ?, ?>> builtEntries = new HashMap<>();
+			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
+				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(group, e.getKey());
+				builtEntries.put(e.getValue(), entry);
+				entriesByName.put(e.getKey(), entry);
 				translate(entry);
-				entry.setParent(group);
 				entry.buildConfig(specBuilder, specValues);
 			}
 			for (String name : groups.keySet()) {
@@ -481,14 +503,22 @@ public class SimpleConfigBuilder
 				groupMap.put(name, subGroup);
 				builtGroups.put(builder, subGroup);
 			}
-			final List<IGUIEntry> builtOrder = guiOrder.stream()
-			  .map(e -> e instanceof GroupBuilder ? builtGroups.get(e) : (IGUIEntry) e)
-			  .collect(Collectors.toList());
+			final List<IGUIEntry> builtOrder = guiOrder.stream().map(
+			  e -> e instanceof GroupBuilder
+			       ? builtGroups.get(e)
+			       : e instanceof AbstractConfigEntryBuilder
+			         ? builtEntries.get(e)
+			         : (IGUIEntry) e).collect(Collectors.toList());
 			group.build(
-			  unmodifiableMap(entries), unmodifiableMap(specValues),
+			  unmodifiableMap(entriesByName), unmodifiableMap(specValues),
 			  unmodifiableMap(groupMap), unmodifiableList(builtOrder));
 			specBuilder.pop();
 			return group;
+		}
+		
+		@Override
+		public String toString() {
+			return "Group[" + path + "]";
 		}
 	}
 	
@@ -530,14 +560,17 @@ public class SimpleConfigBuilder
 		final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
+		final Map<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>, AbstractConfigEntry<?, ?, ?, ?>> builtEntries = new HashMap<>();
+		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+		for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
+			final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(config, e.getKey());
+			builtEntries.put(e.getValue(), entry);
+			entriesByName.put(e.getKey(), entry);
 			translate(entry);
-			entry.setParent(config);
 			entry.buildConfig(specBuilder, specValues);
 		}
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
-		final List<IGUIEntry> order = new ArrayList<>();
 		for (CategoryBuilder cat : categories.values())
 			categoryMap.put(cat.name, cat.build(config, specBuilder));
 		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, specBuilder);
@@ -546,11 +579,15 @@ public class SimpleConfigBuilder
 			built.put(group, g);
 			groupMap.put(group.name, g);
 		}
-		guiOrder.stream().map(e -> e instanceof GroupBuilder ? built.get(e) : (IGUIEntry) e)
-		  .forEachOrdered(order::add);
+		final List<IGUIEntry> order = guiOrder.stream().map(
+		  e -> e instanceof GroupBuilder
+		       ? built.get(e)
+		       : e instanceof AbstractConfigEntryBuilder
+		         ? builtEntries.get(e)
+		         : (IGUIEntry) e).collect(Collectors.toList());
 		
 		config.build(
-		  unmodifiableMap(entries), unmodifiableMap(categoryMap),
+		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
 		  unmodifiableMap(groupMap), unmodifiableMap(specValues),
 		  unmodifiableList(order), specBuilder.build());
 		ModLoadingContext.get().registerConfig(type, config.spec);
@@ -562,5 +599,10 @@ public class SimpleConfigBuilder
 		});
 		modEventBus.register(config);
 		return config;
+	}
+	
+	@Override
+	public String toString() {
+		return "SimpleConfig[" + path + "]";
 	}
 }

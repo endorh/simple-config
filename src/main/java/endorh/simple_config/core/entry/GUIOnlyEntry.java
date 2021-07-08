@@ -1,23 +1,43 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
   extends AbstractConfigEntry<V, Void, Gui, Self> {
-	public GUIOnlyEntry(V value, Class<?> typeClass) {
-		super(value, typeClass);
+	public GUIOnlyEntry(ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass) {
+		super(parent, name, value);
+	}
+	
+	public static abstract class Builder<V, Gui,
+	  Entry extends GUIOnlyEntry<V, Gui, Entry>,
+	  Self extends Builder<V, Gui, Entry, Self>>
+	  extends AbstractConfigEntryBuilder<V, Void, Gui, Entry, Self> {
+		public Builder(V value, Class<?> typeClass) {
+			super(value, typeClass);
+		}
+		
+		@Override
+		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+			/*if (parent.getRoot().type != Type.CLIENT)
+				throw new IllegalArgumentException(
+				  "Attempt to declare non persistent config entry in a non-client config");*/
+			return super.build(parent, name);
+		}
 	}
 	
 	@Override protected Void forConfig(V value) {
@@ -60,24 +80,20 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	}
 	
 	@Override
-	protected final void buildConfig(Builder builder, Map<String, ConfigValue<?>> specValues) {
-		if (parent.getRoot().type != Type.CLIENT) {
-			throw new IllegalArgumentException(
-			  "Attempt to declare non persistent config entry " + getPath() + " on a server config");
-		}
+	protected final void buildConfig(ForgeConfigSpec.Builder builder, Map<String, ConfigValue<?>> specValues) {
 		specValues.put(name, null);
 	}
 	
 	@Override
-	protected final Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+	protected final Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.empty();
 	}
 	
 	@Override
-	protected Consumer<Gui> saveConsumer(ISimpleConfigEntryHolder c) {
+	protected Consumer<Gui> saveConsumer() {
 		return g -> {
 			markDirty();
-			c.markDirty().set(name, fromGuiOrDefault(g));
+			parent.markDirty().set(name, fromGuiOrDefault(g));
 		};
 	}
 }

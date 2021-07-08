@@ -1,7 +1,7 @@
 package endorh.simple_config.core;
 
 import endorh.simple_config.core.entry.TextEntry;
-import endorh.simple_config.core.SimpleConfig.IAbstractGUIEntry;
+import endorh.simple_config.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import net.minecraft.util.text.ITextComponent;
 
@@ -14,14 +14,20 @@ import java.util.function.Supplier;
 abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSimpleConfigEntryHolderBuilder<Builder>> {
 	
 	protected final Map<String, GroupBuilder> groups = new LinkedHashMap<>();
-	protected final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries = new LinkedHashMap<>();
-	protected final List<IAbstractGUIEntry> guiOrder = new ArrayList<>();
-	protected AbstractConfigEntry<?, ?, ?, ?> last = null;
+	protected final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
+	protected final List<IGUIEntryBuilder> guiOrder = new ArrayList<>();
 	protected boolean requireRestart = false;
 	
-	protected abstract void addEntry(AbstractConfigEntry<?, ?, ?, ?> entry);
-	protected abstract AbstractConfigEntry<?, ?, ?, ?> getEntry(String name);
+	protected abstract void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry);
+	protected abstract AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name);
 	protected abstract boolean hasEntry(String name);
+	
+	protected void checkName(String name) {
+		if (name.contains("."))
+			throw new IllegalArgumentException("Config entry names cannot contain dots: " + name);
+		if (entries.containsKey(name) || groups.containsKey(name))
+			throw new IllegalArgumentException("Duplicate config entry name: " + name);
+	}
 	
 	/**
 	 * Flag this config section as requiring a restart to be effective
@@ -29,7 +35,7 @@ abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSi
 	public Builder restart() {
 		requireRestart = true;
 		groups.values().forEach(GroupBuilder::restart);
-		entries.values().forEach(AbstractConfigEntry::restart);
+		entries.values().forEach(AbstractConfigEntryBuilder::restart);
 		return self();
 	}
 	
@@ -41,8 +47,8 @@ abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSi
 	/**
 	 * Add an entry to the config
 	 */
-	public Builder add(String name, AbstractConfigEntry<?, ?, ?, ?> entry) {
-		addEntry(entry.name(name));
+	public Builder add(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder) {
+		addEntry(name, entryBuilder);
 		return self();
 	}
 	
@@ -54,21 +60,21 @@ abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSi
 	 *             called before being filled in
 	 */
 	public Builder text(String name, Object... args) {
-		add(name, new TextEntry().args(args));
+		add(name, new TextEntry.Builder().args(args));
 		return self();
 	}
 	/**
 	 * Create a text entry in the config
 	 */
 	public Builder text(ITextComponent text) {
-		add(SimpleConfig.nextTextID(), new TextEntry(() -> text));
+		add(SimpleConfig.nextTextID(), new TextEntry.Builder(() -> text));
 		return self();
 	}
 	/**
 	 * Create a text entry in the config
 	 */
 	public Builder text(Supplier<ITextComponent> textSupplier) {
-		add(SimpleConfig.nextTextID(), new TextEntry(textSupplier));
+		add(SimpleConfig.nextTextID(), new TextEntry.Builder(textSupplier));
 		return self();
 	}
 	

@@ -1,12 +1,14 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.IErrorEntry;
+import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
 import javax.annotation.Nullable;
@@ -17,45 +19,64 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public abstract class ListEntry
-  <V, Config, Gui, Self extends ListEntry<V, Config, Gui, Self>>
+public abstract class AbstractListEntry
+  <V, Config, Gui, Self extends AbstractListEntry<V, Config, Gui, Self>>
   extends AbstractConfigEntry<List<V>, List<Config>, List<Gui>, Self> {
-	protected Function<V, Optional<ITextComponent>> validator = t -> Optional.empty();
+	protected Function<V, Optional<ITextComponent>> validator;
 	protected boolean expand;
 	
-	public ListEntry(@Nullable List<V> value) {
-		super(value != null ? value : new ArrayList<>(), List.class);
+	public AbstractListEntry(
+	  ISimpleConfigEntryHolder parent, String name, @Nullable List<V> value
+	) {
+		super(parent, name, value != null ? value : new ArrayList<>());
 	}
 	
-	/**
-	 * Set a validator for the elements of this list entry<br>
-	 * You may also use {@link ListEntry#elemError(Function)}
-	 * to provide users with more explicative error messages<br>
-	 * You may also use {@link IErrorEntry#error(Function)} to
-	 * validate instead the whole list
-	 *
-	 * @param validator Element validator. Should return true for all valid elements
-	 */
-	public Self setValidator(Predicate<V> validator) {
-		return this.elemError(
-		  c -> validator.test(c) ? Optional.empty() :
-		       Optional.of(new TranslationTextComponent(
-			      "simple-config.config.error.list_element_does_not_match_validator", c)));
+	public static abstract class Builder<V, Config, Gui,
+	  Entry extends AbstractListEntry<V, Config, Gui, Entry>,
+	  Self extends Builder<V, Config, Gui, Entry, Self>>
+	  extends AbstractConfigEntryBuilder<List<V>, List<Config>, List<Gui>, Entry, Self> {
+		protected Function<V, Optional<ITextComponent>> validator = v -> Optional.empty();
+		
+		public Builder(List<V> value) {
+			super(value, List.class);
+		}
+		
+		/**
+		 * Set a validator for the elements of this list entry<br>
+		 * You may also use {@link AbstractListEntry.Builder#elemError(Function)}
+		 * to provide users with more explicative error messages<br>
+		 * You may also use {@link IErrorEntry#error(Function)} to
+		 * validate instead the whole list
+		 *
+		 * @param validator Element validator. Should return true for all valid elements
+		 */
+		public Self setValidator(Predicate<V> validator) {
+			return this.elemError(
+			  c -> validator.test(c) ? Optional.empty() :
+			       Optional.of(new TranslationTextComponent(
+				      "simple-config.config.error.list_element_does_not_match_validator", c)));
+		}
+		
+		/**
+		 * Set an error message supplier for the elements of this list entry<br>
+		 * You may also use {@link IErrorEntry#error(Function)} to check
+		 * instead the whole list
+		 *
+		 * @param validator Error message supplier. Empty return values indicate
+		 *                  correct values
+		 */
+		public Self elemError(Function<V, Optional<ITextComponent>> validator) {
+			this.validator = validator;
+			return self();
+		}
+		
+		@Override
+		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+			final Entry e = super.build(parent, name);
+			e.validator = validator;
+			return e;
+		}
 	}
-	
-	/**
-	 * Set an error message supplier for the elements of this list entry<br>
-	 * You may also use {@link IErrorEntry#error(Function)} to check
-	 * instead the whole list
-	 *
-	 * @param validator Error message supplier. Empty return values indicate
-	 *                  correct values
-	 */
-	public Self elemError(Function<V, Optional<ITextComponent>> validator) {
-		this.validator = validator;
-		return self();
-	}
-	
 	/**
 	 * Expand this list automatically in the GUI
 	 */
@@ -141,9 +162,7 @@ public abstract class ListEntry
 	}
 	
 	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(
-	  Builder builder
-	) {
+	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(decorate(builder).defineList(name, value, this::validateElement));
 	}
 }

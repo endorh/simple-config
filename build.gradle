@@ -29,16 +29,16 @@ import net.minecraftforge.gradle.common.task.SignJar
 
 def mod_id = "simple-config"
 group = "endorh.simple_config"
-version = "0.2.0"
+version = "0.2.4"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
 
 // Attributes
 def display_name = "Simple Config",
-    vendor = "DnJ",
+    vendor = "Endor H",
     credits = "",
-    authors = "Endor8",
+    authors = "Endor H",
     issue_tracker = "",
     page = "",
     update_json = "",
@@ -108,7 +108,6 @@ println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getPro
 
 java {
     withSourcesJar()
-    // withJavadocJar()
 }
 
 // Minecraft options --------------------------------------------------------------
@@ -161,26 +160,6 @@ minecraft {
                 }
             }
         }
-
-        /*
-        // Data generation
-        data {
-            //noinspection GroovyAssignabilityCheck
-            workingDirectory project.file('run')
-
-            // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-
-            args '--mod', 'examplemod', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-
-            mods {
-                simpleconfig {
-                    //noinspection GroovyAssignabilityCheck
-                    source sourceSets.main
-                }
-            }
-        }*/
     }
 }
 
@@ -258,23 +237,16 @@ jar {
     finalizedBy 'reobfJar'
 }
 
-task deobfJar(type: Jar, dependsOn: classes) {
-    archiveClassifier.set("deobf")
-    from sourceSets.main.output
-    manifest {
-        attributes(jar_attributes)
-    }
-}
-
 artifacts {
     archives shadowJar
-    archives deobfJar
 }
 
 // Process resources
 processResources {
     inputs.properties mod_properties
 
+    // Exclude development files
+    exclude("**/.dev/**")
     from(sourceSets.main.resources.srcDirs) {
         filesMatching(["**/*.toml", "**/*.mcmeta"]) {
             expand mod_properties
@@ -292,8 +264,6 @@ publishing {
         mod(MavenPublication) {
             artifact shadowJar
             artifact sourcesJar
-            // artifact javadocJar
-            // artifact deobfJar
 
             pom {
                 name = display_name

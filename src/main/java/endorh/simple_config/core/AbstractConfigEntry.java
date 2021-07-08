@@ -7,11 +7,9 @@ import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.FieldBuilder;
+import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -21,20 +19,18 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.*;
 
 import static endorh.simple_config.core.ReflectionUtil.setBackingField;
+import static endorh.simple_config.core.TextUtil.splitTtc;
 
 /**
  * An abstract config entry, which may or may not produce an entry in
  * the actual config and/or the config GUI<br>
- * Entries should not be accessed by API users after
- * their config has been registered. Doing so will result in
- * undefined behaviour.<br>
- * In particular, users can not modify the default
- * value/bounds/validators of an entry after the registering phase
- * has ended.<br>
  * Subclasses may override {@link AbstractConfigEntry#buildConfigEntry}
  * and {@link AbstractConfigEntry#buildGUIEntry} to generate the appropriate
  * entries in both ends
@@ -44,11 +40,14 @@ import static endorh.simple_config.core.ReflectionUtil.setBackingField;
  * @param <Gui> The type of the associated GUI config entry
  * @param <Self> The actual subtype of this entry to be
  *              returned by builder-like methods
+ * @see AbstractConfigEntryBuilder
  */
 public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
-  implements IGUIEntry, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
-	protected final Class<?> typeClass;
-	protected String name = null;
+  implements IGUIEntry {
+	protected final ISimpleConfigEntryHolder parent;
+	protected final V value;
+	protected String name;
+	protected Class<?> typeClass;
 	protected @Nullable String translation = null;
 	protected @Nullable String tooltip = null;
 	protected @Nullable String comment = null;
@@ -58,17 +57,19 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
 	protected @Nullable Function<Gui, Optional<ITextComponent[]>> guiTooltipSupplier = null;
 	protected @Nullable BiConsumer<Gui, ISimpleConfigEntryHolder> saver = null;
-	protected final V value;
 	protected @Nullable Field backingField;
-	protected ISimpleConfigEntryHolder parent;
 	protected boolean dirty = false;
+	protected @Nullable ITextComponent displayName = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected @Nullable AbstractConfigListEntry<Gui> guiEntry = null;
 	
-	protected AbstractConfigEntry(V value, Class<?> typeClass) {
+	protected AbstractConfigEntry(
+	  ISimpleConfigEntryHolder parent, String name, V value
+	) {
+		this.parent = parent;
 		this.value = value;
-		this.typeClass = typeClass;
+		this.name = name;
 	}
 	
 	/**
@@ -80,18 +81,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		} else return name;
 	}
 	
-	protected void setParent(ISimpleConfigEntryHolder config) {
-		this.parent = config;
-	}
-	
 	@SuppressWarnings("unchecked")
 	protected Self self() {
 		return (Self) this;
-	}
-	
-	protected Self name(String name) {
-		this.name = name;
-		return self();
 	}
 	
 	@SuppressWarnings("UnusedReturnValue")
@@ -103,26 +95,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	@SuppressWarnings("UnusedReturnValue")
 	protected Self tooltip(String translation) {
 		this.tooltip = translation;
-		return self();
-	}
-	
-	@Override public Self guiTooltip(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier) {
-		this.guiTooltipSupplier = tooltipSupplier;
-		return self();
-	}
-	
-	@Override public Self tooltip(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
-		this.tooltipSupplier = tooltipSupplier;
-		return self();
-	}
-	
-	@Override public Self guiError(Function<Gui, Optional<ITextComponent>> errorSupplier) {
-		this.guiErrorSupplier = errorSupplier;
-		return self();
-	}
-	
-	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
-		this.errorSupplier = errorSupplier;
 		return self();
 	}
 	
@@ -144,62 +116,29 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return I18n.format(translation, arr);
 	}
 	
-	/**
-	 * Set the arguments that will be passed to the tooltip translation key<br>
-	 * As a special case, {@code Function}s and {@code Supplier}s passed
-	 * will be invoked before being passed as arguments, with the entry value
-	 * as argument
-	 */
-	public Self tooltipArgs(Object... args) {
-		for (Object o : args) { // Check function types to fail fast
-			if (o instanceof Function) {
+	protected Object[] formatArgs(V value, List<Object> args) {
+		return args.stream().map(a -> {
+			if (a instanceof Function) {
 				try {
 					//noinspection unchecked
-					((Function<V, ?>) o).apply(value);
+					return ((Function<V, ?>) a).apply(value);
 				} catch (ClassCastException e) {
 					throw new InvalidConfigValueTypeException(
 					  getPath(), e, "A translation argument provider expected an invalid value type");
 				}
-			}
-		}
-		tooltipArgs.clear();
-		tooltipArgs.addAll(Arrays.asList(args));
-		return self();
-	}
-	
-	/**
-	 * Set the arguments that will be passed to the name translation key<br>
-	 * As a special case, {@code Supplier}s passed
-	 * will be invoked before being passed as arguments
-	 */
-	public Self nameArgs(Object... args) {
-		for (Object arg : args) {
-			if (arg instanceof Function)
-				throw new IllegalArgumentException(
-				  "Name args cannot be functions that depend on the value, since names aren't refreshed");
-		}
-		nameArgs.clear();
-		nameArgs.addAll(Arrays.asList(args));
-		return self();
-	}
-	
-	/**
-	 * Flag this entry as requiring a restart to be effective
-	 */
-	public Self restart() {
-		return restart(true);
-	}
-	
-	/**
-	 * Flag this entry as requiring a restart to be effective
-	 */
-	public Self restart(boolean requireRestart) {
-		this.requireRestart = requireRestart;
-		return self();
+			} else if (a instanceof Supplier) {
+				return ((Supplier<?>) a).get();
+			} else return a;
+		}).toArray();
 	}
 	
 	protected Self withSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
 		this.saver = saver;
+		return self();
+	}
+	
+	protected Self withDisplayName(ITextComponent name) {
+		this.displayName = name;
 		return self();
 	}
 	
@@ -209,10 +148,12 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent getDisplayName() {
+		if (displayName != null)
+			return displayName;
 		if (debugTranslations())
 			return getDebugDisplayName();
 		if (translation != null && I18n.hasKey(translation))
-			return new StringTextComponent(fillArgs(translation, null, nameArgs));
+			return new TranslationTextComponent(translation, formatArgs(null, nameArgs));
 		return new StringTextComponent(name);
 	}
 	
@@ -282,7 +223,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	/**
-	 * Subclasses may override to prevent nesting at build time
+	 * Subclasses may override to prevent nesting at buildEntry time
 	 */
 	protected boolean canBeNested() {
 		return true;
@@ -297,17 +238,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (dirty) parent.markDirty();
 	}
 	
-	protected Consumer<Gui> saveConsumer(ISimpleConfigEntryHolder c) {
+	protected Consumer<Gui> saveConsumer() {
 		if (saver != null)
-			return g -> saver.accept(g, c);
+			return g -> saver.accept(g, parent);
 		final String n = name; // Use the current name
 		return g -> {
 			guiEntry = null; // Discard the entry
 			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
-			if (!c.get(n).equals(v)) {
+			if (!parent.get(n).equals(v)) {
 				markDirty();
-				c.markDirty().set(n, v);
+				parent.markDirty().set(n, v);
 			}
 		};
 	}
@@ -328,10 +269,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 				if (o.isPresent()) return o;
 			}
 		}
-		if (tooltip != null && I18n.hasKey(tooltip))
-			return Optional.of(
+		if (tooltip != null && I18n.hasKey(tooltip)) {
+			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs))
+			                     .toArray(new ITextComponent[0]));
+			/*return Optional.of(
 			  Arrays.stream(fillArgs(tooltip, v, tooltipArgs).split("\n"))
-			    .map(StringTextComponent::new).toArray(ITextComponent[]::new));
+			    .map(StringTextComponent::new).toArray(ITextComponent[]::new));*/
+		}
 		return Optional.empty();
 	}
 	
@@ -404,13 +348,23 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Generate an {@link AbstractConfigListEntry} to be added to the GUI, if any
 	 * @param builder Entry builder
-	 * @param config Config holder
 	 */
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder config
+	  ConfigEntryBuilder builder
 	) {
 		return Optional.empty();
+	}
+	
+	/**
+	 * Add entry to the GUI<br>
+	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigEntryBuilder)}
+	 */
+	public void buildGUI(SubCategoryBuilder group, ConfigEntryBuilder entryBuilder) {
+		buildGUIEntry(entryBuilder).ifPresent(e -> {
+			this.guiEntry = e;
+			group.add(e);
+		});
 	}
 	
 	/**
@@ -419,12 +373,20 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Override @Internal public void buildGUI(
-	  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
+	  ConfigCategory category, ConfigEntryBuilder entryBuilder
 	) {
-		buildGUIEntry(entryBuilder, config).ifPresent(e -> {
+		buildGUIEntry(entryBuilder).ifPresent(e -> {
 			this.guiEntry = e;
 			category.addEntry(e);
 		});
+	}
+	
+	protected V get() {
+		return parent.get(name);
+	}
+	
+	protected void set(V value) {
+		parent.set(name, value);
 	}
 	
 	/**
@@ -449,8 +411,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		((ConfigValue<Config>) spec).set(forConfig(value));
 	}
 	
-	protected Gui getGUI(ISimpleConfigEntryHolder c) {
-		return guiEntry != null? guiEntry.getValue() : forGui(c.get(name));
+	protected Gui getGUI() {
+		return guiEntry != null? guiEntry.getValue() : forGui(get());
 	}
 	
 	protected void commitField(ISimpleConfigEntryHolder c) throws IllegalAccessException {

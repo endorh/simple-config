@@ -1,6 +1,7 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -9,7 +10,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,8 +20,23 @@ public abstract class AbstractSerializableEntry
   <V, Self extends AbstractSerializableEntry<V, Self>>
   extends AbstractConfigEntry<V, String, String, Self> {
 	
-	public AbstractSerializableEntry(V value, Class<?> typeClass) {
-		super(value, typeClass);
+	public AbstractSerializableEntry(
+	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
+	) {
+		super(parent, name, value);
+	}
+	
+	public static abstract class Builder<V, Entry extends AbstractSerializableEntry<V, Entry>,
+	  Self extends Builder<V, Entry, Self>>
+	  extends AbstractConfigEntryBuilder<V, String, String, Entry, Self> {
+		
+		public Builder(V value) {
+			super(value, value.getClass());
+		}
+		
+		public Builder(V value, Class<?> typeClass) {
+			super(value, typeClass);
+		}
 	}
 	
 	protected abstract String serialize(V value);
@@ -56,25 +72,25 @@ public abstract class AbstractSerializableEntry
 	@Override
 	protected Optional<ITextComponent> supplyError(String value) {
 		final Optional<ITextComponent> opt = super.supplyError(value);
-		if (!opt.isPresent() && fromGui(value) == null) {
+		if (!opt.isPresent() && fromGui(value) == null && value != null) {
 			return getErrorMessage(value);
 		} else return opt;
 	}
 	
 	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(builder.define(name, forConfig(value), configValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<String>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder
-		  .startTextField(getDisplayName(), forGui(c.get(name)))
+		  .startTextField(getDisplayName(), forGui(get()))
 		  .setDefaultValue(forGui(value))
-		  .setSaveConsumer(saveConsumer(c))
+		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);
 		return Optional.of(decorate(valBuilder).build());

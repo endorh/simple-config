@@ -1,13 +1,14 @@
 package endorh.simple_config.core;
 
-import endorh.simple_config.core.entry.ListEntry;
+import endorh.simple_config.core.entry.AbstractListEntry;
 import endorh.simple_config.gui.NestedListEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -26,21 +27,43 @@ import java.util.Optional;
  */
 public class EntryListEntry
   <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
-  extends ListEntry<V, C, G, EntryListEntry<V, C, G, E>> {
+  extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, E>> {
 	protected static final String TOOLTIP_KEY_SUFFIX = ".help";
 	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ".sub";
 	
 	protected final AbstractConfigEntry<V, C, G, E> entry;
 	protected ListEntryEntryHolder<V, C, G, E> holder;
 	
-	public EntryListEntry(@Nullable List<V> value, AbstractConfigEntry<V, C, G, E> entry) {
-		super(value);
+	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
+	  extends AbstractListEntry.Builder<V, C, G, EntryListEntry<V, C, G, E>, Builder<V, C, G, E, B>> {
+		protected B builder;
+		
+		public Builder(List<V> value, B builder) {
+			super(value);
+			this.builder = builder;
+		}
+		
+		@Override
+		protected EntryListEntry<V, C, G, E> buildEntry(
+		  ISimpleConfigEntryHolder parent, String name
+		) {
+			return new EntryListEntry<>(parent, name, value, builder);
+		}
+	}
+	
+	@Internal public EntryListEntry(
+	  ISimpleConfigEntryHolder parent, String name,
+	  @Nullable List<V> value, AbstractConfigEntryBuilder<V, C, G, E, ?> builder) {
+		super(parent, name, value);
+		holder = new ListEntryEntryHolder<>();
+		entry = builder.build(holder, name).withSaver((g, c) -> {});
+		holder.entry = entry;
 		if (!entry.canBeNested()) {
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
 			  "nested in a list entry");
 		}
-		this.entry = entry.withSaver((g, c) -> {});
 		if (translation != null)
 			this.translate(translation);
 		if (tooltip != null)
@@ -67,13 +90,6 @@ public class EntryListEntry
 	}
 	
 	@Override
-	protected void setParent(ISimpleConfigEntryHolder config) {
-		super.setParent(config);
-		this.entry.setParent(config);
-		this.holder = new ListEntryEntryHolder<>(entry);
-	}
-	
-	@Override
 	protected C elemForConfig(V value) {
 		return entry.forConfig(value);
 	}
@@ -94,7 +110,7 @@ public class EntryListEntry
 	}
 	
 	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(Builder builder) {
+	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(decorate(builder).defineList(name, forConfig(value), v -> {
 			try {
 				//noinspection unchecked
@@ -108,21 +124,21 @@ public class EntryListEntry
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
-		holder.setValue(c.get(name));
+		holder.setValue(get());
 		holder.clear();
 		final NestedListEntry<G, AbstractConfigListEntry<G>> e =
 		  new NestedListEntry<>(
-			 getDisplayName(), forGui(c.get(name)), expand,
-			 () -> this.supplyTooltip(forGui(c.get(name))),
-			 saveConsumer(c).andThen(g -> holder.clear()),
+			 getDisplayName(), forGui(get()), expand,
+			 () -> this.supplyTooltip(forGui(get())),
+			 saveConsumer().andThen(g -> holder.clear()),
 			 () -> forGui(value), builder.getResetButtonKey(),
 			 true, false,
 			 (g, en) -> {
-				 entry.name(holder.nameFor(g));
+				 entry.name = holder.nameFor(g);
 				 return entry.buildGUIEntry(
-					builder, holder
+					builder
 				 ).orElseThrow(() -> new IllegalStateException(
 					"Sub entry in list entry did not generate a GUI entry"));
 			 }, holder::onDelete);

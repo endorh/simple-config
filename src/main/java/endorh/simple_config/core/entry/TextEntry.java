@@ -1,12 +1,16 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.TextDescriptionBuilder;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.*;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -23,34 +27,60 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry
 	protected @Nullable Supplier<ITextComponent> translationSupplier = null; // Lazy
 	protected boolean own = false;
 	
-	public TextEntry(@Nullable Supplier<ITextComponent> supplier) {
-		super(null, Void.class);
-		translationSupplier = supplier;
-		own = supplier != null;
+	public TextEntry(ISimpleConfigEntryHolder parent, String name) {
+		super(parent, name, null);
 	}
 	
-	public TextEntry() {
-		super(null, Void.class);
-	}
-	
-	/**
-	 * @deprecated Use {@link TextEntry#args(Object...)} instead
-	 */
-	@Override @Deprecated public TextEntry nameArgs(Object... args) {
-		return super.nameArgs(args);
-	}
-	
-	/**
-	 * Set the arguments that will be passed to the name translation key<br>
-	 * As a special case, {@code Supplier}s passed
-	 * will be invoked before being passed as arguments
-	 */
-	public TextEntry args(Object... args) {
-		return nameArgs(args);
+	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Object, TextEntry, Builder> {
+		protected Supplier<ITextComponent> translationSupplier = null;
+		
+		public Builder() {
+			super(null, null);
+		}
+		
+		public Builder(@Nullable Supplier<ITextComponent> supplier) {
+			this();
+			text(supplier);
+		}
+		
+		public Builder text(Supplier<ITextComponent> supplier) {
+			this.translationSupplier = supplier;
+			return this;
+		}
+		
+		public Builder text(ITextComponent text) {
+			return text(() -> text);
+		}
+		
+		
+		/**
+		 * @deprecated Use {@link Builder#args(Object...)} instead
+		 */
+		@Override @Deprecated public Builder nameArgs(Object... args) {
+			return super.nameArgs(args);
+		}
+		
+		/**
+		 * Set the arguments that will be passed to the name translation key<br>
+		 * As a special case, {@code Supplier}s passed
+		 * will be invoked before being passed as arguments
+		 */
+		public Builder args(Object... args) {
+			return nameArgs(args);
+		}
+		
+		@Override
+		protected TextEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			final TextEntry e = new TextEntry(parent, name);
+			e.translationSupplier = translationSupplier;
+			e.own = translationSupplier != null;
+			return e;
+		}
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected ITextComponent getDisplayName() {
+		if (displayName != null) return displayName;
 		if (debugTranslations()) {
 			return getDebugDisplayName();
 		} else if (translationSupplier != null) {
@@ -128,14 +158,14 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry
 	}
 	
 	@Override
-	protected Object getGUI(ISimpleConfigEntryHolder c) {
+	protected Object getGUI() {
 		throw new IllegalArgumentException("Text entries do not have a value");
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	public Optional<AbstractConfigListEntry<Object>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
 		final ITextComponent displayName = getDisplayName();
 		if (displayName != null) {

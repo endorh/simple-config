@@ -1,9 +1,11 @@
 package endorh.simple_config.demo;
 
+import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simple_config.core.SimpleConfigCategory;
+import endorh.simple_config.core.annotation.Bind;
 import endorh.simple_config.core.entry.EnumEntry.ITranslatedEnum;
 import me.shedaniel.clothconfig2.api.ModifierKeyCode;
 import net.minecraft.item.Item;
@@ -18,12 +20,15 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
 
-import java.awt.Color;
+import java.awt.*;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static endorh.simple_config.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simple_config.core.SimpleConfig.category;
@@ -89,7 +94,7 @@ public class DemoConfigCategory {
 		  // Groups can be automatically expanded in the GUI, by
 		  //   passing true in their builder
 		  // Groups can contain entries and other groups
-		  .n(group("entry_types", true)
+		  .n(group("entries", true)
 		       // Text entries may also be defined by name, receiving
 		       //   automatically mapped translation keys as other entries
 		       .text("intro")
@@ -116,6 +121,13 @@ public class DemoConfigCategory {
 		       .add("float_slider", number(80F, 0, 100).slider())
 		       // String values are also common
 		       .add("string_value", string("Hello World!"))
+		       // You may also use regex entries, which automatically
+		       //   validate the inputted expressions and compile them
+		       //   with the flags you choose
+		       // Remember that users may freely change most flags using (?_)
+		       //   notation, so don't struggle too much about flexibility
+		       //   and set as flags what you think should be the default
+		       .add("regex_value", pattern("nice (?<regex>.*+)").flags(Pattern.CASE_INSENSITIVE))
 		       // Enums are supported too
 		       // Enums entries get automatically mapped translation keys
 		       //   for their values, however, this mappings do not
@@ -137,12 +149,12 @@ public class DemoConfigCategory {
 		            // Color entries use java.awt.Color as their type
 		            .add("no_alpha_color", color(Color.BLUE))
 		            // Colors may optionally allow alpha values
-		            .add("alpha_color", color(Color.YELLOW, true)))
+		            .add("alpha_color", color(Color.YELLOW).alpha()))
 		       .n(group("lists")
 		            // Lists of basic types are supported
-		            .add("string_list", list(asList("Lorem ipsum", "dolor sit amet")))
+		            .add("string_list", stringList(asList("Lorem ipsum", "dolor sit amet")))
 		            // For numeric lists, null bounds mean unbound ends
-		            .add("int_list", list(asList(1, 2, 4, 8), 0, null))
+		            .add("int_list", intList(asList(1, 2, 4, 8)).min(0))
 		            // Lists can also contain other entry types
 		            .add("color_list", list(
 		              color(Color.BLACK), asList(Color.RED, Color.BLUE, Color.GREEN)))
@@ -166,10 +178,10 @@ public class DemoConfigCategory {
 		              .from(Items.APPLE, Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE))
 		            // CompoundNBT entries contain CompoundNBT s, and automatically
 		            //   check the NBT syntax in the GUI
-		            .add("nbt_compound", nbt(nbt))
+		            .add("nbt_compound", nbtTag(nbt))
 		            // If you pass a INBT default value instead of a compound,
 		            //   the entry will also accept literal NBT values
-		            .add("nbt_value", nbt(StringNBT.valueOf("NBT")))
+		            .add("nbt_value", nbtValue(StringNBT.valueOf("NBT")))
 		            // It is also possible to use custom String serializable entries
 		            //   A class may implement ISerializableConfigEntry to be
 		            //   automatically serializable as well
@@ -187,79 +199,122 @@ public class DemoConfigCategory {
 			              } catch (NumberFormatException ignored) {
 				              return Optional.empty();
 			              }
-		              }))))
-		  // Text entries can also receive format arguments if they
-		  //   are defined by name
-		  .text("non_persistent_desc", ttc(prefix("text.non_persistent")).mergeStyle(TextFormatting.GRAY))
-		  // A special type of entry is non persistent boolean flags
-		  //   This entries do not have an entry in the config file,
-		  //   and revert to their default whenever restarting the game
-		  // They are rarely useful for enabling special profiling
-		  //   or debugging features
-		  .add("non_persistent_bool", nonPersistentBool(false))
-		  // You may add links or contextual tooltips in text entries
-		  //   by calling .modifyStyle() on text components
-		  .text("open_file", ttc(prefix("text.mod_file")).modifyStyle(style -> style
-		    .setFormatting(TextFormatting.DARK_AQUA)
-		    .setClickEvent(new ClickEvent(
-		      ClickEvent.Action.OPEN_FILE, FMLPaths.GAMEDIR.get().resolve("options.txt").toString()))
-		    .setHoverEvent(new HoverEvent(
-		      HoverEvent.Action.SHOW_TEXT, ttc(prefix("text.hover.open_file"))))))
-		  // All entries may additionally have value restrictions,
-		  //   which produce an error message in the GUI
-		  // This is done adding error suppliers to the entries,
-		  //   which may return an optional text component with
-		  //   the error reason
-		  // Error suppliers are also evaluated against values
-		  //   changed in the config file, even if their
-		  //   error message cannot be displayed
-		  // Erroneous values in the config file are reset to their
-		  //   default value. The GUI does not allow invalid values
-		  //   to be saved
-		  .add("lowercase_string", string("lowercase text").error(
-		    s -> !s.equals(s.toLowerCase())
-		         ? Optional.of(ttc(prefix("error.not_lowercase")))
-		         : Optional.empty()))
-		  // To check other values in the error supplier, you may use
-		  //   the 'getGUI' method (and its primitive variants), which
-		  //   retrieves the current candidate value for an entry, or
-		  //   the current value if no GUI is active
-		  .add("min", number(0).error(
-		    n -> CLIENT_CONFIG.getGUIInt("demo.max") < n
-		         ? Optional.of(ttc(prefix("error.min_greater_than_max")))
-		         : Optional.empty()))
-		  // In cases like this, it's better to have the check on both
-		  //   keys so that when the error occurs in the config file,
-		  //   both keys get reset to a valid default state
-		  // However, if you need this kind of range often,
-		  //   you could just create a serializable range class
-		  .add("max", number(10).error(
-		    n -> CLIENT_CONFIG.getGUIInt("demo.min") > n
-		         ? Optional.of(ttc(prefix("error.min_greater_than_max")))
-		         : Optional.empty()))
-		  // For lists, you may also set an element validator, which
-		  //   takes single elements, instead of the whole entry
-		  //   to validate
-		  // It is also possible to call .setValidator, which receives
-		  //   a simple Predicate, instead of an error supplier,
-		  //   and produces a generic error message, but this is
-		  //   discouraged
-		  .add("even_int_list", list(asList(2, 4), -20, 20)
-		    .elemError(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"))) : Optional.empty()))
-		  // It is also possible to define a dynamic tooltip for an entry,
-		  //   which will depend on the current value of the entry
-		  // However, you'll need to manually separate your tooltip
-		  //   into separate lines, so think if it's really necessary
-		  .add("dynamic_tooltip", string("Steve")
-		    .tooltip(s -> Optional.of(new ITextComponent[] {
-		      ttc(prefix("text.hello"), stc(s).mergeStyle(TextFormatting.DARK_AQUA))})))
-		  // However, most of the time it's enough to just set the
-		  //   format arguments that will be passed to the tooltip,
-		  //   which can also be functions receiving the value of
-		  //   the entry
-		  .add("tooltip_args", string("Alex")
-		    .tooltipArgs((Function<String, ITextComponent>)
-		                   s -> stc(s).mergeStyle(TextFormatting.DARK_AQUA)))
+		              })))
+		     .n(group("maps")
+		          // Map entries are also supported
+		          //   The only map key type currently supported is String
+		          // Map values may be any other entry that serializes
+		          //   in the config as any type serializable to NBT
+		          //   Currently, this includes every built-in entry type
+		          //   (except GUI only entries)
+		          // Currently, maps are serialized as NBT compounds in the
+		          //   config file.
+		          .add("map", map(
+			         string("<placeholder>"),
+			         ImmutableMap.of(
+				        "first", "some_value",
+				        "second", "other_value")))
+		          // Of course, maps of lists, maps of maps, and lists of maps
+		          //   are valid entry types, without nesting limit
+		          // However, try to keep your config simple to use
+		          .add("list_map", map(
+			         list(string("<name>"), asList("<name>")),
+			         ImmutableMap.of(
+				        "simple-config", asList("Dev", "Dev2"),
+				        "aerobatic-elytra", asList("Dev", "Dev3")))
+		            // Maps may define an error supplier for their keys
+		            //   For example, this map requires lowercase keys
+			         .keyError(k -> !k.equals(k.toLowerCase())
+			                        ? Optional.of(ttc(prefix("error.not_lowercase"), k))
+			                        : Optional.empty()))
+		          // The entries within a map can be decorated as usual
+		          .add("even_int_map_map", map(
+		            map(number(0)
+		                  .error(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"))) : Optional.empty()),
+		                ImmutableMap.of("", 0)
+		            ), ImmutableMap.of(
+		              "plains", ImmutableMap.of("Cornflower", 2, "Dandelion", 4),
+		              "birch forest", ImmutableMap.of("Poppy", 8, "Lily of the Valley", 4)))))
+		     .n(group("special")
+		          // Text entries can also receive format arguments if they
+		          //   are defined by name
+		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).mergeStyle(TextFormatting.GRAY))
+		          // A special type of entry is non persistent boolean flags
+		          //   This entries do not have an entry in the config file,
+		          //   and revert to their default whenever restarting the game
+		          // They are rarely useful for enabling special profiling
+		          //   or debugging features
+		          .add("non_persistent_bool", nonPersistentBool(false))))
+		  .n(group("errors_tooltips_n_links")
+		       // You may add links or contextual tooltips in text entries
+		       //   by calling .modifyStyle() on text components
+		       // Format arguments may be suppliers, which will be evaluated before
+		       //   being filled in.
+		       .text("open_file", (Supplier<ITextComponent>) () ->
+			      ttc(prefix("text.mod_config_file")).modifyStyle(style -> style
+				     .setFormatting(TextFormatting.DARK_AQUA)
+				     .setClickEvent(new ClickEvent(
+				       ClickEvent.Action.OPEN_FILE,
+				       CLIENT_CONFIG.getFilePath().map(Path::toString).orElse("")))
+				     .setHoverEvent(new HoverEvent(
+				       // "chat.file.open" does not actually exist in minecraft (yet),
+				       // I add it in my translations because I feel it's a fair common
+				       // translation key to have. Feel free to use it or translate it.
+				       HoverEvent.Action.SHOW_TEXT, ttc("chat.file.open")))))
+		       // All entries may additionally have value restrictions,
+		       //   which produce an error message in the GUI
+		       // This is done adding error suppliers to the entries,
+		       //   which may return an optional text component with
+		       //   the error reason
+		       // Error suppliers are also evaluated against values
+		       //   changed in the config file, even if their
+		       //   error message cannot be displayed
+		       // Erroneous values in the config file are reset to their
+		       //   default value. The GUI does not allow invalid values
+		       //   to be saved
+		       .add("lowercase_string", string("lowercase text").error(
+			      s -> !s.equals(s.toLowerCase())
+			           ? Optional.of(ttc(prefix("error.not_lowercase"), s))
+			           : Optional.empty()))
+		       // To check other values in the error supplier, you may use
+		       //   the 'getGUI' method (and its primitive variants), which
+		       //   retrieves the current candidate value for an entry, or
+		       //   the current value if no GUI is active
+		       .add("min", number(0).error(
+			      n -> CLIENT_CONFIG.getGUIInt("demo.errors_tooltips_n_links.max") < n
+			           ? Optional.of(ttc(prefix("error.min_greater_than_max")))
+			           : Optional.empty()))
+		       // In cases like this, it's better to have the check on both
+		       //   keys so that when the error occurs in the config file,
+		       //   both keys get reset to a valid default state
+		       // However, if you need this kind of range often,
+		       //   you could just create a serializable range class
+		       .add("max", number(10).error(
+			      n -> CLIENT_CONFIG.getGUIInt("demo.errors_tooltips_n_links.min") > n
+			           ? Optional.of(ttc(prefix("error.min_greater_than_max")))
+			           : Optional.empty()))
+		       // For lists, you may also set an element validator, which
+		       //   takes single elements, instead of the whole entry
+		       //   to validate
+		       // It is also possible to call .setValidator, which receives
+		       //   a simple Predicate, instead of an error supplier,
+		       //   and produces a generic error message, but this is
+		       //   discouraged
+		       .add("even_int_list", intList(asList(2, 4)).range(-20, 20)
+			      .elemError(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"))) : Optional.empty()))
+		       // It is also possible to define a dynamic tooltip for an entry,
+		       //   which will depend on the current value of the entry
+		       // However, you'll need to manually separate your tooltip
+		       //   into separate lines, so think if it's really necessary
+		       .add("dynamic_tooltip", string("Steve")
+			      .tooltip(s -> Optional.of(new ITextComponent[] {
+				     ttc(prefix("text.hello"), stc(s).mergeStyle(TextFormatting.DARK_AQUA))})))
+		       // However, most of the time it's enough to just set the
+		       //   format arguments that will be passed to the tooltip,
+		       //   which can also be functions receiving the value of
+		       //   the entry
+		       .add("tooltip_args", string("Alex")
+			      .tooltipArgs(s -> stc(s).mergeStyle(TextFormatting.DARK_AQUA))))
 		  .text("end")
 		  // Set a specific background for this category
 		  //   The whole config may also define a default background
@@ -320,52 +375,60 @@ public class DemoConfigCategory {
 	// Backing fields must be static, and shouldn't be final
 	// If a backing field does not match its expected type,
 	//   the game will crash early
-	public static boolean bool;
+	// The @Bind annotation is purely optional.
+	//   If present, it will throw an exception at load time if a
+	//   field that was supposed to match an entry didn't match any
+	@Bind public static boolean bool;
 	// Groups are mapped into static inner classes
-	public static class entry_types {
-		public static int int_value;
-		public static long long_value;
-		public static float float_value;
-		public static double double_value;
+	@Bind public static class entries {
+		@Bind public static int int_value;
+		@Bind public static long long_value;
+		@Bind public static float float_value;
+		@Bind public static double double_value;
 		
-		public static long long_slider;
-		public static float float_slider;
+		@Bind public static long long_slider;
+		@Bind public static float float_slider;
 		
-		public static String string_value;
-		public static RockPaperScissors enum_value;
+		@Bind public static String string_value;
+		@Bind public static RockPaperScissors enum_value;
 		
-		// As said before, register your keybindings with
-		//   ClientRegistry.registerKeyBinding to benefit
-		//   from Forge's key conflict resolution
-		@Deprecated public static ModifierKeyCode key_bind;
-		@Deprecated public static ModifierKeyCode mouse_key;
-		
-		public static class colors {
-			public static Color no_alpha_color;
-			public static Color alpha_color;
+		@Bind public static class colors {
+			@Bind public static Color no_alpha_color;
+			@Bind public static Color alpha_color;
 		}
 		
-		public static class lists {
-			public static List<String> string_list;
-			public static List<Integer> int_list;
-			public static List<Color> color_list;
-			public static List<List<Color>> color_list_list;
+		@Bind public static class lists {
+			@Bind public static List<String> string_list;
+			@Bind public static List<Integer> int_list;
+			@Bind public static List<Color> color_list;
+			@Bind public static List<List<Color>> color_list_list;
 		}
 		
-		public static class serializable {
-			public static ResourceLocation resource;
-			public static Item item;
-			public static CompoundNBT nbt_compound;
-			public static INBT nbt_value;
-			public static Pair<String, Integer> pair;
+		@Bind public static class serializable {
+			@Bind public static ResourceLocation resource;
+			@Bind public static Item item;
+			@Bind public static CompoundNBT nbt_compound;
+			@Bind public static INBT nbt_value;
+			@Bind public static Pair<String, Integer> pair;
+		}
+		
+		@Bind public static class maps {
+			@Bind public static Map<String, String> map;
+			@Bind public static Map<String, List<String>> list_map;
+			@Bind public static Map<String, Map<String, Integer>> even_int_map_map;
+		}
+		
+		@Bind public static class special {
+			public static boolean non_persistent_bool;
 		}
 	}
 	
-	public static boolean non_persistent_bool;
-	public static String lowercase_string;
-	public static int min;
-	public static int max;
-	public static List<Integer> even_int_list;
-	public static String dynamic_tooltip;
-	public static String tooltip_args;
+	@Bind public static class errors_tooltips_n_links {
+		@Bind public static String lowercase_string;
+		@Bind public static int min;
+		@Bind public static int max;
+		@Bind public static List<Integer> even_int_list;
+		@Bind public static String dynamic_tooltip;
+		@Bind public static String tooltip_args;
+	}
 }

@@ -10,21 +10,33 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.List;
 import java.util.Optional;
 
-public class StringListEntry extends ListEntry<String, String, String, StringListEntry> {
-	public StringListEntry(List<String> value) {
-		super(value);
+public class StringListEntry extends AbstractListEntry<String, String, String, StringListEntry> {
+	public StringListEntry(
+	  ISimpleConfigEntryHolder parent, String name, List<String> value) {
+		super(parent, name, value);
+	}
+	
+	public static class Builder extends AbstractListEntry.Builder<String, String, String, StringListEntry, Builder> {
+		public Builder(List<String> value) {
+			super(value);
+		}
+		
+		@Override
+		protected StringListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			return new StringListEntry(parent, name, value);
+		}
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<List<String>>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
 		final StringListBuilder valBuilder = builder
-		  .startStrList(getDisplayName(), c.get(name))
+		  .startStrList(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer(c))
+		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);
 		return Optional.of(decorate(valBuilder).build());

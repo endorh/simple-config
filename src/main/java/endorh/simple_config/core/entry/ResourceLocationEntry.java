@@ -1,9 +1,11 @@
 package endorh.simple_config.core.entry;
 
+import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -11,14 +13,27 @@ import java.util.Optional;
 public class ResourceLocationEntry
   extends AbstractSerializableEntry<ResourceLocation, ResourceLocationEntry> {
 	
-	public ResourceLocationEntry(ResourceLocation value) {
-		super(value, ResourceLocation.class);
+	@Internal public ResourceLocationEntry(
+	  ISimpleConfigEntryHolder parent, String name, ResourceLocation value
+	) {
+		super(parent, name, value, ResourceLocation.class);
+	}
+	
+	public static class Builder extends AbstractSerializableEntry.Builder<ResourceLocation, ResourceLocationEntry, Builder> {
+		public Builder(ResourceLocation value) {
+			super(value, ResourceLocation.class);
+		}
+		
+		@Override
+		protected ResourceLocationEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			return new ResourceLocationEntry(parent, name, value);
+		}
 	}
 	
 	@Override
 	protected Optional<ITextComponent> getErrorMessage(String value) {
 		try {
-			ResourceLocation rl = new ResourceLocation(value);
+			new ResourceLocation(value);
 			return Optional.empty();
 		} catch (ResourceLocationException e) {
 			return Optional.of(new TranslationTextComponent(

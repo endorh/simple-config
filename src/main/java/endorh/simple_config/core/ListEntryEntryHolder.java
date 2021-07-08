@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
   implements ISimpleConfigEntryHolder {
-	protected final AbstractConfigEntry<V, C, G, E> entry;
+	protected AbstractConfigEntry<V, C, G, E> entry;
 	protected List<V> value = null;
 	protected final List<V> buffer = new ArrayList<>();
 	
@@ -35,9 +35,7 @@ public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G
 		value = null;
 	}
 	
-	public ListEntryEntryHolder(AbstractConfigEntry<V, C, G, E> entry) {
-		this.entry = entry;
-	}
+	public ListEntryEntryHolder() {}
 	
 	public void setValue(List<V> value) {
 		this.value = value;

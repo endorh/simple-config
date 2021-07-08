@@ -7,6 +7,7 @@ import me.shedaniel.clothconfig2.impl.builders.FloatListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -14,23 +15,50 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatListEntry> {
-	public FloatListEntry(@Nullable List<Float> value) {
-		this(value, null, null);
-	}
-	
-	public FloatListEntry(
-	  @Nullable List<Float> value,
-	  @Nullable Float min, @Nullable Float max
+	@Internal public FloatListEntry(
+	  ISimpleConfigEntryHolder parent, String name,
+	  @Nullable List<Float> value
 	) {
-		super(value, min != null ? min : Float.NEGATIVE_INFINITY,
-		      max != null ? max : Float.POSITIVE_INFINITY);
+		super(parent, name, value);
 	}
 	
-	public FloatListEntry min(float min) {
-		return super.min(min);
-	}
-	public FloatListEntry max(float max) {
-		return super.max(max);
+	public static class Builder extends RangedListEntry.Builder<Float, Number, Float, FloatListEntry, Builder> {
+		
+		public Builder(List<Float> value) {
+			super(value);
+		}
+		
+		/**
+		 * Set the minimum allowed value for the elements of this list entry (inclusive)
+		 */
+		public Builder min(float min) {
+			return super.min(min);
+		}
+		
+		/**
+		 * Set the maximum allowed value for the elements of this list entry (inclusive)
+		 */
+		public Builder max(float max) {
+			return super.max(max);
+		}
+		
+		/**
+		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
+		 */
+		public Builder range(float min, float max) {
+			return super.range(min, max);
+		}
+		
+		@Override
+		protected void checkBounds() {
+			min = min != null ? min : Float.NEGATIVE_INFINITY;
+			max = max != null ? max : Float.POSITIVE_INFINITY;
+		}
+		
+		@Override
+		protected FloatListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			return new FloatListEntry(parent, name, value);
+		}
 	}
 	
 	@Override
@@ -48,14 +76,14 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<List<Float>>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
 		final FloatListBuilder valBuilder = builder
-		  .startFloatList(getDisplayName(), c.get(name))
+		  .startFloatList(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
 		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer(c))
+		  .setSaveConsumer(saveConsumer())
 		  .setTooltipSupplier(this::supplyTooltip)
 		  .setErrorSupplier(this::supplyError);
 		return Optional.of(decorate(valBuilder).build());

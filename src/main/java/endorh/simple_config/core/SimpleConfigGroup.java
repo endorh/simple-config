@@ -63,7 +63,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder
 	) {
 		if (this.entries != null)
-			throw new IllegalStateException("Called build() twice");
+			throw new IllegalStateException("Called buildEntry() twice");
 		this.entries = entries;
 		this.specValues = specValues;
 		this.groups = groups;
@@ -180,7 +180,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order) {
 				if (entry instanceof AbstractConfigEntry) {
-					((AbstractConfigEntry<?, ?, ?, ?>) entry).buildGUIEntry(entryBuilder, this).ifPresent(group::add);
+					((AbstractConfigEntry<?, ?, ?, ?>) entry).buildGUI(group, entryBuilder);
 				} else if (entry instanceof SimpleConfigGroup) {
 					group.add(((SimpleConfigGroup) entry).buildGUI(entryBuilder));
 				}
@@ -191,7 +191,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override @Internal public void buildGUI(
-	  ConfigCategory category, ConfigEntryBuilder entryBuilder, ISimpleConfigEntryHolder config
+	  ConfigCategory category, ConfigEntryBuilder entryBuilder
 	) {
 		category.addEntry(buildGUI(entryBuilder));
 	}

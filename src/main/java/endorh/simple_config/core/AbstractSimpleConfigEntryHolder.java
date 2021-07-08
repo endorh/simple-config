@@ -181,7 +181,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	@Override public <G> G getGUI(String path) {
 		try {
 			if (entries.containsKey(path))
-				return this.<Object, G>getEntry(path).getGUI(this);
+				return this.<Object, G>getEntry(path).getGUI();
 			final String[] split = path.split("\\.", 2);
 			if (split.length < 2)
 				throw new NoSuchConfigEntryError(getPath() + "." + path);

@@ -7,29 +7,49 @@ import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.DoubleFieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class DoubleEntry extends RangedEntry<Double, Number, Double, DoubleEntry> {
-	public DoubleEntry(double value, Double min, Double max) {
-		super(value,
-		      min == null ? Double.NEGATIVE_INFINITY : min,
-		      max == null ? Double.POSITIVE_INFINITY : max, "%.2f", Double.class);
+public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, DoubleEntry> {
+	@Internal public DoubleEntry(
+	  ISimpleConfigEntryHolder parent, String name, double value
+	) {
+		super(parent, name, value, Double.class);
 	}
 	
-	@Override protected void checkBounds() {
-		if (min.isNaN() || max.isNaN())
-			throw new IllegalArgumentException("NaN bound in double config entry " + getPath());
-		if (asSlider && (min.isInfinite() || max.isInfinite()))
-			throw new IllegalArgumentException("Infinite bound in double config entry " + getPath());
-	}
-	
-	public DoubleEntry min(double min) {
-		return super.min(min);
-	}
-	public DoubleEntry max(double max) {
-		return super.max(max);
+	public static class Builder extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
+		
+		public Builder(Double value) {
+			super(value, Double.class, "%.2f");
+		}
+		
+		public Builder min(double min) {
+			return super.min(min);
+		}
+		public Builder max(double max) {
+			return super.max(max);
+		}
+		public Builder range(double min, double max) {
+			return super.range(min, max);
+		}
+		
+		@Override
+		protected void checkBounds() {
+			min = min == null ? Double.NEGATIVE_INFINITY : min;
+			max = max == null ? Double.POSITIVE_INFINITY : max;
+			if (min.isNaN() || max.isNaN())
+				throw new IllegalArgumentException("NaN bound in double config entry");
+			if (asSlider && (min.isInfinite() || max.isInfinite()))
+				throw new IllegalArgumentException("Infinite bound in double config entry");
+			super.checkBounds();
+		}
+		
+		@Override
+		public DoubleEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			return new DoubleEntry(parent, name, value);
+		}
 	}
 	
 	@Nullable
@@ -41,25 +61,22 @@ public class DoubleEntry extends RangedEntry<Double, Number, Double, DoubleEntry
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<Double>> buildGUIEntry(
-	  ConfigEntryBuilder builder, ISimpleConfigEntryHolder c
+	  ConfigEntryBuilder builder
 	) {
-		checkBounds();
 		if (!asSlider) {
 			final DoubleFieldBuilder valBuilder = builder
-			  .startDoubleField(getDisplayName(), c.get(name))
+			  .startDoubleField(getDisplayName(), get())
 			  .setDefaultValue(value)
 			  .setMin(min).setMax(max)
-			  .setSaveConsumer(saveConsumer(c))
+			  .setSaveConsumer(saveConsumer())
 			  .setTooltipSupplier(this::supplyTooltip)
 			  .setErrorSupplier(this::supplyError);
 			return Optional.of(decorate(valBuilder).build());
 		} else {
 			final DoubleSliderBuilder valBuilder =
-			  new DoubleSliderBuilder(builder, getDisplayName(), c.get(name),
-			                          min != null? min : Double.NEGATIVE_INFINITY,
-			                          max != null? max : Double.POSITIVE_INFINITY)
+			  new DoubleSliderBuilder(builder, getDisplayName(), get(), min, max)
 			  .setDefaultValue(value)
-			  .setSaveConsumer(saveConsumer(c))
+			  .setSaveConsumer(saveConsumer())
 			  .setTooltipSupplier(this::supplyTooltip)
 			  .setErrorSupplier(this::supplyError)
 			  .setTextGetter(sliderTextSupplier);

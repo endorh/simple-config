@@ -1,11 +1,13 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.EntryListEntry;
+import endorh.simple_config.core.EntryListEntry.Builder;
+import endorh.simple_config.core.StringMapEntry;
 import endorh.simple_config.core.annotation.Entry;
 import endorh.simple_config.core.annotation.HasAlpha;
 import endorh.simple_config.core.annotation.Slider;
-import endorh.simple_config.core.entry.SerializableEntry.SerializableConfigEntry;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
@@ -13,10 +15,10 @@ import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static endorh.simple_config.core.ReflectionUtil.checkType;
 import static endorh.simple_config.core.SimpleConfigClassParser.*;
@@ -28,21 +30,21 @@ import static endorh.simple_config.core.SimpleConfigClassParser.*;
 public class Builders {
 	
 	// Basic types
-	public static BooleanEntry bool(boolean value) {
-		return new BooleanEntry(value);
+	public static BooleanEntry.Builder bool(boolean value) {
+		return new BooleanEntry.Builder(value);
 	}
 	/**
 	 * Generates an entry in the config GUI, but no entry in the config file<br>
 	 * Modifications are only effective until restart
 	 */
-	public static NonPersistentBooleanEntry nonPersistentBool(boolean value) {
-		return new NonPersistentBooleanEntry(value);
+	public static NonPersistentBooleanEntry.Builder nonPersistentBool(boolean value) {
+		return new NonPersistentBooleanEntry.Builder(value);
 	}
-	public static StringEntry string(String value) {
-		return new StringEntry(value);
+	public static StringEntry.Builder string(String value) {
+		return new StringEntry.Builder(value);
 	}
-	public static <E extends Enum<E>> EnumEntry<E> enum_(E value) {
-		return new EnumEntry<>(value);
+	public static <E extends Enum<E>> EnumEntry.Builder<E> enum_(E value) {
+		return new EnumEntry.Builder<>(value);
 	}
 	
 	// Byte
@@ -50,22 +52,22 @@ public class Builders {
 	 * Unbound byte value
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ByteEntry number(byte value) {
-		return new ByteEntry(value, null, null);
+	public static @Deprecated ByteEntry.Builder number(byte value) {
+		return new ByteEntry.Builder(value);
 	}
 	/**
 	 * Non-negative byte between 0 and {@code max} (inclusive)
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ByteEntry number(byte value, byte max) {
+	public static @Deprecated ByteEntry.Builder number(byte value, byte max) {
 		return number(value, (byte) 0, max);
 	}
 	/**
 	 * Byte value between {@code min} and {@code max} (inclusive)
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ByteEntry number(byte value, byte min, byte max) {
-		return new ByteEntry(value, min, max);
+	public static @Deprecated ByteEntry.Builder number(byte value, byte min, byte max) {
+		return new ByteEntry.Builder(value).range(min, max);
 	}
 	
 	// Short
@@ -73,108 +75,108 @@ public class Builders {
 	 * Unbound short value
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ShortEntry number(short value) {
-		return new ShortEntry(value, null, null);
+	public static @Deprecated ShortEntry.Builder number(short value) {
+		return new ShortEntry.Builder(value);
 	}
 	/**
 	 * Non-negative short between 0 and {@code max} (inclusive)
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ShortEntry number(short value, short max) {
+	public static @Deprecated ShortEntry.Builder number(short value, short max) {
 		return number(value, (short) 0, max);
 	}
 	/**
 	 * Short value between {@code min} and {@code max} (inclusive)
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ShortEntry number(short value, short min, short max) {
-		return new ShortEntry(value, min, max);
+	public static @Deprecated ShortEntry.Builder number(short value, short min, short max) {
+		return new ShortEntry.Builder(value).range(min, max);
 	}
 	
 	// Int
 	/**
 	 * Unbound integer value
 	 */
-	public static IntegerEntry number(int value) {
-		return new IntegerEntry(value, null, null);
+	public static IntegerEntry.Builder number(int value) {
+		return new IntegerEntry.Builder(value);
 	}
 	/**
 	 * Non-negative integer between 0 and {@code max} (inclusive)
 	 */
-	public static IntegerEntry number(int value, int max) {
+	public static IntegerEntry.Builder number(int value, int max) {
 		return number(value, 0, max);
 	}
 	/**
 	 * Integer value between {@code min} and {@code max} (inclusive)
 	 */
-	public static IntegerEntry number(int value, int min, int max) {
-		return new IntegerEntry(value, min, max);
+	public static IntegerEntry.Builder number(int value, int min, int max) {
+		return new IntegerEntry.Builder(value).range(min, max);
 	}
 	
 	// Long
 	/**
 	 * Unbound long value
 	 */
-	public static LongEntry number(long value) {
-		return new LongEntry(value, null, null);
+	public static LongEntry.Builder number(long value) {
+		return new LongEntry.Builder(value);
 	}
 	/**
 	 * Non-negative long between 0 and {@code max} (inclusive)
 	 */
-	public static LongEntry number(long value, long max) {
+	public static LongEntry.Builder number(long value, long max) {
 		return number(value, 0L, max);
 	}
 	/**
 	 * Long value between {@code min} and {@code max} (inclusive)
 	 */
-	public static LongEntry number(long value, long min, long max) {
-		return new LongEntry(value, min, max);
+	public static LongEntry.Builder number(long value, long min, long max) {
+		return new LongEntry.Builder(value).range(min, max);
 	}
 	
 	// Float
 	/**
 	 * Unbound float value
 	 */
-	public static FloatEntry number(float value) {
-		return new FloatEntry(value, null, null);
+	public static FloatEntry.Builder number(float value) {
+		return new FloatEntry.Builder(value);
 	}
 	/**
 	 * Non-negative float value between 0 and {@code max} (inclusive)
 	 */
-	public static FloatEntry number(float value, float max) {
+	public static FloatEntry.Builder number(float value, float max) {
 		return number(value, 0F, max);
 	}
 	/**
 	 * Float value between {@code min} and {@code max} inclusive
 	 */
-	public static FloatEntry number(float value, float min, float max) {
-		return new FloatEntry(value, min, max);
+	public static FloatEntry.Builder number(float value, float min, float max) {
+		return new FloatEntry.Builder(value).range(min, max);
 	}
 	
 	// Double
 	/**
 	 * Unbound double value
 	 */
-	public static DoubleEntry number(double value) {
-		return new DoubleEntry(value, null, null);
+	public static DoubleEntry.Builder number(double value) {
+		return new DoubleEntry.Builder(value);
 	}
 	/**
 	 * Non-negative double value between 0 and {@code max} (inclusive)
 	 */
-	public static DoubleEntry number(double value, double max) {
+	public static DoubleEntry.Builder number(double value, double max) {
 		return number(value, 0D, max);
 	}
 	/**
 	 * Double value between {@code min} and {@code max} inclusive
 	 */
-	public static DoubleEntry number(double value, double min, double max) {
-		return new DoubleEntry(value, min, max);
+	public static DoubleEntry.Builder number(double value, double min, double max) {
+		return new DoubleEntry.Builder(value).range(min, max);
 	}
 	
 	/**
 	 * Float value between 0 and 1 (inclusive)
 	 */
-	public static FloatEntry fractional(float value) {
+	public static FloatEntry.Builder fractional(float value) {
 		if (0F > value || value > 1F)
 			throw new IllegalArgumentException(
 			  "Fraction values must be within [0, 1], passed " + value);
@@ -184,7 +186,7 @@ public class Builders {
 	/**
 	 * Double value between 0 and 1 (inclusive)
 	 */
-	public static DoubleEntry fractional(double value) {
+	public static DoubleEntry.Builder fractional(double value) {
 		if (0D > value || value > 1D)
 			throw new IllegalArgumentException(
 			  "Fraction values must be within [0, 1], passed " + value);
@@ -192,16 +194,32 @@ public class Builders {
 	}
 	
 	/**
-	 * Color without alpha component
+	 * Color
 	 */
-	public static ColorEntry color(Color value) {
-		return color(value, false);
+	public static ColorEntry.Builder color(Color value) {
+		return new ColorEntry.Builder(value);
 	}
+	
 	/**
-	 * Color with or without alpha component
+	 * Regex Pattern entry<br>
+	 * Will use the flags of the passed regex to compile user input<br>
 	 */
-	public static ColorEntry color(Color value, boolean alpha) {
-		return alpha ? new AlphaColorEntry(value) : new ColorEntry(value);
+	public static PatternEntry.Builder pattern(Pattern pattern) {
+		return new PatternEntry.Builder(pattern);
+	}
+	
+	/**
+	 * Regex pattern entry with default flags
+	 */
+	public static PatternEntry.Builder pattern(String pattern) {
+		return new PatternEntry.Builder(pattern);
+	}
+	
+	/**
+	 * Regex pattern
+	 */
+	public static PatternEntry.Builder pattern(String pattern, int flags) {
+		return new PatternEntry.Builder(pattern, flags);
 	}
 	
 	// String serializable entries
@@ -209,59 +227,49 @@ public class Builders {
 	/**
 	 * Entry of a String serializable object
 	 */
-	public static <T> SerializableEntry<T> entry(
-	  T value, Function<T, String> serializer, Function<String, Optional<T>> deserializer
+	public static <V> SerializableEntry.Builder<V> entry(
+	  V value, Function<V, String> serializer, Function<String, Optional<V>> deserializer
 	) {
-		return new SerializableEntry<>(value, serializer, deserializer);
-	}
-	/**
-	 * Entry of a String serializable object
-	 * @param typeClass Actual type of the entry, required in the backing field
-	 */
-	public static <T> SerializableEntry<T> entry(
-	  T value, Function<T, String> serializer, Function<String, Optional<T>> deserializer,
-	  Class<?> typeClass
-	) {
-		return new SerializableEntry<>(value, serializer, deserializer, typeClass);
+		return new SerializableEntry.Builder<>(value, serializer, deserializer);
 	}
 	/**
 	 * Entry of a String serializable object
 	 */
-	public static <T extends ISerializableConfigEntry<T>> SerializableEntry<T> entry(T value) {
-		return new SerializableConfigEntry<>(value);
+	public static <V extends ISerializableConfigEntry<V>> SerializableEntry.Builder<V> entry(V value) {
+		return new SerializableEntry.Builder<>(value, value.getConfigSerializer());
 	}
 	
 	// Convenience Minecraft entries
-	public static ItemEntry item(@Nullable Item value) {
-		return new ItemEntry(value);
+	public static ItemEntry.Builder item(@Nullable Item value) {
+		return new ItemEntry.Builder(value);
 	}
 	
 	/**
 	 * NBT entry that accepts any kind of NBT, either values or compounds
 	 */
-	public static INBTEntry nbt(INBT value) {
-		return new INBTEntry(value);
+	public static INBTEntry.Builder nbtValue(INBT value) {
+		return new INBTEntry.Builder(value);
 	}
 	
 	/**
 	 * NBT entry that accepts NBT compounds
 	 */
-	public static CompoundNBTEntry nbt(CompoundNBT value) {
-		return new CompoundNBTEntry(value);
+	public static CompoundNBTEntry.Builder nbtTag(CompoundNBT value) {
+		return new CompoundNBTEntry.Builder(value);
 	}
 	
 	
 	/**
 	 * Generic resource location entry
 	 */
-	public static ResourceLocationEntry resource(String resourceName) {
-		return new ResourceLocationEntry(new ResourceLocation(resourceName));
+	public static ResourceLocationEntry.Builder resource(String resourceName) {
+		return new ResourceLocationEntry.Builder(new ResourceLocation(resourceName));
 	}
 	/**
 	 * Generic resource location entry
 	 */
-	public static ResourceLocationEntry resource(ResourceLocation value) {
-		return new ResourceLocationEntry(value);
+	public static ResourceLocationEntry.Builder resource(ResourceLocation value) {
+		return new ResourceLocationEntry.Builder(value);
 	}
 	
 	// List entries
@@ -269,8 +277,8 @@ public class Builders {
 	/**
 	 * String list
 	 */
-	public static StringListEntry list(java.util.List<String> value) {
-		return new StringListEntry(value);
+	public static StringListEntry.Builder stringList(java.util.List<String> value) {
+		return new StringListEntry.Builder(value);
 	}
 	
 	/**
@@ -278,8 +286,8 @@ public class Builders {
 	 * Null bounds are unbound
 	 * @deprecated Use bound Integer lists
 	 */
-	@Deprecated public static ByteListEntry list(java.util.List<Byte> value, Byte min, Byte max) {
-		return new ByteListEntry(value, min, max);
+	@Deprecated public static ByteListEntry.Builder byteList(java.util.List<Byte> value) {
+		return new ByteListEntry.Builder(value);
 	}
 	
 	/**
@@ -287,155 +295,151 @@ public class Builders {
 	 * Null bounds are unbound
 	 * @deprecated Use bound Integer lists
 	 */
-	@Deprecated public static ShortListEntry list(java.util.List<Short> value, Short min, Short max) {
-		return new ShortListEntry(value, min, max);
+	@Deprecated public static ShortListEntry.Builder shortList(java.util.List<Short> value) {
+		return new ShortListEntry.Builder(value);
 	}
 	
 	/**
 	 * Integer list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static IntegerListEntry list(java.util.List<Integer> value, Integer min, Integer max) {
-		return new IntegerListEntry(value, min, max);
+	public static IntegerListEntry.Builder intList(java.util.List<Integer> value) {
+		return new IntegerListEntry.Builder(value);
 	}
 	/**
 	 * Long list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static LongListEntry list(java.util.List<Long> value, Long min, Long max) {
-		return new LongListEntry(value, min, max);
+	public static LongListEntry.Builder longList(java.util.List<Long> value) {
+		return new LongListEntry.Builder(value);
 	}
 	/**
 	 * Float list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static FloatListEntry list(java.util.List<Float> value, Float min, Float max) {
-		return new FloatListEntry(value, min, max);
+	public static FloatListEntry.Builder floatList(java.util.List<Float> value) {
+		return new FloatListEntry.Builder(value);
 	}
 	/**
 	 * Double list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static DoubleListEntry list(java.util.List<Double> value, Double min, Double max) {
-		return new DoubleListEntry(value, min, max);
+	public static DoubleListEntry.Builder doubleList(java.util.List<Double> value) {
+		return new DoubleListEntry.Builder(value);
 	}
 	
 	// List of other entries
+	
 	/**
 	 * List of other entries. Defaults to empty list<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
-	EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry) {
-		return list(entry, new ArrayList<>());
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
+	Builder<V, C, G, E, B> list(B entry) {
+		return list(entry, Collections.emptyList());
 	}
+	
 	/**
 	 * List of other entries<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
-	EntryListEntry<V, C, G, E> list(AbstractConfigEntry<V, C, G, E> entry, List<V> value) {
-		return new EntryListEntry<>(value, entry);
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
+	EntryListEntry.Builder<V, C, G, E, B> list(B entry, List<V> value) {
+		return new EntryListEntry.Builder<>(value, entry);
+	}
+	
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
+	StringMapEntry.Builder<V, C, G, E, B> map(B entry, Map<String, V> value) {
+		return new StringMapEntry.Builder<>(value, entry);
 	}
 	
 	// Register reflection field parsers ------------------------------------------------------------
 	
 	static {
 		registerFieldParser(Entry.class, Boolean.class, (a, field, value) ->
-		  new BooleanEntry(value != null ? value : false));
+		  bool(value != null ? value : false));
 		registerFieldParser(Entry.class, String.class, (a, field, value) ->
-		  new StringEntry(value != null ? value : ""));
+		  string(value != null ? value : ""));
 		registerFieldParser(Entry.class, Enum.class, (a, field, value) -> {
 			if (value == null)
 				//noinspection rawtypes
 				value = (Enum) field.getType().getEnumConstants()[0];
-			//noinspection rawtypes
-			return new EnumEntry(value);
+			return enum_(value);
 		});
-		registerFieldParser(Entry.class, Byte.class, (a, field, value) -> {
-			//noinspection deprecation
-			final ByteEntry e = new ByteEntry(value, getMin(field).byteValue(), getMax(field).byteValue());
-			if (field.isAnnotationPresent(Slider.class))
-				e.slider();
-			return e;
-		});
-		registerFieldParser(Entry.class, Short.class, (a, field, value) -> {
-			//noinspection deprecation
-			final ShortEntry e = new ShortEntry(value, getMin(field).shortValue(), getMax(field).shortValue());
-			if (field.isAnnotationPresent(Slider.class))
-				e.slider();
-			return e;
-		});
-		registerFieldParser(Entry.class, Integer.class, (a, field, value) -> {
-			final IntegerEntry e = new IntegerEntry(value, getMin(field).intValue(), getMax(field).intValue());
-			if (field.isAnnotationPresent(Slider.class))
-				e.slider();
-			return e;
-		});
-		registerFieldParser(Entry.class, Long.class, (a, field, value) -> {
-			final LongEntry e = new LongEntry(value, getMin(field).longValue(), getMax(field).longValue());
-			if (field.isAnnotationPresent(Slider.class))
-				e.slider();
-			return e;
-		});
-		registerFieldParser(Entry.class, Float.class, (a, field, value) -> {
-			final FloatEntry e = new FloatEntry(value, getMin(field).floatValue(), getMax(field).floatValue());
-			if (field.isAnnotationPresent(Slider.class))
-				e.slider();
-			return e;
-		});
-		registerFieldParser(Entry.class, Double.class, (a, field, value) -> {
-			final DoubleEntry e = new DoubleEntry(value, getMin(field).doubleValue(), getMax(field).doubleValue());
-			if (field.isAnnotationPresent(Slider.class))
-				e.slider();
-			return e;
-		});
+		registerFieldParser(Entry.class, Byte.class, (a, field, value) ->
+		  number(value, getMin(field).byteValue(), getMax(field).byteValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Short.class, (a, field, value) ->
+		  number(value, getMin(field).shortValue(), getMax(field).shortValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Integer.class, (a, field, value) ->
+		  number(value, getMin(field).intValue(), getMax(field).intValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Long.class, (a, field, value) ->
+		  number(value, getMin(field).longValue(), getMax(field).longValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Float.class, (a, field, value) ->
+		  number(value, getMin(field).floatValue(), getMax(field).floatValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Double.class, (a, field, value) ->
+		  number(value, getMin(field).doubleValue(), getMax(field).doubleValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
 		registerFieldParser(Entry.class, Color.class, (a, field, value) ->
-		  field.isAnnotationPresent(HasAlpha.class)
-		  ? new AlphaColorEntry(value) : new ColorEntry(value));
+		  color(value).alpha(field.isAnnotationPresent(HasAlpha.class)));
 		
 		// Lists
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, String.class) ? null :
-		  decorateListEntry(new StringListEntry((List<String>) value), field));
+		  decorateListEntry(stringList((List<String>) value), field));
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Integer.class) ? null :
-		  decorateListEntry(new IntegerListEntry((List<Integer>) value, getMin(field).intValue(), getMax(field).intValue()), field));
+		  decorateListEntry(
+		    intList((List<Integer>) value)
+		      .min(getMin(field).intValue()).max(getMax(field).intValue()), field));
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Long.class) ? null :
-		  decorateListEntry(new LongListEntry((List<Long>) value, getMin(field).longValue(), getMax(field).longValue()), field));
+		  decorateListEntry(
+		    longList((List<Long>) value)
+		      .min(getMin(field).longValue()).max(getMax(field).longValue()), field));
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Float.class) ? null :
-		  decorateListEntry(new FloatListEntry((List<Float>) value, getMin(field).floatValue(), getMax(field).floatValue()), field));
+		  decorateListEntry(
+		    floatList((List<Float>) value)
+		      .min(getMin(field).floatValue()).max(getMax(field).floatValue()), field));
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Double.class) ? null :
-		  decorateListEntry(new DoubleListEntry((List<Double>) value, getMin(field).doubleValue(), getMax(field).doubleValue()), field));
+		  decorateListEntry(
+		    doubleList((List<Double>) value)
+		      .min(getMin(field).doubleValue()).max(getMax(field).doubleValue()), field));
 		
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Short.class) ? null :
-		  decorateListEntry(new ShortListEntry((List<Short>) value), field));
+		  decorateListEntry(
+		    shortList((List<Short>) value)
+		      .min(getMin(field).shortValue()).max(getMax(field).shortValue()), field));
 		//noinspection unchecked
 		registerFieldParser(Entry.class, List.class, (a, field, value) ->
 		  !checkType(field, List.class, Byte.class) ? null :
-		  decorateListEntry(new ByteListEntry((List<Byte>) value), field));
+		  decorateListEntry(
+		    byteList((List<Byte>) value)
+		      .min(getMin(field).byteValue()).max(getMax(field).byteValue()), field));
 		
 		registerFieldParser(Entry.NonPersistent.class, Boolean.class, (a, field, value) ->
-		  new NonPersistentBooleanEntry(value != null ? value : false));
+		  nonPersistentBool(value != null ? value : false));
 		
 		// Minecraft entry types
-		registerFieldParser(Entry.class, Item.class, (a, field, value) ->
-		  new ItemEntry(value));
-		registerFieldParser(Entry.class, INBT.class, (a, field, value) ->
-		  new INBTEntry(value));
-		registerFieldParser(Entry.class, CompoundNBT.class, (a, field, value) ->
-		  new CompoundNBTEntry(value));
-		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) ->
-		  new ResourceLocationEntry(value));
+		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));
+		registerFieldParser(Entry.class, INBT.class, (a, field, value) -> nbtValue(value));
+		registerFieldParser(Entry.class, CompoundNBT.class, (a, field, value) -> nbtTag(value));
+		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) -> resource(value));
 	}
 }
