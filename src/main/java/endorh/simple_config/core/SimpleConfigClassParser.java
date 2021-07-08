@@ -199,7 +199,7 @@ public class SimpleConfigClassParser {
 				  "Unsupported text supplier in config field " + getFieldName(field) + " of type " + fieldTypeName
 				  + "\n  Should be either String (contents ignored), ITextComponent or Supplier<ITextComponent>");
 				addTooltip(textBuilder, configClass, field);
-				builder.add(field.getName(), textBuilder);
+				builder.add(field.getName(), textBuilder, getOrder(field));
 				continue;
 			}
 			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
@@ -246,7 +246,7 @@ public class SimpleConfigClassParser {
 									if (entryBuilder != null) {
 										entryBuilder.backingField = field;
 										decorateEntry(entryBuilder, configClass, field);
-										builder.add(field.getName(), entryBuilder);
+										builder.add(field.getName(), entryBuilder, getOrder(field));
 										continue parseFields;
 									}
 								}
@@ -279,10 +279,11 @@ public class SimpleConfigClassParser {
 						  "Attempt to declare backing class for config category that already has a " +
 						  "backing class: " + name + ", class: " + clazz.getName());
 				} else {
+					Category a = clazz.getAnnotation(Category.class);
 					catBuilder = new CategoryBuilder(name);
 					if (clazz.isAnnotationPresent(RequireRestart.class))
 						catBuilder.restart();
-					root.n(catBuilder);
+					root.n(catBuilder, a.value());
 				}
 				decorateAbstractBuilder(root, clazz, catBuilder);
 			} else if (clazz.isAnnotationPresent(Group.class)
@@ -292,11 +293,11 @@ public class SimpleConfigClassParser {
 					gBuilder = builder.groups.get(name);
 				} else {
 					Group a = clazz.getAnnotation(Group.class);
-					boolean expand = a != null && a.expand();
+					boolean expand = a.expand();
 					gBuilder = new GroupBuilder(name, expand);
 					if (clazz.isAnnotationPresent(RequireRestart.class))
 						gBuilder.restart();
-					builder.n(gBuilder);
+					builder.n(gBuilder, a.value());
 				}
 				decorateAbstractBuilder(root, clazz, gBuilder);
 			} else if (clazz.isAnnotationPresent(Bind.class))
@@ -370,6 +371,16 @@ public class SimpleConfigClassParser {
 		}
 		return field.isAnnotationPresent(Text.class)
 		       || field.isAnnotationPresent(RequireRestart.class);
+	}
+	
+	protected static int getOrder(Field field) {
+		if (field.isAnnotationPresent(Entry.class))
+			return field.getAnnotation(Entry.class).value();
+		else if (field.isAnnotationPresent(Entry.NonPersistent.class))
+			return field.getAnnotation(Entry.NonPersistent.class).value();
+		else if (field.isAnnotationPresent(Text.class))
+			return field.getAnnotation(Text.class).value();
+		else return 0;
 	}
 	
 	public static AbstractSimpleConfigEntryHolderBuilder<?> getBuilderForClass(Class<?> clazz) {

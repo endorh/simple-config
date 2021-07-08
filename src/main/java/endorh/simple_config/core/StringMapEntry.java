@@ -23,15 +23,18 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * String map entry<br>
+ */
 public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-  extends AbstractConfigEntry<Map<String, V>, CompoundNBT, List<Pair<String, G>>,
+  extends AbstractConfigEntry<Map<String, V>, Map<String, V>, List<Pair<String, G>>,
   StringMapEntry<V, C, G, E, B>> {
 	protected final Map<String, E> entries = new HashMap<>();
 	protected final B entryBuilder;
 	protected final E entry;
 	protected final Class<?> entryTypeClass;
-	protected final StringMapEntryHolder<V, C, E, B> holder;
+	protected final StringMapEntryHolder<V, C, E> holder;
 	protected Function<String, Optional<ITextComponent>> keyErrorSupplier;
 	protected boolean expand;
 	
@@ -43,12 +46,16 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 		this.entryBuilder = entryBuilder;
 		entryTypeClass = entryBuilder.typeClass;
 		entry = entryBuilder.build(parent, name + "$ ");
-		holder = new StringMapEntryHolder<>(parent.getRoot(), entryBuilder);
+		holder = new StringMapEntryHolder<>(parent.getRoot());
+		if (!entry.canBeNested())
+			throw new IllegalArgumentException(
+			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
+			  "nested in a map entry");
 	}
 	
 	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	  extends AbstractConfigEntryBuilder<Map<String, V>, CompoundNBT,
+	  extends AbstractConfigEntryBuilder<Map<String, V>, Map<String, V>,
 	  List<Pair<String, G>>, StringMapEntry<V, C, G, E, B>, Builder<V, C, G, E, B>> {
 		protected B entryBuilder;
 		protected Function<String, Optional<ITextComponent>> keyErrorSupplier;
@@ -89,32 +96,17 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 		((ConfigValue<String>) spec).set(forActualConfig(forConfig(value)));
 	}
 	
-	protected String forActualConfig(CompoundNBT value) {
-		return value.toString();
-	}
-	
-	protected @Nullable CompoundNBT fromActualConfig(String value) {
-		try {
-			return new JsonToNBT(new StringReader(value)).readStruct();
-		} catch (CommandSyntaxException e) {
-			return null;
-		}
-	}
-	
-	@Override
-	protected CompoundNBT forConfig(Map<String, V> value) {
+	protected String forActualConfig(Map<String, V> value) {
 		final Map<String, C> m = value.entrySet().stream()
 		  .collect(Collectors.toMap(Entry::getKey, e -> entry.forConfig(e.getValue())));
-		return (CompoundNBT) toNBT(m);
+		return toNBT(m).toString();
 	}
 	
-	@Nullable
-	@Override
-	protected Map<String, V> fromConfig(@Nullable CompoundNBT value) {
+	protected @Nullable Map<String, V> fromActualConfig(String value) {
 		if (value == null) return null;
 		try {
-			return mapFromNBT(value);
-		} catch (IllegalArgumentException ignored) {
+			return mapFromNBT(new JsonToNBT(new StringReader(value)).readStruct());
+		} catch (CommandSyntaxException | IllegalArgumentException e) {
 			return null;
 		}
 	}
@@ -261,7 +253,9 @@ public class StringMapEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
 	}
 	
-	protected AbstractConfigListEntry<G> buildCell(ConfigEntryBuilder builder, @Nullable G value) {
+	protected AbstractConfigListEntry<G> buildCell(
+	  ConfigEntryBuilder builder, @Nullable G value
+	) {
 		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
 		e.set(entry.fromGuiOrDefault(value));

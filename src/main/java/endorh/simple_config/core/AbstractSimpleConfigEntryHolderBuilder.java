@@ -4,6 +4,7 @@ import endorh.simple_config.core.entry.TextEntry;
 import endorh.simple_config.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import net.minecraft.util.text.ITextComponent;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,10 +16,10 @@ abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSi
 	
 	protected final Map<String, GroupBuilder> groups = new LinkedHashMap<>();
 	protected final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
-	protected final List<IGUIEntryBuilder> guiOrder = new ArrayList<>();
+	protected final Map<IGUIEntryBuilder, Integer> guiOrder = new LinkedHashMap<>();
 	protected boolean requireRestart = false;
 	
-	protected abstract void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry);
+	protected abstract void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index);
 	protected abstract AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name);
 	protected abstract boolean hasEntry(String name);
 	
@@ -48,7 +49,13 @@ abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSi
 	 * Add an entry to the config
 	 */
 	public Builder add(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder) {
-		addEntry(name, entryBuilder);
+		return add(name, entryBuilder, 0);
+	}
+	
+	protected Builder add(
+	  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder, int index
+	) {
+		addEntry(name, entryBuilder, index);
 		return self();
 	}
 	
@@ -83,5 +90,12 @@ abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSi
 	/**
 	 * Add a config group
 	 */
-	public abstract Builder n(GroupBuilder group);
+	protected abstract Builder n(GroupBuilder group, int index);
+	
+	/**
+	 * Add a config group
+	 */
+	public Builder n(GroupBuilder group) {
+		return n(group, 0);
+	}
 }

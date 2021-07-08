@@ -272,9 +272,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (tooltip != null && I18n.hasKey(tooltip)) {
 			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs))
 			                     .toArray(new ITextComponent[0]));
-			/*return Optional.of(
-			  Arrays.stream(fillArgs(tooltip, v, tooltipArgs).split("\n"))
-			    .map(StringTextComponent::new).toArray(ITextComponent[]::new));*/
 		}
 		return Optional.empty();
 	}

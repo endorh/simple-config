@@ -1,11 +1,10 @@
 package endorh.simple_config.core;
 
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
-import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A <i>fake</i> entry holder used by {@link EntryListEntry} to
@@ -17,33 +16,28 @@ import java.util.List;
  */
 public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
   implements ISimpleConfigEntryHolder {
+	protected final SimpleConfig root;
 	protected AbstractConfigEntry<V, C, G, E> entry;
-	protected List<V> value = null;
-	protected final List<V> buffer = new ArrayList<>();
+	protected final Map<String, V> values = new HashMap<>();
 	
-	public String nameFor(G element) {
-		buffer.add(entry.fromGuiOrDefault(element));
-		return String.valueOf(buffer.size() - 1);
-	}
+	protected int id_gen = 0;
 	
-	public void onDelete(int index) {
-		buffer.remove(index);
+	public String nextName() {
+		return String.valueOf(id_gen++);
 	}
 	
 	public void clear() {
-		buffer.clear();
-		value = null;
+		values.clear();
+		id_gen = 0;
 	}
 	
-	public ListEntryEntryHolder() {}
-	
-	public void setValue(List<V> value) {
-		this.value = value;
+	public ListEntryEntryHolder(SimpleConfig root) {
+		this.root = root;
 	}
 	
 	@Override
 	public SimpleConfig getRoot() {
-		return entry.parent.getRoot();
+		return root;
 	}
 	
 	@Override
@@ -55,9 +49,7 @@ public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G
 		// V must be T
 		try {
 			//noinspection unchecked
-			return (T) buffer.get(Integer.parseInt(path));
-		} catch (NumberFormatException e) {
-			throw new NoSuchConfigEntryError(entry.getPath() + "." + path);
+			return (T) values.get(path);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(entry.getPath() + "." + path, e);
 		}
@@ -71,14 +63,13 @@ public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G
 		// T must be V
 		try {
 			//noinspection unchecked
-			this.buffer.set(Integer.parseInt(path), (V) value);
-		} catch (NumberFormatException e) {
-			throw new NoSuchConfigEntryError(entry.getPath() + "." + path);
+			values.put(path, (V) value);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(entry.getPath() + "." + path, e);
 		}
 	}
 	
+	// Should never be called
 	@Override public <Gui> Gui getGUI(String path) {
 		return null;
 	}

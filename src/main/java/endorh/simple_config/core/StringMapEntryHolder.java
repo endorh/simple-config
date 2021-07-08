@@ -5,21 +5,16 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StringMapEntryHolder<V, C, E extends AbstractConfigEntry<V, C, ?, E>,
-  B extends AbstractConfigEntryBuilder<V, C, ?, E, B>>
+public class StringMapEntryHolder<V, C, E extends AbstractConfigEntry<V, C, ?, E>>
   implements ISimpleConfigEntryHolder {
 	protected final SimpleConfig root;
-	protected final B builder;
 	protected final Map<String, V> values = new HashMap<>();
-	protected final E entry;
 	protected int id_gen = 0;
 	
 	@Internal public StringMapEntryHolder(
-	  SimpleConfig root, B builder
+	  SimpleConfig root
 	) {
 		this.root = root;
-		this.builder = builder;
-		this.entry = builder.build(this, " ");
 	}
 	
 	public void clear() {
@@ -42,10 +37,10 @@ public class StringMapEntryHolder<V, C, E extends AbstractConfigEntry<V, C, ?, E
 		return (T) values.get(path);
 	}
 	
+	// Should never be called
 	@Override
 	public <G> G getGUI(String path) {
-		//noinspection unchecked
-		return (G) entry.forGui(get(path));
+		return null;
 	}
 	
 	@Override

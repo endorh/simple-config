@@ -3,7 +3,6 @@ package endorh.simple_config.gui;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.Expandable;
 import me.shedaniel.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
 import me.shedaniel.clothconfig2.gui.entries.TextFieldListEntry;
 import net.minecraft.client.MainWindow;
@@ -72,8 +71,7 @@ public class StringPairCell<V, E extends AbstractConfigListEntry<V>>
 		key = new AtomicReference<>(value.getKey());
 		nameWidget.setText(key.get());
 		widgets = Lists.newArrayList(new IGuiEventListener[]{nameWidget, nestedEntry});
-		offsetName = nestedEntry instanceof Expandable;
-		// this.widgets.addAll(nestedEntry.getEventListeners());
+		offsetName = true; // nestedEntry instanceof Expandable;
 	}
 	
 	@Override
@@ -115,34 +113,21 @@ public class StringPairCell<V, E extends AbstractConfigListEntry<V>>
 	) {
 		MainWindow window = Minecraft.getInstance().getMainWindow();
 		final FontRenderer fr = Minecraft.getInstance().fontRenderer;
-		// this.resetButton.active = this.isEditable() && this.getDefaultValue().isPresent() && !this.defaultSupplier.get().equals(getValue());
-		// this.resetButton.y = y;
-		// this.nameWidget.active = true;
-		// this.valueWidget.active = this.isEditable();
 		final int o = offsetName? 24 : 0;
 		this.nameWidget.y = y;
-		// this.valueWidget.y = y;
 		ITextComponent displayedFieldName = this.nestedEntry.getDisplayedFieldName();
 		if (fr.getBidiFlag()) {
 			fr.func_238407_a_(matrices, displayedFieldName.func_241878_f(), (float)(window.getScaledWidth() - x - fr.getStringPropertyWidth(displayedFieldName)), (float)(y + 6), getPreferredTextColor());
-			// this.resetButton.x = x;
-			// this.valueWidget.x = x + resetButton.getWidth() + 1;
 			this.nameWidget.x = x + entryWidth - 120 - o;
 		} else {
 			fr.func_238407_a_(matrices, displayedFieldName.func_241878_f(), (float)x, (float)(y + 6), this.getPreferredTextColor());
 			this.nameWidget.x = x + o;
-			// this.valueWidget.x = x + entryWidth - 150;
-			// this.resetButton.x = x + entryWidth - this.resetButton.getWidth();
 		}
 		
-		// valueWidget.setWidth(150 - resetButton.getWidth() - 2);
-		// resetButton.render(matrices, mouseX, mouseY, delta);
 		nestedEntry.setParent(((StringPairListEntry) listListEntry).getParent());
 		nestedEntry.setScreen(listListEntry.getConfigScreen());
 		nestedEntry.render(matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		nameWidget.render(matrices, mouseX, mouseY, delta);
-		// valueWidget.render(matrices, mouseX, mouseY, delta);
-		
 	}
 	
 	@Override

@@ -235,6 +235,14 @@ public class Builders {
 	/**
 	 * Entry of a String serializable object
 	 */
+	public static <V> SerializableEntry.Builder<V> entry(
+	  V value, IConfigEntrySerializer<V> serializer
+	) {
+		return new SerializableEntry.Builder<>(value, serializer);
+	}
+	/**
+	 * Entry of a String serializable object
+	 */
 	public static <V extends ISerializableConfigEntry<V>> SerializableEntry.Builder<V> entry(V value) {
 		return new SerializableEntry.Builder<>(value, value.getConfigSerializer());
 	}

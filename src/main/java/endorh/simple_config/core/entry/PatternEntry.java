@@ -109,7 +109,8 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 			return super.getErrorMessage(value);
 		} catch (PatternSyntaxException e) {
 			return Optional.of(new TranslationTextComponent(
-			  "simple-config.config.error.invalid_pattern", e.getMessage()));
+			  "simple-config.config.error.invalid_pattern",
+			  e.getMessage().trim().replace("\r\n", ": ")));
 		}
 	}
 }

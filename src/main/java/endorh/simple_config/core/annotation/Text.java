@@ -36,4 +36,11 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Text {}
+public @interface Text {
+	/**
+	 * Preferred order to be inserted in the config (relative to its siblings)<br>
+	 * Should only be necessary when dealing with nested groups in between entries,
+	 * but the Java reflection specification won't let me guarantee that
+	 */
+	int value() default 0;
+}

@@ -18,6 +18,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Group {
 	/**
+	 * The preferred order where to place this group relative to its siblings, including
+	 * entries at the same level<br>
+	 * By default, it's added in random order, since Java does not
+	 * allow to travel inner classes in source order.
+	 */
+	int value() default 0;
+	/**
 	 * Expand this config group in the GUI automatically
 	 */
 	boolean expand() default false;

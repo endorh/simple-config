@@ -69,6 +69,13 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Entry {
+	/**
+	 * The preferred index where to add this entry, relative to its siblings,
+	 * including config groups on the same level<br>
+	 * Should only be necessary when dealing with nested groups in between
+	 * entries, but the Java language specification won't let me guarantee that
+	 */
+	int value() default 0;
 	
 	/**
 	 * Mark a <b>static</b> field as a non persistent config entry<br>
@@ -98,5 +105,13 @@ public @interface Entry {
 	 */
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
-	@interface NonPersistent {}
+	@interface NonPersistent {
+		/**
+		 * The preferred index where to add this entry, relative to its siblings,
+		 * including config groups on the same level<br>
+		 * Should only be necessary when dealing with nested groups in between entries,
+		 * but the Java reflection specification won't let me guarantee that
+		 */
+		int value() default 0;
+	}
 }

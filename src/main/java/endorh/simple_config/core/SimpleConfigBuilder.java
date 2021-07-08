@@ -19,10 +19,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -54,6 +51,7 @@ public class SimpleConfigBuilder
 	protected final String title;
 	
 	protected final Map<String, CategoryBuilder> categories = new LinkedHashMap<>();
+	protected final Map<CategoryBuilder, Integer> categoryOrder = new HashMap<>();
 	protected final CategoryBuilder defaultCategory;
 	
 	protected String path;
@@ -145,14 +143,14 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
-	@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry) {
+	@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index) {
 		checkName(name);
 		if (entries.containsKey(name))
 			throw new IllegalArgumentException("Duplicate config entry name: " + name);
 		entries.put(name, entry);
 		if (requireRestart)
 			entry.restart();
-		guiOrder.add(entry);
+		guiOrder.put(entry, index);
 	}
 	
 	@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -177,20 +175,25 @@ public class SimpleConfigBuilder
 	}
 	
 	public SimpleConfigBuilder n(CategoryBuilder cat) {
+		return n(cat, 0);
+	}
+	
+	public SimpleConfigBuilder n(CategoryBuilder cat, int index) {
 		if (categories.containsKey(cat.name) || groups.containsKey(cat.name))
 			throw new IllegalArgumentException("Duplicated config category: \"" + cat.name + "\"");
 		categories.put(cat.name, cat);
+		categoryOrder.put(cat, index);
 		cat.setParent(this);
 		if (requireRestart)
 			cat.restart();
 		return this;
 	}
 	
-	@Override public SimpleConfigBuilder n(GroupBuilder group) {
+	@Override public SimpleConfigBuilder n(GroupBuilder group, int index) {
 		if (groups.containsKey(group.name) || categories.containsKey(group.name))
 			throw new IllegalArgumentException("Duplicated config group: \"" + group.name + "\"");
 		groups.put(group.name, group);
-		guiOrder.add(group);
+		guiOrder.put(group, index);
 		group.setParent(defaultCategory);
 		if (requireRestart)
 			group.restart();
@@ -234,7 +237,7 @@ public class SimpleConfigBuilder
 		protected void setParent(SimpleConfigBuilder parent) {
 			this.parent = parent;
 			this.path = parent.path + "." + name;
-			this.title = parent.modId + ".config.category." + path;
+			this.title = parent.modId + ".config." + path;
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
@@ -282,7 +285,7 @@ public class SimpleConfigBuilder
 		}
 		
 		@Override protected void addEntry(
-		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
+		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index
 		) {
 			checkName(name);
 			if (entries.containsKey(name))
@@ -290,7 +293,7 @@ public class SimpleConfigBuilder
 			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			guiOrder.add(entry);
+			guiOrder.put(entry, index);
 		}
 		
 		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -314,11 +317,11 @@ public class SimpleConfigBuilder
 			entry.tooltip(tooltip(entry.name));
 		}
 		
-		@Override public CategoryBuilder n(GroupBuilder group) {
+		@Override public CategoryBuilder n(GroupBuilder group, int index) {
 			if (groups.containsKey(group.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + group.name + "\"");
 			groups.put(group.name, group);
-			guiOrder.add(group);
+			guiOrder.put(group, index);
 			if (parent != null)
 				group.setParent(this);
 			if (requireRestart)
@@ -346,12 +349,13 @@ public class SimpleConfigBuilder
 				built.put(group, g);
 				groups.put(group.name, g);
 			}
-			final List<IGUIEntry> order = guiOrder.stream().map(
-			  e -> e instanceof GroupBuilder
-			       ? built.get(e)
-			       : e instanceof AbstractConfigEntryBuilder
-			         ? builtEntries.get(e)
-			         : (IGUIEntry) e).collect(Collectors.toList());
+			final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
+			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
+			).map(
+			  e -> e instanceof GroupBuilder ? built.get(e) :
+			       e instanceof AbstractConfigEntryBuilder ? builtEntries.get(e) :
+			       (IGUIEntry) e
+			).collect(Collectors.toList());
 			cat.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
 			  unmodifiableMap(specValues), unmodifiableList(order));
@@ -401,7 +405,7 @@ public class SimpleConfigBuilder
 			this.category = parent;
 			this.path = parent.path + "." + name;
 			final String modId = parent.parent.modId;
-			this.title = modId + ".config.group." + path;
+			this.title = modId + ".config." + path;
 			this.tooltip = title + ".help";
 			
 			for (GroupBuilder group : groups.values())
@@ -412,20 +416,20 @@ public class SimpleConfigBuilder
 			this.category = parent.category;
 			this.path = parent.path + "." + name;
 			final String modId = parent.category.parent.modId;
-			this.title = modId + ".config.group." + path;
+			this.title = modId + ".config." + path;
 			this.tooltip = title + ".help";
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
 		}
 		
-		@Override public GroupBuilder n(GroupBuilder nested) {
+		@Override public GroupBuilder n(GroupBuilder nested, int index) {
 			if (groups.containsKey(nested.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + nested.name + "\"");
 			if (category != null)
 				nested.setParent(this);
 			groups.put(nested.name, nested);
-			guiOrder.add(nested);
+			guiOrder.put(nested, index);
 			if (requireRestart)
 				nested.restart();
 			return this;
@@ -436,14 +440,16 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry) {
+		@Override protected void addEntry(
+		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index
+		) {
 			checkName(name);
 			if (entries.containsKey(name))
 				throw new IllegalArgumentException("Duplicate config entry name: " + name);
 			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			guiOrder.add(entry);
+			guiOrder.put(entry, index);
 		}
 		
 		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -503,12 +509,13 @@ public class SimpleConfigBuilder
 				groupMap.put(name, subGroup);
 				builtGroups.put(builder, subGroup);
 			}
-			final List<IGUIEntry> builtOrder = guiOrder.stream().map(
-			  e -> e instanceof GroupBuilder
-			       ? builtGroups.get(e)
-			       : e instanceof AbstractConfigEntryBuilder
-			         ? builtEntries.get(e)
-			         : (IGUIEntry) e).collect(Collectors.toList());
+			final List<IGUIEntry> builtOrder = guiOrder.keySet().stream().sorted(
+			  Comparator.comparing(a -> (int) guiOrder.getOrDefault(a, 0))
+			).map(
+			  e -> e instanceof GroupBuilder ? builtGroups.get(e) :
+			       e instanceof AbstractConfigEntryBuilder ? builtEntries.get(e) :
+			       (IGUIEntry) e
+			).collect(Collectors.toList());
 			group.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(specValues),
 			  unmodifiableMap(groupMap), unmodifiableList(builtOrder));
@@ -571,21 +578,22 @@ public class SimpleConfigBuilder
 		}
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
-		for (CategoryBuilder cat : categories.values())
-			categoryMap.put(cat.name, cat.build(config, specBuilder));
+		categories.values().stream().sorted(
+		  Comparator.comparing(c -> categoryOrder.getOrDefault(c, 0))
+		).forEachOrdered(c -> categoryMap.put(c.name, c.build(config, specBuilder)));
 		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, specBuilder);
 		for (GroupBuilder group : groups.values()) {
 			final SimpleConfigGroup g = group.build(defaultCategory, specBuilder);
 			built.put(group, g);
 			groupMap.put(group.name, g);
 		}
-		final List<IGUIEntry> order = guiOrder.stream().map(
-		  e -> e instanceof GroupBuilder
-		       ? built.get(e)
-		       : e instanceof AbstractConfigEntryBuilder
-		         ? builtEntries.get(e)
-		         : (IGUIEntry) e).collect(Collectors.toList());
-		
+		final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
+		  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
+		).map(
+		  e -> e instanceof GroupBuilder ? built.get(e) :
+		       e instanceof AbstractConfigEntryBuilder ? builtEntries.get(e) :
+		       (IGUIEntry) e
+		).collect(Collectors.toList());
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
 		  unmodifiableMap(groupMap), unmodifiableMap(specValues),

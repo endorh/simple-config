@@ -26,14 +26,12 @@ import java.util.function.Supplier;
 public class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
   extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListEntry<T, Inner>> {
 	protected final List<ReferenceProvider<?>> referencableEntries = Lists.newArrayList();
-	protected final Consumer<Integer> deleteConsumer;
 	
 	public NestedListEntry(
 	  ITextComponent fieldName, List<T> value, boolean defaultExpanded,
 	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<T>> saveConsumer,
 	  Supplier<List<T>> defaultValue, ITextComponent resetButtonKey, boolean deleteButtonEnabled,
-	  boolean insertInFront, BiFunction<T, NestedListEntry<T, Inner>, Inner> createNewCell,
-	  Consumer<Integer> deleteConsumer
+	  boolean insertInFront, BiFunction<T, NestedListEntry<T, Inner>, Inner> createNewCell
 	) {
 		super(
 		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
@@ -41,7 +39,6 @@ public class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		  (t, nestedListEntry) -> new NestedListCell<>(
 		    t, nestedListEntry, createNewCell.apply(t, nestedListEntry)));
 		
-		this.deleteConsumer = deleteConsumer;
 		for (NestedListCell<T, Inner> cell : cells)
 			referencableEntries.add(cell.nestedEntry);
 		setReferenceProviderEntries(referencableEntries);
@@ -57,9 +54,7 @@ public class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	}
 	
 	public void delete(Inner inner) {
-		final int i = referencableEntries.indexOf(inner);
-		deleteConsumer.accept(i);
-		referencableEntries.remove(i);
+		referencableEntries.remove(inner);
 		requestReferenceRebuilding();
 	}
 	

@@ -4,6 +4,7 @@ import endorh.simple_config.core.entry.AbstractListEntry;
 import endorh.simple_config.gui.NestedListEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -26,17 +27,36 @@ import java.util.Optional;
  * @param <E> The type of the entry nested within the list
  */
 public class EntryListEntry
-  <V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
-  extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, E>> {
+  <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+    B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
+  extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, E, B>> {
 	protected static final String TOOLTIP_KEY_SUFFIX = ".help";
 	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ".sub";
 	
 	protected final AbstractConfigEntry<V, C, G, E> entry;
+	protected final B entryBuilder;
 	protected ListEntryEntryHolder<V, C, G, E> holder;
+	
+	@Internal public EntryListEntry(
+	  ISimpleConfigEntryHolder parent, String name,
+	  @Nullable List<V> value, B entryBuilder) {
+		super(parent, name, value);
+		holder = new ListEntryEntryHolder<>(parent.getRoot());
+		this.entryBuilder = entryBuilder;
+		entry = entryBuilder.build(holder, name).withSaver((g, c) -> {});
+		if (!entry.canBeNested())
+			throw new IllegalArgumentException(
+			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
+			  "nested in a list entry");
+		if (translation != null)
+			this.translate(translation);
+		if (tooltip != null)
+			this.tooltip(tooltip);
+	}
 	
 	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	  extends AbstractListEntry.Builder<V, C, G, EntryListEntry<V, C, G, E>, Builder<V, C, G, E, B>> {
+	  extends AbstractListEntry.Builder<V, C, G, EntryListEntry<V, C, G, E, B>, Builder<V, C, G, E, B>> {
 		protected B builder;
 		
 		public Builder(List<V> value, B builder) {
@@ -45,33 +65,15 @@ public class EntryListEntry
 		}
 		
 		@Override
-		protected EntryListEntry<V, C, G, E> buildEntry(
+		protected EntryListEntry<V, C, G, E, B> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			return new EntryListEntry<>(parent, name, value, builder);
 		}
 	}
 	
-	@Internal public EntryListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
-	  @Nullable List<V> value, AbstractConfigEntryBuilder<V, C, G, E, ?> builder) {
-		super(parent, name, value);
-		holder = new ListEntryEntryHolder<>();
-		entry = builder.build(holder, name).withSaver((g, c) -> {});
-		holder.entry = entry;
-		if (!entry.canBeNested()) {
-			throw new IllegalArgumentException(
-			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
-			  "nested in a list entry");
-		}
-		if (translation != null)
-			this.translate(translation);
-		if (tooltip != null)
-			this.tooltip(tooltip);
-	}
-	
 	@Override
-	protected EntryListEntry<V, C, G, E> translate(String translation) {
+	protected EntryListEntry<V, C, G, E, B> translate(String translation) {
 		super.translate(translation);
 		if (translation != null)
 			entry.translate(translation + SUB_ELEMENTS_KEY_SUFFIX);
@@ -79,7 +81,7 @@ public class EntryListEntry
 	}
 	
 	@Override
-	protected EntryListEntry<V, C, G, E> tooltip(String translation) {
+	protected EntryListEntry<V, C, G, E, B> tooltip(String translation) {
 		super.tooltip(translation);
 		if (tooltip != null)
 			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX))
@@ -121,27 +123,33 @@ public class EntryListEntry
 		}));
 	}
 	
+	protected AbstractConfigListEntry<G> buildCell(
+	  ConfigEntryBuilder builder, @Nullable G value
+	) {
+		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
+		  .withDisplayName(new StringTextComponent("•"));
+		e.set(entry.fromGuiOrDefault(value));
+		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
+		  .orElseThrow(() -> new IllegalStateException(
+		    "List config entry's sub-entry did not produce a GUI entry"));
+		e.guiEntry = g;
+		return g;
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		holder.setValue(get());
 		holder.clear();
 		final NestedListEntry<G, AbstractConfigListEntry<G>> e =
 		  new NestedListEntry<>(
-			 getDisplayName(), forGui(get()), expand,
-			 () -> this.supplyTooltip(forGui(get())),
-			 saveConsumer().andThen(g -> holder.clear()),
-			 () -> forGui(value), builder.getResetButtonKey(),
-			 true, false,
-			 (g, en) -> {
-				 entry.name = holder.nameFor(g);
-				 return entry.buildGUIEntry(
-					builder
-				 ).orElseThrow(() -> new IllegalStateException(
-					"Sub entry in list entry did not generate a GUI entry"));
-			 }, holder::onDelete);
+		    getDisplayName(), forGui(get()), expand,
+		    () -> this.supplyTooltip(forGui(get())),
+		    saveConsumer().andThen(g -> holder.clear()),
+		    () -> forGui(value), builder.getResetButtonKey(),
+		    true, false,
+		    (g, en) -> buildCell(builder, g));
 		e.setRequiresRestart(requireRestart);
 		e.setTooltipSupplier(() -> this.supplyTooltip(e.getValue()));
 		e.setErrorSupplier(() -> this.supplyError(e.getValue()));

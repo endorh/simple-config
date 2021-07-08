@@ -5,9 +5,11 @@ import com.mojang.datafixers.util.Pair;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simple_config.core.SimpleConfigCategory;
+import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
 import endorh.simple_config.core.entry.EnumEntry.ITranslatedEnum;
-import me.shedaniel.clothconfig2.api.ModifierKeyCode;
+import endorh.simple_config.core.entry.IConfigEntrySerializer;
+import endorh.simple_config.gui.StringPairListEntry;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
@@ -26,7 +28,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -98,54 +99,58 @@ public class DemoConfigCategory {
 		       // Text entries may also be defined by name, receiving
 		       //   automatically mapped translation keys as other entries
 		       .text("intro")
-		       // Many different types of entries exist
-		       // All primitive number types can be used in entries, but
-		       //   using byte or short is discouraged
-		       // Numeric entries can specify their range in their builders
-		       //   These bounds are inclusive
-		       .add("int_value", number(0, 0, 10))
-		       // Bounds can also be specified with builder-like methods
-		       //   If a bound is not specified, it will be unbound
-		       .add("long_value", number(0L).min(0))
-		       // A shortcut exists for float or double values between 0 and 1
-		       //   fractional(v) is equivalent to number(v, 0, 1);
-		       .add("float_value", fractional(0.8F))
-		       // Any value can be marked as requiring a restart to be effective
-		       //   Entire groups and categories can be marked as well
-		       .add("double_value", number(0.0, -10, 10).restart())
-		       // All numeric entry types can be displayed as sliders, including
-		       //   floats and doubles
-		       .add("long_slider", number(5L, 0, 10).slider())
-		       // For obvious reasons, entries displayed as sliders must
-		       //   have finite defined bounds
-		       .add("float_slider", number(80F, 0, 100).slider())
-		       // String values are also common
-		       .add("string_value", string("Hello World!"))
-		       // You may also use regex entries, which automatically
-		       //   validate the inputted expressions and compile them
-		       //   with the flags you choose
-		       // Remember that users may freely change most flags using (?_)
-		       //   notation, so don't struggle too much about flexibility
-		       //   and set as flags what you think should be the default
-		       .add("regex_value", pattern("nice (?<regex>.*+)").flags(Pattern.CASE_INSENSITIVE))
-		       // Enums are supported too
-		       // Enums entries get automatically mapped translation keys
-		       //   for their values, however, this mappings do not
-		       //   depend on their path, so enums with the same name
-		       //   may clash
-		       // For instance, the enum RockPaperScissors would be
-		       //   mapped to the translation keys
-		       //     config.{mod-id}.enum.rock_paper_scissors.rock
-		       //     config.{mod-id}.enum.rock_paper_scissors.paper
-		       //     config.{mod-id}.enum.rock_paper_scissors.scissors
-		       .add("enum_value", enum_(RockPaperScissors.SCISSORS))
-		       // By intentional design, there's no support for keybinding
-		       //   entries, please register your keybindings through
-		       //   the ClientRegistry.registerKeyBinding to benefit
-		       //   from Forge's key conflict resolution and an entry
-		       //   in the Controls GUI
 		       // Groups can be nested
-		       .n(group("colors")
+		       .n(group("basic")
+		            // Many different types of entries exist
+		            // All primitive number types can be used in entries, but
+		            //   using byte or short is discouraged
+		            // Numeric entries can specify their range in their builders
+		            //   These bounds are inclusive
+		            .add("int_value", number(0, 0, 10))
+		            // Bounds can also be specified with builder-like methods
+		            //   If a bound is not specified, it will be unbound
+		            .add("long_value", number(0L).min(0))
+		            // A shortcut exists for float or double values between 0 and 1
+		            //   fractional(v) is equivalent to number(v, 0, 1);
+		            .add("float_value", fractional(0.8F))
+		            // Any value can be marked as requiring a restart to be effective
+		            //   Entire groups and categories can be marked as well
+		            .add("double_value", number(0.0, -10, 10).restart())
+		            // All numeric entry types can be displayed as sliders, including
+		            //   floats and doubles
+		            .add("long_slider", number(5L, 0, 10).slider())
+		            // For obvious reasons, entries displayed as sliders must
+		            //   have finite defined bounds
+		            .add("float_slider", number(80F, 0, 100).slider())
+		            // String values are also common
+		            .add("string_value", string("Hello World!"))
+		            // You may also use regex entries, which automatically
+		            //   validate the inputted expressions and compile them
+		            //   with the flags you choose
+		            // Remember that users may freely change most flags using (?_)
+		            //   notation, so don't struggle too much about flexibility
+		            //   and set as flags what you think should be the default
+		            .add("regex_value", pattern("nice (?<regex>.*+)").flags(Pattern.CASE_INSENSITIVE))
+		            // Enums are supported too
+		            // Enums entries get automatically mapped translation keys
+		            //   for their values, however, this mappings do not
+		            //   depend on their path, so enums with the same name
+		            //   may clash
+		            // For instance, the enum RockPaperScissors would be
+		            //   mapped to the translation keys
+		            //     config.{mod-id}.enum.rock_paper_scissors.rock
+		            //     config.{mod-id}.enum.rock_paper_scissors.paper
+		            //     config.{mod-id}.enum.rock_paper_scissors.scissors
+		            .add("enum_value", enum_(RockPaperScissors.SCISSORS))
+		            // Enums may define their own translations implementing
+		            //   ITranslatedEnum (see the Placement enum)
+		            .add("enum_value_2", enum_(Placement.UPSIDE_DOWN))
+		            // By intentional design, there's no built-in support for
+		            //   keybinding entries, please register your keybindings
+		            //   through the ClientRegistry.registerKeyBinding to
+		            //   benefit from Forge's key conflict resolution and an
+		            //   entry in the Controls GUI
+		       ).n(group("colors")
 		            // Color entries use java.awt.Color as their type
 		            .add("no_alpha_color", color(Color.BLUE))
 		            // Colors may optionally allow alpha values
@@ -183,23 +188,14 @@ public class DemoConfigCategory {
 		            //   the entry will also accept literal NBT values
 		            .add("nbt_value", nbtValue(StringNBT.valueOf("NBT")))
 		            // It is also possible to use custom String serializable entries
-		            //   A class may implement ISerializableConfigEntry to be
-		            //   automatically serializable as well
+		            //   You may either pass an IConfigEntrySerializer,
+		            //   make the type implement ISerializableConfigEntry, or
+		            //   pass directly two de/serializing lambdas
+		            // In this case we opt for the first choice, because we
+		            //   can't modify the Pair class, and using lambdas directly
+		            //   isn't reusable
 		            .add("pair", entry(
-		              Pair.of("string", 2),
-		              p -> p.getFirst() + ", " + p.getSecond(),
-		              s -> {
-			              if (s == null || s.isEmpty())
-			              	  return Optional.empty();
-			              final String[] split = s.split(",");
-			              if (split.length != 2)
-			              	  return Optional.empty();
-			              try {
-				              return Optional.of(Pair.of(split[0].trim(), Integer.parseInt(split[1].trim())));
-			              } catch (NumberFormatException ignored) {
-				              return Optional.empty();
-			              }
-		              })))
+		              Pair.of("string", 2), new StringIntPairSerializer())))
 		     .n(group("maps")
 		          // Map entries are also supported
 		          //   The only map key type currently supported is String
@@ -230,7 +226,7 @@ public class DemoConfigCategory {
 		          // The entries within a map can be decorated as usual
 		          .add("even_int_map_map", map(
 		            map(number(0)
-		                  .error(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"))) : Optional.empty()),
+		                  .error(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"), i)) : Optional.empty()),
 		                ImmutableMap.of("", 0)
 		            ), ImmutableMap.of(
 		              "plains", ImmutableMap.of("Cornflower", 2, "Dandelion", 4),
@@ -301,7 +297,7 @@ public class DemoConfigCategory {
 		       //   and produces a generic error message, but this is
 		       //   discouraged
 		       .add("even_int_list", intList(asList(2, 4)).range(-20, 20)
-			      .elemError(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"))) : Optional.empty()))
+			      .elemError(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"), i)) : Optional.empty()))
 		       // It is also possible to define a dynamic tooltip for an entry,
 		       //   which will depend on the current value of the entry
 		       // However, you'll need to manually separate your tooltip
@@ -353,7 +349,7 @@ public class DemoConfigCategory {
 	
 	// A common pattern is creating enums for certain config settings
 	// This enum's entries are automatically mapped to translation
-	//    keys under the key 'config.{mod-id}.enum.rock_paper_scissors.*'
+	//    keys under the key '{mod-id}.config.enum.rock_paper_scissors.*'
 	public enum RockPaperScissors {
 		ROCK, PAPER, SCISSORS
 	}
@@ -366,31 +362,97 @@ public class DemoConfigCategory {
 		
 		// Although in this case it doesn't make much difference
 		@Override public ITextComponent getDisplayName() {
-			return ttc(prefix("enum.demo.placement." + name().toLowerCase()));
+			return ttc(prefix("enum.placement." + name().toLowerCase()));
 		}
 	}
 	
-	// Since this is the config class for the category, we may
-	//   directly define here backing fields for all entries
+	public static class StringIntPairSerializer implements IConfigEntrySerializer<Pair<String, Integer>> {
+		@Override public String serializeConfigEntry(Pair<String, Integer> value) {
+			return value.getFirst() + ", " + value.getSecond();
+		}
+		@Override public Optional<Pair<String, Integer>> deserializeConfigEntry(String value) {
+			if (value == null || value.isEmpty() || value.matches("(?s).*?,.*?,.*+"))
+				return Optional.empty();
+			final String[] split = value.split(",");
+			if (split.length != 2)
+				return Optional.empty();
+			try {
+				return Optional.of(Pair.of(split[0].trim(), Integer.parseInt(split[1].trim())));
+			} catch (NumberFormatException ignored) {
+				return Optional.empty();
+			}
+		}
+	}
+	
+	// Since we passed 'this' as the config class for the category,
+	//   we may directly define here backing fields for all entries
 	// Backing fields must be static, and shouldn't be final
 	// If a backing field does not match its expected type,
 	//   the game will crash early
+	//   There's no guaranty however that this will happen with
+	//   mismatched generic types, such as List<String>. Be careful.
 	// The @Bind annotation is purely optional.
 	//   If present, it will throw an exception at load time if a
 	//   field that was supposed to match an entry didn't match any
+	// This is because fields that don't match any entry are allowed
+	//   in the config class. If you explicitly want to ensure the
+	//   field is bound to an entry use @Bind, otherwise just be careful
+	// If you want to have a field with the same name as an entry,
+	//   yet unbound to that entry, or of a different type, you may
+	//   annotate it as @NotEntry. This can be useful to translate
+	//   the config units to more useful units in the code within the
+	//   baker method, such as from m/s to m/tick.
 	@Bind public static boolean bool;
 	// Groups are mapped into static inner classes
 	@Bind public static class entries {
-		@Bind public static int int_value;
-		@Bind public static long long_value;
-		@Bind public static float float_value;
-		@Bind public static double double_value;
 		
-		@Bind public static long long_slider;
-		@Bind public static float float_slider;
-		
-		@Bind public static String string_value;
-		@Bind public static RockPaperScissors enum_value;
+		@Bind public static class basic {
+			@Bind public static int int_value;
+			@Bind public static long long_value;
+			@Bind public static float float_value;
+			@Bind public static double double_value;
+			
+			// Fields may be non-public, if they're used by the
+			//   config class itself and there's no use in exposing them
+			// However, fields should not be final, since they are to
+			//   be modified arbitrarily, and the JVM may perform
+			//   unpredicted optimizations for their usages.
+			@Bind private static long long_slider;
+			@Bind public static float float_slider;
+			
+			// The @Bind annotation is optional, these fields will still
+			//   be bound to their corresponding entries
+			public static String string_value;
+			public static RockPaperScissors enum_value;
+			
+			// Fields unrelated to any entry are allowed
+			//   These fields may be assigned by a baker method
+			public static int not_an_entry = 3;
+			
+			// A bake method is recognized automatically within all
+			//   classes, and is run when the config changes, after
+			//   the backing fields have been updated
+			// The bake method must receive either a SimpleConfig, a
+			//   SimpleConfigCategory or a SimpleConfigGroup depending
+			//   on where it is defined
+			static void bake(SimpleConfigGroup g) {
+				// Since int_value has been already updated, we may
+				//   use its value for other computations
+				// It's sometimes useful to precompute certain values
+				//   in baker methods, if they're going to be accessed
+				//   often and only rely on config values
+				not_an_entry = (int_value * 2) - 1;
+				// The received group can also be used to access
+				//   config values, or to modify them, triggering however
+				//   another bake (take care for infinite recursion)
+				// To set values you can also alter the fields and then
+				//   call g.commitFields()
+				// Here we only read another value
+				//   We could have used the long_value field directly as well
+				//   getInt() performs the necessary casts if the entry is numeric
+				not_an_entry *= g.getInt("long_value");
+			}
+		}
 		
 		@Bind public static class colors {
 			@Bind public static Color no_alpha_color;
@@ -398,6 +460,7 @@ public class DemoConfigCategory {
 		}
 		
 		@Bind public static class lists {
+			// It is important that the generics in the field type match
 			@Bind public static List<String> string_list;
 			@Bind public static List<Integer> int_list;
 			@Bind public static List<Color> color_list;
@@ -413,6 +476,7 @@ public class DemoConfigCategory {
 		}
 		
 		@Bind public static class maps {
+			// As with the lists, the generics of the field types must match
 			@Bind public static Map<String, String> map;
 			@Bind public static Map<String, List<String>> list_map;
 			@Bind public static Map<String, Map<String, Integer>> even_int_map_map;

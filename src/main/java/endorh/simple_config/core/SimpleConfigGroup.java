@@ -224,7 +224,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	 * You may also call this method on the root {@link SimpleConfig}
 	 * or on the parent {@link SimpleConfigCategory} of this group
 	 */
-	public void commitFields() throws IllegalAccessException {
+	public void commitFields() {
 		try {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();

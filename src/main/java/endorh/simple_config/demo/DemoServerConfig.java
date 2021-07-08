@@ -36,6 +36,19 @@ public class DemoServerConfig {
 	public static void registerServerConfig() {
 		// In this example, we generate all config entries
 		//   directly in the config class through the use of annotations
+		// This is discouraged, since it's more restrictive than the
+		//   builder. For instance, you may not define lists of
+		//   complex types, such as lists of lists, nor lists of maps
+		//   in the config class.
+		//   Declaring groups and categories like this may require you
+		//   to give their order (relative to its siblings) explicitly
+		//   in their annotations since it's not possible to read inner
+		//   classes in declaration order.
+		// Where possible, you should use the builder to define your
+		//   entries, as it's done in DemoConfigCategory, but this
+		//   class serves as an example for small/simple configs that
+		//   may not require any such features.
+		
 		// We use this class as the backing class
 		SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.SERVER, DemoServerConfig.class)
 		  .buildAndRegister();
@@ -79,7 +92,13 @@ public class DemoServerConfig {
 		@Text private static String greeting;
 		
 		// Groups can be created with @Group
-		@Group(expand = true)
+		//   We pass the desired order of the group related to its siblings
+		//   since Java can't read inner classes in declaration order
+		// Also, the default insertion place is 0, so 1 will be after the
+		//   greeting above. Negative values would place this group above greeting
+		//   Conflicting indexes will resolve entries before groups and then
+		//   (hopefully) entries in declaration order and groups randomly
+		@Group(value = 1, expand = true)
 		public static class group {
 			// Most entry types can be created by simply using @Entry
 			// The default value of an entry is the field's initial value
@@ -98,7 +117,7 @@ public class DemoServerConfig {
 			@Entry public static Direction direction;
 		}
 		
-		@Group(expand = true)
+		@Group(value = 2, expand = true)
 		public static abstract class demo_group {
 			// For the types that support them, you may use the
 			//   @Min, @Max, @Slider or @HasAlpha annotations
@@ -114,7 +133,7 @@ public class DemoServerConfig {
 			// Like text fields, these methods should be non-public to avoid cluttering the exposed API
 			private static Optional<ITextComponent> even_score$error(long v) {
 				// This example entry accepts only even values
-				return v % 2 != 0 ? Optional.of(ttc(prefix("error.demo.not_even"))) : Optional.empty();
+				return v % 2 != 0 ? Optional.of(ttc(prefix("error.demo.not_even"), v)) : Optional.empty();
 			}
 			// A '$tooltip' method can also be added to provide dynamic or complex
 			//   tooltips to entries, but using the builder for this is recommended
@@ -130,7 +149,7 @@ public class DemoServerConfig {
 			}
 			
 			// Text fields can be final, since they won't be updated
-			@Text private static final ITextComponent _1 = ttc(prefix("some_other_text"));
+			@Text private static final ITextComponent _1 = ttc(prefix("text.some_other_text"));
 			
 			// Generated entries/groups/categories may also have the
 			//   @RequireRestart annotation to flag them as requiring a
@@ -162,6 +181,9 @@ public class DemoServerConfig {
 				     .setClickEvent(new ClickEvent(
 					    ClickEvent.Action.COPY_TO_CLIPBOARD, summon_command))));
 			
+			// Groups will always be placed after entries with the same order
+			//   Since neither the above entries nor this group declare
+			//   an order, both use 0, and the group is resolved at the end
 			@Group
 			public static abstract class nested_group {
 				@Entry
