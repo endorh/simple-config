@@ -97,6 +97,8 @@
   "simple-config.config.client.demo.errors_tooltips_n_links.even_int_list": "Even int list",
   "simple-config.config.client.demo.errors_tooltips_n_links.even_int_list.help": "List entries may also define a validator for its elements, as well as for the whole list",
   "simple-config.config.client.demo.errors_tooltips_n_links.dynamic_tooltip": "Greeting name",
+  "simple-config.config.client.demo.errors_tooltips_n_links.restart_bool": "Bool that requires restart",
+  "simple-config.config.client.demo.errors_tooltips_n_links.restart_bool.help": "Some entries require a restart to be effective\nYou'll be notified about it when you save your changes",
   "simple-config.config.text.hello": "Hello, %s!\nTooltips may be dynamic",
   "simple-config.config.client.demo.errors_tooltips_n_links.tooltip_args": "Greeting name",
   "simple-config.config.client.demo.errors_tooltips_n_links.tooltip_args.help": "Hello, %s!\nTooltips may be dynamic\nThere are various ways too achieve this",
@@ -130,6 +132,13 @@
 
   "simple-config.config.enum.placement.upright": "Upright",
   "simple-config.config.enum.placement.upside_down": "Upside Down",
+
+  "simple-config.config.enum.direction.down": "Down",
+  "simple-config.config.enum.direction.up": "Up",
+  "simple-config.config.enum.direction.North": "North",
+  "simple-config.config.enum.direction.South": "South",
+  "simple-config.config.enum.direction.West": "West",
+  "simple-config.config.enum.direction.East": "East",
 
   "chat.file.open": "Open file"
 }

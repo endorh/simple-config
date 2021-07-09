@@ -9,7 +9,6 @@ import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
 import endorh.simple_config.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simple_config.core.entry.IConfigEntrySerializer;
-import endorh.simple_config.gui.StringPairListEntry;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
@@ -89,7 +88,7 @@ public class DemoConfigCategory {
 		  //   config.{mod-id}.demo.some_bool
 		  // and its tooltip is mapped to (if the translation exists)
 		  //   config.{mod-id}.demo.some_bool.help
-		  .add("bool", bool(true).restart())
+		  .add("bool", bool(true))
 		  // Creating config subgroups is done with .n(), which is
 		  //   short for 'nest', and the group() builder
 		  // Groups can be automatically expanded in the GUI, by
@@ -113,9 +112,7 @@ public class DemoConfigCategory {
 		            // A shortcut exists for float or double values between 0 and 1
 		            //   fractional(v) is equivalent to number(v, 0, 1);
 		            .add("float_value", fractional(0.8F))
-		            // Any value can be marked as requiring a restart to be effective
-		            //   Entire groups and categories can be marked as well
-		            .add("double_value", number(0.0, -10, 10).restart())
+		            .add("double_value", number(0.0, -10, 10))
 		            // All numeric entry types can be displayed as sliders, including
 		            //   floats and doubles
 		            .add("long_slider", number(5L, 0, 10).slider())
@@ -317,7 +314,10 @@ public class DemoConfigCategory {
 		       //   which can also be functions receiving the value of
 		       //   the entry
 		       .add("tooltip_args", string("Alex")
-			      .tooltipArgs(s -> stc(s).mergeStyle(TextFormatting.DARK_AQUA))))
+			      .tooltipArgs(s -> stc(s).mergeStyle(TextFormatting.DARK_AQUA)))
+		       // Any value can be marked as requiring a restart to be effective
+		       //   Entire groups and categories can be marked as well
+		       .add("restart_bool", bool(false).restart()))
 		  .text("end")
 		  // Set a specific background for this category
 		  //   The whole config may also define a default background
