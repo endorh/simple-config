@@ -10,6 +10,8 @@ import me.shedaniel.clothconfig2.impl.builders.FieldBuilder;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
+import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -170,6 +172,23 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			}
 			TextFormatting format =
 			  I18n.hasKey(translation)? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
+			  .setFormatting(TextFormatting.WHITE)
+			  .setHoverEvent(new HoverEvent(
+				 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
+				 "simple-config.debug.copy").mergeStyle(TextFormatting.GRAY)))
+			  .setClickEvent(new ClickEvent(
+			    ClickEvent.Action.COPY_TO_CLIPBOARD, translation)))
+			).appendString(" ");
+			if (tooltip != null)
+				status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
+				  .setFormatting(TextFormatting.GRAY)
+				  .setHoverEvent(new HoverEvent(
+					 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
+					 "simple-config.debug.copy.help").mergeStyle(TextFormatting.GRAY)))
+				  .setClickEvent(new ClickEvent(
+				    ClickEvent.Action.COPY_TO_CLIPBOARD, tooltip)))
+				).appendString(" ");
 			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).mergeStyle(format));
 		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}

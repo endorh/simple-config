@@ -28,8 +28,8 @@ public class EntryListEntry
   <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
     B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
   extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, E, B>> {
-	protected static final String TOOLTIP_KEY_SUFFIX = ".help";
-	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ".sub";
+	protected static final String TOOLTIP_KEY_SUFFIX = ":help";
+	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ":sub";
 	
 	protected final AbstractConfigEntry<V, C, G, E> entry;
 	protected final B entryBuilder;

@@ -166,7 +166,7 @@ public class SimpleConfigBuilder
 	}
 	
 	protected String tooltip(String name) {
-		return translation(name) + ".help";
+		return translation(name) + ":help";
 	}
 	
 	@Override protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
@@ -309,7 +309,7 @@ public class SimpleConfigBuilder
 		}
 		
 		protected String tooltip(String name) {
-			return translation(name) + ".help";
+			return translation(name) + ":help";
 		}
 		
 		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
@@ -403,7 +403,7 @@ public class SimpleConfigBuilder
 			this.path = parent.path + "." + name;
 			final String modId = parent.parent.modId;
 			this.title = modId + ".config." + path;
-			this.tooltip = title + ".help";
+			this.tooltip = title + ":help";
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
@@ -414,7 +414,7 @@ public class SimpleConfigBuilder
 			this.path = parent.path + "." + name;
 			final String modId = parent.category.parent.modId;
 			this.title = modId + ".config." + path;
-			this.tooltip = title + ".help";
+			this.tooltip = title + ":help";
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
@@ -462,7 +462,7 @@ public class SimpleConfigBuilder
 		}
 		
 		protected String tooltip(String name) {
-			return translation(name) + ".help";
+			return translation(name) + ":help";
 		}
 		
 		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
