@@ -1,10 +1,7 @@
 package endorh.simple_config.core.entry;
 
-import endorh.simple_config.core.AbstractConfigEntry;
-import endorh.simple_config.core.AbstractConfigEntryBuilder;
-import endorh.simple_config.core.EntryListEntry;
+import endorh.simple_config.core.*;
 import endorh.simple_config.core.EntryListEntry.Builder;
-import endorh.simple_config.core.StringToEntryMapEntry;
 import endorh.simple_config.core.annotation.Entry;
 import endorh.simple_config.core.annotation.HasAlpha;
 import endorh.simple_config.core.annotation.Slider;
@@ -15,10 +12,13 @@ import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static endorh.simple_config.core.ReflectionUtil.checkType;
 import static endorh.simple_config.core.SimpleConfigClassParser.*;
@@ -28,7 +28,6 @@ import static endorh.simple_config.core.SimpleConfigClassParser.*;
  */
 @SuppressWarnings("unused")
 public class Builders {
-	
 	// Basic types
 	public static BooleanEntry.Builder bool(boolean value) {
 		return new BooleanEntry.Builder(value);
@@ -47,6 +46,91 @@ public class Builders {
 		return new EnumEntry.Builder<>(value);
 	}
 	
+	public static ButtonEntry.Builder button(Runnable action) {
+		return new ButtonEntry.Builder(h -> action.run());
+	}
+	
+	public static ButtonEntry.Builder button(Consumer<ISimpleConfigEntryHolder> action) {
+		return new ButtonEntry.Builder(action);
+	}
+	
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner>>
+	EntryButtonEntry.Builder<V, Gui, Inner> button(
+	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner, Consumer<V> action
+	) { return button(inner, (v, h) -> action.accept(v)); }
+	
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner>>
+	EntryButtonEntry.Builder<V, Gui, Inner> button(
+	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner,
+	  BiConsumer<V, ISimpleConfigEntryHolder> action
+	) {
+		return new EntryButtonEntry.Builder<>(inner, action);
+	}
+	
+	@SuppressWarnings("unchecked") public static <V, E extends AbstractConfigEntry<V, ?, ?, E>
+	  & IAbstractStringKeyEntry<V>> SelectorEntry.Builder<V, E> select(
+	  AbstractConfigEntryBuilder<V, ?, ?, E, ?> builder, V... values
+	) {
+		return new SelectorEntry.Builder<>(builder, values);
+	}
+	
+	public static <V, E extends AbstractConfigEntry<V, ?, ?, E>
+	  & IAbstractStringKeyEntry<V>> SelectorEntry.Builder<V, E> select(
+	  AbstractConfigEntryBuilder<V, ?, ?, E, ?> builder, List<V> values
+	) {
+		//noinspection unchecked
+		return new SelectorEntry.Builder<>(builder, (V[]) values.toArray(new Object[0]));
+	}
+	
+	public static PresetSwitcherEntry.Builder globalPresetSwitcher(
+	  Map<String, Map<String, Object>> presets, String path
+	) {
+		return new PresetSwitcherEntry.Builder(presets, path, true);
+	}
+	
+	public static PresetSwitcherEntry.Builder localPresetSwitcher(
+	  Map<String, Map<String, Object>> presets, String path
+	) {
+		return new PresetSwitcherEntry.Builder(presets, path, false);
+	}
+	
+	/**
+	 * Create a preset map from a collection of preset builders
+	 */
+	public static Map<String, Map<String, Object>> presets(PresetBuilder... presets) {
+		final Map<String, Map<String, Object>> map = new LinkedHashMap<>();
+		Arrays.stream(presets).forEachOrdered(p -> map.put(p.name, p.build()));
+		return Collections.unmodifiableMap(map);
+	}
+	
+	/**
+	 * Preset map builder
+	 */
+	public static PresetBuilder preset(String name) {
+		return new PresetBuilder(name);
+	}
+	
+	public static class PresetBuilder {
+		protected final Map<String, Object> map = new LinkedHashMap<>();
+		protected final String name;
+		
+		protected PresetBuilder(String presetName) {
+			name = presetName;
+		}
+		
+		/**
+		 * Add an entry to the preset
+		 */
+		public <V> PresetBuilder add(String path, V value) {
+			map.put(path, value);
+			return this;
+		}
+		
+		protected Map<String, Object> build() {
+			return Collections.unmodifiableMap(map);
+		}
+	}
+	
 	// Byte
 	/**
 	 * Unbound byte value
@@ -55,6 +139,7 @@ public class Builders {
 	public static @Deprecated ByteEntry.Builder number(byte value) {
 		return new ByteEntry.Builder(value);
 	}
+	
 	/**
 	 * Non-negative byte between 0 and {@code max} (inclusive)
 	 * @deprecated Use a bound int entry
@@ -294,7 +379,8 @@ public class Builders {
 	 * Null bounds are unbound
 	 * @deprecated Use bound Integer lists
 	 */
-	@Deprecated public static ByteListEntry.Builder byteList(java.util.List<Byte> value) {
+	@SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
+	public static ByteListEntry.Builder byteList(java.util.List<Byte> value) {
 		return new ByteListEntry.Builder(value);
 	}
 	
@@ -303,7 +389,8 @@ public class Builders {
 	 * Null bounds are unbound
 	 * @deprecated Use bound Integer lists
 	 */
-	@Deprecated public static ShortListEntry.Builder shortList(java.util.List<Short> value) {
+	@SuppressWarnings("DeprecatedIsStillUsed") @Deprecated
+	public static ShortListEntry.Builder shortList(java.util.List<Short> value) {
 		return new ShortListEntry.Builder(value);
 	}
 	
@@ -336,10 +423,11 @@ public class Builders {
 		return new DoubleListEntry.Builder(value);
 	}
 	
-	// List of other entries
+	// List entry
 	
 	/**
-	 * List of other entries. Defaults to empty list<br>
+	 * List of other entries. Defaults to an empty list<br>
+	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
@@ -350,6 +438,7 @@ public class Builders {
 	
 	/**
 	 * List of other entries<br>
+	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
@@ -358,6 +447,30 @@ public class Builders {
 		return new EntryListEntry.Builder<>(value, entry);
 	}
 	
+	/**
+	 * List of other entries<br>
+	 * The nested entry may be other list entry, or even a map entry.<br>
+	 * Non-persistent entries cannot be nested
+	 */
+	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
+	EntryListEntry.Builder<V, C, G, E, B> list(B entry, V... values) {
+		return list(entry, Arrays.stream(values).collect(Collectors.toList()));
+	}
+	
+	// Map entry
+	
+	/**
+	 * Map of other entries<br>
+	 * The keys themselves are other entries, as long as they can
+	 * serialize as strings. Non string-serializable key entries
+	 * won't compile<br>
+	 * By default the key is a string entry
+	 * @param keyEntry The entry to be used as key
+	 * @param entry The entry to be used as value, which may be another map
+	 *              entry, or a list entry. Not persistent entries cannot be used
+	 * @param value Entry value
+	 */
 	public static <K, V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
 	  KE extends AbstractConfigEntry<K, ?, ?, KE> & IAbstractStringKeyEntry<K>,
@@ -368,6 +481,16 @@ public class Builders {
 		return new StringToEntryMapEntry.Builder<>(value, keyEntry, entry);
 	}
 	
+	/**
+	 * Map of other entries<br>
+	 * The keys themselves are other entries, as long as they can
+	 * serialize as strings. Non string-serializable key entries
+	 * won't compile<br>
+	 * By default the key is a string entry
+	 * @param entry The entry to be used as value, which may be other
+	 *              map entry, or a list entry. Not persistent entries cannot be used
+	 * @param value Entry value
+	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
 	StringToEntryMapEntry.Builder<String, V, C, G, E, B, StringEntry, StringEntry.Builder> map(

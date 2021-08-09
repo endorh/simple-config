@@ -29,7 +29,7 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<List<String>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<String>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final StringListBuilder valBuilder = builder

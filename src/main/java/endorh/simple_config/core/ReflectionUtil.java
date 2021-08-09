@@ -226,4 +226,25 @@ import java.util.Arrays;
 			throw new InvalidConfigValueTypeException(field.getName(), e);
 		}
 	}
+	
+	protected static Field getFieldOrNull(Class<?> clazz, String name) {
+		try {
+			final Field f = clazz.getDeclaredField(name);
+			f.setAccessible(true);
+			return f;
+		} catch (NoSuchFieldException e) {
+			return null;
+		}
+	}
+	
+	protected static <T> T getFieldValueOrNull(Object object, Field field) {
+		if (field == null || object == null)
+			return null;
+		try {
+			//noinspection unchecked
+			return (T) field.get(object);
+		} catch (IllegalAccessException | ClassCastException e) {
+			return null;
+		}
+	}
 }

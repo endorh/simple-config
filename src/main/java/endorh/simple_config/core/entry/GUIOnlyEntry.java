@@ -19,8 +19,21 @@ import java.util.stream.Collectors;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
   extends AbstractConfigEntry<V, Void, Gui, Self> {
-	public GUIOnlyEntry(ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass) {
+	protected V actualValue;
+	protected boolean addNonPersistentTooltip;
+	
+	public GUIOnlyEntry(
+	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
+	) { this(parent, name, value, true, typeClass); }
+	
+	public GUIOnlyEntry(
+	  ISimpleConfigEntryHolder parent, String name, V value,
+	  boolean addNonPersistentTooltip, Class<?> typeClass
+	) {
 		super(parent, name, value);
+		this.actualValue = value;
+		this.addNonPersistentTooltip = addNonPersistentTooltip;
+		this.typeClass = typeClass;
 	}
 	
 	public static abstract class Builder<V, Gui,
@@ -58,8 +71,12 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		set(value);
 	}
 	
-	protected abstract V get();
-	protected abstract void set(V value);
+	protected V get() {
+		return actualValue;
+	}
+	protected void set(V value) {
+		this.actualValue = value;
+	}
 	
 	@Override
 	protected boolean canBeNested() {
@@ -68,15 +85,17 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	
 	@Override
 	protected Optional<ITextComponent[]> supplyTooltip(Gui value) {
-		return Optional.of(super.supplyTooltip(value).map(tooltip -> {
-			final List<ITextComponent> t = Arrays.stream(tooltip).collect(Collectors.toList());
-			t.add(new TranslationTextComponent(
+		if (addNonPersistentTooltip)
+			return Optional.of(super.supplyTooltip(value).map(tooltip -> {
+				final List<ITextComponent> t = Arrays.stream(tooltip).collect(Collectors.toList());
+				t.add(new TranslationTextComponent(
+				  "simple-config.config.help.not_persistent_entry"
+				).mergeStyle(TextFormatting.GRAY));
+				return t.toArray(new ITextComponent[0]);
+			}).orElse(new ITextComponent[]{new TranslationTextComponent(
 			  "simple-config.config.help.not_persistent_entry"
-			).mergeStyle(TextFormatting.GRAY));
-			return t.toArray(new ITextComponent[0]);
-		}).orElse(new ITextComponent[]{new TranslationTextComponent(
-		  "simple-config.config.help.not_persistent_entry"
-		).mergeStyle(TextFormatting.GRAY)}));
+			).mergeStyle(TextFormatting.GRAY)}));
+		else return super.supplyTooltip(value);
 	}
 	
 	@Override
@@ -92,7 +111,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	@Override
 	protected Consumer<Gui> saveConsumer() {
 		return g -> {
-			markDirty();
+			dirty();
 			parent.markDirty().set(name, fromGuiOrDefault(g));
 		};
 	}

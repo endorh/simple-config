@@ -121,7 +121,7 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<E>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<E>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final EnumSelectorBuilder<E> valBuilder = builder

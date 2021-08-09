@@ -2,6 +2,7 @@ package endorh.simple_config.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.core.EntrySetterUtil;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
 import me.shedaniel.clothconfig2.gui.entries.TextFieldListEntry;
@@ -37,19 +38,9 @@ public class StringPairCell<V, E extends AbstractConfigListEntry<V>>
 		}
 	}
 	
-	protected static TextFieldWidget TextFieldListEntry$getTextFieldWidget(TextFieldListEntry<?> entry) {
-		try {
-			return (TextFieldWidget) TextFieldListEntry$textFieldWidget.get(entry);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Could not access TextFieldListEntry$textFieldWidget through reflection");
-		}
-	}
-	
 	
 	protected final E nestedEntry;
 	protected final TextFieldWidget nameWidget;
-	// protected TextFieldWidget valueWidget;
-	// protected Button resetButton;
 	protected AtomicReference<String> key;
 	protected final Pair<String, V> original;
 	protected final List<IGuiEventListener> widgets;
@@ -106,7 +97,28 @@ public class StringPairCell<V, E extends AbstractConfigListEntry<V>>
 		return e;
 	}
 	
-	@Override
+	public E getNestedEntry() {
+		return nestedEntry;
+	}
+	
+	public TextFieldWidget getNameWidget() {
+		return nameWidget;
+	}
+	
+	public void setValue(Pair<String, V> value) {
+		setKey(value.getKey());
+		setValue(value.getValue());
+	}
+	
+	public void setValue(V value) {
+		EntrySetterUtil.setValue(nestedEntry, value);
+	}
+	
+	public void setKey(String key) {
+		this.key.set(key);
+	}
+	
+	@SuppressWarnings({"unchecked", "rawtypes"}) @Override
 	public void render(
 	  MatrixStack matrices, int index, int y, int x, int entryWidth,
 	  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta

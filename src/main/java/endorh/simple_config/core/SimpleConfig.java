@@ -403,6 +403,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	public static class InvalidConfigValueTypeException extends RuntimeException {
+		public InvalidConfigValueTypeException(String path) {
+			super("Invalid type requested for config value \"" + path + "\"");
+		}
 		public InvalidConfigValueTypeException(String path, ClassCastException cause) {
 			super("Invalid type requested for config value \"" + path + "\"", cause);
 		}

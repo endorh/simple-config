@@ -145,12 +145,12 @@ public class SimpleConfigBuilder
 	
 	@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index) {
 		checkName(name);
-		if (entries.containsKey(name))
-			throw new IllegalArgumentException("Duplicate config entry name: " + name);
+		if (entries.containsKey(name) || groups.containsKey(name) || categories.containsKey(name))
+			throw new IllegalArgumentException("Duplicate name for entry: " + name);
 		entries.put(name, entry);
 		if (requireRestart)
 			entry.restart();
-		guiOrder.put(entry, index);
+		guiOrder.put(name, index);
 	}
 	
 	@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -190,10 +190,10 @@ public class SimpleConfigBuilder
 	}
 	
 	@Override public SimpleConfigBuilder n(GroupBuilder group, int index) {
-		if (groups.containsKey(group.name) || categories.containsKey(group.name))
-			throw new IllegalArgumentException("Duplicated config group: \"" + group.name + "\"");
+		if (groups.containsKey(group.name) || categories.containsKey(group.name) || entries.containsKey(group.name))
+			throw new IllegalArgumentException("Duplicated name for group: \"" + group.name + "\"");
 		groups.put(group.name, group);
-		guiOrder.put(group, index);
+		guiOrder.put(group.name, index);
 		group.setParent(defaultCategory);
 		if (requireRestart)
 			group.restart();
@@ -288,12 +288,12 @@ public class SimpleConfigBuilder
 		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index
 		) {
 			checkName(name);
-			if (entries.containsKey(name))
-				throw new IllegalArgumentException("Duplicate config entry name: " + name);
+			if (entries.containsKey(name) || groups.containsKey(name))
+				throw new IllegalArgumentException("Duplicate name for entry: " + name);
 			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			guiOrder.put(entry, index);
+			guiOrder.put(name, index);
 		}
 		
 		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -321,7 +321,7 @@ public class SimpleConfigBuilder
 			if (groups.containsKey(group.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + group.name + "\"");
 			groups.put(group.name, group);
-			guiOrder.put(group, index);
+			guiOrder.put(group.name, index);
 			if (parent != null)
 				group.setParent(this);
 			if (requireRestart)
@@ -332,29 +332,26 @@ public class SimpleConfigBuilder
 		protected SimpleConfigCategory build(SimpleConfig parent, ForgeConfigSpec.Builder specBuilder) {
 			specBuilder.push(name);
 			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, baker);
-			final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
 			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			final Map<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>, AbstractConfigEntry<?, ?, ?, ?>> builtEntries = new HashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
-				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(cat, e.getKey());
-				builtEntries.put(e.getValue(), entry);
-				entriesByName.put(e.getKey(), entry);
+				final String name = e.getKey();
+				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(cat, name);
+				entriesByName.put(name, entry);
 				translate(entry);
+				if (backingFields.containsKey(name))
+					entry.backingField = backingFields.get(name);
 				entry.buildConfig(specBuilder, specValues);
 			}
 			for (GroupBuilder group : this.groups.values()) {
 				final SimpleConfigGroup g = group.build(cat, specBuilder);
-				built.put(group, g);
 				groups.put(group.name, g);
 			}
 			final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
 			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 			).map(
-			  e -> e instanceof GroupBuilder ? built.get(e) :
-			       e instanceof AbstractConfigEntryBuilder ? builtEntries.get(e) :
-			       (IGUIEntry) e
+			  n -> groups.containsKey(n)? groups.get(n) : entriesByName.get(n)
 			).collect(Collectors.toList());
 			cat.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
@@ -429,7 +426,7 @@ public class SimpleConfigBuilder
 			if (category != null)
 				nested.setParent(this);
 			groups.put(nested.name, nested);
-			guiOrder.put(nested, index);
+			guiOrder.put(nested.name, index);
 			if (requireRestart)
 				nested.restart();
 			return this;
@@ -449,7 +446,7 @@ public class SimpleConfigBuilder
 			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			guiOrder.put(entry, index);
+			guiOrder.put(name, index);
 		}
 		
 		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -491,30 +488,27 @@ public class SimpleConfigBuilder
 			if (parent != null)
 				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded, baker);
 			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded, baker);
-			final Map<GroupBuilder, SimpleConfigGroup> builtGroups = new HashMap<>();
 			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-			final Map<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>, AbstractConfigEntry<?, ?, ?, ?>> builtEntries = new HashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
-				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(group, e.getKey());
-				builtEntries.put(e.getValue(), entry);
-				entriesByName.put(e.getKey(), entry);
+				final String name = e.getKey();
+				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(group, name);
+				entriesByName.put(name, entry);
 				translate(entry);
+				if (backingFields.containsKey(name))
+					entry.backingField = backingFields.get(name);
 				entry.buildConfig(specBuilder, specValues);
 			}
 			for (String name : groups.keySet()) {
 				GroupBuilder builder = groups.get(name);
 				SimpleConfigGroup subGroup = builder.build(group, specBuilder);
 				groupMap.put(name, subGroup);
-				builtGroups.put(builder, subGroup);
 			}
 			final List<IGUIEntry> builtOrder = guiOrder.keySet().stream().sorted(
-			  Comparator.comparing(a -> (int) guiOrder.getOrDefault(a, 0))
+			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 			).map(
-			  e -> e instanceof GroupBuilder ? builtGroups.get(e) :
-			       e instanceof AbstractConfigEntryBuilder ? builtEntries.get(e) :
-			       (IGUIEntry) e
+			  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
 			).collect(Collectors.toList());
 			group.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(specValues),
@@ -536,7 +530,15 @@ public class SimpleConfigBuilder
 	 * {@link SimpleConfigBuilder#buildAndRegister(IEventBus)}
 	 * @return The built config, which is also received by the baker
 	 */
-	public SimpleConfig buildAndRegister() { return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus()); }
+	public SimpleConfig buildAndRegister() {
+		try {
+			return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus());
+		} catch (ClassCastException e) {
+			throw new IllegalArgumentException(
+			  "Cannot call SimpleConfigBuilder#buildAndRegister in non-Java mod without passing " +
+			  "the mod event bus. Pass your mod event bus to buildAndRegister.");
+		}
+	}
 	
 	/**
 	 * Applies the final decorations before the config building<br>
@@ -564,16 +566,16 @@ public class SimpleConfigBuilder
 			saver = SimpleConfig::checkRestart;
 		}
 		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
-		final Map<GroupBuilder, SimpleConfigGroup> built = new HashMap<>();
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
-		final Map<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>, AbstractConfigEntry<?, ?, ?, ?>> builtEntries = new HashMap<>();
 		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 		for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
-			final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(config, e.getKey());
-			builtEntries.put(e.getValue(), entry);
-			entriesByName.put(e.getKey(), entry);
+			final String name = e.getKey();
+			final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(config, name);
+			entriesByName.put(name, entry);
 			translate(entry);
+			if (backingFields.containsKey(name))
+				entry.backingField = backingFields.get(name);
 			entry.buildConfig(specBuilder, specValues);
 		}
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
@@ -584,15 +586,12 @@ public class SimpleConfigBuilder
 		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, specBuilder);
 		for (GroupBuilder group : groups.values()) {
 			final SimpleConfigGroup g = group.build(defaultCategory, specBuilder);
-			built.put(group, g);
 			groupMap.put(group.name, g);
 		}
 		final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
 		  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 		).map(
-		  e -> e instanceof GroupBuilder ? built.get(e) :
-		       e instanceof AbstractConfigEntryBuilder ? builtEntries.get(e) :
-		       (IGUIEntry) e
+		  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
 		).collect(Collectors.toList());
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),

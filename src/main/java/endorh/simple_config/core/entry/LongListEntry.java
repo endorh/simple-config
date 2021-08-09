@@ -75,7 +75,7 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<List<Long>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<Long>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final LongListBuilder valBuilder = builder

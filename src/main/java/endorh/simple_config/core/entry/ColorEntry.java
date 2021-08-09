@@ -100,7 +100,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		ColorFieldBuilder valBuilder = builder

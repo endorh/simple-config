@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * Implementation of the missing double slider entry in Cloth API
  */
 @OnlyIn(Dist.CLIENT)
-public class DoubleSliderEntry extends TooltipListEntry<Double> {
+public class DoubleSliderEntry extends TooltipListEntry<Double> implements ISettableConfigListEntry<Double> {
 	protected DoubleSliderEntry.Slider sliderWidget;
 	protected Button resetButton;
 	protected AtomicDouble value;
@@ -41,22 +41,19 @@ public class DoubleSliderEntry extends TooltipListEntry<Double> {
 	private final List<IGuiEventListener> widgets;
 	
 	/** @deprecated */
-	@Deprecated
-	@Internal
+	@Deprecated @Internal
 	public DoubleSliderEntry(ITextComponent fieldName, double minimum, double maximum, double value, Consumer<Double> saveConsumer, ITextComponent resetButtonKey, Supplier<Double> defaultValue) {
 		this(fieldName, minimum, maximum, value, saveConsumer, resetButtonKey, defaultValue, null);
 	}
 	
 	/** @deprecated */
-	@Deprecated
-	@Internal
+	@Deprecated @Internal
 	public DoubleSliderEntry(ITextComponent fieldName, double minimum, double maximum, double value, Consumer<Double> saveConsumer, ITextComponent resetButtonKey, Supplier<Double> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
 		this(fieldName, minimum, maximum, value, saveConsumer, resetButtonKey, defaultValue, tooltipSupplier, false);
 	}
 	
 	/** @deprecated Use the builder */
-	@Deprecated
-	@Internal
+	@SuppressWarnings("DeprecatedIsStillUsed") @Deprecated @Internal
 	public DoubleSliderEntry(ITextComponent fieldName, double minimum, double maximum, double value, Consumer<Double> saveConsumer, ITextComponent resetButtonKey, Supplier<Double> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier, boolean requiresRestart) {
 		//noinspection UnstableApiUsage
 		super(fieldName, tooltipSupplier, requiresRestart);
@@ -92,8 +89,10 @@ public class DoubleSliderEntry extends TooltipListEntry<Double> {
 		return this.value.get();
 	}
 	
-	/** @deprecated */
-	@Deprecated
+	@Override public void setValue(Double value) {
+		setValue(value.doubleValue());
+	}
+	
 	public void setValue(double value) {
 		this.sliderWidget.setValue(
 		  (MathHelper.clamp(value, this.minimum, this.maximum) - this.minimum) / Math.abs(this.maximum - this.minimum));

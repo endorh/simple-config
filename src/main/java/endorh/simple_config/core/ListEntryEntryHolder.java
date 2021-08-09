@@ -71,6 +71,9 @@ public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G
 	
 	// Should never be called
 	@Override public <Gui> Gui getGUI(String path) {
-		return null;
+		throw new UnsupportedOperationException();
+	}
+	@Override public <T> void doSetGUI(String path, T value) {
+		throw new UnsupportedOperationException();
 	}
 }

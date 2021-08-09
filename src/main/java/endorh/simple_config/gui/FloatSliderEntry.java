@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * Implementation of the missing float slider entry in Cloth API
  */
 @OnlyIn(Dist.CLIENT)
-public class FloatSliderEntry extends TooltipListEntry<Float> {
+public class FloatSliderEntry extends TooltipListEntry<Float> implements ISettableConfigListEntry<Float> {
 	protected FloatSliderEntry.Slider sliderWidget;
 	protected Button resetButton;
 	protected AtomicDouble value;
@@ -41,22 +41,19 @@ public class FloatSliderEntry extends TooltipListEntry<Float> {
 	private final List<IGuiEventListener> widgets;
 	
 	/** @deprecated */
-	@Deprecated
-	@Internal
+	@Deprecated @Internal
 	public FloatSliderEntry(ITextComponent fieldName, float minimum, float maximum, float value, Consumer<Float> saveConsumer, ITextComponent resetButtonKey, Supplier<Float> defaultValue) {
 		this(fieldName, minimum, maximum, value, saveConsumer, resetButtonKey, defaultValue, null);
 	}
 	
 	/** @deprecated */
-	@Deprecated
-	@Internal
+	@Deprecated @Internal
 	public FloatSliderEntry(ITextComponent fieldName, float minimum, float maximum, float value, Consumer<Float> saveConsumer, ITextComponent resetButtonKey, Supplier<Float> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
 		this(fieldName, minimum, maximum, value, saveConsumer, resetButtonKey, defaultValue, tooltipSupplier, false);
 	}
 	
 	/** @deprecated Use the builder */
-	@Deprecated
-	@Internal
+	@SuppressWarnings("DeprecatedIsStillUsed") @Deprecated @Internal
 	public FloatSliderEntry(ITextComponent fieldName, float minimum, float maximum, float value, Consumer<Float> saveConsumer, ITextComponent resetButtonKey, Supplier<Float> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier, boolean requiresRestart) {
 		//noinspection UnstableApiUsage
 		super(fieldName, tooltipSupplier, requiresRestart);
@@ -92,8 +89,10 @@ public class FloatSliderEntry extends TooltipListEntry<Float> {
 		return (float) value.get();
 	}
 	
-	/** @deprecated */
-	@Deprecated
+	@Override public void setValue(Float value) {
+		setValue(value.floatValue());
+	}
+	
 	public void setValue(float value) {
 		this.sliderWidget.setValue(
 		  (MathHelper.clamp(value, this.minimum, this.maximum) - this.minimum) / Math.abs(this.maximum - this.minimum));

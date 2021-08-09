@@ -1,6 +1,7 @@
 package endorh.simple_config.gui;
 
 import com.google.common.collect.Lists;
+import endorh.simple_config.core.EntrySetterUtil;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ReferenceProvider;
 import me.shedaniel.clothconfig2.gui.entries.AbstractListListEntry;
@@ -24,7 +25,8 @@ import java.util.function.Supplier;
 @SuppressWarnings("UnstableApiUsage")
 @OnlyIn(Dist.CLIENT)
 public class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
-  extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListEntry<T, Inner>> {
+  extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListEntry<T, Inner>>
+  implements ISettableConfigListEntry<List<T>> {
 	protected final List<ReferenceProvider<?>> referencableEntries = Lists.newArrayList();
 	
 	public NestedListEntry(
@@ -48,17 +50,49 @@ public class NestedListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return this;
 	}
 	
-	public void add(Inner inner) {
+	protected void onAdd(Inner inner) {
 		referencableEntries.add(inner);
 		requestReferenceRebuilding();
 	}
 	
-	public void delete(Inner inner) {
+	protected void onDelete(Inner inner) {
 		referencableEntries.remove(inner);
 		requestReferenceRebuilding();
 	}
 	
-	/*@Override public Optional<ITextComponent[]> getTooltip() {
-		return super.getTooltip();
-	}*/
+	@Override public void setValue(List<T> value) {
+		for (int i = 0; i < cells.size() && i < value.size(); i++)
+			cells.get(i).setValue(value.get(i));
+		while (cells.size() > value.size())
+			remove(cells.size() - 1);
+		while (cells.size() < value.size())
+			add(value.get(cells.size()));
+	}
+	
+	public void add(T element) {
+		NestedListCell<T, Inner> cell = createNewCell.apply(element, this);
+		cells.add(cell);
+		widgets.add(cell);
+		cell.onAdd();
+	}
+	
+	public void add(int index, T element) {
+		NestedListCell<T, Inner> cell = createNewCell.apply(element, this);
+		cells.add(index, cell);
+		widgets.add(index, cell);
+		cell.onAdd();
+	}
+	
+	public void remove(T element) {
+		final int index = getValue().indexOf(element);
+		if (index >= 0)
+			remove(index);
+	}
+	
+	public void remove(int index) {
+		final NestedListCell<T, Inner> cell = cells.get(index);
+		cell.onDelete();
+		cells.remove(cell);
+		widgets.remove(cell);
+	}
 }

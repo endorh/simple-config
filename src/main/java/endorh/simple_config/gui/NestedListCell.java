@@ -1,6 +1,7 @@
 package endorh.simple_config.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.core.EntrySetterUtil;
 import me.shedaniel.clothconfig2.api.AbstractConfigEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ReferenceProvider;
@@ -49,7 +50,7 @@ public class NestedListCell<T, Inner extends AbstractConfigListEntry<T>>
 		return nestedEntry.getItemHeight();
 	}
 	
-	public void render(
+	@SuppressWarnings({"unchecked", "rawtypes"}) public void render(
 	  MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight,
 	  int mouseX, int mouseY, boolean isSelected, float delta
 	) {
@@ -75,13 +76,21 @@ public class NestedListCell<T, Inner extends AbstractConfigListEntry<T>>
 		return super.isEdited() || nestedEntry.isEdited();
 	}
 	
+	public Inner getNestedEntry() {
+		return nestedEntry;
+	}
+	
+	public void setValue(T value) {
+		EntrySetterUtil.setValue(nestedEntry, value);
+	}
+	
 	public void onAdd() {
 		super.onAdd();
-		listListEntry.add(nestedEntry);
+		listListEntry.onAdd(nestedEntry);
 	}
 	
 	public void onDelete() {
 		super.onDelete();
-		listListEntry.delete(nestedEntry);
+		listListEntry.onDelete(nestedEntry);
 	}
 }

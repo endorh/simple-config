@@ -2,6 +2,7 @@ package endorh.simple_config.core;
 
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
 import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -50,7 +51,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		this.dirty = dirty;
 		if (!dirty) {
 			children.values().forEach(c -> c.markDirty(false));
-			entries.values().forEach(e -> e.markDirty(false));
+			entries.values().forEach(e -> e.dirty(false));
 		}
 	}
 	
@@ -80,6 +81,27 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		return entries.values().stream().anyMatch(e -> e.dirty && e.requireRestart)
 		       || children.values().stream().anyMatch(
 		         AbstractSimpleConfigEntryHolder::anyDirtyRequiresRestart);
+	}
+	
+	/**
+	 * Get a child entry holder<br>
+	 * @param path Name or dot-separated path to the child
+	 *             If null or empty, {@code this} will be returned
+	 * @throws NoSuchConfigGroupError if the child is not found
+	 * @return A child {@link AbstractSimpleConfigEntryHolder},
+	 *         or {@code this} if path is null or empty.
+	 */
+	public AbstractSimpleConfigEntryHolder getChild(String path) {
+		if (path == null || path.isEmpty())
+			return this;
+		final String[] split = path.split("\\.", 2);
+		if (split.length < 2) {
+			if (children.containsKey(path))
+				return children.get(path);
+			throw new NoSuchConfigGroupError(getPath() + "." + path);
+		} else if (children.containsKey(split[0]))
+			return children.get(split[0]).getChild(split[1]);
+		throw new NoSuchConfigGroupError(getPath() + "." + path);
 	}
 	
 	/**
@@ -127,10 +149,11 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	protected <T, Gui> AbstractConfigEntry<T, ?, Gui, ?> getEntry(String path) {
 		AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(path);
-		if (entry == null)
+		if (entry == null) {
 			entry = getSubEntry(path);
-		if (entry == null) // Unnecessary, since getSubEntry already throws
-			throw new NoSuchConfigEntryError(getPath() + "." + path);
+			if (entry == null) // Unnecessary, since getSubEntry already throws
+				throw new NoSuchConfigEntryError(getPath() + "." + path);
+		}
 		//noinspection unchecked
 		return (AbstractConfigEntry<T, ?, Gui, ?>) entry;
 	}
@@ -192,10 +215,102 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	@Internal @Deprecated @Override public <V> void doSet(String path, V value) {
 		try {
+			if (!this.<V, Object>getEntry(path).typeClass.isInstance(value))
+				throw new InvalidConfigValueTypeException(getPath() + "." + path);
 			this.<V, Object>getEntry(path).set(getSpecValue(path), value);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
+	}
+	
+	/**
+	 * Set a config value in the GUI<br>
+	 * Use {@link AbstractSimpleConfigEntryHolder#setGUI(String, Object)} instead
+	 * to benefit from an extra layer of primitive generics type safety
+	 * @param path Name or dot-separated path to the value
+	 * @param value Value to be set
+	 * @param <G> Type of the value
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 * @deprecated Use {@link AbstractSimpleConfigEntryHolder#setGUI(String, Object)} instead
+	 * to benefit from an extra layer of primitive generics type safety
+	 */
+	@Internal @Deprecated @Override public <G> void doSetGUI(String path, G value) {
+		try {
+			this.<Object, G>getEntry(path).setGUI(value);
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
+		}
+	}
+	
+	protected <V> void doSetForGUI(String path, V value) {
+		try {
+			getEntry(path).setForGUI(value);
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
+		}
+	}
+	
+	/**
+	 * Set a config value in the GUI, translating it from its actual type<br>
+	 * @param path Name or dot-separated path to the value
+	 * @param value Value to be set
+	 * @param <V> Type of the value
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 */
+	public <V> void setForGUI(String path, V value) {
+		if (value instanceof Number) {
+			try {
+				setForGUI(path, (Number) value);
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetForGUI(path, value);
+	}
+	
+	/**
+	 * Set a config value in the GUI, translating it from its actual type<br>
+	 * Numeric types are upcast as needed
+	 * @param path Name or dot-separated path to the value
+	 * @param number Value to be set
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 */
+	public void setForGUI(String path, Number number) {
+		boolean pre;
+		//noinspection AssignmentUsedAsCondition
+		if (pre = number instanceof Byte) {
+			try {
+				doSetForGUI(path, number.byteValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Short) {
+			try {
+				doSetForGUI(path, number.shortValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Integer) {
+			try {
+				doSetForGUI(path, number.intValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre || number instanceof Long) {
+			try {
+				doSetForGUI(path, number.longValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (number instanceof Float) {
+			try {
+				doSetForGUI(path, number.floatValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetForGUI(path, number.doubleValue());
 	}
 	
 	@Override public <G> G getGUI(String path) {

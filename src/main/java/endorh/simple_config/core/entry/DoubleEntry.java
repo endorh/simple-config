@@ -64,7 +64,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Double>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Double>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

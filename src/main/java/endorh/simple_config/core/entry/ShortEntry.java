@@ -59,7 +59,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

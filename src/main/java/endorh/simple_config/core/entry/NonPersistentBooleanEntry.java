@@ -14,7 +14,6 @@ import java.util.function.Function;
 
 public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, NonPersistentBooleanEntry> {
 	protected Function<Boolean, ITextComponent> yesNoSupplier;
-	protected boolean actualValue = value;
 	
 	@Internal public NonPersistentBooleanEntry(
 	  ISimpleConfigEntryHolder parent, String name, Boolean value
@@ -45,23 +44,13 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 		}
 	}
 	
-	@Override
-	protected Boolean get() {
-		return actualValue;
-	}
-	
-	@Override
-	protected void set(Boolean value) {
-		actualValue = value;
-	}
-	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final BooleanToggleBuilder valBuilder = builder
-		  .startBooleanToggle(getDisplayName(), actualValue)
+		  .startBooleanToggle(getDisplayName(), get())
 		  .setDefaultValue(value)
 		  .setSaveConsumer(saveConsumer())
 		  .setYesNoTextSupplier(yesNoSupplier)

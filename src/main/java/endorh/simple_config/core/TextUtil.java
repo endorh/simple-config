@@ -11,22 +11,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TextUtil {
+	protected static final Pattern NEW_LINE = Pattern.compile("\\R");
 	protected static final Pattern FS_PATTERN = Pattern.compile(
 	  "%(?:(?<index>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)?(?<width>\\d+)?(?<precision>\\.\\d+)?(?<t>[tT])?(?<conversion>[a-zA-Z%])");
 
 	/**
 	 * Separate a translation text component on each line break<br>
 	 * Line breaks added by format arguments aren't considered<br>
-	 * <b>This must only be called on the client side</b>, since
-	 * translations are not present on the server side
+	 * Only works on the client side<br>
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public static List<ITextComponent> splitTtc(String key, Object... args) {
+	protected static List<ITextComponent> splitTtc(String key, Object... args) {
 		if (I18n.hasKey(key)) {
-			// We add the explicit indexes, so relative indexes preserve
-			//   meaning after splitting
+			// We add the explicit indexes, so relative/implicit indexes
+			//   preserve meaning after splitting
 			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().func_230503_a_(key));
-			final String[] lines = f.split("\\R");
+			final String[] lines = NEW_LINE.split(f);
 			final List<ITextComponent> components = new ArrayList<>();
 			for (String line : lines) {
 				final Matcher m = FS_PATTERN.matcher(line);
@@ -63,13 +63,13 @@ public class TextUtil {
 		}
 	}
 	
-	// For some reason using a lookahead for the last character class
+	// For some reason, using a lookahead for the last character class
 	//   makes the pattern fail if at the start of the sample
 	//   I think it may be a bug in the JDK
-	private static final Pattern fsIndexPattern = Pattern.compile(
+	protected static final Pattern FS_INDEX_PATTERN = Pattern.compile(
 	  "(?<pre>(?<!%)(?:%%)*+%)(?:(?<d>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)(?<pos>[a-zA-Z])");
 	protected static String addExplicitFormatIndexes(String fmt) {
-		final Matcher m = fsIndexPattern.matcher(fmt);
+		final Matcher m = FS_INDEX_PATTERN.matcher(fmt);
 		final StringBuffer sb = new StringBuffer();
 		int last_gen = -1;
 		int last = -1;

@@ -94,6 +94,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	
 	protected Set<Item> getValidItems() {
 		final Predicate<Item> nonNullFilter = filter != null? filter : i -> true;
+		//noinspection deprecation
 		return Registry.ITEM.getEntries().stream().map(Entry::getValue)
 		  .filter(nonNullFilter).collect(Collectors.toSet());
 	}
@@ -116,6 +117,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		if (itemId == null || itemId.isEmpty())
 			return null;
 		final ResourceLocation registryName = new ResourceLocation(itemId);
+		//noinspection deprecation
 		final Item item = Registry.ITEM.keySet().contains(registryName) ?
 		                  Registry.ITEM.getOrDefault(registryName) : null;
 		return getValidItems().contains(item) ? item : null;
@@ -130,7 +132,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Item>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Item>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final DropdownMenuBuilder<Item> valBuilder = builder

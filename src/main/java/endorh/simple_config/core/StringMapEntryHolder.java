@@ -37,18 +37,18 @@ public class StringMapEntryHolder<V, C, E extends AbstractConfigEntry<V, C, ?, E
 		return (T) values.get(path);
 	}
 	
-	// Should never be called
-	@Override
-	public <G> G getGUI(String path) {
-		return null;
-	}
-	
-	@Override
-	public <T> void doSet(String path, T value) {
+	@Override public <T> void doSet(String path, T value) {
 		//noinspection unchecked
 		values.put(path, (V) value);
 	}
 	
-	@Override
-	public void markDirty(boolean dirty) {}
+	@Override public void markDirty(boolean dirty) {}
+	
+	// Should never be called
+	@Override public <G> G getGUI(String path) {
+		throw new UnsupportedOperationException();
+	}
+	@Override public <G> void doSetGUI(String path, G value) {
+		throw new UnsupportedOperationException();
+	}
 }

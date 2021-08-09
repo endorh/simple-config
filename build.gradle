@@ -29,7 +29,7 @@ import net.minecraftforge.gradle.common.task.SignJar
 
 def mod_id = "simple-config"
 group = "endorh.simple_config"
-version = "0.2.7"
+version = "0.2.13"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -173,12 +173,16 @@ repositories {
         name = "Cloth Config API"
         url = "https://maven.shedaniel.me/"
     }
+    maven {
+        url 'https://repo.maven.apache.org/maven2'
+        name 'Maven Central'
+    }
 }
 
 dependencies {
     // IDE
-    implementation 'org.jetbrains:annotations:20.1.0'
-    implementation 'org.junit.jupiter:junit-jupiter:5.4.2'
+    implementation 'org.jetbrains:annotations:21.0.1'
+    implementation 'org.junit.jupiter:junit-jupiter:5.7.2'
 
     // Minecraft
     minecraft "net.minecraftforge:forge:${forge_version}"
@@ -193,7 +197,6 @@ dependencies {
 shadowJar {
     manifest {
         attributes(jar_attributes)
-        attributes 'Maven-Artifact': "${maven_artifact}:deobf"
     }
 
     // Include only Cloth Config API in the shadow jar

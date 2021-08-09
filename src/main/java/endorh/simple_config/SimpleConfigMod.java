@@ -1,8 +1,10 @@
 package endorh.simple_config;
 
+import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.SimpleConfig;
 import endorh.simple_config.core.annotation.Entry;
 import endorh.simple_config.core.annotation.Group;
+import endorh.simple_config.core.entry.Builders;
 import endorh.simple_config.demo.DemoConfigCategory;
 import endorh.simple_config.demo.DemoServerConfig;
 import net.minecraft.util.ResourceLocation;
@@ -18,6 +20,11 @@ public class SimpleConfigMod {
 	public static final String MOD_ID = "simple-config";
 	// Storing the config instance is optional
 	public static SimpleConfig CLIENT_CONFIG;
+	
+	static {
+		// Trigger class loading
+		Builders.nonPersistentBool(false);
+	}
 	
 	public SimpleConfigMod() {
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
@@ -53,9 +60,5 @@ public class SimpleConfigMod {
 	@SuppressWarnings("unused")
 	public enum MenuButtonPosition {
 		SPLIT_OPTIONS_BUTTON, LEFT_OF_OPTIONS_BUTTON
-	}
-	
-	public static ResourceLocation prefix(String name) {
-		return new ResourceLocation(MOD_ID, name);
 	}
 }

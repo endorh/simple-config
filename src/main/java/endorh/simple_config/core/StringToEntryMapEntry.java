@@ -338,11 +338,12 @@ public class StringToEntryMapEntry<K, V, C, G, E extends AbstractConfigEntry<V, 
 	}
 	
 	@Override
-	protected Optional<AbstractConfigListEntry<List<Pair<String, G>>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<Pair<String, G>>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final StringPairListEntry<G, AbstractConfigListEntry<G>> e = new StringPairListEntry<>(
-		  getDisplayName(), forGui(get()), expand, () -> this.supplyTooltip(parent.getGUI(name)),
+		  getDisplayName(), forGui(get()), expand, // () -> this.supplyTooltip(parent.getGUI(name)),
+		  () -> this.supplyTooltip(getGUI()),
 		  saveConsumer(), () -> forGui(value), () -> Pair.of("", entry.forGui(entry.value)),
 		  this::supplyError, this::supplyPairError,
 		  builder.getResetButtonKey(), true, false,

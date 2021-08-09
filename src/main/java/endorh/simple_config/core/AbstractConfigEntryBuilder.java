@@ -3,6 +3,7 @@ package endorh.simple_config.core;
 import endorh.simple_config.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import net.minecraft.util.text.ITextComponent;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -35,7 +36,6 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected boolean requireRestart = false;
-	protected @Nullable Field backingField = null;
 	protected Class<?> typeClass;
 	
 	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
@@ -153,8 +153,11 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 		e.guiTooltipSupplier = guiTooltipSupplier;
 		e.nameArgs = nameArgs;
 		e.tooltipArgs = tooltipArgs;
-		e.backingField = backingField;
 		e.typeClass = typeClass;
 		return e;
+	}
+	
+	@Internal @Deprecated public static <V> V getValue(AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder) {
+		return builder.value;
 	}
 }

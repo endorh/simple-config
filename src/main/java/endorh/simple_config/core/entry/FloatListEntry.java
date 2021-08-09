@@ -75,7 +75,7 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<List<Float>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<Float>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final FloatListBuilder valBuilder = builder

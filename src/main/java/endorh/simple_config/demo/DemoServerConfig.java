@@ -5,6 +5,8 @@ import endorh.simple_config.core.SimpleConfig;
 import endorh.simple_config.core.annotation.*;
 import endorh.simple_config.demo.DemoServerConfig.demo.demo_group;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.IntNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.Direction;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -109,8 +111,8 @@ public class DemoServerConfig {
 			//   initializer affects the default value for this field
 			@Entry public static CompoundNBT nbt = new CompoundNBT();
 			static {
-				nbt.putString("name", "Steve");
-				nbt.putInt("health", 20);
+				nbt.put("name", StringNBT.valueOf("Steve"));
+				nbt.put("health", IntNBT.valueOf(20));
 			}
 			// Enum fields without an initializer default to the first
 			//   enum constant in the class, but you should be explicit

@@ -229,11 +229,11 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return true;
 	}
 	
-	protected void markDirty() {
-		markDirty(true);
+	protected void dirty() {
+		dirty(true);
 	}
 	
-	protected void markDirty(boolean dirty) {
+	protected void dirty(boolean dirty) {
 		this.dirty = dirty;
 		if (dirty) parent.markDirty();
 	}
@@ -247,7 +247,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
 			if (!parent.get(n).equals(v)) {
-				markDirty();
+				dirty();
 				parent.markDirty().set(n, v);
 			}
 		};
@@ -349,7 +349,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * @param builder Entry builder
 	 */
 	@OnlyIn(Dist.CLIENT)
-	protected Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		return Optional.empty();
@@ -412,6 +412,16 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	protected Gui getGUI() {
 		return guiEntry != null? guiEntry.getValue() : forGui(get());
+	}
+	protected V getFromGUI() {
+		return guiEntry != null? fromGui(getGUI()) : get();
+	}
+	protected void setGUI(Gui value) {
+		if (guiEntry != null)
+			EntrySetterUtil.setValue(guiEntry, value);
+	}
+	protected void setForGUI(V value) {
+		setGUI(forGui(value));
 	}
 	
 	protected void commitField(ISimpleConfigEntryHolder c) throws IllegalAccessException {

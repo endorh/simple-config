@@ -4,11 +4,13 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import com.electronwill.nightconfig.toml.TomlWriter;
+import endorh.simple_config.SimpleConfigMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
@@ -46,8 +48,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-
-import static endorh.simple_config.SimpleConfigMod.prefix;
 
 /**
  * Handle synchronization of {@link SimpleConfig} data with server config
@@ -164,7 +164,7 @@ import static endorh.simple_config.SimpleConfigMod.prefix;
 	
 	protected static final String CHANNEL_PROTOCOL_VERSION = "1";
 	protected static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-	  prefix("config"),
+	  new ResourceLocation(SimpleConfigMod.MOD_ID, "config"),
 	  () -> CHANNEL_PROTOCOL_VERSION,
 	  CHANNEL_PROTOCOL_VERSION::equals,
 	  CHANNEL_PROTOCOL_VERSION::equals

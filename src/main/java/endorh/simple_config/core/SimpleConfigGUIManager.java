@@ -26,7 +26,6 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static endorh.simple_config.SimpleConfigMod.prefix;
 import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.synchronizedSet;
 
@@ -161,7 +160,8 @@ public class SimpleConfigGUIManager {
 				x = gui.width / 2 - 102 + 98 - 20;
 			}
 			Button modOptions = new ImageButton(
-			  x, y, w, h, 0, 0, 20, prefix("textures/gui/menu.png"),
+			  x, y, w, h, 0, 0, 20,
+			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/menu.png"),
 			  32, 64, p -> showModListGUI()
 			);
 			event.addWidget(modOptions);

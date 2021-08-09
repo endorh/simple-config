@@ -1,6 +1,7 @@
 package endorh.simple_config.demo;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
@@ -9,12 +10,14 @@ import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
 import endorh.simple_config.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simple_config.core.entry.IConfigEntrySerializer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -29,11 +32,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static endorh.simple_config.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simple_config.core.SimpleConfig.category;
 import static endorh.simple_config.core.SimpleConfig.group;
 import static endorh.simple_config.core.entry.Builders.*;
+import static java.lang.Math.abs;
 import static java.util.Arrays.asList;
 
 /**
@@ -130,7 +135,7 @@ public class DemoConfigCategory {
 		            .add("regex_value", pattern("nice (?<regex>.*+)").flags(Pattern.CASE_INSENSITIVE))
 		            // Enums are supported too
 		            // Enums entries get automatically mapped translation keys
-		            //   for their values, however, this mappings do not
+		            //   for their values, however, these mappings do not
 		            //   depend on their path, so enums with the same name
 		            //   may clash
 		            // For instance, the enum RockPaperScissors would be
@@ -142,6 +147,13 @@ public class DemoConfigCategory {
 		            // Enums may define their own translations implementing
 		            //   ITranslatedEnum (see the Placement enum)
 		            .add("enum_value_2", enum_(Placement.UPSIDE_DOWN))
+		            // String entries can suggest possible values
+		            .add("str_suggest", string("Alpha").suggest("Alpha", "Bravo", "Charlie", "Delta"))
+		            // The suggestions may also be restrictions
+		            .add("str_restrict", string("Alpha").restrict("Alpha", "Bravo", "Charlie", "Delta"))
+		            // Any entry can be restricted to a finite set of values
+		            //   by using select(), resulting in an enum-like GUI control
+		            .add("str_select", select(string("Alpha"), "Alpha", "Bravo", "Charlie", "Delta"))
 		            // By intentional design, there's no built-in support for
 		            //   keybinding entries, please register your keybindings
 		            //   through the ClientRegistry.registerKeyBinding to
@@ -240,11 +252,74 @@ public class DemoConfigCategory {
 		          //   are defined by name
 		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).mergeStyle(TextFormatting.GRAY))
 		          // A special type of entry is non persistent boolean flags
-		          //   This entries do not have an entry in the config file,
+		          //   These entries do not have an entry in the config file,
 		          //   and revert to their default whenever restarting the game
 		          // They are rarely useful for enabling special profiling
 		          //   or debugging features
-		          .add("non_persistent_bool", nonPersistentBool(false))))
+		          .add("non_persistent_bool", nonPersistentBool(false))
+		          // Button entries can execute any arbitrary action
+		          .add("action_button", button(
+		            () -> Util.getOSType().openFile(
+		              Minecraft.getInstance().gameDir.toPath().resolve("options.txt").toFile())
+		          ).label("chat.file.open"))
+		          // A button may be added to any entry type, replacing its reset button
+		          //   However, this makes the entry not persistent
+		          //   This may be useful to modify other entries
+		          // It's also useful to create config presets, for which a
+		          //   specific builder exists as shown below
+		          .add("button_entry", button(
+		            number(2F).error(
+		              n -> abs(n) > 10 ? Optional.of(new StringTextComponent("> 10")) :
+		                   Optional.empty()
+		            ), s -> {
+		            	final String path = "demo.entries.special.button_test";
+		            	CLIENT_CONFIG.setGUI(path, CLIENT_CONFIG.<List<Integer>>getGUI(path)
+			              .stream().map(i -> (int) (s * i)).collect(Collectors.toList()));
+		            }))
+		          // This is a test entry modified by the above button entry
+		          .add("button_test", list(
+		            number(0), 0, 1, 2, 3, 4, 5, 6, 7))
+		          // You may create config presets, either locally or
+		          //   globally with localPresetSwitcher() and globalPresetSwitcher()
+		          //   respectively
+		          // Local presets use paths relative to the current scope
+		          //   while global presets use paths relative to the whole config
+		          //   Global presets cannot affect other configs however, i.e.
+		          //   a client config preset cannot modify server config entries
+		          // The presets are simply a map of paths to values, and a preset
+		          //   entry takes a map of preset names to such maps
+		          // The preset names are mapped to translation keys under
+		          //   the key of the preset entry
+		          // Invalid keys in a preset, or with a wrong type will
+		          //   be skipped, logging an error
+		          .add("preset_switcher", localPresetSwitcher(
+		            presets(
+		              preset("even")
+		                .add("preset_test.a", 0)
+		                .add("preset_test.b", 2)
+		                .add("preset_test.c", 4)
+		                .add("preset_test.d", "\"6\"")
+		                .add("preset_test.e", Lists.newArrayList(8, 10, 12)),
+		              preset("odd")
+		                .add("preset_test.a", 1)
+		                .add("preset_test.b", 3)
+		                .add("preset_test.c", 5)
+		                .add("preset_test.d", "\"7\"")
+		                .add("preset_test.e", Lists.newArrayList(9, 11, 13)),
+		              preset("fibonacci")
+		                .add("preset_test.a", 1)
+		                .add("preset_test.b", 1)
+		                .add("preset_test.c", 2)
+		                .add("preset_test.d", "\"3\"")
+		                .add("preset_test.e", Lists.newArrayList(5, 8, 13))
+		            ), ""))
+		          // The following entries are used in the presets above
+		          .n(group("preset_test")
+		               .add("a", number(0))
+		               .add("b", number(0))
+		               .add("c", number(0))
+		               .add("d", string("\"0\""))
+		               .add("e", list(number(0), 0, 0, 0)))))
 		  .n(group("errors_tooltips_n_links")
 		       // You may add links or contextual tooltips in text entries
 		       //   by calling .modifyStyle() on text components
@@ -491,7 +566,15 @@ public class DemoConfigCategory {
 		}
 		
 		@Bind public static class special {
-			public static boolean non_persistent_bool;
+			@Bind public static boolean non_persistent_bool;
+			@Bind public static List<Integer> button_test;
+			@Bind public static class preset_test {
+				@Bind public static int a;
+				@Bind public static int b;
+				@Bind public static int c;
+				@Bind public static String d;
+				@Bind public static List<Integer> e;
+			}
 		}
 	}
 	

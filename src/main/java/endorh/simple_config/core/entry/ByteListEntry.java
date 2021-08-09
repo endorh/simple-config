@@ -77,7 +77,7 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final IntListBuilder valBuilder = builder

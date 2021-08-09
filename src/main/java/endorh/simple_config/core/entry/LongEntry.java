@@ -1,7 +1,7 @@
 package endorh.simple_config.core.entry;
 
-import endorh.simple_config.core.IStringKeyEntry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
+import endorh.simple_config.core.IStringKeyEntry;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.LongFieldBuilder;
@@ -60,7 +60,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Long>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Long>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

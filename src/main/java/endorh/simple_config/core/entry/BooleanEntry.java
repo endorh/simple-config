@@ -52,7 +52,7 @@ public class BooleanEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final BooleanToggleBuilder valBuilder = builder

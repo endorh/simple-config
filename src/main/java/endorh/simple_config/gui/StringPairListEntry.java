@@ -8,7 +8,6 @@ import me.shedaniel.clothconfig2.gui.entries.BaseListCell;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +20,8 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("UnstableApiUsage")
 public class StringPairListEntry<T, Inner extends AbstractConfigListEntry<T>>
-  extends AbstractListListEntry<Pair<String, T>, StringPairCell<T, Inner>, StringPairListEntry<T, Inner>> {
+  extends AbstractListListEntry<Pair<String, T>, StringPairCell<T, Inner>, StringPairListEntry<T, Inner>>
+  implements ISettableConfigListEntry<List<Pair<String, T>>> {
 	protected final List<ReferenceProvider<?>> referencableEntries = Lists.newArrayList();
 	protected final Supplier<Pair<String, T>> defaultEntrySupplier;
 	protected Function<List<Pair<String, T>>, Optional<ITextComponent>> errorSupplier;
@@ -101,5 +101,43 @@ public class StringPairListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		if (e.isPresent())
 			return e;
 		return errorSupplier.apply(getValue());
+	}
+	
+	@Override public void setValue(List<Pair<String, T>> value) {
+		for (int i = 0; i < cells.size() && i < value.size(); i++)
+			cells.get(i).setValue(value.get(i));
+		while (cells.size() > value.size())
+			remove(cells.size() - 1);
+		while (cells.size() < value.size())
+			add(value.get(cells.size()));
+	}
+	
+	public void add(Pair<String, T> element) {
+		StringPairCell<T, Inner> cell = createNewCell.apply(element, this);
+		cells.add(cell);
+		widgets.add(cell);
+		cell.onAdd();
+		referencableEntries.add(cell.nestedEntry);
+	}
+	
+	public void add(int index, Pair<String, T> element) {
+		StringPairCell<T, Inner> cell = createNewCell.apply(element, this);
+		cells.add(index, cell);
+		widgets.add(index, cell);
+		cell.onAdd();
+		referencableEntries.remove(cell.nestedEntry);
+	}
+	
+	public void remove(Pair<String, T> element) {
+		final int index = getValue().indexOf(element);
+		if (index >= 0)
+			remove(index);
+	}
+	
+	public void remove(int index) {
+		final StringPairCell<T, Inner> cell = cells.get(index);
+		cell.onDelete();
+		cells.remove(cell);
+		widgets.remove(cell);
 	}
 }

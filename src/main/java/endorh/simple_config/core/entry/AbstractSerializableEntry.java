@@ -25,6 +25,7 @@ public abstract class AbstractSerializableEntry
 	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
 	) {
 		super(parent, name, value);
+		this.typeClass = typeClass;
 	}
 	
 	public static abstract class Builder<V, Entry extends AbstractSerializableEntry<V, Entry>,
@@ -85,7 +86,7 @@ public abstract class AbstractSerializableEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<String>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder

@@ -64,7 +64,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Float>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Float>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

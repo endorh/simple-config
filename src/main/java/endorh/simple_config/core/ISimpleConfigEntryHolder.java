@@ -57,10 +57,11 @@ public interface ISimpleConfigEntryHolder {
 	 * @deprecated Use {@link ISimpleConfigEntryHolder#set(String, Object)} instead
 	 * to benefit from an extra layer of primitive generics type safety
 	 */
-	@Internal @Deprecated <V> void doSet(String path, V value);
+	@SuppressWarnings("DeprecatedIsStillUsed") @Internal @Deprecated <V> void doSet(String path, V value);
 	
 	/**
-	 * Set a config value
+	 * Set a config value<br>
+	 * Numeric values are upcast as needed
 	 * @param path Name or dot-separated path to the value
 	 * @param value Value to be set
 	 * @param <V> Type of the value
@@ -68,86 +69,57 @@ public interface ISimpleConfigEntryHolder {
 	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
 	 */
 	default <V> void set(String path, V value) {
+		if (value instanceof Number) {
+			try {
+				set(path, (Number) value);
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
 		doSet(path, value);
 	}
 	
 	/**
-	 * Set a config value
+	 * Set a config value<br>
+	 * Numeric values are upcast as needed
 	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
+	 * @param number Value to be set
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
 	 */
-	default void set(String path, Float value) {
-		try {
-			doSet(path, value);
-		} catch (InvalidConfigValueTypeException ignored) {
-			set(path, value.doubleValue());
-		}
-	}
-	
-	/**
-	 * Set a config value
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 */
-	default void set(String path, Long value) {
-		try {
-			doSet(path, value);
-		} catch (InvalidConfigValueTypeException ignored) {
-			set(path, value.doubleValue());
-		}
-	}
-	
-	/**
-	 * Set a config value
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 */
-	default void set(String path, Integer value) {
-		try {
-			doSet(path, value);
-		} catch (InvalidConfigValueTypeException ignored) {
+	default void set(String path, Number number) {
+		boolean pre;
+		//noinspection AssignmentUsedAsCondition
+		if (pre = number instanceof Byte) {
 			try {
-				doSet(path, value.longValue());
-			} catch (InvalidConfigValueTypeException ignored1) {
-				set(path, value.floatValue());
-			}
+				doSet(path, number.byteValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
 		}
-	}
-	
-	/**
-	 * Set a config value
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 */
-	default void set(String path, Short value) {
-		try {
-			doSet(path, value);
-		} catch (InvalidConfigValueTypeException ignored) {
-			set(path, value.intValue());
+		if (pre |= number instanceof Short) {
+			try {
+				doSet(path, number.shortValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
 		}
-	}
-	
-	/**
-	 * Set a config value
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 */
-	default void set(String path, Byte value) {
-		try {
-			doSet(path, value);
-		} catch (InvalidConfigValueTypeException ignored) {
-			set(path, value.shortValue());
+		if (pre |= number instanceof Integer) {
+			try {
+				doSet(path, number.intValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
 		}
+		if (pre || number instanceof Long) {
+			try {
+				doSet(path, number.longValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (number instanceof Float) {
+			try {
+				doSet(path, number.floatValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSet(path, number.doubleValue());
 	}
 	
 	/**
@@ -351,5 +323,81 @@ public interface ISimpleConfigEntryHolder {
 	 */
 	default double getGUIDouble(String path) {
 		return this.<Number>getGUI(path).doubleValue();
+	}
+	
+	/**
+	 * Internal generic GUI setter<br>
+	 * Use {@link ISimpleConfigEntryHolder#setGUI(String, Object)} instead
+	 * to benefit from a layer of primitive generics type safety
+	 * @param path Name or dot-separated path to the value
+	 * @param value Value to be set
+	 * @param <G> The type of the value
+	 * @deprecated Use {@link ISimpleConfigEntryHolder#setGUI(String, Object)} instead
+	 * to benefit from an extra layer of primitive generics type safety
+	 */
+	@SuppressWarnings("DeprecatedIsStillUsed") @Internal @Deprecated <G> void doSetGUI(String path, G value);
+	
+	
+	/**
+	 * Set a config value in the GUI
+	 * @param path Name or dot-separated path to the value
+	 * @param value Value to be set
+	 * @param <G> Type of the value in the GUI
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 */
+	default <G> void setGUI(String path, G value) {
+		if (value instanceof Number) {
+			try {
+				setGUI(path, (Number) value);
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetGUI(path, value);
+	}
+	
+	
+	/**
+	 * Set a config value in the GUI<br>
+	 * Numeric values are upcast as needed
+	 * @param path Name or dot-separated path to the value
+	 * @param number Value to be set in the GUI
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 */
+	default void setGUI(String path, Number number) {
+		boolean pre;
+		//noinspection AssignmentUsedAsCondition
+		if (pre = number instanceof Byte) {
+			try {
+				doSetGUI(path, number.byteValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Short) {
+			try {
+				doSetGUI(path, number.shortValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Integer) {
+			try {
+				doSetGUI(path, number.intValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre || number instanceof Long) {
+			try {
+				doSetGUI(path, number.longValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (number instanceof Float) {
+			try {
+				doSetGUI(path, number.floatValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetGUI(path, number.doubleValue());
 	}
 }

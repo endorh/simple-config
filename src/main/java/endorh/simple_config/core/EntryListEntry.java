@@ -141,7 +141,7 @@ public class EntryListEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		holder.clear();

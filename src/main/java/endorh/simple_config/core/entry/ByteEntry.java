@@ -3,6 +3,8 @@ package endorh.simple_config.core.entry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.gui.entries.IntegerSliderEntry;
+import me.shedaniel.clothconfig2.gui.entries.TextFieldListEntry;
 import me.shedaniel.clothconfig2.impl.builders.IntFieldBuilder;
 import me.shedaniel.clothconfig2.impl.builders.IntSliderBuilder;
 import net.minecraft.util.text.ITextComponent;
@@ -59,7 +61,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

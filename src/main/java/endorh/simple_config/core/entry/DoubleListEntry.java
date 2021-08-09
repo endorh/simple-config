@@ -75,7 +75,7 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	protected Optional<AbstractConfigListEntry<List<Double>>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<List<Double>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final DoubleListBuilder valBuilder = builder

@@ -50,11 +50,6 @@ public class SimpleConfigClassParser {
 		}
 	}
 	
-	static {
-		// Trigger classloading
-		Builders.nonPersistentBool(true);
-	}
-	
 	/**
 	 * Adds a validator from a sibling method to a {@link AbstractListEntry}
 	 */
@@ -220,7 +215,11 @@ public class SimpleConfigClassParser {
 					  "Config field " + getFieldName(field) + " of type " + fieldTypeName + " does not " +
 					  "match its entry's type: " + entryClass.getTypeName() +
 					  "\nAnnotate this field with @NotEntry to suppress this error");
-				builder.getEntry(name).backingField = field;
+				if (builder.backingFields.containsKey(name))
+					throw new SimpleConfigClassParseException(
+					  builder, "Config entry " + name + " cannot have two backing fields");
+				builder.setBackingField(name, field);
+				// builder.getEntry(name).backingField = field;
 				if (hasAnyConfigAnnotation(field))
 					LOGGER.warn(
 					  "Config field " + getFieldName(field) + " has config annotations but is already " +
@@ -244,9 +243,12 @@ public class SimpleConfigClassParser {
 									final AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder =
 									  ((FieldEntryParser<Annotation, Object>) parser).tryParse(annotation, field, value);
 									if (entryBuilder != null) {
-										entryBuilder.backingField = field;
+										if (builder.hasEntry(name) || builder.groups.containsKey(name))
+											throw new SimpleConfigClassParseException(
+											  builder, "Cannot create entry with name " + name + ". The name is already used.");
 										decorateEntry(entryBuilder, configClass, field);
-										builder.add(field.getName(), entryBuilder, getOrder(field));
+										builder.add(name, entryBuilder, getOrder(field));
+										builder.setBackingField(name, field);
 										continue parseFields;
 									}
 								}
@@ -414,8 +416,12 @@ public class SimpleConfigClassParser {
 			r.append("    Defined entries:\n");
 			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entry :
 			  builder.entries.entrySet()) {
+				final AbstractConfigEntryBuilder<?, ?, ?, ?, ?> e = entry.getValue();
 				r.append("      ").append(entry.getKey()).append(": ")
-				  .append(entry.getValue().typeClass.getName()).append("\n");
+				  .append(e.getClass().getSimpleName());
+				if (e.typeClass != null)
+					r.append(" (").append(e.typeClass.getName()).append(")");
+				r.append("\n");
 			}
 			return r.toString();
 		}
