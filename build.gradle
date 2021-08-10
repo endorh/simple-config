@@ -18,7 +18,6 @@ buildscript {
 
 // Plugins
 plugins {
-    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'java'
     id 'maven-publish'
 }
@@ -29,7 +28,7 @@ import net.minecraftforge.gradle.common.task.SignJar
 
 def mod_id = "simple-config"
 group = "endorh.simple_config"
-version = "0.2.13"
+version = "0.2.14"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -171,15 +170,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven {
-        name = "Cloth Config API"
-        url = "https://maven.shedaniel.me/"
-    }
-    maven {
         url 'https://repo.maven.apache.org/maven2'
         name 'Maven Central'
-    }
-    maven {
-        url "https://maven.tterrag.com/"
     }
 }
 
@@ -190,44 +182,9 @@ dependencies {
 
     // Minecraft
     minecraft "net.minecraftforge:forge:${forge_version}"
-
-    // Mod dependencies
-    // Cloth Config API
-    // implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_api_version}")
 }
 
 // Tasks --------------------------------------------------------------------------
-
-shadowJar {
-    manifest {
-        attributes(jar_attributes)
-    }
-
-    // Include only Cloth Config API in the shadow jar
-    dependencies {
-        //noinspection GroovyAssignabilityCheck
-        include dependency(fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_api_version}"))
-    }
-
-    // Exclude the packages we don't use
-    exclude "me/shedaniel/autoconfig/**"
-    exclude "me/shedaniel/cloth/**"
-    exclude "me/shedaniel/clothconfig/**"
-    exclude "me/shedaniel/clothconfig2/forge/**"
-    exclude "architectury_inject*/**"
-
-    // Relocate the root package
-    relocate "me.shedaniel", "endorh.simple_config.shadowed.me.shedaniel"
-
-    classifier '' // Replace default jar
-
-    // Preferred method to reobfuscate the jar file
-    finalizedBy 'reobfJar'
-}
-
-reobf {
-    shadowJar {}
-}
 
 classes.dependsOn extractNatives // Make sure the natives are extracted on compile
 
@@ -238,14 +195,10 @@ jar {
         attributes 'Maven-Artifact': "${maven_artifact}:deobf"
     }
 
-    classifier 'clean'
+    classifier ''
 
     // Preferred method to reobfuscate the jar file
     finalizedBy 'reobfJar'
-}
-
-artifacts {
-    archives shadowJar
 }
 
 // Process resources
@@ -269,7 +222,7 @@ processResources {
 publishing {
     publications {
         mod(MavenPublication) {
-            artifact shadowJar
+            artifact jar
             artifact sourcesJar
 
             pom {

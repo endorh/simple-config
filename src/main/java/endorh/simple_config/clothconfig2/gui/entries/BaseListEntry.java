@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.Expandable;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -35,7 +36,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell, SELF extends Base
   extends TooltipListEntry<List<T>>
   implements Expandable {
 	protected static final ResourceLocation CONFIG_TEX =
-	  new ResourceLocation("cloth-config2", "textures/gui/cloth_config.png");
+	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
 	@NotNull
 	protected final List<C> cells;
 	@NotNull

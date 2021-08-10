@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.Expandable;
@@ -31,7 +32,7 @@ public class SubCategoryListEntry
   extends TooltipListEntry<List<AbstractConfigListEntry<?>>>
   implements Expandable {
 	private static final ResourceLocation CONFIG_TEX =
-	  new ResourceLocation("cloth-config2", "textures/gui/cloth_config.png");
+	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
 	private final List<AbstractConfigListEntry<?>> entries;
 	private final CategoryLabelWidget widget;
 	private final List<IGuiEventListener> children;
