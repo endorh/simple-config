@@ -67,11 +67,6 @@ public class FloatListListEntry
 		return this;
 	}
 	
-	@Override
-	public FloatListListEntry self() {
-		return this;
-	}
-	
 	public static class FloatListCell
 	  extends
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<Float, FloatListCell, FloatListListEntry> {
@@ -100,6 +95,10 @@ public class FloatListListEntry
 			} catch (NumberFormatException e) {
 				return 0.0f;
 			}
+		}
+		
+		@Override public void setValue(Float value) {
+			this.widget.setText(String.valueOf(value));
 		}
 		
 		@Override

@@ -37,8 +37,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class DropdownBoxEntry<T>
-  extends TooltipListEntry<T> {
+public class DropdownBoxEntry<T> extends TooltipListEntry<T> {
 	protected Button resetButton;
 	protected SelectionElement<T> selectionElement;
 	@NotNull
@@ -63,12 +62,11 @@ public class DropdownBoxEntry<T>
 		  0, 0, Minecraft.getInstance().fontRenderer.getStringPropertyWidth(
 		  resetButtonKey) + 6, 20, resetButtonKey,
 		  widget -> this.selectionElement.topRenderer.setValue(defaultValue.get()));
-		this.selectionElement = new SelectionElement<>(this, new Rectangle(0, 0, 150, 20),
-		                                               new DefaultDropdownMenuElement<>(
-		                                                 selections == null ? ImmutableList.of()
-		                                                                    : ImmutableList.copyOf(
-			                                                                   selections)),
-		                                               topRenderer, cellCreator);
+		this.selectionElement = new SelectionElement<>(
+		  this, new Rectangle(0, 0, 150, 20),
+		  new DefaultDropdownMenuElement<>(
+		    selections == null ? ImmutableList.of() : ImmutableList.copyOf(selections)),
+		  topRenderer, cellCreator);
 	}
 	
 	@Override
@@ -79,18 +77,17 @@ public class DropdownBoxEntry<T>
 		super.render(
 		  matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		MainWindow window = Minecraft.getInstance().getMainWindow();
-		this.resetButton.active = this.isEditable() && this.getDefaultValue().isPresent() &&
-		                          (!this.defaultValue.get().equals(this.getValue()) ||
-		                           this.getConfigError().isPresent());
+		this.resetButton.active =
+		  this.isEditable() && this.getDefaultValue().isPresent() &&
+		  (!this.defaultValue.get().equals(this.getValue()) || this.getConfigError().isPresent());
 		this.resetButton.y = y;
 		this.selectionElement.active = this.isEditable();
 		this.selectionElement.bounds.y = y;
 		ITextComponent displayedFieldName = this.getDisplayedFieldName();
 		if (Minecraft.getInstance().fontRenderer.getBidiFlag()) {
 			Minecraft.getInstance().fontRenderer.func_238407_a_(
-			  matrices, displayedFieldName.func_241878_f(), (float) (window.getScaledWidth() - x -
-			                                                         Minecraft.getInstance().fontRenderer.getStringPropertyWidth(
-				                                                        displayedFieldName)),
+			  matrices, displayedFieldName.func_241878_f(),
+			  (float) (window.getScaledWidth() - x - Minecraft.getInstance().fontRenderer.getStringPropertyWidth(displayedFieldName)),
 			  (float) (y + 6), this.getPreferredTextColor());
 			this.resetButton.x = x;
 			this.selectionElement.bounds.x = x + this.resetButton.getWidth() + 1;
@@ -130,9 +127,14 @@ public class DropdownBoxEntry<T>
 		return this.selectionElement.menu.getSelections();
 	}
 	
-	@Override
-	public T getValue() {
+	@Override public T getValue() {
 		return this.selectionElement.getValue();
+	}
+	
+	@Override public void setValue(T value) {
+		if (!this.getSelections().contains(value))
+			throw new IllegalArgumentException("Invalid value: \"" + value + "\"");
+		this.selectionElement.topRenderer.setValue(value);
 	}
 	
 	@Deprecated
@@ -142,8 +144,8 @@ public class DropdownBoxEntry<T>
 	
 	@Override
 	public Optional<T> getDefaultValue() {
-		return this.defaultValue == null ? Optional.empty()
-		                                 : Optional.ofNullable(this.defaultValue.get());
+		return this.defaultValue == null
+		       ? Optional.empty() : Optional.ofNullable(this.defaultValue.get());
 	}
 	
 	@Override

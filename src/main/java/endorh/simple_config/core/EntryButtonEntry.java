@@ -1,7 +1,7 @@
 package endorh.simple_config.core;
 
 import endorh.simple_config.core.entry.GUIOnlyEntry;
-import endorh.simple_config.gui.EntryButtonListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.EntryButtonListEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.Minecraft;

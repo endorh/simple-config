@@ -436,8 +436,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return guiEntry != null? fromGui(getGUI()) : get();
 	}
 	protected void setGUI(Gui value) {
-		if (guiEntry != null)
-			EntrySetterUtil.setValue(guiEntry, value);
+		if (guiEntry != null) {
+			guiEntry.setValue(value);
+		} else throw new IllegalStateException("Cannot set GUI value without GUI");
 	}
 	protected void setForGUI(V value) {
 		setGUI(forGui(value));

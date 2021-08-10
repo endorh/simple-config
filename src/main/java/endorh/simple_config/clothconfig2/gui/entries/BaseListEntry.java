@@ -104,7 +104,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell, SELF extends Base
 				  cell.onDelete();
 			  }
 			  this.cells.clear();
-			  defaultValue.get().stream().map(this::getFromValue).forEach(this.cells::add);
+			  defaultValue.get().stream().map(this::cellWithValue).forEach(this.cells::add);
 			  for (BaseListCell cell : this.cells) {
 				  cell.onAdd();
 			  }
@@ -160,13 +160,16 @@ public abstract class BaseListEntry<T, C extends BaseListCell, SELF extends Base
 	public void setRequiresRestart(boolean requiresRestart) {
 	}
 	
-	public abstract SELF self();
+	public SELF self() {
+		//noinspection unchecked
+		return (SELF) this;
+	}
 	
 	public boolean isDeleteButtonEnabled() {
 		return this.deleteButtonEnabled;
 	}
 	
-	protected abstract C getFromValue(T var1);
+	protected abstract C cellWithValue(T var1);
 	
 	@NotNull
 	public Function<SELF, C> getCreateNewInstance() {
@@ -343,8 +346,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell, SELF extends Base
 		return this.insertInFront;
 	}
 	
-	public class ListLabelWidget
-	  implements IGuiEventListener {
+	public class ListLabelWidget implements IGuiEventListener {
 		protected Rectangle rectangle = new Rectangle();
 		
 		public boolean mouseClicked(double double_1, double double_2, int int_1) {

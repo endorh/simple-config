@@ -24,8 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class SelectionListEntry<T>
-  extends TooltipListEntry<T> {
+public class SelectionListEntry<T> extends TooltipListEntry<T> {
 	private final ImmutableList<T> values;
 	private final AtomicInteger index;
 	private final int original;
@@ -107,9 +106,15 @@ public class SelectionListEntry<T>
 		return super.isEdited() || !Objects.equals(this.index.get(), this.original);
 	}
 	
-	@Override
-	public T getValue() {
+	@Override public T getValue() {
 		return this.values.get(this.index.get());
+	}
+	
+	@Override public void setValue(T value) {
+		final int index = this.values.indexOf(value);
+		if (index < 0)
+			throw new IllegalArgumentException("Invalid value for selection: \"" + value + "\"");
+		this.index.set(index);
 	}
 	
 	@Override

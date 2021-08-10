@@ -1,8 +1,7 @@
-package endorh.simple_config.gui;
+package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simple_config.clothconfig2.gui.entries.TooltipListEntry;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -18,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ButtonListEntry extends TooltipListEntry<Runnable> implements ISettableConfigListEntry<Runnable> {
+public class ButtonListEntry extends TooltipListEntry<Runnable> {
 	protected final Runnable original;
 	protected final Supplier<ITextComponent> buttonLabelSupplier;
 	protected final Consumer<Runnable> saveConsumer;
@@ -33,7 +32,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements ISett
 	  @Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier
 	) { this(value, fieldName, buttonLabelSupplier, tooltipSupplier, r -> {}); }
 	
-	@SuppressWarnings({"deprecation", "UnstableApiUsage"}) public ButtonListEntry(
+	public ButtonListEntry(
 	  Runnable value, ITextComponent fieldName, Supplier<ITextComponent> buttonLabelSupplier,
 	  @Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<Runnable> saveConsumer
 	) {

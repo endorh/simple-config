@@ -6,8 +6,7 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.Widget;
 import org.jetbrains.annotations.NotNull;
 
-public class ColorDisplayWidget
-  extends Widget {
+public class ColorDisplayWidget extends Widget {
 	protected TextFieldWidget textFieldWidget;
 	protected int color;
 	protected int size;

@@ -83,6 +83,10 @@ public class SubCategoryListEntry
 		return this.entries;
 	}
 	
+	@Override public void setValue(List<AbstractConfigListEntry<?>> value) {
+		throw new UnsupportedOperationException("Cannot change entries of category");
+	}
+	
 	@Override
 	public Optional<List<AbstractConfigListEntry<?>>> getDefaultValue() {
 		return Optional.empty();

@@ -3,7 +3,7 @@ package endorh.simple_config.core;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.core.entry.IAbstractStringKeyEntry;
-import endorh.simple_config.gui.StringPairListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.StringPairListListEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.nbt.*;
@@ -341,7 +341,8 @@ public class StringToEntryMapEntry<K, V, C, G, E extends AbstractConfigEntry<V, 
 	public Optional<AbstractConfigListEntry<List<Pair<String, G>>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final StringPairListEntry<G, AbstractConfigListEntry<G>> e = new StringPairListEntry<>(
+		final StringPairListListEntry<G, AbstractConfigListEntry<G>>
+		  e = new StringPairListListEntry<>(
 		  getDisplayName(), forGui(get()), expand, // () -> this.supplyTooltip(parent.getGUI(name)),
 		  () -> this.supplyTooltip(getGUI()),
 		  saveConsumer(), () -> forGui(value), () -> Pair.of("", entry.forGui(entry.value)),

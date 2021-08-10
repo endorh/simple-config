@@ -24,8 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class IntegerSliderEntry
-  extends TooltipListEntry<Integer> {
+public class IntegerSliderEntry extends TooltipListEntry<Integer> {
 	protected Slider sliderWidget;
 	protected Button resetButton;
 	protected AtomicInteger value;
@@ -99,9 +98,12 @@ public class IntegerSliderEntry
 		return this;
 	}
 	
-	@Override
-	public Integer getValue() {
+	@Override public Integer getValue() {
 		return this.value.get();
+	}
+	
+	@Override public void setValue(Integer value) {
+		this.value.set(value);
 	}
 	
 	@Deprecated

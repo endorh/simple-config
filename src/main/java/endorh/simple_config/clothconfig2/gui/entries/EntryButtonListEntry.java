@@ -1,10 +1,8 @@
-package endorh.simple_config.gui;
+package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simple_config.core.EntrySetterUtil;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simple_config.clothconfig2.gui.entries.TooltipListEntry;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -22,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
-  extends TooltipListEntry<V> implements ISettableConfigListEntry<V> {
+  extends TooltipListEntry<V> {
 	protected static final int BUTTON_HEIGHT = 20;
 	
 	protected final Entry entry;
@@ -31,7 +29,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
 	protected final @Nullable Consumer<V> saveConsumer;
 	protected List<IGuiEventListener> listeners;
 	
-	@SuppressWarnings({"deprecation", "UnstableApiUsage"}) public EntryButtonListEntry(
+	public EntryButtonListEntry(
 	  ITextComponent fieldName, Entry entry, Consumer<V> action,
 	  Supplier<ITextComponent> buttonLabelSupplier,
 	  @Nullable Consumer<V> saveConsumer,
@@ -72,7 +70,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
 	}
 	
 	@Override public void setValue(V value) {
-		EntrySetterUtil.setValue(entry, value);
+		entry.setValue(value);
 	}
 	
 	@Override public Optional<V> getDefaultValue() {
@@ -103,7 +101,6 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
 	) {
 		super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		entry.setParent(getParent());
-		//noinspection UnstableApiUsage
 		entry.setScreen(getConfigScreen());
 		entry.setEditable(isEditable());
 		entry.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);

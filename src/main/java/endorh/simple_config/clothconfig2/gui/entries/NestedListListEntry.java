@@ -10,7 +10,6 @@ import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,109 +21,105 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public final class NestedListListEntry<T, INNER extends AbstractConfigListEntry<T>>
-  extends AbstractListListEntry<T, NestedListCell<T, INNER>, NestedListListEntry<T, INNER>> {
-	private final List<ReferenceProvider<?>> referencableEntries = Lists.newArrayList();
+public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
+  extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListListEntry<T, Inner>> {
+	protected final List<ReferenceProvider<?>> referencableEntries = Lists.newArrayList();
 	
-	@ApiStatus.Internal
 	public NestedListListEntry(
 	  ITextComponent fieldName, List<T> value, boolean defaultExpanded,
 	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<T>> saveConsumer,
 	  Supplier<List<T>> defaultValue, ITextComponent resetButtonKey, boolean deleteButtonEnabled,
-	  boolean insertInFront, BiFunction<T, NestedListListEntry<T, INNER>, INNER> createNewCell
+	  boolean insertInFront, BiFunction<T, NestedListListEntry<T, Inner>, Inner> createNewCell
 	) {
-		super(fieldName, value, defaultExpanded, null, null, defaultValue, resetButtonKey, false,
-		      deleteButtonEnabled, insertInFront,
-		      (t, nestedListListEntry) -> new NestedListCell<>(
-		        t, nestedListListEntry, createNewCell.apply(t, nestedListListEntry)));
-		for (NestedListCell<T, INNER> cell : this.cells) {
-			this.referencableEntries.add(cell.nestedEntry);
-		}
-		this.setReferenceProviderEntries(this.referencableEntries);
-	}
-	
-	@Override
-	public NestedListListEntry<T, INNER> self() {
-		return this;
-	}
-	
-	public static class NestedListCell<T, INNER extends AbstractConfigListEntry<T>>
-	  extends
-	  AbstractListListEntry.AbstractListCell<T, NestedListCell<T, INNER>, NestedListListEntry<T, INNER>>
-	  implements ReferenceProvider<T> {
-		private final INNER nestedEntry;
+		super(
+		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
+		  resetButtonKey, false, deleteButtonEnabled, insertInFront,
+		  (t, NestedListListEntry) -> new NestedListListEntry.NestedListCell<>(
+			 t, NestedListListEntry, createNewCell.apply(t, NestedListListEntry)));
 		
-		@ApiStatus.Internal
+		for (NestedListCell<T, Inner> cell : cells)
+			referencableEntries.add(cell.nestedEntry);
+		setReferenceProviderEntries(referencableEntries);
+	}
+	
+	@Override public boolean isEdited() {
+		return !getValue().equals(original);
+		// return super.isEdited();
+	}
+	
+	public static class NestedListCell<T, Inner extends AbstractConfigListEntry<T>>
+	  extends AbstractListListEntry.AbstractListCell<T, NestedListListEntry.NestedListCell<T,
+	  Inner>, NestedListListEntry<T, Inner>>
+	  implements ReferenceProvider<T> {
+		protected final Inner nestedEntry;
+		
 		public NestedListCell(
-		  @Nullable T value, NestedListListEntry<T, INNER> listListEntry, INNER nestedEntry
+		  @Nullable T value, NestedListListEntry<T, Inner> listListEntry, Inner nestedEntry
 		) {
 			super(value, listListEntry);
 			this.nestedEntry = nestedEntry;
 		}
 		
-		@Override
-		@NotNull
-		public AbstractConfigEntry<T> provideReferenceEntry() {
-			return this.nestedEntry;
+		@NotNull public AbstractConfigEntry<T> provideReferenceEntry() {
+			return nestedEntry;
 		}
 		
-		@Override
 		public T getValue() {
-			return this.nestedEntry.getValue();
+			return nestedEntry.getValue();
 		}
 		
-		@Override
 		public Optional<ITextComponent> getError() {
-			return this.nestedEntry.getError();
+			return nestedEntry.getError();
 		}
 		
-		@Override
 		public int getCellHeight() {
-			return this.nestedEntry.getItemHeight();
+			return nestedEntry.getItemHeight();
 		}
 		
-		@Override
-		public void render(
-		  MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
-		  int mouseY, boolean isSelected, float delta
+		@SuppressWarnings({"unchecked", "rawtypes"}) public void render(
+		  MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight,
+		  int mouseX, int mouseY, boolean isSelected, float delta
 		) {
-			this.nestedEntry.setParent(((NestedListListEntry) this.listListEntry).getParent());
-			this.nestedEntry.setScreen(this.listListEntry.getConfigScreen());
-			this.nestedEntry.render(
-			  matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
+			nestedEntry.setParent(((NestedListListEntry) listListEntry).getParent());
+			nestedEntry.setScreen(listListEntry.getConfigScreen());
+			
+			nestedEntry.render(matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
 		}
 		
 		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
-			return Collections.singletonList(this.nestedEntry);
+			return Collections.singletonList(nestedEntry);
 		}
 		
-		@Override
 		public boolean isRequiresRestart() {
-			return this.nestedEntry.isRequiresRestart();
+			return nestedEntry.isRequiresRestart();
 		}
 		
-		@Override
 		public void updateSelected(boolean isSelected) {
-			this.nestedEntry.updateSelected(isSelected);
+			nestedEntry.updateSelected(isSelected);
 		}
 		
-		@Override
 		public boolean isEdited() {
-			return super.isEdited() || this.nestedEntry.isEdited();
+			return super.isEdited() || nestedEntry.isEdited();
 		}
 		
-		@Override
+		public Inner getNestedEntry() {
+			return nestedEntry;
+		}
+		
+		public void setValue(T value) {
+			nestedEntry.setValue(value);
+		}
+		
 		public void onAdd() {
 			super.onAdd();
-			this.listListEntry.referencableEntries.add(this.nestedEntry);
-			this.listListEntry.requestReferenceRebuilding();
+			listListEntry.referencableEntries.add(nestedEntry);
+			listListEntry.requestReferenceRebuilding();
 		}
 		
-		@Override
 		public void onDelete() {
 			super.onDelete();
-			this.listListEntry.referencableEntries.remove(this.nestedEntry);
-			this.listListEntry.requestReferenceRebuilding();
+			listListEntry.referencableEntries.remove(nestedEntry);
+			listListEntry.requestReferenceRebuilding();
 		}
 	}
 }

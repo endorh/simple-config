@@ -10,8 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class StringListEntry
-  extends TextFieldListEntry<String> {
+public class StringListEntry extends TextFieldListEntry<String> {
 	private final Consumer<String> saveConsumer;
 	
 	@Deprecated

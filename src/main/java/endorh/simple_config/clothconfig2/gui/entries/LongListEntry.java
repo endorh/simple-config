@@ -106,7 +106,7 @@ public class LongListEntry
 	public Long getValue() {
 		try {
 			return Long.valueOf(this.textFieldWidget.getText());
-		} catch (Exception e) {
+		} catch (NumberFormatException e) {
 			return 0L;
 		}
 	}

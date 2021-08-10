@@ -5,7 +5,7 @@ import endorh.simple_config.core.DummyEntryHolder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
-import endorh.simple_config.gui.EntryButtonListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.EntryButtonListEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.resources.I18n;
@@ -83,7 +83,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		for (Entry<String, Object> entry : preset.entrySet()) {
 			try {
 				h.setForGUI(entry.getKey(), entry.getValue());
-			} catch (NoSuchConfigEntryError | InvalidConfigValueTypeException e) {
+			} catch (RuntimeException e) {
 				LOGGER.warn(
 				  "Unable to set preset (" + name + ") entry: \"" + entry.getKey() + "\"\n" +
 				  "Details: " + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());

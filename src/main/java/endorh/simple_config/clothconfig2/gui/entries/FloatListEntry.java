@@ -13,8 +13,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class FloatListEntry
-  extends TextFieldListEntry<Float> {
+public class FloatListEntry extends TextFieldListEntry<Float> {
 	private static final Function<String, String> stripCharacters = s -> {
 		StringBuilder stringBuilder_1 = new StringBuilder();
 		char[] var2 = s.toCharArray();
@@ -106,7 +105,7 @@ public class FloatListEntry
 	public Float getValue() {
 		try {
 			return Float.valueOf(this.textFieldWidget.getText());
-		} catch (Exception e) {
+		} catch (NumberFormatException e) {
 			return 0.0f;
 		}
 	}

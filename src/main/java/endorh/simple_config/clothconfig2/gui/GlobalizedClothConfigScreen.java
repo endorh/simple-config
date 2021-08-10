@@ -140,8 +140,7 @@ public class GlobalizedClothConfigScreen
 				this.listWidget.getEventListeners().add((AbstractConfigEntry) new EmptyEntry(5));
 			}
 			this.listWidget.getEventListeners().add((AbstractConfigEntry) new EmptyEntry(4));
-			this.listWidget.getEventListeners().add((AbstractConfigEntry) new CategoryTextEntry(
-			  category, category.deepCopy().mergeStyle(TextFormatting.BOLD)));
+			this.listWidget.getEventListeners().add((AbstractConfigEntry) new CategoryTextEntry(category, category.deepCopy().mergeStyle(TextFormatting.BOLD)));
 			this.listWidget.getEventListeners().add((AbstractConfigEntry) new EmptyEntry(4));
 			this.listWidget.getEventListeners().addAll((List) entries);
 		});
@@ -491,8 +490,7 @@ public class GlobalizedClothConfigScreen
 		void go();
 	}
 	
-	private static class CategoryTextEntry
-	  extends AbstractConfigListEntry<Object> {
+	private static class CategoryTextEntry extends AbstractConfigListEntry<Void> {
 		private final ITextComponent category;
 		private final ITextComponent text;
 		
@@ -513,13 +511,14 @@ public class GlobalizedClothConfigScreen
 			return 4 + strings.size() * 10;
 		}
 		
-		@Override
-		public Object getValue() {
+		@Override public Void getValue() {
 			return null;
 		}
 		
+		@Override public void setValue(Void value) {}
+		
 		@Override
-		public Optional<Object> getDefaultValue() {
+		public Optional<Void> getDefaultValue() {
 			return Optional.empty();
 		}
 		
@@ -559,8 +558,7 @@ public class GlobalizedClothConfigScreen
 		}
 	}
 	
-	private static class EmptyEntry
-	  extends AbstractConfigListEntry<Object> {
+	private static class EmptyEntry extends AbstractConfigListEntry<Void> {
 		private final int height;
 		
 		public EmptyEntry(int height) {
@@ -573,13 +571,14 @@ public class GlobalizedClothConfigScreen
 			return this.height;
 		}
 		
-		@Override
-		public Object getValue() {
+		@Override public Void getValue() {
 			return null;
 		}
 		
+		@Override public void setValue(Void value) {}
+		
 		@Override
-		public Optional<Object> getDefaultValue() {
+		public Optional<Void> getDefaultValue() {
 			return Optional.empty();
 		}
 		

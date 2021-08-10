@@ -1,11 +1,11 @@
 package endorh.simple_config.core.entry;
 
-import endorh.simple_config.core.AbstractConfigEntry;
-import endorh.simple_config.core.AbstractConfigEntryBuilder;
-import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.TextDescriptionBuilder;
+import endorh.simple_config.core.AbstractConfigEntry;
+import endorh.simple_config.core.AbstractConfigEntryBuilder;
+import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry> {
+public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected @Nullable Supplier<ITextComponent> translationSupplier = null; // Lazy
 	protected boolean own = false;
@@ -31,7 +31,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry
 		super(parent, name, null);
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Object, TextEntry, Builder> {
+	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Void, TextEntry, Builder> {
 		protected Supplier<ITextComponent> translationSupplier = null;
 		
 		public Builder() {
@@ -114,8 +114,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	protected Optional<ITextComponent[]> supplyDebugTooltip(Object value) {
+	@Override protected Optional<ITextComponent[]> supplyDebugTooltip(Void value) {
 		List<ITextComponent> lines = new ArrayList<>();
 		lines.add(new StringTextComponent("Text entry").mergeStyle(TextFormatting.GRAY));
 		if (own) {
@@ -158,13 +157,13 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Object, TextEntry
 	}
 	
 	@Override
-	protected Object getGUI() {
+	protected Void getGUI() {
 		throw new IllegalArgumentException("Text entries do not have a value");
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	public Optional<AbstractConfigListEntry<Object>> buildGUIEntry(
+	public Optional<AbstractConfigListEntry<Void>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final ITextComponent displayName = getDisplayName();

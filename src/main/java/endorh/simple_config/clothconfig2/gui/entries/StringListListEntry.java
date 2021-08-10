@@ -53,11 +53,6 @@ public class StringListListEntry
 		  resetButtonKey, requiresRestart, deleteButtonEnabled, insertInFront, StringListCell::new);
 	}
 	
-	@Override
-	public StringListListEntry self() {
-		return this;
-	}
-	
 	public static class StringListCell
 	  extends
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<String, StringListCell, StringListListEntry> {
@@ -82,6 +77,10 @@ public class StringListListEntry
 		@Override
 		public String getValue() {
 			return this.widget.getText();
+		}
+		
+		@Override public void setValue(String value) {
+			this.widget.setText(value);
 		}
 		
 		@Override

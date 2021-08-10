@@ -1,9 +1,9 @@
 package endorh.simple_config.core;
 
-import endorh.simple_config.core.entry.AbstractListEntry;
-import endorh.simple_config.gui.NestedListEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.gui.entries.NestedListListEntry;
+import endorh.simple_config.core.entry.AbstractListEntry;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -145,8 +145,8 @@ public class EntryListEntry
 	  ConfigEntryBuilder builder
 	) {
 		holder.clear();
-		final NestedListEntry<G, AbstractConfigListEntry<G>> e =
-		  new NestedListEntry<>(
+		final NestedListListEntry<G, AbstractConfigListEntry<G>> e =
+		  new NestedListListEntry<>(
 		    getDisplayName(), forGui(get()), expand,
 		    () -> this.supplyTooltip(getGUI()),
 		    saveConsumer(),

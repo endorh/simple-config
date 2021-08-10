@@ -106,7 +106,7 @@ public class IntegerListEntry
 	public Integer getValue() {
 		try {
 			return Integer.valueOf(this.textFieldWidget.getText());
-		} catch (Exception e) {
+		} catch (NumberFormatException e) {
 			return 0;
 		}
 	}

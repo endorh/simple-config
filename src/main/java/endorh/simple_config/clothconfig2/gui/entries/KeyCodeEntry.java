@@ -99,7 +99,7 @@ public class KeyCodeEntry
 		return this.value;
 	}
 	
-	public void setValue(ModifierKeyCode value) {
+	@Override public void setValue(ModifierKeyCode value) {
 		this.value = value;
 	}
 	

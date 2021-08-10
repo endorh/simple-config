@@ -88,6 +88,10 @@ public class BooleanListEntry
 		return this.bool.get();
 	}
 	
+	@Override public void setValue(Boolean value) {
+		this.bool.set(value);
+	}
+	
 	@Override
 	public Optional<Boolean> getDefaultValue() {
 		return this.defaultValue == null ? Optional.empty()

@@ -1,9 +1,8 @@
-package endorh.simple_config.gui;
+package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simple_config.clothconfig2.gui.entries.TooltipListEntry;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -25,37 +24,36 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Implementation of the missing double slider entry in Cloth API
+ * Implementation of the missing float slider entry in Cloth API
  */
 @OnlyIn(Dist.CLIENT)
-public class DoubleSliderEntry extends TooltipListEntry<Double> implements ISettableConfigListEntry<Double> {
-	protected DoubleSliderEntry.Slider sliderWidget;
+public class FloatSliderEntry extends TooltipListEntry<Float> {
+	protected FloatSliderEntry.Slider sliderWidget;
 	protected Button resetButton;
 	protected AtomicDouble value;
-	protected final double original;
-	private double minimum;
-	private double maximum;
-	private final Consumer<Double> saveConsumer;
-	private final Supplier<Double> defaultValue;
-	private Function<Double, ITextComponent> textGetter;
+	protected final float original;
+	private float minimum;
+	private float maximum;
+	private final Consumer<Float> saveConsumer;
+	private final Supplier<Float> defaultValue;
+	private Function<Float, ITextComponent> textGetter;
 	private final List<IGuiEventListener> widgets;
 	
 	/** @deprecated */
 	@Deprecated @Internal
-	public DoubleSliderEntry(ITextComponent fieldName, double minimum, double maximum, double value, Consumer<Double> saveConsumer, ITextComponent resetButtonKey, Supplier<Double> defaultValue) {
+	public FloatSliderEntry(ITextComponent fieldName, float minimum, float maximum, float value, Consumer<Float> saveConsumer, ITextComponent resetButtonKey, Supplier<Float> defaultValue) {
 		this(fieldName, minimum, maximum, value, saveConsumer, resetButtonKey, defaultValue, null);
 	}
 	
 	/** @deprecated */
 	@Deprecated @Internal
-	public DoubleSliderEntry(ITextComponent fieldName, double minimum, double maximum, double value, Consumer<Double> saveConsumer, ITextComponent resetButtonKey, Supplier<Double> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
+	public FloatSliderEntry(ITextComponent fieldName, float minimum, float maximum, float value, Consumer<Float> saveConsumer, ITextComponent resetButtonKey, Supplier<Float> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
 		this(fieldName, minimum, maximum, value, saveConsumer, resetButtonKey, defaultValue, tooltipSupplier, false);
 	}
 	
 	/** @deprecated Use the builder */
 	@SuppressWarnings("DeprecatedIsStillUsed") @Deprecated @Internal
-	public DoubleSliderEntry(ITextComponent fieldName, double minimum, double maximum, double value, Consumer<Double> saveConsumer, ITextComponent resetButtonKey, Supplier<Double> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier, boolean requiresRestart) {
-		//noinspection UnstableApiUsage
+	public FloatSliderEntry(ITextComponent fieldName, float minimum, float maximum, float value, Consumer<Float> saveConsumer, ITextComponent resetButtonKey, Supplier<Float> defaultValue, Supplier<Optional<ITextComponent[]>> tooltipSupplier, boolean requiresRestart) {
 		super(fieldName, tooltipSupplier, requiresRestart);
 		this.textGetter = v -> new StringTextComponent(String.format("Value: %.2f", v));
 		this.original = value;
@@ -64,9 +62,9 @@ public class DoubleSliderEntry extends TooltipListEntry<Double> implements ISett
 		this.saveConsumer = saveConsumer;
 		this.maximum = maximum;
 		this.minimum = minimum;
-		this.sliderWidget = new DoubleSliderEntry.Slider(0, 0, 152, 20, (this.value.get() - minimum) / Math.abs(maximum - minimum));
+		this.sliderWidget = new FloatSliderEntry.Slider(0, 0, 152, 20, (getValue() - minimum) / Math.abs(maximum - minimum));
 		this.resetButton = new Button(0, 0, Minecraft.getInstance().fontRenderer.getStringPropertyWidth(resetButtonKey) + 6, 20, resetButtonKey, widget -> setValue(defaultValue.get()));
-		this.sliderWidget.setMessage(this.textGetter.apply(this.value.get()));
+		this.sliderWidget.setMessage(this.textGetter.apply(getValue()));
 		this.widgets = Lists.newArrayList(new IGuiEventListener[]{this.sliderWidget, this.resetButton});
 	}
 	
@@ -75,32 +73,32 @@ public class DoubleSliderEntry extends TooltipListEntry<Double> implements ISett
 			saveConsumer.accept(this.getValue());
 	}
 	
-	public Function<Double, ITextComponent> getTextGetter() {
+	public Function<Float, ITextComponent> getTextGetter() {
 		return this.textGetter;
 	}
 	
-	public DoubleSliderEntry setTextGetter(Function<Double, ITextComponent> textGetter) {
+	public FloatSliderEntry setTextGetter(Function<Float, ITextComponent> textGetter) {
 		this.textGetter = textGetter;
-		this.sliderWidget.setMessage(textGetter.apply(this.value.get()));
+		this.sliderWidget.setMessage(textGetter.apply(getValue()));
 		return this;
 	}
 	
-	@Override public Double getValue() {
-		return this.value.get();
+	@Override public Float getValue() {
+		return (float) value.get();
 	}
 	
-	@Override public void setValue(Double value) {
-		setValue(value.doubleValue());
+	@Override public void setValue(Float value) {
+		setValue(value.floatValue());
 	}
 	
-	public void setValue(double value) {
+	public void setValue(float value) {
 		this.sliderWidget.setValue(
 		  (MathHelper.clamp(value, this.minimum, this.maximum) - this.minimum) / Math.abs(this.maximum - this.minimum));
 		this.value.set(Math.min(Math.max(value, this.minimum), this.maximum));
 		this.sliderWidget.func_230979_b_();
 	}
 	
-	@Override public Optional<Double> getDefaultValue() {
+	@Override public Optional<Float> getDefaultValue() {
 		return defaultValue == null ? Optional.empty() : Optional.ofNullable(
 		  defaultValue.get());
 	}
@@ -113,12 +111,12 @@ public class DoubleSliderEntry extends TooltipListEntry<Double> implements ISett
 		return super.isEdited() || this.getValue() != this.original;
 	}
 	
-	public DoubleSliderEntry setMaximum(double maximum) {
+	public FloatSliderEntry setMaximum(float maximum) {
 		this.maximum = maximum;
 		return this;
 	}
 	
-	public DoubleSliderEntry setMinimum(double minimum) {
+	public FloatSliderEntry setMinimum(float minimum) {
 		this.minimum = minimum;
 		return this;
 	}
@@ -150,33 +148,34 @@ public class DoubleSliderEntry extends TooltipListEntry<Double> implements ISett
 	}
 	
 	private class Slider extends AbstractSlider {
-		protected Slider(int int_1, int int_2, int int_3, int int_4, double double_1) {
-			super(int_1, int_2, int_3, int_4, NarratorChatListener.EMPTY, double_1);
+		protected Slider(int int_1, int int_2, int int_3, int int_4, float float_1) {
+			super(int_1, int_2, int_3, int_4, NarratorChatListener.EMPTY, float_1);
 		}
 		
 		@Override public void func_230979_b_() {
 			this.setMessage(
-			  DoubleSliderEntry.this.textGetter.apply(DoubleSliderEntry.this.value.get()));
+			  FloatSliderEntry.this.textGetter.apply(FloatSliderEntry.this.getValue()));
 		}
 		
 		@Override protected void func_230972_a_() {
-			DoubleSliderEntry.this.value.set(DoubleSliderEntry.this.minimum + Math.abs(DoubleSliderEntry.this.maximum - DoubleSliderEntry.this.minimum) * this.sliderValue);
+			FloatSliderEntry.this.value.set(FloatSliderEntry.this.minimum + Math.abs(FloatSliderEntry.this.maximum - FloatSliderEntry.this.minimum) * this.sliderValue);
 		}
 		
 		@Override public boolean keyPressed(int int_1, int int_2, int int_3) {
 			return isEditable() && super.keyPressed(int_1, int_2, int_3);
 		}
 		
-		@Override public boolean mouseDragged(double double_1, double double_2, int int_1, double double_3,
-		                             double double_4) {
+		@Override public boolean mouseDragged(
+		  double double_1, double double_2, int int_1, double double_3, double double_4
+		) {
 			return isEditable() && super.mouseDragged(double_1, double_2, int_1, double_3, double_4);
 		}
 		
-		public double getValue() {
-			return this.sliderValue;
+		public float getValue() {
+			return (float) sliderValue;
 		}
 		
-		public void setValue(double integer) {
+		public void setValue(float integer) {
 			this.sliderValue = integer;
 		}
 	}

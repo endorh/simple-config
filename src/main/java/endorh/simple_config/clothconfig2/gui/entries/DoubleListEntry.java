@@ -13,8 +13,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class DoubleListEntry
-  extends TextFieldListEntry<Double> {
+public class DoubleListEntry extends TextFieldListEntry<Double> {
 	private static final Function<String, String> stripCharacters = s -> {
 		StringBuilder stringBuilder_1 = new StringBuilder();
 		char[] var2 = s.toCharArray();
@@ -106,7 +105,7 @@ public class DoubleListEntry
 	public Double getValue() {
 		try {
 			return Double.valueOf(this.textFieldWidget.getText());
-		} catch (Exception e) {
+		} catch (NumberFormatException e) {
 			return 0.0;
 		}
 	}

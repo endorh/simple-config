@@ -23,8 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class TextListEntry
-  extends TooltipListEntry<Object> {
+public class TextListEntry extends TooltipListEntry<Void> {
 	public static final int LINE_HEIGHT = 12;
 	private final FontRenderer textRenderer;
 	private final int color;
@@ -130,13 +129,14 @@ public class TextListEntry
 	public void save() {
 	}
 	
-	@Override
-	public Object getValue() {
+	@Override public Void getValue() {
 		return null;
 	}
 	
+	@Override public void setValue(Void value) {}
+	
 	@Override
-	public Optional<Object> getDefaultValue() {
+	public Optional<Void> getDefaultValue() {
 		return Optional.empty();
 	}
 	

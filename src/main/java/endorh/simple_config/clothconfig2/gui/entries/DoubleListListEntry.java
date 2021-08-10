@@ -67,11 +67,6 @@ public class DoubleListListEntry
 		return this;
 	}
 	
-	@Override
-	public DoubleListListEntry self() {
-		return this;
-	}
-	
 	public static class DoubleListCell
 	  extends
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<Double, DoubleListCell, DoubleListListEntry> {
@@ -100,6 +95,10 @@ public class DoubleListListEntry
 			} catch (NumberFormatException e) {
 				return 0.0;
 			}
+		}
+		
+		@Override public void setValue(Double value) {
+			this.widget.setText(String.valueOf(value));
 		}
 		
 		@Override

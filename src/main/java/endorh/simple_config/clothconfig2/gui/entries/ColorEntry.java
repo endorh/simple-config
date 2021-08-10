@@ -110,8 +110,7 @@ public class ColorEntry
 		return this.getColorValueColor(this.textFieldWidget.getText());
 	}
 	
-	@Deprecated
-	public void setValue(int color) {
+	@Override public void setValue(Integer color) {
 		this.textFieldWidget.setText(this.getHexColorString(color));
 	}
 	

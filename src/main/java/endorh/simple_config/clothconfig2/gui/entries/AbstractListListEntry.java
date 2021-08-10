@@ -5,6 +5,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -52,25 +53,30 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		this.cellErrorSupplier = cellErrorSupplier;
 	}
 	
-	@Override
-	public List<T> getValue() {
+	@Override public List<T> getValue() {
 		return this.cells.stream().map(AbstractListCell::getValue).collect(Collectors.toList());
 	}
 	
-	@Override
-	protected C getFromValue(T value) {
+	@Override public void setValue(List<T> value) {
+		for (int i = 0; i < cells.size() && i < value.size(); i++)
+			cells.get(i).setValue(value.get(i));
+		while (cells.size() > value.size())
+			remove(cells.size() - 1);
+		while (cells.size() < value.size())
+			add(value.get(cells.size()));
+	}
+	
+	@Override protected C cellWithValue(T value) {
 		return this.createNewCell.apply(value, this.self());
 	}
 	
 	@Override
 	public boolean isEdited() {
-		if (super.isEdited()) {
+		if (super.isEdited())
 			return true;
-		}
 		final List<T> value = this.getValue();
-		if (value.size() != this.original.size()) {
+		if (value.size() != this.original.size())
 			return true;
-		}
 		for (int i = 0; i < value.size(); ++i) {
 			if (Objects.equals(value.get(i), this.original.get(i))) continue;
 			return true;
@@ -78,7 +84,34 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		return false;
 	}
 	
-	@ApiStatus.Internal
+	public void add(T element) {
+		final C cell = createNewCell.apply(element, self());
+		cells.add(cell);
+		widgets.add(cell);
+		cell.onAdd();
+	}
+	
+	public void add(int index, T element) {
+		final C cell = createNewCell.apply(element, self());
+		cells.add(index, cell);
+		widgets.add(index, cell);
+		cell.onAdd();
+	}
+	
+	public void remove(T element) {
+		final int index = getValue().indexOf(element);
+		if (index >= 0)
+			remove(index);
+	}
+	
+	public void remove(int index) {
+		final C cell = cells.get(index);
+		cell.onDelete();
+		cells.remove(cell);
+		widgets.remove(cell);
+	}
+	
+	@Internal
 	public static abstract class AbstractListCell<T, SELF extends AbstractListCell<T, SELF, OUTER_SELF>, OUTER_SELF extends AbstractListListEntry<T, SELF, OUTER_SELF>>
 	  extends BaseListCell {
 		protected final OUTER_SELF listListEntry;
@@ -90,6 +123,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		}
 		
 		public abstract T getValue();
+		public abstract void setValue(T value);
 	}
 }
 

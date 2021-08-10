@@ -55,8 +55,8 @@ public abstract class TextFieldListEntry<T>
 		this.defaultValue = defaultValue;
 		this.original = original;
 		this.textFieldWidget =
-		  new TextFieldWidget(Minecraft.getInstance().fontRenderer, 0, 0, 148, 18,
-		                      NarratorChatListener.EMPTY) {
+		  new TextFieldWidget(
+		    Minecraft.getInstance().fontRenderer, 0, 0, 148, 18, NarratorChatListener.EMPTY) {
 			  
 			  public void render(@NotNull MatrixStack matrices, int int_1, int int_2, float float_1) {
 				  this.setFocused(TextFieldListEntry.this.isSelected &&
@@ -94,8 +94,7 @@ public abstract class TextFieldListEntry<T>
 		widget.setWidth(width);
 	}
 	
-	@Deprecated
-	public void setValue(String s) {
+	@Override public void setValue(T s) {
 		this.textFieldWidget.setText(String.valueOf(s));
 	}
 	

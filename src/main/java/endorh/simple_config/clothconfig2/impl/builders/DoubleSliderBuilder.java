@@ -1,7 +1,7 @@
-package endorh.simple_config.gui;
+package endorh.simple_config.clothconfig2.impl.builders;
 
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simple_config.clothconfig2.impl.builders.FieldBuilder;
+import endorh.simple_config.clothconfig2.gui.entries.DoubleSliderEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

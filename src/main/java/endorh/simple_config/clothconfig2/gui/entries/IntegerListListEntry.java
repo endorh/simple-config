@@ -67,11 +67,6 @@ public class IntegerListListEntry
 		return this;
 	}
 	
-	@Override
-	public IntegerListListEntry self() {
-		return this;
-	}
-	
 	public static class IntegerListCell extends
 	                                    AbstractTextFieldListListEntry.AbstractTextFieldListCell<Integer, IntegerListCell, IntegerListListEntry> {
 		public IntegerListCell(Integer value, IntegerListListEntry listListEntry) {
@@ -99,6 +94,10 @@ public class IntegerListListEntry
 			} catch (NumberFormatException e) {
 				return 0;
 			}
+		}
+		
+		@Override public void setValue(Integer value) {
+			this.widget.setText(String.valueOf(value));
 		}
 		
 		@Override

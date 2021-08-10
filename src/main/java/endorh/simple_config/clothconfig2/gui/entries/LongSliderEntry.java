@@ -24,8 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class LongSliderEntry
-  extends TooltipListEntry<Long> {
+public class LongSliderEntry extends TooltipListEntry<Long> {
 	protected Slider sliderWidget;
 	protected Button resetButton;
 	protected AtomicLong value;
@@ -100,9 +99,12 @@ public class LongSliderEntry
 		return this;
 	}
 	
-	@Override
-	public Long getValue() {
+	@Override public Long getValue() {
 		return this.value.get();
+	}
+	
+	@Override public void setValue(Long value) {
+		this.value.set(value);
 	}
 	
 	@Deprecated

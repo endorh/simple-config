@@ -67,11 +67,6 @@ public class LongListListEntry extends
 		return this;
 	}
 	
-	@Override
-	public LongListListEntry self() {
-		return this;
-	}
-	
 	public static class LongListCell
 	  extends
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<Long, LongListCell, LongListListEntry> {
@@ -100,6 +95,10 @@ public class LongListListEntry extends
 			} catch (NumberFormatException e) {
 				return 0L;
 			}
+		}
+		
+		@Override public void setValue(Long value) {
+			this.widget.setText(String.valueOf(value));
 		}
 		
 		@Override
