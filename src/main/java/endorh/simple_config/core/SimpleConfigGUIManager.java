@@ -3,7 +3,7 @@ package endorh.simple_config.core;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.SimpleConfigMod.MenuButtonPosition;
 import endorh.simple_config.SimpleConfigMod.Config;
-import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import endorh.simple_config.clothconfig2.api.ConfigBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;

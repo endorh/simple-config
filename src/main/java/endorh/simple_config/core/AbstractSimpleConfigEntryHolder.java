@@ -3,7 +3,7 @@ package endorh.simple_config.core;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
-import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 

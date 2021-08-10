@@ -1,0 +1,49 @@
+package endorh.simple_config.clothconfig2.api;
+
+import endorh.simple_config.clothconfig2.math.Point;
+import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.ITextProperties;
+import net.minecraft.util.text.LanguageMap;
+import org.jetbrains.annotations.ApiStatus.Internal;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class QueuedTooltip implements Tooltip {
+   private final Point location;
+   private final List<IReorderingProcessor> text;
+
+   private QueuedTooltip(Point location, List<IReorderingProcessor> text) {
+      this.location = location;
+      this.text = Collections.unmodifiableList(text);
+   }
+
+   public static QueuedTooltip create(Point location, List<ITextComponent> text) {
+      //noinspection unchecked
+      return new QueuedTooltip(location, LanguageMap.getInstance().func_244260_a(
+        (List<ITextProperties>) (List<?>) text));
+   }
+
+   public static QueuedTooltip create(Point location, ITextComponent... text) {
+      return create(location, Arrays.asList(text));
+   }
+
+   public static QueuedTooltip create(Point location, IReorderingProcessor... text) {
+      return new QueuedTooltip(location, Arrays.asList(text));
+   }
+
+   public static QueuedTooltip create(Point location, ITextProperties... text) {
+      return new QueuedTooltip(location, LanguageMap.getInstance().func_244260_a(Arrays.asList(text)));
+   }
+
+   public Point getPoint() {
+      return this.location;
+   }
+
+   @Internal
+   public List<IReorderingProcessor> getText() {
+      return this.text;
+   }
+}

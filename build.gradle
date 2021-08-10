@@ -121,11 +121,12 @@ minecraft {
     //
     // Official mappings channel license:
     // https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
-    //mappings channel: 'official', version: '1.16.5'
+    // mappings channel: 'official', version: '1.16.5'
     mappings channel: 'snapshot', version: '20201028-1.16.3'
+    // mappings channel: 'snapshot', version: '20210810-mixed-1.16.1'
 
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
-    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Run configurations
     runs {
@@ -177,6 +178,9 @@ repositories {
         url 'https://repo.maven.apache.org/maven2'
         name 'Maven Central'
     }
+    maven {
+        url "https://maven.tterrag.com/"
+    }
 }
 
 dependencies {
@@ -189,7 +193,7 @@ dependencies {
 
     // Mod dependencies
     // Cloth Config API
-    implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_api_version}")
+    // implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_api_version}")
 }
 
 // Tasks --------------------------------------------------------------------------

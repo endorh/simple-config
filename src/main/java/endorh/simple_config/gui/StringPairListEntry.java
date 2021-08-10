@@ -1,10 +1,10 @@
 package endorh.simple_config.gui;
 
 import com.google.common.collect.Lists;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.ReferenceProvider;
-import me.shedaniel.clothconfig2.gui.entries.AbstractListListEntry;
-import me.shedaniel.clothconfig2.gui.entries.BaseListCell;
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ReferenceProvider;
+import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.BaseListCell;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 

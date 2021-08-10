@@ -3,7 +3,7 @@ package endorh.simple_config.gui;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import me.shedaniel.clothconfig2.gui.entries.TooltipListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.TooltipListEntry;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;

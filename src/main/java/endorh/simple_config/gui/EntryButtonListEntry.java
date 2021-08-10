@@ -2,9 +2,9 @@ package endorh.simple_config.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.core.EntrySetterUtil;
-import me.shedaniel.clothconfig2.api.AbstractConfigEntry;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.gui.entries.TooltipListEntry;
+import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.TooltipListEntry;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;

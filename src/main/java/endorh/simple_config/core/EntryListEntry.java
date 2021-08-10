@@ -2,8 +2,8 @@ package endorh.simple_config.core;
 
 import endorh.simple_config.core.entry.AbstractListEntry;
 import endorh.simple_config.gui.NestedListEntry;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

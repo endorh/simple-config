@@ -279,9 +279,8 @@ public class DemoConfigCategory {
 		          // This is a test entry modified by the above button entry
 		          .add("button_test", list(
 		            number(0), 0, 1, 2, 3, 4, 5, 6, 7))
-		          // You may create config presets, either locally or
-		          //   globally with localPresetSwitcher() and globalPresetSwitcher()
-		          //   respectively
+		          // You may create config presets, either locally or globally with
+		          //   localPresetSwitcher() and globalPresetSwitcher() respectively
 		          // Local presets use paths relative to the current scope
 		          //   while global presets use paths relative to the whole config
 		          //   Global presets cannot affect other configs however, i.e.

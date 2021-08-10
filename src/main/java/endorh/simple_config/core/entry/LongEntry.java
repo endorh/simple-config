@@ -2,10 +2,10 @@ package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import endorh.simple_config.core.IStringKeyEntry;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.impl.builders.LongFieldBuilder;
-import me.shedaniel.clothconfig2.impl.builders.LongSliderBuilder;
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.impl.builders.LongFieldBuilder;
+import endorh.simple_config.clothconfig2.impl.builders.LongSliderBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;

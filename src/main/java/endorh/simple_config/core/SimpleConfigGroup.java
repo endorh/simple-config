@@ -4,10 +4,10 @@ import endorh.simple_config.SimpleConfigMod.Config;
 import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simple_config.core.SimpleConfig.IGUIEntry;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
-import me.shedaniel.clothconfig2.api.ConfigCategory;
-import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.gui.entries.SubCategoryListEntry;
-import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
+import endorh.simple_config.clothconfig2.api.ConfigCategory;
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
+import endorh.simple_config.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
@@ -133,23 +133,23 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 			}
 			TextFormatting format =
 			  I18n.hasKey(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
-			  .setFormatting(TextFormatting.WHITE)
-			  .setHoverEvent(new HoverEvent(
-				 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-				 "simple-config.debug.copy").mergeStyle(TextFormatting.GRAY)))
-			  .setClickEvent(new ClickEvent(
-				 ClickEvent.Action.COPY_TO_CLIPBOARD, title)))
-			).appendString(" ");
-			if (tooltip != null)
-				status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
-				  .setFormatting(TextFormatting.GRAY)
-				  .setHoverEvent(new HoverEvent(
-				    HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-				      "simple-config.debug.copy.help").mergeStyle(TextFormatting.GRAY)))
-				  .setClickEvent(new ClickEvent(
-					 ClickEvent.Action.COPY_TO_CLIPBOARD, tooltip)))
-				).appendString(" ");
+			// status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
+			//   .setFormatting(TextFormatting.WHITE)
+			//   .setHoverEvent(new HoverEvent(
+			// 	 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
+			// 	 "simple-config.debug.copy").mergeStyle(TextFormatting.GRAY)))
+			//   .setClickEvent(new ClickEvent(
+			// 	 ClickEvent.Action.COPY_TO_CLIPBOARD, title)))
+			// ).appendString(" ");
+			// if (tooltip != null)
+			// 	status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
+			// 	  .setFormatting(TextFormatting.GRAY)
+			// 	  .setHoverEvent(new HoverEvent(
+			// 	    HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
+			// 	      "simple-config.debug.copy.help").mergeStyle(TextFormatting.GRAY)))
+			// 	  .setClickEvent(new ClickEvent(
+			// 		 ClickEvent.Action.COPY_TO_CLIPBOARD, tooltip)))
+			// 	).appendString(" ");
 			return new StringTextComponent("").append(status.append(new StringTextComponent(title)).mergeStyle(format));
 		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}

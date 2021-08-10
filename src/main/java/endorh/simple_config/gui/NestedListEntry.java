@@ -2,9 +2,9 @@ package endorh.simple_config.gui;
 
 import com.google.common.collect.Lists;
 import endorh.simple_config.core.EntrySetterUtil;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.ReferenceProvider;
-import me.shedaniel.clothconfig2.gui.entries.AbstractListListEntry;
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ReferenceProvider;
+import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Reimplementation of {@link me.shedaniel.clothconfig2.gui.entries.NestedListListEntry},
+ * Reimplementation of {@link endorh.simple_config.clothconfig2.gui.entries.NestedListListEntry},
  * which not only is marked as internal, but also is not functional, since
  * it passes null as its saveConsumer to its super.
  * @param <T> Type held by the entry

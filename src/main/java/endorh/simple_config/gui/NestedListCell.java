@@ -2,10 +2,10 @@ package endorh.simple_config.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.core.EntrySetterUtil;
-import me.shedaniel.clothconfig2.api.AbstractConfigEntry;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import me.shedaniel.clothconfig2.api.ReferenceProvider;
-import me.shedaniel.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
+import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ReferenceProvider;
+import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Reimplementation of {@link me.shedaniel.clothconfig2.gui.entries.NestedListListEntry.NestedListCell}
+ * Reimplementation of {@link endorh.simple_config.clothconfig2.gui.entries.NestedListListEntry.NestedListCell}
  * for {@link NestedListEntry}
  * @param <T> Value held by the entry
  * @param <Inner> Cell type
