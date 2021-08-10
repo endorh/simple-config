@@ -4,7 +4,8 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
+@OnlyIn(value = Dist.CLIENT)
 public interface GameOptionsHooks {
-   void cloth_setKeysAll(KeyBinding[] var1);
+	void cloth_setKeysAll(KeyBinding[] var1);
 }
+

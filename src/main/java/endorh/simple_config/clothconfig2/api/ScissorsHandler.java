@@ -7,17 +7,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 
-@OnlyIn(Dist.CLIENT)
+@OnlyIn(value = Dist.CLIENT)
 public interface ScissorsHandler {
-   ScissorsHandler INSTANCE = ScissorsHandlerImpl.INSTANCE;
-
-   void clearScissors();
-
-   List<Rectangle> getScissorsAreas();
-
-   void scissor(Rectangle var1);
-
-   void removeLastScissor();
-
-   void applyScissors();
+	ScissorsHandler INSTANCE = ScissorsHandlerImpl.INSTANCE;
+	
+	void clearScissors();
+	
+	List<Rectangle> getScissorsAreas();
+	
+	void scissor(Rectangle var1);
+	
+	void removeLastScissor();
+	
+	void applyScissors();
 }
+

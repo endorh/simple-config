@@ -8,20 +8,30 @@ import net.minecraft.util.text.ITextComponent;
 
 import java.util.Map;
 
-public abstract class AbstractTabbedConfigScreen extends AbstractConfigScreen implements TabbedConfigScreen {
-   private final Map<ITextComponent, ResourceLocation> categoryBackgroundLocation = Maps.newHashMap();
-
-   protected AbstractTabbedConfigScreen(Screen parent, ITextComponent title, ResourceLocation backgroundLocation) {
-      super(parent, title, backgroundLocation);
-   }
-
-   public final void registerCategoryBackground(ITextComponent text, ResourceLocation identifier) {
-      this.categoryBackgroundLocation.put(text, identifier);
-   }
-
-   public ResourceLocation getBackgroundLocation() {
-      ITextComponent selectedCategory = this.getSelectedCategory();
-      return this.categoryBackgroundLocation.containsKey(selectedCategory) ? this.categoryBackgroundLocation.get(selectedCategory)
-                                                                           : super.getBackgroundLocation();
-   }
+public abstract class AbstractTabbedConfigScreen
+  extends AbstractConfigScreen
+  implements TabbedConfigScreen {
+	private final Map<ITextComponent, ResourceLocation> categoryBackgroundLocation =
+	  Maps.newHashMap();
+	
+	protected AbstractTabbedConfigScreen(
+	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation
+	) {
+		super(parent, title, backgroundLocation);
+	}
+	
+	@Override
+	public final void registerCategoryBackground(ITextComponent text, ResourceLocation identifier) {
+		this.categoryBackgroundLocation.put(text, identifier);
+	}
+	
+	@Override
+	public ResourceLocation getBackgroundLocation() {
+		ITextComponent selectedCategory = this.getSelectedCategory();
+		if (this.categoryBackgroundLocation.containsKey(selectedCategory)) {
+			return this.categoryBackgroundLocation.get(selectedCategory);
+		}
+		return super.getBackgroundLocation();
+	}
 }
+

@@ -3,7 +3,8 @@ package endorh.simple_config.clothconfig2.impl;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
+@OnlyIn(value = Dist.CLIENT)
 public interface KeyBindingHooks {
-   void cloth_setId(String var1);
+	void cloth_setId(String var1);
 }
+

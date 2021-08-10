@@ -11,33 +11,28 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@OnlyIn(Dist.CLIENT)
+@OnlyIn(value = Dist.CLIENT)
 public interface ConfigCategory {
-   ITextComponent getCategoryKey();
-
-   /** @deprecated */
-   @Deprecated
-   List<Object> getEntries();
-
-   ConfigCategory addEntry(AbstractConfigListEntry var1);
-
-   ConfigCategory setCategoryBackground(ResourceLocation var1);
-
-   void setBackground(@Nullable ResourceLocation var1);
-
-   @Nullable
-   ResourceLocation getBackground();
-
-   @Nullable
-   Supplier<Optional<ITextProperties[]>> getDescription();
-
-   void setDescription(@Nullable Supplier<Optional<ITextProperties[]>> var1);
-
-   default void setDescription(@Nullable ITextProperties[] description) {
-      this.setDescription(() -> {
-         return Optional.ofNullable(description);
-      });
-   }
-
-   void removeCategory();
+	ITextComponent getCategoryKey();
+	
+	@Deprecated List<Object> getEntries();
+	
+	ConfigCategory addEntry(AbstractConfigListEntry<?> var1);
+	
+	ConfigCategory setCategoryBackground(ResourceLocation var1);
+	
+	void setBackground(@Nullable ResourceLocation var1);
+	
+	@Nullable ResourceLocation getBackground();
+	
+	@Nullable Supplier<Optional<ITextProperties[]>> getDescription();
+	
+	void setDescription(@Nullable Supplier<Optional<ITextProperties[]>> var1);
+	
+	default void setDescription(@Nullable ITextProperties[] description) {
+		this.setDescription(() -> Optional.ofNullable(description));
+	}
+	
+	void removeCategory();
 }
+
