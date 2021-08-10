@@ -3,7 +3,6 @@ package endorh.simple_config.clothconfig2.impl;
 import com.google.common.collect.Lists;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
 import endorh.simple_config.clothconfig2.api.ScissorsScreen;
-import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;

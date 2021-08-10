@@ -51,6 +51,24 @@ public interface IDialogCapableScreen {
 		return !dialogs.isEmpty();
 	}
 	
+	default boolean handleDialogsMouseScrolled(double mouseX, double mouseY, double delta) {
+		final List<AbstractDialog> dialogs = getDialogs();
+		for (AbstractDialog dialog : Lists.reverse(dialogs)) {
+			if (dialog.mouseScrolled(mouseX, mouseY, delta)) return true;
+		}
+		return !dialogs.isEmpty();
+	}
+	
+	default boolean handleDialogsMouseDragged(
+	  double mouseX, double mouseY, int button, double dragX, double dragY
+	) {
+		final List<AbstractDialog> dialogs = getDialogs();
+		for (AbstractDialog dialog : Lists.reverse(dialogs)) {
+			if (dialog.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
+		}
+		return !dialogs.isEmpty();
+	}
+	
 	default boolean handleDialogsKeyPressed(int keyCode, int scanCode, int modifiers) {
 		if (keyCode == 256) return handleDialogsEscapeKey(); // Esc
 		if (keyCode == 258) return handleDialogsChangeFocus(!Screen.hasShiftDown());

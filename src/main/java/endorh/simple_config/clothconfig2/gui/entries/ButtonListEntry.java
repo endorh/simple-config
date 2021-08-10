@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -86,7 +87,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 	@Override public void updateSelected(boolean isSelected) {
 		super.updateSelected(isSelected);
 		if (!isSelected)
-			ButtonListEntry.forceUnFocus(button);
+			WidgetUtils.forceUnFocus(button);
 	}
 	
 	@Override public boolean isEdited() {

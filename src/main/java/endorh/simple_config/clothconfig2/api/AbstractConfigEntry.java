@@ -4,9 +4,10 @@ import com.google.common.collect.Lists;
 import com.ibm.icu.impl.Pair;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.entries.BaseListEntry;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicElementListWidget;
-import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.EditHistory;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -38,7 +39,7 @@ public abstract class AbstractConfigEntry<T>
   extends DynamicElementListWidget.ElementEntry
   implements ReferenceProvider {
 	private static final Logger LOGGER = LogManager.getLogger();
-	private WeakReference<AbstractConfigScreen> screen = new WeakReference<>(null);
+	private @Nullable AbstractConfigScreen screen = null;
 	protected @Nullable BaseListEntry<?, ?, ?> listParent = null;
 	@NotNull private Supplier<T> defaultSupplier = () -> null;
 	@Nullable private Supplier<Optional<ITextComponent>> errorSupplier = null;
@@ -74,7 +75,7 @@ public abstract class AbstractConfigEntry<T>
 	}
 	
 	public void requestReferenceRebuilding() {
-		final AbstractConfigScreen screen = this.screen.get();
+		final AbstractConfigScreen screen = this.screen;
 		if (screen instanceof ReferenceBuildingConfigScreen)
 			((ReferenceBuildingConfigScreen) screen).requestReferenceRebuilding();
 	}
@@ -275,14 +276,14 @@ public abstract class AbstractConfigEntry<T>
 	}
 	
 	@NotNull public final AbstractConfigScreen getConfigScreen() {
-		final AbstractConfigScreen screen = this.screen.get();
+		final AbstractConfigScreen screen = this.screen;
 		if (screen == null)
 			throw new IllegalStateException("Cannot get config screen so early!");
 		return screen;
 	}
 	
 	@Internal public @Nullable final AbstractConfigScreen getConfigScreenOrNull() {
-		return screen.get();
+		return screen;
 	}
 	
 	protected final void addTooltip(@NotNull Tooltip tooltip) {
@@ -307,13 +308,13 @@ public abstract class AbstractConfigEntry<T>
 		if (!isSelected) {
 			final IGuiEventListener listener = getListener();
 			if (listener instanceof Widget && ((Widget) listener).isFocused())
-				forceUnFocus(listener);
+				WidgetUtils.forceUnFocus(listener);
 			setListener(null);
 		}
 	}
 	
-	@Internal public void setScreen(AbstractConfigScreen screen) {
-		this.screen = new WeakReference<>(screen);
+	@Internal public void setScreen(@Nullable AbstractConfigScreen screen) {
+		this.screen = screen;
 	}
 	
 	public abstract boolean isEditable();
@@ -393,16 +394,16 @@ public abstract class AbstractConfigEntry<T>
 	@Override public void claimFocus() {
 		getConfigScreen().setSelectedCategory(getCategory());
 		IExpandable parent = expandableParent.get();
-		LinkedList<AbstractConfigEntry<?>> parents = Lists.newLinkedList();
+		List<AbstractConfigEntry<?>> parents = Lists.newArrayList();
+		parents.add(this);
 		while (parent instanceof AbstractConfigEntry) {
 			final AbstractConfigEntry<?> p = (AbstractConfigEntry<?>) parent;
-			parents.add(0, p);
+			parents.add(p);
 			parent = p.expandableParent.get();
 		}
-		parents.add(this);
-		AbstractConfigEntry<?> p = parents.get(0);
+		AbstractConfigEntry<?> p = parents.get(parents.size() - 1);
 		getParent().setListener(p);
-		for (int i = 1; i < parents.size(); i++) {
+		for (int i = parents.size() - 2; i >= 0; i--) {
 			AbstractConfigEntry<?> n = parents.get(i);
 			p.setListener(n);
 			p = n;
@@ -508,7 +509,7 @@ public abstract class AbstractConfigEntry<T>
 		if (!listeners.isEmpty()) {
 			final IGuiEventListener listener = listeners.get(0);
 			setListener(listener);
-			forceFocus(listener);
+			WidgetUtils.forceFocus(listener);
 		}
 	}
 	
@@ -527,34 +528,6 @@ public abstract class AbstractConfigEntry<T>
 		fill(mStack, x, y + bw, x + bw, maxY - bw, color);
 		fill(mStack, maxX - bw, y + bw, maxX, maxY - bw, color);
 		fill(mStack, x, maxY - bw, maxX, maxY, color);
-	}
-	
-	protected static void forceUnFocus(IGuiEventListener... listeners) {
-		for (IGuiEventListener listener : listeners)
-			forceUnFocus(listener);
-	}
-	
-	protected static void forceUnFocus(IGuiEventListener listener) {
-		if (listener instanceof Widget && !((Widget) listener).isFocused())
-			return;
-		// FIXME when IGuiEventListener gets a `setFocused` method or equivalent
-		for (int i = 0; i < 1000; i++) // Hanging here would be awkward
-			if (!listener.changeFocus(true)) break;
-	}
-	
-	protected static void forceFocus(IGuiEventListener listener) {
-		if (listener instanceof Widget && ((Widget) listener).isFocused())
-			return;
-		forceUnFocus(listener);
-		listener.changeFocus(true);
-	}
-	
-	protected static void forceSetFocus(IGuiEventListener listener, boolean focus) {
-		if (listener instanceof Widget && ((Widget) listener).isFocused() == focus)
-			return;
-		if (focus)
-			forceFocus(listener);
-		else forceUnFocus(listener);
 	}
 	
 	public static class EntryError {

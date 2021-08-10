@@ -2,12 +2,15 @@ package endorh.simple_config.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.clothconfig2.gui.widget.MultiFunctionImageButton;
+import endorh.simple_config.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,6 +19,7 @@ import java.util.List;
 public abstract class AbstractDialog
   extends FocusableGui implements IExtendedDragAwareNestedGuiEventHandler {
 	protected ITextComponent title;
+	protected MultiFunctionImageButton copyTextButton;
 	protected int titleColor = 0xffe0e0e0;
 	protected int borderColor = 0xff909090;
 	protected int subBorderColor = 0xff646464;
@@ -30,21 +34,33 @@ public abstract class AbstractDialog
 	 */
 	protected boolean persistent = false;
 	protected boolean cancelled;
+	protected Icon icon = Icon.EMPTY;
 	
-	protected int x;
-	protected int y;
-	protected int w;
-	protected int h;
+	protected int x, y, w, h;
 	protected FontRenderer font = Minecraft.getInstance().fontRenderer;
 	
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	
-	public AbstractDialog(ITextComponent title, IOverlayCapableScreen screen) {
+	public AbstractDialog(
+	  IOverlayCapableScreen screen, ITextComponent title
+	) {
 		this.title = title;
 		this.overlayScreen = screen;
 		if (!(screen instanceof Screen))
 			throw new IllegalArgumentException("Unknown Screen class: " + screen.getClass().getName());
 		this.screen = (Screen) screen;
+		this.copyTextButton = new MultiFunctionImageButton(
+		  0, 0, 18, 18, SimpleConfigIcons.COPY, ButtonAction.of(this::copyText)
+		  .tooltip(() -> Lists.newArrayList(new TranslationTextComponent("simple-config.ui.copy_dialog"))));
+		listeners.add(copyTextButton);
+	}
+	
+	public void copyText() {
+		Minecraft.getInstance().keyboardListener.setClipboardString(getText());
+	}
+	
+	public String getText() {
+		return title.getString();
 	}
 	
 	public void cancel() { cancel(false); }
@@ -58,6 +74,8 @@ public abstract class AbstractDialog
 		final int height = screen.height;
 		x = width / 2 - w / 2;
 		y = height / 2 - h / 2;
+		copyTextButton.x = x + w - 21;
+		copyTextButton.y = y + 3;
 	}
 	
 	public boolean render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
@@ -72,7 +90,13 @@ public abstract class AbstractDialog
 	public void renderTitle(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		fill(mStack, x + 1, y + 1, x + w - 1, y + 23, backgroundOverlayColor);
 		fill(mStack, x + 1, y + 23, x + w - 1, y + 24, subBorderColor);
-		drawString(mStack, font, title, x + 8, y + 8, titleColor);
+		int tx = x + 8;
+		if (icon != null && icon != Icon.EMPTY) {
+			tx += 18;
+			icon.renderStretch(mStack, x + 2, y + 2, 20, 20);
+		}
+		drawString(mStack, font, title, tx, y + 8, titleColor);
+		copyTextButton.render(mStack, mouseX, mouseY, delta);
 	}
 	
 	public void renderBackground(MatrixStack mStack, int mouseX, int mouseY, float delta) {
@@ -100,18 +124,16 @@ public abstract class AbstractDialog
 	}
 	
 	public boolean escapeKeyPressed() {
-		cancel();
+		if (!persistent) cancel();
 		return true;
 	}
 	
 	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 		return listeners;
 	}
-	
 	@Override public Pair<Integer, IGuiEventListener> getDragged() {
 		return dragged;
 	}
-	
 	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
@@ -119,16 +141,19 @@ public abstract class AbstractDialog
 	public ITextComponent getTitle() {
 		return title;
 	}
-	
 	public void setTitle(ITextComponent title) {
 		this.title = title;
 	}
-	
 	public boolean isPersistent() {
 		return persistent;
 	}
-	
 	public void setPersistent(boolean persistent) {
 		this.persistent = persistent;
+	}
+	public Icon getIcon() {
+		return icon;
+	}
+	public void setIcon(Icon icon) {
+		this.icon = icon;
 	}
 }

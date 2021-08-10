@@ -3,7 +3,6 @@ package endorh.simple_config.core.entry;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.core.TextUtil;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;

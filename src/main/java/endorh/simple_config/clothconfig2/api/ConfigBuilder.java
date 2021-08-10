@@ -1,5 +1,6 @@
 package endorh.simple_config.clothconfig2.api;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simple_config.clothconfig2.impl.ConfigBuilderImpl;
 import endorh.simple_config.clothconfig2.impl.ConfigEntryBuilderImpl;
 import net.minecraft.client.gui.screen.Screen;
@@ -7,7 +8,13 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.config.ModConfig.Type;
+import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @OnlyIn(value = Dist.CLIENT)
@@ -54,9 +61,9 @@ public interface ConfigBuilder {
 		return this.setAlwaysShowTabs(true);
 	}
 	
-	@Deprecated void setGlobalized(boolean globalized);
-	
-	@Deprecated void setGlobalizedExpanded(boolean globalizedExpanded);
+	// @Deprecated void setGlobalized(boolean globalized);
+	//
+	// @Deprecated void setGlobalizedExpanded(boolean globalizedExpanded);
 	
 	boolean isAlwaysShowTabs();
 	
@@ -79,5 +86,21 @@ public interface ConfigBuilder {
 	Screen build();
 	
 	boolean hasTransparentBackground();
+	
+	ConfigBuilder setSnapshotHandler(SnapshotHandler handler);
+	
+	interface SnapshotHandler {
+		CommentedConfig preserve(Type type);
+		void restore(CommentedConfig config, Type type);
+		boolean canSaveRemote();
+		CommentedConfig getLocal(String name, Type type);
+		CompletableFuture<CommentedConfig> getRemote(String name, Type type);
+		Optional<Throwable> saveLocal(String name, Type type, CommentedConfig config);
+		CompletableFuture<Void> saveRemote(String name, Type type, CommentedConfig config);
+		Optional<Throwable> deleteLocal(String name, Type type);
+		CompletableFuture<Void> deleteRemote(String name, Type type);
+		List<String> getLocalSnapshotNames();
+		CompletableFuture<List<String>> getRemoteSnapshotNames();
+	}
 }
 

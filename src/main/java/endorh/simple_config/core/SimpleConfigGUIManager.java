@@ -5,6 +5,7 @@ import endorh.simple_config.SimpleConfigMod.ClientConfig;
 import endorh.simple_config.SimpleConfigMod.ConfigPermission;
 import endorh.simple_config.SimpleConfigMod.ServerConfig;
 import endorh.simple_config.clothconfig2.api.ConfigBuilder;
+import endorh.simple_config.core.SimpleConfig.SnapshotHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -28,20 +29,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.synchronizedMap;
-import static java.util.Collections.synchronizedSet;
 
 /**
  * Handle the creation of config GUIs for the registered mods<br>
- * Mod configs are automatically registered upon building
+ * Mod configs are automatically registered upon building.
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
 public class SimpleConfigGUIManager {
 	// Mod loading is asynchronous
-	protected static final Map<String, Set<SimpleConfig>> modConfigs = synchronizedMap(new HashMap<>());
+	protected static final Map<String, Map<Type, SimpleConfig>> modConfigs = synchronizedMap(new HashMap<>());
 	
 	protected static boolean addButton = false;
-	protected static boolean autoAddButton = false;
+	protected static boolean autoAddedButton = false;
 	
 	/**
 	 * Modify the behaviour that adds a side button to the pause menu
@@ -54,24 +54,24 @@ public class SimpleConfigGUIManager {
 	 */
 	@SuppressWarnings("unused") public void setAddButton(boolean add) {
 		addButton = add;
-		autoAddButton = true;
+		autoAddedButton = true;
 	}
 	
 	/**
 	 * Register a config in the GUI system
 	 */
 	protected static void registerConfig(SimpleConfig config) {
-		if (!autoAddButton)
-			autoAddButton = addButton = true;
+		if (!autoAddedButton)
+			autoAddedButton = addButton = true;
 		final ModLoadingContext context = ModLoadingContext.get();
 		String modId = context.getActiveContainer().getModId();
 		if (!modConfigs.containsKey(modId)) {
-			modConfigs.computeIfAbsent(modId, s -> synchronizedSet(new HashSet<>())).add(config);
+			modConfigs.computeIfAbsent(modId, s -> synchronizedMap(new HashMap<>())).put(config.type, config);
 			context.registerExtensionPoint(
 			  ExtensionPoint.CONFIGGUIFACTORY,
 			  () -> (mc, screen) -> getConfigGUI(modId, screen));
 		} else {
-			modConfigs.get(modId).add(config);
+			modConfigs.get(modId).put(config.type, config);
 		}
 	}
 	
@@ -80,13 +80,26 @@ public class SimpleConfigGUIManager {
 	 * @param parent Parent screen to return to
 	 */
 	public static Screen getConfigGUI(String modId, Screen parent) {
-		Set<SimpleConfig> configs = modConfigs.get(modId);
+		Map<Type, SimpleConfig> configs = modConfigs.get(modId);
 		if (configs == null || configs.isEmpty())
 			throw new IllegalArgumentException(
 			  "There's not any config GUI registered for mod id: \"" + modId + "\"");
+		final Minecraft mc = Minecraft.getInstance();
+		boolean hasPermission =
+		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
+		final List<SimpleConfig> orderedConfigs = configs.values().stream()
+		  .filter(c -> c.type != Type.SERVER || hasPermission)
+		  .sorted(Comparator.comparing(c -> {
+			switch (c.type) {
+				case CLIENT: return 1;
+				case COMMON: return 2;
+				case SERVER: return 4;
+				default: return 3;
+			}
+		})).collect(Collectors.toList());
 		final ConfigBuilder builder = ConfigBuilder.create()
 		  .setParentScreen(parent)
-		  .setSavingRunnable(() -> configs.stream()
+		  .setSavingRunnable(() -> orderedConfigs.stream()
 		    .filter(c -> c.dirty).forEach(c -> {
 			    if (c.anyDirtyRequiresRestart())
 				    c.markGUIRestart();
@@ -96,22 +109,10 @@ public class SimpleConfigGUIManager {
 		  .setTitle(new TranslationTextComponent(
 		    "simple-config.config.title", SimpleConfig.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(new ResourceLocation(
-		  "textures/block/oak_planks.png"));
-		final List<SimpleConfig> orderedConfigs = configs.stream().sorted(Comparator.comparing(c -> {
-			switch (c.type) {
-				case CLIENT: return 1;
-				case COMMON: return 2;
-				case SERVER: return 4;
-				default: return 3;
-			}
-		})).collect(Collectors.toList());
-		final Minecraft mc = Minecraft.getInstance();
-		boolean hasPermission =
-		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
-		for (SimpleConfig config : orderedConfigs) {
-			if (config.type != Type.SERVER || hasPermission)
-				config.buildGUI(builder);
-		}
+		  "textures/block/oak_planks.png"))
+		  .setSnapshotHandler(new SnapshotHandler(configs));
+		for (SimpleConfig config : orderedConfigs)
+			config.buildGUI(builder);
 		return builder.build();
 	}
 	

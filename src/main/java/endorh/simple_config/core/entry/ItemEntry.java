@@ -2,14 +2,12 @@ package endorh.simple_config.core.entry;
 
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
 import endorh.simple_config.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.core.entry.StringEntry.SupplierSuggestionProvider;
-import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.crafting.Ingredient;
@@ -155,7 +153,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	public Optional<AbstractConfigListEntry<Item>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final ComboBoxFieldBuilder<Item> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofItem(), forGui(get()))
-		    .setSuggestionProvider(new SupplierSuggestionProvider<>(this::supplyOptions))
+		    .setSuggestionProvider(new SimpleSortedSuggestionProvider<>(this::supplyOptions))
 			 .setSuggestionMode(false);
 		return Optional.of(decorate(entryBuilder).build());
 	}

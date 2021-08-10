@@ -8,6 +8,7 @@ import endorh.simple_config.SimpleConfigMod.KeyBindings;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry.EntryError;
 import endorh.simple_config.clothconfig2.gui.widget.*;
+import endorh.simple_config.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget.ISearchHandler;
 import endorh.simple_config.clothconfig2.impl.EasingMethod;
 import endorh.simple_config.clothconfig2.math.Point;
@@ -15,23 +16,27 @@ import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -39,24 +44,24 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.ref.WeakReference;
+import java.nio.file.Path;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static endorh.simple_config.core.SimpleConfigTextUtil.splitTtc;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ClothConfigScreen
   extends AbstractTabbedConfigScreen implements ISearchHandler {
-	private final ScrollingContainer tabsScroller = new ScrollingContainer() {
+	private final ScrollingHandler tabsScroller = new ScrollingHandler() {
 		@Override public Rectangle getBounds() {
 			return new Rectangle(0, 0, 1, width - 40);
 		}
 		
 		@Override public int getMaxScrollHeight() {
-			return (int) getTabsMaximumScrolled();
+			return (int) tabsMaximumScrolled;
 		}
 		
 		@Override public void updatePosition(float delta) {
@@ -64,15 +69,17 @@ public class ClothConfigScreen
 			scrollAmount = clamp(scrollAmount, 0.0);
 		}
 	};
+	public Map<ConfigCategory, ListWidget<AbstractConfigEntry<?>>> listWidgets = new HashMap<>();
 	public ListWidget<AbstractConfigEntry<?>> listWidget;
-	public ListWidget<AbstractConfigEntry<?>> resizingListWidget = null;
-	private final List<Pair<ConfigCategory, Integer>> tabs;
 	protected TintedButton quitButton;
 	protected TintedButton saveButton;
+	protected MultiFunctionImageButton serverButton;
+	protected PresetPickerWidget presetPickerWidget;
 	protected Widget buttonLeftTab;
 	protected Widget buttonRightTab;
 	protected MultiFunctionImageButton undoButton;
 	protected MultiFunctionImageButton redoButton;
+	protected MultiFunctionImageButton editFileButton;
 	protected Rectangle tabsBounds;
 	protected Rectangle tabsLeftBounds;
 	protected Rectangle tabsRightBounds;
@@ -81,30 +88,30 @@ public class ClothConfigScreen
 	protected TooltipSearchBarWidget searchBar;
 	protected ErrorDisplayWidget errorDisplayWidget;
 	
+	protected ConfigCategory lastClientCategory = null;
+	protected ConfigCategory lastServerCategory = null;
+	
 	@Internal public ClothConfigScreen(
-	  Screen parent, ITextComponent title, Map<String, ConfigCategory> categories,
-	  ResourceLocation backgroundLocation
+	  Screen parent, ITextComponent title, Collection<ConfigCategory> categories,
+	  Collection<ConfigCategory> serverCategories, ResourceLocation backgroundLocation
 	) {
-		super(parent, title, backgroundLocation, categories);
-		categories.forEach((categoryName, category) -> {
+		super(parent, title, backgroundLocation, categories, serverCategories);
+		for (ConfigCategory category : sortedCategories) {
 			for (AbstractConfigEntry<?> entry : category.getEntries()) {
 				entry.setCategory(category);
 				entry.setScreen(this);
 			}
-			if (category.getBackground() != null)
-				registerCategoryBackground(categoryName, category.getBackground());
-		});
-		tabs = sortedCategories.stream().map(c -> Pair.of(
-		  c, Minecraft.getInstance().fontRenderer.getStringPropertyWidth(c.getTitle()) + 8
-		)).collect(Collectors.toList());
-		this.categoryMap = categories;
-		final WeakReference<ClothConfigScreen> weakSelf = new WeakReference<>(this);
-		errorDisplayWidget = new ErrorDisplayWidget(this, 48, 6);
-		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, weakSelf::get);
+		}
+		errorDisplayWidget = new ErrorDisplayWidget(this, 94, 6);
+		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
+		presetPickerWidget = new PresetPickerWidget(this, 0, 0, 70);
+		if (isSelectedCategoryServer())
+			lastServerCategory = selectedCategory;
+		else lastClientCategory = selectedCategory;
 	}
-
-	protected static final Pattern COLON = Pattern.compile(":");
-	protected static final Pattern DOT = Pattern.compile("\\.");
+	
+	protected static final Pattern COLON = Pattern.compile(":" );
+	protected static final Pattern DOT = Pattern.compile("\\." );
 	
 	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
 		final String[] sp = COLON.split(path, 2);
@@ -124,12 +131,8 @@ public class ClothConfigScreen
 	}
 	
 	@Override public List<AbstractConfigEntry<?>> getEntries() {
-		return categoryMap.values().stream().flatMap(c -> c.getEntries().stream())
+		return sortedCategories.stream().flatMap(c -> c.getEntries().stream())
 		  .collect(Collectors.toList());
-	}
-	
-	@Override public ConfigCategory getSelectedCategory() {
-		return sortedCategories.get(selectedCategoryIndex);
 	}
 	
 	@Override
@@ -145,27 +148,25 @@ public class ClothConfigScreen
 	
 	protected void init() {
 		super.init();
-		tabButtons.clear();
 		searchBar.w = width;
-		if (resizingListWidget == null) {
-			this.listWidget = new ListWidget<>(
-			  this, minecraft, width, height, isShowingTabs() ? 50 : 24,
-			  height - 28, getBackgroundLocation());
-			if (categoryMap.size() > selectedCategoryIndex)
-				this.listWidget.getEntries().addAll(sortedCategories.get(selectedCategoryIndex).getEntries());
-		} else {
-			listWidget = resizingListWidget;
-			listWidget.resize(width, height, isShowingTabs()? 50 : 24, height - 28);
-			resizingListWidget = null;
-		}
+		listWidget = listWidgets.computeIfAbsent(
+		  selectedCategory, c -> {
+			  final ListWidget<AbstractConfigEntry<?>> w =
+				 new ListWidget<>(
+					this, minecraft, width, height, isShowingTabs() ? 50 : 24,
+					height - 28, getBackgroundLocation());
+			  w.getEntries().addAll(c.getEntries());
+			  return w;
+		  });
+		listWidget.resize(width, height, isShowingTabs()? 50 : 24, height - 28);
 		children.add(listWidget);
 		int buttonWidths = Math.min(200, (width - 50 - 12) / 3);
 		quitButton =
 		  new TintedButton(
 			 width / 2 - buttonWidths - 3, height - 24, buttonWidths, 20,
 			 isEdited() ? new TranslationTextComponent(
-				"text.cloth-config.cancel_discard")
-			            : new TranslationTextComponent("gui.cancel"),
+				"text.cloth-config.cancel_discard" )
+			            : DialogTexts.GUI_CANCEL,
 			 widget -> quit());
 		// quitButton.setTintColor(0x80BD4242);
 		addButton(quitButton);
@@ -186,8 +187,8 @@ public class ClothConfigScreen
 				}
 				active = isEdited() && !hasErrors;
 				setMessage(
-				  hasErrors ? new TranslationTextComponent("text.cloth-config.error_cannot_save")
-				            : new TranslationTextComponent("text.cloth-config.save_and_done"));
+				  hasErrors ? new TranslationTextComponent("text.cloth-config.error_cannot_save" )
+				            : new TranslationTextComponent("text.cloth-config.save_and_done" ));
 				super.render(matrices, mouseX, mouseY, delta);
 			}
 		};
@@ -198,94 +199,103 @@ public class ClothConfigScreen
 			tabsBounds = new Rectangle(0, 24, width, 24);
 			tabsLeftBounds = new Rectangle(0, 24, 18, 24);
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
-			buttonLeftTab = new Button(4, 25, 12, 18, NarratorChatListener.EMPTY,
-			                                button -> tabsScroller.scrollTo(0.0, true)) {
-				
-				public void renderButton(
-				  @NotNull MatrixStack matrices, int mouseX, int mouseY, float delta
-				) {
-					minecraft.getTextureManager().bindTexture(AbstractConfigScreen.CONFIG_TEX);
-					RenderSystem.color4f(1.0f, 1.0f, 1.0f, alpha);
-					int int_3 = getYImage(isHovered());
-					RenderSystem.enableBlend();
-					RenderSystem.blendFuncSeparate(770, 771, 0, 1);
-					RenderSystem.blendFunc(770, 771);
-					blit(matrices, x, y, 12, 18 * int_3, width, height);
-				}
-			};
+			buttonLeftTab = new MultiFunctionImageButton(
+			  4, 27, 12, 18, SimpleConfigIcons.LEFT_TAB,
+			  ButtonAction.of(() -> tabsScroller.offset(-48, true))
+				 .active(() -> tabsScroller.scrollAmount > 0.0));
 			children.add(buttonLeftTab);
-			int j = 0;
-			for (Pair<ConfigCategory, Integer> tab : tabs) {
+			tabButtons.clear();
+			int ww = 0;
+			for (ConfigCategory cat : (isSelectedCategoryServer() ? sortedServerCategories
+			                                                      : sortedClientCategories)) {
+				final int w = font.getStringPropertyWidth(cat.getTitle());
+				ww += w + 2;
 				tabButtons.add(new ClothConfigTabButton(
-				  this, j, -100, 26, tab.getValue(), 20, tab.getKey().getTitle(),
-				  categoryMap.get(tab.getKey().getName()).getDescription()));
-				++j;
+				  this, cat, -100, 26, w + 8,
+				  20, cat.getTitle(), cat.getDescription()));
 			}
+			tabsMaximumScrolled = ww;
 			children.addAll(tabButtons);
-			buttonRightTab = new Button(width - 16, 25, 12, 18, NarratorChatListener.EMPTY,
-			                                 button -> tabsScroller.scrollTo(
-			                                   tabsScroller.getMaxScroll(), true)) {
-				
-				public void renderButton(
-				  @NotNull MatrixStack matrices, int mouseX, int mouseY, float delta
-				) {
-					minecraft.getTextureManager()
-					  .bindTexture(AbstractConfigScreen.CONFIG_TEX);
-					RenderSystem.color4f(1.0f, 1.0f, 1.0f, alpha);
-					int int_3 = getYImage(isHovered());
-					RenderSystem.enableBlend();
-					RenderSystem.blendFuncSeparate(770, 771, 0, 1);
-					RenderSystem.blendFunc(770, 771);
-					blit(matrices, x, y, 0, 18 * int_3, width, height);
-				}
-			};
+			buttonRightTab = new MultiFunctionImageButton(
+			  width - 16, 27, 12, 18, SimpleConfigIcons.RIGHT_TAB,
+			  ButtonAction.of(() -> tabsScroller.offset(48, true))
+				 .active(
+					() -> tabsScroller.scrollAmount < tabsMaximumScrolled - (double) width + 40.0));
 			children.add(buttonRightTab);
-			addListener(searchBar);
-		} else {
-			tabsLeftBounds = tabsRightBounds = new Rectangle();
-			tabsBounds = tabsRightBounds;
-		}
+		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
+		addListener(searchBar);
 		addListener(errorDisplayWidget);
 		undoButton = new MultiFunctionImageButton(
-		  2, 2, 20, 20, 80, 128, CONFIG_TEX, (w, b) -> {
-			  if (b == 0) {
-				  undo();
-				  setListener(listWidget);
-			  }
-			  return true;
-		  });
-		undoButton.setActivePredicate(w -> history.canUndo(this));
+		  48, 2, 20, 20, SimpleConfigIcons.UNDO, ButtonAction.of(() -> {
+			undo();
+			setListener(listWidget);
+		}).active(() -> history.canUndo(this)));
 		addButton(undoButton);
 		redoButton = new MultiFunctionImageButton(
-		  22, 2, 20, 20, 100, 128, CONFIG_TEX, (w, b) -> {
-			if (b == 0) {
-				  redo();
-				  setListener(listWidget);
-			  }
-			return true;
-		});
-		redoButton.setActivePredicate(w -> history.canRedo(this));
+		  68, 2, 20, 20, SimpleConfigIcons.REDO, ButtonAction.of(() -> {
+			redo();
+			setListener(listWidget);
+		}).active(() -> history.canRedo(this)));
 		addButton(redoButton);
+		editFileButton = new MultiFunctionImageButton(
+		  24, 2, 20, 20, SimpleConfigIcons.EDIT_FILE, ButtonAction.of(
+			 () -> selectedCategory.getContainingFile().ifPresent(
+			   f -> addDialog(new EditConfigFileDialog(this, f.toAbsolutePath())))
+		).active(() -> selectedCategory.getContainingFile().isPresent())
+		  .tooltip(() -> Lists.newArrayList(new TranslationTextComponent(
+			 "simple-config.file.open"))));
+		addButton(editFileButton);
+		if (hasClient() && hasServer()) {
+			serverButton = new MultiFunctionImageButton(
+			  width - 24, 26, 20, 20,
+			  isSelectedCategoryServer() ? SimpleConfigIcons.CLIENT : SimpleConfigIcons.SERVER,
+			  ButtonAction.of(() -> {
+				  if (isSelectedCategoryServer() && hasClient())
+					  setSelectedCategory(
+						 lastClientCategory != null ? lastClientCategory : sortedClientCategories.get(0));
+				  else if (!isSelectedCategoryServer() && hasServer())
+					  setSelectedCategory(
+						 lastServerCategory != null ? lastServerCategory : sortedServerCategories.get(0));
+			  }).active(() -> isSelectedCategoryServer() ? hasClient() : hasServer())
+			    .tooltip(() -> Lists.newArrayList(
+					new TranslationTextComponent(
+					  "simple-config.ui.switch."
+					  + (isSelectedCategoryServer()? "client" : "server")))));
+			children.add(serverButton);
+			tabsMaximumScrolled -= 24;
+			buttonRightTab.x -= 24;
+			tabsBounds = tabsBounds.grow(0, 0, -24, 0);
+			tabsRightBounds = tabsRightBounds.grow(-24, 0, -24, 0);
+		}
+		presetPickerWidget.x = width * 2 / 3;
+		presetPickerWidget.y = 2;
+		presetPickerWidget.w = width - presetPickerWidget.x - 2;
+		addListener(presetPickerWidget);
 		Optional.ofNullable(afterInitConsumer).ifPresent(consumer -> consumer.accept(this));
 	}
 	
 	@Override protected boolean canSave() {
 		return isEdited() && sortedCategories.stream().anyMatch(
-		  c -> c.getEntries().stream().anyMatch(e -> e.hasErrors()));
+		  c -> c.getEntries().stream().anyMatch(INavigableTarget::hasErrors));
 	}
 	
-	@Override public void setSelectedCategory(int index) {
-		if (selectedCategoryIndex != index) {
+	@Override public void setSelectedCategory(ConfigCategory category) {
+		if (selectedCategory != category) {
 			getHistory().saveState(this);
-			super.setSelectedCategory(index);
+			if (isSelectedCategoryServer())
+				lastServerCategory = selectedCategory;
+			else lastClientCategory = selectedCategory;
+			super.setSelectedCategory(category);
+			final int index = getTabbedCategories().indexOf(category);
 			int x = 0;
 			for (int i = 0; i < index; i++)
 				x += tabButtons.get(i).getWidth() + 2;
 			x += tabButtons.get(index).getWidth() / 2;
 			x -= tabsScroller.getBounds().width / 2;
-			tabsScroller.scrollTo(x, true, 250);
+			tabsScroller.scrollTo(x, true, 250L);
+			init(Minecraft.getInstance(), width, height);
+			searchBar.refresh();
 			if (searchBar.isExpanded()) {
-				searchBar.refresh();
 				setListener(searchBar);
 			}
 		}
@@ -302,9 +312,8 @@ public class ClothConfigScreen
 	}
 	
 	@Override protected void recomputeFocus() {
-		if (searchBar.isExpanded() && dialogs.isEmpty()) {
+		if (searchBar.isExpanded() && dialogs.isEmpty())
 			setListener(searchBar);
-		}
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -346,70 +355,7 @@ public class ClothConfigScreen
 			redo();
 			return true;
 		}
-		// if (Screen.hasControlDown()) {
-		// 	if (KeyBindings.SEARCH.matchesKey(keyCode, scanCode)) { // Ctrl + F
-		// 		if (!searchBar.isExpanded())
-		// 			searchBar.open();
-		// 		setListener(searchBar);
-		// 		Minecraft.getInstance().getSoundHandler().play(
-		// 		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-		// 		return true;
-		// 	} else if (KeyBindings.UNDO.matchesKey(keyCode, scanCode)) { // Ctrl + Z
-		// 		if (getHistory().canUndo(this))
-		// 			Minecraft.getInstance().getSoundHandler().play(
-		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-		// 		undo();
-		// 		return true;
-		// 	} else if (KeyBindings.REDO.matchesKey(keyCode, scanCode)) { // Ctrl + Y
-		// 		if (getHistory().canRedo(this))
-		// 			Minecraft.getInstance().getSoundHandler().play(
-		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-		// 		redo();
-		// 		return true;
-		// 	}
-			// switch (keyCode) {
-			// 	case 89: // Ctrl + F
-			// 		if (!searchBar.isExpanded())
-			// 			searchBar.open();
-			// 		setListener(searchBar);
-			// 		Minecraft.getInstance().getSoundHandler().play(
-			// 		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-			// 		return true;
-			// 	case 47: // Ctrl + Z
-			// 		if (getHistory().canUndo(this))
-			// 			Minecraft.getInstance().getSoundHandler().play(
-			// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-			// 		undo();
-			// 		return true;
-			// 	case 84: // Ctrl + Y
-			// 		if (getHistory().canRedo(this))
-			// 			Minecraft.getInstance().getSoundHandler().play(
-			// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-			// 		redo();
-			// 		return true;
-			// }
-		// }
 		return false;
-	}
-	
-	@Override public void resize(@NotNull Minecraft mc, int width, int height) {
-		resizingListWidget = listWidget;
-		super.resize(mc, width, height);
-		resizingListWidget = null;
-	}
-	
-	public double getTabsMaximumScrolled() {
-		if (tabsMaximumScrolled == -1.0) {
-			int[] i = new int[]{0};
-			for (Pair<ConfigCategory, Integer> pair : tabs)
-				i[0] = i[0] + (pair.getValue() + 2);
-			tabsMaximumScrolled = i[0];
-		}
-		return tabsMaximumScrolled + 6.0;
-	}
-	
-	public void resetTabsMaximumScrolled() {
-		tabsMaximumScrolled = -1.0;
 	}
 	
 	@Override
@@ -428,9 +374,6 @@ public class ClothConfigScreen
 				tabButton.x = xx;
 				xx += tabButton.getWidth() + 2;
 			}
-			buttonLeftTab.active = tabsScroller.scrollAmount > 0.0;
-			buttonRightTab.active = tabsScroller.scrollAmount <
-			                             getTabsMaximumScrolled() - (double) width + 40.0;
 		}
 		if (isTransparentBackground()) {
 			fillGradient(mStack, 0, 0, width, height, 0xa0101010, 0xb0101010);
@@ -445,7 +388,8 @@ public class ClothConfigScreen
 		if (isShowingTabs()) {
 			ClothConfigScreen.drawCenteredString(
 			  mStack, minecraft.fontRenderer, title, width / 2, 8, 0xffffffff);
-			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
+			Rectangle r =
+			  new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
 			ScissorsHandler.INSTANCE.scissor(r);
 			if (isTransparentBackground()) {
 				fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
@@ -457,14 +401,19 @@ public class ClothConfigScreen
 			ScissorsHandler.INSTANCE.removeLastScissor();
 			buttonLeftTab.render(mStack, smX, smY, delta);
 			buttonRightTab.render(mStack, smX, smY, delta);
+			if (hasClient() && hasServer())
+				serverButton.render(mStack, mouseX, mouseY, delta);
 		} else {
 			ClothConfigScreen.drawCenteredString(
 			  mStack, minecraft.fontRenderer, title, width / 2, 8, 0xffffffff);
 		}
+		editFileButton.render(mStack, mouseX, mouseY, delta);
 		errorDisplayWidget.render(mStack, smX, smY);
-		searchBar.render(mStack, hasDialog? -1 : mouseX, hasDialog? -1 : mouseY, delta);
+		searchBar.render(mStack, hasDialog ? -1 : mouseX, hasDialog ? -1 : mouseY, delta);
 		if (listWidget.isScrollingNow())
-			removeTooltips(new Rectangle(listWidget.left, listWidget.top, listWidget.width, listWidget.height));
+			removeTooltips(
+			  new Rectangle(listWidget.left, listWidget.top, listWidget.width, listWidget.height));
+		presetPickerWidget.render(mStack, mouseX, mouseY, delta);
 		super.render(mStack, mouseX, mouseY, delta);
 	}
 	
@@ -476,7 +425,7 @@ public class ClothConfigScreen
 			 e -> entries.indexOf(e.getEntry()), EntryError::getSource, (a, b) -> a));
 		errors.remove(-1); // There shouldn't be any outside of allEntries
 		AbstractConfigEntry<?> entry = listWidget.getSelectedEntry();
-		int index = entry == null ? forwards? -1 : entries.size() : entries.indexOf(entry);
+		int index = entry == null ? forwards ? -1 : entries.size() : entries.indexOf(entry);
 		if (!errors.isEmpty()) {
 			Comparator<Integer> order = Comparator.naturalOrder();
 			if (!forwards) order = order.reversed();
@@ -486,8 +435,9 @@ public class ClothConfigScreen
 			errors.get(next).onNavigate();
 		} else {
 			int s = sortedCategories.size();
+			final int selectedIndex = sortedCategories.indexOf(selectedCategory);
 			Function<Integer, Integer> step = forwards ? j -> (j + 1) % s : j -> (j - 1 + s) % s;
-			for (int i = step.apply(selectedCategoryIndex); i != selectedCategoryIndex; i = step.apply(i)) {
+			for (int i = step.apply(selectedIndex); i != selectedIndex; i = step.apply(i)) {
 				ConfigCategory cat = sortedCategories.get(i);
 				final List<EntryError> catErrors = cat.getErrors();
 				if (!catErrors.isEmpty()) {
@@ -499,7 +449,7 @@ public class ClothConfigScreen
 		}
 	}
 	
-	@SuppressWarnings("SameParameterValue") private void drawTabsShades(
+	@SuppressWarnings("SameParameterValue" ) private void drawTabsShades(
 	  MatrixStack mStack, int lightColor, int darkColor
 	) {
 		drawTabsShades(mStack.getLast().getMatrix(), lightColor, darkColor);
@@ -513,34 +463,20 @@ public class ClothConfigScreen
 		RenderSystem.disableTexture();
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder buffer = tessellator.getBuffer();
+		// @formatter:off
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(
-		  matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMinY() + 4),
-		  0.0f).tex(0.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
-		buffer.pos(
-		  matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMinY() + 4),
-		  0.0f).tex(1.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
-		buffer.pos(
-			 matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMinY(), 0.0f)
-		  .tex(1.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
-		buffer.pos(
-			 matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMinY(), 0.0f)
-		  .tex(0.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMinY() + 4), 0.0f).tex(0.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMinY() + 4), 0.0f).tex(1.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMinY(), 0.0f).tex(1.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMinY(), 0.0f).tex(0.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
 		tessellator.draw();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(
-			 matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMaxY(), 0.0f)
-		  .tex(0.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
-		buffer.pos(
-			 matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMaxY(), 0.0f)
-		  .tex(1.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
-		buffer.pos(
-		  matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMaxY() - 4),
-		  0.0f).tex(1.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
-		buffer.pos(
-		  matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMaxY() - 4),
-		  0.0f).tex(0.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMaxY(), 0.0f).tex(0.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMaxY(), 0.0f).tex(1.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMaxY() - 4), 0.0f).tex(1.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
+		buffer.pos(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMaxY() - 4), 0.0f).tex(0.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
 		tessellator.draw();
+		// @formatter:on
 		RenderSystem.enableTexture();
 		RenderSystem.shadeModel(7424);
 		RenderSystem.enableAlphaTest();
@@ -619,15 +555,12 @@ public class ClothConfigScreen
 				duration = 40L;
 			} else if (hasCurrent && target != null) {
 				timePast = System.currentTimeMillis() - start;
-				currentX = (int) ScrollingContainer.ease(
-				  currentX, target.x, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				currentY = (int) ScrollingContainer.ease(
-				  currentY, target.y, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				currentWidth = (int) ScrollingContainer.ease(
-				  currentWidth, target.width, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				currentHeight = (int) ScrollingContainer.ease(
-				  currentHeight, target.height, Math.min(
-				    (double) timePast / (double) duration * (double) delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				// @formatter:off
+				currentX = (int) ScrollingHandler.ease(currentX, target.x, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				currentY = (int) ScrollingHandler.ease(currentY, target.y, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				currentWidth = (int) ScrollingHandler.ease(currentWidth, target.width, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				currentHeight = (int) ScrollingHandler.ease(currentHeight, target.height, Math.min((double) timePast / (double) duration * (double) delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				// @formatter:on
 			}
 		}
 		
@@ -657,22 +590,20 @@ public class ClothConfigScreen
 		  Matrix4f matrix4f, BufferBuilder bufferBuilder, double xStart, double yStart, double xEnd,
 		  double yEnd, int i, int j, int k
 		) {
-			float f = (float) (j >> 24 & 0xFF) / 255.0f;
-			float g = (float) (j >> 16 & 0xFF) / 255.0f;
-			float h = (float) (j >> 8 & 0xFF) / 255.0f;
-			float l = (float) (j & 0xFF) / 255.0f;
-			float m = (float) (k >> 24 & 0xFF) / 255.0f;
-			float n = (float) (k >> 16 & 0xFF) / 255.0f;
-			float o = (float) (k >> 8 & 0xFF) / 255.0f;
-			float p = (float) (k & 0xFF) / 255.0f;
-			bufferBuilder.pos(matrix4f, (float) xEnd, (float) yStart, (float) i).color(g, h, l, f)
-			  .endVertex();
-			bufferBuilder.pos(matrix4f, (float) xStart, (float) yStart, (float) i).color(g, h, l, f)
-			  .endVertex();
-			bufferBuilder.pos(matrix4f, (float) xStart, (float) yEnd, (float) i).color(n, o, p, m)
-			  .endVertex();
-			bufferBuilder.pos(matrix4f, (float) xEnd, (float) yEnd, (float) i).color(n, o, p, m)
-			  .endVertex();
+			float f = (float) (j >> 24 & 0xFF) / 255F;
+			float g = (float) (j >> 16 & 0xFF) / 255F;
+			float h = (float) (j >> 8 & 0xFF) / 255F;
+			float l = (float) (j & 0xFF) / 255F;
+			float m = (float) (k >> 24 & 0xFF) / 255F;
+			float n = (float) (k >> 16 & 0xFF) / 255F;
+			float o = (float) (k >> 8 & 0xFF) / 255F;
+			float p = (float) (k & 0xFF) / 255F;
+			// @formatter:off
+			bufferBuilder.pos(matrix4f, (float) xEnd, (float) yStart, (float) i).color(g, h, l, f).endVertex();
+			bufferBuilder.pos(matrix4f, (float) xStart, (float) yStart, (float) i).color(g, h, l, f).endVertex();
+			bufferBuilder.pos(matrix4f, (float) xStart, (float) yEnd, (float) i).color(n, o, p, m).endVertex();
+			bufferBuilder.pos(matrix4f, (float) xEnd, (float) yEnd, (float) i).color(n, o, p, m).endVertex();
+			// @formatter:on
 		}
 		
 		@Override
@@ -721,24 +652,21 @@ public class ClothConfigScreen
 	
 	@Override public Pair<Integer, Integer> query(Pattern query) {
 		final Pair<Integer, Integer> result = listWidget.search(query);
-		final ArrayList<String> names = new ArrayList<>(categoryMap.keySet());
-		final String name = names.get(selectedCategoryIndex);
-		final Map<String, Integer> search = categoryMap.entrySet().stream()
-		  .filter(p -> !p.getKey().equals(name)).collect(Collectors.toMap(
-		    Entry::getKey,
-			 p -> (int) p.getValue().getEntries().stream().mapToLong(e -> e.search(query).size()).sum()));
-		for (ClothConfigTabButton tabButton : tabButtons) {
-			if (tabButton.index >= 0 && tabButton.index < names.size()) {
-				int count = search.getOrDefault(names.get(tabButton.index), 0);
-				tabButton.setTintColor(count > 0? 0x80BDBD42 : 0x00000000);
-			}
-		}
+		final Map<ConfigCategory, Long> searches =
+		  sortedCategories.stream().filter(p -> p != selectedCategory)
+			 .collect(Collectors.toMap(c -> c, c -> c.getEntries().stream()
+				.mapToLong(e -> e.search(query).size()).sum()));
+		for (ClothConfigTabButton button : tabButtons)
+			button.setTintColor(searches.getOrDefault(button.category, 0L) > 0 ? 0x80BDBD42 : 0);
 		return result;
 	}
 	
-	@SuppressWarnings("RegExpUnexpectedAnchor") protected static final Pattern NO_MATCH = Pattern.compile("$^");
+	@SuppressWarnings("RegExpUnexpectedAnchor" ) protected static final Pattern NO_MATCH =
+	  Pattern.compile("$^" );
+	
 	@Override public void dismissQuery() {
 		listWidget.search(NO_MATCH);
+		tabButtons.forEach(b -> b.setTintColor(0));
 	}
 	
 	@Override public void selectMatch(int idx) {
@@ -746,22 +674,25 @@ public class ClothConfigScreen
 	}
 	
 	public static class TooltipSearchBarWidget extends SearchBarWidget {
-		protected static ITextComponent[] TOOLTIP_SEARCH_TOOLTIP = new ITextComponent[] {
-		  new TranslationTextComponent("simple-config.ui.search.tooltip"),
-		  new TranslationTextComponent("modifier.cloth-config.alt", "T").mergeStyle(TextFormatting.GRAY)};
+		protected static ITextComponent[] TOOLTIP_SEARCH_TOOLTIP = new ITextComponent[]{
+		  new TranslationTextComponent("simple-config.ui.search.tooltip" ),
+		  new TranslationTextComponent("modifier.cloth-config.alt", "T" ).mergeStyle(
+			 TextFormatting.GRAY)};
 		
 		protected ToggleImageButton tooltipButton;
 		protected boolean searchTooltips = true;
 		
 		public TooltipSearchBarWidget(
-		  ISearchHandler handler, int x, int y, int w, Supplier<IOverlayCapableScreen> screen
-		) { this(handler, x, y, w, 24, screen); }
+		  ISearchHandler handler, int x, int y, int w, IOverlayCapableScreen screen
+		) {this(handler, x, y, w, 24, screen);}
 		
 		public TooltipSearchBarWidget(
-		  ISearchHandler handler, int x, int y, int w, int h, Supplier<IOverlayCapableScreen> screen
+		  ISearchHandler handler, int x, int y, int w, int h, IOverlayCapableScreen screen
 		) {
 			super(handler, x, y, w, h, screen);
-			tooltipButton = new ToggleImageButton(searchTooltips, 0, 0, 18, 18, 202, 188, CONFIG_TEX, b -> updateModifiers());
+			tooltipButton =
+			  new ToggleImageButton(searchTooltips, 0, 0, 18, 18, SimpleConfigIcons.SEARCH_TOOLTIPS,
+			                        b -> updateModifiers());
 			expandedListeners.add(tooltipButton);
 			regexListeners.add(tooltipButton);
 		}
@@ -777,27 +708,22 @@ public class ClothConfigScreen
 			return super.getTooltip(mouseX, mouseY);
 		}
 		
-		@Override public boolean renderOverlay(
-		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
-		) {
+		@Override
+		protected void positionExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 			x += 18;
 			w -= 18;
-			final boolean r = super.renderOverlay(mStack, area, mouseX, mouseY, delta);
+			super.positionExpanded(mStack, mouseX, mouseY, delta);
 			x -= 18;
 			w += 18;
-			if (!r) return false;
-			tooltipButton.x = 4;
+			close.x = x + 2;
+			tooltipButton.x = 24;
 			tooltipButton.y = y + 3;
-			tooltipButton.render(mStack, mouseX, mouseY, delta);
-			return true;
 		}
 		
-		@Override protected void drawBackground(MatrixStack mStack, int mouseX, int mouseY, float delta) {
-			x -= 18;
-			w += 18;
-			super.drawBackground(mStack, mouseX, mouseY, delta);
-			x += 18;
-			w -= 18;
+		@Override
+		protected void renderExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+			super.renderExpanded(mStack, mouseX, mouseY, delta);
+			tooltipButton.render(mStack, mouseX, mouseY, delta);
 		}
 		
 		@Override public boolean charTyped(char codePoint, int modifiers) {
@@ -832,12 +758,13 @@ public class ClothConfigScreen
 	public static class ErrorDisplayWidget extends AbstractGui implements IGuiEventListener {
 		protected ClothConfigScreen screen;
 		protected int x, y, w, h;
+		
 		public ErrorDisplayWidget(ClothConfigScreen screen, int x, int y) {
 			this.screen = screen;
 			this.x = x;
 			this.y = y;
-			this.w = 20;
-			this.h = 14;
+			w = 20;
+			h = 14;
 		}
 		
 		@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -851,7 +778,7 @@ public class ClothConfigScreen
 			FontRenderer font = mc.fontRenderer;
 			if (screen.isEditable()) {
 				List<ITextComponent> errors = Lists.newArrayList();
-				for (ConfigCategory cat : screen.sortedCategories)
+				for (ConfigCategory cat : screen.sortedClientCategories)
 					cat.getErrors().forEach(e -> errors.add(e.getError()));
 				if (errors.size() > 0) {
 					mc.getTextureManager().bindTexture(CONFIG_TEX);
@@ -859,12 +786,11 @@ public class ClothConfigScreen
 					String text =
 					  "\u00a7c" +
 					  (errors.size() == 1 ? errors.get(0).copyRaw().getString() : I18n.format(
-						 "text.cloth-config.multi_error"));
+						 "text.cloth-config.multi_error" ));
 					w = 12 + font.getStringWidth(text);
-					if (screen.isTransparentBackground()) {
-						Objects.requireNonNull(font);
-						fillGradient(mStack, x, y, x + w, y + h, 0xA0000000, 0xA0000000);
-					}
+					int bgColor = 0xBD000000;
+					Objects.requireNonNull(font);
+					fillGradient(mStack, x, y, x + w, y + h, 0xA0000000, 0xA0000000);
 					blit(mStack, x + 2, y + 1, 24, 36, 3, 11);
 					ClothConfigScreen.drawString(
 					  mStack, font, text, x + 10, y + 3, 0xffffffff);
@@ -881,7 +807,7 @@ public class ClothConfigScreen
 			} else {
 				mc.getTextureManager().bindTexture(CONFIG_TEX);
 				RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-				String text = "\u00a7c" + I18n.format("text.cloth-config.not_editable");
+				String text = "\u00a7c" + I18n.format("text.cloth-config.not_editable" );
 				w = 12 + mc.fontRenderer.getStringWidth(text);
 				if (screen.isTransparentBackground()) {
 					Objects.requireNonNull(mc.fontRenderer);
@@ -894,6 +820,44 @@ public class ClothConfigScreen
 		
 		public boolean isMouseInside(double mouseX, double mouseY) {
 			return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+		}
+	}
+	
+	public static class EditConfigFileDialog extends ConfirmDialog {
+		protected TintedButton openAndExit;
+		protected final Path file;
+		
+		public EditConfigFileDialog(
+		  ClothConfigScreen screen, Path file
+		) {
+			super(screen, new TranslationTextComponent(
+			  "simple-config.file.dialog.title"
+			), b -> {
+				if (b) open(file);
+			}, splitTtc(
+			  "simple-config.file.dialog.body",
+			  new StringTextComponent(file.toString()).modifyStyle(s -> s
+			    .setFormatting(TextFormatting.DARK_AQUA).setUnderlined(true)
+			    .setHoverEvent(new HoverEvent(
+					HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("chat.copy.click")))
+			    .setClickEvent(new ClickEvent(
+					ClickEvent.Action.COPY_TO_CLIPBOARD, file.toString())))));
+			setConfirmText(new TranslationTextComponent(
+			  "simple-config.file.dialog.option.open_n_continue"));
+			setConfirmButtonTint(0xAA8000AA);
+			this.file = file;
+			openAndExit = new TintedButton(0, 0, 0, 20, new TranslationTextComponent(
+			  "simple-config.file.dialog.option.open_n_discard"), p -> {
+				open(file);
+				cancel(true);
+				screen.quit(true);
+			});
+			openAndExit.setTintColor(0xAA904210);
+			addButton(1, openAndExit);
+		}
+		
+		protected static void open(Path path) {
+			Util.getOSType().openFile(path.toFile());
 		}
 	}
 }

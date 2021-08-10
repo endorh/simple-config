@@ -81,6 +81,10 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		       : category.getPath() + "." + name;
 	}
 	
+	@Override protected String getName() {
+		return name;
+	}
+	
 	/**
 	 * Get the parent category of this group
 	 */

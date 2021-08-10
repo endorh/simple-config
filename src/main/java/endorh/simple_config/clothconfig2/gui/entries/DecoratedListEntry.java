@@ -4,8 +4,9 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
+import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -124,7 +125,7 @@ public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
 		setListener(listEntry);
 		listEntry.updateSelected(false);
 		listEntry.setListener(listEntry.label);
-		forceFocus(listEntry.label);
+		WidgetUtils.forceFocus(listEntry.label);
 	}
 	
 	@Override public void save() {
@@ -173,6 +174,12 @@ public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
 	
 	@Override public void resetValue(boolean commit) {
 		listEntry.resetValue(commit);
+	}
+	
+	@Override public void restoreValue(Object storedValue) {
+		listEntry.suppressRecords = true;
+		super.restoreValue(storedValue);
+		listEntry.suppressRecords = false;
 	}
 	
 	@Override public String seekableText() {

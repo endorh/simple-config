@@ -9,6 +9,7 @@ import endorh.simple_config.clothconfig2.api.IExpandable;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry.ToggleAnimator;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
@@ -418,8 +419,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		}
 		if (!isEditable() && isExpanded()) setExpanded(false);
 		label.area.setBounds(x - 24, y, heldEntry != null? entryWidth - 132 : entryWidth + 17 - resetButton.getWidth(), 20);
-		forceSetFocus(label, isSelected && getListener() == label && dragCursor == -1
-		              && (getListParent() == null || getListParent().dragCursor == -1));
+		WidgetUtils.forceSetFocus(label, isSelected && getListener() == label && dragCursor == -1
+		                                 && (getListParent() == null || getListParent().dragCursor == -1));
 		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		bindTexture();
 		//noinspection unchecked
@@ -663,7 +664,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		for (BaseListCell<T> cell : cells)
 			cell.updateSelected(isSelected && expanded && getListener() == cell);
 		if (!isSelected)
-			BaseListEntry.forceUnFocus(resetButton);
+			WidgetUtils.forceUnFocus(resetButton);
 	}
 	
 	@Override public void save() {

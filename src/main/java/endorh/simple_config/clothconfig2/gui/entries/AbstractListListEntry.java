@@ -46,12 +46,15 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	}
 	
 	@Override public void setValue(List<T> value) {
+		final boolean original = suppressRecords;
+		if (!original) suppressRecords = true;
 		for (int i = 0; i < cells.size() && i < value.size(); i++)
 			cells.get(i).setValue(value.get(i));
 		while (cells.size() > value.size())
 			remove(cells.size() - 1);
 		while (cells.size() < value.size())
 			add(value.get(cells.size()));
+		suppressRecords = original;
 	}
 	
 	@Override protected C createCellWithValue(T value) {

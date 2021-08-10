@@ -2,7 +2,6 @@ package endorh.simple_config.clothconfig2.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -11,6 +10,8 @@ import endorh.simple_config.clothconfig2.api.ScissorsHandler;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.IExtendedDragAwareGuiEventListener;
 import endorh.simple_config.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
+import endorh.simple_config.clothconfig2.gui.Icon;
+import endorh.simple_config.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simple_config.clothconfig2.gui.entries.IEntryHoldingListEntry;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -18,13 +19,11 @@ import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.ref.WeakReference;
 import java.util.Optional;
 
 import static java.lang.Math.abs;
@@ -33,7 +32,6 @@ import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
-	protected WeakReference<AbstractConfigEntry<?>> entry;
 	protected static ITextComponent[] resetTooltip = new ITextComponent[]{
 	  new TranslationTextComponent("text.cloth-config.reset_value"),
 	  new TranslationTextComponent("simple-config.ui.restore.alt")};
@@ -52,6 +50,7 @@ public class ResetButton extends MultiFunctionImageButton
 	protected static ITextComponent[] restoreTooltipGroup = new ITextComponent[]{
 	  new TranslationTextComponent("simple-config.ui.restore.group")};
 	
+	protected AbstractConfigEntry<?> entry;
 	protected boolean shift = false;
 	protected boolean alt = false;
 	protected boolean confirming = false;
@@ -62,14 +61,10 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	public ResetButton(AbstractConfigEntry<?> entry) {
 		super(
-		  0, 0, 20, 20, 0, 128, new ResourceLocation(
-			 SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"),
-		  256, 256, (w, b) -> false,
-		  (button, matrixStack, mouseX, mouseY) -> {
-			 
-		  }, NarratorChatListener.EMPTY);
-		this.entry = new WeakReference<>(entry);
-		this.setActivePredicate(w -> shouldBeActive());
+		  0, 0, 20, 20, SimpleConfigIcons.RESET, ButtonAction.of(b -> {}),
+		  NarratorChatListener.EMPTY);
+		this.entry = entry;
+		defaultActivePredicate = this::shouldBeActive;
 	}
 	
 	protected boolean shouldSafeGuard() {
@@ -91,7 +86,7 @@ public class ResetButton extends MultiFunctionImageButton
 		if (!confirming && !dragging && !getScreen().hasDialogs()) {
 			shift = Screen.hasShiftDown();
 			alt = Screen.hasAltDown();
-			u = getU();
+			defaultIcon = getIcon();
 		}
 		super.render(mStack, mouseX, mouseY, delta);
 	}
@@ -101,7 +96,6 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected boolean isGroup() {
-		final AbstractConfigEntry<?> entry = this.entry.get();
 		if (entry == null) return false;
 		if (entry instanceof IEntryHoldingListEntry) {
 			final AbstractConfigListEntry<?> held = ((IEntryHoldingListEntry) entry).getHeldEntry();
@@ -111,8 +105,10 @@ public class ResetButton extends MultiFunctionImageButton
 		return entry instanceof IExpandable;
 	}
 	
-	protected int getU() {
-		return isRestore()? isGroup()? 60 : 40 : isGroup()? 20 : 0;
+	protected Icon getIcon() {
+		return isRestore()?
+		       isGroup()? SimpleConfigIcons.RESTORE_GROUP : SimpleConfigIcons.RESTORE :
+		       isGroup()? SimpleConfigIcons.RESET_GROUP : SimpleConfigIcons.RESET;
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -142,7 +138,6 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected boolean shouldBeActive() {
-		final AbstractConfigEntry<?> entry = this.entry.get();
 		if (entry == null) return false;
 		if (entry.getListParent() != null) // This only creates confusion
 			return false;
@@ -177,9 +172,8 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	public boolean onPress(Button widget, int button) {
-		final AbstractConfigEntry<?> e = entry.get();
-		if (e != null) {
-			final boolean result = reset(e, button);
+		if (entry != null) {
+			final boolean result = reset(entry, button);
 			if (result) {
 				Minecraft.getInstance().getSoundHandler().play(
 				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0f));
@@ -209,10 +203,7 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected AbstractConfigScreen getScreen() {
-		final AbstractConfigEntry<?> entry = this.entry.get();
-		if (entry != null)
-			return entry.getConfigScreen();
-		return null;
+		return entry != null ? entry.getConfigScreen() : null;
 	}
 	
 	@Override public boolean mouseDragged(
@@ -238,27 +229,25 @@ public class ResetButton extends MultiFunctionImageButton
 	) {
 		if (!dragging && !confirming) return false;
 		getScreen().removeTooltips(area);
-		// getScreen().addTooltip(Tooltip.of(new Point(mouseX, mouseY), getRese));
-		Minecraft.getInstance().getTextureManager().bindTexture(texture);
 		RenderSystem.color4f(1F, 1F, 1F, 1F);
 		RenderSystem.enableBlend();
 		fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), 0x80FF4242);
 		fill(mStack, area.x + 2, area.y + 2, area.getMaxX() - 2, area.getMaxY() - 2, 0xFFFF6464);
 		if (dragging) {
-			blit(mStack, x, y, u, v, width, height);
+			defaultIcon.renderStretch(mStack, x, y, width, height, 0);
 			if (Minecraft.getInstance().fontRenderer.getBidiFlag()) {
-				blit(mStack, x + width, y, 216, 148, 40, 20);
-				blit(mStack, x + width + 40, y, u, v, width, height);
+				blit(mStack, x + width, y, 216, 20, 40, 20);
+				defaultIcon.renderStretch(mStack, x + width + 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
 					fill(mStack, x + width, y, x + 2 * width + 40, y + height, 0x64FF4242);
 			} else {
-				blit(mStack, x - 40, y, 216, 128, 40, 20);
-				blit(mStack, x - 40 - width, y, u, v, width, height);
+				blit(mStack, x - 40, y, 216, 0, 40, 20);
+				defaultIcon.renderStretch(mStack, x - width - 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
 					fill(mStack, x - 40, y, x + width, y + height, 0x64FF4242);
 			}
 		}
-		blit(mStack, x + dragOffset, y, u, v + 2 * height, width, height);
+		defaultIcon.renderStretch(mStack, x + dragOffset, y, width, height, 2);
 		if (confirming)
 			fill(mStack, x + dragOffset, y, x + width, y + height, 0x64FF4242);
 		return true;
@@ -279,7 +268,7 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	public ITextComponent[] getTooltip() {
 		if (isGroup()) return isRestore()? restoreTooltipGroup : resetTooltipGroup;
-		if (entry.get() instanceof IExpandable) return isRestore()? restoreTooltipShift : resetTooltipShift;
+		if (entry instanceof IExpandable) return isRestore()? restoreTooltipShift : resetTooltipShift;
 		return isRestore()? restoreTooltip : resetTooltip;
 	}
 	

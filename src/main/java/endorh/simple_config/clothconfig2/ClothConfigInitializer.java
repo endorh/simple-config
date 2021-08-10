@@ -1,6 +1,6 @@
 package endorh.simple_config.clothconfig2;
 
-import endorh.simple_config.clothconfig2.api.ScrollingContainer;
+import endorh.simple_config.clothconfig2.api.ScrollingHandler;
 import endorh.simple_config.clothconfig2.impl.EasingMethod;
 import endorh.simple_config.clothconfig2.impl.EasingMethod.EasingMethodImpl;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,20 +19,20 @@ public class ClothConfigInitializer {
 	public static double handleScrollingPosition(
 	  double[] target, double scroll, double maxScroll, float delta, double start, double duration
 	) {
-		return ScrollingContainer.handleScrollingPosition(
+		return ScrollingHandler.handleScrollingPosition(
 		  target, scroll, maxScroll, delta, start, duration);
 	}
 	
 	@Deprecated
 	@ApiStatus.ScheduledForRemoval
 	public static double expoEase(double start, double end, double amount) {
-		return ScrollingContainer.ease(start, end, amount, ClothConfigInitializer.getEasingMethod());
+		return ScrollingHandler.ease(start, end, amount, ClothConfigInitializer.getEasingMethod());
 	}
 	
 	@Deprecated
 	@ApiStatus.ScheduledForRemoval
 	public static double clamp(double v, double maxScroll) {
-		return ScrollingContainer.clampExtension(v, maxScroll);
+		return ScrollingHandler.clampExtension(v, maxScroll);
 	}
 	
 	public static EasingMethod getEasingMethod() {

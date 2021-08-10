@@ -6,6 +6,7 @@ import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import net.minecraft.client.MainWindow;
@@ -223,21 +224,21 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			show = false;
 		showText = show;
 		if (focus)
-			forceUnFocus(resetButton);
+			WidgetUtils.forceUnFocus(resetButton);
 		if (show) {
 			textFieldEntry.setValue(getValue());
 			if (focus) {
 				setListener(textFieldEntry);
-				forceUnFocus(sliderWidget);
+				WidgetUtils.forceUnFocus(sliderWidget);
 				final TextFieldWidget textFieldWidget = textFieldEntry.textFieldWidget;
 				textFieldEntry.setListener(textFieldWidget);
-				forceFocus(textFieldWidget);
+				WidgetUtils.forceFocus(textFieldWidget);
 				textFieldWidget.setCursorPosition(textFieldWidget.getText().length());
 				textFieldWidget.setSelectionPos(0);
 			}
 		} else if (focus) {
 			setListener(sliderWidget);
-			forceFocus(sliderWidget);
+			WidgetUtils.forceFocus(sliderWidget);
 		}
 	}
 	
@@ -297,7 +298,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	
 	@Override public void updateSelected(boolean isSelected) {
 		super.updateSelected(isSelected);
-		if (!isSelected) forceUnFocus(sliderWidget, resetButton);
+		if (!isSelected) WidgetUtils.forceUnFocus(sliderWidget, resetButton);
 	}
 	
 	@Override public boolean isChild() {

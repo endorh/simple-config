@@ -1,8 +1,6 @@
 package endorh.simple_config.core.entry;
 
-import com.google.common.collect.ObjectArrays;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;

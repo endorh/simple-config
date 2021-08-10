@@ -2,9 +2,10 @@ package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
@@ -59,7 +60,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		
 		@Override public void updateSelected(boolean isSelected) {
 			super.updateSelected(isSelected);
-			forceSetFocus(widget, isSelected);
+			WidgetUtils.forceSetFocus(widget, isSelected);
 		}
 		
 		protected abstract boolean isValidText(@NotNull String var1);

@@ -2,7 +2,7 @@ package endorh.simple_config.clothconfig2.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.ClothConfigInitializer;
-import endorh.simple_config.clothconfig2.api.ScrollingContainer;
+import endorh.simple_config.clothconfig2.api.ScrollingHandler;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import endorh.simple_config.clothconfig2.math.impl.PointHelper;
 import net.minecraft.client.Minecraft;
@@ -57,8 +57,8 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 			this.scroll =
 			  clamp(scroll, 0.0, getMaxScroll());
 		} else {
-			this.scroll = ScrollingContainer.clampExtension(scroll, getMaxScroll());
-			target = ScrollingContainer.clampExtension(scroll, getMaxScroll());
+			this.scroll = ScrollingHandler.clampExtension(scroll, getMaxScroll());
+			target = ScrollingHandler.clampExtension(scroll, getMaxScroll());
 		}
 	}
 	
@@ -140,12 +140,12 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 	}
 	
 	public void scrollTo(double value, boolean animated, long duration) {
-		target = ScrollingContainer.clampExtension(value, getMaxScroll());
+		target = ScrollingHandler.clampExtension(value, getMaxScroll());
 		if (animated) {
 			start = System.currentTimeMillis();
 			this.duration = duration;
 		} else {
-			scroll = ScrollingContainer.clampExtension(target, getMaxScroll(), 0.0);
+			scroll = ScrollingHandler.clampExtension(target, getMaxScroll(), 0.0);
 			last = System.currentTimeMillis();
 		}
 		scrollTargetEntry = null;
@@ -164,12 +164,12 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 	@Override
 	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		long time = System.currentTimeMillis();
-		if (followedEntry != null && time - followEntryStart < duration)
+		if (followedEntry != null && time - followEntryStart < duration + 50L)
 			this.target = entryScroll(followedEntry);
 		double[] target = new double[]{this.target};
 		double prev = scroll;
 		final int maxScroll = getMaxScroll();
-		scroll = ScrollingContainer.handleScrollingPosition(
+		scroll = ScrollingHandler.handleScrollingPosition(
 		  target, scroll, Double.POSITIVE_INFINITY, delta, start, duration);
 		if (scroll > maxScroll && scroll > prev)
 			scroll = maxScroll;
@@ -184,8 +184,8 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		}
 		super.render(mStack, mouseX, mouseY, delta);
 		if (scrollTargetEntry != null) {
-			scrollTo(entryScroll(scrollTargetEntry));
 			followedEntry = scrollTargetEntry;
+			scrollTo(entryScroll(scrollTargetEntry));
 			followEntryStart = time;
 			scrollTargetEntry = null;
 		}

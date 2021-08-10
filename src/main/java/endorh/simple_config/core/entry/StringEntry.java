@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import endorh.simple_config.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
 import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
 import endorh.simple_config.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.TextFieldBuilder;
@@ -19,7 +18,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,14 +36,14 @@ public class StringEntry
   extends AbstractConfigEntry<String, String, String, StringEntry>
   implements IKeyEntry<String, String> {
 	protected Supplier<List<String>> choiceSupplier;
-	protected SupplierSuggestionProvider<String> suggestionProvider;
+	protected SimpleSortedSuggestionProvider<String> suggestionProvider;
 	protected boolean restrict;
 	protected int maxLength;
 	protected int minLength;
 	
 	@Internal public StringEntry(ISimpleConfigEntryHolder parent, String name, String value) {
 		super(parent, name, value);
-		suggestionProvider = new SupplierSuggestionProvider<>(
+		suggestionProvider = new SimpleSortedSuggestionProvider<>(
 		  () -> choiceSupplier != null? choiceSupplier.get() : Lists.newArrayList());
 	}
 	
@@ -249,32 +247,4 @@ public class StringEntry
 		return Optional.of(key);
 	}
 	
-	public static class SupplierSuggestionProvider<T> extends SimpleSortedSuggestionProvider<T> {
-		protected Supplier<List<T>> supplier;
-		
-		public SupplierSuggestionProvider(@NotNull Supplier<List<T>> supplier) {
-			super(Lists.newArrayList());
-			this.supplier = supplier;
-		}
-		
-		public Supplier<List<T>> getSupplier() {
-			return supplier;
-		}
-		
-		public void setSupplier(Supplier<List<T>> supplier) {
-			this.supplier = supplier;
-		}
-		
-		@Override public Pair<List<T>, List<ITextComponent>> provideDecoratedSuggestions(
-		  ITypeWrapper<T> typeWrapper, String query
-		) {
-			suggestions = supplier.get();
-			return super.provideDecoratedSuggestions(typeWrapper, query);
-		}
-		
-		@Override public List<T> provideSuggestions(ITypeWrapper<T> typeWrapper, String query) {
-			suggestions = supplier.get();
-			return super.provideSuggestions(typeWrapper, query);
-		}
-	}
 }

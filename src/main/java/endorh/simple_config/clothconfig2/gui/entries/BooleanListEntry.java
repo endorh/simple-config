@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -63,7 +64,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	@Override public void updateSelected(boolean isSelected) {
 		super.updateSelected(isSelected);
 		if (!isSelected)
-			forceUnFocus(buttonWidget, resetButton);
+			WidgetUtils.forceUnFocus(buttonWidget, resetButton);
 	}
 	
 	@Override

@@ -8,6 +8,7 @@ import endorh.simple_config.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simple_config.SimpleConfigMod.KeyBindings;
 import endorh.simple_config.clothconfig2.ClothConfigInitializer;
 import endorh.simple_config.clothconfig2.api.*;
+import endorh.simple_config.clothconfig2.api.ConfigBuilder.SnapshotHandler;
 import endorh.simple_config.clothconfig2.gui.entries.KeyCodeEntry;
 import endorh.simple_config.clothconfig2.gui.widget.CheckboxButton;
 import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget;
@@ -23,6 +24,8 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.util.InputMappings;
+import net.minecraft.client.util.InputMappings.Input;
+import net.minecraft.client.util.InputMappings.Type;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
@@ -31,6 +34,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.util.text.event.ClickEvent.Action;
+import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +48,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static endorh.simple_config.SimpleConfigMod.CLIENT_CONFIG;
+import static java.lang.Math.max;
 
 public abstract class AbstractConfigScreen extends Screen
   implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler, ScissorsScreen,
@@ -55,8 +61,7 @@ public abstract class AbstractConfigScreen extends Screen
 	protected final Screen parent;
 	protected boolean alwaysShowTabs = false;
 	protected boolean transparentBackground = false;
-	@Nullable protected String defaultFallbackCategory = null;
-	public int selectedCategoryIndex = 0;
+	@Nullable protected ConfigCategory defaultFallbackCategory = null;
 	protected boolean editable = true;
 	protected KeyCodeEntry focusedBinding;
 	protected ModifierKeyCode startedKeyCode = null;
@@ -64,7 +69,12 @@ public abstract class AbstractConfigScreen extends Screen
 	@Nullable protected Runnable savingRunnable = null;
 	@Nullable protected Consumer<Screen> afterInitConsumer = null;
 	protected Pair<Integer, IGuiEventListener> dragged = null;
+	protected Map<String, ConfigCategory> serverCategoryMap;
 	protected Map<String, ConfigCategory> categoryMap;
+	
+	protected ConfigCategory selectedCategory;
+	protected List<ConfigCategory> sortedClientCategories;
+	protected List<ConfigCategory> sortedServerCategories;
 	protected List<ConfigCategory> sortedCategories;
 	
 	protected SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
@@ -72,17 +82,25 @@ public abstract class AbstractConfigScreen extends Screen
 	protected EditHistory history = new EditHistory();
 	
 	protected List<AbstractDialog> dialogs = Lists.newLinkedList();
+	protected @Nullable SnapshotHandler snapshotHandler;
 	
 	protected AbstractConfigScreen(
 	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
-	  Map<String, ConfigCategory> categories
+	  Collection<ConfigCategory> clientCategories, Collection<ConfigCategory> serverCategories
 	) {
 		super(title);
 		this.parent = parent;
 		this.backgroundLocation = backgroundLocation;
-		this.categoryMap = categories;
-		this.sortedCategories = categories.values().stream()
-		  .sorted(Comparator.comparing(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
+		this.categoryMap = clientCategories.stream()
+		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
+		this.sortedClientCategories = clientCategories.stream()
+		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
+		this.serverCategoryMap = serverCategories.stream()
+		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
+		this.sortedServerCategories = serverCategories.stream()
+		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
+		this.sortedCategories = new ArrayList<>(sortedClientCategories);
+		sortedCategories.addAll(sortedServerCategories);
 	}
 	
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
@@ -94,7 +112,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public ResourceLocation getBackgroundLocation() {
-		return backgroundLocation;
+		ResourceLocation background = selectedCategory.getBackground();
+		return background != null? background : backgroundLocation;
 	}
 	
 	@Override public boolean isRequiresRestart() {
@@ -109,27 +128,32 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public void setSelectedCategory(String name) {
-		final ConfigCategory cat = categoryMap.get(name);
-		if (cat == null) throw new IllegalArgumentException("Unknown category: " + name);
-		setSelectedCategory(sortedCategories.indexOf(cat));
+		if (categoryMap.containsKey(name))
+			setSelectedCategory(categoryMap.get(name));
+		else if (serverCategoryMap.containsKey(name))
+			setSelectedCategory(serverCategoryMap.get(name));
+		else throw new IllegalArgumentException("Unknown category name: " + name);
 	}
 	
-	public void setSelectedCategory(int index) {
-		if (index < 0 || index >= categoryMap.size())
-			throw new IndexOutOfBoundsException("index: " + index + ", size: " + categoryMap.size());
-		if (selectedCategoryIndex != index) {
-			selectedCategoryIndex = index;
-			init(Minecraft.getInstance(), width, height);
-		}
+	public void selectNextCategory(boolean forward) {
+		int i = sortedCategories.indexOf(selectedCategory);
+		if (i == -1) throw new IllegalStateException();
+		i = (i + (forward? 1 : -1) + sortedCategories.size()) % sortedCategories.size();
+		setSelectedCategory(sortedCategories.get(i));
 	}
 	
-	public @Nullable String getSelectedCategoryName() {
-		return sortedCategories.get(selectedCategoryIndex).getName();
+	public void setSelectedCategory(ConfigCategory category) {
+		if (!categoryMap.containsValue(category) && !serverCategoryMap.containsValue(category))
+			throw new IllegalArgumentException("Unknown category");
+		selectedCategory = category;
 	}
 	
-	@Override
-	public boolean isEdited() {
-		for (ConfigCategory cat : categoryMap.values()) {
+	public ConfigCategory getSelectedCategory() {
+		return selectedCategory;
+	}
+	
+	@Override public boolean isEdited() {
+		for (ConfigCategory cat : sortedCategories) {
 			for (AbstractConfigEntry<?> entry : cat.getEntries()) {
 				if (!entry.isEdited()) continue;
 				return true;
@@ -142,8 +166,16 @@ public abstract class AbstractConfigScreen extends Screen
 		return null;
 	}
 	
+	public ModConfig.Type currentConfigType() {
+		return isSelectedCategoryServer()? ModConfig.Type.SERVER : ModConfig.Type.CLIENT;
+	}
+	
+	public boolean isSelectedCategoryServer() {
+		return serverCategoryMap.containsValue(selectedCategory);
+	}
+	
 	public boolean isShowingTabs() {
-		return isAlwaysShowTabs() || categoryMap.size() > 1;
+		return isAlwaysShowTabs() || (isSelectedCategoryServer()? serverCategoryMap : categoryMap).size() > 1;
 	}
 	
 	public boolean isAlwaysShowTabs() {
@@ -162,19 +194,15 @@ public abstract class AbstractConfigScreen extends Screen
 		this.transparentBackground = transparentBackground;
 	}
 	
-	public String getFallbackCategory() {
-		if (defaultFallbackCategory != null) return defaultFallbackCategory;
-		return categoryMap.keySet().iterator().next();
+	public ConfigCategory getFallbackCategory() {
+		return defaultFallbackCategory != null
+		       ? defaultFallbackCategory
+		       : (categoryMap.isEmpty()? serverCategoryMap : categoryMap).values().iterator().next();
 	}
 	
-	@Internal public void setFallbackCategory(@Nullable String defaultFallbackCategory) {
+	@Internal public void setFallbackCategory(@Nullable ConfigCategory defaultFallbackCategory) {
 		this.defaultFallbackCategory = defaultFallbackCategory;
-		for (int i = 0; i < sortedCategories.size(); i++) {
-			if (sortedCategories.get(i).getName().equals(defaultFallbackCategory)) {
-				selectedCategoryIndex = i;
-				break;
-			}
-		}
+		selectedCategory = defaultFallbackCategory;
 	}
 	
 	@Override public void saveAll(boolean openOtherScreens) {
@@ -184,13 +212,15 @@ public abstract class AbstractConfigScreen extends Screen
 	public void saveAll(boolean openOtherScreens, boolean forceConfirm) {
 		if ((confirmSave || forceConfirm) && isEdited()) {
 			final ConfirmDialog dialog = new ConfirmDialog(
-			  (b, s) -> {
+			  this, new TranslationTextComponent("simple-config.ui.confirm_save"), (b, s) -> {
 				  if (b) doSaveAll(openOtherScreens);
 				  if (s[0]) CLIENT_CONFIG.set("confirm.save", false);
-			  }, new TranslationTextComponent("simple-config.ui.confirm_save"),
+			  },
 			  Lists.newArrayList(new TranslationTextComponent("simple-config.ui.confirm_save.msg")),
-			  DialogTexts.GUI_CANCEL, new TranslationTextComponent("text.cloth-config.save_and_done"), this,
-			  new CheckboxButton(false, 0, 0, 100, new TranslationTextComponent("simple-config.ui.dont_confirm"), null));
+			  DialogTexts.GUI_CANCEL, new TranslationTextComponent("text.cloth-config.save_and_done"),
+			  new CheckboxButton(
+				 false, 0, 0, 100, new TranslationTextComponent("simple-config.ui.do_not_ask_again"),
+				 null));
 			dialog.setConfirmButtonTint(0x8042BD42);
 			addDialog(dialog);
 		} else {
@@ -199,7 +229,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void doSaveAll(boolean openOtherScreens) {
-		for (ConfigCategory cat : categoryMap.values()) {
+		for (ConfigCategory cat : sortedCategories) {
 			for (AbstractConfigEntry<?> entry : cat.getEntries()) entry.save();
 		}
 		save();
@@ -251,15 +281,15 @@ public abstract class AbstractConfigScreen extends Screen
 	@Override public boolean mouseDragged(
 	  double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
-		if (handleOverlaysMouseDragged(mouseX, mouseY, button, dragX, dragY))
-			return true;
+		if (handleDialogsMouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
+		if (handleOverlaysMouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
 		return IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
 		  mouseX, mouseY, button, dragX, dragY);
 	}
 	
 	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (handleOverlaysMouseScrolled(mouseX, mouseY, delta))
-			return true;
+		if (handleDialogsMouseScrolled(mouseX, mouseY, delta)) return true;
+		if (handleOverlaysMouseScrolled(mouseX, mouseY, delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 	
@@ -283,30 +313,30 @@ public abstract class AbstractConfigScreen extends Screen
 		if (focusedBinding != null && startedKeyCode != null &&
 		    focusedBinding.isAllowMouse()) {
 			if (startedKeyCode.isUnknown()) {
-				startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
+				startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 			} else if (focusedBinding.isAllowModifiers() &&
-			           startedKeyCode.getType() == InputMappings.Type.KEYSYM) {
+			           startedKeyCode.getType() == Type.KEYSYM) {
 				int code = startedKeyCode.getKeyCode().getKeyCode();
 				if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
 				                                : code == 341 || code == 345) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-					startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 				if (code == 344 || code == 340) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-					startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 				if (code == 342 || code == 346) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-					startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 			}
@@ -334,7 +364,7 @@ public abstract class AbstractConfigScreen extends Screen
 				if (startedKeyCode.isUnknown()) {
 					startedKeyCode.setKeyCode(InputMappings.getInputByCode(keyCode, scanCode));
 				} else if (focusedBinding.isAllowModifiers()) {
-					if (startedKeyCode.getType() == InputMappings.Type.KEYSYM) {
+					if (startedKeyCode.getType() == Type.KEYSYM) {
 						int code = startedKeyCode.getKeyCode().getKeyCode();
 						if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
 						                                : code == 341 || code == 345) {
@@ -409,76 +439,52 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
-		InputMappings.Input key = InputMappings.getInputByCode(keyCode, scanCode);
+		Input key = InputMappings.getInputByCode(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
-			int i = selectedCategoryIndex - 1;
-			if (i < 0) i = categoryMap.size() - 1;
-			setSelectedCategory(i);
+			selectNextCategory(true);
 			recomputeFocus();
 			Minecraft.getInstance().getSoundHandler().play(
 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		} else if (KeyBindings.PREV_PAGE.isActiveAndMatches(key)) {
-			int i = selectedCategoryIndex + 1;
-			if (i >= categoryMap.size()) i = 0;
-			setSelectedCategory(i);
+			selectNextCategory(false);
 			recomputeFocus();
 			Minecraft.getInstance().getSoundHandler().play(
 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
-			if (canSave()) saveAll(true, true);
+			if (canSave()) saveAll(true, false);
 			Minecraft.getInstance().getSoundHandler().play(
 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
-		// if (Screen.hasControlDown()) {
-		// 	int i;
-		// 	switch (keyCode) {
-		// 		case 266: // Page Up
-		// 			i = selectedCategoryIndex - 1;
-		// 			if (i < 0) i = categoryMap.size() - 1;
-		// 			setSelectedCategory(i);
-		// 			recomputeFocus();
-		// 			Minecraft.getInstance().getSoundHandler().play(
-		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-		// 			return true;
-		// 		case 267: // Page Down
-		// 			i = selectedCategoryIndex + 1;
-		// 			if (i >= categoryMap.size()) i = 0;
-		// 			setSelectedCategory(i);
-		// 			recomputeFocus();
-		// 			Minecraft.getInstance().getSoundHandler().play(
-		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-		// 			return true;
-		// 		case 59: // Ctrl + S
-		// 			if (canSave()) saveAll(true, true);
-		// 			Minecraft.getInstance().getSoundHandler().play(
-		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-		// 			return true;
-		// 	}
-		// }
 		return false;
 	}
 	
 	protected final boolean quit() {
+		return quit(false);
+	}
+	protected final boolean quit(boolean skipConfirm) {
 		if (minecraft == null) return false;
-		if (confirmUnsaved && isEdited()) {
+		if (!skipConfirm && confirmUnsaved && isEdited()) {
 			final ConfirmDialog dialog = new ConfirmDialog(
-			  (b, s) -> {
+			  this, new TranslationTextComponent("text.cloth-config.quit_config"), (b, s) -> {
 				  if (s[0]) CLIENT_CONFIG.set("confirm.unsaved", false);
-				  if (b) minecraft.displayGuiScreen(parent);
+				  if (b) quit(true);
 			  },
-			  new TranslationTextComponent("text.cloth-config.quit_config"),
 			  Util.<List<ITextComponent>>make(
 				 new ArrayList<>(),
 				 l -> l.add(new TranslationTextComponent("text.cloth-config.quit_config_sure"))),
 			  new TranslationTextComponent("gui.cancel"),
-			  new TranslationTextComponent("text.cloth-config.quit_discard"), this,
-			  new CheckboxButton(false, 0, 0, 100, new TranslationTextComponent("simple-config.ui.dont_confirm"), null));
+			  new TranslationTextComponent("text.cloth-config.quit_discard"),
+			  new CheckboxButton(
+				 false, 0, 0, 100, new TranslationTextComponent("simple-config.ui.do_not_ask_again"),
+				 null));
 			dialog.setConfirmButtonTint(0x80BD2424);
 			addDialog(dialog);
-		} else minecraft.displayGuiScreen(parent);
+		} else {
+			minecraft.displayGuiScreen(parent);
+		}
 		return true;
 	}
 	
@@ -501,12 +507,19 @@ public abstract class AbstractConfigScreen extends Screen
 	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final boolean hasDialog = !dialogs.isEmpty();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
-		super.render(mStack, suppressHover? -1 : mouseX, suppressHover? -1 : mouseY, delta);
-		renderOverlays(mStack, hasDialog? -1 : mouseX, hasDialog? -1 : mouseY, delta);
+		super.render(mStack, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
+		renderOverlays(mStack, hasDialog ? -1 : mouseX, hasDialog ? -1 : mouseY, delta);
 		if (hasDialog) tooltips.clear();
 		renderDialogs(mStack, mouseX, mouseY, delta);
-		for (Tooltip tooltip : tooltips)
-			renderTooltip(mStack, tooltip.getText(), tooltip.getX(), tooltip.getY());
+		renderTooltips(mStack, mouseX, mouseY, delta);
+	}
+	
+	protected void renderTooltips(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		for (Tooltip tooltip : tooltips) {
+			int ty = tooltip.getY();
+			if (ty <= 24) ty += 16;
+			renderTooltip(mStack, tooltip.getText(), tooltip.getX(), ty);
+		}
 		tooltips.clear();
 	}
 	
@@ -514,8 +527,13 @@ public abstract class AbstractConfigScreen extends Screen
 		tooltips.add(tooltip);
 	}
 	
+	@Override public List<Tooltip> getTooltips() {
+		return tooltips;
+	}
+	
 	@Override public boolean removeTooltips(Rectangle area) {
-		final List<Tooltip> removed = tooltips.stream().filter(t -> area.contains(t.getPoint())).collect(Collectors.toList());
+		final List<Tooltip> removed =
+		  tooltips.stream().filter(t -> area.contains(t.getPoint())).collect(Collectors.toList());
 		return tooltips.removeAll(removed);
 	}
 	
@@ -564,7 +582,7 @@ public abstract class AbstractConfigScreen extends Screen
 			return false;
 		}
 		ClickEvent clickEvent = style.getClickEvent();
-		if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL) {
+		if (clickEvent != null && clickEvent.getAction() == Action.OPEN_URL) {
 			try {
 				URI uri = new URI(clickEvent.getValue());
 				String string = uri.getScheme();
@@ -584,9 +602,18 @@ public abstract class AbstractConfigScreen extends Screen
 		return super.handleComponentClicked(style);
 	}
 	
+	public boolean hasClient() {
+		return !sortedClientCategories.isEmpty();
+	}
+	
+	public boolean hasServer() {
+		return !sortedServerCategories.isEmpty();
+	}
+	
 	@Override public Pair<Integer, IGuiEventListener> getDragged() {
 		return dragged;
 	}
+	
 	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
@@ -621,5 +648,13 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	@Override public List<AbstractDialog> getDialogs() {
 		return dialogs;
+	}
+	
+	public void setSnapshotHandler(@Nullable SnapshotHandler snapshotHandler) {
+		this.snapshotHandler = snapshotHandler;
+	}
+	
+	public @Nullable SnapshotHandler getSnapshotHandler() {
+		return snapshotHandler;
 	}
 }

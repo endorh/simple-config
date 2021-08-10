@@ -1,7 +1,10 @@
 package endorh.simple_config.core;
 
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.*;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.LanguageMap;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -11,7 +14,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TextUtil {
+/**
+ * @deprecated Internal utils, see Endorh Util mod for an updated version of these methods
+ */
+@Internal @Deprecated public class SimpleConfigTextUtil {
 	protected static final Pattern NEW_LINE = Pattern.compile("\\R");
 	protected static final Pattern FS_PATTERN = Pattern.compile(
 	  "%(?:(?<index>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)?(?<width>\\d+)?(?<precision>\\.\\d+)?(?<t>[tT])?(?<conversion>[a-zA-Z%])");
@@ -20,9 +26,10 @@ public class TextUtil {
 	 * Separate a translation text component on each line break<br>
 	 * Line breaks added by format arguments aren't considered<br>
 	 * Only works on the client side<br>
+	 * @deprecated Internal utils, see Endorh Util mod for an updated version of these methods
 	 */
 	@OnlyIn(Dist.CLIENT)
-	protected static List<ITextComponent> splitTtc(String key, Object... args) {
+	@Internal @Deprecated public static List<ITextComponent> splitTtc(String key, Object... args) {
 		if (I18n.hasKey(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting
@@ -72,20 +79,23 @@ public class TextUtil {
 	protected static String addExplicitFormatIndexes(String fmt) {
 		final Matcher m = FS_INDEX_PATTERN.matcher(fmt);
 		final StringBuffer sb = new StringBuffer();
-		int last_gen = -1;
-		int last = -1;
+		int last_gen = -1; // Counter for generated implicit indexes
+		int last = -1; // Last found index, for relative indexing
 		while (m.find()) {
 			final String g = m.group("d");
 			final String f = m.group("flags");
 			String rep = g + f;
-			if (f.contains("<")) {
+			if (f.contains("<")) { // Relative index (last index)
 				if (last >= 0)
 					rep = (last + 1) + "\\$" + f.replace("<", "");
-			} else if (g == null || g.isEmpty()) {
+			} else if (g == null || g.isEmpty()) { // Implicit index
 				last_gen++;
 				last = last_gen;
 				rep = (last_gen + 1) + "\\$" + f;
-			} else last = Integer.parseInt(g) - 1;
+			} else { // Explicit index
+				last = Integer.parseInt(g) - 1;
+				rep += "\\$";
+			}
 			m.appendReplacement(sb, "${pre}" + rep + "${pos}");
 		}
 		m.appendTail(sb);

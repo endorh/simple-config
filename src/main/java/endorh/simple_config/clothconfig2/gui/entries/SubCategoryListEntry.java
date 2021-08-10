@@ -7,6 +7,7 @@ import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import endorh.simple_config.clothconfig2.impl.EditHistory.EditRecord;
@@ -162,7 +163,7 @@ public class SubCategoryListEntry
 	  int mouseY, boolean isHovered, float delta
 	) {
 		label.area.setBounds(x - 24, y, heldEntry != null? entryWidth - 132 : entryWidth + 17 - resetButton.getWidth(), 20);
-		forceSetFocus(label, isSelected && getListener() == label);
+		WidgetUtils.forceSetFocus(label, isSelected && getListener() == label);
 		super.renderEntry(
 		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);

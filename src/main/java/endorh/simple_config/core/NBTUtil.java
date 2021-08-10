@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import net.minecraft.nbt.*;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.regex.Pattern;
 

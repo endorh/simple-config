@@ -1,5 +1,7 @@
 package endorh.simple_config.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
 import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
@@ -33,6 +36,8 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	protected abstract String getPath();
 	
+	protected abstract String getName();
+	
 	/**
 	 * Mark this entry holder as dirty<br>
 	 * When the config screen is saved, only config files containing dirty entries are updated
@@ -40,6 +45,51 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	@Override public AbstractSimpleConfigEntryHolder markDirty() {
 		markDirty(true);
 		return this;
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected void saveGUISnapshot(CommentedConfig config) {
+		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
+			final CommentedConfig subConfig = config.createSubConfig();
+			e.getValue().saveGUISnapshot(subConfig);
+			config.set(e.getKey(), subConfig);
+		}
+		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
+			//noinspection unchecked
+			final AbstractConfigEntry<?, Object, ?, ?> entry =
+			  (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
+			if (!entry.nonPersistent)
+				entry.put(config, entry.guiForConfig());
+		}
+	}
+	
+	protected void buildConfigSpec(ConfigSpec spec, String path) {
+		final String thisPath = path + getName() + '.';
+		for (AbstractConfigEntry<?, ?, ?, ?> e : entries.values())
+			e.buildSpec(spec, thisPath);
+		for (AbstractSimpleConfigEntryHolder child : children.values())
+			child.buildConfigSpec(spec, thisPath);
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected void loadGUISnapshot(CommentedConfig config) {
+		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
+			if (config.contains(e.getKey())) {
+				final Object sub = config.get(e.getKey());
+				if (sub instanceof CommentedConfig)
+					e.getValue().loadGUISnapshot(((CommentedConfig) sub));
+			}
+		}
+		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
+			if (config.contains(e.getKey()))
+				trySetConfigForGUI(e.getValue(), config);
+		}
+	}
+	
+	private static <C> void trySetConfigForGUI(AbstractConfigEntry<?, C, ?, ?> entry, CommentedConfig config) {
+		try {
+			entry.setConfigForGUI(entry.get(config));
+		} catch (InvalidConfigValueTypeException ignored) {}
 	}
 	
 	protected abstract void bake();
@@ -112,7 +162,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @param <T> Expected type of the entry
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
-	protected @Nullable <T> ConfigValue<T> getSpecValue(String path) {
+	protected <T> ConfigValue<T> getSpecValue(String path) {
 		try {
 			if (specValues.containsKey(path))
 				//noinspection unchecked

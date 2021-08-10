@@ -3,6 +3,7 @@ package endorh.simple_config.demo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.clothconfig2.api.ModifierKeyCode;
 import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simple_config.core.SimpleConfigCategory;
 import endorh.simple_config.core.SimpleConfigGroup;
@@ -37,6 +38,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simple_config.SimpleConfigMod.CLIENT_CONFIG;
+import static endorh.simple_config.clothconfig2.api.ModifierKeyCode.parse;
 import static endorh.simple_config.core.SimpleConfig.category;
 import static endorh.simple_config.core.SimpleConfig.group;
 import static endorh.simple_config.core.entry.Builders.*;
@@ -93,24 +95,29 @@ public class DemoConfigCategory {
 		  //   in their builder
 		  // Entries get automatically mapped translation keys for both their
 		  //   label and their tooltip based on their paths within the config
-		  // The tooltip translation key is the label key followed by '.help'
+		  // The tooltip translation key is the label key followed by ':help'
 		  //   and its optional, that is, if it's not defined, the entry
-		  //   won't display a tooltip
+		  //   won't display a tooltip.
 		  // Tooltip translation keys can contain newline characters to
-		  //   produce multiline tooltips
+		  //   produce multiline tooltips, and they automatically wrap as well.
 		  // For example, the following entry is mapped under
 		  //   config.{mod-id}.demo.some_bool
 		  // and its tooltip is mapped to (if the translation exists)
-		  //   config.{mod-id}.demo.some_bool.help
+		  //   config.{mod-id}.demo.some_bool:help
+		  // There's a translation debug mode which can be enabled in the
+		  //   SimpleConfig mod config, which will display translation
+		  //   keys, and highlight missing ones in red.
 		  .add("bool", bool(true))
-		  // Creating config subgroups is done with .n(), which is
-		  //   short for 'nest', and the group() builder
+		  // Creating config subgroups and categories is done with .n(),
+		  //   which is short for 'nest', and the group()/category() builders
+		  // Categories can not be nested more than one level, and produce
+		  //   separate pages in the GUI. Groups can be nested without limit.
 		  // Groups can be automatically expanded in the GUI, by
 		  //   passing true in their builder
 		  // Groups can contain entries and other groups
 		  .n(group("entries", true)
 		       // Text entries may also be defined by name, receiving
-		       //   automatically mapped translation keys as other entries
+		       //   automatically mapped translation keys like other entries
 		       .text("intro")
 		       // Groups can be nested
 		       .n(group("basic")
@@ -160,7 +167,7 @@ public class DemoConfigCategory {
 		            //   and set as flags what you think should be the default
 		            .add("regex_value", pattern("nice (?<regex>.*+)").flags(Pattern.CASE_INSENSITIVE))
 		            // Enums are supported too
-		            // Enums entries get automatically mapped translation keys
+		            // Enum entries get automatically mapped translation keys
 		            //   for their values, however, these mappings do not
 		            //   depend on their path, so enums with the same name
 		            //   may clash
@@ -181,12 +188,19 @@ public class DemoConfigCategory {
 		              .restrict(natoPhoneticAlphabet))
 		            // Any entry can be restricted to a finite set of values
 		            //   by using select(), resulting in an enum-like GUI control
+		            // A user setting may transform these enum-like controls with
+		            //   too many options into combo boxes for a better interface
 		            .add("str_select", select(string("Alpha"), natoPhoneticAlphabet))
-		            // By intentional design, there's no built-in support for
-		            //   keybinding entries, please register your keybindings
-		            //   through the ClientRegistry.registerKeyBinding to
+		            // Key binding entries also exist, HOWEVER,
+		            //   PLEASE REGISTER YOUR KEY BINDINGS THROUGH
+		            //   ClientRegistry.registerKeyBinding INSTEAD, to
 		            //   benefit from Forge's key conflict resolution and an
-		            //   entry in the Controls GUI
+		            //   entry in the Controls GUI, where USERS WILL EXPECT it.
+		            // Key binding entries are only supported to be used in
+		            //   map entries, like shown below in this demo.
+		            // Note that the KeyBinding class used by standard
+		            //   key bindings and the ModifierKeyCode class used by
+		            //   key bind entries are distinct.
 		       ).n(group("colors")
 		            // Color entries use java.awt.Color as their type
 		            .add("no_alpha_color", color(Color.BLUE))
@@ -204,10 +218,10 @@ public class DemoConfigCategory {
 		            //   make your config too complex to use
 		            // Each list builder can specify the default for its level
 		            // Additionally, list types can hold another entry of
-		            //   non-expandable types by passing it to the same .add() method
+		            //   non-expandable types by using caption()
 		            // Held entries are displayed on the blank space at the caption
-		            //   of the list entry, but have their own independent entry
-		            //   in the config file.
+		            //   of the list entry.
+		            // A caption() entry produces an org.apache.commons.lang3.tuple.Pair
 		            .add("color_list_list", caption(color(Color.GRAY), list(
 		              caption(color(Color.GRAY), list(color(Color.BLACK), asList(Color.GRAY))),
 		              asList(
@@ -333,7 +347,11 @@ public class DemoConfigCategory {
 		          .add("instruction_list", pairList(
 						string("move").restrict("move", "rotate", "dig", "tower"),
 						number(1), Lists.newArrayList(
-						  Pair.of("move", 2), Pair.of("tower", 1)))))
+						  Pair.of("move", 2), Pair.of("tower", 1))))
+		          .add("key_map", map(
+						key(), string("/execute ..."), ImmutableMap.of(
+						  parse("ctrl+h"), "/tp 0 0 0",
+						  parse("ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true"))))
 		     // As lists and maps, groups can also hold entries in their captions
 		     //   The held entries belong to the group and have their own entry
 		     //   within it in the config file.
@@ -366,7 +384,7 @@ public class DemoConfigCategory {
 		            () -> Util.getOSType().openFile(
 		              Minecraft.getInstance().gameDir.toPath().resolve("options.txt").toFile())
 		          ).label("chat.file.open"))
-		          // A button may be added to any entry type, replacing its reset button
+		          // A button may be added to any entry type
 		          //   However, this makes the entry not persistent
 		          //   This may be useful to modify other entries
 		          // It's also useful to create config presets, for which a
@@ -403,18 +421,22 @@ public class DemoConfigCategory {
 		                .add("preset_test.c", 4)
 		                .add("preset_test.d", "\"6\"")
 		                .add("preset_test.e", Lists.newArrayList(8, 10, 12)),
+						  // We may also extract common path parts using .n()
 		              preset("odd")
-		                .add("preset_test.a", 1)
-		                .add("preset_test.b", 3)
-		                .add("preset_test.c", 5)
-		                .add("preset_test.d", "\"7\"")
-		                .add("preset_test.e", Lists.newArrayList(9, 11, 13)),
+		                .n(preset("preset_test")
+		                     .add("a", 1)
+		                     .add("b", 3)
+		                     .add("c", 5)
+		                     .add("d", "\"7\"")
+		                     .add("e", Lists.newArrayList(9, 11, 13))),
 		              preset("fibonacci")
-		                .add("preset_test.a", 1)
-		                .add("preset_test.b", 1)
-		                .add("preset_test.c", 2)
-		                .add("preset_test.d", "\"3\"")
-		                .add("preset_test.e", Lists.newArrayList(5, 8, 13))
+		                .n(preset("preset_test")
+		                     .add("a", 1)
+		                     .add("b", 1)
+		                     .add("c", 2)
+		                     .add("d", "\"3\"")
+		                     .add("e", Lists.newArrayList(5, 8, 13)))
+		              // Or in this case, we could have passed "preset_test" as the path here
 		            ), ""))
 		          // The following entries are used in the presets above
 		          .n(group("preset_test")
@@ -675,6 +697,7 @@ public class DemoConfigCategory {
 			@Bind public static Map<String, List<String>> list_map;
 			@Bind public static Pair<Integer, Map<String, Map<String, Integer>>> divisible_int_map_map;
 			@Bind public static Map<Integer, Integer> int_to_int_map;
+			@Bind public static Map<ModifierKeyCode, String> key_map;
 		}
 		
 		@Bind public static class special {

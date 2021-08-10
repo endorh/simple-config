@@ -1,7 +1,6 @@
 package endorh.simple_config.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.gui.widget.TintedButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.DialogTexts;
@@ -10,8 +9,6 @@ import net.minecraft.util.text.*;
 
 import java.util.List;
 import java.util.function.Consumer;
-
-import static java.lang.Math.min;
 
 public class ConfirmLinkDialog extends ConfirmDialog {
 	protected TintedButton copyButton;
@@ -37,7 +34,7 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	  ITextComponent cancelText, ITextComponent copyText, ITextComponent confirmText,
 	  IOverlayCapableScreen screen, boolean securityWarning
 	) {
-		super(b -> {}, title, body, cancelText, confirmText, screen);
+		super(screen, title, b -> {}, body, cancelText, confirmText);
 		if (securityWarning)
 			body.add(0, new TranslationTextComponent("chat.link.warning"));
 		body.add(new TranslationTextComponent("simple-config.ui.link.display", formatLink(link)));
@@ -45,27 +42,8 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 		super.setAction(this::action);
 		copyButton = new TintedButton(0, 0, 120, 20, copyText, p -> copy());
 		copyButton.setTintColor(0x802424BD);
+		addButton(1, copyButton);
 		confirmButton.setTintColor(0x80A07010);
-		listeners.add(1, copyButton);
-	}
-	
-	@Override protected void position() {
-		super.position();
-		int bw = min(150, (w - 16) / 3);
-		cancelButton.setWidth(bw);
-		confirmButton.setWidth(bw);
-		copyButton.setWidth(bw);
-		copyButton.x = x + w / 2 - bw / 2;
-		cancelButton.x = x + w / 2 - bw * 3 / 2 - 4;
-		confirmButton.x = x + w / 2 + bw / 2 + 4;
-		copyButton.y = cancelButton.y = confirmButton.y = this.y + h - 24;
-	}
-	
-	@Override public void renderBody(
-	  MatrixStack mStack, int mouseX, int mouseY, float delta
-	) {
-		super.renderBody(mStack, mouseX, mouseY, delta);
-		copyButton.render(mStack, mouseX, mouseY, delta);
 	}
 	
 	public void copy() {

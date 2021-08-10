@@ -2,18 +2,19 @@ package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.SimpleConfigIcons;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.MultiFunctionImageButton;
+import endorh.simple_config.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -55,15 +56,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		entry.setExpandableParent(getExpandableParent());
 		this.buttonLabelSupplier = buttonLabelSupplier;
 		this.button = new MultiFunctionImageButton(
-		  0, 0, 20, 20, 160, 128,
-		  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"),
-		  (w, b) -> {
-			  if (b == 0) {
-				  action.accept(getValue());
-				  return true;
-			  }
-			  return false;
-		  });
+		  0, 0, 20, 20, SimpleConfigIcons.ACCEPT, ButtonAction.of(() -> action.accept(getValue())));
 		this.listeners = Lists.newArrayList(this.entry, button, resetButton);
 		this.childListeners = Lists.newArrayList(this.entry, button);
 		setReferenceProviderEntries(Util.make(new ArrayList<>(), l -> l.add(entry)));
@@ -77,7 +70,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		super.updateSelected(isSelected);
 		entry.updateSelected(isSelected);
 		if (!isSelected)
-			EntryButtonListEntry.forceUnFocus(button);
+			WidgetUtils.forceUnFocus(button);
 	}
 	
 	@Override public boolean isEdited() {

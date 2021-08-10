@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.widget;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.clothconfig2.gui.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.TextFieldWidget;
@@ -37,8 +38,7 @@ public class ColorDisplayWidget extends Widget {
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.enableDepthTest();
-		blit(mStack, x + 1, y + 1, 216, 0, size - 2, size - 2);
-		// fillGradient(mStack, x + 1, y + 1, x + size - 1, y + size - 1, -1, -1);
+		SimpleConfigIcons.CHESS_BOARD.renderStretch(mStack, x + 1, y + 1, size - 2, size - 2);
 		fillGradient(mStack, x + 1, y + 1, x + size - 1, y + size - 1, color, color);
 	}
 	

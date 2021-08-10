@@ -1,5 +1,7 @@
 package endorh.simple_config.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -26,7 +28,6 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simple_config.core.NBTUtil.fromNBT;
@@ -124,27 +125,19 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
-	@Override protected List<Pair<K, V>> get(ConfigValue<?> spec) {
-		return fromConfigOrDefault(fromActualConfig((String) spec.get()));
-	}
-	
-	@Override protected void set(ConfigValue<?> spec, List<Pair<K, V>> value) {
-		//noinspection unchecked
-		((ConfigValue<String>) spec).set(forActualConfig(forConfig(value)));
-		bakeField();
-	}
-	
-	protected String forActualConfig(List<Pair<String, C>> value) {
+	public String forActualConfig(@Nullable List<Pair<String, C>> value) {
+		if (value == null) return null;
 		final Map<String, C> m = new HashMap<>();
 		int i = 0;
 		for (Pair<String, C> p : value) m.put(i++ + ":" + p.getKey(), p.getValue());
 		return toNBT(m).toString();
 	}
 	
-	protected @Nullable List<Pair<String, C>> fromActualConfig(String value) {
-		if (value == null) return null;
+	protected @Nullable List<Pair<String, C>> fromActualConfig(@Nullable Object value) {
+		if (!(value instanceof String)) return null;
+		final String str = (String) value;
 		try {
-			CompoundNBT m = new JsonToNBT(new StringReader(value)).readStruct();
+			CompoundNBT m = new JsonToNBT(new StringReader(str)).readStruct();
 			final List<Pair<String, C>> list = new ArrayList<>();
 			m.keySet().stream().map(k -> {
 				final Matcher s = NBTUtil.SPLIT.matcher(k);
@@ -194,7 +187,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	protected Predicate<Object> configValidator() {
 		return o -> {
 			if (o instanceof String) {
-				final List<Pair<String, C>> pre = fromActualConfig((String) o);
+				final List<Pair<String, C>> pre = fromActualConfig(o);
 				final List<Pair<K, V>> l = fromConfig(pre);
 				if (l == null) return false;
 				return !supplyError(forGui(l)).isPresent();
@@ -204,8 +197,11 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(
-		  decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
+	}
+	
+	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
+		spec.define(parentPath + name, forActualConfig(forConfig(value)), configValidator());
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>

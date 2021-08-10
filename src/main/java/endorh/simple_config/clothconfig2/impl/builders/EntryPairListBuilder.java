@@ -2,8 +2,8 @@ package endorh.simple_config.clothconfig2.impl.builders;
 
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simple_config.clothconfig2.gui.entries.EntryPairListListEntry;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.EntryPairListListEntry;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 

@@ -1,14 +1,12 @@
 package endorh.simple_config.clothconfig2.gui;
 
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHelper;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.INestedGuiEventHandler;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
- * Propagates drag events with other buttons than 0
+ * Propagates drag events with other buttons than 0<br>
  * Adds the method {@link IExtendedDragAwareNestedGuiEventHandler#endDrag(double, double, int)}
  */
 public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEventHandler {

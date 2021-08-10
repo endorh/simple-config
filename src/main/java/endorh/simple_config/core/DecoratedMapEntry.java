@@ -1,6 +1,6 @@
 package endorh.simple_config.core;
 
-import com.google.common.collect.Lists;
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -17,7 +17,6 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -95,10 +94,11 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		return nbt.toString();
 	}
 	
-	public @Nullable Pair<CC, Map<String, C>> fromActualConfig(@Nullable String value) {
-		if (value == null) return null;
+	public @Nullable Pair<CC, Map<String, C>> fromActualConfig(@Nullable Object value) {
+		if (!(value instanceof String)) return null;
+		final String str = (String) value;
 		try {
-			final CompoundNBT nbt = new JsonToNBT(new StringReader(value)).readStruct();
+			final CompoundNBT nbt = new JsonToNBT(new StringReader(str)).readStruct();
 			//noinspection unchecked
 			final CC key = (CC) fromNBT(nbt.get("k"), getExpectedType().next.get(0));
 			//noinspection unchecked
@@ -132,22 +132,10 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		               mapEntry.fromGuiOrDefault(value.getValue()));
 	}
 	
-	@Override protected Pair<CV, Map<K, V>> get(ConfigValue<?> spec) {
-		return fromConfigOrDefault(fromActualConfig((String)spec.get()));
-	}
-	
-	@Override protected void set(
-	  ConfigValue<?> spec, Pair<CV, Map<K, V>> value
-	) {
-		//noinspection unchecked
-		((ConfigValue<String>) spec).set(forActualConfig(forConfig(value)));
-		bakeField();
-	}
-	
 	@Override protected Predicate<Object> configValidator() {
 		return o -> {
 			if (o instanceof String) {
-				final Pair<CC, Map<String, C>> pre = fromActualConfig((String) o);
+				final Pair<CC, Map<String, C>> pre = fromActualConfig(o);
 				final Pair<CV, Map<K, V>> p = fromConfig(pre);
 				if (p == null) return false;
 				return !supplyError(forGui(p)).isPresent()

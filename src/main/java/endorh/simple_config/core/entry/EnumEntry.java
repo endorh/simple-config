@@ -1,5 +1,8 @@
 package endorh.simple_config.core.entry;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.EnumGetMethod;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
 import endorh.simple_config.SimpleConfigMod.ClientConfig.advanced;
@@ -72,6 +75,16 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(decorate(builder).defineEnum(name, value, configValidator()));
+	}
+	
+	@Override protected void buildSpec(
+	  ConfigSpec spec, String parentPath
+	) {
+		spec.defineEnum(parentPath + name, value, EnumGetMethod.NAME_IGNORECASE);
+	}
+	
+	@Override protected E get(CommentedConfig config) {
+		return config.getEnumOrElse(name, value, EnumGetMethod.NAME_IGNORECASE);
 	}
 	
 	@Override protected ITextComponent getDebugDisplayName() {

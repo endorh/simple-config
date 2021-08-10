@@ -2,8 +2,6 @@ package endorh.simple_config.core;
 
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 /**

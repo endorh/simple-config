@@ -5,11 +5,16 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.gui.ClothConfigScreen;
 import endorh.simple_config.clothconfig2.gui.entries.BaseListEntry;
+import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import endorh.simple_config.clothconfig2.math.Rectangle;
+import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.Style;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

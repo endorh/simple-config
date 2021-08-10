@@ -1,7 +1,5 @@
 package endorh.simple_config.core.annotation;
 
-import endorh.simple_config.core.SimpleConfigBuilder;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

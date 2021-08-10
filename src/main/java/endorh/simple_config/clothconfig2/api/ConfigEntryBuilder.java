@@ -1,6 +1,8 @@
 package endorh.simple_config.clothconfig2.api;
 
-import endorh.simple_config.clothconfig2.gui.entries.*;
+import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.EntryPairListListEntry;
+import endorh.simple_config.clothconfig2.gui.entries.NestedListListEntry;
 import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
 import endorh.simple_config.clothconfig2.impl.ConfigEntryBuilderImpl;
 import endorh.simple_config.clothconfig2.impl.builders.*;

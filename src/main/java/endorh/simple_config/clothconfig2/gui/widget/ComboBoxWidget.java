@@ -6,9 +6,10 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
-import endorh.simple_config.clothconfig2.api.ScrollingContainer;
+import endorh.simple_config.clothconfig2.api.ScrollingHandler;
 import endorh.simple_config.clothconfig2.gui.IOverlayCapableScreen;
 import endorh.simple_config.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
+import endorh.simple_config.clothconfig2.gui.Icon;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.block.Block;
 import net.minecraft.client.KeyboardListener;
@@ -36,15 +37,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import static endorh.simple_config.SimpleConfigMod.CLIENT_CONFIG;
 import static java.lang.Math.*;
 import static net.minecraft.util.math.MathHelper.clamp;
 
@@ -93,7 +90,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected int disabledColor = 0x707070;
 	protected Consumer<String> textListener;
 	protected Consumer<T> valueListener;
+	// protected CompletableFuture<List<T>> futureSuggestions;
 	protected List<T> lastSuggestions = Lists.newArrayList();
+	protected List<T> lastSortedSuggestions = Lists.newArrayList();
+	protected String lastQuery = "";
 	protected List<ITextComponent> decoratedSuggestions = Lists.newArrayList();
 	/** Called to check if the text is valid */
 	protected Predicate<String> textValidator = Objects::nonNull;
@@ -162,7 +162,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		mStack.push();{
 			final int maxScroll = getMaxDropDownScroll();
 			final double prev = dropDownScroll;
-			this.dropDownScroll = ScrollingContainer.handleScrollingPosition(
+			this.dropDownScroll = ScrollingHandler.handleScrollingPosition(
 			  new double[]{dropDownScrollTarget}, this.dropDownScroll, Double.POSITIVE_INFINITY,
 			  0, scrollAnimationStart, scrollAnimationDuration);
 			if (dropDownScroll > maxScroll && dropDownScroll > prev)
@@ -183,19 +183,19 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			if (showScrollbar)
 				suggestionWidth -= 5;
 			
-			if (!lastSuggestions.isEmpty()) {
+			if (!lastSortedSuggestions.isEmpty()) {
 				final int suggestionHeight = getSuggestionHeight();
 				int firstIdx =
-				  (int) clamp(this.dropDownScroll / suggestionHeight, 0, lastSuggestions.size() - 1);
+				  (int) clamp(this.dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				int lastIdx =
 				  (int) clamp(
 					 (this.dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0,
-					 lastSuggestions.size() - 1);
+					 lastSortedSuggestions.size() - 1);
 				
 				int yy = area.y + 1 - ((int) this.dropDownScroll) % suggestionHeight;
 				for (int i = firstIdx; i <= lastIdx; i++) {
 					renderSuggestion(
-					  i, lastSuggestions.get(i), mStack, area.x + 1, yy, suggestionWidth,
+					  i, lastSortedSuggestions.get(i), mStack, area.x + 1, yy, suggestionWidth,
 					  suggestionHeight,
 					  mouseX, mouseY, delta, i == suggestionCursor);
 					yy += suggestionHeight;
@@ -205,7 +205,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					final int scrollBarX = area.getMaxX() - 6;
 					fill(mStack, scrollBarX, area.y + 1, scrollBarX + 5, area.getMaxY(), 0x80646464);
 					int thumbHeight =
-					  max(20, (area.height - 2) / (lastSuggestions.size() * suggestionHeight));
+					  max(20, (area.height - 2) / (lastSortedSuggestions.size() * suggestionHeight));
 					int thumbY = area.y + 1 + (int) round(
 					  (area.height - 2 - thumbHeight) * (this.dropDownScroll / maxScroll));
 					int thumbColor = draggingDropDownScrollBar || (
@@ -216,9 +216,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					  mStack, scrollBarX, thumbY, area.getMaxX() - 1, thumbY + thumbHeight, thumbColor);
 				}
 			} else {
-				drawTextComponent(
-				  new TranslationTextComponent("text.cloth-config.dropdown.value.unknown"),
-				  mStack, area.x + 4, area.y + 2, area.width - 2, 10, 0xffe0e0e0);
+				final Optional<ITextComponent> opt = suggestionProvider.getPlaceHolder(typeWrapper, text);
+				if (opt.isPresent()) {
+					drawTextComponent(
+					  opt.get(), mStack, area.x + 4, area.y + 2,
+					  area.width - 2, 10, 0xffe0e0e0);
+				} else setDropDownShown(false);
 			}
 			
 			fill(mStack, area.x + 1, area.y, area.getMaxX() - 1, area.y + 1, borderColor);
@@ -240,14 +243,17 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		
 		int textX = x + 2;
 		int textY = y;
-		final int iconSize = getIconSize();
+		final int iconHeight = getIconHeight();
+		final int iconWidth = getIconWidth();
 		if (typeWrapper.hasIcon()) {
 			// mStack.push(); {
 			// 	// mStack.translate(0D, 0D, CLIENT_CONFIG.getGUIDouble("demo.entries.serializable.z_test"));
-				typeWrapper.renderIcon(suggestion, mStack, x, y, iconSize, min(iconSize, h), mouseX, mouseY, delta);
+				typeWrapper.renderIcon(
+				  suggestion, typeWrapper.getName(suggestion), mStack, x, y, iconWidth,
+				  min(iconHeight, h), mouseX, mouseY, delta);
 			// } mStack.pop();
-			textX += iconSize;
-			textY += (iconSize - 10) / 2;
+			textX += iconWidth;
+			textY += (iconHeight - 10) / 2;
 		}
 		
 		final ITextComponent name =
@@ -256,7 +262,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		
 		int textW = w - 4;
 		if (hasIcon())
-			textW -= iconSize;
+			textW -= iconWidth;
 		
 		drawTextComponent(
 		  name, mStack, textX, textY + 1, textW, 10, 0xffffffff);
@@ -284,7 +290,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public int getMaxDropDownScroll() {
-		return getSuggestionHeight() * lastSuggestions.size() + 2 - getDropDownHeight();
+		return getSuggestionHeight() * lastSortedSuggestions.size() + 2 - getDropDownHeight();
 	}
 	
 	public boolean isScrollbarHovered(double mouseX, double mouseY) {
@@ -295,7 +301,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public boolean isScrollThumbHovered(double mouseX, double mouseY) {
 		final Rectangle area = dropDownRectangle;
-		int thumbHeight = max(20, (area.height - 2) / (lastSuggestions.size() * suggestionHeight));
+		int thumbHeight = max(20, (area.height - 2) / (lastSortedSuggestions.size() * suggestionHeight));
 		int thumbY = area.y + 1 + (int) round((area.height - 2 - thumbHeight) * (dropDownScroll / getMaxDropDownScroll()));
 		return mouseX >= area.getMaxX() - 6 && mouseX < area.getMaxX() - 1
 		       && mouseY >= thumbY && mouseY < thumbY + thumbHeight;
@@ -306,7 +312,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (!rect.contains(mouseX, mouseY))
 			return false;
 		if (isScrollbarHovered(mouseX, mouseY)) {
-			int thumbHeight = max(20, (rect.height - 2) / (lastSuggestions.size() * suggestionHeight));
+			int thumbHeight = max(20, (rect.height - 2) / (lastSortedSuggestions.size() * suggestionHeight));
 			double scrollRange = rect.height - 2 - thumbHeight;
 			setDropDownScroll((int) round((mouseY - rect.y - thumbHeight / 2D) / scrollRange * getMaxDropDownScroll()));
 			draggingDropDownScrollBar = true;
@@ -315,8 +321,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		final int suggestionHeight = getSuggestionHeight();
 		int relY = (int) ((mouseY) - rect.y - 1 + dropDownScroll);
 		int hoveredIndex = relY / suggestionHeight;
-		if (hoveredIndex >= 0 && hoveredIndex < lastSuggestions.size())
-			setValue(lastSuggestions.get(hoveredIndex));
+		if (hoveredIndex >= 0 && hoveredIndex < lastSortedSuggestions.size())
+			setValue(lastSortedSuggestions.get(hoveredIndex));
 		setDropDownShown(false);
 		return true;
 	}
@@ -326,7 +332,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	) {
 		if (draggingDropDownScrollBar) {
 			final Rectangle rect = dropDownRectangle;
-			int thumbHeight = max(20, (rect.height - 2) / (lastSuggestions.size() * suggestionHeight));
+			int thumbHeight = max(20, (rect.height - 2) / (lastSortedSuggestions.size() * suggestionHeight));
 			double scrollRange = rect.height - 2 - thumbHeight;
 			setDropDownScroll((int) round((mouseY - rect.y - thumbHeight / 2D) / scrollRange * getMaxDropDownScroll()));
 			return true;
@@ -384,20 +390,24 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public List<T> getShownSuggestions() {
-		return Collections.unmodifiableList(lastSuggestions);
+		return Collections.unmodifiableList(lastSortedSuggestions);
 	}
 	
 	public int getDropDownHeight() {
-		return lastSuggestions.isEmpty()? 12 : min(
-		  dropDownHeight, getSuggestionHeight() * lastSuggestions.size() + 2);
+		return lastSortedSuggestions.isEmpty() ? 12 : min(
+		  dropDownHeight, getSuggestionHeight() * lastSortedSuggestions.size() + 2);
 	}
 	
-	public int getIconSize() {
-		return typeWrapper.getIconSize();
+	public int getIconHeight() {
+		return typeWrapper.getIconHeight();
+	}
+	
+	public int getIconWidth() {
+		return typeWrapper.getIconWidth();
 	}
 	
 	public int getSuggestionHeight() {
-		return hasIcon() ? getIconSize() : 10;
+		return hasIcon() ? getIconHeight() : 10;
 	}
 	
 	public void setDropDownScroll(int scroll) {
@@ -519,7 +529,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			clampCaretPosition(start + length);
 			setAnchor(caretPos);
 			onTextChanged(text);
-			if (isAutoDropDown() && !isDropDownShown() && !lastSuggestions.isEmpty())
+			if (isAutoDropDown() && !isDropDownShown() && !lastSortedSuggestions.isEmpty())
 				setDropDownShown(true);
 		}
 	}
@@ -544,11 +554,17 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	protected void updateSuggestions() {
-		final Pair<List<T>, List<ITextComponent>> p =
-		  suggestionProvider.provideDecoratedSuggestions(typeWrapper, text);
-		lastSuggestions = p.getLeft();
-		decoratedSuggestions = p.getRight();
-		setDropDownScroll(0);
+		String query = text;
+		final Optional<List<T>> opt = suggestionProvider.updateSuggestions(typeWrapper, query);
+		opt.ifPresent(ls -> lastSuggestions = ls);
+		if (opt.isPresent() || !query.equals(lastQuery)) {
+			final Pair<List<T>, List<ITextComponent>> pair =
+			  suggestionProvider.pickAndDecorateSuggestions(typeWrapper, query, lastSuggestions);
+			lastSortedSuggestions = pair.getLeft();
+			decoratedSuggestions = pair.getRight();
+			lastQuery = query;
+			setDropDownScroll(0);
+		}
 	}
 	
 	protected void onValueChanged(T newValue) {
@@ -780,11 +796,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (!isDropDownShown())
 			setDropDownShown(true);
 		int prev = suggestionCursor;
-		suggestionCursor = clamp(suggestionCursor + step, 0, lastSuggestions.size() - 1);
+		suggestionCursor = clamp(suggestionCursor + step, 0, lastSortedSuggestions.size() - 1);
 		// Ensure visible
 		final int suggestionHeight = getSuggestionHeight();
-		int firstIdx = (int) clamp(dropDownScroll / suggestionHeight, 0, lastSuggestions.size() - 1);
-		int lastIdx = (int) clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSuggestions.size() - 1);
+		int firstIdx = (int) clamp(dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+		int lastIdx = (int) clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 		
 		final long t = System.currentTimeMillis();
 		// Do not animate for very fast movement for better readability
@@ -833,12 +849,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			
 			boolean hovered = isMouseOver(mouseX, mouseY);
 			if (isRestrictedToSuggestions() && hovered) {
-				if (!isFocused())
-					setFocused(true);
+				if (!isFocused()) setFocused(true);
 				final boolean wasShown = isDropDownShown();
 				setDropDownShown(!wasShown);
-				if (!wasShown)
-					setText("");
+				if (!wasShown) setText("");
 				Minecraft.getInstance().getSoundHandler().play(
 				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
@@ -888,6 +902,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
 	) {
 		if (getVisible()) {
+			updateSuggestions();
 			if (shouldDrawBackground()) {
 				int borderColor = isFocused() ? 0xffffffff : 0xffa0a0a0;
 				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, borderColor);
@@ -901,20 +916,21 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			
 			updateDropDownRectangle();
 			
-			if (lastSuggestions.isEmpty()) {
+			if (lastSortedSuggestions.isEmpty()) {
 				autoCompleteValue = null;
-			} else if (suggestionCursor >= 0 && suggestionCursor < lastSuggestions.size()) {
-				autoCompleteValue = lastSuggestions.get(suggestionCursor);
+			} else if (suggestionCursor >= 0 && suggestionCursor < lastSortedSuggestions.size()) {
+				autoCompleteValue = lastSortedSuggestions.get(suggestionCursor);
 			} else if (text.isEmpty() && !"".equals(value)) {
 				autoCompleteValue = value;
-			} else autoCompleteValue = lastSuggestions.get(0);
+			} else autoCompleteValue = lastSortedSuggestions.get(0);
 			
 			boolean hasIcon = hasIcon();
-			final int iconSize = getIconSize();
-			int textX = hasIcon? x + iconSize + 1 : shouldDrawBackground ? x + 4 : x;
+			final int iconHeight = getIconHeight();
+			final int iconWidth = getIconWidth();
+			int textX = hasIcon? x + iconWidth + 1 : shouldDrawBackground ? x + 4 : x;
 			int textY = shouldDrawBackground ? y + (height - 8) / 2 : y;
 			int iconX = x;
-			int iconY = shouldDrawBackground? textY + 4 - iconSize / 2 : hasIcon? y + iconSize / 2 - 4 : y;
+			int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
 			final int adjustedWidth = getAdjustedWidth();
 			if (isFocused() || value == null) {
 				int color = isEnabled() ? enabledColor : disabledColor;
@@ -978,18 +994,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				drawTextComponent(display, mStack, textX, textY, adjustedWidth, 10, 0xffe0e0e0);
 			}
 			
-			if (hasIcon) {
-				if (value == null && autoCompleteValue == null) {
-					Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);
-					blit(mStack, iconX, iconY, 96, 84, 20, 20);
-				} else if (!typeWrapper.renderIcon(
-				  autoCompleteValue != null? autoCompleteValue : value,
-				  mStack, iconX, iconY, iconSize, iconSize, mouseX, mouseY, delta)
-				) {
-					Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);
-					blit(mStack, iconX, iconY, 96, 64, 20, 20);
-				}
-			}
+			if (hasIcon) typeWrapper.renderIcon(
+			  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
+			  iconX, iconY, iconWidth, iconHeight, mouseX, mouseY, delta);
 			
 			int arrowX = x + width - arrowWidth, arrowY = y;
 			renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHovered() ? x : arrowX);
@@ -1002,10 +1009,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public boolean isMouseOverIcon(int mouseX, int mouseY) {
-		final int iconSize = getIconSize();
-		int iconY = shouldDrawBackground? y + height / 2 - iconSize / 2 : y;
-		return hasIcon() && mouseX >= x && mouseX < x + iconSize
-		       && mouseY >= iconY && mouseY < iconY + iconSize;
+		final int iconHeight = getIconHeight();
+		int iconY = shouldDrawBackground? y + height / 2 - iconHeight / 2 : y;
+		return hasIcon() && mouseX >= x && mouseX < x + getIconWidth()
+		       && mouseY >= iconY && mouseY < iconY + iconHeight;
 	}
 	
 	protected void renderArrow(MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, int backgroundX) {
@@ -1161,7 +1168,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	public int getAdjustedWidth() {
 		int w = shouldDrawBackground() ? width - 8 : width;
 		if (hasIcon())
-			w += 4 - getIconSize();
+			w += 4 - getIconWidth();
 		return w - arrowWidth;
 	}
 	
@@ -1188,7 +1195,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				hScroll -= font.func_238413_a_(text, j, true).length();
 			
 			if (anchorPos > k) {
-				// We can't assume the font is monospace
+				// We can't assume the font is monospace (plus the default actually isn't)
 				final String rev = new StringBuilder(text.substring(0, anchorPos)).reverse().toString();
 				hScroll = anchorPos - font.func_238412_a_(rev, j).length();
 			} else if (anchorPos <= hScroll) {
@@ -1239,144 +1246,80 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	// Extension
 	
 	public interface ISortedSuggestionProvider<T> {
-		default Pair<List<T>, List<ITextComponent>> provideDecoratedSuggestions(
-		  ITypeWrapper<T> typeWrapper, String query
-		) {
-			final List<T> suggestions = provideSuggestions(typeWrapper, query);
-			return Pair.of(suggestions, suggestions.stream()
-			  .map(t -> (ITextComponent) new StringTextComponent(typeWrapper.getName(t)))
-			  .collect(Collectors.toList()));
+		Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
+		  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions);
+		Optional<List<T>> updateSuggestions(ITypeWrapper<T> typeWrapper, String query);
+		default Optional<ITextComponent> getPlaceHolder(ITypeWrapper<T> typeWrapper, String query) {
+			return Optional.of(new TranslationTextComponent("text.cloth-config.dropdown.value.unknown"));
 		}
-		List<T> provideSuggestions(ITypeWrapper<T> typeWrapper, String query);
 	}
 	
-	public static class SimpleSortedSuggestionProvider<T> implements ISortedSuggestionProvider<T> {
-		@NotNull protected List<T> suggestions;
-		protected TextFormatting matchFormat = TextFormatting.BLUE;
+	public static abstract class AbstractSortedSuggestionProvider<T> implements ISortedSuggestionProvider<T> {
+		/**
+		 * Splits word parts
+		 */
+		protected static Pattern TOKEN_SPLITTER = Pattern.compile("[\\s_]++|(?<=[a-z])(?=[A-Z])");
 		
-		public SimpleSortedSuggestionProvider(
-		  @NotNull List<T> suggestions
-		) {
-			this.suggestions = suggestions;
+		/**
+		 * Extract a formatted substring from an {@link ITextComponent}.<br>
+		 * Should be called on the client side only, if the component may contain translations.<br>
+		 * <br>
+		 * See {@code endorh.util.text.TextUtil} from the {@code endorh-util} mod
+		 * @param text Component to slice
+		 * @param start Start index of the substring.
+		 *              Negative values are corrected counting from the end.
+		 * @param end End index of the substring.
+		 *            Negative values are corrected counting from the end.
+		 *            Defaults to the end of the component.
+		 */
+		protected static IFormattableTextComponent subText(ITextComponent text, int start, int end) {
+			final int n = text.getString().length();
+			if (start > n) throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
+			if (start < 0) {
+				if (n + start < 0) throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
+				start = n + start;
+			}
+			if (end > n) throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
+			if (end < 0) {
+				if (n + end < 0) throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
+				end = n + end;
+			}
+			if (end <= start) return new StringTextComponent("");
+			boolean started = false;
+			final List<ITextComponent> siblings = text.getSiblings();
+			IFormattableTextComponent res = new StringTextComponent("");
+			String str = text.getUnformattedComponentText();
+			if (start < str.length()) {
+				started = true;
+				res = res.append(new StringTextComponent(
+				  str.substring(start, Math.min(str.length(), end))).setStyle(text.getStyle()));
+				if (end < str.length()) return res;
+			}
+			int o = str.length();
+			for (ITextComponent sibling : siblings) {
+				str = sibling.getUnformattedComponentText();
+				if (started || start - o < str.length()) {
+					res = res.append(new StringTextComponent(
+					  str.substring(started? 0 : start - o, Math.min(str.length(), end - o))
+					).setStyle(sibling.getStyle()));
+					started = true;
+					if (end - o < str.length()) return res;
+				}
+				o += str.length();
+			}
+			return res;
 		}
 		
-		@Override public Pair<List<T>, List<ITextComponent>> provideDecoratedSuggestions(
-		  ITypeWrapper<T> typeWrapper, String query
-		) {
-			if (query.isEmpty())
-				return Pair.of(suggestions, suggestions.stream()
-				  .map(e -> (ITextComponent) new StringTextComponent(typeWrapper.getName(e)))
-				  .collect(Collectors.toList()));
-			Set<T> set = new LinkedHashSet<>();
-			List<ITextComponent> names = new ArrayList<>();
-			suggestions.stream()
-			  .map(e -> {
-				  final String n = typeWrapper.getName(e);
-				  return Triple.of(e, n, tokenMatches(n, query));
-			  }).filter(t -> !t.getRight().isEmpty())
-			  .sorted(Comparator.<Triple<T, String, List<String>>>comparingInt(
-				 t -> t.getRight().stream().mapToInt(String::length).reduce(0, (a, b) -> a * b)
-			  ).thenComparingInt(t -> t.getMiddle().length()))
-			  .forEachOrdered(t -> {
-				  if (set.add(t.getLeft())) {
-					  final String name = t.getMiddle();
-					  String n = name;
-					  final String[] sp = splitter.split(name);
-					  final List<String> matches = t.getRight();
-					  int i = 0;
-					  IFormattableTextComponent stc = new StringTextComponent("");
-					  for (final String frag : sp) {
-						  if (i >= matches.size()) {
-							  stc = stc.appendString(n);
-							  break;
-						  }
-						  final int s = n.indexOf(frag);
-						  if (s > 0) {
-							  stc = stc.appendString(n.substring(0, s));
-							  n = n.substring(s);
-						  }
-						  final String tar = matches.get(i);
-						  final int j = frag.indexOf(tar);
-						  if (j == -1) {
-							  stc = stc.appendString(frag);
-						  } else {
-							  stc = stc.appendString(frag.substring(0, j))
-							    .append(new StringTextComponent(frag.substring(j, j + tar.length()))
-								           .mergeStyle(matchFormat))
-							    .appendString(frag.substring(j + tar.length()));
-							  i++;
-						  }
-						  n = n.substring(frag.length());
-					  }
-					  stc = stc.appendString(n);
-					  // for (String m : tm) {
-						//   final int i = n.indexOf(m);
-						//   if (i == -1) {
-						// 	  names.add(new StringTextComponent(name));
-						// 	  return;
-						//   }
-						//   stc = stc.appendString(n.substring(0, i))
-						//     .append(new StringTextComponent(m).mergeStyle(matchFormat));
-						//   n = n.substring(i + m.length());
-					  // }
-					  // stc = stc.appendString(n);
-					  names.add(stc);
-				  }
-			  });
-			suggestions.stream()
-			  .filter(e -> !set.contains(e))
-			  .map(e -> Pair.of(e, typeWrapper.getName(e)))
-			  .filter(p -> p.getRight().contains(query))
-			  .sorted(Comparator
-				         .<Pair<T, String>>comparingInt(p -> p.getRight().length())
-				         .thenComparingInt(p -> p.getRight().indexOf(query))
-				         .thenComparing(Pair::getRight))
-			  .forEachOrdered(p -> {
-				  if (set.add(p.getKey())) {
-					  final String name = p.getRight();
-					  final int i = name.indexOf(query);
-					  names.add(
-					    new StringTextComponent(name.substring(0, i))
-					      .append(new StringTextComponent(
-					        name.substring(i, i + query.length())).mergeStyle(matchFormat))
-					      .appendString(name.substring(i + query.length())));
-				  }
-			  });
-			return Pair.of(new ArrayList<>(set), names);
-		}
-		
-		@Override public List<T> provideSuggestions(ITypeWrapper<T> typeWrapper, String query) {
-			if (query.isEmpty())
-				return suggestions;
-			final Set<T> set = suggestions.stream()
-			  .map(e -> Pair.of(e, tokenMatches(typeWrapper.getName(e), query)))
-			  .filter(p -> !p.getRight().isEmpty())
-			  .sorted(Comparator.<Pair<T, List<String>>>comparingInt(
-			    p -> p.getRight().stream().mapToInt(String::length).reduce(0, (a, b) -> a * b)
-			  ).thenComparingInt(p -> typeWrapper.getName(p.getLeft()).length()))
-			  .map(Pair::getLeft).collect(Collectors.toCollection(LinkedHashSet::new));
-			suggestions.stream()
-			  .filter(e -> !set.contains(e))
-			  .map(e -> Pair.of(e, typeWrapper.getName(e)))
-			  .filter(p -> p.getRight().contains(query))
-			  .sorted(Comparator
-			            .<Pair<T, String>>comparingInt(p -> p.getRight().length())
-			            .thenComparingInt(p -> p.getRight().indexOf(query))
-			            .thenComparing(Pair::getRight))
-			  .map(Pair::getLeft)
-			  .forEachOrdered(set::add);
-			return new ArrayList<>(set);
-		}
-		
-		protected Pattern splitter = Pattern.compile(
-		  "[\\s_]++|(?<=[a-z])(?=[A-Z])");
-		protected List<String> tokenMatches(String target, String query) {
+		/**
+		 * Matches at word part starts
+		 */
+		protected static List<String> tokenMatches(String target, String query) {
 			query = query.trim();
 			target = target.trim();
 			if (query.length() > target.length())
 				return Collections.emptyList();
-			final String[] q = splitter.split(query);
-			final String[] t = splitter.split(target);
+			final String[] q = TOKEN_SPLITTER.split(query);
+			final String[] t = TOKEN_SPLITTER.split(target);
 			if (t.length == 0)
 				return Collections.emptyList();
 			List<String> result = Lists.newArrayList();
@@ -1408,9 +1351,162 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			}
 			return result;
 		}
+		
+		@Override public Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
+		  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions
+		) {
+			if (query.isEmpty())
+				return Pair.of(suggestions, suggestions.stream()
+				  .map(typeWrapper::getDisplayName).collect(Collectors.toList()));
+			if (suggestions.isEmpty()) return Pair.of(suggestions, new ArrayList<>());
+			Set<T> set = new LinkedHashSet<>();
+			List<ITextComponent> names = new ArrayList<>();
+			suggestions.stream()
+			  .map(e -> {
+				  final String n = typeWrapper.getName(e);
+				  return Triple.of(e, n, tokenMatches(n, query));
+			  }).filter(t -> !t.getRight().isEmpty())
+			  .sorted(Comparator.<Triple<T, String, List<String>>>comparingInt(
+				 t -> t.getRight().stream().mapToInt(String::length).reduce(0, (a, b) -> a * b)
+			  ).thenComparingInt(t -> t.getMiddle().length()))
+			  .forEachOrdered(t -> {
+				  final T value = t.getLeft();
+				  if (set.add(value)) {
+					  final String name = t.getMiddle();
+					  String n = name;
+					  final String[] sp = TOKEN_SPLITTER.split(name);
+					  final List<String> matches = t.getRight();
+					  int i = 0, o = 0;
+					  IFormattableTextComponent stc = new StringTextComponent("");
+					  for (final String frag : sp) {
+						  if (i >= matches.size()) break;
+						  final int s = n.indexOf(frag);
+						  if (s > 0) {
+							  stc = stc.append(getNonMatch(typeWrapper, value, name, o, n.substring(0, s)));
+							  o += s;
+							  n = n.substring(s);
+						  }
+						  final String tar = matches.get(i);
+						  final int j = frag.indexOf(tar);
+						  if (j == -1) {
+							  stc = stc.append(getNonMatch(typeWrapper, value, name, o, frag));
+						  } else {
+							  stc = stc.append(getNonMatch(typeWrapper, value, name, o, frag.substring(0, j)))
+							    .append(getMatch(typeWrapper, value, name, o, frag, o + j, tar))
+							    .append(getNonMatch(typeWrapper, value, name, o + j + tar.length(), frag.substring(j + tar.length())));
+							  i++;
+						  }
+						  o += frag.length();
+						  n = n.substring(frag.length());
+					  }
+					  stc = stc.append(getNonMatch(typeWrapper, value, name, o, n));
+					  names.add(stc);
+				  }
+			  });
+			suggestions.stream()
+			  .filter(e -> !set.contains(e))
+			  .map(e -> Pair.of(e, typeWrapper.getName(e)))
+			  .filter(p -> p.getRight().contains(query))
+			  .sorted(Comparator
+				         .<Pair<T, String>>comparingInt(p -> p.getRight().length())
+				         .thenComparingInt(p -> p.getRight().indexOf(query))
+				         .thenComparing(Pair::getRight))
+			  .forEachOrdered(p -> {
+				  final T value = p.getKey();
+				  if (set.add(value)) {
+					  final String name = p.getRight();
+					  final int i = name.indexOf(query);
+					  names.add(getNonMatch(typeWrapper, value, name, 0, name.substring(0, i)).deepCopy()
+					              .append(getMatch(typeWrapper, value, name, 0, name, i, query))
+					              .append(getNonMatch(typeWrapper, value, name, i + query.length(), name.substring(i + query.length()))));
+				  }
+			  });
+			return Pair.of(new ArrayList<>(set), names);
+		}
+		
+		protected Style getMatchStyle() {
+			return Style.EMPTY.createStyleFromFormattings(TextFormatting.BLUE);
+		}
+		
+		protected ITextComponent getMatch(
+		  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
+		  String fragment, int matchPos, String match
+		) {
+			return new StringTextComponent(match).setStyle(getMatchStyle());
+		}
+		
+		protected ITextComponent getNonMatch(
+		  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
+		) {
+			final ITextComponent title = typeWrapper.getDisplayName(item);
+			if (!title.getString().equals(name))
+				return new StringTextComponent(fragment);
+			return subText(title, fragmentPos, fragmentPos + fragment.length());
+		}
+	}
+	
+	public static class SimpleSortedSuggestionProvider<T> extends AbstractSortedSuggestionProvider<T> {
+		@NotNull protected Supplier<List<T>> suggestions;
+		protected List<T> lastSuggestions = null;
+		protected long lastUpdate = 0L;
+		protected long updateCooldown = 250L;
+		protected @Nullable Function<String, ITextComponent> placeholder = null;
+		
+		public SimpleSortedSuggestionProvider(
+		  @NotNull List<T> suggestions
+		) {
+			this.suggestions = () -> suggestions;
+		}
+		
+		public SimpleSortedSuggestionProvider(
+		  @NotNull Supplier<List<T>> suggestionSupplier
+		) {
+			this.suggestions = suggestionSupplier;
+		}
+		
+		@Override public Optional<List<T>> updateSuggestions(
+		  ITypeWrapper<T> typeWrapper, String query
+		) {
+			final long time = System.currentTimeMillis();
+			if (time - lastUpdate < updateCooldown)
+				return Optional.empty();
+			lastUpdate = time;
+			final List<T> suggestions = new ArrayList<>(this.suggestions.get());
+			if (!Objects.equals(suggestions, lastSuggestions)) {
+				lastSuggestions = suggestions;
+				return Optional.of(suggestions);
+			}
+			return Optional.empty();
+		}
+		
+		@Override public Optional<ITextComponent> getPlaceHolder(
+		  ITypeWrapper<T> typeWrapper, String query
+		) {
+			return placeholder != null? Optional.of(placeholder.apply(query))
+			                          : super.getPlaceHolder(typeWrapper, query);
+		}
+		
+		/**
+		 * Set the minimum cooldown between suggestion update checks.<br>
+		 * Defaults to 500ms.
+		 */
+		public void setUpdateCooldown(long cooldownMs) {
+			this.updateCooldown = cooldownMs;
+		}
+		public void setPlaceholder(@Nullable Function<String, ITextComponent> getter) {
+			this.placeholder = getter;
+		}
+		public void setPlaceholder(ITextComponent placeholder) {
+			setPlaceholder(s -> placeholder);
+		}
 	}
 	
 	public interface ITypeWrapper<T> {
+		Icon ICON_ERROR = new Icon(new ResourceLocation(
+		  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"), 96, 84, 20, 20, 256, 256);
+		Icon ICON_UNKNOWN = new Icon(new ResourceLocation(
+		  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"), 96, 64, 20, 20, 256, 256);
+		
 		/**
 		 * Whether this type has an icon to display in combo boxes<br>
 		 * Subclasses that return yes should also override {@link ITypeWrapper#renderIcon}
@@ -1421,19 +1517,45 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		
 		/**
 		 * Only queried if {@link ITypeWrapper#hasIcon} returns true
-		 * @return The size reserved for the icon of this type
+		 * @return The height reserved for the icon of this type
 		 */
-		default int getIconSize() {
+		default int getIconHeight() {
 			return 20;
 		}
 		
 		/**
-		 * Render the icon for an element
+		 * Only queried if {@link ITypeWrapper#hasIcon()} returns true.
+		 * @return The width reserved for the icons of this type.
+		 *         Defaults to {@link ITypeWrapper#getIconHeight()}.
 		 */
-		default boolean renderIcon(
-		  @Nullable T element, @NotNull MatrixStack mStack, int x, int y, int w, int h,
+		default int getIconWidth() {
+			return getIconHeight();
+		}
+		
+		/**
+		 * Render the icon for an element, by default calls {@link ITypeWrapper#getIcon}
+		 * and renders it if present.
+		 */
+		default void renderIcon(
+		  @Nullable T element, String text, @NotNull MatrixStack mStack, int x, int y, int w, int h,
 		  int mouseX, int mouseY, float delta
-		) { return false; }
+		) {
+			final Optional<Icon> opt = getIcon(element, text);
+			opt.ifPresent(icon -> icon.renderCentered(mStack, x, y, w, h));
+		}
+		
+		/**
+		 * Get the icon of an element.<br>
+		 * Implementations may alternatively override
+		 * {@link ITypeWrapper#renderIcon} directly.
+		 *
+		 * @param element The element being rendered, possibly null.
+		 * @param text The text written by the user, possibly not matching
+		 *             any valid element if element is null.
+		 */
+		default Optional<Icon> getIcon(@Nullable T element, String text) {
+			return Optional.empty();
+		}
 		
 		/**
 		 * Parse an element from its string representation, if possible
@@ -1444,8 +1566,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		
 		/**
 		 * Get the display name of the element.<br>
-		 * It should have the same text as the lookup name.
-		 * It's only used when the ComboBox isn't active
+		 * It should have the same text as the lookup name,
+		 * otherwise the lookup will use the string name.
 		 */
 		ITextComponent getDisplayName(@NotNull T element);
 		
@@ -1501,21 +1623,31 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	public static class ResourceLocationTypeWrapper implements ITypeWrapper<ResourceLocation> {
 		
 		boolean hasIcon = false;
-		int iconSize = 20;
+		int iconHeight = 20;
+		int iconWidth = 20;
 		
 		public ResourceLocationTypeWrapper() {}
 		
 		protected ResourceLocationTypeWrapper(int iconSize) {
+			this(iconSize, iconSize);
+		}
+		
+		protected ResourceLocationTypeWrapper(int iconWidth, int iconHeight) {
 			hasIcon = true;
-			this.iconSize = iconSize;
+			this.iconHeight = iconHeight;
+			this.iconWidth = iconWidth;
 		}
 		
 		@Override public boolean hasIcon() {
 			return hasIcon;
 		}
 		
-		@Override public int getIconSize() {
-			return hasIcon? iconSize : ITypeWrapper.super.getIconSize();
+		@Override public int getIconHeight() {
+			return hasIcon ? iconHeight : ITypeWrapper.super.getIconHeight();
+		}
+		
+		@Override public int getIconWidth() {
+			return hasIcon ? iconWidth : ITypeWrapper.super.getIconWidth();
 		}
 		
 		@Override public Pair<Optional<ResourceLocation>, Optional<ITextComponent>> parseElement(
@@ -1546,15 +1678,16 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			super(20);
 		}
 		
-		@Override public boolean renderIcon(
-		  @Nullable ResourceLocation element, @NotNull MatrixStack mStack, int x, int y, int w, int h, int mouseX,
+		@Override public void renderIcon(
+		  @Nullable ResourceLocation element, String text, @NotNull MatrixStack mStack,
+		  int x, int y, int w, int h, int mouseX,
 		  int mouseY, float delta
 		) {
 			final Optional<Item> opt = Registry.ITEM.getOptional(element);
-			if (!opt.isPresent())
-				return false;
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(new ItemStack(opt.get()), x + 2, y + 2);
-			return true;
+			if (opt.isPresent()) {
+				Minecraft.getInstance().getItemRenderer()
+				  .renderItemIntoGUI(new ItemStack(opt.get()), x + 2, y + 2);
+			} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
 		}
 	}
 	
@@ -1563,15 +1696,15 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			super(20);
 		}
 		
-		@Override public boolean renderIcon(
-		  @Nullable ResourceLocation element, @NotNull MatrixStack mStack, int x, int y, int w, int h,
-		  int mouseX, int mouseY, float delta
+		@Override public void renderIcon(
+		  @Nullable ResourceLocation element, String text, @NotNull MatrixStack mStack,
+		  int x, int y, int w, int h, int mouseX, int mouseY, float delta
 		) {
 			final Optional<Block> opt = Registry.BLOCK.getOptional(element);
-			if (!opt.isPresent())
-				return false;
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(new ItemStack(opt.get()), x + 2, y + 2);
-			return true;
+			if (opt.isPresent()) {
+				Minecraft.getInstance().getItemRenderer()
+				  .renderItemIntoGUI(new ItemStack(opt.get()), x + 2, y + 2);
+			} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
 		}
 	}
 	
@@ -1580,16 +1713,16 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			super(20);
 		}
 		
-		@Override public boolean renderIcon(
-		  @Nullable ResourceLocation element, @NotNull MatrixStack mStack, int x, int y, int w, int h,
+		@Override public void renderIcon(
+		  @Nullable ResourceLocation element, String text, @NotNull MatrixStack mStack,
+		  int x, int y, int w, int h,
 		  int mouseX, int mouseY, float delta
 		) {
 			final Optional<Fluid> opt = Registry.FLUID.getOptional(element);
-			if (!opt.isPresent())
-				return false;
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(
-			  new ItemStack(opt.get().getFilledBucket()), x + 2, y + 2);
-			return true;
+			if (opt.isPresent()) {
+				Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(
+				  new ItemStack(opt.get().getFilledBucket()), x + 2, y + 2);
+			} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
 		}
 	}
 	
@@ -1607,7 +1740,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			return hasIcon;
 		}
 		
-		@Override public int getIconSize() {
+		@Override public int getIconHeight() {
 			return iconSize;
 		}
 		
@@ -1661,13 +1794,14 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			return new TranslationTextComponent("argument.item.id.invalid", name);
 		}
 		
-		@Override public boolean renderIcon(
-		  @Nullable Item element, @NotNull MatrixStack mStack, int x, int y, int w, int h,
-		  int mouseX, int mouseY, float delta
+		@Override public void renderIcon(
+		  @Nullable Item element, String text, @NotNull MatrixStack mStack, int x, int y,
+		  int w, int h, int mouseX, int mouseY, float delta
 		) {
-			if (element == null) return false;
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(new ItemStack(element), x + 2, y + 2);
-			return true;
+			if (element != null) {
+				Minecraft.getInstance().getItemRenderer()
+				  .renderItemIntoGUI(new ItemStack(element), x + 2, y + 2);
+			} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 		}
 	}
 	
@@ -1688,14 +1822,13 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			return new TranslationTextComponent("argument.block.id.invalid", name);
 		}
 		
-		@Override public boolean renderIcon(
-		  @Nullable Block element, @NotNull MatrixStack mStack, int x, int y, int w, int h,
-		  int mouseX, int mouseY, float delta
+		@Override public void renderIcon(
+		  @Nullable Block element, String text, @NotNull MatrixStack mStack, int x, int y,
+		  int w, int h, int mouseX, int mouseY, float delta
 		) {
-			if (element == null)
-				return false;
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(new ItemStack(element), x + 2, y + 2);
-			return true;
+			if (element != null) {
+				Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(new ItemStack(element), x + 2, y + 2);
+			} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 		}
 	}
 	
@@ -1716,15 +1849,14 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			return new TranslationTextComponent("argument.fluid.id.invalid", name);
 		}
 		
-		@Override public boolean renderIcon(
-		  @Nullable Fluid element, @NotNull MatrixStack mStack, int x, int y, int w, int h,
-		  int mouseX, int mouseY, float delta
+		@Override public void renderIcon(
+		  @Nullable Fluid element, String text, @NotNull MatrixStack mStack, int x, int y,
+		  int w, int h, int mouseX, int mouseY, float delta
 		) {
-			if (element == null)
-				return false;
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(
-			  new ItemStack(element.getFilledBucket()), x + 2, y + 2);
-			return true;
+			if (element != null) {
+				Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(
+				  new ItemStack(element.getFilledBucket()), x + 2, y + 2);
+			} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 		}
 	}
 }

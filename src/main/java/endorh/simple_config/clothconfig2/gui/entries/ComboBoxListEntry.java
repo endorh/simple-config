@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget;
 import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.ISortedSuggestionProvider;
 import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
@@ -18,7 +19,10 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 import static java.lang.Math.min;
 
@@ -96,7 +100,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		super.updateSelected(isSelected);
 		if (!isSelected) {
 			comboBox.setFocused(false);
-			ComboBoxListEntry.forceUnFocus(resetButton);
+			WidgetUtils.forceUnFocus(resetButton);
 		}
 	}
 	

@@ -5,9 +5,10 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.entries.EntryPairListListEntry.EntryPairCell;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -295,7 +296,7 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 				if (listener == keyEntry) {
 					final List<? extends IGuiEventListener> subListeners = subList.getEventListeners();
 					final IGuiEventListener l = focus ? subListeners.get(1) : subListeners.get(0);
-					forceUnFocus(l);
+					WidgetUtils.forceUnFocus(l);
 					setListener(valueEntry);
 					valueEntry.setListener(l);
 					if (valueEntry.changeFocus(focus))

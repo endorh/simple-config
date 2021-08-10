@@ -337,15 +337,14 @@ public class SimpleConfigBuilder
 			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
-			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
-				final String name = e.getKey();
-				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(cat, name);
+			entries.forEach((name, value) -> {
+				final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(cat, name);
 				entriesByName.put(name, entry);
 				translate(entry);
 				if (backingFields.containsKey(name))
 					entry.backingField = backingFields.get(name);
 				entry.buildConfig(specBuilder, specValues);
-			}
+			});
 			for (GroupBuilder group : this.groups.values()) {
 				final SimpleConfigGroup g = group.build(cat, specBuilder);
 				groups.put(group.name, g);
@@ -514,15 +513,15 @@ public class SimpleConfigBuilder
 					heldEntry.backingField = backingFields.get(heldEntryName);
 				heldEntry.buildConfig(specBuilder, specValues);
 			}
-			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
-				final String name = e.getKey();
-				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(group, name);
+			entries.forEach((name, builder) -> {
+				if (builder == heldEntryBuilder) return;
+				final AbstractConfigEntry<?, ?, ?, ?> entry = builder.build(group, name);
 				entriesByName.put(name, entry);
 				translate(entry);
 				if (backingFields.containsKey(name))
 					entry.backingField = backingFields.get(name);
 				entry.buildConfig(specBuilder, specValues);
-			}
+			});
 			for (String name : groups.keySet()) {
 				GroupBuilder builder = groups.get(name);
 				SimpleConfigGroup subGroup = builder.build(group, specBuilder);
@@ -592,15 +591,14 @@ public class SimpleConfigBuilder
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
-		for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
-			final String name = e.getKey();
-			final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(config, name);
+		entries.forEach((name, value) -> {
+			final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
 			entriesByName.put(name, entry);
 			translate(entry);
 			if (backingFields.containsKey(name))
 				entry.backingField = backingFields.get(name);
 			entry.buildConfig(specBuilder, specValues);
-		}
+		});
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 		categories.values().stream().sorted(

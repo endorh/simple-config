@@ -1,5 +1,6 @@
 package endorh.simple_config.core.entry;
 
+import com.electronwill.nightconfig.core.ConfigSpec;
 import endorh.simple_config.clothconfig2.impl.builders.ListFieldBuilder;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
@@ -191,7 +192,11 @@ public abstract class AbstractListEntry
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).defineList(name, value, this::validateElement));
+		return Optional.of(decorate(builder).defineList(name, forConfig(value), this::validateElement));
+	}
+	
+	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
+		spec.defineList(parentPath + name, forConfig(value), this::validateElement);
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <F extends ListFieldBuilder<Gui, ?, F>> F decorate(F builder) {

@@ -56,6 +56,7 @@ public class EditHistory {
 	}
 	
 	public void saveBatch(AbstractConfigScreen holder) {
+		saveState(holder);
 		if (collector != null) {
 			final EditRecord c = this.collector;
 			collector = null;
@@ -186,7 +187,7 @@ public class EditHistory {
 				} else LOGGER.warn("Could not find entry with path " + e.getKey());
 			}
 			if (listRecords != null) {
-				lr = new LinkedList<>();
+				lr = new ArrayList<>();
 				for (ListEditRecord record : listRecords) {
 					final ListEditRecord r = record.apply(holder, false);
 					if (!r.isEmpty()) lr.add(r);
@@ -211,7 +212,7 @@ public class EditHistory {
 			}
 			values.keySet().removeAll(removed);
 			if (listRecords != null) {
-				List<ListEditRecord> removedLR = Lists.newLinkedList();
+				List<ListEditRecord> removedLR = Lists.newArrayList();
 				for (ListEditRecord record : listRecords) {
 					record.flatten(holder);
 					if (record.isEmpty()) removedLR.add(record);
@@ -223,11 +224,11 @@ public class EditHistory {
 		
 		protected void merge(EditRecord record) {
 			if (record instanceof ListEditRecord) {
-				if (listRecords == null) listRecords = new LinkedList<>();
+				if (listRecords == null) listRecords = new ArrayList<>();
 				listRecords.add(((ListEditRecord) record));
 			} else {
 				values.putAll(record.values);
-				if (focusEntry == null) focusEntry = record.focusEntry;
+				// if (focusEntry == null) focusEntry = record.focusEntry;
 			}
 		}
 		
@@ -353,7 +354,7 @@ public class EditHistory {
 				}
 				if (move != null) {
 					Map<Integer, Integer> m = new Int2ObjectArrayMap<>(move.size());
-					List<Pair<Integer, Integer>> l = new LinkedList<>();
+					List<Pair<Integer, Integer>> l = new ArrayList<>();
 					list.setSuppressRecords(true);
 					move.forEach((i, j) -> {
 						list.move(i, j);

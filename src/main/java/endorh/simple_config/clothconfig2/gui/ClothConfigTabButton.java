@@ -1,6 +1,7 @@
 package endorh.simple_config.clothconfig2.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import endorh.simple_config.clothconfig2.api.Tooltip;
 import endorh.simple_config.clothconfig2.math.Point;
 import net.minecraft.client.Minecraft;
@@ -17,35 +18,37 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ClothConfigTabButton extends AbstractButton {
-	protected final int index;
+	protected final ConfigCategory category;
 	protected final ClothConfigScreen screen;
 	@Nullable protected final Supplier<Optional<ITextProperties[]>> descriptionSupplier;
-	protected int tintColor = 0x00000000;
+	protected int tintColor;
 	
 	public ClothConfigTabButton(
-	  ClothConfigScreen screen, int index, int x, int y, int w, int h,
+	  ClothConfigScreen screen, ConfigCategory category, int x, int y, int w, int h,
+	  ITextComponent title
+	) {
+		this(screen, category, x, y, w, h, title, null);
+	}
+	
+	public ClothConfigTabButton(
+	  ClothConfigScreen screen, ConfigCategory category, int x, int y, int w, int h,
 	  ITextComponent title, @Nullable Supplier<Optional<ITextProperties[]>> descriptionSupplier
 	) {
 		super(x, y, w, h, title);
-		this.index = index;
+		this.category = category;
 		this.screen = screen;
 		this.descriptionSupplier = descriptionSupplier;
 	}
 	
-	public ClothConfigTabButton(
-	  ClothConfigScreen screen, int index, int x, int y, int w, int h, ITextComponent title
-	) {
-		this(screen, index, x, y, w, h, title, null);
-	}
-	
 	public void onPress() {
-		if (this.index != -1) this.screen.selectedCategoryIndex = this.index;
-		this.screen.init(Minecraft.getInstance(), this.screen.width, this.screen.height);
+		if (category != null)
+			screen.setSelectedCategory(category);
+		// this.screen.init(Minecraft.getInstance(), this.screen.width, this.screen.height);
 	}
 	
 	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		Optional<ITextProperties[]> tooltip;
-		this.active = this.index != this.screen.selectedCategoryIndex;
+		this.active = this.category != this.screen.selectedCategory;
 		super.render(mStack, mouseX, mouseY, delta);
 		if (this.isMouseOver(mouseX, mouseY) && (tooltip = this.getTooltip()).isPresent()
 		    && tooltip.get().length > 0) {
@@ -56,6 +59,7 @@ public class ClothConfigTabButton extends AbstractButton {
 	@Override
 	protected void renderBg(@NotNull MatrixStack mStack, @NotNull Minecraft minecraft, int mouseX, int mouseY) {
 		super.renderBg(mStack, minecraft, mouseX, mouseY);
+		final int tintColor = getTintColor();
 		if (tintColor != 0)
 			fill(mStack, x, y, x + width - 1, y + height, tintColor);
 	}
@@ -77,11 +81,11 @@ public class ClothConfigTabButton extends AbstractButton {
 	}
 	
 	public int getTintColor() {
-		return tintColor;
+		return tintColor != 0? tintColor : category.getColor();
 	}
 	
-	public void setTintColor(int color) {
-		this.tintColor = color;
+	public void setTintColor(int tintColor) {
+		this.tintColor = tintColor;
 	}
 }
 

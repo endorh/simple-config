@@ -1,5 +1,6 @@
 package endorh.simple_config.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -84,10 +85,12 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		return nbt.toString();
 	}
 	
-	public @Nullable Pair<CC, List<C>> fromActualConfig(@Nullable String value) {
-		if (value == null) return null;
+	public @Nullable Pair<CC, List<C>> fromActualConfig(@Nullable Object value) {
+		if (!(value instanceof String))
+			return null;
+		final String str = ((String) value);
 		try {
-			final CompoundNBT nbt = new JsonToNBT(new StringReader(value)).readStruct();
+			final CompoundNBT nbt = new JsonToNBT(new StringReader(str)).readStruct();
 			if (!nbt.contains("k") && !nbt.contains("v")) return null;
 			//noinspection unchecked
 			final CC key = (CC) fromNBT(nbt.get("k"), getExpectedType().next.get(0));
@@ -123,22 +126,10 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		               listEntry.fromGuiOrDefault(value.getValue()));
 	}
 	
-	@Override protected Pair<CV, List<V>> get(ConfigValue<?> spec) {
-		return fromConfigOrDefault(fromActualConfig((String)spec.get()));
-	}
-	
-	@Override protected void set(
-	  ConfigValue<?> spec, Pair<CV, List<V>> value
-	) {
-		//noinspection unchecked
-		((ConfigValue<String>) spec).set(forActualConfig(forConfig(value)));
-		bakeField();
-	}
-	
 	@Override protected Predicate<Object> configValidator() {
 		return o -> {
 			if (o instanceof String) {
-				final Pair<CC, List<C>> pre = fromActualConfig((String) o);
+				final Pair<CC, List<C>> pre = fromActualConfig(o);
 				final Pair<CV, List<V>> p = fromConfig(pre);
 				if (p == null) return false;
 				return !supplyError(forGui(p)).isPresent()

@@ -1,11 +1,11 @@
 package endorh.simple_config.clothconfig2.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.clothconfig2.gui.Icon;
+import endorh.simple_config.clothconfig2.gui.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,18 +23,20 @@ public class CheckboxButton extends ToggleImageButton {
 	  boolean value, int x, int y, int w, @Nullable ITextComponent label,
 	  @Nullable Consumer<Boolean> onChange
 	) {
-		this(value, x, y, w, 18, 238, 64,
-		     new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"),
-		     label, onChange);
+		this(value, x, y, w, 18, SimpleConfigIcons.CHECKBOX, label, onChange);
 	}
 	
 	public CheckboxButton(
-	  boolean value, int x, int y, int w, int h, int u, int v, ResourceLocation texture,
+	  boolean value, int x, int y, int w, int h, Icon icon,
 	  @Nullable ITextComponent label, @Nullable Consumer<Boolean> onChange
 	) {
-		super(value, x, y, w, h, u, v, texture, onChange);
+		super(value, x, y, w, h, icon, onChange);
 		this.label = label;
 		this.realWidth = width;
+	}
+	
+	@Override protected int getYImage(boolean isHovered) {
+		return isToggle()? 1 : 0;
 	}
 	
 	@Override public void renderButton(

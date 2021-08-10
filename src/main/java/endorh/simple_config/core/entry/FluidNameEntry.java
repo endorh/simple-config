@@ -1,6 +1,5 @@
 package endorh.simple_config.core.entry;
 
-import com.google.common.collect.Lists;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.ComboBoxFieldBuilder;

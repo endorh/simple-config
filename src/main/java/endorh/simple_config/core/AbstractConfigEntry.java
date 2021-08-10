@@ -1,5 +1,7 @@
 package endorh.simple_config.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import endorh.simple_config.SimpleConfigMod.ClientConfig;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -28,8 +30,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.*;
 
-import static endorh.simple_config.core.ReflectionUtil.setBackingField;
-import static endorh.simple_config.core.TextUtil.splitTtc;
+import static endorh.simple_config.core.SimpleConfigTextUtil.splitTtc;
 
 /**
  * An abstract config entry, which may or may not produce an entry in
@@ -68,8 +69,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Note that users may still be able to modify these entries from the
 	 * config file. This feature is only meant to visually express that
 	 * an entry's value is currently irrelevant, perhaps due to other
-	 * entries' values, but don't overuse it to the point editing the
-	 * config becomes frustrating.
+	 * entries' values, but don't overuse it to the point where editing
+	 * the config becomes frustrating.
 	 */
 	protected @Nullable Supplier<Boolean> editableSupplier = null;
 	protected @Nullable Field backingField;
@@ -254,6 +255,33 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return v != null ? v : this.value;
 	}
 	
+	protected void put(CommentedConfig config, Config value) {
+		config.set(name, forActualConfig(value));
+	}
+	
+	protected Config get(CommentedConfig config) {
+		return fromActualConfig(config.getOrElse(name, forActualConfig(forConfig(value))));
+	}
+	
+	/**
+	 * Last conversion step before being stored in the config
+	 */
+	public Object forActualConfig(@Nullable Config value) {
+		return value;
+	}
+	
+	/**
+	 * First conversion step before reading from the config
+	 */
+	protected @Nullable Config fromActualConfig(@Nullable Object value) {
+		try {
+			//noinspection unchecked
+			return (Config) value;
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getPath(), e);
+		}
+	}
+	
 	/**
 	 * Subclasses may override to prevent nesting at build time
 	 */
@@ -377,9 +405,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected Predicate<Object> configValidator() {
 		return o -> {
 			try {
-				//noinspection unchecked
-				Config c = (Config) o;
-				return fromConfig(c) != null && !supplyError(forGui(fromConfig(c))).isPresent();
+				final Config c = fromActualConfig(o);
+				final V v = fromConfig(c);
+				return v != null && !supplyError(forGui(v)).isPresent();
 			} catch (ClassCastException e) {
 				return false;
 			}
@@ -403,6 +431,19 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	) {
 		if (!nonPersistent)
 			buildConfigEntry(builder).ifPresent(e -> specValues.put(name, e));
+	}
+	
+	/**
+	 * Build a config spec
+	 *
+	 * @param spec       The built config spec
+	 * @param parentPath The path of the parents of this entry, including
+	 *                   a final dot.
+	 */
+	protected void buildSpec(
+	  ConfigSpec spec, String parentPath
+	) {
+		spec.define(parentPath + name, forConfig(value), configValidator());
 	}
 	
 	/**
@@ -458,8 +499,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * @throws ClassCastException if the found value type does not match the expected
 	 */
 	protected V get(ConfigValue<?> spec) {
-		//noinspection unchecked
-		return fromConfigOrDefault(((ConfigValue<Config>) spec).get());
+		return fromConfigOrDefault(fromActualConfig(spec.get()));
 	}
 	
 	/**
@@ -470,7 +510,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	protected void set(ConfigValue<?> spec, V value) {
 		//noinspection unchecked
-		((ConfigValue<Config>) spec).set(forConfig(value));
+		((ConfigValue<Object>) spec).set(forActualConfig(forConfig(value)));
 		bakeField();
 	}
 	
@@ -482,6 +522,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (FMLEnvironment.dist != Dist.CLIENT) return get();
 		return guiEntry != null? fromGui(getGUI()) : get();
 	}
+	protected Config guiForConfig() {
+		return forConfig(getFromGUI());
+	}
 	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value) {
 		if (guiEntry != null) {
 			AbstractConfigScreen screen = guiEntry.getConfigScreenOrNull();
@@ -492,6 +535,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	@OnlyIn(Dist.CLIENT) protected void setForGUI(V value) {
 		setGUI(forGui(value));
+	}
+	@OnlyIn(Dist.CLIENT) protected void setConfigForGUI(Config value) {
+		setForGUI(fromConfigOrDefault(value));
 	}
 	
 	protected void setBackingField(V value) throws IllegalAccessException {

@@ -1,22 +1,20 @@
 package endorh.simple_config.core.entry;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
   extends AbstractConfigEntry<V, Void, Gui, Self> {
@@ -87,6 +85,8 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		specValues.put(name, null);
 	}
 	
+	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {}
+	
 	@Override
 	protected final Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.empty();
@@ -98,5 +98,10 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 			dirty();
 			parent.markDirty().set(name, fromGuiOrDefault(g));
 		};
+	}
+	
+	@Override protected void put(CommentedConfig config, Void value) {}
+	@Override protected Void get(CommentedConfig config) {
+		return null;
 	}
 }

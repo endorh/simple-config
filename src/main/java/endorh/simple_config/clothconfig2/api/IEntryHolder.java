@@ -1,16 +1,13 @@
 package endorh.simple_config.clothconfig2.api;
 
 import com.google.common.collect.Lists;
-import endorh.simple_config.clothconfig2.api.AbstractConfigEntry.EntryError;
 import endorh.simple_config.clothconfig2.gui.entries.IEntryHoldingListEntry;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public interface IEntryHolder {
 	/**

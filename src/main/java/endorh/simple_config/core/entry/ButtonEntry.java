@@ -1,9 +1,9 @@
 package endorh.simple_config.core.entry;
 
-import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.clothconfig2.gui.entries.ButtonListEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.gui.entries.ButtonListEntry;
+import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;

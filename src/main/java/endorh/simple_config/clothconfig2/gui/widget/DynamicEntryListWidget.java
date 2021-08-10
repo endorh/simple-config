@@ -83,8 +83,8 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		this.height = height;
 		this.top = top;
 		this.bottom = bottom;
-		this.left = 0;
-		this.right = width;
+		left = 0;
+		right = width;
 	}
 	
 	public void setRenderSelection(boolean boolean_1) {
@@ -128,7 +128,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		if (selectedTarget != null && targets.contains(selectedTarget))
 			return selectedTarget;
 		if (selectedTarget != null) {
-			INavigableTarget target = this.selectedTarget;
+			INavigableTarget target = selectedTarget;
 			while (target != null && !targets.contains(target))
 				target = target.getNavigableParent();
 			if (target != null)
@@ -623,7 +623,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	}
 	
 	public void setSelectedTarget(@Nullable INavigableTarget target) {
-		this.selectedTarget = target;
+		selectedTarget = target;
 	}
 	
 	@OnlyIn(value = Dist.CLIENT)
@@ -663,7 +663,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	@OnlyIn(value = Dist.CLIENT)
 	public static abstract class Entry
 	  extends AbstractGui implements IGuiEventListener, ISeekableComponent, INavigableTarget {
-		private WeakReference<DynamicEntryListWidget<?>> parent = new WeakReference<>(null);
+		private @Nullable DynamicEntryListWidget<?> parent = null;
 		
 		public abstract void render(
 		  MatrixStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
@@ -671,7 +671,6 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		);
 		
 		public DynamicEntryListWidget<?> getParent() {
-			final DynamicEntryListWidget<?> parent = this.parent.get();
 			if (parent == null)
 				throw new IllegalStateException(
 				  "Tried to get parent of orphan config entry of type " + getClass().getSimpleName() +
@@ -680,11 +679,11 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		}
 		
 		@Internal protected @Nullable DynamicEntryListWidget<?> getParentOrNull() {
-			return parent.get();
+			return parent;
 		}
 		
-		public void setParent(DynamicEntryListWidget<?> parent) {
-			this.parent = new WeakReference<>(parent);
+		public void setParent(@Nullable DynamicEntryListWidget<?> parent) {
+			this.parent = parent;
 		}
 		
 		protected abstract void expandParents();
@@ -740,8 +739,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 			  SimpleSound.master(SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return;
 		}
-		if (focusedMatch != null)
-			focusedMatch.setFocusedMatch(false);
+		matchingEntries.forEach(e -> e.setFocusedMatch(false));
 		focusedMatch = matchingEntries.get(index);
 		focusedMatch.setFocusedMatch(true);
 		if (focusedMatch instanceof INavigableTarget)
@@ -762,7 +760,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		INavigableTarget selectedTarget = getClosestNavigableTarget();
 		if (selectedTarget instanceof AbstractConfigEntry
 		    && !((AbstractConfigEntry<?>) selectedTarget).getCategory().equals(
-				((AbstractConfigEntry<?>) selectedTarget).getConfigScreen().getSelectedCategoryName())) {
+				((AbstractConfigEntry<?>) selectedTarget).getConfigScreen().getSelectedCategory().getName())) {
 			selectedTarget = null;
 		}
 		int i = selectedTarget != null ? targets.indexOf(selectedTarget) : -1;
@@ -778,7 +776,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	
 	protected @Nullable INavigableTarget getClosestNavigableTarget() {
 		final List<INavigableTarget> targets = getNavigableTargets();
-		INavigableTarget target = this.selectedTarget;
+		INavigableTarget target = selectedTarget;
 		while (target != null && !targets.contains(target))
 			target = target.getNavigableParent();
 		return target;

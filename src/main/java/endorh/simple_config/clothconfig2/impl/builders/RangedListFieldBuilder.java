@@ -3,7 +3,6 @@ package endorh.simple_config.clothconfig2.impl.builders;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
-import endorh.simple_config.clothconfig2.gui.entries.BaseListCell;
 import endorh.simple_config.clothconfig2.gui.entries.IRangedEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;

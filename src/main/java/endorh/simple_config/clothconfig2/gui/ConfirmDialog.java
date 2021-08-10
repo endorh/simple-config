@@ -6,6 +6,8 @@ import endorh.simple_config.clothconfig2.gui.widget.TintedButton;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.Style;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,9 +16,10 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
+import static java.lang.Math.round;
 import static net.minecraft.util.math.MathHelper.clamp;
 
-public class ConfirmDialog extends AbstractDialog {
+public class ConfirmDialog extends AbstractButtonDialog {
 	protected List<ITextComponent> body;
 	protected int bodyColor = 0xffbdbdbd;
 	protected int lineHeight = 10;
@@ -29,39 +32,39 @@ public class ConfirmDialog extends AbstractDialog {
 	protected CheckboxButton[] checkBoxes;
 	
 	public ConfirmDialog(
-	  Consumer<Boolean> action, ITextComponent title,
-	  List<ITextComponent> body, IOverlayCapableScreen screen, CheckboxButton... checkBoxes
-	) { this((v, s) -> action.accept(v), title, body, screen, checkBoxes); }
+	  IOverlayCapableScreen screen, ITextComponent title, Consumer<Boolean> action,
+	  List<ITextComponent> body, CheckboxButton... checkBoxes
+	) { this(screen, title, (v, s) -> action.accept(v), body, checkBoxes); }
 	
 	public ConfirmDialog(
-	  BiConsumer<Boolean, boolean[]> action, ITextComponent title,
-	  List<ITextComponent> body, IOverlayCapableScreen screen, CheckboxButton... checkBoxes
+	  IOverlayCapableScreen screen, ITextComponent title, BiConsumer<Boolean, boolean[]> action,
+	  List<ITextComponent> body, CheckboxButton... checkBoxes
 	) {
-		this(action, title, body, DialogTexts.GUI_CANCEL, DialogTexts.GUI_PROCEED, screen, checkBoxes);
+		this(screen, title, action, body, DialogTexts.GUI_CANCEL, DialogTexts.GUI_PROCEED, checkBoxes);
 	}
 	
 	public ConfirmDialog(
-	  Consumer<Boolean> action, ITextComponent title, List<ITextComponent> body,
-	  ITextComponent cancelText, ITextComponent confirmText,
-	  IOverlayCapableScreen screen, CheckboxButton... checkBoxes
-	) { this((v, s) -> action.accept(v), title, body, cancelText, confirmText, screen, checkBoxes); }
+	  IOverlayCapableScreen screen, ITextComponent title, Consumer<Boolean> action,
+	  List<ITextComponent> body, ITextComponent cancelText, ITextComponent confirmText,
+	  CheckboxButton... checkBoxes
+	) { this(screen, title, (v, s) -> action.accept(v), body, cancelText, confirmText, checkBoxes); }
 	
 	public ConfirmDialog(
-	  BiConsumer<Boolean, boolean[]> action, ITextComponent title, List<ITextComponent> body,
-	  ITextComponent cancelText, ITextComponent confirmText,
-	  IOverlayCapableScreen screen, CheckboxButton... checkBoxes
+	  IOverlayCapableScreen screen, ITextComponent title, BiConsumer<Boolean, boolean[]> action,
+	  List<ITextComponent> body, ITextComponent cancelText, ITextComponent confirmText,
+	  CheckboxButton... checkBoxes
 	) {
-		super(title, screen);
+		super(screen, title);
 		this.body = body;
 		this.action = action;
+		this.checkBoxes = checkBoxes;
 		cancelButton = new TintedButton(0, 0, 120, 20, cancelText, p -> cancel());
 		confirmButton = new TintedButton(0, 0, 120, 20, confirmText, p -> confirm());
-		listeners.add(cancelButton);
-		listeners.add(confirmButton);
-		listeners.addAll(Arrays.asList(checkBoxes));
+		addButton(cancelButton);
+		addButton(confirmButton);
 		setListener(cancelButton);
 		cancelButton.changeFocus(true);
-		this.checkBoxes = checkBoxes;
+		bodyListeners.addAll(Arrays.asList(this.checkBoxes));
 	}
 	
 	public CheckboxButton[] getCheckBoxes() {
@@ -89,26 +92,16 @@ public class ConfirmDialog extends AbstractDialog {
 		final int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
 			w = min(screen.width - 32, titleWidth + 16);
-		lines = body.stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
-		h = (int) clamp(
-		  64 + lines.stream().reduce(
-			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
-				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum)
-		  + checkBoxes.length * 22, 96, screen.height * 0.9);
+		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
+		h = (int) clamp(60 + getInnerHeight(), 68, screen.height * 0.9);
 		super.position();
-		int bw = min(150, (w - 12) / 2);
-		cancelButton.setWidth(bw);
-		confirmButton.setWidth(bw);
-		cancelButton.x = x + w / 2 - 2 - bw;
-		confirmButton.x = x + w / 2 + 2;
-		cancelButton.y = confirmButton.y = y + h - 24;
 	}
 	
-	@Override public void renderBody(
-	  MatrixStack mStack, int mouseX, int mouseY, float delta
+	@Override public void renderInner(
+	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		int tx = x + 8;
-		int ty = y + 32;
+		int tx = x + 4;
+		int ty = y + 4;
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
 				font.func_238407_a_(mStack, l, tx, ty, bodyColor);
@@ -124,17 +117,39 @@ public class ConfirmDialog extends AbstractDialog {
 			checkBox.render(mStack, mouseX, mouseY, delta);
 			ty += 22;
 		}
-		
-		fill(mStack, x + 1, y + h - 27, x + w - 1, y + h - 1, backgroundOverlayColor);
-		fill(mStack, x + 1, y + h - 28, x + w - 1, y + h - 27, subBorderColor);
-		cancelButton.render(mStack, mouseX, mouseY, delta);
-		confirmButton.render(mStack, mouseX, mouseY, delta);
+	}
+	
+	@Override public @Nullable Style getInnerTextAt(
+	  int x, int y, int w, int h, double mX, double mY
+	) {
+		int tx = x + 4;
+		int ty = y + 4;
+		for (List<IReorderingProcessor> line : lines) {
+			for (IReorderingProcessor l : line) {
+				if (mY >= ty && mY < ty + lineHeight && mX >= tx && tx < x + w - 8)
+					return font.getCharacterManager().func_243239_a(l, (int) round(mX - tx));
+				ty += lineHeight;
+			}
+			ty += paragraphMarginDown;
+		}
+		return null;
+	}
+	
+	@Override public int getInnerHeight() {
+		return 4 + lines.stream().reduce(
+		  0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
+			 0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum)
+		              + checkBoxes.length * 22;
+	}
+	
+	@Override public String getText() {
+		return title.getString() + "\n" + getBody().stream()
+		  .map(ITextComponent::getString).collect(Collectors.joining("\n"));
 	}
 	
 	public List<ITextComponent> getBody() {
 		return body;
 	}
-	
 	public void setBody(List<ITextComponent> body) {
 		this.body = body;
 	}
@@ -142,7 +157,6 @@ public class ConfirmDialog extends AbstractDialog {
 	public void setAction(BiConsumer<Boolean, boolean[]> action) {
 		this.action = action;
 	}
-	
 	public void setAction(Consumer<Boolean> action) {
 		this.action = (v, s) -> action.accept(v);
 	}
@@ -150,16 +164,14 @@ public class ConfirmDialog extends AbstractDialog {
 	public void setCancelText(ITextComponent text) {
 		cancelButton.setMessage(text);
 	}
-	
 	public void setConfirmText(ITextComponent text) {
 		confirmButton.setMessage(text);
 	}
 	
 	public void setCancelButtonTint(int color) {
-		this.cancelButton.setTintColor(color);
+		cancelButton.setTintColor(color);
 	}
-	
 	public void setConfirmButtonTint(int color) {
-		this.confirmButton.setTintColor(color);
+		confirmButton.setTintColor(color);
 	}
 }

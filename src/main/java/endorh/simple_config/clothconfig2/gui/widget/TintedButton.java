@@ -2,8 +2,10 @@ package endorh.simple_config.clothconfig2.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.ITextProperties;
 import org.jetbrains.annotations.NotNull;
 
 public class TintedButton extends Button {
@@ -26,8 +28,9 @@ public class TintedButton extends Button {
 	  @NotNull MatrixStack mStack, @NotNull Minecraft minecraft, int mouseX, int mouseY
 	) {
 		super.renderBg(mStack, minecraft, mouseX, mouseY);
+		// The 2-patch button texture blit implementation floors width to even numbers
 		if (tintColor != 0) {
-			fill(mStack, x, y, x + width - 1, y + height,
+			fill(mStack, x, y, x + width / 2 * 2, y + height,
 			     active ? tintColor : tintColor & 0xFFFFFF | (tintColor >> 24 & 0xFF) / 4 << 24);
 		}
 	}

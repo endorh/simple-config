@@ -1,6 +1,13 @@
 package endorh.simple_config.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
+import com.electronwill.nightconfig.core.io.IndentStyle;
+import com.electronwill.nightconfig.toml.TomlFormat;
+import com.electronwill.nightconfig.toml.TomlWriter;
 import com.mojang.datafixers.util.Pair;
+import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.ConfigPermission;
 import endorh.simple_config.clothconfig2.api.ConfigBuilder;
 import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
@@ -25,20 +32,25 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.Type;
+import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
+import javax.naming.NoPermissionException;
+import java.io.*;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static java.util.Collections.synchronizedMap;
-import static java.util.Collections.unmodifiableMap;
+import static endorh.simple_config.core.SimpleConfigTextUtil.splitTtc;
+import static java.util.Collections.*;
 
 /**
  * Simple config class. Requires Cloth Config API (Forge) for the GUI menu<br>
@@ -230,6 +242,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Used in error messages
 	 */
 	@Override protected String getPath() {
+		return getName();
+	}
+	
+	@Override protected String getName() {
 		return "SimpleConfig[" + modId + ", " + type.name() + "]";
 	}
 	
@@ -314,7 +330,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected void syncToClients() {
-		new SSimpleConfigSyncPacket(this).send();
+		new SSimpleConfigSyncPacket(this).sendToAll();
 	}
 	
 	protected void syncToServer() {
@@ -372,6 +388,15 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		  "simple-config.config.category." + type.name().toLowerCase());
 	}
 	
+	protected ConfigSpec buildConfigSpec() {
+		final ConfigSpec spec = new ConfigSpec();
+		for (AbstractConfigEntry<?, ?, ?, ?> e : entries.values())
+			e.buildSpec(spec, "");
+		for (AbstractSimpleConfigEntryHolder child : children.values())
+			child.buildConfigSpec(spec, "");
+		return spec;
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder configBuilder) {
 		if (background != null)
@@ -381,11 +406,12 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		if (!order.isEmpty()) {
 			final ConfigCategory category = configBuilder.getOrCreateCategory(type.name().toLowerCase());
 			category.setTitle(getTitle());
+			category.setIsServer(type == Type.SERVER);
+			getFilePath().ifPresent(category::setContainingFile);
 			category.setDescription(
 			  () -> I18n.hasKey(tooltip)
-			        ? Optional.of(TextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
+			        ? Optional.of(splitTtc(tooltip).toArray(new ITextComponent[0]))
 			        : Optional.empty());
-			// category.setDescription(splitTtc(tooltip));
 			if (background != null)
 				category.setBackground(background);
 			for (IGUIEntry entry : order)
@@ -396,6 +422,70 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 		if (decorator != null)
 			decorator.accept(this, configBuilder);
+	}
+	
+	// null config implies deletion
+	protected CompletableFuture<Void> saveLocalPreset(String name, @Nullable CommentedConfig config) {
+		final String prefix = type.name().toLowerCase() + "-";
+		final String fileName = modId + "-preset-" + prefix + name + ".toml";
+		final File dest = FMLPaths.CONFIGDIR.get().resolve(fileName).toFile();
+		if (dest.isDirectory())
+			return failedFuture(new FileNotFoundException(dest.getPath()));
+		if (config != null) {
+			final TomlWriter writer = new TomlWriter();
+			writer.setIndent(IndentStyle.SPACES_2);
+			final ByteArrayOutputStream os = new ByteArrayOutputStream();
+			writer.write(config.unmodifiable(), os);
+			final byte[] bytes = os.toByteArray();
+			try {
+				FileUtils.writeByteArrayToFile(dest, bytes);
+				return CompletableFuture.completedFuture(null);
+			} catch (IOException e) {
+				return failedFuture(e);
+			}
+		} else {
+			if (!dest.exists() || !dest.isFile())
+				return failedFuture(new FileNotFoundException(dest.getPath()));
+			if (!dest.delete())
+				return failedFuture(new IOException("Could not delete file " + dest.getPath()));
+			return CompletableFuture.completedFuture(null);
+		}
+	}
+	
+	protected CompletableFuture<Void> saveRemotePreset(String name, CommentedConfig config) {
+		final String prefix = type.name().toLowerCase() + "-";
+		return SimpleConfigSync.saveSnapshot(modId, prefix + name, config);
+	}
+	
+	protected CompletableFuture<CommentedConfig> getLocalPreset(String name) {
+		final CompletableFuture<CommentedConfig> future = new CompletableFuture<>();
+		final String prefix = type.name().toLowerCase() + "-";
+		final Optional<Path> opt = getFilePath();
+		if (!opt.isPresent()) {
+			future.completeExceptionally(
+			  new FileNotFoundException("Config file for mod " + modId));
+			return future;
+		}
+		final File file =
+		  opt.get().getParent().resolve(modId + "-preset-" + prefix + name + ".toml").toFile();
+		if (!file.exists() || !file.isFile()) {
+			future.completeExceptionally(new FileNotFoundException(file.getPath()));
+			return future;
+		}
+		try {
+			final CommentedConfig config = TomlFormat.instance().createParser()
+			  .parse(new ByteArrayInputStream(FileUtils.readFileToByteArray(file)));
+			future.complete(config);
+			return future;
+		} catch (IOException e) {
+			future.completeExceptionally(e);
+			return future;
+		}
+	}
+	
+	protected CompletableFuture<CommentedConfig> getRemotePreset(String name) {
+		final String prefix = type.name().toLowerCase() + "-";
+		return SimpleConfigSync.requestSnapshot(modId, prefix + name);
 	}
 	
 	public static class NoSuchConfigEntryError extends RuntimeException {
@@ -442,5 +532,133 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		@Internal void buildGUI(
 		  ConfigCategory category, ConfigEntryBuilder entryBuilder
 		);
+	}
+	
+	protected static class SnapshotHandler implements ConfigBuilder.SnapshotHandler {
+		private final String modId;
+		private final Map<ModConfig.Type, SimpleConfig> configMap;
+		
+		public SnapshotHandler(
+		  Map<Type, SimpleConfig> configMap
+		) {
+			this.configMap = configMap;
+			modId = configMap.values().stream().findFirst()
+			  .map(c -> c.modId).orElse("");
+		}
+		
+		@Override public CommentedConfig preserve(Type type) {
+			final SimpleConfig c = configMap.get(type);
+			if (c == null) throw new IllegalArgumentException("Unsupported config type: " + type);
+			final CommentedConfig config =
+			  CommentedConfig.of(LinkedHashMap::new, TomlFormat.instance());
+			c.saveGUISnapshot(config);
+			return config;
+		}
+		
+		@Override public void restore(
+		  CommentedConfig config, Type type
+		) {
+			final SimpleConfig c = configMap.get(type);
+			if (c != null)
+				c.loadGUISnapshot(config);
+		}
+		
+		@OnlyIn(Dist.CLIENT)
+		@Override public boolean canSaveRemote() {
+			final Minecraft mc = Minecraft.getInstance();
+			if (mc.getConnection() == null || mc.player == null) return false;
+			return SimpleConfigMod.ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
+		}
+		
+		@Override public CommentedConfig getLocal(String name, Type type) {
+			final SimpleConfig c = configMap.get(type);
+			if (c == null)
+				throw new IllegalArgumentException("Missing config type");
+			final CompletableFuture<CommentedConfig> future = c.getLocalPreset(name);
+			if (!future.isDone())
+				throw new IllegalStateException("Uncompleted future");
+			return future.getNow(null);
+		}
+		
+		@Override public CompletableFuture<CommentedConfig> getRemote(String name, Type type) {
+			final SimpleConfig c = configMap.get(type);
+			return c != null ? c.getRemotePreset(name) :
+			       failedFuture(new IllegalArgumentException("Missing config type"));
+		}
+		
+		@Override public Optional<Throwable> saveLocal(
+		  String name, Type type, CommentedConfig config
+		) {
+			final SimpleConfig c = configMap.get(type);
+			if (c != null) {
+				return getException(c.saveLocalPreset(name, config));
+			} else return Optional.empty();
+		}
+		
+		@Override public CompletableFuture<Void> saveRemote(
+		  String name, Type type, CommentedConfig config
+		) {
+			if (!canSaveRemote())
+				return failedFuture(new NoPermissionException("Cannot save remote preset"));
+			final SimpleConfig c = configMap.get(type);
+			return c != null ? c.saveRemotePreset(name, config) :
+			       failedFuture(new IllegalArgumentException("Missing config type"));
+		}
+		
+		@Override public Optional<Throwable> deleteLocal(
+		  String name, Type type
+		) {
+			return saveLocal(name, type, null);
+		}
+		
+		@Override public CompletableFuture<Void> deleteRemote(
+		  String name, Type type
+		) {
+			return saveRemote(name, type, null);
+		}
+		
+		@Override public List<String> getLocalSnapshotNames() {
+			final SimpleConfig c = configMap.get(Type.CLIENT);
+			if (c == null) return emptyList();
+			final Optional<Path> opt = c.getFilePath();
+			if (!opt.isPresent()) return emptyList();
+			final File dir = opt.get().getParent().toFile();
+			Pattern pattern = Pattern.compile("^" + c.modId + "-preset-.+\\.toml$");
+			final File[] files =
+			  dir.listFiles((d, name) -> pattern.matcher(name).matches());
+			return files == null ? emptyList() :
+			       Arrays.stream(files).map(
+						f -> {
+							final String name = f.getName();
+							return name.substring(
+							  c.modId.length() + 8, // "-preset-".length()
+							  name.length() - 5); // ".toml".length()
+						}
+			       ).collect(Collectors.toList());
+		}
+		
+		@Override public CompletableFuture<List<String>> getRemoteSnapshotNames() {
+			final SimpleConfig c = configMap.get(Type.SERVER);
+			if (c == null) return CompletableFuture.completedFuture(emptyList());
+			return SimpleConfigSync.requestSnapshotList(c.modId);
+		}
+	}
+	
+	private static <T> CompletableFuture<T> failedFuture(Throwable throwable) {
+		final CompletableFuture<T> future = new CompletableFuture<>();
+		future.completeExceptionally(throwable);
+		return future;
+	}
+	
+	private static Optional<Throwable> getException(CompletableFuture<?> future) {
+		if (future.isCompletedExceptionally()) {
+			try {
+				future.getNow(null);
+				return Optional.empty();
+			} catch (CompletionException e) {
+				return Optional.of(e.getCause());
+			}
+		}
+		return Optional.empty();
 	}
 }

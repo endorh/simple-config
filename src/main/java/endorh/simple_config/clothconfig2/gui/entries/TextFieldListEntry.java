@@ -5,6 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
+import endorh.simple_config.clothconfig2.gui.WidgetUtils;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.MainWindow;
@@ -92,7 +93,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	@Override public void updateSelected(boolean isSelected) {
 		super.updateSelected(isSelected);
 		if (!isSelected)
-			forceUnFocus(textFieldWidget, longTextFieldWidget, resetButton);
+			WidgetUtils.forceUnFocus(textFieldWidget, longTextFieldWidget, resetButton);
 	}
 	
 	@Override public void renderEntry(

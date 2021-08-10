@@ -15,6 +15,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
@@ -42,6 +43,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected List<IGUIEntry> order;
 	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategory> decorator;
 	protected @Nullable ResourceLocation background;
+	protected int color = 0;
 	
 	@Internal protected SimpleConfigCategory(
 	  SimpleConfig parent, String name, String title, @Nullable Consumer<SimpleConfigCategory> baker
@@ -72,6 +74,10 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		return parent != null? parent.getPath() + "." + name : name;
 	}
 	
+	@Override protected String getName() {
+		return name;
+	}
+	
 	@Override public void markDirty(boolean dirty) {
 		super.markDirty(dirty);
 		if (dirty) parent.markDirty(true);
@@ -99,14 +105,18 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		ConfigCategory category = builder.getOrCreateCategory(
 		  parent.type.name().toLowerCase() + "." + name);
 		category.setTitle(getTitle());
+		category.setIsServer(root.type == Type.SERVER);
 		category.setDescription(
 		  () -> I18n.hasKey(tooltip)
-		        ? Optional.of(TextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
+		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
 		        : Optional.empty());
+		root.getFilePath().ifPresent(category::setContainingFile);
 		if (background != null)
 			category.setBackground(background);
 		else if (parent.background != null)
 			category.setBackground(parent.background);
+		if (color != 0)
+			category.setColor(color);
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder);
@@ -115,8 +125,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 			decorator.accept(this, category);
 	}
 	
-	@Override
-	protected void bake() {
+	@Override protected void bake() {
 		for (SimpleConfigGroup group : groups.values())
 			group.bake();
 		if (baker != null)

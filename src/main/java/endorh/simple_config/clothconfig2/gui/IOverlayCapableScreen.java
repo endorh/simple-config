@@ -1,18 +1,15 @@
 package endorh.simple_config.clothconfig2.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
-import endorh.simple_config.clothconfig2.api.Tooltip;
 import endorh.simple_config.clothconfig2.math.Rectangle;
-import net.minecraft.client.gui.AbstractGui;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Stream;
 
-public interface IOverlayCapableScreen {
+public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 	interface IOverlayRenderer {
 		/**
 		 * Render the overlay<br>
@@ -192,10 +189,6 @@ public interface IOverlayCapableScreen {
 		} mStack.pop();
 		sortedOverlays.removeAll(removed);
 	}
-	
-	boolean removeTooltips(Rectangle area);
-	
-	void addTooltip(Tooltip tooltip);
 	
 	class OverlayTicket implements Comparable<OverlayTicket> {
 		public final int priority;

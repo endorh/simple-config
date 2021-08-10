@@ -1,10 +1,15 @@
 package endorh.simple_config.core.entry;
 
+import endorh.simple_config.clothconfig2.api.Modifier;
+import endorh.simple_config.clothconfig2.api.ModifierKeyCode;
 import endorh.simple_config.core.*;
 import endorh.simple_config.core.annotation.Entry;
 import endorh.simple_config.core.annotation.HasAlpha;
 import endorh.simple_config.core.annotation.Slider;
+import endorh.simple_config.core.entry.KeyBindEntry.Builder;
 import net.minecraft.block.Block;
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.CompoundNBT;
@@ -179,6 +184,18 @@ public class Builders {
 		 */
 		public <V> PresetBuilder add(String path, V value) {
 			map.put(path, value);
+			return this;
+		}
+		
+		/**
+		 * Add all entries from another preset, using the prefix name as
+		 * prefix for the entries (separated with a dot).
+		 */
+		public PresetBuilder n(PresetBuilder nest) {
+			for (Map.Entry<String, Object> e : nest.map.entrySet()) {
+				final String k = e.getKey();
+				map.put(nest.name + "." + k, nest.map.get(k));
+			}
 			return this;
 		}
 		
@@ -415,6 +432,124 @@ public class Builders {
 	
 	// Convenience Minecraft entries
 	
+	
+	/**
+	 * NBT entry that accepts any kind of NBT, either values or compounds
+	 */
+	public static INBTEntry.Builder nbtValue(INBT value) {
+		return new INBTEntry.Builder(value);
+	}
+	
+	/**
+	 * NBT entry that accepts NBT compounds
+	 */
+	public static CompoundNBTEntry.Builder nbtTag(CompoundNBT value) {
+		return new CompoundNBTEntry.Builder(value);
+	}
+	
+	/**
+	 * Generic resource location entry
+	 */
+	public static ResourceLocationEntry.Builder resource(String resourceName) {
+		return new ResourceLocationEntry.Builder(new ResourceLocation(resourceName));
+	}
+	/**
+	 * Generic resource location entry
+	 */
+	public static ResourceLocationEntry.Builder resource(ResourceLocation value) {
+		return new ResourceLocationEntry.Builder(value);
+	}
+	
+	/**
+	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
+	 * This is because handling mouse keys requires extra code on your end,
+	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
+	 * be able to detect mouse keys.<br><br>
+	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+	 * </b><br>
+	 * <b>KeyBindings registered the proper way can be configured altogether with
+	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
+	 * The only encouraged use of KeyBind entries is when you need further
+	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
+	 * Use wisely.
+	 */
+	public static KeyBindEntry.Builder key(ModifierKeyCode key) {
+		return new KeyBindEntry.Builder(key);
+	}
+	
+	/**
+	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
+	 * This is because handling mouse keys requires extra code on your end,
+	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
+	 * be able to detect mouse keys.<br><br>
+	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+	 * </b><br>
+	 * <b>KeyBindings registered the proper way can be configured altogether with
+	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
+	 * The only encouraged use of KeyBind entries is when you need further
+	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
+	 * Use wisely.
+	 */
+	public static Builder key(InputMappings.Input key) {
+		return key(key, Modifier.none());
+	}
+	
+	/**
+	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
+	 * This is because handling mouse keys requires extra code on your end,
+	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
+	 * be able to detect mouse keys.<br><br>
+	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+	 * </b><br>
+	 * <b>KeyBindings registered the proper way can be configured altogether with
+	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
+	 * The only encouraged use of KeyBind entries is when you need further
+	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
+	 * Use wisely.
+	 */
+	public static KeyBindEntry.Builder key(InputMappings.Input key, Modifier modifier) {
+		return new KeyBindEntry.Builder(key, modifier);
+	}
+	
+	/**
+	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
+	 * This is because handling mouse keys requires extra code on your end,
+	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
+	 * be able to detect mouse keys.<br><br>
+	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+	 * </b><br>
+	 * <b>KeyBindings registered the proper way can be configured altogether with
+	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
+	 * The only encouraged use of KeyBind entries is when you need further
+	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
+	 * Use wisely.
+	 */
+	public static KeyBindEntry.Builder key(String key) {
+		return new KeyBindEntry.Builder(key);
+	}
+	
+	/**
+	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
+	 * This is because handling mouse keys requires extra code on your end,
+	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
+	 * be able to detect mouse keys.<br><br>
+	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+	 * </b><br>
+	 * <b>KeyBindings registered the proper way can be configured altogether with
+	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
+	 * The only encouraged use of KeyBind entries is when you need further
+	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
+	 * Use wisely.
+	 */
+	public static KeyBindEntry.Builder key() {
+		return new KeyBindEntry.Builder();
+	}
+	
 	/**
 	 * Item entry<br>
 	 * Use {@link Builders#itemName} instead to use ResourceLocations as value,
@@ -488,33 +623,6 @@ public class Builders {
 	 */
 	public static FluidNameEntry.Builder fluidName(Fluid value) {
 		return fluidName(value.getRegistryName());
-	}
-	
-	/**
-	 * NBT entry that accepts any kind of NBT, either values or compounds
-	 */
-	public static INBTEntry.Builder nbtValue(INBT value) {
-		return new INBTEntry.Builder(value);
-	}
-	
-	/**
-	 * NBT entry that accepts NBT compounds
-	 */
-	public static CompoundNBTEntry.Builder nbtTag(CompoundNBT value) {
-		return new CompoundNBTEntry.Builder(value);
-	}
-	
-	/**
-	 * Generic resource location entry
-	 */
-	public static ResourceLocationEntry.Builder resource(String resourceName) {
-		return new ResourceLocationEntry.Builder(new ResourceLocation(resourceName));
-	}
-	/**
-	 * Generic resource location entry
-	 */
-	public static ResourceLocationEntry.Builder resource(ResourceLocation value) {
-		return new ResourceLocationEntry.Builder(value);
 	}
 	
 	// List entries

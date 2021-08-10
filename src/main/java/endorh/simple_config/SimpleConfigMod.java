@@ -11,13 +11,18 @@ import endorh.simple_config.demo.DemoConfigCategory;
 import endorh.simple_config.demo.DemoServerCategory;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.Util;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.RegistryEvent;
@@ -35,6 +40,7 @@ import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.util.List;
@@ -145,7 +151,11 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			return names;
 		});
 		SERVER_CONFIG = SimpleConfig.builder(MOD_ID, Type.SERVER, ServerConfig.class)
-		  .text("desc")
+		  .text("desc", makeLink(
+			 "simple-config.config.server.desc.permission_level",
+			 "simple-config.config.server.desc.permission_level:help",
+			 "https://minecraft.fandom.com/wiki/Permission_level",
+			 TextFormatting.DARK_GRAY, TextFormatting.UNDERLINE))
 		  .n(group("permissions", true)
 		       .add("roles", map(
 					string("").notEmpty()
@@ -159,37 +169,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 					caption(enum_(ListType.WHITELIST), list(modName))))
 		       .add("rules", pairList(
 					roleName, caption(enum_(ConfigPermission.ALLOW), list(modGroupOrName)),
-					Lists.newArrayList(Pair.of("op", Pair.of(ConfigPermission.ALLOW, Lists.newArrayList("[all]"))))))
-		       // .add("test_player", string("").ignored())
-		       // .add("test_mod", string("").ignored())
-		       // .text(() -> {
-			    //    final String name = SERVER_CONFIG.getFromGUI("permissions.test_player");
-			    //    final String mod = SERVER_CONFIG.getFromGUI("permissions.test_mod");
-					//  if (!name.isEmpty()) {
-					// 	 final MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-					// 	 final ServerPlayerEntity player = server.getPlayerList().getPlayerByUsername(name);
-					// 	 if (player == null)
-					// 		 return new TranslationTextComponent("simple-config.config.permissions.test.unknown_player", new StringTextComponent(name).mergeStyle(TextFormatting.DARK_RED));
-					// 	 final List<String> mods = permissions.testModsEditableBy(name);
-					// 	 IFormattableTextComponent tc =
-					// 	   new TranslationTextComponent("simple-config.config.permissions.test.player", new StringTextComponent(name).mergeStyle(TextFormatting.DARK_AQUA));
-					// 	 for (String m : mods)
-					// 		 tc = tc.appendString("\n - ").append(new StringTextComponent(m).mergeStyle(TextFormatting.DARK_AQUA));
-					// 	 return tc;
-					//  } else if (!mod.isEmpty()) {
-					// 	 final List<String> players = permissions.testPlayersWithPermissionFor(mod);
-					// 	 if (players.isEmpty())
-					// 		 return new TranslationTextComponent("simple-config.config.permissions.test.empty");
-					// 	 final boolean knownMod = ModList.get().getMods().stream().anyMatch(m -> m.getModId().equals(mod));
-					// 	 IFormattableTextComponent tc = new TranslationTextComponent(
-					// 		"simple-config.config.permissions.test.mod",
-					// 		new StringTextComponent(mod).mergeStyle(knownMod? TextFormatting.DARK_AQUA : TextFormatting.DARK_RED));
-					// 	 for (String pl : players)
-					// 		 tc = tc.appendString("\n - ").append(new StringTextComponent(pl).mergeStyle(TextFormatting.DARK_AQUA));
-					// 	 return tc;
-					//  } else return new TranslationTextComponent("simple-config.config.permissions.test.placeholder");
-		       // })
-		  )
+					Lists.newArrayList(Pair.of("op", Pair.of(ConfigPermission.ALLOW, Lists.newArrayList("[all]")))))))
 		  .text("end")
 		  // Register the demo server config category as well
 		  .n(DemoServerCategory.getDemoServerCategory())
@@ -254,90 +234,21 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 				final Set<String> roles = permissions.roles.entrySet().stream().filter(
 				  e -> e.getValue().contains(player.getScoreboardName())
 				).map(Entry::getKey).collect(Collectors.toSet());
+				if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
+					return ConfigPermission.ALLOW;
 				if (player.hasPermissionLevel(2)) roles.add("op");
-				final Set<String> mod_groups = modGroups(mod, permissions.mod_groups);
+				final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
+				  e -> e.getValue().getKey() == ListType.BLACKLIST ^ e.getValue().getValue().contains(mod)
+				).map(Entry::getKey).collect(Collectors.toSet());
+				modGroups.add("[all]");
+				modGroups.add(mod);
 				ConfigPermission permission = ConfigPermission.DENY;
 				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
 					if (roles.contains(rule.getKey())
-					    && rule.getValue().getValue().stream().anyMatch(mod_groups::contains))
+					    && rule.getValue().getValue().stream().anyMatch(modGroups::contains))
 						permission = rule.getValue().getKey();
 				}
 				return permission;
-			}
-			
-			public static List<String> testModsEditableBy(String player) {
-				final Set<String> playerRoles = playerRoles(player, SERVER_CONFIG.getFromGUI("permissions.roles"));
-				final Map<String, Pair<ListType, List<String>>> groups = SERVER_CONFIG.getFromGUI("permissions.mod_groups");
-				final List<Pair<String, Pair<ConfigPermission, List<String>>>> rules = SERVER_CONFIG.getFromGUI("permissions.rules");
-				Map<String, ConfigPermission> permissions = new HashMap<>();
-				ModList.get().getMods().forEach(m -> permissions.put(m.getModId(), ConfigPermission.DENY));
-				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
-					if (playerRoles.contains(rule.getKey())) {
-						for (String id : rule.getValue().getValue()) {
-							if (id.equals("[all]")) {
-								permissions.replaceAll((m, v) -> rule.getValue().getKey());
-							} else if (groups.containsKey(id)) {
-								final Pair<ListType, List<String>> groupList = groups.get(id);
-								for (String m : permissions.keySet()) {
-									if (groupList.getValue().contains(m) ^ groupList.getKey() == ListType.BLACKLIST)
-										permissions.put(m, rule.getValue().getKey());
-								}
-							} else permissions.put(id, rule.getValue().getKey());
-						}
-					}
-				}
-				return permissions.entrySet().stream().filter(e -> e.getValue() == ConfigPermission.ALLOW)
-				  .map(Entry::getKey).sorted().collect(Collectors.toList());
-			}
-			
-			public static List<String> testPlayersWithPermissionFor(String mod) {
-				final Map<String, List<String>> roles = SERVER_CONFIG.getFromGUI("permissions.roles");
-				final Set<String> modGroups = modGroups(mod, SERVER_CONFIG.getFromGUI("permissions.mod_groups"));
-				final List<Pair<String, Pair<ConfigPermission, List<String>>>> rules = SERVER_CONFIG.getFromGUI("permissions.rules");
-				final Map<String, ConfigPermission> players = new HashMap<>();
-				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
-					if (roles.containsKey(rule.getKey())) {
-						if (rule.getValue().getValue().stream().anyMatch(modGroups::contains)) {
-							final List<String> ruleRole = roles.get(rule.getKey());
-							for (String player : ruleRole)
-								players.put(player, rule.getValue().getKey());
-						}
-					} else if (rule.getKey().equals("op")) {
-						final MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-						for (ServerPlayerEntity player : server.getPlayerList().getPlayers())
-							if (player.hasPermissionLevel(2))
-								players.put(player.getScoreboardName(), rule.getValue().getKey());
-						for (String player : server.getPlayerList().getOppedPlayerNames())
-							players.put(player, rule.getValue().getKey());
-					}
-				}
-				return players.entrySet().stream().filter(e -> e.getValue() == ConfigPermission.ALLOW)
-				  .map(Entry::getKey).sorted().collect(Collectors.toList());
-			}
-			
-			@Internal protected static Set<String> playerRoles(
-			  String playerName, Map<String, List<String>> roles
-			) {
-				final MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-				final ServerPlayerEntity player = server.getPlayerList().getPlayerByUsername(playerName);
-				if (player == null) return new HashSet<>();
-				final Set<String> playerRoles = roles.entrySet().stream().filter(
-				  e -> e.getValue().contains(playerName)
-				).map(Entry::getKey).collect(Collectors.toSet());
-				if (player.hasPermissionLevel(2)) playerRoles.add("op");
-				return playerRoles;
-			}
-			
-			@Internal protected static Set<String> modGroups(
-			  String modId, Map<String, Pair<ListType, List<String>>> groups
-			) {
-				final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
-				  e -> e.getValue().getKey() == ListType.BLACKLIST
-				       ^ e.getValue().getValue().contains(modId)
-				).map(Entry::getKey).collect(Collectors.toSet());
-				modGroups.add("[all]");
-				modGroups.add(modId);
-				return modGroups;
 			}
 		}
 	}
@@ -347,7 +258,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	}
 	
 	public enum ConfigPermission {
-		ALLOW, DENY // VIEW
+		ALLOW, DENY // VIEW // SAVE_PRESET
 	}
 	
 	public enum MenuButtonPosition {
@@ -399,5 +310,18 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
+	}
+	
+	private static IFormattableTextComponent makeLink(
+	  String key, @Nullable String tooltipKey, String url, TextFormatting... styles
+	) {
+		return new TranslationTextComponent(key).modifyStyle(s -> {
+			s = s.createStyleFromFormattings(styles);
+			if (tooltipKey != null)
+				s = s.setHoverEvent(new HoverEvent(
+				  Action.SHOW_TEXT, new TranslationTextComponent(tooltipKey)));
+			return s.setClickEvent(new ClickEvent(
+			  ClickEvent.Action.OPEN_URL, url));
+		});
 	}
 }

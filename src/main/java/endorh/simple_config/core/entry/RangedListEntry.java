@@ -1,6 +1,5 @@
 package endorh.simple_config.core.entry;
 
-import endorh.simple_config.clothconfig2.impl.builders.FieldBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.RangedListFieldBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
@@ -8,7 +7,6 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.Builder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

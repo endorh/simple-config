@@ -1,10 +1,9 @@
 package endorh.simple_config.clothconfig2.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.Minecraft;
+import endorh.simple_config.clothconfig2.gui.Icon;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.ImageButton;
-import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,40 +11,36 @@ import java.util.function.Consumer;
 
 public class ToggleImageButton extends ImageButton {
 	
-	protected boolean toggle;
-	protected ResourceLocation texture;
-	public int u;
-	public int v;
+	private boolean toggle;
+	protected Icon icon;
 	protected int hoverOverlayColor = 0x42FFFFFF;
 	protected int borderColor = 0xffe0e0e0;
 	protected Consumer<Boolean> onChange;
 	
 	public ToggleImageButton(
-	  boolean value, int x, int y, int width, int height, int u, int v,
-	  ResourceLocation texture, @Nullable Consumer<Boolean> onChange
+	  boolean value, int x, int y, int width, int height, Icon icon,
+	  @Nullable Consumer<Boolean> onChange
 	) {
-		super(x, y, width, height, u, v, v, texture, b -> {});
+		super(x, y, width, height, icon.u, icon.v, icon.h, icon.location, b -> {});
 		this.toggle = value;
-		this.u = u;
-		this.v = v;
-		this.texture = texture;
+		this.icon = icon;
 		this.onChange = onChange;
 	}
 	
 	public boolean getValue() {
-		return toggle;
+		return isToggle();
 	}
 	
 	public void setValue(boolean value) {
-		toggle = value;
+		setToggle(value);
 		if (onChange != null)
-			onChange.accept(toggle);
+			onChange.accept(isToggle());
 	}
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (isMouseOver(mouseX, mouseY)) {
 			if (button == 0) {
-				setValue(!toggle);
+				setValue(!isToggle());
 				return true;
 			} else if (button == 1) {
 				setValue(Screen.hasShiftDown());
@@ -57,7 +52,7 @@ public class ToggleImageButton extends ImageButton {
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (keyCode == 257 || keyCode == 32 || keyCode == 335) { // Enter | Space | NumPadEnter
-			setValue(!toggle);
+			setValue(!isToggle());
 			return true;
 		}
 		return false;
@@ -66,8 +61,7 @@ public class ToggleImageButton extends ImageButton {
 	@Override public void renderButton(
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
-		Minecraft.getInstance().getTextureManager().bindTexture(texture);
-		blit(mStack, x, y, u, toggle? v + height : v, width, height);
+		icon.renderStretch(mStack, x, y, width, height, isToggle() ? 1 : 0);
 		if (isMouseOver(mouseX, mouseY))
 			fill(mStack, x, y, x + width, y + height, hoverOverlayColor);
 		if (isFocused()) {
@@ -76,5 +70,13 @@ public class ToggleImageButton extends ImageButton {
 			fill(mStack, x + width - 1, y + 1, x + width, y + height - 1, borderColor);
 			fill(mStack, x, y + height - 1, x + width, y + height, borderColor);
 		}
+	}
+	
+	public boolean isToggle() {
+		return toggle;
+	}
+	
+	public void setToggle(boolean toggle) {
+		this.toggle = toggle;
 	}
 }

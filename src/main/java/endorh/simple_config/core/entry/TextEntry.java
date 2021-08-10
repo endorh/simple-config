@@ -1,11 +1,13 @@
 package endorh.simple_config.core.entry;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.ConfigSpec;
+import com.google.common.collect.Lists;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.TextDescriptionBuilder;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
-import endorh.simple_config.core.AbstractSimpleConfigEntryHolder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -32,6 +34,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	
 	public TextEntry(ISimpleConfigEntryHolder parent, String name) {
 		super(parent, name, null);
+		nonPersistent = true;
 	}
 	
 	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Void, TextEntry, Builder> {
@@ -75,6 +78,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		
 		@Override
 		protected TextEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			nonPersistent = true;
 			final TextEntry e = new TextEntry(parent, name);
 			e.translationSupplier = translationSupplier;
 			e.own = translationSupplier != null;
@@ -91,6 +95,8 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	@Override protected Consumer<Void> saveConsumer() {
 		return v -> {};
 	}
+	
+	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected ITextComponent getDisplayName() {
@@ -114,24 +120,28 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		return text != null? text : StringTextComponent.EMPTY;
 	}
 	
+	@Override protected List<ITextComponent> supplyExtraTooltip(Void value) {
+		return Lists.newArrayList();
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected ITextComponent getDebugDisplayName() {
 		if (own) {
 			assert translationSupplier != null;
 			return new StringTextComponent("").append(
 			  translationSupplier.get().copyRaw().mergeStyle(TextFormatting.DARK_AQUA));
-		} else if (super.translation != null) {
+		} else if (translation != null) {
 			IFormattableTextComponent status =
-			  I18n.hasKey(super.translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			  I18n.hasKey(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.hasKey(tooltip)
 				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
 				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
 			}
-			TextFormatting format = I18n.hasKey(super.translation) ? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			TextFormatting format = I18n.hasKey(translation) ? TextFormatting.DARK_GREEN : TextFormatting.RED;
 			return new StringTextComponent("")
-			  .append(status.append(new StringTextComponent(super.translation)).mergeStyle(format));
+			  .append(status.append(new StringTextComponent(translation)).mergeStyle(format));
 		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}
 	
@@ -142,14 +152,14 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		if (own) {
 			lines.add(new StringTextComponent(" + Provides its own translation")
 			            .mergeStyle(TextFormatting.GRAY));
-		} else if (super.translation != null) {
+		} else if (translation != null) {
 			lines.add(new StringTextComponent("Translation key:")
 			            .mergeStyle(TextFormatting.GRAY));
 			final IFormattableTextComponent status =
-			  I18n.hasKey(super.translation)
+			  I18n.hasKey(translation)
 			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
 			  : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
-			lines.add(new StringTextComponent("   " + super.translation + " ")
+			lines.add(new StringTextComponent("   " + translation + " ")
 			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
 		} else {
 			lines.add(new StringTextComponent("Translation key:")
@@ -180,6 +190,12 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	
 	@Override protected Void getGUI() {
 		throw new IllegalArgumentException("Text entries do not have a value");
+	}
+	
+	@Override protected void put(CommentedConfig config, Void value) {}
+	
+	@Override protected Void get(CommentedConfig config) {
+		return null;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

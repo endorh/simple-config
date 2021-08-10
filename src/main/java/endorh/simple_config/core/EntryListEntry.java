@@ -121,16 +121,13 @@ public class EntryListEntry
 		return super.supplyElementError(value);
 	}
 	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).defineList(name, forConfig(value), v -> {
-			try {
-				//noinspection unchecked
-				return !entry.supplyError(elemForGui(elemFromConfig((C) v))).isPresent();
-			} catch (ClassCastException e) {
-				return false;
-			}
-		}));
+	@Override protected boolean validateElement(Object o) {
+		try {
+			//noinspection unchecked
+			return !entry.supplyError(elemForGui(elemFromConfig((C) o))).isPresent();
+		} catch (ClassCastException e) {
+			return false;
+		}
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(

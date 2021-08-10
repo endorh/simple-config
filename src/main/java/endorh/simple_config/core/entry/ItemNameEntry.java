@@ -1,23 +1,16 @@
 package endorh.simple_config.core.entry;
 
-import com.google.common.collect.Lists;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.ComboBoxFieldBuilder;
-import endorh.simple_config.core.AbstractConfigEntry;
-import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.core.entry.StringEntry.SupplierSuggestionProvider;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.ApiStatus.Internal;
