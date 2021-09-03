@@ -2,7 +2,6 @@ package endorh.simple_config.demo;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.mojang.datafixers.util.Pair;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simple_config.core.SimpleConfigCategory;
@@ -10,7 +9,9 @@ import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
 import endorh.simple_config.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simple_config.core.entry.IConfigEntrySerializer;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
@@ -24,6 +25,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.*;
 import java.nio.file.Path;
@@ -65,9 +67,16 @@ public class DemoConfigCategory {
 	//   in the server config
 	public static CategoryBuilder getDemoCategory() {
 		// This value will be used below
-		final CompoundNBT nbt = new CompoundNBT();
+		CompoundNBT nbt = new CompoundNBT();
 		nbt.putString("name", "Steve");
 		nbt.putInt("health", 20);
+		
+		// Used below
+		List<String> natoPhoneticAlphabet = Lists.newArrayList(
+		  "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf",
+		  "Hotel", "India", "Juliet", "Kilo", "Lima", "Mike", "November", "Oscar",
+		  "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor",
+		  "Whiskey", "X-ray", "Yankee", "Zulu");
 		
 		// We pass this (DemoConfigCategory) class as the backing class
 		//   Note that any other class could be passed instead,
@@ -147,13 +156,15 @@ public class DemoConfigCategory {
 		            // Enums may define their own translations implementing
 		            //   ITranslatedEnum (see the Placement enum)
 		            .add("enum_value_2", enum_(Placement.UPSIDE_DOWN))
-		            // String entries can suggest possible values
-		            .add("str_suggest", string("Alpha").suggest("Alpha", "Bravo", "Charlie", "Delta"))
+		            // String entries can suggest possible values and restrict a maximum length
+		            .add("str_suggest", string("Alpha")
+		              .suggest(natoPhoneticAlphabet).maxLength(20))
 		            // The suggestions may also be restrictions
-		            .add("str_restrict", string("Alpha").restrict("Alpha", "Bravo", "Charlie", "Delta"))
+		            .add("str_restrict", string("Alpha")
+		              .restrict(natoPhoneticAlphabet))
 		            // Any entry can be restricted to a finite set of values
 		            //   by using select(), resulting in an enum-like GUI control
-		            .add("str_select", select(string("Alpha"), "Alpha", "Bravo", "Charlie", "Delta"))
+		            .add("str_select", select(string("Alpha"), natoPhoneticAlphabet))
 		            // By intentional design, there's no built-in support for
 		            //   keybinding entries, please register your keybindings
 		            //   through the ClientRegistry.registerKeyBinding to
@@ -175,26 +186,48 @@ public class DemoConfigCategory {
 		            // Of course this includes other lists, but try not to
 		            //   make your config too complex to use
 		            // Each list builder can specify the default for its level
-		            // If you find yourself needing multiple nested lists in
-		            //   your config, you probably instead want a custom
+		            // Additionally, list types can hold another entry of
+		            //   non-expandable types by passing it to the same .add() method
+		            // Held entries are displayed on the blank space at the caption
+		            //   of the list entry, but have their own independent entry
+		            //   in the config file.
+		            .add("color_list_list", caption(color(Color.GRAY), list(
+		              caption(color(Color.GRAY), list(color(Color.BLACK), asList(Color.GRAY))),
+		              asList(
+							 Pair.of(Color.CYAN, asList(Color.YELLOW, Color.BLUE)),
+							 Pair.of(Color.PINK, asList(Color.RED, Color.GREEN)))
+		            ))))
+		            // If you find yourself needing multiple nested lists or maps
+		            //   in your config, you probably instead want a custom
 		            //   JsonReloadListener to extend your mod through datapacks
-		            .add("color_list_list", list(
-		              list(color(Color.BLACK), asList(Color.GRAY)),
-		              asList(asList(Color.RED, Color.GREEN), asList(Color.BLUE, Color.YELLOW)))))
-		       // A few string serializable types come built-in as well
+		       // A few string-serializable types come built-in as well
 		       .n(group("serializable")
 		            // Resource entries contain ResourceLocation s
 		            .add("resource", resource("minecraft:elytra"))
-		            // Item entries provide auto-completion in the GUI
-		            //   Item entries can be restricted to certain items
-		            //   Using tags as filter is only possible in server configs
-		            .add("item", item(Items.APPLE)
+		            // Item and block entries provide auto-completion in the GUI as well as icons
+		            .add("block", block(Blocks.GRASS_BLOCK))
+		            .add("item", item(Items.NETHERITE_HOE))
+		            // There are also fluid entries, which show their filled buckets as icons
+		            .add("fluid", fluid(Fluids.WATER))
+		            // All these entries can be restricted to certain items/blocks/fluids
+		            //   Using tags as filter is only possible in server configs,
+		            //   as tags are server-dependant
+		            // However, items in configs should not be used to customize
+		            //   recipes, only other behaviours. Use custom recipe
+		            //   serializers for that purpose.
+		            .add("apple_item", item(Items.APPLE)
 		              .from(Items.APPLE, Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE))
-		            // CompoundNBT entries contain CompoundNBT s, and automatically
+		            // All these entries can accept unknown items/blocks/fluids
+		            //   by using the itemName()/blockName()/fluidName variant entry types
+		            //   which use resource locations as their type instead
+		            // This is preferable to simply using a resource() entry, since it
+		            //   provides icons and auto-completion for known items
+		            // You may also suggest a specific set of items calling .suggest()
+		            .add("item_name", itemName(new ResourceLocation("unknown:item")))
+		            // NBT tag entries contain CompoundNBT s, and automatically
 		            //   check the NBT syntax in the GUI
 		            .add("nbt_compound", nbtTag(nbt))
-		            // If you pass a INBT default value instead of a compound,
-		            //   the entry will also accept literal NBT values
+		            // NBT value entries also accept INBT values as well as CompoundNBT s
 		            .add("nbt_value", nbtValue(StringNBT.valueOf("NBT")))
 		            // It is also possible to use custom String serializable entries
 		            //   You may either pass an IConfigEntrySerializer,
@@ -210,12 +243,20 @@ public class DemoConfigCategory {
 		          // Map values may be any other entry that serializes
 		          //   in the config as any type serializable to NBT
 		          //   Currently, this includes every built-in entry type
-		          //   (except GUI only entries)
+		          //   except GUI-only entries, including other maps and lists
 		          // By default, map keys are strings, but all types that
-		          //   can be serialized as strings, including numbers,
-		          //   can be used as keys.
+		          //   can be serialized as strings, and are not expandable
+		          //   can be keys. Specifically, other lists and maps
+		          //   cannot be used as keys, nor GUI-only entries.
 		          // Currently, maps are serialized as NBT compounds in the
-		          //   config file.
+		          //   config file, since I haven't found a better alternative.
+		          // As lists, maps can hold another entry in their caption
+		          //   by passing it to the same .add() method call
+		          //   (see below)
+		          // Note that, although we use ImmutableMap.of() (for conciseness)
+		          //   the values you'll retrieve are only guaranteed to implement
+		          //   the Map interface, regardless of the specific type you
+		          //   provide as default.
 		          .add("map", map(
 			         string("<placeholder>"),
 			         ImmutableMap.of(
@@ -231,31 +272,73 @@ public class DemoConfigCategory {
 				        new ResourceLocation("overworld"), asList("Dev", "Dev2"),
 				        new ResourceLocation("the_nether"), asList("Dev", "Dev3"))))
 		          // The entries within a map can be decorated as usual
-		          .add("even_int_map_map", map(
+		          // In this case, the held entry is used in the validation too
+		          .add("divisible_int_map_map", caption(number(2), map(
 		            map(number(0)
-		                  .error(i -> i % 2 != 0 ? Optional.of(ttc(prefix("error.not_even"), i)) : Optional.empty()),
-		                ImmutableMap.of("", 0)
+		                  .error(i -> {
+			                  int d = CLIENT_CONFIG.<Pair<Integer, Map<String, Map<String, Integer>>>>getGUI(
+									  "demo.entries.maps.divisible_int_map_map").getKey();
+			                  return d == 0 || i % d != 0 ? Optional.of(
+			                    ttc(prefix("error.not_divisible"), i, d)
+			                  ) : Optional.empty();
+		                  }), ImmutableMap.of("", 0)
 		            ), ImmutableMap.of(
 		              "plains", ImmutableMap.of("Cornflower", 2, "Dandelion", 4),
-		              "birch forest", ImmutableMap.of("Poppy", 8, "Lily of the Valley", 4))))
+		              "birch forest", ImmutableMap.of("Poppy", 8, "Lily of the Valley", 4)))))
 		          // You may pass an entry builder for the key type as well,
-		          //   as long as its serializable as a string.
+		          //   as long as it's serializable as a string.
+		          //   Invalid types will result in a compile-time error.
 		          // The key entry may have error suppliers, but its tooltip
 		          //   is currently ignored
-		          // In this example, we use int for both the keys and the values
+		          // In this example, we use color for both the keys and the values
+		          .add("color_color_map", map(
+		            color(Color.BLACK).alpha(), color(Color.BLACK).alpha(), ImmutableMap.of(
+		              Color.RED, Color.GREEN,
+		              Color.YELLOW, Color.BLUE)))
+		          // The key and value entries can be different, here we have
+		          //   strings with suggestions mapping to items
+		          .add("str_suggest_map", caption(bool(true), map(
+		            string("").suggest("Have", "Some", "Nice", "Suggestions"),
+		            item(Items.APPLE).from(Items.APPLE, Items.CARROT, Items.POTATO, Items.BEETROOT),
+		            ImmutableMap.of("lol apple", Items.APPLE))))
+		          // Also, map entries may be linked, preserving their order.
+		          // In the config file this translates to adding an ordinal prefix
+		          //   to the NBT keys
 		          .add("int_to_int_map", map(
 		            number(0).min(0).max(1024),
 		            number(0).min(0).max(2048),
-		            ImmutableMap.of(0, 1, 1, 2, 2, 4, 3, 8))))
-		     .n(group("special")
+		            ImmutableMap.of(0, 1, 1, 2, 2, 4, 3, 8)
+		          ).linked())
+		          // If you need duplicates in a map, you may use a pair-list
+		          //   Remember to not push the depth too far or the config will stop being simple
+		          //   A datapack or a custom json storage may be more suitable for storing
+		          //   complex data, since list and map entries must be all the same type.
+		          .add("instruction_list", pairList(
+						string("move").restrict("move", "rotate", "dig", "tower"),
+						number(1), Lists.newArrayList(
+						  Pair.of("move", 2), Pair.of("tower", 1)))))
+		     // As lists and maps, groups can also hold entries in their captions
+		     //   The held entries belong to the group and have their own entry
+		     //   within it in the config file.
+		     // By default, the held entry is named '$root', but a different
+		     //   name may be specified
+		     .n(group("special", false)
+		          // Groups can hold entries in their captions
+		          // To set a caption entry, use .caption() instead of .add()
+		          // Caption entries have an entry under the group in the config file,
+		          //   as any other entry of the group
+		          // Only a single caption entry can be set per group
+		          .caption("caption", string("Caption entry")
+		            .suggest("Groups", "can", "hold", "entries", "in", "their", "captions"))
 		          // Text entries can also receive format arguments if they
-		          //   are defined by name
+		          //   are defined by name instead of passing an ITextComponent
 		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).mergeStyle(TextFormatting.GRAY))
-		          // A special type of entry is non persistent boolean flags
+		          // A special type of entry are non-persistent boolean flags
 		          //   These entries do not have an entry in the config file,
 		          //   and revert to their default whenever restarting the game
 		          // They are rarely useful for enabling special profiling
 		          //   or debugging features
+		          // TODO: allow all entries to be non persistent
 		          .add("non_persistent_bool", nonPersistentBool(false))
 		          // Button entries can execute any arbitrary action
 		          .add("action_button", button(
@@ -391,8 +474,12 @@ public class DemoConfigCategory {
 			      .tooltipArgs(s -> stc(s).mergeStyle(TextFormatting.DARK_AQUA)))
 		       // Any value can be marked as requiring a restart to be effective
 		       //   Entire groups and categories can be marked as well
-		       .add("restart_bool", bool(false).restart()))
-		  .text("end")
+		       .add("restart_bool", bool(false).restart())
+		       .add("enable_switch", bool(false))
+		       .add("enable_test", string("text").editable(() -> CLIENT_CONFIG.getGUIBoolean("demo.errors_tooltips_n_links.enable_switch"))))
+		  .text("end", new TranslationTextComponent("simple-config.text.wiki")
+		    .modifyStyle(style -> style.setFormatting(TextFormatting.AQUA)
+		      .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
 		  // Set a specific background for this category
 		  //   The whole config may also define a default background
 		  //   for all categories
@@ -449,7 +536,7 @@ public class DemoConfigCategory {
 	
 	public static class StringIntPairSerializer implements IConfigEntrySerializer<Pair<String, Integer>> {
 		@Override public String serializeConfigEntry(Pair<String, Integer> value) {
-			return value.getFirst() + ", " + value.getSecond();
+			return value.getKey() + ", " + value.getValue();
 		}
 		@Override public Optional<Pair<String, Integer>> deserializeConfigEntry(String value) {
 			if (value == null || value.isEmpty() || value.matches("(?s).*?,.*?,.*+"))
@@ -462,6 +549,11 @@ public class DemoConfigCategory {
 			} catch (NumberFormatException ignored) {
 				return Optional.empty();
 			}
+		}
+		// If we do not explicitly return Pair.class, the reflection
+		//   API will match fields with type ImmutablePair instead
+		@Override public Class<?> getClass(Pair<String, Integer> value) {
+			return Pair.class;
 		}
 	}
 	
@@ -545,7 +637,7 @@ public class DemoConfigCategory {
 			@Bind public static List<String> string_list;
 			@Bind public static List<Integer> int_list;
 			@Bind public static List<Color> color_list;
-			@Bind public static List<List<Color>> color_list_list;
+			@Bind public static Pair<Color, List<Pair<Color, List<Color>>>> color_list_list;
 		}
 		
 		@Bind public static class serializable {
@@ -560,7 +652,7 @@ public class DemoConfigCategory {
 			// As with the lists, the generics of the field types must match
 			@Bind public static Map<String, String> map;
 			@Bind public static Map<String, List<String>> list_map;
-			@Bind public static Map<String, Map<String, Integer>> even_int_map_map;
+			@Bind public static Pair<Integer, Map<String, Map<String, Integer>>> divisible_int_map_map;
 			@Bind public static Map<Integer, Integer> int_to_int_map;
 		}
 		

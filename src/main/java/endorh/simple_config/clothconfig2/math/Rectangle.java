@@ -1,7 +1,6 @@
 package endorh.simple_config.clothconfig2.math;
 
-public class Rectangle
-  implements Cloneable {
+public class Rectangle implements Cloneable {
 	public int x;
 	public int y;
 	public int width;
@@ -226,25 +225,19 @@ public class Rectangle
 		rx2 += r.width;
 		long ry2 = ry1;
 		ry2 += r.height;
-		if (tx1 < rx1) {
+		if (tx1 < rx1)
 			tx1 = rx1;
-		}
-		if (ty1 < ry1) {
+		if (ty1 < ry1)
 			ty1 = ry1;
-		}
-		if (tx2 > rx2) {
+		if (tx2 > rx2)
 			tx2 = rx2;
-		}
-		if (ty2 > ry2) {
+		if (ty2 > ry2)
 			ty2 = ry2;
-		}
 		ty2 -= ty1;
-		if ((tx2 -= tx1) < Integer.MIN_VALUE) {
+		if ((tx2 -= tx1) < Integer.MIN_VALUE)
 			tx2 = Integer.MIN_VALUE;
-		}
-		if (ty2 < Integer.MIN_VALUE) {
+		if (ty2 < Integer.MIN_VALUE)
 			ty2 = Integer.MIN_VALUE;
-		}
 		return new Rectangle(tx1, ty1, (int) tx2, (int) ty2);
 	}
 	
@@ -370,6 +363,10 @@ public class Rectangle
 		this.reshape(tx1, ty1, (int) tx2, (int) ty2);
 	}
 	
+	public Rectangle grow(int left, int up, int right, int down) {
+		return new Rectangle(x - left, y - up, width + left + right, height + up + down);
+	}
+	
 	public void grow(int h, int v) {
 		long x0 = this.x;
 		long y0 = this.y;
@@ -437,7 +434,8 @@ public class Rectangle
 	}
 	
 	public String toString() {
-		return this.getClass().getName() + "[x=" + this.x + ",y=" + this.y + ",width=" + this.width +
+		return this.getClass().getName() +
+		       "[x=" + this.x + ",y=" + this.y + ",width=" + this.width +
 		       ",height=" + this.height + "]";
 	}
 	

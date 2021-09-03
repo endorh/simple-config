@@ -16,75 +16,53 @@ public interface ConfigBuilder {
 		return new ConfigBuilderImpl();
 	}
 	
-	ConfigBuilder setFallbackCategory(ConfigCategory var1);
+	ConfigBuilder setFallbackCategory(ConfigCategory fallbackCategory);
 	
 	Screen getParentScreen();
 	
-	ConfigBuilder setParentScreen(Screen var1);
+	ConfigBuilder setParentScreen(Screen parent);
 	
 	ITextComponent getTitle();
 	
-	ConfigBuilder setTitle(ITextComponent var1);
+	ConfigBuilder setTitle(ITextComponent title);
 	
 	boolean isEditable();
 	
-	ConfigBuilder setEditable(boolean var1);
+	ConfigBuilder setEditable(boolean editable);
 	
-	ConfigCategory getOrCreateCategory(ITextComponent var1);
+	ConfigCategory getOrCreateCategory(ITextComponent name);
 	
-	ConfigBuilder removeCategory(ITextComponent var1);
+	ConfigBuilder removeCategory(ITextComponent name);
 	
-	ConfigBuilder removeCategoryIfExists(ITextComponent var1);
+	ConfigBuilder removeCategoryIfExists(ITextComponent name);
 	
-	boolean hasCategory(ITextComponent var1);
-	
-	ConfigBuilder setShouldTabsSmoothScroll(boolean var1);
-	
-	boolean isTabsSmoothScrolling();
-	
-	ConfigBuilder setShouldListSmoothScroll(boolean var1);
-	
-	boolean isListSmoothScrolling();
-	
-	ConfigBuilder setDoesConfirmSave(boolean var1);
-	
-	boolean doesConfirmSave();
-	
-	@Deprecated
-	default ConfigBuilder setDoesProcessErrors(boolean processErrors) {
-		return this;
-	}
-	
-	@Deprecated
-	default boolean doesProcessErrors() {
-		return false;
-	}
+	boolean hasCategory(ITextComponent name);
 	
 	ResourceLocation getDefaultBackgroundTexture();
 	
-	ConfigBuilder setDefaultBackgroundTexture(ResourceLocation var1);
+	ConfigBuilder setDefaultBackgroundTexture(ResourceLocation texture);
 	
 	Runnable getSavingRunnable();
 	
-	ConfigBuilder setSavingRunnable(Runnable var1);
+	ConfigBuilder setSavingRunnable(Runnable runnable);
 	
 	Consumer<Screen> getAfterInitConsumer();
 	
-	ConfigBuilder setAfterInitConsumer(Consumer<Screen> var1);
+	ConfigBuilder setAfterInitConsumer(Consumer<Screen> afterInitConsumer);
 	
 	default ConfigBuilder alwaysShowTabs() {
 		return this.setAlwaysShowTabs(true);
 	}
 	
-	void setGlobalized(boolean var1);
+	@Deprecated void setGlobalized(boolean globalized);
 	
-	void setGlobalizedExpanded(boolean var1);
+	@Deprecated void setGlobalizedExpanded(boolean globalizedExpanded);
 	
 	boolean isAlwaysShowTabs();
 	
-	ConfigBuilder setAlwaysShowTabs(boolean var1);
+	ConfigBuilder setAlwaysShowTabs(boolean alwaysShowTabs);
 	
-	ConfigBuilder setTransparentBackground(boolean var1);
+	ConfigBuilder setTransparentBackground(boolean transparentBackground);
 	
 	default ConfigBuilder transparentBackground() {
 		return this.setTransparentBackground(true);
@@ -92,11 +70,6 @@ public interface ConfigBuilder {
 	
 	default ConfigBuilder solidBackground() {
 		return this.setTransparentBackground(false);
-	}
-	
-	@Deprecated
-	default ConfigEntryBuilderImpl getEntryBuilder() {
-		return (ConfigEntryBuilderImpl) this.entryBuilder();
 	}
 	
 	default ConfigEntryBuilder entryBuilder() {

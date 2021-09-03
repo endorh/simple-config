@@ -1,7 +1,10 @@
 package endorh.simple_config.clothconfig2.gui.entries;
 
+import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
+import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
+import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
@@ -9,92 +12,153 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 @OnlyIn(value = Dist.CLIENT)
-public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFieldListCell<T, C, SELF>, SELF extends AbstractTextFieldListListEntry<T, C, SELF>>
-  extends AbstractListListEntry<T, C, SELF> {
-	@ApiStatus.Internal
-	public AbstractTextFieldListListEntry(
-	  ITextComponent fieldName, List<T> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<T>> saveConsumer,
-	  Supplier<List<T>> defaultValue, ITextComponent resetButtonKey, boolean requiresRestart,
-	  boolean deleteButtonEnabled, boolean insertInFront, BiFunction<T, SELF, C> createNewCell
+public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFieldListCell<T, C, Self>, Self extends AbstractTextFieldListListEntry<T, C, Self>>
+  extends AbstractListListEntry<T, C, Self> {
+	
+	@Internal public AbstractTextFieldListListEntry(
+	  ITextComponent fieldName, List<T> value, Function<Self, C> cellFactory
 	) {
-		super(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, requiresRestart, deleteButtonEnabled, insertInFront, createNewCell);
+		super(fieldName, value, cellFactory);
 	}
 	
-	@ApiStatus.Internal
-	public static abstract class AbstractTextFieldListCell<T, SELF extends AbstractTextFieldListCell<T, SELF, OUTER_SELF>, OUTER_SELF extends AbstractTextFieldListListEntry<T, SELF, OUTER_SELF>>
-	  extends AbstractListListEntry.AbstractListCell<T, SELF, OUTER_SELF> {
+	@Internal
+	public static abstract class AbstractTextFieldListCell<T, Self extends AbstractTextFieldListCell<T, Self, ListEntry>, ListEntry extends AbstractTextFieldListListEntry<T, Self, ListEntry>>
+	  extends AbstractListListEntry.AbstractListCell<T, Self, ListEntry> {
 		protected TextFieldWidget widget;
-		private boolean isSelected;
 		
-		public AbstractTextFieldListCell(@Nullable T value, OUTER_SELF listListEntry) {
-			super(value, listListEntry);
-			T finalValue = this.substituteDefault(value);
-			this.widget = new TextFieldWidget(Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
+		public AbstractTextFieldListCell(ListEntry listListEntry) {
+			super(listListEntry);
+			// T finalValue = this.substituteDefault(value);
+			widget = new TextFieldWidget(Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
 			                                  NarratorChatListener.EMPTY) {
 				
 				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
-					this.setFocused(isSelected);
+					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
 				}
 			};
-			this.widget.setValidator(this::isValidText);
-			this.widget.setMaxStringLength(Integer.MAX_VALUE);
-			this.widget.setEnableBackgroundDrawing(false);
-			this.widget.setText(Objects.toString(finalValue));
-			this.widget.setCursorPositionZero();
-			this.widget.setResponder(s -> this.widget.setTextColor(this.getPreferredTextColor()));
+			widget.setValidator(this::isValidText);
+			widget.setMaxStringLength(Integer.MAX_VALUE);
+			widget.setEnableBackgroundDrawing(false);
+			// this.widget.setText(Objects.toString(finalValue));
+			widget.setCursorPositionZero();
+			widget.setResponder(s -> widget.setTextColor(getPreferredTextColor()));
 		}
 		
-		@Override
-		public void updateSelected(boolean isSelected) {
-			this.isSelected = isSelected;
+		@Override public void updateSelected(boolean isSelected) {
+			super.updateSelected(isSelected);
+			forceSetFocus(widget, isSelected);
 		}
-		
-		@Nullable
-		protected abstract T substituteDefault(@Nullable T var1);
 		
 		protected abstract boolean isValidText(@NotNull String var1);
 		
-		@Override
-		public int getCellHeight() {
+		@Override public int getCellHeight() {
 			return 20;
 		}
 		
-		@Override
-		public void render(
-		  MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
+		@Override public int getCellDecorationOffset() {
+			return -4;
+		}
+		
+		@Override protected String seekableText() {
+			return widget.getText();
+		}
+		
+		@Override public void render(
+		  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
 		  int mouseY, boolean isSelected, float delta
 		) {
-			this.widget.setWidth(entryWidth - 12);
-			this.widget.x = x;
-			this.widget.y = y + 1;
-			this.widget.setEnabled(this.listListEntry.isEditable());
-			this.widget.render(matrices, mouseX, mouseY, delta);
-			if (isSelected && this.listListEntry.isEditable()) {
-				AbstractTextFieldListCell.fill(matrices, x, y + 12, x + entryWidth - 12, y + 13,
-				                               this.getConfigError().isPresent() ? -43691 : -2039584);
+			super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
+			widget.setWidth(entryWidth - 12);
+			widget.x = x;
+			widget.y = y + 1;
+			final boolean editable = getListEntry().isEditable();
+			widget.setEnabled(editable);
+			widget.render(mStack, mouseX, mouseY, delta);
+			if (isSelected && editable) {
+				AbstractTextFieldListCell.fill(
+				  mStack, x, y + 12, x + entryWidth - 12, y + 13,
+				  getConfigError().isPresent() ? 0xffff5555 : 0xffe0e0e0);
+			}
+			if (matchedText != null) {
+				fill(
+				  mStack, x - 32, y - 2, x + entryWidth, y + entryHeight - 8,
+				  isFocusedMatch()? 0x64FFBD42 : 0x64FFFF42);
 			}
 		}
 		
 		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
-			return Collections.singletonList(this.widget);
+			return Collections.singletonList(widget);
 		}
+		
+		@Override public void setFocusedMatch(boolean isFocusedMatch) {
+			super.setFocusedMatch(isFocusedMatch);
+			if (isFocusedMatch) {
+				final ListEntry listEntry = getListEntry();
+				listEntry.expandParents();
+				listEntry.setExpanded(true);
+				listEntry.claimFocus();
+				scrollToSelf();
+				listEntry.setListener(this);
+				widget.setFocused2(true);
+			}
+		}
+		
+		@Override public List<INavigableTarget> getNavigableChildren() {
+			return Lists.newArrayList(this);
+		}
+		
+		@Override public void onNavigate() {
+			final ListEntry listEntry = getListEntry();
+			listEntry.expandParents();
+			listEntry.claimFocus();
+			listEntry.setExpanded(true);
+			listEntry.setListener(this);
+			setListener(widget);
+			widget.setFocused2(true);
+			scrollToSelf();
+			listEntry.getParent().setSelectedTarget(this);
+		}
+		
+		protected void scrollToSelf() {
+			final ListEntry listEntry = getListEntry();
+			//noinspection SuspiciousMethodCalls
+			final int j = listEntry.cells.indexOf(this);
+			int y = 24;
+			for (int i = 0; i < j; i++)
+				y += listEntry.cells.get(i).getCellHeight();
+			final DynamicEntryListWidget<?> parent = listEntry.getParent();
+			final int half = (parent.bottom - parent.top) / 2;
+			int target = max(
+			  0, listEntry.getScrollY() - parent.top - half
+			     + min(half, listEntry.getCaptionHeight() / 2) + y);
+			parent.scrollTo(target);
+		}
+	}
+	
+	@Override public String seekableValueText() {
+		return "";
+	}
+	
+	@Override public List<INavigableTarget> getNavigableChildren() {
+		if (expanded) {
+			final List<INavigableTarget> targets = new LinkedList<>(cells);
+			targets.add(0, this);
+			return targets;
+		}
+		return super.getNavigableChildren();
 	}
 }
 

@@ -36,19 +36,22 @@ public abstract class AbstractRangedEntry
 		}
 		
 		public Self min(V min) {
-			this.min = min;
-			return self();
+			Self copy = copy();
+			copy.min = min;
+			return copy;
 		}
 		
 		public Self max(V max) {
-			this.max = max;
-			return self();
+			Self copy = copy();
+			copy.max = max;
+			return copy;
 		}
 		
 		public Self range(V min, V max) {
-			this.min = min;
-			this.max = max;
-			return self();
+			Self copy = copy();
+			copy.min = min;
+			copy.max = max;
+			return copy;
 		}
 		
 		public Self slider() {
@@ -61,15 +64,17 @@ public abstract class AbstractRangedEntry
 				  "simple-config.config.format.slider",
 				  String.format(sliderFormat, v)));
 			} else {
-				this.asSlider = false;
-				return self();
+				Self copy = copy();
+				copy.asSlider = false;
+				return copy;
 			}
 		}
 		
 		public Self slider(Function<V, ITextComponent> sliderTextSupplier) {
-			this.asSlider = true;
-			this.sliderTextSupplier = sliderTextSupplier;
-			return self();
+			Self copy = copy();
+			copy.asSlider = true;
+			copy.sliderTextSupplier = sliderTextSupplier;
+			return copy;
 		}
 		
 		protected void checkBounds() {
@@ -87,6 +92,16 @@ public abstract class AbstractRangedEntry
 			e.asSlider = asSlider;
 			e.sliderTextSupplier = sliderTextSupplier;
 			return e;
+		}
+		
+		@Override protected Self copy() {
+			final Self copy = super.copy();
+			copy.sliderFormat = sliderFormat;
+			copy.min = min;
+			copy.max = max;
+			copy.asSlider = asSlider;
+			copy.sliderTextSupplier = sliderTextSupplier;
+			return copy;
 		}
 	}
 	

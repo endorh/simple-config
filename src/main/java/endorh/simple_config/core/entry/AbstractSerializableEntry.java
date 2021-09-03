@@ -2,6 +2,7 @@ package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
+import endorh.simple_config.core.IKeyEntry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
@@ -12,6 +13,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -19,7 +21,7 @@ import java.util.Optional;
 public abstract class AbstractSerializableEntry
   <V, Self extends AbstractSerializableEntry<V, Self>>
   extends AbstractConfigEntry<V, String, String, Self>
-  implements IAbstractStringKeyEntry<V> {
+  implements IKeyEntry<String, String> {
 	
 	public AbstractSerializableEntry(
 	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
@@ -45,24 +47,21 @@ public abstract class AbstractSerializableEntry
 	protected abstract @Nullable V deserialize(String value);
 	
 	@Override
-	protected String forGui(V value) {
+	public String forGui(V value) {
 		return value != null? serialize(value) : "";
 	}
 	
 	@Nullable
-	@Override
-	protected V fromGui(@Nullable String value) {
+	@Override public V fromGui(@Nullable String value) {
 		return value != null? deserialize(value) : null;
 	}
 	
-	@Override
-	protected String forConfig(V value) {
+	@Override public String forConfig(V value) {
 		return value != null? serialize(value) : "";
 	}
 	
 	@Nullable
-	@Override
-	protected V fromConfig(@Nullable String value) {
+	@Override public V fromConfig(@Nullable String value) {
 		return value != null? deserialize(value) : null;
 	}
 	
@@ -90,26 +89,11 @@ public abstract class AbstractSerializableEntry
 	  ConfigEntryBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder
-		  .startTextField(getDisplayName(), forGui(get()))
-		  .setDefaultValue(forGui(value))
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startTextField(getDisplayName(), forGui(get()));
 		return Optional.of(decorate(valBuilder).build());
 	}
 	
-	@Override
-	public String serializeStringKey(V key) {
-		return serialize(key);
-	}
-	
-	@Override
-	public Optional<V> deserializeStringKey(String key) {
-		return Optional.ofNullable(deserialize(key));
-	}
-	
-	@Override
-	public Optional<ITextComponent> stringKeyError(String key) {
-		return supplyError(key);
+	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
+		return Optional.of(key);
 	}
 }

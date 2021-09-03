@@ -1,9 +1,7 @@
 package endorh.simple_config.clothconfig2.impl;
 
 import com.google.common.collect.Lists;
-import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simple_config.clothconfig2.api.ConfigBuilder;
-import endorh.simple_config.clothconfig2.api.ConfigCategory;
+import endorh.simple_config.clothconfig2.api.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.ITextProperties;
@@ -16,20 +14,21 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class ConfigCategoryImpl
-  implements ConfigCategory {
+public class ConfigCategoryImpl implements ConfigCategory {
 	private final ConfigBuilder builder;
-	private final List<Object> data;
+	private final List<AbstractConfigEntry<?>> data;
 	@Nullable
 	private ResourceLocation background;
 	private final ITextComponent categoryKey;
 	@Nullable
 	private Supplier<Optional<ITextProperties[]>> description = Optional::empty;
+	private String name;
 	
 	ConfigCategoryImpl(ConfigBuilder builder, ITextComponent categoryKey) {
 		this.builder = builder;
 		this.data = Lists.newArrayList();
 		this.categoryKey = categoryKey;
+		this.name = categoryKey.getString();
 	}
 	
 	@Override
@@ -38,8 +37,16 @@ public class ConfigCategoryImpl
 	}
 	
 	@Override
-	public List<Object> getEntries() {
+	public List<AbstractConfigEntry<?>> getEntries() {
 		return this.data;
+	}
+	
+	@Override public void setName(String name) {
+		this.name = name;
+	}
+	
+	@Override public String getName() {
+		return name;
 	}
 	
 	@Override

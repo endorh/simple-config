@@ -1,31 +1,29 @@
 package endorh.simple_config.core.entry;
 
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.entries.EntryButtonListEntry;
 import endorh.simple_config.core.AbstractSimpleConfigEntryHolder;
 import endorh.simple_config.core.DummyEntryHolder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
-import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
-import endorh.simple_config.clothconfig2.gui.entries.EntryButtonListEntry;
-import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.core.SelectorEntry;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
-import static endorh.simple_config.core.EntryButtonEntry.sameOrLessWidthBlank;
-
 public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwitcherEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	
-	protected SelectorEntry<String> inner;
+	protected SelectorEntry<String, String, String, StringEntry> inner;
 	protected Map<String, Map<String, Object>> presets;
 	protected boolean global;
 	protected String path;
@@ -67,6 +65,10 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		@Override protected PresetSwitcherEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new PresetSwitcherEntry(parent, name, presets, path, global);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(new HashMap<>(presets), path, global);
+		}
 	}
 	
 	protected static String firstKey(Map<String, Map<String, Object>> presets) {
@@ -80,6 +82,11 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		final Map<String, Object> preset = presets.get(name);
 		final AbstractSimpleConfigEntryHolder h =
 		  (global ? parent.getRoot() : (AbstractSimpleConfigEntryHolder) parent).getChild(path);
+		AbstractConfigScreen screen = null;
+		if (guiEntry != null) {
+			screen = guiEntry.getConfigScreenOrNull();
+			if (screen != null) screen.getHistory().startBatch(screen, null);
+		}
 		for (Entry<String, Object> entry : preset.entrySet()) {
 			try {
 				h.setForGUI(entry.getKey(), entry.getValue());
@@ -89,22 +96,16 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 				  "Details: " + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
 			}
 		}
+		if (screen != null) screen.getHistory().saveBatch(screen);
 	}
 	
 	@Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final ITextComponent prevKey = builder.getResetButtonKey();
-		builder.setResetButtonKey(sameOrLessWidthBlank(prevKey));
-		final Optional<AbstractConfigListEntry<String>> in = inner.buildGUIEntry(builder);
-		builder.setResetButtonKey(prevKey);
-		if (!in.isPresent())
-			return Optional.empty();
-		final EntryButtonListEntry<String, AbstractConfigListEntry<String>> entry =
-		  new EntryButtonListEntry<>(
-		    getDisplayName(), in.get(), this::applyPreset,
-		    () -> new TranslationTextComponent("simple-config.label.preset.apply"),
-		    null, () -> this.supplyTooltip(getGUI()), builder.getResetButtonKey());
+		final EntryButtonListEntry<String, ?> entry = new EntryButtonListEntry<>(
+		  getDisplayName(), inner.buildChildGUIEntry(builder), this::applyPreset,
+		  () -> new TranslationTextComponent("simple-config.label.preset.apply")
+		);
 		return Optional.of(entry);
 	}
 }

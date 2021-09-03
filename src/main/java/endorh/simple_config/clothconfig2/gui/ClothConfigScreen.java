@@ -5,7 +5,8 @@ import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.clothconfig2.api.*;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicElementListWidget;
+import endorh.simple_config.clothconfig2.gui.widget.*;
+import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget.ISearchHandler;
 import endorh.simple_config.clothconfig2.impl.EasingMethod;
 import endorh.simple_config.clothconfig2.math.Point;
 import endorh.simple_config.clothconfig2.math.Rectangle;
@@ -23,88 +24,120 @@ import net.minecraft.util.Tuple;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.ApiStatus;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ClothConfigScreen
-  extends AbstractTabbedConfigScreen {
+  extends AbstractTabbedConfigScreen implements ISearchHandler {
 	private final ScrollingContainer tabsScroller = new ScrollingContainer() {
-		
-		@Override
-		public Rectangle getBounds() {
-			return new Rectangle(0, 0, 1, ClothConfigScreen.this.width - 40);
+		@Override public Rectangle getBounds() {
+			return new Rectangle(0, 0, 1, width - 40);
 		}
 		
-		@Override
-		public int getMaxScrollHeight() {
-			return (int) ClothConfigScreen.this.getTabsMaximumScrolled();
+		@Override public int getMaxScrollHeight() {
+			return (int) getTabsMaximumScrolled();
 		}
 		
-		@Override
-		public void updatePosition(float delta) {
+		@Override public void updatePosition(float delta) {
 			super.updatePosition(delta);
-			this.scrollAmount = this.clamp(this.scrollAmount, 0.0);
+			scrollAmount = clamp(scrollAmount, 0.0);
 		}
 	};
-	public ListWidget<AbstractConfigEntry<AbstractConfigEntry<?>>> listWidget;
+	public ListWidget<AbstractConfigEntry<?>> listWidget;
+	public ListWidget<AbstractConfigEntry<?>> resizingListWidget = null;
+	protected final LinkedHashMap<String, List<AbstractConfigEntry<?>>> categoryEntries = Maps.newLinkedHashMap();
 	private final LinkedHashMap<ITextComponent, List<AbstractConfigEntry<?>>> categorizedEntries =
 	  Maps.newLinkedHashMap();
 	private final List<Tuple<ITextComponent, Integer>> tabs;
-	private Widget quitButton;
-	private Widget saveButton;
-	private Widget buttonLeftTab;
-	private Widget buttonRightTab;
-	private Rectangle tabsBounds;
-	private Rectangle tabsLeftBounds;
-	private Rectangle tabsRightBounds;
-	private double tabsMaximumScrolled = -1.0;
-	private final List<ClothConfigTabButton> tabButtons = Lists.newArrayList();
-	private final Map<ITextComponent, ConfigCategory> categoryMap;
+	protected TintedButton quitButton;
+	protected TintedButton saveButton;
+	protected Widget buttonLeftTab;
+	protected Widget buttonRightTab;
+	protected MultiFunctionImageButton undoButton;
+	protected MultiFunctionImageButton redoButton;
+	protected Rectangle tabsBounds;
+	protected Rectangle tabsLeftBounds;
+	protected Rectangle tabsRightBounds;
+	protected double tabsMaximumScrolled = -1.0;
+	protected final List<ClothConfigTabButton> tabButtons = Lists.newArrayList();
+	protected final Map<ITextComponent, ConfigCategory> categoryMap;
+	protected TooltipSearchBarWidget searchBar;
 	
-	@ApiStatus.Internal
-	public ClothConfigScreen(
+	@Internal public ClothConfigScreen(
 	  Screen parent, ITextComponent title, Map<ITextComponent, ConfigCategory> categoryMap,
 	  ResourceLocation backgroundLocation
 	) {
-		super(parent, title, backgroundLocation);
+		super(parent, title, backgroundLocation, categoryMap.values());
 		categoryMap.forEach((categoryName, category) -> {
-			List<AbstractConfigListEntry<?>> entries = Lists.newArrayList();
+			List<AbstractConfigEntry<?>> entries = Lists.newArrayList();
 			for (Object object : category.getEntries()) {
 				//noinspection unchecked
 				AbstractConfigListEntry<?> entry =
 				  object instanceof Tuple ? ((Tuple<?, AbstractConfigListEntry<?>>) object).getB()
 				                          : (AbstractConfigListEntry<?>) object;
+				entry.setCategory(category);
 				entry.setScreen(this);
 				entries.add(entry);
 			}
-			//noinspection unchecked
-			this.categorizedEntries.put(
-			  categoryName, (List<AbstractConfigEntry<?>>) (List<?>) entries);
-			if (category.getBackground() != null) {
-				this.registerCategoryBackground(categoryName, category.getBackground());
-			}
+			categoryEntries.put(category.getName(), entries);
+			categorizedEntries.put(categoryName, entries); // FIXME
+			if (category.getBackground() != null)
+				registerCategoryBackground(categoryName, category.getBackground());
 		});
-		this.tabs = this.categorizedEntries.keySet().stream().map(s -> new Tuple<>(
+		tabs = categorizedEntries.keySet().stream().map(s -> new Tuple<>(
 		  s, Minecraft.getInstance().fontRenderer.getStringPropertyWidth(s) + 8)
 		).collect(Collectors.toList());
 		this.categoryMap = categoryMap;
+		final WeakReference<ClothConfigScreen> weakSelf = new WeakReference<>(this);
+		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, weakSelf::get);
+	}
+
+	protected static final Pattern COLON = Pattern.compile(":");
+	protected static final Pattern DOT = Pattern.compile("\\.");
+	
+	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+		final String[] sp = COLON.split(path, 2);
+		final Optional<ConfigCategory> opt =
+		  categoryMap.values().stream().filter(c -> c.getName().equals(sp[0])).findFirst();
+		if (!opt.isPresent()) return null;
+		final ConfigCategory cat = opt.get();
+		final String[] split = DOT.split(sp[1], 2);
+		final Optional<AbstractConfigEntry<?>> first =
+		  cat.getEntries().stream().filter(e -> e.getName().equals(split[0])).findFirst();
+		if (!first.isPresent()) return null;
+		AbstractConfigEntry<?> entry = first.get();
+		if (split.length < 2) return entry;
+		if (!(entry instanceof IEntryHolder))
+			return null;
+		return ((IEntryHolder) entry).getEntry(split[1]);
 	}
 	
-	@Override
-	public ITextComponent getSelectedCategory() {
-		return this.tabs.get(this.selectedCategoryIndex).getA();
+	@Override public List<AbstractConfigEntry<?>> getEntries() {
+		return categoryMap.values().stream().flatMap(c -> c.getEntries().stream())
+		  .collect(Collectors.toList());
+	}
+	
+	@Override public ITextComponent getSelectedCategory() {
+		return tabs.get(selectedCategoryIndex).getA();
 	}
 	
 	@Override
 	public Map<ITextComponent, List<AbstractConfigEntry<?>>> getCategorizedEntries() {
-		return this.categorizedEntries;
+		return categorizedEntries;
 	}
 	
 	@Override
@@ -113,49 +146,44 @@ public class ClothConfigScreen
 	}
 	
 	@Override
-	@Deprecated
-	public void setEdited(boolean edited) {
-		super.setEdited(edited);
-	}
-	
-	@Override
-	@Deprecated
-	public void setEdited(boolean edited, boolean requiresRestart) {
-		super.setEdited(edited, requiresRestart);
-	}
-	
-	@Override
 	public void saveAll(boolean openOtherScreens) {
+		history.saveState(this);
 		super.saveAll(openOtherScreens);
 	}
 	
 	protected void init() {
 		super.init();
-		this.tabButtons.clear();
-		this.listWidget = new ListWidget<>(
-		  this, this.minecraft, this.width, this.height, this.isShowingTabs() ? 70 : 30,
-		  this.height - 32, this.getBackgroundLocation());
-		this.children.add(this.listWidget);
-		if (this.categorizedEntries.size() > this.selectedCategoryIndex) {
-			this.listWidget.getEventListeners().addAll(
-			  (List) Lists.newArrayList(this.categorizedEntries.values())
-				 .get(this.selectedCategoryIndex));
+		tabButtons.clear();
+		searchBar.w = width;
+		if (resizingListWidget == null) {
+			this.listWidget = new ListWidget<>(
+			  this, minecraft, width, height, isShowingTabs() ? 50 : 24,
+			  height - 28, getBackgroundLocation());
+			if (categorizedEntries.size() > selectedCategoryIndex)
+				this.listWidget.getEntries().addAll(
+				  Lists.newArrayList(categorizedEntries.values()).get(selectedCategoryIndex));
+		} else {
+			listWidget = resizingListWidget;
+			listWidget.resize(width, height, isShowingTabs()? 50 : 24, height - 28);
+			resizingListWidget = null;
 		}
-		int buttonWidths = Math.min(200, (this.width - 50 - 12) / 3);
-		this.quitButton =
-		  new Button(this.width / 2 - buttonWidths - 3, this.height - 26, buttonWidths, 20,
-		             this.isEdited() ? new TranslationTextComponent(
-			            "text.cloth-config.cancel_discard")
-		                             : new TranslationTextComponent("gui.cancel"),
-		             widget -> this.quit());
-		this.addButton(this.quitButton);
-		this.saveButton = new Button(this.width / 2 + 3, this.height - 26, buttonWidths, 20,
-		                             NarratorChatListener.EMPTY, button -> this.saveAll(true)) {
+		children.add(listWidget);
+		int buttonWidths = Math.min(200, (width - 50 - 12) / 3);
+		quitButton =
+		  new TintedButton(
+			 width / 2 - buttonWidths - 3, height - 24, buttonWidths, 20,
+			 isEdited() ? new TranslationTextComponent(
+				"text.cloth-config.cancel_discard")
+			            : new TranslationTextComponent("gui.cancel"),
+			 widget -> quit());
+		// quitButton.setTintColor(0x80BD4242);
+		addButton(quitButton);
+		saveButton = new TintedButton(width / 2 + 3, height - 24, buttonWidths, 20,
+		                        NarratorChatListener.EMPTY, button -> saveAll(true)) {
 			
 			public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 				boolean hasErrors = false;
-				for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(
-				  ClothConfigScreen.this.categorizedEntries.values())) {
+				for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(categorizedEntries.values())) {
 					for (AbstractConfigEntry<?> entry : entries) {
 						if (!entry.getConfigError().isPresent()) continue;
 						hasErrors = true;
@@ -164,201 +192,275 @@ public class ClothConfigScreen
 					if (!hasErrors) continue;
 					break;
 				}
-				this.active = ClothConfigScreen.this.isEdited() && !hasErrors;
-				this.setMessage(
+				active = isEdited() && !hasErrors;
+				setMessage(
 				  hasErrors ? new TranslationTextComponent("text.cloth-config.error_cannot_save")
 				            : new TranslationTextComponent("text.cloth-config.save_and_done"));
 				super.render(matrices, mouseX, mouseY, delta);
 			}
 		};
-		this.addButton(this.saveButton);
-		this.saveButton.active = this.isEdited();
-		if (this.isShowingTabs()) {
-			this.tabsBounds = new Rectangle(0, 41, this.width, 24);
-			this.tabsLeftBounds = new Rectangle(0, 41, 18, 24);
-			this.tabsRightBounds = new Rectangle(this.width - 18, 41, 18, 24);
-			this.buttonLeftTab = new Button(4, 44, 12, 18, NarratorChatListener.EMPTY,
-			                                button -> this.tabsScroller.scrollTo(0.0, true)) {
+		saveButton.setTintColor(0x8042BD42);
+		addButton(saveButton);
+		saveButton.active = isEdited();
+		if (isShowingTabs()) {
+			tabsBounds = new Rectangle(0, 24, width, 24);
+			tabsLeftBounds = new Rectangle(0, 24, 18, 24);
+			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
+			buttonLeftTab = new Button(4, 25, 12, 18, NarratorChatListener.EMPTY,
+			                                button -> tabsScroller.scrollTo(0.0, true)) {
 				
 				public void renderButton(
 				  @NotNull MatrixStack matrices, int mouseX, int mouseY, float delta
 				) {
-					ClothConfigScreen.this.minecraft.getTextureManager()
-					  .bindTexture(AbstractConfigScreen.CONFIG_TEX);
-					RenderSystem.color4f(1.0f, 1.0f, 1.0f, this.alpha);
-					int int_3 = this.getYImage(this.isHovered());
+					minecraft.getTextureManager().bindTexture(AbstractConfigScreen.CONFIG_TEX);
+					RenderSystem.color4f(1.0f, 1.0f, 1.0f, alpha);
+					int int_3 = getYImage(isHovered());
 					RenderSystem.enableBlend();
 					RenderSystem.blendFuncSeparate(770, 771, 0, 1);
 					RenderSystem.blendFunc(770, 771);
-					this.blit(matrices, this.x, this.y, 12, 18 * int_3, this.width, this.height);
+					blit(matrices, x, y, 12, 18 * int_3, width, height);
 				}
 			};
-			this.children.add(this.buttonLeftTab);
+			children.add(buttonLeftTab);
 			int j = 0;
-			for (Tuple<ITextComponent, Integer> tab : this.tabs) {
-				this.tabButtons.add(new ClothConfigTabButton(this, j, -100, 43, tab.getB(), 20,
-				                                             tab.getA(),
-				                                             this.categoryMap.get(tab.getA())
-				                                               .getDescription()));
+			for (Tuple<ITextComponent, Integer> tab : tabs) {
+				tabButtons.add(new ClothConfigTabButton(
+				  this, j, -100, 26, tab.getB(), 20, tab.getA(),
+				  categoryMap.get(tab.getA()).getDescription()));
 				++j;
 			}
-			this.children.addAll(this.tabButtons);
-			this.buttonRightTab = new Button(this.width - 16, 44, 12, 18, NarratorChatListener.EMPTY,
-			                                 button -> this.tabsScroller.scrollTo(
-			                                   this.tabsScroller.getMaxScroll(), true)) {
+			children.addAll(tabButtons);
+			buttonRightTab = new Button(width - 16, 25, 12, 18, NarratorChatListener.EMPTY,
+			                                 button -> tabsScroller.scrollTo(
+			                                   tabsScroller.getMaxScroll(), true)) {
 				
 				public void renderButton(
 				  @NotNull MatrixStack matrices, int mouseX, int mouseY, float delta
 				) {
-					ClothConfigScreen.this.minecraft.getTextureManager()
+					minecraft.getTextureManager()
 					  .bindTexture(AbstractConfigScreen.CONFIG_TEX);
-					RenderSystem.color4f(1.0f, 1.0f, 1.0f, this.alpha);
-					int int_3 = this.getYImage(this.isHovered());
+					RenderSystem.color4f(1.0f, 1.0f, 1.0f, alpha);
+					int int_3 = getYImage(isHovered());
 					RenderSystem.enableBlend();
 					RenderSystem.blendFuncSeparate(770, 771, 0, 1);
 					RenderSystem.blendFunc(770, 771);
-					this.blit(matrices, this.x, this.y, 0, 18 * int_3, this.width, this.height);
+					blit(matrices, x, y, 0, 18 * int_3, width, height);
 				}
 			};
-			this.children.add(this.buttonRightTab);
+			children.add(buttonRightTab);
+			addListener(searchBar);
 		} else {
-			this.tabsLeftBounds = this.tabsRightBounds = new Rectangle();
-			this.tabsBounds = this.tabsRightBounds;
+			tabsLeftBounds = tabsRightBounds = new Rectangle();
+			tabsBounds = tabsRightBounds;
 		}
-		Optional.ofNullable(this.afterInitConsumer).ifPresent(consumer -> consumer.accept(this));
+		undoButton = new MultiFunctionImageButton(
+		  2, 2, 20, 20, 80, 128, CONFIG_TEX, (w, b) -> {
+			  if (b == 0) {
+				  undo();
+				  setListener(listWidget);
+			  }
+			  return true;
+		  });
+		undoButton.setActivePredicate(w -> history.canUndo(this));
+		addButton(undoButton);
+		redoButton = new MultiFunctionImageButton(
+		  22, 2, 20, 20, 100, 128, CONFIG_TEX, (w, b) -> {
+			if (b == 0) {
+				  redo();
+				  setListener(listWidget);
+			  }
+			return true;
+		});
+		redoButton.setActivePredicate(w -> history.canRedo(this));
+		addButton(redoButton);
+		Optional.ofNullable(afterInitConsumer).ifPresent(consumer -> consumer.accept(this));
+	}
+	
+	@Override public void setSelectedCategory(int index) {
+		if (selectedCategoryIndex != index) {
+			getHistory().saveState(this);
+			super.setSelectedCategory(index);
+			int x = 0;
+			for (int i = 0; i < index; i++)
+				x += tabButtons.get(i).getWidth() + 2;
+			x += tabButtons.get(index).getWidth() / 2;
+			x -= tabsScroller.getBounds().width / 2;
+			tabsScroller.scrollTo(x, true, 250);
+			if (searchBar.isExpanded()) {
+				searchBar.refresh();
+				setListener(searchBar);
+			}
+		}
 	}
 	
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-		if (this.tabsBounds.contains(mouseX, mouseY) &&
-		    !this.tabsLeftBounds.contains(mouseX, mouseY) &&
-		    !this.tabsRightBounds.contains(mouseX, mouseY) && amount != 0.0) {
-			this.tabsScroller.offset(-amount * 16.0, true);
+		if (tabsBounds.contains(mouseX, mouseY) &&
+		    !tabsLeftBounds.contains(mouseX, mouseY) &&
+		    !tabsRightBounds.contains(mouseX, mouseY) && amount != 0.0) {
+			tabsScroller.offset(-amount * 16.0, true);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, amount);
 	}
 	
+	@Override protected void recomputeFocus() {
+		if (searchBar.isExpanded() && dialogs.isEmpty()) {
+			setListener(searchBar);
+		}
+	}
+	
+	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (super.keyPressed(keyCode, scanCode, modifiers))
+			return true;
+		if (keyCode == 264 || keyCode == 265) {
+			setListener(listWidget);
+			return true;
+		}
+		return false;
+	}
+	
+	@Override protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
+		if (super.screenKeyPressed(keyCode, scanCode, modifiers)) return true;
+		if (Screen.hasControlDown()) {
+			switch (keyCode) {
+				case 89: // Ctrl + F
+					if (!searchBar.isExpanded())
+						searchBar.open();
+					setListener(searchBar);
+					return true;
+				case 47: // Ctrl + Z
+					undo();
+					return true;
+				case 84: // Ctrl + Y
+					redo();
+					return true;
+			}
+		}
+		return false;
+	}
+	
+	@Override public void resize(@NotNull Minecraft mc, int width, int height) {
+		resizingListWidget = listWidget;
+		super.resize(mc, width, height);
+		resizingListWidget = null;
+	}
+	
 	public double getTabsMaximumScrolled() {
-		if (this.tabsMaximumScrolled == -1.0) {
+		if (tabsMaximumScrolled == -1.0) {
 			int[] i = new int[]{0};
-			for (Tuple<ITextComponent, Integer> pair : this.tabs) {
+			for (Tuple<ITextComponent, Integer> pair : tabs) {
 				i[0] = i[0] + (pair.getB() + 2);
 			}
-			this.tabsMaximumScrolled = i[0];
+			tabsMaximumScrolled = i[0];
 		}
-		return this.tabsMaximumScrolled + 6.0;
+		return tabsMaximumScrolled + 6.0;
 	}
 	
 	public void resetTabsMaximumScrolled() {
-		this.tabsMaximumScrolled = -1.0;
+		tabsMaximumScrolled = -1.0;
 	}
 	
 	@Override
-	public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
-		if (this.isShowingTabs()) {
-			this.tabsScroller.updatePosition(delta * 3.0f);
-			int xx = 24 - (int) this.tabsScroller.scrollAmount;
-			for (ClothConfigTabButton tabButton : this.tabButtons) {
+	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		if (minecraft == null) return;
+		final boolean hasDialog = !dialogs.isEmpty();
+		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
+		final int smX = suppressHover ? -1 : mouseX;
+		final int smY = suppressHover ? -1 : mouseY;
+		if (getListener() == null || getListener() == searchBar && !searchBar.isExpanded())
+			setListener(listWidget);
+		if (isShowingTabs()) {
+			tabsScroller.updatePosition(delta * 3.0f);
+			int xx = 24 - (int) tabsScroller.scrollAmount;
+			for (ClothConfigTabButton tabButton : tabButtons) {
 				tabButton.x = xx;
 				xx += tabButton.getWidth() + 2;
 			}
-			this.buttonLeftTab.active = this.tabsScroller.scrollAmount > 0.0;
-			this.buttonRightTab.active = this.tabsScroller.scrollAmount <
-			                             this.getTabsMaximumScrolled() - (double) this.width + 40.0;
+			buttonLeftTab.active = tabsScroller.scrollAmount > 0.0;
+			buttonRightTab.active = tabsScroller.scrollAmount <
+			                             getTabsMaximumScrolled() - (double) width + 40.0;
 		}
-		if (this.isTransparentBackground()) {
-			this.fillGradient(matrices, 0, 0, this.width, this.height, -1072689136, -804253680);
+		if (isTransparentBackground()) {
+			fillGradient(mStack, 0, 0, width, height, 0xa0101010, 0xb0101010);
 		} else {
-			this.renderDirtBackground(0);
+			renderDirtBackground(0);
 		}
-		this.listWidget.render(matrices, mouseX, mouseY, delta);
+		listWidget.render(mStack, smX, smY, delta);
 		ScissorsHandler.INSTANCE.scissor(
-		  new Rectangle(this.listWidget.left, this.listWidget.top, this.listWidget.width,
-		                this.listWidget.bottom - this.listWidget.top));
-		for (Object child : this.listWidget.getEventListeners()) {
-			((AbstractConfigEntry<?>) child).lateRender(matrices, mouseX, mouseY, delta);
-		}
+		  new Rectangle(listWidget.left, listWidget.top, listWidget.width,
+		                listWidget.bottom - listWidget.top));
 		ScissorsHandler.INSTANCE.removeLastScissor();
-		if (this.isShowingTabs()) {
+		if (isShowingTabs()) {
 			ClothConfigScreen.drawCenteredString(
-			  matrices, this.minecraft.fontRenderer, this.title, this.width / 2, 18, -1);
-			Rectangle onlyInnerTabBounds =
-			  new Rectangle(this.tabsBounds.x + 20, this.tabsBounds.y, this.tabsBounds.width - 40,
-			                this.tabsBounds.height);
-			ScissorsHandler.INSTANCE.scissor(onlyInnerTabBounds);
-			if (this.isTransparentBackground()) {
-				this.fillGradient(
-				  matrices, onlyInnerTabBounds.x, onlyInnerTabBounds.y, onlyInnerTabBounds.getMaxX(),
-				  onlyInnerTabBounds.getMaxY(), 0x68000000, 0x68000000);
+			  mStack, minecraft.fontRenderer, title, width / 2, 8, 0xffffffff);
+			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
+			ScissorsHandler.INSTANCE.scissor(r);
+			if (isTransparentBackground()) {
+				fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
 			} else {
-				this.overlayBackground(matrices, onlyInnerTabBounds, 32, 32, 32, 255, 255);
+				overlayBackground(mStack, r, 32, 32, 32);
 			}
-			this.tabButtons.forEach(widget -> widget.render(matrices, mouseX, mouseY, delta));
-			this.drawTabsShades(matrices, 0, this.isTransparentBackground() ? 120 : 255);
+			tabButtons.forEach(widget -> widget.render(mStack, smX, smY, delta));
+			drawTabsShades(mStack, 0, isTransparentBackground() ? 120 : 255);
 			ScissorsHandler.INSTANCE.removeLastScissor();
-			this.buttonLeftTab.render(matrices, mouseX, mouseY, delta);
-			this.buttonRightTab.render(matrices, mouseX, mouseY, delta);
+			buttonLeftTab.render(mStack, smX, smY, delta);
+			buttonRightTab.render(mStack, smX, smY, delta);
 		} else {
 			ClothConfigScreen.drawCenteredString(
-			  matrices, this.minecraft.fontRenderer, this.title, this.width / 2, 12, -1);
+			  mStack, minecraft.fontRenderer, title, width / 2, 8, 0xffffffff);
 		}
-		if (this.isEditable()) {
+		if (isEditable()) {
 			List<ITextComponent> errors = Lists.newArrayList();
-			for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(
-			  this.categorizedEntries.values())) {
+			for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(categorizedEntries.values())) {
 				for (AbstractConfigEntry<?> entry : entries) {
 					if (!entry.getConfigError().isPresent()) continue;
 					errors.add(entry.getConfigError().get());
 				}
 			}
 			if (errors.size() > 0) {
-				this.minecraft.getTextureManager().bindTexture(CONFIG_TEX);
+				minecraft.getTextureManager().bindTexture(CONFIG_TEX);
 				RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 				String text =
 				  "\u00a7c" + (errors.size() == 1 ? errors.get(0).copyRaw().getString() : I18n.format(
 					 "text.cloth-config.multi_error"));
-				if (this.isTransparentBackground()) {
-					int stringWidth = this.minecraft.fontRenderer.getStringWidth(text);
-					Objects.requireNonNull(this.minecraft.fontRenderer);
-					this.fillGradient(matrices, 8, 9, 20 + stringWidth, 14 + 9, 0x68000000, 0x68000000);
+				if (isTransparentBackground()) {
+					int stringWidth = minecraft.fontRenderer.getStringWidth(text);
+					Objects.requireNonNull(minecraft.fontRenderer);
+					fillGradient(mStack, 8 + 40, 6, 20 + 40 + stringWidth, 14 + 6, 0xA0000000, 0xA0000000);
 				}
-				this.blit(matrices, 10, 10, 0, 54, 3, 11);
+				blit(mStack, 10 + 40, 7, 24, 36, 3, 11);
 				ClothConfigScreen.drawString(
-				  matrices, this.minecraft.fontRenderer, text, 18, 12, -1);
+				  mStack, minecraft.fontRenderer, text, 18 + 40, 9, 0xffffffff);
 				if (errors.size() > 1) {
-					int stringWidth = this.minecraft.fontRenderer.getStringWidth(text);
-					if (mouseX >= 10 && mouseY >= 10 && mouseX <= 18 + stringWidth) {
-						Objects.requireNonNull(this.minecraft.fontRenderer);
-						if (mouseY <= 14 + 9) {
-							this.addTooltip(Tooltip.of(new Point(mouseX, mouseY),
-							                           errors.toArray(new ITextComponent[0])));
-						}
+					int stringWidth = minecraft.fontRenderer.getStringWidth(text);
+					if (smX >= 10 + 40 && smY >= 6 && smX <= 18 + 40 + stringWidth && smY <= 14 + 6) {
+						Objects.requireNonNull(minecraft.fontRenderer);
+						addTooltip(Tooltip.of(new Point(mouseX, mouseY), errors.toArray(new ITextComponent[0])));
 					}
 				}
 			}
-		} else if (!this.isEditable()) {
-			this.minecraft.getTextureManager().bindTexture(CONFIG_TEX);
+		} else if (!isEditable()) {
+			minecraft.getTextureManager().bindTexture(CONFIG_TEX);
 			RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 			String text = "\u00a7c" + I18n.format("text.cloth-config.not_editable");
-			if (this.isTransparentBackground()) {
-				int stringWidth = this.minecraft.fontRenderer.getStringWidth(text);
-				Objects.requireNonNull(this.minecraft.fontRenderer);
-				this.fillGradient(matrices, 8, 9, 20 + stringWidth, 14 + 9, 0x68000000, 0x68000000);
+			if (isTransparentBackground()) {
+				int stringWidth = minecraft.fontRenderer.getStringWidth(text);
+				Objects.requireNonNull(minecraft.fontRenderer);
+				fillGradient(mStack, 8, 9, 20 + stringWidth, 14 + 9, 0x68000000, 0x68000000);
 			}
-			this.blit(matrices, 10, 10, 0, 54, 3, 11);
-			ClothConfigScreen.drawString(matrices, this.minecraft.fontRenderer, text, 18, 12, -1);
+			blit(mStack, 10, 10, 24, 36, 3, 11);
+			ClothConfigScreen.drawString(mStack, minecraft.fontRenderer, text, 18, 12, -1);
 		}
-		super.render(matrices, mouseX, mouseY, delta);
+		searchBar.render(mStack, hasDialog? -1 : mouseX, hasDialog? -1 : mouseY, delta);
+		if (listWidget.isScrollingNow())
+			removeTooltips(new Rectangle(listWidget.left, listWidget.top, listWidget.width, listWidget.height));
+		super.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	@Deprecated
-	@ApiStatus.ScheduledForRemoval
-	public void queueTooltip(QueuedTooltip queuedTooltip) {
-		super.addTooltip(queuedTooltip);
-	}
-	
-	private void drawTabsShades(MatrixStack matrices, int lightColor, int darkColor) {
-		this.drawTabsShades(matrices.getLast().getMatrix(), lightColor, darkColor);
+	@SuppressWarnings("SameParameterValue") private void drawTabsShades(
+	  MatrixStack mStack, int lightColor, int darkColor
+	) {
+		drawTabsShades(mStack.getLast().getMatrix(), lightColor, darkColor);
 	}
 	
 	private void drawTabsShades(Matrix4f matrix, int lightColor, int darkColor) {
@@ -371,30 +473,30 @@ public class ClothConfigScreen
 		BufferBuilder buffer = tessellator.getBuffer();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		buffer.pos(
-		  matrix, (float) (this.tabsBounds.getMinX() + 20), (float) (this.tabsBounds.getMinY() + 4),
+		  matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMinY() + 4),
 		  0.0f).tex(0.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
 		buffer.pos(
-		  matrix, (float) (this.tabsBounds.getMaxX() - 20), (float) (this.tabsBounds.getMinY() + 4),
+		  matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMinY() + 4),
 		  0.0f).tex(1.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
 		buffer.pos(
-			 matrix, (float) (this.tabsBounds.getMaxX() - 20), (float) this.tabsBounds.getMinY(), 0.0f)
+			 matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMinY(), 0.0f)
 		  .tex(1.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
 		buffer.pos(
-			 matrix, (float) (this.tabsBounds.getMinX() + 20), (float) this.tabsBounds.getMinY(), 0.0f)
+			 matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMinY(), 0.0f)
 		  .tex(0.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
 		tessellator.draw();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		buffer.pos(
-			 matrix, (float) (this.tabsBounds.getMinX() + 20), (float) this.tabsBounds.getMaxY(), 0.0f)
+			 matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMaxY(), 0.0f)
 		  .tex(0.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
 		buffer.pos(
-			 matrix, (float) (this.tabsBounds.getMaxX() - 20), (float) this.tabsBounds.getMaxY(), 0.0f)
+			 matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMaxY(), 0.0f)
 		  .tex(1.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
 		buffer.pos(
-		  matrix, (float) (this.tabsBounds.getMaxX() - 20), (float) (this.tabsBounds.getMaxY() - 4),
+		  matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMaxY() - 4),
 		  0.0f).tex(1.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
 		buffer.pos(
-		  matrix, (float) (this.tabsBounds.getMinX() + 20), (float) (this.tabsBounds.getMaxY() - 4),
+		  matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMaxY() - 4),
 		  0.0f).tex(0.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
 		tessellator.draw();
 		RenderSystem.enableTexture();
@@ -403,17 +505,7 @@ public class ClothConfigScreen
 		RenderSystem.disableBlend();
 	}
 	
-	@Override
-	public void save() {
-		super.save();
-	}
-	
-	@Override
-	public boolean isEditable() {
-		return super.isEditable();
-	}
-	
-	public static class ListWidget<R extends DynamicElementListWidget.ElementEntry<R>>
+	public static class ListWidget<R extends DynamicElementListWidget.ElementEntry>
 	  extends DynamicElementListWidget<R> {
 		private final AbstractConfigScreen screen;
 		private boolean hasCurrent;
@@ -432,79 +524,67 @@ public class ClothConfigScreen
 		  ResourceLocation backgroundLocation
 		) {
 			super(client, width, height, top, bottom, backgroundLocation);
-			this.setRenderSelection(false);
+			setRenderSelection(false);
 			this.screen = screen;
 		}
 		
-		@Override
-		public int getItemWidth() {
-			return this.width - 80;
+		@Override public int getItemWidth() {
+			return width - 80;
 		}
 		
-		@Override
-		protected int getScrollbarPosition() {
-			return this.left + this.width - 36;
+		@Override protected int getScrollBarPosition() {
+			return left + width - 36;
 		}
 		
-		@Override
-		protected void renderItem(
+		@Override protected void renderItem(
 		  MatrixStack matrices, R item, int index, int y, int x, int entryWidth, int entryHeight,
 		  int mouseX, int mouseY, boolean isSelected, float delta
 		) {
-			if (item instanceof AbstractConfigEntry) {
-				((AbstractConfigEntry<?>) item).updateSelected(this.getFocused() == item);
-			}
-			super.renderItem(
-			  matrices, item, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
+			if (item instanceof AbstractConfigEntry)
+				((AbstractConfigEntry<?>) item).updateSelected(getFocused() == item);
+			super.renderItem(matrices, item, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
 		}
 		
-		@Override
-		protected void renderList(
-		  MatrixStack matrices, int startX, int startY, int int_3, int int_4, float delta
+		@Override protected void renderList(
+		  MatrixStack mStack, int startX, int startY, int mouseX, int mouseY, float delta
 		) {
 			long timePast;
-			this.thisTimeTarget = null;
-			if (this.hasCurrent) {
-				timePast = System.currentTimeMillis() - this.lastTouch;
+			thisTimeTarget = null;
+			if (hasCurrent) {
+				timePast = System.currentTimeMillis() - lastTouch;
 				int alpha = timePast <= 200L ? 255 : MathHelper.ceil(
 				  255.0 - (double) (Math.min((float) (timePast - 200L), 500.0f) / 500.0f) * 255.0);
 				alpha = alpha * 36 / 255 << 24;
-				this.fillGradient(
-				  matrices, this.currentX, this.currentY, this.currentX + this.currentWidth,
-				  this.currentY + this.currentHeight, 0xFFFFFF | alpha, 0xFFFFFF | alpha);
+				fillGradient(
+				  mStack, currentX, currentY, currentX + currentWidth,
+				  currentY + currentHeight, 0xFFFFFF | alpha, 0xFFFFFF | alpha);
 			}
-			super.renderList(matrices, startX, startY, int_3, int_4, delta);
-			if (this.thisTimeTarget != null && this.isMouseOver(int_3, int_4)) {
-				this.lastTouch = System.currentTimeMillis();
+			super.renderList(mStack, startX, startY, mouseX, mouseY, delta);
+			if (thisTimeTarget != null && isMouseOver(mouseX, mouseY)) {
+				lastTouch = System.currentTimeMillis();
 			}
-			if (this.thisTimeTarget != null && !this.thisTimeTarget.equals(this.target)) {
-				if (!this.hasCurrent) {
-					this.currentX = this.thisTimeTarget.x;
-					this.currentY = this.thisTimeTarget.y;
-					this.currentWidth = this.thisTimeTarget.width;
-					this.currentHeight = this.thisTimeTarget.height;
-					this.hasCurrent = true;
+			if (thisTimeTarget != null && !thisTimeTarget.equals(target)) {
+				if (!hasCurrent) {
+					currentX = thisTimeTarget.x;
+					currentY = thisTimeTarget.y;
+					currentWidth = thisTimeTarget.width;
+					currentHeight = thisTimeTarget.height;
+					hasCurrent = true;
 				}
-				this.target = this.thisTimeTarget.clone();
-				this.start = this.lastTouch;
-				this.duration = 40L;
-			} else if (this.hasCurrent && this.target != null) {
-				timePast = System.currentTimeMillis() - this.start;
-				this.currentX = (int) ScrollingContainer.ease(this.currentX, this.target.x, Math.min(
-				                                                (double) timePast / (double) this.duration * (double) delta * 3.0, 1.0),
-				                                              EasingMethod.EasingMethodImpl.LINEAR);
-				this.currentY = (int) ScrollingContainer.ease(this.currentY, this.target.y, Math.min(
-				                                                (double) timePast / (double) this.duration * (double) delta * 3.0, 1.0),
-				                                              EasingMethod.EasingMethodImpl.LINEAR);
-				this.currentWidth = (int) ScrollingContainer.ease(this.currentWidth, this.target.width,
-				                                                  Math.min((double) timePast /
-				                                                           (double) this.duration *
-				                                                           (double) delta * 3.0, 1.0),
-				                                                  EasingMethod.EasingMethodImpl.LINEAR);
-				this.currentHeight =
-				  (int) ScrollingContainer.ease(this.currentHeight, this.target.height, Math.min(
-					                               (double) timePast / (double) this.duration * (double) delta * 3.0, 1.0),
-				                                EasingMethod.EasingMethodImpl.LINEAR);
+				target = thisTimeTarget.clone();
+				start = lastTouch;
+				duration = 40L;
+			} else if (hasCurrent && target != null) {
+				timePast = System.currentTimeMillis() - start;
+				currentX = (int) ScrollingContainer.ease(
+				  currentX, target.x, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				currentY = (int) ScrollingContainer.ease(
+				  currentY, target.y, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				currentWidth = (int) ScrollingContainer.ease(
+				  currentWidth, target.width, Math.min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+				currentHeight = (int) ScrollingContainer.ease(
+				  currentHeight, target.height, Math.min(
+				    (double) timePast / (double) duration * (double) delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
 			}
 		}
 		
@@ -522,7 +602,7 @@ public class ClothConfigScreen
 			bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
 			ListWidget.fillGradient(
 			  matrices.getLast().getMatrix(), bufferBuilder, xStart, yStart, xEnd, yEnd,
-			  this.getBlitOffset(), colorStart, colorEnd);
+			  getBlitOffset(), colorStart, colorEnd);
 			tessellator.draw();
 			RenderSystem.shadeModel(7424);
 			RenderSystem.disableBlend();
@@ -554,34 +634,35 @@ public class ClothConfigScreen
 		
 		@Override
 		public boolean mouseClicked(double mouseX, double mouseY, int button) {
-			this.updateScrollingState(mouseX, mouseY, button);
-			if (!this.isMouseOver(mouseX, mouseY)) {
+			updateScrollingState(mouseX, mouseY, button);
+			if (!isMouseOver(mouseX, mouseY))
 				return false;
-			}
-			for (R entry : this.getEventListeners()) {
+			for (R entry : getEventListeners()) {
 				if (!entry.mouseClicked(mouseX, mouseY, button)) continue;
-				this.setListener(entry);
-				this.setDragging(true);
+				setListener(entry);
+				if (!isDragging())
+					setDragged(Pair.of(button, entry));
+				setDragging(true);
+				updateSelectedTarget();
 				return true;
 			}
 			if (button == 0) {
-				this.clickedHeader(
-				  (int) (mouseX - (double) (this.left + this.width / 2 - this.getItemWidth() / 2)),
-				  (int) (mouseY - (double) this.top) + (int) this.getScroll() - 4);
+				clickedHeader(
+				  (int) (mouseX - (double) (left + width / 2 - getItemWidth() / 2)),
+				  (int) (mouseY - (double) top) + (int) getScroll() - 4);
 				return true;
 			}
-			return this.scrolling;
+			return scrolling;
 		}
 		
 		@Override
 		protected void renderBackBackground(
-		  MatrixStack matrices, BufferBuilder buffer, Tessellator tessellator
+		  MatrixStack mStack, BufferBuilder buffer, Tessellator tessellator
 		) {
-			if (!this.screen.isTransparentBackground()) {
-				super.renderBackBackground(matrices, buffer, tessellator);
+			if (!screen.isTransparentBackground()) {
+				super.renderBackBackground(mStack, buffer, tessellator);
 			} else {
-				this.fillGradient(
-				  matrices, this.left, this.top, this.right, this.bottom, 0x68000000, 0x68000000);
+				fillGradient(mStack, left, top, right, bottom, 0x68000000, 0x68000000);
 			}
 		}
 		
@@ -589,10 +670,119 @@ public class ClothConfigScreen
 		protected void renderHoleBackground(
 		  MatrixStack matrices, int y1, int y2, int alpha1, int alpha2
 		) {
-			if (!this.screen.isTransparentBackground()) {
+			if (!screen.isTransparentBackground()) {
 				super.renderHoleBackground(matrices, y1, y2, alpha1, alpha2);
 			}
 		}
 	}
+	
+	@Override public Pair<Integer, Integer> query(Pattern query) {
+		final Pair<Integer, Integer> result = listWidget.search(query);
+		final ArrayList<String> names = new ArrayList<>(categoryEntries.keySet());
+		final String name = names.get(selectedCategoryIndex);
+		final Map<String, Integer> search = categoryEntries.entrySet().stream().filter(p -> !p.getKey().equals(name))
+		  .collect(Collectors.toMap(
+		    Entry::getKey,
+			 p -> (int) p.getValue().stream().mapToLong(e -> e.search(query).size()).sum()));
+		for (ClothConfigTabButton tabButton : tabButtons) {
+			if (tabButton.index >= 0 && tabButton.index < names.size()) {
+				int count = search.getOrDefault(names.get(tabButton.index), 0);
+				tabButton.setTintColor(count > 0? 0x80BDBD42 : 0x00000000);
+			}
+		}
+		return result;
+	}
+	
+	@SuppressWarnings("RegExpUnexpectedAnchor") protected static final Pattern NO_MATCH = Pattern.compile("$^");
+	@Override public void dismissQuery() {
+		listWidget.search(NO_MATCH);
+	}
+	
+	@Override public void selectMatch(int idx) {
+		listWidget.changeFocusedMatch(idx);
+	}
+	
+	public static class TooltipSearchBarWidget extends SearchBarWidget {
+		protected static ITextComponent[] TOOLTIP_SEARCH_TOOLTIP = new ITextComponent[] {
+		  new TranslationTextComponent("simple-config.ui.search.tooltip"),
+		  new TranslationTextComponent("modifier.cloth-config.alt", "T").mergeStyle(TextFormatting.GRAY)};
+		
+		protected ToggleImageButton tooltipButton;
+		protected boolean searchTooltips = true;
+		
+		public TooltipSearchBarWidget(
+		  ISearchHandler handler, int x, int y, int w, Supplier<IOverlayCapableScreen> screen
+		) { this(handler, x, y, w, 24, screen); }
+		
+		public TooltipSearchBarWidget(
+		  ISearchHandler handler, int x, int y, int w, int h, Supplier<IOverlayCapableScreen> screen
+		) {
+			super(handler, x, y, w, h, screen);
+			tooltipButton = new ToggleImageButton(searchTooltips, 0, 0, 18, 18, 202, 188, CONFIG_TEX, b -> updateModifiers());
+			expandedListeners.add(tooltipButton);
+			regexListeners.add(tooltipButton);
+		}
+		
+		@Override protected void updateModifiers() {
+			searchTooltips = tooltipButton.getValue();
+			super.updateModifiers();
+		}
+		
+		@Override public Optional<ITextComponent[]> getTooltip(double mouseX, double mouseY) {
+			if (isExpanded() && tooltipButton.isMouseOver(mouseX, mouseY))
+				return Optional.of(TOOLTIP_SEARCH_TOOLTIP);
+			return super.getTooltip(mouseX, mouseY);
+		}
+		
+		@Override public boolean renderOverlay(
+		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+		) {
+			x += 18;
+			w -= 18;
+			final boolean r = super.renderOverlay(mStack, area, mouseX, mouseY, delta);
+			x -= 18;
+			w += 18;
+			if (!r) return false;
+			tooltipButton.x = 4;
+			tooltipButton.y = y + 3;
+			tooltipButton.render(mStack, mouseX, mouseY, delta);
+			return true;
+		}
+		
+		@Override protected void drawBackground(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+			x -= 18;
+			w += 18;
+			super.drawBackground(mStack, mouseX, mouseY, delta);
+			x += 18;
+			w -= 18;
+		}
+		
+		@Override public boolean charTyped(char codePoint, int modifiers) {
+			if (Screen.hasAltDown()) {
+				if (Character.toLowerCase(codePoint) == 't') {
+					tooltipButton.setValue(!tooltipButton.getValue());
+					return true;
+				}
+			}
+			return super.charTyped(codePoint, modifiers);
+		}
+		
+		public boolean isSearchTooltips() {
+			return searchTooltips;
+		}
+	}
+	
+	@Override public TooltipSearchBarWidget getSearchBar() {
+		return searchBar;
+	}
+	
+	@Override public void undo() {
+		super.undo();
+	}
+	
+	@Override public void redo() {
+		super.redo();
+		if (listWidget.getSelectedTarget() instanceof AbstractConfigEntry)
+			history.preserveState(((AbstractConfigEntry<?>) listWidget.getSelectedTarget()));
+	}
 }
-

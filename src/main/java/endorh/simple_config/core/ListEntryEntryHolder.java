@@ -7,18 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A <i>fake</i> entry holder used by {@link EntryListEntry} to
- * trick nested entries into reading their values from a list
- * @param <V> The type of the elements of the list
- * @param <C> The type of the elements of the list facing the Config
- * @param <G> The type of the elements of the list facing the GUI
- * @param <E> The type of the entry being wrapped in the list
+ * An entry holder used by {@link EntryListEntry}
  */
-public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>>
+public class ListEntryEntryHolder
   implements ISimpleConfigEntryHolder {
 	protected final SimpleConfig root;
-	protected AbstractConfigEntry<V, C, G, E> entry;
-	protected final Map<String, V> values = new HashMap<>();
+	protected AbstractConfigEntry<?, ?, ?, ?> entry;
+	protected final Map<String, Object> values = new HashMap<>();
 	
 	protected int id_gen = 0;
 	
@@ -62,8 +57,7 @@ public class ListEntryEntryHolder<V, C, G, E extends AbstractConfigEntry<V, C, G
 	@Internal @Deprecated @Override public <T> void doSet(String path, T value) {
 		// T must be V
 		try {
-			//noinspection unchecked
-			values.put(path, (V) value);
+			values.put(path, value);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(entry.getPath() + "." + path, e);
 		}

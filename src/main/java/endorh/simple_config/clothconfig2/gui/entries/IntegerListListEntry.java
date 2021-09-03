@@ -5,113 +5,63 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class IntegerListListEntry
-  extends AbstractTextFieldListListEntry<Integer, IntegerListCell, IntegerListListEntry> {
+  extends AbstractTextFieldListListEntry<Integer, IntegerListCell, IntegerListListEntry>
+  implements IRangedEntry<Integer> {
 	private int minimum = Integer.MIN_VALUE;
 	private int maximum = Integer.MAX_VALUE;
 	
-	@Deprecated
-	@ApiStatus.Internal
-	public IntegerListListEntry(
-	  ITextComponent fieldName, List<Integer> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<Integer>> saveConsumer,
-	  Supplier<List<Integer>> defaultValue, ITextComponent resetButtonKey
-	) {
-		this(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, false);
+	@Internal public IntegerListListEntry(ITextComponent fieldName, List<Integer> value) {
+		super(fieldName, value, IntegerListCell::new);
 	}
 	
-	@Deprecated
-	@ApiStatus.Internal
-	public IntegerListListEntry(
-	  ITextComponent fieldName, List<Integer> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<Integer>> saveConsumer,
-	  Supplier<List<Integer>> defaultValue, ITextComponent resetButtonKey, boolean requiresRestart
-	) {
-		this(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, requiresRestart, true, true);
+	@Override public void setMinimum(Integer minimum) {
+		this.minimum = minimum != null ? minimum : Integer.MIN_VALUE;
 	}
 	
-	@Deprecated
-	@ApiStatus.Internal
-	public IntegerListListEntry(
-	  ITextComponent fieldName, List<Integer> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<Integer>> saveConsumer,
-	  Supplier<List<Integer>> defaultValue, ITextComponent resetButtonKey, boolean requiresRestart,
-	  boolean deleteButtonEnabled, boolean insertInFront
-	) {
-		super(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, requiresRestart, deleteButtonEnabled, insertInFront, IntegerListCell::new);
+	@Override public void setMaximum(Integer maximum) {
+		this.maximum = maximum != null ? maximum : Integer.MAX_VALUE;
 	}
 	
-	public IntegerListListEntry setMaximum(int maximum) {
-		this.maximum = maximum;
-		return this;
-	}
-	
-	public IntegerListListEntry setMinimum(int minimum) {
-		this.minimum = minimum;
-		return this;
-	}
-	
-	public static class IntegerListCell extends
-	                                    AbstractTextFieldListListEntry.AbstractTextFieldListCell<Integer, IntegerListCell, IntegerListListEntry> {
-		public IntegerListCell(Integer value, IntegerListListEntry listListEntry) {
-			super(value, listListEntry);
+	public static class IntegerListCell
+	  extends AbstractTextFieldListListEntry.AbstractTextFieldListCell<Integer, IntegerListCell, IntegerListListEntry> {
+		public IntegerListCell(IntegerListListEntry listListEntry) {
+			super(listListEntry);
 		}
 		
-		@Override
-		@Nullable
-		protected Integer substituteDefault(@Nullable Integer value) {
-			if (value == null) {
-				return 0;
-			}
-			return value;
-		}
-		
-		@Override
-		protected boolean isValidText(@NotNull String text) {
+		@Override protected boolean isValidText(@NotNull String text) {
 			return text.chars().allMatch(c -> Character.isDigit(c) || c == 45);
 		}
 		
-		@Override
-		public Integer getValue() {
+		@Override public Integer getValue() {
 			try {
-				return Integer.valueOf(this.widget.getText());
+				return Integer.valueOf(widget.getText());
 			} catch (NumberFormatException e) {
 				return 0;
 			}
 		}
 		
-		@Override public void setValue(Integer value) {
-			this.widget.setText(String.valueOf(value));
+		@Override public void doSetValue(Integer value) {
+			widget.setText(String.valueOf(value));
 		}
 		
-		@Override
-		public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getError() {
 			try {
-				int i = Integer.parseInt(this.widget.getText());
-				if (i > this.listListEntry.maximum) {
-					return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_large",
-					                                                this.listListEntry.maximum));
-				}
-				if (i < this.listListEntry.minimum) {
-					return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_small",
-					                                                this.listListEntry.minimum));
-				}
+				int i = Integer.parseInt(widget.getText());
+				final IntegerListListEntry listEntry = getListEntry();
+				if (i > listEntry.maximum)
+					return Optional.of(new TranslationTextComponent(
+					  "text.cloth-config.error.too_large", listEntry.maximum));
+				if (i < listEntry.minimum)
+					return Optional.of(new TranslationTextComponent(
+					  "text.cloth-config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
 				  new TranslationTextComponent("text.cloth-config.error.not_valid_number_int"));

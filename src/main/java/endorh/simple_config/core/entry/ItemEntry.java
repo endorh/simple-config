@@ -1,38 +1,44 @@
 package endorh.simple_config.core.entry;
 
+import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simple_config.clothconfig2.impl.builders.DropdownMenuBuilder;
-import endorh.simple_config.clothconfig2.impl.builders.DropdownMenuBuilder.CellCreatorBuilder;
-import endorh.simple_config.clothconfig2.impl.builders.DropdownMenuBuilder.TopCellElementBuilder;
+import endorh.simple_config.core.entry.StringEntry.SupplierSuggestionProvider;
+import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.fml.config.ModConfig.Type;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static endorh.simple_config.clothconfig2.impl.builders.ComboBoxFieldBuilder.ofItem;
+
 public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry> {
-	protected final Predicate<Item> filter;
+	protected @NotNull Predicate<Item> filter;
 	
 	@Internal public ItemEntry(
 	  ISimpleConfigEntryHolder parent, String name,
@@ -43,11 +49,23 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	}
 	
 	public static class Builder extends AbstractConfigEntryBuilder<Item, String, Item, ItemEntry, Builder> {
-		protected Predicate<Item> filter = null;
-		protected ITag<Item> tag = null;
+		private static final Logger LOGGER = LogManager.getLogger();
+		protected @Nullable Predicate<Item> filter = null;
+		protected @Nullable ITag<Item> tag = null;
+		protected boolean requireGroup = true;
 		
 		public Builder(Item value) {
 			super(value, Item.class);
+		}
+		
+		/**
+		 * When true (the default), items without an item group are not accepted.<br>
+		 * This excludes the AIR and BARRIER item blocks, as well as other special blocks.
+		 */
+		public Builder setRequireGroup(boolean requireGroup) {
+			Builder copy = copy();
+			copy.requireGroup = requireGroup;
+			return copy;
 		}
 		
 		public Builder from(Ingredient filter) {
@@ -55,8 +73,14 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		}
 		
 		public Builder from(Predicate<Item> filter) {
-			this.filter = filter;
-			return this;
+			Builder copy = copy();
+			copy.filter = filter;
+			return copy;
+		}
+		
+		public Builder from(List<Item> items) {
+			List<Item> listCopy = new ArrayList<>(items);
+			return from(listCopy::contains);
 		}
 		
 		public Builder from(Item... items) {
@@ -69,58 +93,55 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		 * are server-dependant
 		 */
 		public Builder from(ITag<Item> tag) {
-			this.tag = tag;
-			return this;
+			Builder copy = copy();
+			copy.tag = tag;
+			return copy;
 		}
 		
-		@Override
-		protected ItemEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected ItemEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			if (parent.getRoot().type != Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null)
 				filter = filter != null ? filter.and(tag::contains) : tag::contains;
-			try {
-				if (!filter.test(value))
-					throw new IllegalArgumentException(
-					  "Item entry's default value doesn't match its filter");
-			} catch (IllegalStateException e) {
-				if (parent.getRoot().type != Type.SERVER)
-					throw e;
-			}
+			if (filter != null && !filter.test(value))
+				LOGGER.warn("Item entry's default value doesn't match its filter");
+			Predicate<Item> filter = this.filter != null ? this.filter : i -> true;
+			if (requireGroup) filter = filter.and(i -> i.getGroup() != null);
 			return new ItemEntry(parent, name, value, filter);
+		}
+		
+		@Override protected Builder createCopy() {
+			final Builder copy = new Builder(value);
+			copy.filter = filter;
+			copy.tag = tag;
+			copy.requireGroup = requireGroup;
+			return copy;
 		}
 	}
 	
-	protected Set<Item> getValidItems() {
-		final Predicate<Item> nonNullFilter = filter != null? filter : i -> true;
-		//noinspection deprecation
-		return Registry.ITEM.getEntries().stream().map(Entry::getValue)
-		  .filter(nonNullFilter).collect(Collectors.toSet());
+	protected List<Item> supplyOptions() {
+		return Registry.ITEM.getEntries().stream().map(Entry::getValue).filter(filter)
+		  .collect(Collectors.toList());
 	}
 	
-	@Override
-	protected String forConfig(Item value) {
+	@Override public String forConfig(Item value) {
 		//noinspection ConstantConditions
 		return value.getRegistryName().toString();
 	}
 	
-	@Override
-	protected @Nullable Item fromConfig(@Nullable String value) {
+	@Override @Nullable public Item fromConfig(@Nullable String value) {
 		if (value == null) return null;
-		final Item i = fromId(value);
-		return i != null ? i : this.value;
-	}
-	
-	protected @Nullable
-	Item fromId(String itemId) {
-		if (itemId == null || itemId.isEmpty())
+		try {
+			final ResourceLocation name = new ResourceLocation(value);
+			//noinspection deprecation
+			final Item item = Registry.ITEM.keySet().contains(name) ?
+			                  Registry.ITEM.getOrDefault(name) : null;
+			// Prevent unnecessary config resets adding the default value as exception
+			return filter.test(item) || item == this.value ? item : null;
+		} catch (ResourceLocationException e) {
 			return null;
-		final ResourceLocation registryName = new ResourceLocation(itemId);
-		//noinspection deprecation
-		final Item item = Registry.ITEM.keySet().contains(registryName) ?
-		                  Registry.ITEM.getOrDefault(registryName) : null;
-		return getValidItems().contains(item) ? item : null;
+		}
 	}
 	
 	@Override
@@ -130,23 +151,12 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		  name, value.getRegistryName().toString(), configValidator()));
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Item>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
-		final DropdownMenuBuilder<Item> valBuilder = builder
-		  .startDropdownMenu(
-			 getDisplayName(), TopCellElementBuilder.ofItemObject(get()),
-			 CellCreatorBuilder.ofItemObject())
-		  .setDefaultValue(value)
-		  .setSelections(
-			 getValidItems().stream().sorted(
-				Comparator.comparing(Item::toString)
-			 ).collect(Collectors.toCollection(LinkedHashSet::new)))
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
-		return Optional.of(decorate(valBuilder).build());
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<Item>> buildGUIEntry(ConfigEntryBuilder builder) {
+		final ComboBoxFieldBuilder<Item> entryBuilder =
+		  builder.startComboBox(getDisplayName(), ofItem(), forGui(get()))
+		    .setSuggestionProvider(new SupplierSuggestionProvider<>(this::supplyOptions))
+			 .setSuggestionMode(false);
+		return Optional.of(decorate(entryBuilder).build());
 	}
 }

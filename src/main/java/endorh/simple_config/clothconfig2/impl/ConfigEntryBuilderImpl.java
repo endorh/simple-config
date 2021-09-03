@@ -2,180 +2,184 @@ package endorh.simple_config.clothconfig2.impl;
 
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.api.ModifierKeyCode;
-import endorh.simple_config.clothconfig2.gui.entries.DropdownBoxEntry;
+import endorh.simple_config.clothconfig2.gui.entries.*;
+import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
 import endorh.simple_config.clothconfig2.impl.builders.*;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class ConfigEntryBuilderImpl
-  implements ConfigEntryBuilder {
-	private ITextComponent resetButtonKey =
-	  new TranslationTextComponent("text.cloth-config.reset_value");
-	
-	private ConfigEntryBuilderImpl() {
-	}
+public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
+	private ConfigEntryBuilderImpl() {}
 	
 	public static ConfigEntryBuilderImpl create() {
 		return new ConfigEntryBuilderImpl();
 	}
 	
-	public static ConfigEntryBuilderImpl createImmutable() {
-		return new ConfigEntryBuilderImpl() {
-			
-			@Override
-			public ConfigEntryBuilder setResetButtonKey(ITextComponent resetButtonKey) {
-				throw new UnsupportedOperationException("This is an immutable entry builder!");
-			}
-		};
+	@Override public IntListBuilder startIntList(ITextComponent name, List<Integer> value) {
+		return new IntListBuilder(this, name, value);
 	}
 	
-	@Override
-	public ITextComponent getResetButtonKey() {
-		return this.resetButtonKey;
+	@Override public LongListBuilder startLongList(ITextComponent name, List<Long> value) {
+		return new LongListBuilder(this, name, value);
 	}
 	
-	@Override
-	public ConfigEntryBuilder setResetButtonKey(ITextComponent resetButtonKey) {
-		this.resetButtonKey = resetButtonKey;
-		return this;
+	@Override public FloatListBuilder startFloatList(ITextComponent name, List<Float> value) {
+		return new FloatListBuilder(this, name, value);
 	}
 	
-	@Override
-	public IntListBuilder startIntList(ITextComponent fieldNameKey, List<Integer> value) {
-		return new IntListBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public DoubleListBuilder startDoubleList(ITextComponent name, List<Double> value) {
+		return new DoubleListBuilder(this, name, value);
 	}
 	
-	@Override
-	public LongListBuilder startLongList(ITextComponent fieldNameKey, List<Long> value) {
-		return new LongListBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public StringListBuilder startStrList(ITextComponent name, List<String> value) {
+		return new StringListBuilder(this, name, value);
 	}
 	
-	@Override
-	public FloatListBuilder startFloatList(ITextComponent fieldNameKey, List<Float> value) {
-		return new FloatListBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public SubCategoryBuilder startSubCategory(ITextComponent name) {
+		return new SubCategoryBuilder(this, name);
 	}
 	
-	@Override
-	public DoubleListBuilder startDoubleList(ITextComponent fieldNameKey, List<Double> value) {
-		return new DoubleListBuilder(this.resetButtonKey, fieldNameKey, value);
-	}
-	
-	@Override
-	public StringListBuilder startStrList(ITextComponent fieldNameKey, List<String> value) {
-		return new StringListBuilder(this.resetButtonKey, fieldNameKey, value);
-	}
-	
-	@Override
-	public SubCategoryBuilder startSubCategory(ITextComponent fieldNameKey) {
-		return new SubCategoryBuilder(this.resetButtonKey, fieldNameKey);
-	}
-	
-	@Override
-	public SubCategoryBuilder startSubCategory(
-	  ITextComponent fieldNameKey, List<AbstractConfigListEntry<?>> entries
+	@Override public SubCategoryBuilder startSubCategory(
+	  ITextComponent name, List<AbstractConfigListEntry<?>> entries
 	) {
-		SubCategoryBuilder builder = new SubCategoryBuilder(this.resetButtonKey, fieldNameKey);
+		SubCategoryBuilder builder = new SubCategoryBuilder(this, name);
 		builder.addAll(entries);
 		return builder;
 	}
 	
-	@Override
-	public BooleanToggleBuilder startBooleanToggle(ITextComponent fieldNameKey, boolean value) {
-		return new BooleanToggleBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value) {
+		return new BooleanToggleBuilder(this, name, value);
 	}
 	
-	@Override
-	public StringFieldBuilder startStrField(ITextComponent fieldNameKey, String value) {
-		return new StringFieldBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public StringFieldBuilder startStrField(ITextComponent name, String value) {
+		return new StringFieldBuilder(this, name, value);
 	}
 	
-	@Override
-	public ColorFieldBuilder startColorField(ITextComponent fieldNameKey, int value) {
-		return new ColorFieldBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public ColorFieldBuilder startColorField(ITextComponent name, int value) {
+		return new ColorFieldBuilder(this, name, value);
 	}
 	
-	@Override
-	public TextFieldBuilder startTextField(ITextComponent fieldNameKey, String value) {
-		return new TextFieldBuilder(this.resetButtonKey, fieldNameKey, value);
-	}
-	
-	@Override
-	public TextDescriptionBuilder startTextDescription(ITextComponent value) {
-		return new TextDescriptionBuilder(this.resetButtonKey,
-		                                  new StringTextComponent(UUID.randomUUID().toString()),
-		                                  value);
-	}
-	
-	@Override
-	public <T extends Enum<?>> EnumSelectorBuilder<T> startEnumSelector(
-	  ITextComponent fieldNameKey, Class<T> clazz, T value
+	@Override public <V, E extends AbstractConfigListEntry<V>> EntryListFieldBuilder<V, E> startEntryList(
+	  ITextComponent name, List<V> value, Function<NestedListListEntry<V, E>, E> cellFactory
 	) {
-		return new EnumSelectorBuilder<>(this.resetButtonKey, fieldNameKey, clazz, value);
+		return new EntryListFieldBuilder<>(this, name, value, cellFactory);
 	}
 	
-	@Override
-	public <T> SelectorBuilder<T> startSelector(
-	  ITextComponent fieldNameKey, T[] valuesArray, T value
+	@Override public <K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
+	  VE extends AbstractConfigListEntry<V>> EntryPairListBuilder<K, V, KE, VE> startEntryPairList(
+	  ITextComponent name, List<Pair<K, V>> value,
+	  Function<EntryPairListListEntry<K, V, KE, VE>, Pair<KE, VE>> cellFactory
 	) {
-		return new SelectorBuilder<>(this.resetButtonKey, fieldNameKey, valuesArray, value);
+		return new EntryPairListBuilder<>(this, name, value, cellFactory);
 	}
 	
-	@Override
-	public IntFieldBuilder startIntField(ITextComponent fieldNameKey, int value) {
-		return new IntFieldBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public TextFieldBuilder startTextField(ITextComponent name, String value) {
+		return new TextFieldBuilder(this, name, value);
 	}
 	
-	@Override
-	public LongFieldBuilder startLongField(ITextComponent fieldNameKey, long value) {
-		return new LongFieldBuilder(this.resetButtonKey, fieldNameKey, value);
+	@Override public TextDescriptionBuilder startTextDescription(ITextComponent value) {
+		return new TextDescriptionBuilder(
+		  this, new StringTextComponent(UUID.randomUUID().toString()), () -> value);
 	}
 	
-	@Override
-	public FloatFieldBuilder startFloatField(ITextComponent fieldNameKey, float value) {
-		return new FloatFieldBuilder(this.resetButtonKey, fieldNameKey, value);
-	}
-	
-	@Override
-	public DoubleFieldBuilder startDoubleField(ITextComponent fieldNameKey, double value) {
-		return new DoubleFieldBuilder(this.resetButtonKey, fieldNameKey, value);
-	}
-	
-	@Override
-	public IntSliderBuilder startIntSlider(
-	  ITextComponent fieldNameKey, int value, int min, int max
+	@Override public TextDescriptionBuilder startTextDescription(
+	  Supplier<ITextComponent> textSupplier
 	) {
-		return new IntSliderBuilder(this.resetButtonKey, fieldNameKey, value, min, max);
+		return new TextDescriptionBuilder(
+		  this, new StringTextComponent(UUID.randomUUID().toString()), textSupplier);
 	}
 	
-	@Override
-	public LongSliderBuilder startLongSlider(
-	  ITextComponent fieldNameKey, long value, long min, long max
+	@Override public <T extends Enum<?>> EnumSelectorBuilder<T> startEnumSelector(
+	  ITextComponent name, T value
 	) {
-		return new LongSliderBuilder(this.resetButtonKey, fieldNameKey, value, min, max);
+		return new EnumSelectorBuilder<>(this, name, value);
 	}
 	
-	@Override
-	public KeyCodeBuilder startModifierKeyCodeField(
-	  ITextComponent fieldNameKey, ModifierKeyCode value
+	@Override public <T> SelectorBuilder<T> startSelector(
+	  ITextComponent name, T[] valuesArray, T value
 	) {
-		return new KeyCodeBuilder(this.resetButtonKey, fieldNameKey, value);
+		return new SelectorBuilder<>(this, name, valuesArray, value);
 	}
 	
-	@Override
-	public <T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent fieldNameKey, DropdownBoxEntry.SelectionTopCellElement<T> topCellElement,
-	  DropdownBoxEntry.SelectionCellCreator<T> cellCreator
-	) {
-		return new DropdownMenuBuilder<>(
-		  this.resetButtonKey, fieldNameKey, topCellElement, cellCreator);
+	@Override public IntFieldBuilder startIntField(ITextComponent name, int value) {
+		return new IntFieldBuilder(this, name, value);
 	}
+	
+	@Override public LongFieldBuilder startLongField(ITextComponent name, long value) {
+		return new LongFieldBuilder(this, name, value);
+	}
+	
+	@Override public FloatFieldBuilder startFloatField(ITextComponent name, float value) {
+		return new FloatFieldBuilder(this, name, value);
+	}
+	
+	@Override public DoubleFieldBuilder startDoubleField(ITextComponent name, double value) {
+		return new DoubleFieldBuilder(this, name, value);
+	}
+	
+	@Override public IntSliderBuilder startIntSlider(
+	  ITextComponent name, int value, int min, int max
+	) {
+		return new IntSliderBuilder(this, name, value, min, max);
+	}
+	
+	@Override public LongSliderBuilder startLongSlider(
+	  ITextComponent name, long value, long min, long max
+	) {
+		return new LongSliderBuilder(this, name, value, min, max);
+	}
+	
+	@Override public FloatSliderBuilder startFloatSlider(
+	  ITextComponent name, float value, float min, float max
+	) {
+		return new FloatSliderBuilder(this, name, value, min, max);
+	}
+	
+	@Override public DoubleSliderBuilder startDoubleSlider(
+	  ITextComponent name, double value, double min, double max
+	) {
+		return new DoubleSliderBuilder(this, name, value, min, max);
+	}
+	
+	@Override public KeyCodeBuilder startModifierKeyCodeField(
+	  ITextComponent name, ModifierKeyCode value
+	) {
+		return new KeyCodeBuilder(this, name, value);
+	}
+	
+	@Override public <T> ComboBoxFieldBuilder<T> startComboBox(
+	  ITextComponent name, ITypeWrapper<T> typeWrapper, T value
+	) {
+		return new ComboBoxFieldBuilder<>(this, name, value, typeWrapper);
+	}
+	
+	@Override public <V, E extends AbstractListListEntry<V, ?, E>,
+	  C, CE extends AbstractConfigListEntry<C> & IChildListEntry>
+	DecoratedListEntryBuilder<V, E, C, CE> makeDecoratedList(
+	  ITextComponent name, E listEntry, CE captionEntry, Pair<C, List<V>> value
+	) {
+		return new DecoratedListEntryBuilder<>(
+		  this, name, value, listEntry, captionEntry);
+	}
+	
+	// @Override public <T> DropdownMenuBuilder<T> startDropdownMenu(
+	//   ITextComponent name, DropdownBoxEntry.SelectionTopCellElement<T> topCellElement,
+	//   DropdownBoxEntry.SelectionCellCreator<T> cellCreator
+	// ) {
+	// 	return new DropdownMenuBuilder<>(
+	// 	  this, name, topCellElement, cellCreator);
+	// }
 }
 

@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.impl;
 import com.google.common.collect.Lists;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
 import endorh.simple_config.clothconfig2.api.ScissorsScreen;
+import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -13,6 +14,9 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.Collections;
 import java.util.List;
+
+import static java.lang.Math.abs;
+import static java.lang.Math.min;
 
 @OnlyIn(value = Dist.CLIENT)
 @ApiStatus.Internal
@@ -41,22 +45,22 @@ public final class ScissorsHandlerImpl
 	
 	@Override
 	public void removeLastScissor() {
-		if (!this.scissorsAreas.isEmpty()) {
+		if (!this.scissorsAreas.isEmpty())
 			this.scissorsAreas.remove(this.scissorsAreas.size() - 1);
-		}
 		this.applyScissors();
 	}
 	
 	@Override
 	public void applyScissors() {
+		final Minecraft mc = Minecraft.getInstance();
 		if (!this.scissorsAreas.isEmpty()) {
 			Rectangle r = this.scissorsAreas.get(0).clone();
 			for (int i = 1; i < this.scissorsAreas.size(); ++i) {
 				Rectangle r1 = this.scissorsAreas.get(i);
 				if (!r.intersects(r1)) {
-					if (Minecraft.getInstance().currentScreen instanceof ScissorsScreen) {
+					if (mc.currentScreen instanceof ScissorsScreen) {
 						this._applyScissor(
-						  ((ScissorsScreen) Minecraft.getInstance().currentScreen).handleScissor(
+						  ((ScissorsScreen) mc.currentScreen).handleScissor(
 							 new Rectangle()));
 					} else {
 						this._applyScissor(new Rectangle());
@@ -66,17 +70,17 @@ public final class ScissorsHandlerImpl
 				r.setBounds(r.intersection(r1));
 			}
 			r.setBounds(
-			  Math.min(r.x, r.x + r.width), Math.min(r.y, r.y + r.height), Math.abs(r.width),
-			  Math.abs(r.height));
-			if (Minecraft.getInstance().currentScreen instanceof ScissorsScreen) {
+			  min(r.x, r.x + r.width), min(r.y, r.y + r.height),
+			  abs(r.width), abs(r.height));
+			if (mc.currentScreen instanceof ScissorsScreen) {
 				this._applyScissor(
-				  ((ScissorsScreen) Minecraft.getInstance().currentScreen).handleScissor(r));
+				  ((ScissorsScreen) mc.currentScreen).handleScissor(r));
 			} else {
 				this._applyScissor(r);
 			}
-		} else if (Minecraft.getInstance().currentScreen instanceof ScissorsScreen) {
+		} else if (mc.currentScreen instanceof ScissorsScreen) {
 			this._applyScissor(
-			  ((ScissorsScreen) Minecraft.getInstance().currentScreen).handleScissor(null));
+			  ((ScissorsScreen) mc.currentScreen).handleScissor(null));
 		} else {
 			this._applyScissor(null);
 		}

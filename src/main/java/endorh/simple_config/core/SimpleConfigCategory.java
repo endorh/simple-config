@@ -1,6 +1,6 @@
 package endorh.simple_config.core;
 
-import endorh.simple_config.SimpleConfigMod.Config;
+import endorh.simple_config.SimpleConfigMod.ClientConfig;
 import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simple_config.core.SimpleConfig.IGUIEntry;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
@@ -93,6 +93,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
 		ConfigCategory category = builder.getOrCreateCategory(getTitle());
+		category.setName(name);
 		if (background != null)
 			category.setBackground(background);
 		else if (parent.background != null)
@@ -132,12 +133,12 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	 * Commits any changes in the backing fields to the actual config file<br>
 	 * You may also call this method on the root {@link SimpleConfig}
 	 */
-	public void commitFields() {
+	@Override public void commitFields() {
 		try {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				entry.commitField(this);
+				entry.commitField();
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);
@@ -145,7 +146,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected ITextComponent getTitle() {
-		if (Config.advanced.translation_debug_mode)
+		if (ClientConfig.advanced.translation_debug_mode)
 			return new StringTextComponent(title);
 		return new TranslationTextComponent(title);
 	}

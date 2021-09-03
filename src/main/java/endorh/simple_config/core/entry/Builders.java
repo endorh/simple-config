@@ -1,14 +1,16 @@
 package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.*;
-import endorh.simple_config.core.EntryListEntry.Builder;
 import endorh.simple_config.core.annotation.Entry;
 import endorh.simple_config.core.annotation.HasAlpha;
 import endorh.simple_config.core.annotation.Slider;
+import net.minecraft.block.Block;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.util.ResourceLocation;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -20,6 +22,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simple_config.core.AbstractConfigEntryBuilder.getValue;
 import static endorh.simple_config.core.ReflectionUtil.checkType;
 import static endorh.simple_config.core.SimpleConfigClassParser.*;
 
@@ -54,12 +57,12 @@ public class Builders {
 		return new ButtonEntry.Builder(action);
 	}
 	
-	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner>>
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner, Consumer<V> action
 	) { return button(inner, (v, h) -> action.accept(v)); }
 	
-	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner>>
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner,
 	  BiConsumer<V, ISimpleConfigEntryHolder> action
@@ -67,16 +70,16 @@ public class Builders {
 		return new EntryButtonEntry.Builder<>(inner, action);
 	}
 	
-	@SuppressWarnings("unchecked") public static <V, E extends AbstractConfigEntry<V, ?, ?, E>
-	  & IAbstractStringKeyEntry<V>> SelectorEntry.Builder<V, E> select(
-	  AbstractConfigEntryBuilder<V, ?, ?, E, ?> builder, V... values
+	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
+	SelectorEntry.Builder<V, C, G, E> select(
+	  AbstractConfigEntryBuilder<V, C, ?, E, ?> builder, V... values
 	) {
 		return new SelectorEntry.Builder<>(builder, values);
 	}
 	
-	public static <V, E extends AbstractConfigEntry<V, ?, ?, E>
-	  & IAbstractStringKeyEntry<V>> SelectorEntry.Builder<V, E> select(
-	  AbstractConfigEntryBuilder<V, ?, ?, E, ?> builder, List<V> values
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
+	SelectorEntry.Builder<V, C, G, E> select(
+	  AbstractConfigEntryBuilder<V, C, G, E, ?> builder, List<V> values
 	) {
 		//noinspection unchecked
 		return new SelectorEntry.Builder<>(builder, (V[]) values.toArray(new Object[0]));
@@ -337,6 +340,38 @@ public class Builders {
 		return new ItemEntry.Builder(value);
 	}
 	
+	public static ItemNameEntry.Builder itemName(@Nullable ResourceLocation value) {
+		return new ItemNameEntry.Builder(value);
+	}
+	
+	public static ItemNameEntry.Builder itemName(Item value) {
+		return itemName(value.getRegistryName());
+	}
+	
+	public static BlockEntry.Builder block(@Nullable Block value) {
+		return new BlockEntry.Builder(value);
+	}
+	
+	public static BlockNameEntry.Builder blockName(@Nullable ResourceLocation value) {
+		return new BlockNameEntry.Builder(value);
+	}
+	
+	public static BlockNameEntry.Builder blockName(Block value) {
+		return blockName(value.getRegistryName());
+	}
+	
+	public static FluidEntry.Builder fluid(@Nullable Fluid value) {
+		return new FluidEntry.Builder(value);
+	}
+	
+	public static FluidNameEntry.Builder fluidName(@Nullable ResourceLocation value) {
+		return new FluidNameEntry.Builder(value);
+	}
+	
+	public static FluidNameEntry.Builder fluidName(Fluid value) {
+		return fluidName(value.getRegistryName());
+	}
+	
 	/**
 	 * NBT entry that accepts any kind of NBT, either values or compounds
 	 */
@@ -423,6 +458,36 @@ public class Builders {
 		return new DoubleListEntry.Builder(value);
 	}
 	
+	// Caption
+	
+	public static <V, C, G, E extends AbstractListEntry<V, C, G, E>,
+	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
+	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
+	DecoratedListEntry.Builder<V, C, G, E, B, CV, CC, CG, CE, CB> caption(
+	  CB caption, B list
+	) {
+		//noinspection deprecation
+		return new DecoratedListEntry.Builder<>(
+		  Pair.of(getValue(caption), getValue(list)), list, caption);
+	}
+	
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
+	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
+	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
+	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
+	DecoratedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
+	caption(
+	  CB caption, MB map
+	) {
+		//noinspection deprecation
+		return new DecoratedMapEntry.Builder<>(
+		  Pair.of(getValue(caption), getValue(map)), map, caption);
+	}
+	
 	// List entry
 	
 	/**
@@ -431,8 +496,8 @@ public class Builders {
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	Builder<V, C, G, E, B> list(B entry) {
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
+	EntryListEntry.Builder<V, C, G, E, Builder> list(Builder entry) {
 		return list(entry, Collections.emptyList());
 	}
 	
@@ -442,8 +507,8 @@ public class Builders {
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	EntryListEntry.Builder<V, C, G, E, B> list(B entry, List<V> value) {
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
+	EntryListEntry.Builder<V, C, G, E, Builder> list(Builder entry, List<V> value) {
 		return new EntryListEntry.Builder<>(value, entry);
 	}
 	
@@ -453,8 +518,8 @@ public class Builders {
 	 * Non-persistent entries cannot be nested
 	 */
 	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	EntryListEntry.Builder<V, C, G, E, B> list(B entry, V... values) {
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
+	EntryListEntry.Builder<V, C, G, E, Builder> list(Builder entry, V... values) {
 		return list(entry, Arrays.stream(values).collect(Collectors.toList()));
 	}
 	
@@ -465,39 +530,111 @@ public class Builders {
 	 * The keys themselves are other entries, as long as they can
 	 * serialize as strings. Non string-serializable key entries
 	 * won't compile<br>
-	 * By default the key is a string entry
+	 * By default the key is a string entry and the value is an empty map
+	 *
 	 * @param keyEntry The entry to be used as key
-	 * @param entry The entry to be used as value, which may be another map
-	 *              entry, or a list entry. Not persistent entries cannot be used
-	 * @param value Entry value
+	 * @param entry    The entry to be used as value, which may be another map
+	 *                 entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <K, V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, ?, ?, KE> & IAbstractStringKeyEntry<K>,
-	  KB extends AbstractConfigEntryBuilder<K, ?, ?, KE, KB>>
-	StringToEntryMapEntry.Builder<K, V, C, G, E, B, KE, KB> map(
-	  KB keyEntry, B entry, Map<K, V> value
-	) {
-		return new StringToEntryMapEntry.Builder<>(value, keyEntry, entry);
-	}
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
+	EntryMapEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> map(
+	  KeyBuilder keyEntry, Builder entry
+	) { return map(keyEntry, entry, new LinkedHashMap<>()); }
 	
 	/**
 	 * Map of other entries<br>
 	 * The keys themselves are other entries, as long as they can
 	 * serialize as strings. Non string-serializable key entries
 	 * won't compile<br>
-	 * By default the key is a string entry
+	 * By default the key is a string entry and the value is an empty map
+	 *
+	 * @param keyEntry The entry to be used as key
+	 * @param entry    The entry to be used as value, which may be another map
+	 *                 entry, or a list entry. Not persistent entries cannot be used
+	 * @param value    Entry value
+	 */
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
+	EntryMapEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> map(
+	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
+	) { return new EntryMapEntry.Builder<>(value, keyEntry, entry); }
+	
+	/**
+	 * Map of other entries<br>
+	 * The keys themselves are other entries, as long as they can
+	 * serialize as strings. Non string-serializable key entries
+	 * won't compile<br>
+	 * By default the key is a string entry and the value is an empty map
 	 * @param entry The entry to be used as value, which may be other
 	 *              map entry, or a list entry. Not persistent entries cannot be used
-	 * @param value Entry value
 	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	StringToEntryMapEntry.Builder<String, V, C, G, E, B, StringEntry, StringEntry.Builder> map(
-	  B entry, Map<String, V> value
-	) {
-		return new StringToEntryMapEntry.Builder<>(value, string(""), entry);
-	}
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
+	EntryMapEntry.Builder<String, V, String, C, String, G, E, Builder, StringEntry, StringEntry.Builder> map(
+	  Builder entry
+	) { return map(entry, new LinkedHashMap<>()); }
+	
+	/**
+	 * Map of other entries<br>
+	 * The keys themselves are other entries, as long as they can
+	 * serialize as strings. Non string-serializable key entries
+	 * won't compile<br>
+	 * By default the key is a string entry and the value is an empty map
+	 * @param entry The entry to be used as value, which may be other
+	 *              map entry, or a list entry. Not persistent entries cannot be used
+	 * @param value Entry value (default: empty map)
+	 */
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
+	EntryMapEntry.Builder<String, V, String, C, String, G, E, Builder, StringEntry, StringEntry.Builder> map(
+	  Builder entry, Map<String, V> value
+	) { return new EntryMapEntry.Builder<>(value, string(""), entry); }
+	
+	// Pair list
+	
+	/**
+	 * List of pairs of other entries, like a linked map, but with duplicates<br>
+	 * The keys themselves are other entries, as long as they can
+	 * serialize as strings. Non string-serializable key entries
+	 * won't compile<br>
+	 * By default the value is an empty list
+	 *
+	 * @param keyEntry The entry to be used as key
+	 * @param entry    The entry to be used as value, which may be another map
+	 *                 entry, or a list entry. Not persistent entries cannot be used
+	 */
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
+	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
+	  KeyBuilder keyEntry, Builder entry
+	) { return pairList(keyEntry, entry, new ArrayList<>()); }
+	
+	/**
+	 * List of pairs of other entries, like a linked map, but with duplicates<br>
+	 * The keys themselves are other entries, as long as they can
+	 * serialize as strings. Non string-serializable key entries
+	 * won't compile<br>
+	 * By default the value is an empty list
+	 *
+	 * @param keyEntry The entry to be used as key
+	 * @param entry    The entry to be used as value, which may be another map
+	 *                 entry, or a list entry. Not persistent entries cannot be used
+	 * @param value    Entry value
+	 */
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
+	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
+	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
+	) { return new EntryPairListEntry.Builder<>(value, keyEntry, entry); }
 	
 	// Register reflection field parsers ------------------------------------------------------------
 	

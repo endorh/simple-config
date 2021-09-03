@@ -2,9 +2,16 @@ package endorh.simple_config.clothconfig2.math;
 
 public final class Color {
 	private final int color;
+	private final float h;
+	private final float s;
+	private final float b;
 	
 	private Color(int color) {
 		this.color = color;
+		float[] hsb = java.awt.Color.RGBtoHSB(getRed(), getGreen(), getBlue(), new float[3]);
+		h = hsb[0];
+		s = hsb[1];
+		b = hsb[2];
 	}
 	
 	public static Color ofTransparent(int color) {
@@ -33,66 +40,24 @@ public final class Color {
 		return new Color((a & 0xFF) << 24 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | b & 0xFF);
 	}
 	
-	public static Color ofHSB(float hue, float saturation, float brightness) {
-		return Color.ofOpaque(Color.HSBtoRGB(hue, saturation, brightness));
+	public static Color ofHSB(float h, float s, float b) {
+		return Color.ofOpaque(java.awt.Color.HSBtoRGB(h, s, b));
 	}
 	
-	public static int HSBtoRGB(float hue, float saturation, float brightness) {
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		if (saturation == 0.0f) {
-			g = b = (int) (brightness * 255.0f + 0.5f);
-			r = b;
-		} else {
-			float h = (hue - (float) Math.floor(hue)) * 6.0f;
-			float f = h - (float) Math.floor(h);
-			float p = brightness * (1.0f - saturation);
-			float q = brightness * (1.0f - saturation * f);
-			float t = brightness * (1.0f - saturation * (1.0f - f));
-			switch ((int) h) {
-				case 0: {
-					r = (int) (brightness * 255.0f + 0.5f);
-					g = (int) (t * 255.0f + 0.5f);
-					b = (int) (p * 255.0f + 0.5f);
-					break;
-				}
-				case 1: {
-					r = (int) (q * 255.0f + 0.5f);
-					g = (int) (brightness * 255.0f + 0.5f);
-					b = (int) (p * 255.0f + 0.5f);
-					break;
-				}
-				case 2: {
-					r = (int) (p * 255.0f + 0.5f);
-					g = (int) (brightness * 255.0f + 0.5f);
-					b = (int) (t * 255.0f + 0.5f);
-					break;
-				}
-				case 3: {
-					r = (int) (p * 255.0f + 0.5f);
-					g = (int) (q * 255.0f + 0.5f);
-					b = (int) (brightness * 255.0f + 0.5f);
-					break;
-				}
-				case 4: {
-					r = (int) (t * 255.0f + 0.5f);
-					g = (int) (p * 255.0f + 0.5f);
-					b = (int) (brightness * 255.0f + 0.5f);
-					break;
-				}
-				case 5: {
-					r = (int) (brightness * 255.0f + 0.5f);
-					g = (int) (p * 255.0f + 0.5f);
-					b = (int) (q * 255.0f + 0.5f);
-				}
-			}
-		}
-		return 0xFF000000 | r << 16 | g << 8 | b;
+	public static Color ofHSBA(float h, float s, float b, int a) {
+		return Color.ofTransparent(java.awt.Color.HSBtoRGB(h, s, b) & 0xFFFFFF | a << 24);
 	}
 	
 	public int getColor() {
 		return this.color;
+	}
+	
+	public int getOpaque() {
+		return this.color | 0xFF000000;
+	}
+	
+	public int getRGB() {
+		return this.color & 0xFFFFFF;
 	}
 	
 	public int getAlpha() {
@@ -157,6 +122,18 @@ public final class Color {
 	
 	public String toString() {
 		return "Color{r=" + this.getRed() + "g=" + this.getGreen() + "b=" + this.getBlue() + '}';
+	}
+	
+	public float getHue() {
+		return h;
+	}
+	
+	public float getSaturation() {
+		return s;
+	}
+	
+	public float getBrightness() {
+		return b;
 	}
 }
 

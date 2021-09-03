@@ -1,8 +1,9 @@
 package endorh.simple_config.core;
 
 import endorh.simple_config.SimpleConfigMod;
-import endorh.simple_config.SimpleConfigMod.MenuButtonPosition;
-import endorh.simple_config.SimpleConfigMod.Config;
+import endorh.simple_config.SimpleConfigMod.ClientConfig;
+import endorh.simple_config.SimpleConfigMod.ConfigPermission;
+import endorh.simple_config.SimpleConfigMod.ServerConfig;
 import endorh.simple_config.clothconfig2.api.ConfigBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
@@ -51,8 +52,7 @@ public class SimpleConfigGUIManager {
 	 * If your mod doesn't mess with the pause menu, you should not
 	 * call this method
 	 */
-	@SuppressWarnings("unused")
-	public void setAddButton(boolean add) {
+	@SuppressWarnings("unused") public void setAddButton(boolean add) {
 		addButton = add;
 		autoAddButton = true;
 	}
@@ -106,11 +106,11 @@ public class SimpleConfigGUIManager {
 			}
 		})).collect(Collectors.toList());
 		final Minecraft mc = Minecraft.getInstance();
-		final boolean isOperator = mc.player != null && mc.player.hasPermissionLevel(2);
+		boolean hasPermission =
+		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
 		for (SimpleConfig config : orderedConfigs) {
-			if (config.type != Type.SERVER || isOperator) {
+			if (config.type != Type.SERVER || hasPermission)
 				config.buildGUI(builder);
-			}
 		}
 		return builder.build();
 	}
@@ -145,20 +145,38 @@ public class SimpleConfigGUIManager {
 	 */
 	@SubscribeEvent
 	public static void onGuiInit(InitGuiEvent.Post event) {
-		if (!addButton || !Config.add_pause_menu_button)
+		if (!addButton || !ClientConfig.add_pause_menu_button)
 			return;
 		final Screen gui = event.getGui();
 		if (gui instanceof IngameMenuScreen) {
 			// Coordinates taken from IngameMenuScreen#addButtons
-			int w = 20, h = 20, x = gui.width / 2 - 102 - w - 4, y = gui.height / 4 + 96 + -16;
-			
-			final Optional<Button> opt = getOptionsButton(gui, event.getWidgetList());
-			if (Config.menu_button_position == MenuButtonPosition.SPLIT_OPTIONS_BUTTON
-			    && opt.isPresent()) {
-				Button options = opt.get();
-				options.setWidth(options.getWidth() - 20 - 4);
-				x = gui.width / 2 - 102 + 98 - 20;
+			int w = 20, h = 20, x, y;
+			switch (ClientConfig.menu_button_position) {
+				case TOP_LEFT_CORNER:
+					x = 8; y = 8; break;
+				case TOP_RIGHT_CORNER:
+					x = gui.width - 28; y = 8; break;
+				case BOTTOM_LEFT_CORNER:
+					x = 8; y = gui.height - 28; break;
+				case BOTTOM_RIGHT_CORNER:
+					x = gui.width - 28; y = gui.height - 28; break;
+				case SPLIT_OPTIONS_BUTTON:
+					Optional<Button> opt = getOptionsButton(gui, event.getWidgetList());
+					if (opt.isPresent()) {
+						Button options = opt.get();
+						options.setWidth(options.getWidth() - 20 - 4);
+						// Coordinates taken from IngameMenuScreen#addButtons
+						x = gui.width / 2 - 102 + 98 - 20;
+						y = gui.height / 4 + 96 - 16;
+						break;
+					} // else fallthrough
+				case LEFT_OF_OPTIONS_BUTTON:
+				default:
+					// Coordinates taken from IngameMenuScreen#addButtons
+					x = gui.width / 2 - 102 - w - 4;
+					y = gui.height / 4 + 96 - 16;
 			}
+			
 			Button modOptions = new ImageButton(
 			  x, y, w, h, 0, 0, 20,
 			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/menu.png"),
@@ -172,12 +190,9 @@ public class SimpleConfigGUIManager {
 	 * Try to find the Options button in the game menu<br>
 	 * Checks its position and size before returning, so it returns
 	 * empty if the button does not match the expected placement<br>
-	 * This prevents adding the mod config button if the pause menu's
-	 * layout changes in future updates or due to other mods,
-	 * instead of potentially breaking the pause menu
 	 */
 	public static Optional<Button> getOptionsButton(Screen gui, List<Widget> widgets) {
-		final int x = gui.width / 2 - 102, y = gui.height / 4 + 96 + -16;
+		final int x = gui.width / 2 - 102, y = gui.height / 4 + 96 - 16;
 		for (Widget widget : widgets) {
 			if (widget instanceof Button) {
 				Button but = (Button) widget;

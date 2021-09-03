@@ -20,12 +20,14 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected @Nullable Supplier<ITextComponent> translationSupplier = null; // Lazy
 	protected boolean own = false;
+	protected boolean logged = false;
 	
 	public TextEntry(ISimpleConfigEntryHolder parent, String name) {
 		super(parent, name, null);
@@ -40,12 +42,13 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		
 		public Builder(@Nullable Supplier<ITextComponent> supplier) {
 			this();
-			text(supplier);
+			translationSupplier = supplier;
 		}
 		
 		public Builder text(Supplier<ITextComponent> supplier) {
-			this.translationSupplier = supplier;
-			return this;
+			Builder copy = copy();
+			copy.translationSupplier = supplier;
+			return copy;
 		}
 		
 		public Builder text(ITextComponent text) {
@@ -76,20 +79,38 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 			e.own = translationSupplier != null;
 			return e;
 		}
+		
+		@Override protected Builder createCopy() {
+			final Builder copy = new Builder();
+			copy.translationSupplier = translationSupplier;
+			return copy;
+		}
+	}
+	
+	@Override protected Consumer<Void> saveConsumer() {
+		return v -> {};
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected ITextComponent getDisplayName() {
 		if (displayName != null) return displayName;
 		if (debugTranslations()) {
-			return getDebugDisplayName();
+			return nullAsEmpty(getDebugDisplayName());
 		} else if (translationSupplier != null) {
-			return translationSupplier.get();
+			return nullAsEmpty(translationSupplier.get());
 		} else {
 			if (translation == null)
 				LOGGER.warn("Malformed config text entry " + getPath());
-			return super.getDisplayName();
+			return nullAsEmpty(super.getDisplayName());
 		}
+	}
+	
+	protected ITextComponent nullAsEmpty(@Nullable ITextComponent text) {
+		if (!logged && text == null) {
+			LOGGER.warn("Malformed config text entry " + getPath());
+			logged = true;
+		}
+		return text != null? text : StringTextComponent.EMPTY;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -156,8 +177,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		return Optional.of(lines.toArray(new ITextComponent[0]));
 	}
 	
-	@Override
-	protected Void getGUI() {
+	@Override protected Void getGUI() {
 		throw new IllegalArgumentException("Text entries do not have a value");
 	}
 	
@@ -166,15 +186,9 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	public Optional<AbstractConfigListEntry<Void>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final ITextComponent displayName = getDisplayName();
-		if (displayName != null) {
-			final TextDescriptionBuilder valBuilder = builder
-			  .startTextDescription(displayName)
-			  .setTooltipSupplier(() -> this.supplyTooltip(null));
-			return Optional.of(decorate(valBuilder).build());
-		} else {
-			LOGGER.warn("Malformed config text entry " + getPath());
-			return Optional.empty();
-		}
+		final TextDescriptionBuilder valBuilder = builder
+		  .startTextDescription(this::getDisplayName)
+		  .setTooltipSupplier(() -> this.supplyTooltip(null));
+		return Optional.of(decorate(valBuilder).build());
 	}
 }

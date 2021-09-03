@@ -37,18 +37,23 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		}
 		
 		public Builder flags(int flags) {
+			Builder copy = copy();
 			try {
-				this.value = Pattern.compile(value.pattern(), flags);
+				copy.value = Pattern.compile(value.pattern(), flags);
 			} catch (PatternSyntaxException e) {
 				throw new IllegalArgumentException(
 				  "Cannot compile default pattern value with the new flags");
 			}
-			return this;
+			return copy;
 		}
 		
 		@Override
 		protected PatternEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new PatternEntry(parent, name, value);
+		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
 		}
 	}
 	

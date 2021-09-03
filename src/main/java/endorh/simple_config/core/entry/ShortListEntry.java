@@ -27,7 +27,7 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 	public static class Builder extends RangedListEntry.Builder<Short, Number, Integer, ShortListEntry, Builder> {
 		
 		public Builder(List<Short> value) {
-			super(value);
+			super(value, Short.class);
 		}
 		
 		/**
@@ -61,6 +61,10 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 		protected ShortListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new ShortListEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
@@ -75,20 +79,10 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final IntListBuilder valBuilder = builder
-		  .startIntList(getDisplayName(), forGui(get()))
-		  .setDefaultValue(forGui(value))
-		  .setMin(min).setMax(max)
-		  .setInsertInFront(insertInTop)
-		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startIntList(getDisplayName(), forGui(get()));
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

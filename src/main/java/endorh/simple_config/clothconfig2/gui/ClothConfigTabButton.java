@@ -16,63 +16,72 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class ClothConfigTabButton
-  extends AbstractButton {
-	private final int index;
-	private final ClothConfigScreen screen;
-	@Nullable
-	private final Supplier<Optional<ITextProperties[]>> descriptionSupplier;
+public class ClothConfigTabButton extends AbstractButton {
+	protected final int index;
+	protected final ClothConfigScreen screen;
+	@Nullable protected final Supplier<Optional<ITextProperties[]>> descriptionSupplier;
+	protected int tintColor = 0x00000000;
 	
 	public ClothConfigTabButton(
-	  ClothConfigScreen screen, int index, int int_1, int int_2, int int_3, int int_4,
-	  ITextComponent string_1, @Nullable Supplier<Optional<ITextProperties[]>> descriptionSupplier
+	  ClothConfigScreen screen, int index, int x, int y, int w, int h,
+	  ITextComponent title, @Nullable Supplier<Optional<ITextProperties[]>> descriptionSupplier
 	) {
-		super(int_1, int_2, int_3, int_4, string_1);
+		super(x, y, w, h, title);
 		this.index = index;
 		this.screen = screen;
 		this.descriptionSupplier = descriptionSupplier;
 	}
 	
 	public ClothConfigTabButton(
-	  ClothConfigScreen screen, int index, int int_1, int int_2, int int_3, int int_4,
-	  ITextComponent string_1
+	  ClothConfigScreen screen, int index, int x, int y, int w, int h, ITextComponent title
 	) {
-		this(screen, index, int_1, int_2, int_3, int_4, string_1, null);
+		this(screen, index, x, y, w, h, title, null);
 	}
 	
 	public void onPress() {
-		if (this.index != -1) {
-			this.screen.selectedCategoryIndex = this.index;
-		}
+		if (this.index != -1) this.screen.selectedCategoryIndex = this.index;
 		this.screen.init(Minecraft.getInstance(), this.screen.width, this.screen.height);
 	}
 	
-	public void render(@NotNull MatrixStack matrices, int int_1, int int_2, float float_1) {
+	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		Optional<ITextProperties[]> tooltip;
 		this.active = this.index != this.screen.selectedCategoryIndex;
-		super.render(matrices, int_1, int_2, float_1);
-		if (this.isMouseOver(int_1, int_2) && (tooltip = this.getTooltip()).isPresent() &&
-		    tooltip.get().length > 0) {
-			this.screen.addTooltip(Tooltip.of(new Point(int_1, int_2), tooltip.get()));
+		super.render(mStack, mouseX, mouseY, delta);
+		if (this.isMouseOver(mouseX, mouseY) && (tooltip = this.getTooltip()).isPresent()
+		    && tooltip.get().length > 0) {
+			this.screen.addTooltip(Tooltip.of(new Point(mouseX, mouseY), tooltip.get()));
 		}
 	}
 	
-	protected boolean clicked(double double_1, double double_2) {
-		return this.visible && this.active && this.isMouseOver(double_1, double_2);
+	@Override
+	protected void renderBg(@NotNull MatrixStack mStack, @NotNull Minecraft minecraft, int mouseX, int mouseY) {
+		super.renderBg(mStack, minecraft, mouseX, mouseY);
+		if (tintColor != 0)
+			fill(mStack, x, y, x + width - 1, y + height, tintColor);
 	}
 	
-	public boolean isMouseOver(double double_1, double double_2) {
-		return this.visible && double_1 >= (double) this.x && double_2 >= (double) this.y &&
-		       double_1 < (double) (this.x + this.width) &&
-		       double_2 < (double) (this.y + this.height) && double_1 >= 20.0 &&
-		       double_1 < (double) (this.screen.width - 20);
+	protected boolean clicked(double mouseX, double mouseY) {
+		return this.visible && this.active && this.isMouseOver(mouseX, mouseY);
+	}
+	
+	public boolean isMouseOver(double mouseX, double mouseY) {
+		return this.visible && mouseX >= (double) this.x && mouseY >= (double) this.y &&
+		       mouseX < (double) (this.x + this.width) &&
+		       mouseY < (double) (this.y + this.height) && mouseX >= 20.0 &&
+		       mouseX < (double) (this.screen.width - 20);
 	}
 	
 	public Optional<ITextProperties[]> getTooltip() {
-		if (this.descriptionSupplier != null) {
-			return this.descriptionSupplier.get();
-		}
-		return Optional.empty();
+		return this.descriptionSupplier != null
+		       ? this.descriptionSupplier.get() : Optional.empty();
+	}
+	
+	public int getTintColor() {
+		return tintColor;
+	}
+	
+	public void setTintColor(int color) {
+		this.tintColor = color;
 	}
 }
 

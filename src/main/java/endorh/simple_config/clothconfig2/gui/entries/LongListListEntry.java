@@ -5,114 +5,63 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class LongListListEntry extends
-                               AbstractTextFieldListListEntry<Long, LongListCell, LongListListEntry> {
+public class LongListListEntry extends AbstractTextFieldListListEntry<Long, LongListCell, LongListListEntry>
+  implements IRangedEntry<Long> {
 	private long minimum = Long.MIN_VALUE;
 	private long maximum = Long.MAX_VALUE;
 	
-	@Deprecated
-	@ApiStatus.Internal
-	public LongListListEntry(
-	  ITextComponent fieldName, List<Long> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<Long>> saveConsumer,
-	  Supplier<List<Long>> defaultValue, ITextComponent resetButtonKey
-	) {
-		this(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, false);
+	@Internal public LongListListEntry(ITextComponent fieldName, List<Long> value) {
+		super(fieldName, value, LongListCell::new);
 	}
 	
-	@Deprecated
-	@ApiStatus.Internal
-	public LongListListEntry(
-	  ITextComponent fieldName, List<Long> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<Long>> saveConsumer,
-	  Supplier<List<Long>> defaultValue, ITextComponent resetButtonKey, boolean requiresRestart
-	) {
-		this(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, requiresRestart, true, true);
+	@Override public void setMinimum(Long minimum) {
+		this.minimum = minimum != null ? minimum : Long.MIN_VALUE;
 	}
 	
-	@Deprecated
-	@ApiStatus.Internal
-	public LongListListEntry(
-	  ITextComponent fieldName, List<Long> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<Long>> saveConsumer,
-	  Supplier<List<Long>> defaultValue, ITextComponent resetButtonKey, boolean requiresRestart,
-	  boolean deleteButtonEnabled, boolean insertInFront
-	) {
-		super(
-		  fieldName, value, defaultExpanded, tooltipSupplier, saveConsumer, defaultValue,
-		  resetButtonKey, requiresRestart, deleteButtonEnabled, insertInFront, LongListCell::new);
-	}
-	
-	public LongListListEntry setMaximum(long maximum) {
-		this.maximum = maximum;
-		return this;
-	}
-	
-	public LongListListEntry setMinimum(long minimum) {
-		this.minimum = minimum;
-		return this;
+	@Override public void setMaximum(Long maximum) {
+		this.maximum = maximum != null ? maximum : Long.MAX_VALUE;
 	}
 	
 	public static class LongListCell
 	  extends
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<Long, LongListCell, LongListListEntry> {
-		public LongListCell(Long value, LongListListEntry listListEntry) {
-			super(value, listListEntry);
+		public LongListCell(LongListListEntry listListEntry) {
+			super(listListEntry);
 		}
 		
-		@Override
-		@Nullable
-		protected Long substituteDefault(@Nullable Long value) {
-			if (value == null) {
-				return 0L;
-			}
-			return value;
-		}
-		
-		@Override
-		protected boolean isValidText(@NotNull String text) {
+		@Override protected boolean isValidText(@NotNull String text) {
 			return text.chars().allMatch(c -> Character.isDigit(c) || c == 45);
 		}
 		
-		@Override
-		public Long getValue() {
+		@Override public Long getValue() {
 			try {
-				return Long.valueOf(this.widget.getText());
+				return Long.valueOf(widget.getText());
 			} catch (NumberFormatException e) {
 				return 0L;
 			}
 		}
 		
-		@Override public void setValue(Long value) {
-			this.widget.setText(String.valueOf(value));
+		@Override public void doSetValue(Long value) {
+			widget.setText(String.valueOf(value));
 		}
 		
-		@Override
-		public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getError() {
 			try {
-				long l = Long.parseLong(this.widget.getText());
-				if (l > this.listListEntry.maximum) {
-					return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_large",
-					                                                this.listListEntry.maximum));
-				}
-				if (l < this.listListEntry.minimum) {
-					return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_small",
-					                                                this.listListEntry.minimum));
-				}
+				long l = Long.parseLong(widget.getText());
+				final LongListListEntry listEntry = getListEntry();
+				if (l > listEntry.maximum)
+					return Optional.of(new TranslationTextComponent(
+					  "text.cloth-config.error.too_large", listEntry.maximum));
+				if (l < listEntry.minimum)
+					return Optional.of(new TranslationTextComponent(
+					  "text.cloth-config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
 				  new TranslationTextComponent("text.cloth-config.error.not_valid_number_long"));

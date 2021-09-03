@@ -23,9 +23,8 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 	}
 	
 	public static class Builder extends RangedListEntry.Builder<Float, Number, Float, FloatListEntry, Builder> {
-		
 		public Builder(List<Float> value) {
-			super(value);
+			super(value, Float.class);
 		}
 		
 		/**
@@ -59,6 +58,10 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 		protected FloatListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new FloatListEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
@@ -73,20 +76,10 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<List<Float>>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<List<Float>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final FloatListBuilder valBuilder = builder
-		  .startFloatList(getDisplayName(), get())
-		  .setDefaultValue(value)
-		  .setMin(min).setMax(max)
-		  .setExpanded(expand)
-		  .setInsertInFront(insertInTop)
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startFloatList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

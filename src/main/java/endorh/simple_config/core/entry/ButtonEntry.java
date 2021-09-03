@@ -32,19 +32,22 @@ public class ButtonEntry extends GUIOnlyEntry<
 		}
 		
 		public Builder label(String translation) {
+			Builder copy = copy();
 			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
-			this.buttonLabelSupplier = () -> ttc;
-			return self();
+			copy.buttonLabelSupplier = () -> ttc;
+			return copy;
 		}
 		
 		public Builder label(ITextComponent label) {
-			this.buttonLabelSupplier = () -> label;
-			return self();
+			Builder copy = copy();
+			copy.buttonLabelSupplier = () -> label;
+			return copy;
 		}
 		
 		public Builder label(Supplier<ITextComponent> label) {
-			this.buttonLabelSupplier = label;
-			return self();
+			Builder copy = copy();
+			copy.buttonLabelSupplier = label;
+			return copy;
 		}
 		
 		@Override protected ButtonEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
@@ -52,9 +55,15 @@ public class ButtonEntry extends GUIOnlyEntry<
 			entry.buttonLabelSupplier = buttonLabelSupplier;
 			return entry;
 		}
+		
+		@Override protected Builder createCopy() {
+			final Builder copy = new Builder(value);
+			copy.buttonLabelSupplier = buttonLabelSupplier;
+			return copy;
+		}
 	}
 	
-	@Override protected Runnable forGui(
+	@Override public Runnable forGui(
 	  Consumer<ISimpleConfigEntryHolder> value
 	) {
 		return () -> value.accept(parent);
@@ -64,8 +73,8 @@ public class ButtonEntry extends GUIOnlyEntry<
 	  ConfigEntryBuilder builder
 	) {
 		final ButtonListEntry entry =
-		  new ButtonListEntry(forGui(get()), getDisplayName(), buttonLabelSupplier,
-		                      () -> supplyTooltip(forGui(get())));
+		  new ButtonListEntry(forGui(get()), getDisplayName(), buttonLabelSupplier
+		  );
 		return Optional.of(entry);
 	}
 }

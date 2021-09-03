@@ -1,50 +1,29 @@
 package endorh.simple_config.clothconfig2.impl.builders;
 
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.gui.entries.TextListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class TextDescriptionBuilder
-  extends FieldBuilder<ITextComponent, TextListEntry> {
-	private int color = -1;
-	@Nullable
-	private Supplier<Optional<ITextComponent[]>> tooltipSupplier = null;
-	private final ITextComponent value;
+  extends FieldBuilder<Void, TextListEntry, TextDescriptionBuilder> {
+	protected int color = -1;
+	protected Supplier<ITextComponent> textSupplier;
 	
 	public TextDescriptionBuilder(
-	  ITextComponent resetButtonKey, ITextComponent fieldNameKey, ITextComponent value
+	  ConfigEntryBuilder builder, ITextComponent name, Supplier<ITextComponent> value
 	) {
-		super(resetButtonKey, fieldNameKey);
-		this.value = value;
+		super(builder, name, null);
+		this.textSupplier = value;
 	}
 	
-	@Override
-	public void requireRestart(boolean requireRestart) {
-		throw new UnsupportedOperationException();
-	}
-	
-	public TextDescriptionBuilder setTooltipSupplier(
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier
-	) {
-		this.tooltipSupplier = tooltipSupplier;
-		return this;
-	}
-	
-	public TextDescriptionBuilder setTooltip(Optional<ITextComponent[]> tooltip) {
-		this.tooltipSupplier = () -> tooltip;
-		return this;
-	}
-	
-	public TextDescriptionBuilder setTooltip(ITextComponent... tooltip) {
-		this.tooltipSupplier = () -> Optional.ofNullable(tooltip);
-		return this;
+	@Override public TextDescriptionBuilder requireRestart(boolean requireRestart) {
+		return self();
 	}
 	
 	public TextDescriptionBuilder setColor(int color) {
@@ -52,11 +31,9 @@ public class TextDescriptionBuilder
 		return this;
 	}
 	
-	@Override
-	@NotNull
-	public TextListEntry build() {
+	@Override @NotNull public TextListEntry buildEntry() {
 		return new TextListEntry(
-		  this.getFieldNameKey(), this.value, this.color, this.tooltipSupplier);
+		  this.fieldNameKey, this.textSupplier, this.color);
 	}
 }
 

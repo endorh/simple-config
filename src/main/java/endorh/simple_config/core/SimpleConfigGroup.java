@@ -1,17 +1,15 @@
 package endorh.simple_config.core;
 
-import endorh.simple_config.SimpleConfigMod.Config;
-import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
-import endorh.simple_config.core.SimpleConfig.IGUIEntry;
-import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simple_config.SimpleConfigMod.ClientConfig;
 import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import endorh.simple_config.clothconfig2.impl.builders.SubCategoryBuilder;
+import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simple_config.core.SimpleConfig.IGUIEntry;
+import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -31,6 +29,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
 	protected @Nullable Consumer<SimpleConfigGroup> baker;
+	protected AbstractConfigEntry<?, ?, ?, ?> heldEntry;
 	
 	@Internal protected SimpleConfigGroup(
 	  SimpleConfigGroup parent, String name, String title,
@@ -62,7 +61,8 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries, Map<String, ConfigValue<?>> specValues,
-	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder
+	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder,
+	  @Nullable AbstractConfigEntry<?, ?, ?, ?> heldEntry
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
@@ -71,13 +71,14 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		this.groups = groups;
 		children = groups;
 		this.order = guiOrder;
+		this.heldEntry = heldEntry;
 	}
 	
 	@Override
 	protected String getPath() {
 		return parentGroup != null
 		       ? parentGroup.getPath() + "." + name
-		       : category != null ? category.getPath() + "." + name : name;
+		       : category.getPath() + "." + name;
 	}
 	
 	/**
@@ -111,7 +112,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent getTitle() {
-		if (Config.advanced.translation_debug_mode)
+		if (ClientConfig.advanced.translation_debug_mode)
 			return getDebugTitle();
 		if (!I18n.hasKey(title)) {
 			final String[] split = title.split("\\.");
@@ -181,7 +182,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> getTooltip() {
-		if (Config.advanced.translation_debug_mode)
+		if (ClientConfig.advanced.translation_debug_mode)
 			return getDebugTooltip();
 		if (tooltip != null && I18n.hasKey(tooltip))
 			return Optional.of(
@@ -192,10 +193,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@OnlyIn(Dist.CLIENT)
 	protected SubCategoryListEntry buildGUI(ConfigEntryBuilder entryBuilder) {
-		final SubCategoryBuilder group = entryBuilder
+		SubCategoryBuilder group = entryBuilder
 		  .startSubCategory(getTitle())
 		  .setExpanded(expanded)
-		  .setTooltip(getTooltip());
+		  .setTooltipSupplier(this::getTooltip)
+		  .setName(name);
+		if (heldEntry != null)
+			group.setHeldEntry(((IKeyEntry<?, ?>) heldEntry).buildChildGUIEntry(entryBuilder));
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order) {
 				if (entry instanceof AbstractConfigEntry) {
@@ -243,12 +247,12 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	 * You may also call this method on the root {@link SimpleConfig}
 	 * or on the parent {@link SimpleConfigCategory} of this group
 	 */
-	public void commitFields() {
+	@Override public void commitFields() {
 		try {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				entry.commitField(this);
+				entry.commitField();
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);

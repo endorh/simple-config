@@ -43,16 +43,22 @@ public class SerializableEntry<V>
 		
 		public Builder(V value, IConfigEntrySerializer<V> serializer) {
 			this(value, serializer::serializeConfigEntry, serializer::deserializeConfigEntry);
+			this.typeClass = serializer.getClass(value);
 		}
 		
 		public Builder<V> fieldClass(Class<?> fieldClass) {
-			typeClass = fieldClass;
-			return this;
+			Builder<V> copy = copy();
+			copy.typeClass = fieldClass;
+			return copy;
 		}
 		
 		@Override
 		protected SerializableEntry<V> buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new SerializableEntry<>(parent, name, value, serializer, deserializer, typeClass);
+		}
+		
+		@Override protected Builder<V> createCopy() {
+			return new Builder<>(value, serializer, deserializer);
 		}
 	}
 	

@@ -1,14 +1,13 @@
 package endorh.simple_config.core;
 
 import com.mojang.datafixers.util.Pair;
+import endorh.simple_config.clothconfig2.api.ConfigBuilder;
+import endorh.simple_config.clothconfig2.api.ConfigCategory;
+import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simple_config.core.SimpleConfigSync.CSimpleConfigSyncPacket;
 import endorh.simple_config.core.SimpleConfigSync.SSimpleConfigSyncPacket;
-import endorh.simple_config.clothconfig2.api.ConfigBuilder;
-import endorh.simple_config.clothconfig2.api.ConfigCategory;
-import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
@@ -48,7 +47,8 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
-	private static final Map<Pair<String, ModConfig.Type>, SimpleConfig> INSTANCES = synchronizedMap(new HashMap<>());
+	private static final Map<Pair<String, ModConfig.Type>, SimpleConfig> INSTANCES =
+	  synchronizedMap(new HashMap<>());
 	
 	public final ModConfig.Type type;
 	public final String modId;
@@ -97,6 +97,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	private static int TEXT_ENTRY_ID_GEN = 0;
+	
 	protected static String nextTextID() {
 		return "_text$" + TEXT_ENTRY_ID_GEN++;
 	}
@@ -111,8 +112,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
 	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+	 *
 	 * @param modId Your mod id
-	 * @param type A {@link ModConfig.Type}, usually either CLIENT or SERVER
+	 * @param type  A {@link ModConfig.Type}, usually either CLIENT or SERVER
 	 */
 	public static SimpleConfigBuilder builder(String modId, ModConfig.Type type) {
 		return new SimpleConfigBuilder(modId, type);
@@ -124,8 +126,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
 	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
-	 * @param modId Your mod id
-	 * @param type A {@link ModConfig.Type}, usually either CLIENT or SERVER
+	 *
+	 * @param modId       Your mod id
+	 * @param type        A {@link ModConfig.Type}, usually either CLIENT or SERVER
 	 * @param configClass Backing class for the config. It will be parsed
 	 *                    for static backing fields and config annotations
 	 */
@@ -137,6 +140,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Create a config group
+	 *
 	 * @param name Group name, suitable for the config file (without spaces)
 	 */
 	public static GroupBuilder group(String name) {
@@ -145,9 +149,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Create a config group
-	 * @param name Group name, suitable for the config file (without spaces)
-	 * @param expand Whether or not to expand this group in the GUI automatically
-	 *               (default: no)
+	 *
+	 * @param name   Group name, suitable for the config file (without spaces)
+	 * @param expand Whether to expand this group in the GUI automatically (default: no)
 	 */
 	public static GroupBuilder group(String name, boolean expand) {
 		return new GroupBuilder(name, expand);
@@ -155,6 +159,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Create a config category
+	 *
 	 * @param name Category name, suitable for the config file (without spaces)
 	 */
 	public static CategoryBuilder category(String name) {
@@ -163,7 +168,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Create a config category
-	 * @param name Category name, suitable for the config file (without spaces)
+	 *
+	 * @param name        Category name, suitable for the config file (without spaces)
 	 * @param configClass Backing class for the category, which will be parsed
 	 *                    for static backing fields and config annotations
 	 */
@@ -256,14 +262,14 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	/**
 	 * Commits any changes in the backing fields to the actual config file
 	 */
-	public void commitFields() {
+	@Override public void commitFields() {
 		try {
 			for (SimpleConfigCategory cat : categories.values())
 				cat.commitFields();
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				entry.commitField(this);
+				entry.commitField();
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
 			  "Could not access mod config field during config commit\n  Details: " + e.getMessage(), e);
@@ -309,9 +315,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			}
 		}
 	}
+	
 	protected void syncToClients() {
 		new SSimpleConfigSyncPacket(this).send();
 	}
+	
 	protected void syncToServer() {
 		new CSimpleConfigSyncPacket(this).send();
 	}
@@ -334,6 +342,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Get a config category
+	 *
 	 * @param name Name of the category
 	 * @throws NoSuchConfigCategoryError if the category is not found
 	 */
@@ -345,6 +354,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Get a config group
+	 *
 	 * @param path Name or dot-separated path to the group
 	 * @throws NoSuchConfigGroupError if the group is not found
 	 */
@@ -361,7 +371,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected ITextComponent getTitle() {
 		if (I18n.hasKey(defaultTitle))
 			return new TranslationTextComponent(defaultTitle);
-		return new TranslationTextComponent("simple-config.config.category." + type.name().toLowerCase());
+		return new TranslationTextComponent(
+		  "simple-config.config.category." + type.name().toLowerCase());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -372,6 +383,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
 			final ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
+			category.setName(type.name().toLowerCase());
 			if (background != null)
 				category.setBackground(background);
 			for (IGUIEntry entry : order)
@@ -406,9 +418,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		public InvalidConfigValueTypeException(String path) {
 			super("Invalid type requested for config value \"" + path + "\"");
 		}
+		
 		public InvalidConfigValueTypeException(String path, ClassCastException cause) {
 			super("Invalid type requested for config value \"" + path + "\"", cause);
 		}
+		
 		public InvalidConfigValueTypeException(String path, ClassCastException cause, String extra) {
 			super("Invalid type requested for config value \"" + path + "\"\n  " + extra, cause);
 		}
@@ -421,8 +435,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected interface IGUIEntryBuilder {}
+	
 	protected interface IGUIEntry extends IGUIEntryBuilder {
 		@Internal void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder);
+		  ConfigCategory category, ConfigEntryBuilder entryBuilder
+		);
 	}
 }

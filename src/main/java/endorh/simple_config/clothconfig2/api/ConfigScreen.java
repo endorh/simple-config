@@ -17,10 +17,6 @@ public interface ConfigScreen {
 	
 	boolean isEdited();
 	
-	@Deprecated void setEdited(boolean var1);
-	
-	@Deprecated void setEdited(boolean var1, boolean var2);
-	
 	void saveAll(boolean var1);
 	
 	void addTooltip(Tooltip var1);

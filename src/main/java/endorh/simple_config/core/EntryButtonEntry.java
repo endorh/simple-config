@@ -1,5 +1,6 @@
 package endorh.simple_config.core;
 
+import endorh.simple_config.core.EntryListEntry.Builder;
 import endorh.simple_config.core.entry.GUIOnlyEntry;
 import endorh.simple_config.clothconfig2.gui.entries.EntryButtonListEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -15,7 +16,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner>>
+public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
   extends GUIOnlyEntry<V, Gui, EntryButtonEntry<V, Gui, Inner>> {
 	
 	protected Inner inner;
@@ -33,7 +34,7 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 		this.action = action;
 	}
 	
-	public static class Builder<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner>>
+	public static class Builder<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
 	  extends GUIOnlyEntry.Builder<V, Gui, EntryButtonEntry<V, Gui, Inner>, Builder<V, Gui, Inner>> {
 		
 		protected AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner;
@@ -50,19 +51,22 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 		}
 		
 		public Builder<V, Gui, Inner> label(String translation) {
+			Builder<V, Gui, Inner> copy = copy();
 			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
-			this.buttonLabelSupplier = () -> ttc;
-			return self();
+			copy.buttonLabelSupplier = () -> ttc;
+			return copy;
 		}
 		
 		public Builder<V, Gui, Inner> label(ITextComponent label) {
-			this.buttonLabelSupplier = () -> label;
-			return self();
+			Builder<V, Gui, Inner> copy = copy();
+			copy.buttonLabelSupplier = () -> label;
+			return copy;
 		}
 		
 		public Builder<V, Gui, Inner> label(Supplier<ITextComponent> label) {
-			this.buttonLabelSupplier = label;
-			return self();
+			Builder<V, Gui, Inner> copy = copy();
+			copy.buttonLabelSupplier = label;
+			return copy;
 		}
 		
 		@Override protected final EntryButtonEntry<V, Gui, Inner> buildEntry(
@@ -73,40 +77,29 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 			entry.buttonLabelSupplier = buttonLabelSupplier;
 			return entry;
 		}
+		
+		@Override protected Builder<V, Gui, Inner> createCopy() {
+			final Builder<V, Gui, Inner> copy = new Builder<>(inner, action);
+			copy.buttonLabelSupplier = buttonLabelSupplier;
+			return copy;
+		}
 	}
 	
-	@Override protected Gui forGui(V value) {
+	@Override public Gui forGui(V value) {
 		return inner.forGui(value);
 	}
 	
-	@Nullable @Override protected V fromGui(@Nullable Gui value) {
+	@Nullable @Override public V fromGui(@Nullable Gui value) {
 		return inner.fromGui(value);
 	}
 	
 	@Override public Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final ITextComponent prevKey = builder.getResetButtonKey();
-		builder.setResetButtonKey(sameOrLessWidthBlank(prevKey));
-		final Optional<AbstractConfigListEntry<Gui>> in = inner.buildGUIEntry(builder);
-		builder.setResetButtonKey(prevKey);
-		if (!in.isPresent())
-			return Optional.empty();
-		final EntryButtonListEntry<Gui, AbstractConfigListEntry<Gui>> entry = new EntryButtonListEntry<>(
-		  getDisplayName(), in.get(), g -> action.accept(fromGuiOrDefault(g), parent), buttonLabelSupplier,
-		  null, () -> this.supplyTooltip(getGUI()), builder.getResetButtonKey());
+		final EntryButtonListEntry<Gui, ?> entry = new EntryButtonListEntry<>(
+		  getDisplayName(), inner.buildChildGUIEntry(builder),
+		  g -> action.accept(fromGuiOrDefault(g), parent), buttonLabelSupplier
+		);
 		return Optional.of(entry);
-	}
-	
-	public static ITextComponent sameOrLessWidthBlank(ITextComponent src) {
-		final FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
-		final int target = fontRenderer.getStringPropertyWidth(src);
-		String str = "";
-		int cur = 0;
-		while (cur <= target) {
-			str += " ";
-			cur = fontRenderer.getStringPropertyWidth(new StringTextComponent(str));
-		}
-		return new StringTextComponent(str.substring(1));
 	}
 }

@@ -2,6 +2,7 @@ package endorh.simple_config.clothconfig2;
 
 import endorh.simple_config.clothconfig2.api.ScrollingContainer;
 import endorh.simple_config.clothconfig2.impl.EasingMethod;
+import endorh.simple_config.clothconfig2.impl.EasingMethod.EasingMethodImpl;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -34,18 +35,12 @@ public class ClothConfigInitializer {
 		return ScrollingContainer.clampExtension(v, maxScroll);
 	}
 	
-	@Deprecated
-	@ApiStatus.ScheduledForRemoval
-	public static double clamp(double v, double maxScroll, double clampExtension) {
-		return ScrollingContainer.clampExtension(v, -clampExtension, maxScroll + clampExtension);
-	}
-	
 	public static EasingMethod getEasingMethod() {
-		return EasingMethod.EasingMethodImpl.NONE;
+		return EasingMethodImpl.CIRC;
 	}
 	
 	public static long getScrollDuration() {
-		return 0L;
+		return 150L;
 	}
 	
 	public static double getScrollStep() {

@@ -6,7 +6,6 @@ import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +14,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * An {@link AbstractConfigEntry} builder
+ * An {@link AbstractConfigEntry} builder.<br>
+ * Immutable. All methods return modified copies, so reusing is possible.<br>
+ * All subclasses must follow this contract and implement the
+ * {@link AbstractConfigEntryBuilder#createCopy()} method copying their state.
  * @param <V> The type of the value held by the entry
  * @param <Config> The type of the associated config entry
  * @param <Gui> The type of the associated GUI entry
@@ -33,45 +35,47 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
 	protected @Nullable Function<V, Optional<ITextComponent[]>> tooltipSupplier = null;
 	protected @Nullable Function<Gui, Optional<ITextComponent[]>> guiTooltipSupplier = null;
+	protected @Nullable Supplier<Boolean> editableSupplier = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected boolean requireRestart = false;
 	protected Class<?> typeClass;
+	protected @Nullable String heldEntryName = null;
+	protected @Nullable AbstractConfigEntryBuilder<?, ?, ?, ?, ?> heldEntryBuilder = null;
 	
 	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
 		this.value = value;
 		this.typeClass = typeClass;
 	}
 	
-	@SuppressWarnings("unchecked")
-	protected Self self() {
-		return (Self) this;
-	}
-	
 	protected abstract Entry buildEntry(ISimpleConfigEntryHolder parent, String name);
 	
 	@Override
 	public Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier) {
-		this.guiErrorSupplier = guiErrorSupplier;
-		return self();
+		final Self copy = copy();
+		copy.guiErrorSupplier = guiErrorSupplier;
+		return copy;
 	}
 	
 	@Override
 	public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
-		this.errorSupplier = errorSupplier;
-		return self();
+		final Self copy = copy();
+		copy.errorSupplier = errorSupplier;
+		return copy;
 	}
 	
 	@Override
 	public Self guiTooltip(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier) {
-		this.guiTooltipSupplier = tooltipSupplier;
-		return self();
+		final Self copy = copy();
+		copy.guiTooltipSupplier = tooltipSupplier;
+		return copy;
 	}
 	
 	@Override
 	public Self tooltip(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
-		this.tooltipSupplier = tooltipSupplier;
-		return self();
+		final Self copy = copy();
+		copy.tooltipSupplier = tooltipSupplier;
+		return copy;
 	}
 	
 	/**
@@ -81,6 +85,7 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	 * as argument
 	 */
 	public Self tooltipArgs(Object... args) {
+		final Self copy = copy();
 		for (Object o : args) { // Check function types to fail fast
 			if (o instanceof Function) {
 				try {
@@ -92,9 +97,9 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 				}
 			}
 		}
-		tooltipArgs.clear();
-		tooltipArgs.addAll(Arrays.asList(args));
-		return self();
+		copy.tooltipArgs.clear();
+		copy.tooltipArgs.addAll(Arrays.asList(args));
+		return copy;
 	}
 	
 	@SafeVarargs
@@ -113,14 +118,15 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	 * will be invoked before being passed as arguments
 	 */
 	public Self nameArgs(Object... args) {
+		Self copy = copy();
 		for (Object arg : args) {
 			if (arg instanceof Function)
 				throw new IllegalArgumentException(
 				  "Name args cannot be functions that depend on the value, since names aren't refreshed");
 		}
-		nameArgs.clear();
-		nameArgs.addAll(Arrays.asList(args));
-		return self();
+		copy.nameArgs.clear();
+		copy.nameArgs.addAll(Arrays.asList(args));
+		return copy;
 	}
 	
 	/**
@@ -134,8 +140,15 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	 * Flag this entry as requiring a restart to be effective
 	 */
 	public Self restart(boolean requireRestart) {
-		this.requireRestart = requireRestart;
-		return self();
+		Self copy = copy();
+		copy.requireRestart = requireRestart;
+		return copy;
+	}
+	
+	public Self editable(Supplier<Boolean> editable) {
+		Self copy = copy();
+		copy.editableSupplier = editable;
+		return copy;
 	}
 	
 	/**
@@ -154,10 +167,43 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 		e.nameArgs = nameArgs;
 		e.tooltipArgs = tooltipArgs;
 		e.typeClass = typeClass;
+		e.editableSupplier = editableSupplier;
 		return e;
 	}
 	
 	@Internal @Deprecated public static <V> V getValue(AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder) {
 		return builder.value;
+	}
+	
+	/**
+	 * Create a copy of this builder<br>
+	 * Do not call directly, instead use {@link AbstractConfigEntryBuilder#copy()}<br>
+	 * Subclasses should implement this method copying all of their fields.
+	 */
+	protected abstract Self createCopy();
+	
+	/**
+	 * Creates a copy of this builder
+	 */
+	protected Self copy() {
+		final Self copy = createCopy();
+		copy.value = value;
+		copy.errorSupplier = errorSupplier;
+		copy.guiErrorSupplier = guiErrorSupplier;
+		copy.tooltipSupplier = tooltipSupplier;
+		copy.guiTooltipSupplier = guiTooltipSupplier;
+		copy.nameArgs = new ArrayList<>(nameArgs);
+		copy.tooltipArgs = new ArrayList<>(tooltipArgs);
+		copy.requireRestart = requireRestart;
+		copy.typeClass = typeClass;
+		copy.heldEntryName = heldEntryName;
+		copy.heldEntryBuilder = heldEntryBuilder != null? heldEntryBuilder.copy() : null;
+		copy.editableSupplier = editableSupplier;
+		return copy;
+	}
+	
+	// Accessor
+	protected static AbstractConfigEntryBuilder<?, ?, ?, ?, ?> copy(AbstractConfigEntryBuilder<?, ?, ?, ?, ?> builder) {
+		return builder.copy();
 	}
 }

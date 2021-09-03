@@ -6,7 +6,6 @@ import endorh.simple_config.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simple_config.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simple_config.core.annotation.*;
 import endorh.simple_config.core.entry.AbstractListEntry;
-import endorh.simple_config.core.entry.Builders;
 import endorh.simple_config.core.entry.TextEntry;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.LogManager;
@@ -62,6 +61,7 @@ public class SimpleConfigClassParser {
 		if (validate != null) {
 			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
 			if (checkType(validate, Boolean.class)) {
+				//noinspection deprecation
 				builder.setValidator(e -> invoke(
 				  validate, null, errorMsg, e));
 			} else if (checkType(validate, Optional.class, ITextComponent.class)) {
@@ -194,7 +194,7 @@ public class SimpleConfigClassParser {
 				  "Unsupported text supplier in config field " + getFieldName(field) + " of type " + fieldTypeName
 				  + "\n  Should be either String (contents ignored), ITextComponent or Supplier<ITextComponent>");
 				addTooltip(textBuilder, configClass, field);
-				builder.add(field.getName(), textBuilder, getOrder(field));
+				builder.add(getOrder(field), field.getName(), textBuilder);
 				continue;
 			}
 			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
@@ -247,7 +247,7 @@ public class SimpleConfigClassParser {
 											throw new SimpleConfigClassParseException(
 											  builder, "Cannot create entry with name " + name + ". The name is already used.");
 										decorateEntry(entryBuilder, configClass, field);
-										builder.add(name, entryBuilder, getOrder(field));
+										builder.add(getOrder(field), name, entryBuilder);
 										builder.setBackingField(name, field);
 										continue parseFields;
 									}
@@ -311,18 +311,18 @@ public class SimpleConfigClassParser {
 			final SimpleConfigBuilder b = (SimpleConfigBuilder) builder;
 			final Method baker = tryGetMethod(configClass, "bake", SimpleConfig.class);
 			if (baker != null) {
-				if (!Modifier.isStatic(baker.getModifiers()))
-					throw new SimpleConfigClassParseException(builder,
-					  "Found non-static bake method in config class " + className);
 				final String errorMsg = "Reflective error invoking config baker method %s";
 				if (b.baker == null) {
+					if (!Modifier.isStatic(baker.getModifiers()))
+						throw new SimpleConfigClassParseException(
+						  builder, "Found non-static bake method in config class " + className);
 					b.setBaker(c -> invoke(baker, null, errorMsg, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config class " + className + ", but the config " +
 					  "already has a configured baker\nOnly the configured baker will " +
 					  "be used\nIf the configured baker is precisely this method, rename it " +
-					  "to suppress this warning.");
+					  "or let the reflection find it to suppress this warning.");
 				}
 			}
 		} else if (builder instanceof CategoryBuilder) {

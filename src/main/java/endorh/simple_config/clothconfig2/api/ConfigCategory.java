@@ -5,6 +5,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -12,10 +13,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public interface ConfigCategory {
+public interface ConfigCategory extends IEntryHolder {
 	ITextComponent getCategoryKey();
 	
-	@Deprecated List<Object> getEntries();
+	@Internal List<AbstractConfigEntry<?>> getEntries();
+	
+	void setName(String name);
+	
+	String getName();
 	
 	ConfigCategory addEntry(AbstractConfigListEntry<?> var1);
 	

@@ -23,9 +23,8 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 	}
 	
 	public static class Builder extends RangedListEntry.Builder<Double, Number, Double, DoubleListEntry, Builder> {
-		
 		public Builder(List<Double> value) {
-			super(value);
+			super(value, Double.class);
 		}
 		
 		/**
@@ -59,6 +58,10 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		protected DoubleListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new DoubleListEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
@@ -73,20 +76,10 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<List<Double>>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<List<Double>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final DoubleListBuilder valBuilder = builder
-		  .startDoubleList(getDisplayName(), get())
-		  .setDefaultValue(value)
-		  .setMin(min).setMax(max)
-		  .setInsertInFront(insertInTop)
-		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startDoubleList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

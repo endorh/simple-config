@@ -26,11 +26,15 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 		protected INBTEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new INBTEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
 	protected String serialize(INBT value) {
-		return value.toFormattedComponent().getString();
+		return CompoundNBTEntry.STYLE_COMPONENT.matcher(value.toFormattedComponent().getString()).replaceAll("");
 	}
 	
 	@Override

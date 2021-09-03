@@ -1,19 +1,19 @@
 package endorh.simple_config.clothconfig2.api;
 
-import endorh.simple_config.clothconfig2.gui.entries.DropdownBoxEntry;
+import endorh.simple_config.clothconfig2.gui.entries.*;
+import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
 import endorh.simple_config.clothconfig2.impl.ConfigEntryBuilderImpl;
 import endorh.simple_config.clothconfig2.impl.builders.*;
 import endorh.simple_config.clothconfig2.math.Color;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public interface ConfigEntryBuilder {
@@ -21,29 +21,36 @@ public interface ConfigEntryBuilder {
 		return ConfigEntryBuilderImpl.create();
 	}
 	
-	ITextComponent getResetButtonKey();
+	IntListBuilder startIntList(ITextComponent name, List<Integer> value);
 	
-	ConfigEntryBuilder setResetButtonKey(ITextComponent var1);
+	LongListBuilder startLongList(ITextComponent name, List<Long> value);
 	
-	IntListBuilder startIntList(ITextComponent var1, List<Integer> var2);
+	FloatListBuilder startFloatList(ITextComponent name, List<Float> value);
 	
-	LongListBuilder startLongList(ITextComponent var1, List<Long> var2);
+	DoubleListBuilder startDoubleList(ITextComponent name, List<Double> value);
 	
-	FloatListBuilder startFloatList(ITextComponent var1, List<Float> var2);
+	StringListBuilder startStrList(ITextComponent name, List<String> value);
 	
-	DoubleListBuilder startDoubleList(ITextComponent var1, List<Double> var2);
+	SubCategoryBuilder startSubCategory(ITextComponent name);
 	
-	StringListBuilder startStrList(ITextComponent var1, List<String> var2);
+	SubCategoryBuilder startSubCategory(ITextComponent name, List<AbstractConfigListEntry<?>> value);
 	
-	SubCategoryBuilder startSubCategory(ITextComponent var1);
+	BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value);
 	
-	SubCategoryBuilder startSubCategory(ITextComponent var1, List<AbstractConfigListEntry<?>> var2);
+	StringFieldBuilder startStrField(ITextComponent name, String value);
 	
-	BooleanToggleBuilder startBooleanToggle(ITextComponent var1, boolean var2);
+	ColorFieldBuilder startColorField(ITextComponent name, int value);
 	
-	StringFieldBuilder startStrField(ITextComponent var1, String var2);
+	<V, E extends AbstractConfigListEntry<V>> EntryListFieldBuilder<V, E> startEntryList(
+	  ITextComponent name, List<V> value, Function<NestedListListEntry<V, E>, E> cellFactory
+	);
 	
-	ColorFieldBuilder startColorField(ITextComponent var1, int var2);
+	<K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
+	  VE extends AbstractConfigListEntry<V>> EntryPairListBuilder<K, V, KE, VE>
+	startEntryPairList(
+	  ITextComponent name, List<Pair<K, V>> value,
+	  Function<EntryPairListListEntry<K, V, KE, VE>, Pair<KE, VE>> cellFactory
+	);
 	
 	default ColorFieldBuilder startColorField(
 	  ITextComponent fieldNameKey, net.minecraft.util.text.Color color
@@ -63,129 +70,48 @@ public interface ConfigEntryBuilder {
 		return this.startColorField(fieldNameKey, color.getColor());
 	}
 	
-	TextFieldBuilder startTextField(ITextComponent var1, String var2);
+	TextFieldBuilder startTextField(ITextComponent name, String value);
 	
-	TextDescriptionBuilder startTextDescription(ITextComponent var1);
+	TextDescriptionBuilder startTextDescription(ITextComponent text);
 	
-	<T extends Enum<?>> EnumSelectorBuilder<T> startEnumSelector(
-	  ITextComponent var1, Class<T> var2, T var3
-	);
+	TextDescriptionBuilder startTextDescription(Supplier<ITextComponent> textSupplier);
 	
-	<T> SelectorBuilder<T> startSelector(ITextComponent var1, T[] var2, T var3);
+	<T extends Enum<?>> EnumSelectorBuilder<T> startEnumSelector(ITextComponent name, T value);
 	
-	IntFieldBuilder startIntField(ITextComponent var1, int var2);
+	<T> SelectorBuilder<T> startSelector(ITextComponent name, T[] value, T var3);
 	
-	LongFieldBuilder startLongField(ITextComponent var1, long var2);
+	IntFieldBuilder startIntField(ITextComponent name, int value);
 	
-	FloatFieldBuilder startFloatField(ITextComponent var1, float var2);
+	LongFieldBuilder startLongField(ITextComponent name, long value);
 	
-	DoubleFieldBuilder startDoubleField(ITextComponent var1, double var2);
+	FloatFieldBuilder startFloatField(ITextComponent name, float value);
 	
-	IntSliderBuilder startIntSlider(ITextComponent var1, int var2, int var3, int var4);
+	DoubleFieldBuilder startDoubleField(ITextComponent name, double value);
 	
-	LongSliderBuilder startLongSlider(ITextComponent var1, long var2, long var4, long var6);
+	IntSliderBuilder startIntSlider(ITextComponent name, int value, int min, int max);
 	
-	KeyCodeBuilder startModifierKeyCodeField(ITextComponent var1, ModifierKeyCode var2);
+	LongSliderBuilder startLongSlider(ITextComponent name, long value, long min, long max);
+	
+	FloatSliderBuilder startFloatSlider(ITextComponent name, float value, float min, float max);
+	
+	DoubleSliderBuilder startDoubleSlider(ITextComponent name, double value, double min, double max);
+	
+	KeyCodeBuilder startModifierKeyCodeField(ITextComponent name, ModifierKeyCode value);
 	
 	default KeyCodeBuilder startKeyCodeField(
-	  ITextComponent fieldNameKey, InputMappings.Input value
+	  ITextComponent name, InputMappings.Input value
 	) {
 		return this.startModifierKeyCodeField(
-		  fieldNameKey, ModifierKeyCode.of(value, Modifier.none())).setAllowModifiers(false);
+		  name, ModifierKeyCode.of(value, Modifier.none())).setAllowModifiers(false);
 	}
 	
-	default KeyCodeBuilder fillKeybindingField(ITextComponent fieldNameKey, KeyBinding value) {
-		return this.startKeyCodeField(fieldNameKey, value.getKey())
-		  .setDefaultValue(value.getDefault()).setSaveConsumer(code -> {
-			  value.bind(code);
-			  KeyBinding.resetKeyBindingArrayAndHash();
-			  Minecraft.getInstance().gameSettings.saveOptions();
-		  });
-	}
-	
-	<T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent var1, DropdownBoxEntry.SelectionTopCellElement<T> var2,
-	  DropdownBoxEntry.SelectionCellCreator<T> var3
+	<T> ComboBoxFieldBuilder<T> startComboBox(
+	  ITextComponent name, ITypeWrapper<T> typeWrapper, T value
 	);
 	
-	default <T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent fieldNameKey, DropdownBoxEntry.SelectionTopCellElement<T> topCellElement
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, topCellElement, new DropdownBoxEntry.DefaultSelectionCellCreator<>());
-	}
-	
-	default <T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent fieldNameKey, T value, Function<String, T> toObjectFunction,
-	  DropdownBoxEntry.SelectionCellCreator<T> cellCreator
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, toObjectFunction),
-		  cellCreator);
-	}
-	
-	default <T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent fieldNameKey, T value, Function<String, T> toObjectFunction,
-	  Function<T, ITextComponent> toTextFunction,
-	  DropdownBoxEntry.SelectionCellCreator<T> cellCreator
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, toObjectFunction,
-		                                                             toTextFunction), cellCreator);
-	}
-	
-	default <T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent fieldNameKey, T value, Function<String, T> toObjectFunction
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, toObjectFunction),
-		  new DropdownBoxEntry.DefaultSelectionCellCreator<>());
-	}
-	
-	default <T> DropdownMenuBuilder<T> startDropdownMenu(
-	  ITextComponent fieldNameKey, T value, Function<String, T> toObjectFunction,
-	  Function<T, ITextComponent> toTextFunction
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, toObjectFunction,
-		                                                             toTextFunction),
-		  new DropdownBoxEntry.DefaultSelectionCellCreator<>());
-	}
-	
-	default DropdownMenuBuilder<String> startStringDropdownMenu(
-	  ITextComponent fieldNameKey, String value,
-	  DropdownBoxEntry.SelectionCellCreator<String> cellCreator
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, s -> s,
-		                                                             StringTextComponent::new),
-		  cellCreator);
-	}
-	
-	default DropdownMenuBuilder<String> startStringDropdownMenu(
-	  ITextComponent fieldNameKey, String value, Function<String, ITextComponent> toTextFunction,
-	  DropdownBoxEntry.SelectionCellCreator<String> cellCreator
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, s -> s, toTextFunction),
-		  cellCreator);
-	}
-	
-	default DropdownMenuBuilder<String> startStringDropdownMenu(
-	  ITextComponent fieldNameKey, String value
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, s -> s,
-		                                                             StringTextComponent::new),
-		  new DropdownBoxEntry.DefaultSelectionCellCreator<>());
-	}
-	
-	default DropdownMenuBuilder<String> startStringDropdownMenu(
-	  ITextComponent fieldNameKey, String value, Function<String, ITextComponent> toTextFunction
-	) {
-		return this.startDropdownMenu(
-		  fieldNameKey, DropdownMenuBuilder.TopCellElementBuilder.of(value, s -> s, toTextFunction),
-		  new DropdownBoxEntry.DefaultSelectionCellCreator<>());
-	}
+	<V, E extends AbstractListListEntry<V, ?, E>, C,
+	  CE extends AbstractConfigListEntry<C> & IChildListEntry>
+	  DecoratedListEntryBuilder<V, E, C, CE> makeDecoratedList(
+		 ITextComponent name, E listEntry, CE captionEntry, Pair<C, List<V>> value);
 }
 

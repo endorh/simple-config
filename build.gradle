@@ -15,7 +15,6 @@ buildscript {
         }
     }
 }
-
 // Plugins
 plugins {
     id 'java'

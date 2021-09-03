@@ -1,10 +1,10 @@
 package endorh.simple_config.core;
 
+import endorh.simple_config.clothconfig2.api.ConfigBuilder;
+import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import endorh.simple_config.core.SimpleConfig.IGUIEntry;
 import endorh.simple_config.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simple_config.core.entry.Builders;
-import endorh.simple_config.clothconfig2.api.ConfigBuilder;
-import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -143,14 +143,16 @@ public class SimpleConfigBuilder
 		return this;
 	}
 	
-	@Override protected void addEntry(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index) {
+	@Override protected void addEntry(
+	  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
+	) {
 		checkName(name);
 		if (entries.containsKey(name) || groups.containsKey(name) || categories.containsKey(name))
 			throw new IllegalArgumentException("Duplicate name for entry: " + name);
 		entries.put(name, entry);
 		if (requireRestart)
 			entry.restart();
-		guiOrder.put(name, index);
+		guiOrder.put(name, order);
 	}
 	
 	@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -285,7 +287,7 @@ public class SimpleConfigBuilder
 		}
 		
 		@Override protected void addEntry(
-		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index
+		  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
 		) {
 			checkName(name);
 			if (entries.containsKey(name) || groups.containsKey(name))
@@ -293,7 +295,7 @@ public class SimpleConfigBuilder
 			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			guiOrder.put(name, index);
+			guiOrder.put(name, order);
 		}
 		
 		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -391,6 +393,8 @@ public class SimpleConfigBuilder
 		protected @Nullable Consumer<SimpleConfigGroup> baker = null;
 		
 		protected String path;
+		protected String heldEntryName;
+		protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> heldEntryBuilder = null;
 		
 		protected GroupBuilder(String name, boolean expanded) {
 			this.name = name;
@@ -437,8 +441,18 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
+		public GroupBuilder caption(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry) {
+			if (heldEntryBuilder != null)
+				throw new IllegalArgumentException("Attempt to declare two caption entries for the same config group: " + path);
+			this.heldEntryBuilder = entry;
+			this.heldEntryName = name;
+			addEntry(0, name, entry);
+			guiOrder.remove(name);
+			return this;
+		}
+		
 		@Override protected void addEntry(
-		  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry, int index
+		  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
 		) {
 			checkName(name);
 			if (entries.containsKey(name))
@@ -446,7 +460,7 @@ public class SimpleConfigBuilder
 			entries.put(name, entry);
 			if (requireRestart)
 				entry.restart();
-			guiOrder.put(name, index);
+			guiOrder.put(name, order);
 		}
 		
 		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
@@ -491,6 +505,15 @@ public class SimpleConfigBuilder
 			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+			final AbstractConfigEntry<?, ?, ?, ?> heldEntry =
+			  heldEntryBuilder != null ? heldEntryBuilder.build(group, heldEntryName) : null;
+			if (heldEntry != null) {
+				entriesByName.put(heldEntryName, heldEntry);
+				translate(heldEntry);
+				if (backingFields.containsKey(heldEntryName))
+					heldEntry.backingField = backingFields.get(heldEntryName);
+				heldEntry.buildConfig(specBuilder, specValues);
+			}
 			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> e : entries.entrySet()) {
 				final String name = e.getKey();
 				final AbstractConfigEntry<?, ?, ?, ?> entry = e.getValue().build(group, name);
@@ -512,7 +535,7 @@ public class SimpleConfigBuilder
 			).collect(Collectors.toList());
 			group.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(specValues),
-			  unmodifiableMap(groupMap), unmodifiableList(builtOrder));
+			  unmodifiableMap(groupMap), unmodifiableList(builtOrder), heldEntry);
 			specBuilder.pop();
 			return group;
 		}

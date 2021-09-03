@@ -1,9 +1,9 @@
 package endorh.simple_config.core.entry;
 
-import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.IntListBuilder;
+import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 @Deprecated
 public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteListEntry> {
-	@Internal
-	public ByteListEntry(
+	
+	@Internal public ByteListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  @Nullable List<Byte> value
 	) {
@@ -25,9 +25,8 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 	}
 	
 	public static class Builder extends RangedListEntry.Builder<Byte, Number, Integer, ByteListEntry, Builder> {
-		
 		public Builder(List<Byte> value) {
-			super(value);
+			super(value, Byte.class);
 		}
 		
 		/**
@@ -61,6 +60,10 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 		protected ByteListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new ByteListEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
@@ -75,20 +78,10 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final IntListBuilder valBuilder = builder
-		  .startIntList(getDisplayName(), forGui(get()))
-		  .setDefaultValue(forGui(value))
-		  .setMin(min).setMax(max)
-		  .setInsertInFront(insertInTop)
-		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startIntList(getDisplayName(), forGui(get()));
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

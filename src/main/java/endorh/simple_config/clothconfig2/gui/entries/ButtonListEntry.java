@@ -1,7 +1,8 @@
 package endorh.simple_config.clothconfig2.gui.entries;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -9,41 +10,31 @@ import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ButtonListEntry extends TooltipListEntry<Runnable> {
+public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChildListEntry {
 	protected final Runnable original;
 	protected final Supplier<ITextComponent> buttonLabelSupplier;
-	protected final Consumer<Runnable> saveConsumer;
 	protected final AtomicReference<Runnable> value = new AtomicReference<>();
 	protected final Button button;
-	protected List<Button> listeners;
-	protected static final int BUTTON_WIDTH = 150;
-	protected static final int BUTTON_HEIGHT = 20;
+	protected List<IGuiEventListener> listeners;
+	protected List<IGuiEventListener> childListeners;
+	protected boolean child = false;
 	
 	public ButtonListEntry(
-	  Runnable value, ITextComponent fieldName, Supplier<ITextComponent> buttonLabelSupplier,
-	  @Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier
-	) { this(value, fieldName, buttonLabelSupplier, tooltipSupplier, r -> {}); }
-	
-	public ButtonListEntry(
-	  Runnable value, ITextComponent fieldName, Supplier<ITextComponent> buttonLabelSupplier,
-	  @Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<Runnable> saveConsumer
+	  Runnable value, ITextComponent fieldName, Supplier<ITextComponent> buttonLabelSupplier
 	) {
-		super(fieldName, tooltipSupplier);
-		this.original = value;
+		super(fieldName);
+		original = value;
 		this.buttonLabelSupplier = buttonLabelSupplier;
-		this.saveConsumer = saveConsumer;
 		this.value.set(value);
-		this.button = new Button(
-		  0, 0, BUTTON_WIDTH, BUTTON_HEIGHT, buttonLabelSupplier.get(), p -> getValue().run());
-		this.listeners = ImmutableList.of(button);
+		button = new Button(
+		  0, 0, 150, 20, buttonLabelSupplier.get(), p -> getValue().run());
+		listeners = Lists.newArrayList(button);
+		childListeners = Lists.newArrayList(button);
 	}
 	
 	@Override public Runnable getValue() {
@@ -54,40 +45,65 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> {
 		this.value.set(value);
 	}
 	
-	@Override public Optional<Runnable> getDefaultValue() {
-		return Optional.ofNullable(original);
-	}
-	
-	@Override public void save() {
-		saveConsumer.accept(getValue());
-	}
-	
-	@Override public void render(
+	@Override public void renderEntry(
 	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		MainWindow window = Minecraft.getInstance().getMainWindow();
-		final FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
-		button.setMessage(buttonLabelSupplier.get());
-		button.active = this.isEditable();
-		this.button.y = y;
-		if (fontRenderer.getBidiFlag()) {
-			fontRenderer.func_238407_a_(
-			  mStack, getDisplayedFieldName().func_241878_f(),
-			  (float)(window.getScaledWidth() - x - fontRenderer.getStringPropertyWidth(getDisplayedFieldName())),
-			  (float)(y + 6), this.getPreferredTextColor());
-			this.button.x = x;
+		int buttonX;
+		final FontRenderer font = Minecraft.getInstance().fontRenderer;
+		final ITextComponent name = getDisplayedFieldName();
+		if (font.getBidiFlag()) {
+			font.func_238407_a_(
+			  mStack, name.func_241878_f(),
+			  (float)(window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+			  (float)(y + 6), getPreferredTextColor());
+			buttonX = x;
 		} else {
-			fontRenderer.func_238407_a_(
-			  mStack, getDisplayedFieldName().func_241878_f(), (float) x,
-			  (float) (y + 6), this.getPreferredTextColor());
-			this.button.x = x + entryWidth - BUTTON_WIDTH;
+			font.func_238407_a_(
+			  mStack, name.func_241878_f(), (float) x,
+			  (float) (y + 6), getPreferredTextColor());
+			buttonX = x + entryWidth - 150;
 		}
-		button.render(mStack, mouseX, mouseY, 0F);
+		renderChild(mStack, buttonX, y, 150, 20, mouseX, mouseY, delta);
+	}
+	
+	@Override public void renderChildEntry(
+	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	) {
+		button.setMessage(buttonLabelSupplier.get());
+		button.active = isEditable();
+		button.x = x;
+		button.y = y;
+		button.setWidth(w);
+		button.setHeight(h);
+		button.render(mStack, mouseX, mouseY, delta);
+	}
+	
+	@Override public void updateSelected(boolean isSelected) {
+		super.updateSelected(isSelected);
+		if (!isSelected)
+			ButtonListEntry.forceUnFocus(button);
+	}
+	
+	@Override public boolean isEdited() {
+		return false;
 	}
 	
 	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
-		return listeners;
+		return isChild()? childListeners : listeners;
+	}
+	
+	@Override public boolean isChild() {
+		return child;
+	}
+	
+	@Override public void setChild(boolean child) {
+		this.child = child;
+	}
+	
+	@Override public String seekableValueText() {
+		return getUnformattedString(buttonLabelSupplier.get());
 	}
 }

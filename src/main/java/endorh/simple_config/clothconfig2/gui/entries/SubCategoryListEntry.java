@@ -4,231 +4,410 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
-import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
-import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simple_config.clothconfig2.api.Expandable;
-import endorh.simple_config.clothconfig2.api.ReferenceProvider;
+import endorh.simple_config.clothconfig2.api.*;
+import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
+import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
+import endorh.simple_config.clothconfig2.impl.EditHistory.EditRecord;
+import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
 public class SubCategoryListEntry
-  extends TooltipListEntry<List<AbstractConfigListEntry<?>>>
-  implements Expandable {
-	private static final ResourceLocation CONFIG_TEX =
+  extends TooltipListEntry<Void>
+  implements IExpandable, IEntryHoldingListEntry, IEntryHolder {
+	protected static final ResourceLocation CONFIG_TEX =
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
-	private final List<AbstractConfigListEntry<?>> entries;
-	private final CategoryLabelWidget widget;
-	private final List<IGuiEventListener> children;
-	private boolean expanded;
+	protected ResetButton resetButton;
+	protected @Nullable AbstractConfigListEntry<?> heldEntry;
+	protected final CaptionWidget label;
+	protected final List<AbstractConfigListEntry<?>> entries;
+	protected final List<IGuiEventListener> children;
+	protected final List<IGuiEventListener> expandedChildren;
+	protected boolean expanded;
 	
-	@Deprecated
-	public SubCategoryListEntry(
-	  ITextComponent categoryName, List<AbstractConfigListEntry<?>> entries, boolean defaultExpanded
+	@Internal public SubCategoryListEntry(
+	  ITextComponent categoryName, List<AbstractConfigListEntry<?>> entries
 	) {
-		super(categoryName, null);
+		super(categoryName);
 		this.entries = entries;
-		this.expanded = defaultExpanded;
-		this.widget = new CategoryLabelWidget();
-		this.children = Lists.newArrayList(this.widget);
-		this.children.addAll(entries);
+		entries.forEach(e -> e.setExpandableParent(this));
+		entries.forEach(e -> e.setParentEntry(this));
+		label = new CaptionWidget(this);
+		resetButton = new ResetButton(this);
+		children = Lists.newArrayList(label, resetButton);
+		expandedChildren = Lists.newArrayList(label, resetButton);
+		expandedChildren.addAll(entries);
 		//noinspection unchecked
-		this.setReferenceProviderEntries((List<ReferenceProvider<?>>) (List<?>) entries);
+		setReferenceProviderEntries((List<ReferenceProvider>) (List<?>) entries);
 	}
 	
-	@Override
-	public boolean isExpanded() {
-		return this.expanded;
+	@Override public boolean isExpanded() {
+		return expanded;
 	}
 	
-	@Override
-	public void setExpanded(boolean expanded) {
+	@Override public void setExpanded(boolean expanded, boolean recursive) {
 		this.expanded = expanded;
+		if (recursive)
+			entries.stream().filter(e -> e instanceof IExpandable)
+			  .forEach(e -> ((IExpandable) e).setExpanded(expanded, true));
 	}
 	
-	@Override
-	public boolean isRequiresRestart() {
-		for (AbstractConfigListEntry<?> entry : this.entries) {
-			if (!entry.isRequiresRestart()) continue;
-			return true;
-		}
-		return false;
+	@Override public boolean isRequiresRestart() {
+		return heldEntry != null && heldEntry.isEdited() && heldEntry.isRequiresRestart()
+		       || entries.stream().anyMatch(e -> e.isEdited() && e.isRequiresRestart());
 	}
 	
-	@Override
-	public void setRequiresRestart(boolean requiresRestart) {
+	@Override public void setRequiresRestart(boolean requiresRestart) {
+		entries.forEach(e -> e.setRequiresRestart(requiresRestart));
+		if (heldEntry != null)
+			heldEntry.setRequiresRestart(requiresRestart);
 	}
 	
 	public ITextComponent getCategoryName() {
-		return this.getFieldName();
+		return getFieldName();
 	}
 	
-	@Override
-	public List<AbstractConfigListEntry<?>> getValue() {
-		return this.entries;
+	public List<AbstractConfigEntry<?>> getEntries() {
+		//noinspection unchecked
+		return (List<AbstractConfigEntry<?>>) (List<?>) entries;
 	}
 	
-	@Override public void setValue(List<AbstractConfigListEntry<?>> value) {
-		throw new UnsupportedOperationException("Cannot change entries of category");
+	@Override public Void getValue() {
+		return null;
+	}
+	@Override public void setValue(Void value) {}
+	
+	@Override public void resetValue(boolean commit) {
+		EditRecord record = null;
+		if (commit) {
+			getConfigScreen().getHistory().saveState(getConfigScreen());
+			//noinspection unchecked
+			record = EditRecord.of(this, ((List<AbstractConfigEntry<?>>) (List<?>) this.entries));
+		}
+		entries.forEach(e -> e.resetValue(false));
+		if (commit) {
+			record.flatten(getConfigScreen());
+			if (record.size() > 0)
+				getConfigScreen().getHistory().addRecord(record);
+		}
 	}
 	
-	@Override
-	public Optional<List<AbstractConfigListEntry<?>>> getDefaultValue() {
-		return Optional.empty();
+	@Override public void restoreValue(boolean commit) {
+		EditRecord record = null;
+		if (commit) {
+			getConfigScreen().getHistory().saveState(getConfigScreen());
+			//noinspection unchecked
+			record = EditRecord.of(this, ((List<AbstractConfigEntry<?>>) (List<?>) this.entries));
+		}
+		entries.forEach(e -> e.restoreValue(false));
+		if (commit) {
+			record.flatten(getConfigScreen());
+			if (record.size() > 0)
+				getConfigScreen().getHistory().addRecord(record);
+		}
 	}
 	
-	@Override
-	public void render(
-	  MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
+	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+		if (isHeldEntryHovered(mouseX, mouseY))
+			return Optional.empty();
+		if (resetButton.isMouseOver(mouseX, mouseY))
+			return resetButton.getTooltip(mouseX, mouseY);
+		return super.getTooltip(mouseX, mouseY);
+	}
+	
+	@Override public void setParent(DynamicEntryListWidget<?> parent) {
+		super.setParent(parent);
+		for (AbstractConfigListEntry<?> entry : entries) entry.setParent(parent);
+		if (heldEntry != null)
+			heldEntry.setParent(parent);
+	}
+	
+	@Override public void setScreen(AbstractConfigScreen screen) {
+		super.setScreen(screen);
+		for (AbstractConfigListEntry<?> entry : entries) entry.setScreen(screen);
+		if (heldEntry != null)
+			heldEntry.setScreen(screen);
+	}
+	
+	@Override public void renderEntry(
+	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		super.render(
-		  matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		label.area.setBounds(x - 24, y, heldEntry != null? entryWidth - 132 : entryWidth + 17 - resetButton.getWidth(), 20);
+		forceSetFocus(label, isSelected && getListener() == label);
+		super.renderEntry(
+		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);
 		RenderHelper.disableStandardItemLighting();
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-		this.blit(
-		  matrices, x - 15, y + 5, 24,
-		  (this.widget.rectangle.contains(mouseX, mouseY) ? 18 : 0) + (this.expanded ? 9 : 0), 9, 9);
+		blit(
+		  mStack, x - 15, y + 5, 24,
+		  (label.area.contains(mouseX, mouseY) ? 18 : 0) + (expanded ? 9 : 0), 9, 9);
 		Minecraft.getInstance().fontRenderer.func_238407_a_(
-		  matrices, this.getDisplayedFieldName().func_241878_f(), (float) x, (float) (y + 6),
-		  this.widget.rectangle.contains(mouseX, mouseY) ? -1638890 : -1);
-		for (AbstractConfigListEntry<?> entry : this.entries) {
-			entry.setParent((DynamicEntryListWidget) this.getParent());
-			entry.setScreen(this.getConfigScreen());
-		}
-		if (this.expanded) {
+		  mStack, getDisplayedFieldName().func_241878_f(), (float) x, (float) (y + 6),
+		  label.area.contains(mouseX, mouseY) ? 0xffe6fe16 : 0xffffffff);
+		resetButton.x = x + entryWidth - resetButton.getWidth();
+		resetButton.y = y;
+		if (expanded) {
 			int yy = y + 24;
-			for (AbstractConfigListEntry<?> entry : this.entries) {
+			for (AbstractConfigListEntry<?> entry : entries) {
 				entry.render(
-				  matrices, -1, yy, x + 14, entryWidth - 14, entry.getItemHeight(), mouseX, mouseY,
-				  isHovered && this.getListener() == entry, delta);
+				  mStack, -1, yy, x + 14, entryWidth - 14, entry.getItemHeight(), mouseX, mouseY,
+				  isHovered && getListener() == entry, delta);
 				yy += entry.getItemHeight();
 			}
 		}
-	}
-	
-	@Override
-	public void updateSelected(boolean isSelected) {
-		for (AbstractConfigListEntry<?> entry : this.entries) {
-			entry.updateSelected(this.expanded && isSelected && this.getListener() == entry);
+		resetButton.render(mStack, mouseX, mouseY, delta);
+		label.render(mStack, mouseX, mouseY, delta);
+		if (heldEntry != null) {
+			((IChildListEntry) heldEntry).renderChild(
+			  mStack, x + entryWidth - 148, y, 144 - resetButton.getWidth(), 20, mouseX, mouseY, delta);
 		}
 	}
 	
-	@Override
-	public boolean isEdited() {
-		for (AbstractConfigListEntry<?> entry : this.entries) {
-			if (!entry.isEdited()) continue;
-			return true;
-		}
-		return false;
+	public boolean isHeldEntryHovered(int mouseX, int mouseY) {
+		return heldEntry != null && mouseX >= entryArea.getMaxX() - 148
+		       && mouseX < entryArea.getMaxX() - 4 - resetButton.getWidth()
+		       && mouseY >= entryArea.y && mouseY < entryArea.getMaxY();
 	}
 	
-	@Override
-	public void lateRender(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-		if (this.expanded) {
-			for (AbstractConfigListEntry<?> entry : this.entries) {
-				entry.lateRender(matrices, mouseX, mouseY, delta);
-			}
+	@Override public void updateSelected(boolean isSelected) {
+		super.updateSelected(isSelected);
+		if (heldEntry != null) {
+			final boolean heldEntrySelected = isSelected && getListener() == heldEntry;
+			heldEntry.updateSelected(heldEntrySelected);
+			if (heldEntrySelected) getConfigScreen().getHistory().preserveState(heldEntry);
 		}
+		for (AbstractConfigListEntry<?> entry : entries)
+			entry.updateSelected(expanded && isSelected && getListener() == entry);
 	}
 	
-	@Override
-	public int getMorePossibleHeight() {
-		if (!this.expanded) {
-			return -1;
-		}
+	@Override public boolean isEdited() {
+		if (ignoreEdits) return false;
+		return heldEntry != null && heldEntry.isEdited()
+		       || entries.stream().anyMatch(AbstractConfigEntry::isEdited);
+	}
+	
+	@Override public void setEditable(boolean editable) {
+		super.setEditable(editable);
+		if (heldEntry != null) heldEntry.setEditable(editable);
+		for (AbstractConfigListEntry<?> entry : entries) entry.setEditable(editable);
+	}
+	
+	@Override public boolean isResettable() {
+		return isEditable() && entries.stream().anyMatch(AbstractConfigEntry::isResettable);
+	}
+	
+	@Override public boolean isRestorable() {
+		return isEditable() && entries.stream().anyMatch(AbstractConfigEntry::isRestorable);
+	}
+	
+	@Override public int getExtraScrollHeight() {
 		ArrayList<Integer> list = new ArrayList<>();
 		int i = 24;
-		for (AbstractConfigListEntry<?> entry : this.entries) {
-			i += entry.getItemHeight();
-			if (entry.getMorePossibleHeight() < 0) continue;
-			list.add(i + entry.getMorePossibleHeight());
-		}
-		list.add(i);
-		return list.stream().max(Integer::compare).orElse(0) - this.getItemHeight();
-	}
-	
-	@Override
-	public Rectangle getEntryArea(int x, int y, int entryWidth, int entryHeight) {
-		this.widget.rectangle.x = x - 15;
-		this.widget.rectangle.y = y;
-		this.widget.rectangle.width = entryWidth + 15;
-		this.widget.rectangle.height = 24;
-		return new Rectangle(
-		  this.getParent().left, y, this.getParent().right - this.getParent().left, 20);
-	}
-	
-	@Override
-	public int getItemHeight() {
-		if (this.expanded) {
-			int i = 24;
-			for (AbstractConfigListEntry entry : this.entries) {
+		if (heldEntry != null)
+			list.add(i + heldEntry.getExtraScrollHeight());
+		if (expanded) {
+			for (AbstractConfigListEntry<?> entry : entries) {
 				i += entry.getItemHeight();
+				if (entry.getExtraScrollHeight() < 0) continue;
+				list.add(i + entry.getExtraScrollHeight());
 			}
+			list.add(i);
+		}
+		return list.stream().max(Integer::compare).orElse(0) - i;
+	}
+	
+	@Override public Rectangle getEntryArea(int x, int y, int entryWidth, int entryHeight) {
+		return new Rectangle(getParent().left, y, getParent().right - getParent().left, 20);
+	}
+	
+	@Override public int getItemHeight() {
+		if (expanded) {
+			int i = 24;
+			for (AbstractConfigListEntry<?> entry : entries)
+				i += entry.getItemHeight();
 			return i;
 		}
 		return 24;
 	}
 	
-	@Override
-	public int getInitialReferenceOffset() {
+	@Override public int getInitialReferenceOffset() {
 		return 24;
 	}
 	
 	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
-		return this.expanded ? this.children : Collections.singletonList(this.widget);
+		return expanded ? expandedChildren : children;
 	}
 	
-	@Override
-	public void save() {
-		this.entries.forEach(AbstractConfigEntry::save);
+	@Override public void save() {
+		if (heldEntry != null) heldEntry.save();
+		entries.forEach(AbstractConfigEntry::save);
 	}
 	
-	@Override
-	public Optional<ITextComponent> getError() {
-		ITextComponent error = null;
-		for (AbstractConfigListEntry<?> entry : this.entries) {
-			Optional<ITextComponent> configError = entry.getConfigError();
-			if (!configError.isPresent()) continue;
-			if (error != null) {
-				return Optional.ofNullable(
-				  new TranslationTextComponent("text.cloth-config.multi_error"));
-			}
-			return configError;
+	@Internal @Override public Optional<ITextComponent> getError() {
+		Optional<ITextComponent> error = heldEntry != null? heldEntry.getError() : Optional.empty();
+		if (error.isPresent())
+			return error;
+		for (AbstractConfigListEntry<?> entry : entries) {
+			error = entry.getConfigError();
+			if (error.isPresent())
+				return error;
 		}
-		return Optional.ofNullable(error);
+		return error;
 	}
 	
-	public class CategoryLabelWidget
-	  implements IGuiEventListener {
-		private final Rectangle rectangle = new Rectangle();
+	@Override public int getFocusedScroll() {
+		final IGuiEventListener listener = getListener();
+		//noinspection SuspiciousMethodCalls
+		if (!entries.contains(listener))
+			return 0;
+		int y = 24;
+		//noinspection SuspiciousMethodCalls
+		final int index = entries.indexOf(listener);
+		if (index >= 0) {
+			for (AbstractConfigListEntry<?> entry : entries.subList(0, index))
+				y += entry.getItemHeight();
+		}
+		if (listener instanceof IExpandable)
+			y += ((IExpandable) listener).getFocusedScroll();
+		return y;
+	}
+	
+	@Override public int getFocusedHeight() {
+		final IGuiEventListener listener = getListener();
+		if (listener instanceof IExpandable)
+			return ((IExpandable) listener).getFocusedHeight();
+		if (listener instanceof AbstractConfigListEntry<?>)
+			return ((AbstractConfigListEntry<?>) listener).getItemHeight();
+		return 20;
+	}
+	
+	@Override protected List<ISeekableComponent> seekableChildren() {
+		final List<ISeekableComponent> children =
+		  entries.stream().map(e -> ((ISeekableComponent) e)).collect(Collectors.toList());
+		if (heldEntry != null)
+			children.add(0, heldEntry);
+		return children;
+	}
+	
+	@Override public String seekableValueText() {
+		return "";
+	}
+	
+	// Handles the caption clicks and key-presses, but not the rendering
+	public static class CaptionWidget implements IGuiEventListener {
+		protected boolean focused = false;
+		protected WeakReference<IExpandable> expandable;
+		protected final Rectangle area = new Rectangle();
+		protected int focusedColor = 0x80E0E0E0;
 		
-		public boolean mouseClicked(double double_1, double double_2, int int_1) {
-			if (this.rectangle.contains(double_1, double_2)) {
-				SubCategoryListEntry.this.expanded = !SubCategoryListEntry.this.expanded;
+		protected CaptionWidget(IExpandable expandable) {
+			this.expandable = new WeakReference<>(expandable);
+		}
+		
+		protected IExpandable getParent() {
+			return expandable.get();
+		}
+		
+		public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+			if (focused)
+				drawBorder(mStack, area.x + 4, area.y, area.width, area.height, 1, focusedColor);
+		}
+		
+		public boolean isMouseOver(double mouseX, double mouseY) {
+			return area.contains(mouseX, mouseY);
+		}
+		
+		public boolean mouseClicked(double mouseX, double mouseY, int button) {
+			if (area.contains(mouseX, mouseY)) {
+				final IExpandable parent = getParent();
+				parent.setExpanded(!parent.isExpanded(), Screen.hasShiftDown());
 				Minecraft.getInstance().getSoundHandler().play(
 				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0f));
 				return true;
 			}
 			return false;
 		}
+		
+		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+			final IExpandable parent = getParent();
+			switch (keyCode) {
+				case 262: // Arrow right
+					if (!parent.isExpanded()) {
+						parent.setExpanded(true, Screen.hasShiftDown());
+						return true;
+					}
+					break;
+				case 263: // Arrow left
+					if (parent.isExpanded()) {
+						parent.setExpanded(false, Screen.hasShiftDown());
+						return true;
+					}
+					break;
+			}
+			return IGuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
+		}
+		
+		@Override public boolean changeFocus(boolean focus) {
+			return focused = !focused;
+		}
+	}
+	
+	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
+		return super.handleNavigationKey(keyCode, scanCode, modifiers);
+	}
+	
+	@Override public <E extends AbstractConfigListEntry<?> & IChildListEntry> @Nullable E getHeldEntry() {
+		//noinspection unchecked
+		return (E) heldEntry;
+	}
+	
+	@Override public <E extends AbstractConfigListEntry<?> & IChildListEntry> void setHeldEntry(
+	  E entry
+	) {
+		if (heldEntry != null) {
+			children.remove(heldEntry);
+			expandedChildren.remove(heldEntry);
+		}
+		heldEntry = entry;
+		heldEntry.setParentEntry(this);
+		entry.setChild(true);
+		children.add(1, heldEntry);
+		expandedChildren.add(1, heldEntry);
+		heldEntry.setParent(getParentOrNull());
+		heldEntry.setScreen(getConfigScreenOrNull());
+	}
+	
+	@Override public List<INavigableTarget> getNavigableChildren() {
+		if (expanded) {
+			final List<INavigableTarget> targets =
+			  entries.stream().flatMap(e -> e.getNavigableChildren().stream())
+				 .collect(Collectors.toList());
+			targets.add(0, this);
+			return targets;
+		}
+		return super.getNavigableChildren();
 	}
 }
-

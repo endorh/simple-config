@@ -2,8 +2,10 @@ package endorh.simple_config.core;
 
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simple_config.clothconfig2.gui.entries.NestedListListEntry;
+import endorh.simple_config.clothconfig2.impl.builders.EntryListFieldBuilder;
+import endorh.simple_config.core.NBTUtil.ExpectedType;
 import endorh.simple_config.core.entry.AbstractListEntry;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -12,6 +14,7 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -33,13 +36,13 @@ public class EntryListEntry
 	
 	protected final AbstractConfigEntry<V, C, G, E> entry;
 	protected final B entryBuilder;
-	protected ListEntryEntryHolder<V, C, G, E> holder;
+	protected ListEntryEntryHolder holder;
 	
 	@Internal public EntryListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  @Nullable List<V> value, B entryBuilder) {
 		super(parent, name, value);
-		holder = new ListEntryEntryHolder<>(parent.getRoot());
+		holder = new ListEntryEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entry = entryBuilder.build(holder, name).withSaver((g, c) -> {});
 		if (!entry.canBeNested())
@@ -58,15 +61,17 @@ public class EntryListEntry
 		protected B builder;
 		
 		public Builder(List<V> value, B builder) {
-			super(value);
-			this.builder = builder;
+			super(new ArrayList<>(value), builder.typeClass);
+			this.builder = builder.copy();
 		}
-		
-		@Override
-		protected EntryListEntry<V, C, G, E, B> buildEntry(
+		@Override protected EntryListEntry<V, C, G, E, B> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			return new EntryListEntry<>(parent, name, value, builder);
+		}
+		
+		@Override protected Builder<V, C, G, E, B> createCopy() {
+			return new Builder<>(value, builder);
 		}
 	}
 	
@@ -109,6 +114,13 @@ public class EntryListEntry
 		return entry.fromGui(value);
 	}
 	
+	@Override public Optional<ITextComponent> supplyElementError(G value) {
+		final Optional<ITextComponent> opt = entry.supplyError(value);
+		if (opt.isPresent())
+			return opt;
+		return super.supplyElementError(value);
+	}
+	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(decorate(builder).defineList(name, forConfig(value), v -> {
@@ -122,11 +134,11 @@ public class EntryListEntry
 	}
 	
 	protected AbstractConfigListEntry<G> buildCell(
-	  ConfigEntryBuilder builder, @Nullable G value
+	  ConfigEntryBuilder builder
 	) {
 		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent("•"));
-		e.set(entry.fromGuiOrDefault(value));
+		e.set(e.value);
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
 		    "List config entry's sub-entry did not produce a GUI entry"));
@@ -134,29 +146,21 @@ public class EntryListEntry
 		return g;
 	}
 	
-	@Override
-	protected Consumer<List<G>> saveConsumer() {
+	@Override protected Consumer<List<G>> saveConsumer() {
 		return super.saveConsumer().andThen(l -> holder.clear());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
+	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		holder.clear();
-		final NestedListListEntry<G, AbstractConfigListEntry<G>> e =
-		  new NestedListListEntry<>(
-		    getDisplayName(), forGui(get()), expand,
-		    () -> this.supplyTooltip(getGUI()),
-		    saveConsumer(),
-		    () -> forGui(value), builder.getResetButtonKey(),
-		    true, insertInTop,
-		    (g, en) -> buildCell(builder, g));
-		// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
-		// e.setRequiresRestart(requireRestart);
-		e.setTooltipSupplier(() -> this.supplyTooltip(e.getValue()));
-		e.setErrorSupplier(() -> this.supplyError(e.getValue()));
-		return Optional.of(e);
+		final EntryListFieldBuilder<G, AbstractConfigListEntry<G>> valBuilder =
+		  builder.startEntryList(getDisplayName(), forGui(get()), en -> buildCell(builder));
+		return Optional.of(decorate(valBuilder).build());
+	}
+	
+	@Override public ExpectedType getExpectedType() {
+		return new ExpectedType(typeClass, entry.getExpectedType());
 	}
 }

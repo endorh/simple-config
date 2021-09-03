@@ -1,48 +1,39 @@
 package endorh.simple_config.clothconfig2.gui.entries;
 
+import com.google.common.collect.Lists;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
+import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
+import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, SELF>, SELF extends AbstractListListEntry<T, C, SELF>>
   extends BaseListEntry<T, C, SELF> {
-	protected final BiFunction<T, SELF, C> createNewCell;
-	protected Function<T, Optional<ITextComponent>> cellErrorSupplier;
-	protected List<T> original;
+	protected Function<T, Optional<ITextComponent>> cellErrorSupplier = t -> Optional.empty();
 	
-	@ApiStatus.Internal
-	public AbstractListListEntry(
-	  ITextComponent fieldName, List<T> value, boolean defaultExpanded,
-	  Supplier<Optional<ITextComponent[]>> tooltipSupplier, Consumer<List<T>> saveConsumer,
-	  Supplier<List<T>> defaultValue, ITextComponent resetButtonKey, boolean requiresRestart,
-	  boolean deleteButtonEnabled, boolean insertInFront, BiFunction<T, SELF, C> createNewCell
+	@Internal public AbstractListListEntry(
+	  ITextComponent fieldName, List<T> value, Function<SELF, C> createNewCell
 	) {
-		super(
-		  fieldName, tooltipSupplier, defaultValue,
-		  abstractListListEntry -> createNewCell.apply(null, abstractListListEntry), saveConsumer,
-		  resetButtonKey, requiresRestart, deleteButtonEnabled, insertInFront);
-		this.createNewCell = createNewCell;
-		this.original = new ArrayList<>(value);
-		for (T f : value) {
-			this.cells.add(createNewCell.apply(f, this.self()));
-		}
+		super(fieldName, createNewCell);
+		setOriginal(value);
+		for (T f : value)
+			this.cells.add(createCellWithValue(f));
 		this.widgets.addAll(this.cells);
-		this.setExpanded(defaultExpanded);
 	}
 	
 	public Function<T, Optional<ITextComponent>> getCellErrorSupplier() {
@@ -51,10 +42,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	
 	public void setCellErrorSupplier(Function<T, Optional<ITextComponent>> cellErrorSupplier) {
 		this.cellErrorSupplier = cellErrorSupplier;
-	}
-	
-	@Override public List<T> getValue() {
-		return this.cells.stream().map(AbstractListCell::getValue).collect(Collectors.toList());
+		setValue(getValue());
 	}
 	
 	@Override public void setValue(List<T> value) {
@@ -66,64 +54,109 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 			add(value.get(cells.size()));
 	}
 	
-	@Override protected C cellWithValue(T value) {
-		return this.createNewCell.apply(value, this.self());
+	@Override protected C createCellWithValue(T value) {
+		final C cell = cellFactory.apply(self());
+		cell.setValue(value);
+		cell.setOriginal(value);
+		return cell;
 	}
 	
-	@Override
-	public boolean isEdited() {
-		if (super.isEdited())
-			return true;
-		final List<T> value = this.getValue();
-		if (value.size() != this.original.size())
-			return true;
-		for (int i = 0; i < value.size(); ++i) {
-			if (Objects.equals(value.get(i), this.original.get(i))) continue;
-			return true;
-		}
-		return false;
-	}
-	
-	public void add(T element) {
-		final C cell = createNewCell.apply(element, self());
-		cells.add(cell);
-		widgets.add(cell);
-		cell.onAdd();
-	}
-	
-	public void add(int index, T element) {
-		final C cell = createNewCell.apply(element, self());
-		cells.add(index, cell);
-		widgets.add(index, cell);
-		cell.onAdd();
-	}
-	
-	public void remove(T element) {
-		final int index = getValue().indexOf(element);
-		if (index >= 0)
-			remove(index);
-	}
-	
-	public void remove(int index) {
-		final C cell = cells.get(index);
-		cell.onDelete();
-		cells.remove(cell);
-		widgets.remove(cell);
+	@Override public void setOriginal(List<T> value) {
+		this.original = new ArrayList<>(value);
 	}
 	
 	@Internal
-	public static abstract class AbstractListCell<T, SELF extends AbstractListCell<T, SELF, OUTER_SELF>, OUTER_SELF extends AbstractListListEntry<T, SELF, OUTER_SELF>>
-	  extends BaseListCell {
-		protected final OUTER_SELF listListEntry;
+	public static abstract class AbstractListCell<V, Self extends AbstractListCell<V, Self, ListEntry>, ListEntry extends AbstractListListEntry<V, Self, ListEntry>>
+	  extends BaseListCell<V> {
+		private final WeakReference<ListEntry> listEntry;
+		protected boolean isFocusedMatch = false;
+		protected String matchedText = null;
 		
-		public AbstractListCell(@Nullable T value, OUTER_SELF listListEntry) {
-			this.listListEntry = listListEntry;
-			this.setErrorSupplier(() -> Optional.ofNullable(listListEntry.cellErrorSupplier)
+		public AbstractListCell(ListEntry listEntry) {
+			this.listEntry = new WeakReference<>(listEntry);
+			this.setErrorSupplier(() -> Optional.ofNullable(listEntry.cellErrorSupplier)
 			  .flatMap(cellErrorFn -> cellErrorFn.apply(this.getValue())));
 		}
 		
-		public abstract T getValue();
-		public abstract void setValue(T value);
+		protected ListEntry getListEntry() {
+			final ListEntry listEntry = this.listEntry.get();
+			if (listEntry == null)
+				throw new IllegalStateException(
+				  "Illegal attempt to use list entry's cell after its parent list has been disposed");
+			return listEntry;
+		}
+		
+		@Override public List<ISeekableComponent> search(Pattern query) {
+			matchedText = null;
+			final String text = seekableText();
+			if (!text.isEmpty()) {
+				final Matcher m = query.matcher(text);
+				while (m.find()) {
+					if (!m.group().isEmpty()) {
+						matchedText = m.group();
+						break;
+					}
+				}
+			}
+			List<ISeekableComponent> matches =
+			  seekableComponents().stream().flatMap(c -> c.search(query).stream())
+				 .collect(Collectors.toList());
+			if (matchedText != null)
+				matches.add(0, this);
+			return matches;
+		}
+		
+		protected String seekableText() {
+			final V value = getValue();
+			return value != null? value.toString() : "";
+		}
+		
+		protected List<ISeekableComponent> seekableComponents() {
+			return Lists.newLinkedList();
+		}
+		
+		@Override public boolean isFocusedMatch() {
+			return isFocusedMatch;
+		}
+		
+		@Override public void setFocusedMatch(boolean isFocusedMatch) {
+			this.isFocusedMatch = isFocusedMatch;
+			
+		}
+		
+		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
+			if (Screen.hasAltDown()) {
+				final ListEntry listEntry = getListEntry();
+				final IGuiEventListener listener = listEntry.getListener();
+				//noinspection SuspiciousMethodCalls
+				if (listener instanceof BaseListCell && listEntry.cells.contains(listener)) {
+					//noinspection SuspiciousMethodCalls
+					int index = listEntry.cells.indexOf(listener);
+					if (Screen.hasControlDown()) { // Move
+						if (keyCode == 264 && index < listEntry.cells.size() - 1) { // Arrow down
+							listEntry.move(index, index + 1);
+							((BaseListCell<?>) listener).onNavigate();
+							return true;
+						} else if (keyCode == 265 && index > 0) { // Arrow up
+							listEntry.move(index, index - 1);
+							((BaseListCell<?>) listener).onNavigate();
+							return true;
+						}
+					}
+					if (keyCode == 257 || keyCode == 260) { // Enter || Insert
+						listEntry.add(index + 1);
+						listEntry.cells.get(index + 1).onNavigate();
+						return true;
+					} else if (index != -1 && (keyCode == 259 || keyCode == 261)) { // Backspace || Delete
+						listEntry.remove(index);
+						if (!listEntry.cells.isEmpty())
+							listEntry.cells.get(clamp(keyCode == 259? index - 1 : index, 0, listEntry.cells.size() - 1)).onNavigate();
+						return true;
+					}
+				}
+			}
+			return super.handleNavigationKey(keyCode, scanCode, modifiers);
+		}
 	}
 }
 

@@ -4,15 +4,17 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simple_config.clothconfig2.ClothConfigInitializer;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.entries.KeyCodeEntry;
+import endorh.simple_config.clothconfig2.gui.widget.CheckboxButton;
+import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget;
+import endorh.simple_config.clothconfig2.impl.EditHistory;
 import endorh.simple_config.clothconfig2.math.Rectangle;
-import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
-import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -27,68 +29,72 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public abstract class AbstractConfigScreen
-  extends Screen
-  implements ConfigScreen {
+import static endorh.simple_config.SimpleConfigMod.CLIENT_CONFIG;
+
+public abstract class AbstractConfigScreen extends Screen
+  implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler, ScissorsScreen,
+             IOverlayCapableScreen, IEntryHolder, IDialogCapableScreen {
 	protected static final ResourceLocation CONFIG_TEX =
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
-	private boolean legacyEdited = false;
 	private final ResourceLocation backgroundLocation;
-	protected boolean legacyRequiresRestart = false;
-	protected boolean confirmSave;
+	protected boolean confirmUnsaved = confirm.unsaved;
+	protected boolean confirmSave = confirm.save;
 	protected final Screen parent;
 	private boolean alwaysShowTabs = false;
 	private boolean transparentBackground = false;
-	@Nullable
-	private ITextComponent defaultFallbackCategory = null;
+	@Nullable private ITextComponent defaultFallbackCategory = null;
 	public int selectedCategoryIndex = 0;
 	private boolean editable = true;
 	private KeyCodeEntry focusedBinding;
 	private ModifierKeyCode startedKeyCode = null;
 	private final List<Tooltip> tooltips = Lists.newArrayList();
-	@Nullable
-	private Runnable savingRunnable = null;
-	@Nullable
-	protected Consumer<Screen> afterInitConsumer = null;
+	@Nullable private Runnable savingRunnable = null;
+	@Nullable protected Consumer<Screen> afterInitConsumer = null;
+	protected Pair<Integer, IGuiEventListener> dragged = null;
+	protected Map<String, ConfigCategory> categoryMap;
+	
+	protected SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
+	
+	protected EditHistory history = new EditHistory();
+	
+	protected List<AbstractDialog> dialogs = Lists.newLinkedList();
 	
 	protected AbstractConfigScreen(
-	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation
+	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
+	  Collection<ConfigCategory> categories
 	) {
 		super(title);
 		this.parent = parent;
 		this.backgroundLocation = backgroundLocation;
+		this.categoryMap = categories.stream().collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> b));
 	}
 	
-	@Override
-	public void setSavingRunnable(@Nullable Runnable savingRunnable) {
+	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
 		this.savingRunnable = savingRunnable;
 	}
 	
-	@Override
-	public void setAfterInitConsumer(@Nullable Consumer<Screen> afterInitConsumer) {
+	@Override public void setAfterInitConsumer(@Nullable Consumer<Screen> afterInitConsumer) {
 		this.afterInitConsumer = afterInitConsumer;
 	}
 	
-	@Override
-	public ResourceLocation getBackgroundLocation() {
-		return this.backgroundLocation;
+	@Override public ResourceLocation getBackgroundLocation() {
+		return backgroundLocation;
 	}
 	
-	@Override
-	public boolean isRequiresRestart() {
-		if (this.legacyRequiresRestart) {
-			return true;
-		}
-		for (List<AbstractConfigEntry<?>> entries : this.getCategorizedEntries().values()) {
+	@Override public boolean isRequiresRestart() {
+		for (List<AbstractConfigEntry<?>> entries : getCategorizedEntries().values()) {
 			for (AbstractConfigEntry<?> entry : entries) {
 				if (entry.getConfigError().isPresent() || !entry.isEdited() ||
 				    !entry.isRequiresRestart()) continue;
@@ -98,14 +104,38 @@ public abstract class AbstractConfigScreen
 		return false;
 	}
 	
+	public void setSelectedCategory(ITextComponent title) {
+		final int index = new LinkedList<>(getCategorizedEntries().keySet()).indexOf(title);
+		if (index != -1) setSelectedCategory(index);
+	}
+	
+	public void setSelectedCategory(String name) {
+		final ConfigCategory cat = categoryMap.get(name);
+		if (cat != null)
+			setSelectedCategory(cat.getCategoryKey());
+	}
+	
+	public void setSelectedCategory(int index) {
+		if (index < 0 || index >= getCategorizedEntries().size())
+			throw new IndexOutOfBoundsException("index: " + index + ", size: " + getCategorizedEntries().size());
+		if (selectedCategoryIndex != index) {
+			selectedCategoryIndex = index;
+			init(Minecraft.getInstance(), width, height);
+		}
+	}
+	
+	public @Nullable String getSelectedCategoryName() {
+		final ITextComponent displayName = ((List<ITextComponent>) Lists.newArrayList(
+		  getCategorizedEntries().keySet())).get(selectedCategoryIndex);
+		return categoryMap.entrySet().stream().filter(e -> e.getValue().getCategoryKey().equals(displayName))
+		  .map(Entry::getKey).findFirst().orElse(null);
+	}
+	
 	public abstract Map<ITextComponent, List<AbstractConfigEntry<?>>> getCategorizedEntries();
 	
 	@Override
 	public boolean isEdited() {
-		if (this.legacyEdited) {
-			return true;
-		}
-		for (List<AbstractConfigEntry<?>> entries : this.getCategorizedEntries().values()) {
+		for (List<AbstractConfigEntry<?>> entries : getCategorizedEntries().values()) {
 			for (AbstractConfigEntry<?> entry : entries) {
 				if (!entry.isEdited()) continue;
 				return true;
@@ -114,305 +144,375 @@ public abstract class AbstractConfigScreen
 		return false;
 	}
 	
-	@Override
-	@Deprecated
-	@ApiStatus.ScheduledForRemoval
-	public void setEdited(boolean edited) {
-		this.legacyEdited = edited;
-	}
-	
-	@Override
-	@Deprecated
-	@ApiStatus.ScheduledForRemoval
-	public void setEdited(boolean edited, boolean legacyRequiresRestart) {
-		this.setEdited(edited);
-		if (!this.legacyRequiresRestart && legacyRequiresRestart) {
-			this.legacyRequiresRestart = legacyRequiresRestart;
-		}
+	public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+		return null;
 	}
 	
 	public boolean isShowingTabs() {
-		return this.isAlwaysShowTabs() || this.getCategorizedEntries().size() > 1;
+		return isAlwaysShowTabs() || getCategorizedEntries().size() > 1;
 	}
 	
 	public boolean isAlwaysShowTabs() {
-		return this.alwaysShowTabs;
+		return alwaysShowTabs;
 	}
 	
-	@ApiStatus.Internal
-	public void setAlwaysShowTabs(boolean alwaysShowTabs) {
+	@Internal public void setAlwaysShowTabs(boolean alwaysShowTabs) {
 		this.alwaysShowTabs = alwaysShowTabs;
 	}
 	
 	public boolean isTransparentBackground() {
-		return this.transparentBackground && Minecraft.getInstance().world != null;
+		return transparentBackground && Minecraft.getInstance().world != null;
 	}
 	
-	@ApiStatus.Internal
-	public void setTransparentBackground(boolean transparentBackground) {
+	@Internal public void setTransparentBackground(boolean transparentBackground) {
 		this.transparentBackground = transparentBackground;
 	}
 	
 	public ITextComponent getFallbackCategory() {
-		if (this.defaultFallbackCategory != null) {
-			return this.defaultFallbackCategory;
+		if (defaultFallbackCategory != null) {
+			return defaultFallbackCategory;
 		}
-		return this.getCategorizedEntries().keySet().iterator().next();
+		return getCategorizedEntries().keySet().iterator().next();
 	}
 	
-	@ApiStatus.Internal
+	@Internal
 	public void setFallbackCategory(@Nullable ITextComponent defaultFallbackCategory) {
 		this.defaultFallbackCategory = defaultFallbackCategory;
-		List<ITextComponent> categories = Lists.newArrayList(this.getCategorizedEntries().keySet());
+		List<ITextComponent> categories = Lists.newArrayList(getCategorizedEntries().keySet());
 		for (int i = 0; i < categories.size(); ++i) {
 			ITextComponent category = categories.get(i);
-			if (!category.equals(this.getFallbackCategory())) continue;
-			this.selectedCategoryIndex = i;
+			if (!category.equals(getFallbackCategory())) continue;
+			selectedCategoryIndex = i;
 			break;
 		}
 	}
 	
-	@Override
-	public void saveAll(boolean openOtherScreens) {
-		for (List<AbstractConfigEntry<?>> entries :
-		  Lists.newArrayList(this.getCategorizedEntries().values())) {
-			for (AbstractConfigEntry<?> entry : entries) {
-				entry.save();
-			}
+	@Override public void saveAll(boolean openOtherScreens) {
+		saveAll(openOtherScreens, false);
+	}
+	
+	public void saveAll(boolean openOtherScreens, boolean forceConfirm) {
+		if ((confirmSave || forceConfirm) && isEdited()) {
+			final ConfirmDialog dialog = new ConfirmDialog(
+			  (b, s) -> {
+				  if (b) doSaveAll(openOtherScreens);
+				  if (s[0]) CLIENT_CONFIG.set("confirm.save", false);
+			  }, new TranslationTextComponent("simple-config.ui.confirm_save"),
+			  Lists.newArrayList(new TranslationTextComponent("simple-config.ui.confirm_save.msg")),
+			  DialogTexts.GUI_CANCEL, new TranslationTextComponent("text.cloth-config.save_and_done"), this,
+			  new CheckboxButton(false, 0, 0, 100, new TranslationTextComponent("simple-config.ui.dont_confirm"), null));
+			dialog.setConfirmButtonTint(0x8042BD42);
+			addDialog(dialog);
+		} else {
+			doSaveAll(openOtherScreens);
 		}
-		this.save();
-		this.setEdited(false);
-		if (openOtherScreens) {
-			if (this.isRequiresRestart()) {
-				this.minecraft.displayGuiScreen(new ClothRequiresRestartScreen(this.parent));
-			} else {
-				this.minecraft.displayGuiScreen(this.parent);
-			}
+	}
+	
+	protected void doSaveAll(boolean openOtherScreens) {
+		for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(
+		  getCategorizedEntries().values())) {
+			for (AbstractConfigEntry<?> entry : entries) entry.save();
 		}
-		this.legacyRequiresRestart = false;
+		save();
+		if (openOtherScreens && minecraft != null) {
+			if (isRequiresRestart())
+				minecraft.displayGuiScreen(new ClothRequiresRestartScreen(parent));
+			else minecraft.displayGuiScreen(parent);
+		}
 	}
 	
 	public void save() {
-		Optional.ofNullable(this.savingRunnable).ifPresent(Runnable::run);
+		Optional.ofNullable(savingRunnable).ifPresent(Runnable::run);
 	}
 	
 	public boolean isEditable() {
-		return this.editable;
+		return editable;
 	}
 	
-	@ApiStatus.Internal
-	public void setEditable(boolean editable) {
+	@Internal public void setEditable(boolean editable) {
 		this.editable = editable;
 	}
 	
-	@ApiStatus.Internal
-	public void setConfirmSave(boolean confirmSave) {
-		this.confirmSave = confirmSave;
-	}
-	
 	public KeyCodeEntry getFocusedBinding() {
-		return this.focusedBinding;
+		return focusedBinding;
 	}
 	
-	@ApiStatus.Internal
-	public void setFocusedBinding(KeyCodeEntry focusedBinding) {
+	@Internal public void setFocusedBinding(KeyCodeEntry focusedBinding) {
 		this.focusedBinding = focusedBinding;
 		if (focusedBinding != null) {
-			this.startedKeyCode = this.focusedBinding.getValue();
-			this.startedKeyCode.setKeyCodeAndModifier(InputMappings.INPUT_INVALID, Modifier.none());
+			startedKeyCode = this.focusedBinding.getValue();
+			startedKeyCode.setKeyCodeAndModifier(InputMappings.INPUT_INVALID, Modifier.none());
 		} else {
-			this.startedKeyCode = null;
+			startedKeyCode = null;
 		}
 	}
 	
-	public boolean mouseReleased(double double_1, double double_2, int int_1) {
-		if (this.focusedBinding != null && this.startedKeyCode != null &&
-		    !this.startedKeyCode.isUnknown() && this.focusedBinding.isAllowMouse()) {
-			this.focusedBinding.setValue(this.startedKeyCode);
-			this.setFocusedBinding(null);
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (focusedBinding != null && startedKeyCode != null &&
+		    !startedKeyCode.isUnknown() && focusedBinding.isAllowMouse()) {
+			focusedBinding.setValue(startedKeyCode);
+			setFocusedBinding(null);
 			return true;
 		}
-		return super.mouseReleased(double_1, double_2, int_1);
+		if (handleOverlaysMouseReleased(mouseX, mouseY, button))
+			return true;
+		return IExtendedDragAwareNestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
+	}
+	
+	@Override public boolean mouseDragged(
+	  double mouseX, double mouseY, int button, double dragX, double dragY
+	) {
+		if (handleOverlaysMouseDragged(mouseX, mouseY, button, dragX, dragY))
+			return true;
+		return IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
+		  mouseX, mouseY, button, dragX, dragY);
+	}
+	
+	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (handleOverlaysMouseScrolled(mouseX, mouseY, delta))
+			return true;
+		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 	
 	public boolean keyReleased(int int_1, int int_2, int int_3) {
-		if (this.focusedBinding != null && this.startedKeyCode != null &&
-		    this.focusedBinding.isAllowKey()) {
-			this.focusedBinding.setValue(this.startedKeyCode);
-			this.setFocusedBinding(null);
+		if (getDragged() != null)
+			return true;
+		if (focusedBinding != null && startedKeyCode != null &&
+		    focusedBinding.isAllowKey()) {
+			focusedBinding.setValue(startedKeyCode);
+			setFocusedBinding(null);
 			return true;
 		}
 		return super.keyReleased(int_1, int_2, int_3);
 	}
 	
-	public boolean mouseClicked(double double_1, double double_2, int int_1) {
-		if (this.focusedBinding != null && this.startedKeyCode != null &&
-		    this.focusedBinding.isAllowMouse()) {
-			if (this.startedKeyCode.isUnknown()) {
-				this.startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(int_1));
-			} else if (this.focusedBinding.isAllowModifiers() &&
-			           this.startedKeyCode.getType() == InputMappings.Type.KEYSYM) {
-				int code = this.startedKeyCode.getKeyCode().getKeyCode();
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (getDragged() != null)
+			return true;
+		if (handleDialogsMouseClicked(mouseX, mouseY, button))
+			return true;
+		if (handleOverlaysMouseClicked(mouseX, mouseY, button))
+			return true;
+		if (focusedBinding != null && startedKeyCode != null &&
+		    focusedBinding.isAllowMouse()) {
+			if (startedKeyCode.isUnknown()) {
+				startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
+			} else if (focusedBinding.isAllowModifiers() &&
+			           startedKeyCode.getType() == InputMappings.Type.KEYSYM) {
+				int code = startedKeyCode.getKeyCode().getKeyCode();
 				if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
 				                                : code == 341 || code == 345) {
-					Modifier modifier = this.startedKeyCode.getModifier();
-					this.startedKeyCode.setModifier(
+					Modifier modifier = startedKeyCode.getModifier();
+					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-					this.startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(int_1));
+					startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 				if (code == 344 || code == 340) {
-					Modifier modifier = this.startedKeyCode.getModifier();
-					this.startedKeyCode.setModifier(
+					Modifier modifier = startedKeyCode.getModifier();
+					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-					this.startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(int_1));
+					startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 				if (code == 342 || code == 346) {
-					Modifier modifier = this.startedKeyCode.getModifier();
-					this.startedKeyCode.setModifier(
+					Modifier modifier = startedKeyCode.getModifier();
+					startedKeyCode.setModifier(
 					  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-					this.startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(int_1));
+					startedKeyCode.setKeyCode(InputMappings.Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 			}
 			return true;
 		}
-		if (this.focusedBinding != null) {
+		if (focusedBinding != null) {
 			return true;
 		}
-		return super.mouseClicked(double_1, double_2, int_1);
+		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
 	}
 	
-	public boolean keyPressed(int int_1, int int_2, int int_3) {
-		if (this.focusedBinding != null && (this.focusedBinding.isAllowKey() || int_1 == 256)) {
-			if (int_1 != 256) {
-				if (this.startedKeyCode.isUnknown()) {
-					this.startedKeyCode.setKeyCode(InputMappings.getInputByCode(int_1, int_2));
-				} else if (this.focusedBinding.isAllowModifiers()) {
-					if (this.startedKeyCode.getType() == InputMappings.Type.KEYSYM) {
-						int code = this.startedKeyCode.getKeyCode().getKeyCode();
+	protected void recomputeFocus() {}
+	
+	@Override public boolean charTyped(char codePoint, int modifiers) {
+		if (handleDialogsCharTyped(codePoint, modifiers)) return true;
+		return super.charTyped(codePoint, modifiers);
+	}
+	
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (handleDialogsKeyPressed(keyCode, scanCode, modifiers)) return true;
+		if (getDragged() != null)
+			return true; // Suppress
+		if (focusedBinding != null && (focusedBinding.isAllowKey() || keyCode == 256)) {
+			if (keyCode != 256) {
+				if (startedKeyCode.isUnknown()) {
+					startedKeyCode.setKeyCode(InputMappings.getInputByCode(keyCode, scanCode));
+				} else if (focusedBinding.isAllowModifiers()) {
+					if (startedKeyCode.getType() == InputMappings.Type.KEYSYM) {
+						int code = startedKeyCode.getKeyCode().getKeyCode();
 						if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
 						                                : code == 341 || code == 345) {
-							Modifier modifier = this.startedKeyCode.getModifier();
-							this.startedKeyCode.setModifier(
+							Modifier modifier = startedKeyCode.getModifier();
+							startedKeyCode.setModifier(
 							  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-							this.startedKeyCode.setKeyCode(InputMappings.getInputByCode(
-							  int_1, int_2));
+							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
+							  keyCode, scanCode));
 							return true;
 						}
 						if (code == 344 || code == 340) {
-							Modifier modifier = this.startedKeyCode.getModifier();
-							this.startedKeyCode.setModifier(
+							Modifier modifier = startedKeyCode.getModifier();
+							startedKeyCode.setModifier(
 							  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-							this.startedKeyCode.setKeyCode(InputMappings.getInputByCode(
-							  int_1, int_2));
+							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
+							  keyCode, scanCode));
 							return true;
 						}
 						if (code == 342 || code == 346) {
-							Modifier modifier = this.startedKeyCode.getModifier();
-							this.startedKeyCode.setModifier(
+							Modifier modifier = startedKeyCode.getModifier();
+							startedKeyCode.setModifier(
 							  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-							this.startedKeyCode.setKeyCode(InputMappings.getInputByCode(
-							  int_1, int_2));
+							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
+							  keyCode, scanCode));
 							return true;
 						}
 					}
-					if (Minecraft.IS_RUNNING_ON_MAC ? int_1 == 343 || int_1 == 347
-					                                : int_1 == 341 || int_1 == 345) {
-						Modifier modifier = this.startedKeyCode.getModifier();
-						this.startedKeyCode.setModifier(
+					if (Minecraft.IS_RUNNING_ON_MAC ? keyCode == 343 || keyCode == 347
+					                                : keyCode == 341 || keyCode == 345) {
+						Modifier modifier = startedKeyCode.getModifier();
+						startedKeyCode.setModifier(
 						  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
 						return true;
 					}
-					if (int_1 == 344 || int_1 == 340) {
-						Modifier modifier = this.startedKeyCode.getModifier();
-						this.startedKeyCode.setModifier(
+					if (keyCode == 344 || keyCode == 340) {
+						Modifier modifier = startedKeyCode.getModifier();
+						startedKeyCode.setModifier(
 						  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
 						return true;
 					}
-					if (int_1 == 342 || int_1 == 346) {
-						Modifier modifier = this.startedKeyCode.getModifier();
-						this.startedKeyCode.setModifier(
+					if (keyCode == 342 || keyCode == 346) {
+						Modifier modifier = startedKeyCode.getModifier();
+						startedKeyCode.setModifier(
 						  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
 						return true;
 					}
 				}
 			} else {
-				this.focusedBinding.setValue(ModifierKeyCode.unknown());
-				this.setFocusedBinding(null);
+				focusedBinding.setValue(ModifierKeyCode.unknown());
+				setFocusedBinding(null);
 			}
 			return true;
 		}
-		if (this.focusedBinding != null && int_1 != 256) {
+		if (focusedBinding != null)
 			return true;
+		if (keyCode == 256) { // Escape key
+			if (handleOverlaysEscapeKey())
+				return true;
+			if (shouldCloseOnEsc())
+				return quit();
 		}
-		if (int_1 == 256 && this.shouldCloseOnEsc()) {
-			return this.quit();
+		if (screenKeyPressed(keyCode, scanCode, modifiers))
+			return true;
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+	
+	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
+		if (Screen.hasControlDown()) {
+			int i;
+			switch (keyCode) {
+				case 266: // Page Up
+					i = selectedCategoryIndex - 1;
+					if (i < 0) i = getCategorizedEntries().size() - 1;
+					setSelectedCategory(i);
+					recomputeFocus();
+					return true;
+				case 267: // Page Down
+					i = selectedCategoryIndex + 1;
+					if (i >= getCategorizedEntries().size()) i = 0;
+					setSelectedCategory(i);
+					recomputeFocus();
+					return true;
+				case 59: // Ctrl + S
+					saveAll(true, true);
+					return true;
+			}
 		}
-		return super.keyPressed(int_1, int_2, int_3);
+		return false;
 	}
 	
 	protected final boolean quit() {
-		if (this.confirmSave && this.isEdited()) {
-			this.minecraft.displayGuiScreen(new ConfirmScreen(
-			  new QuitSaveConsumer(), new TranslationTextComponent("text.cloth-config.quit_config"),
-			  new TranslationTextComponent("text.cloth-config.quit_config_sure"),
-			  new TranslationTextComponent("text.cloth-config.quit_discard"),
-			  new TranslationTextComponent("gui.cancel")));
-		} else {
-			this.minecraft.displayGuiScreen(this.parent);
-		}
+		if (minecraft == null) return false;
+		if (confirmUnsaved && isEdited()) {
+			final ConfirmDialog dialog = new ConfirmDialog(
+			  (b, s) -> {
+				  if (s[0]) CLIENT_CONFIG.set("confirm.unsaved", false);
+				  if (b) minecraft.displayGuiScreen(parent);
+			  },
+			  new TranslationTextComponent("text.cloth-config.quit_config"),
+			  Util.<List<ITextComponent>>make(
+				 new ArrayList<>(),
+				 l -> l.add(new TranslationTextComponent("text.cloth-config.quit_config_sure"))),
+			  new TranslationTextComponent("gui.cancel"),
+			  new TranslationTextComponent("text.cloth-config.quit_discard"), this,
+			  new CheckboxButton(false, 0, 0, 100, new TranslationTextComponent("simple-config.ui.dont_confirm"), null));
+			dialog.setConfirmButtonTint(0x80BD2424);
+			addDialog(dialog);
+		} else minecraft.displayGuiScreen(parent);
 		return true;
 	}
 	
 	public void tick() {
 		super.tick();
-		boolean edited = this.isEdited();
-		Optional.ofNullable(this.getQuitButton()).ifPresent(button -> button.setMessage(
+		boolean edited = isEdited();
+		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
 		  edited ? new TranslationTextComponent("text.cloth-config.cancel_discard")
 		         : new TranslationTextComponent("gui.cancel")));
-		for (IGuiEventListener child : this.getEventListeners()) {
+		for (IGuiEventListener child : getEventListeners()) {
 			if (!(child instanceof ITickableTileEntity)) continue;
 			((ITickableTileEntity) child).tick();
 		}
 	}
 	
-	@Nullable
-	protected Widget getQuitButton() {
+	@Nullable protected Widget getQuitButton() {
 		return null;
 	}
 	
-	public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
-		super.render(matrices, mouseX, mouseY, delta);
-		for (Tooltip tooltip : this.tooltips) {
-			this.renderTooltip(matrices, tooltip.getText(), tooltip.getX(), tooltip.getY());
-		}
-		this.tooltips.clear();
+	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		final boolean hasDialog = !dialogs.isEmpty();
+		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
+		super.render(mStack, suppressHover? -1 : mouseX, suppressHover? -1 : mouseY, delta);
+		renderOverlays(mStack, hasDialog? -1 : mouseX, hasDialog? -1 : mouseY, delta);
+		if (hasDialog) tooltips.clear();
+		renderDialogs(mStack, mouseX, mouseY, delta);
+		for (Tooltip tooltip : tooltips)
+			renderTooltip(mStack, tooltip.getText(), tooltip.getX(), tooltip.getY());
+		tooltips.clear();
 	}
 	
-	@Override
-	public void addTooltip(Tooltip tooltip) {
-		this.tooltips.add(tooltip);
+	@Override public void addTooltip(Tooltip tooltip) {
+		tooltips.add(tooltip);
+	}
+	
+	@Override public boolean removeTooltips(Rectangle area) {
+		final List<Tooltip> removed = tooltips.stream().filter(t -> area.contains(t.getPoint())).collect(Collectors.toList());
+		return tooltips.removeAll(removed);
+	}
+	
+	@Override @Nullable public Rectangle handleScissor(@Nullable Rectangle area) {
+		return area;
 	}
 	
 	protected void overlayBackground(
-	  MatrixStack matrices, Rectangle rect, int red, int green, int blue, int startAlpha,
-	  int endAlpha
+	  MatrixStack mStack, Rectangle rect, int red, int green, int blue
 	) {
-		this.overlayBackground(
-		  matrices.getLast().getMatrix(), rect, red, green, blue, startAlpha, endAlpha);
+		overlayBackground(mStack.getLast().getMatrix(), rect, red, green, blue, 255, 255);
 	}
 	
-	protected void overlayBackground(
+	@SuppressWarnings("SameParameterValue") protected void overlayBackground(
 	  Matrix4f matrix, Rectangle rect, int red, int green, int blue, int startAlpha, int endAlpha
 	) {
-		if (this.isTransparentBackground()) {
-			return;
-		}
+		if (minecraft == null || isTransparentBackground()) return;
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder buffer = tessellator.getBuffer();
-		this.minecraft.getTextureManager().bindTexture(this.getBackgroundLocation());
+		minecraft.getTextureManager().bindTexture(getBackgroundLocation());
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		buffer.pos(matrix, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f)
@@ -452,12 +552,7 @@ public abstract class AbstractConfigScreen
 					throw new URISyntaxException(
 					  clickEvent.getValue(), "Unsupported protocol: " + string.toLowerCase(Locale.ROOT));
 				}
-				Minecraft.getInstance().displayGuiScreen(new ConfirmOpenLinkScreen(openInBrowser -> {
-					if (openInBrowser) {
-						Util.getOSType().openURI(uri);
-					}
-					Minecraft.getInstance().displayGuiScreen(this);
-				}, clickEvent.getValue(), true));
+				addDialog(new ConfirmLinkDialog(clickEvent.getValue(), this, true));
 			} catch (URISyntaxException e) {
 				ClothConfigInitializer.LOGGER.error("Can't open url for {}", clickEvent, e);
 			}
@@ -466,18 +561,42 @@ public abstract class AbstractConfigScreen
 		return super.handleComponentClicked(style);
 	}
 	
-	private class QuitSaveConsumer
-	  implements BooleanConsumer {
-		private QuitSaveConsumer() {
-		}
-		
-		public void accept(boolean t) {
-			if (!t) {
-				AbstractConfigScreen.this.minecraft.displayGuiScreen(AbstractConfigScreen.this);
-			} else {
-				AbstractConfigScreen.this.minecraft.displayGuiScreen(AbstractConfigScreen.this.parent);
-			}
-		}
+	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+		return dragged;
+	}
+	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+		this.dragged = dragged;
+	}
+	
+	@Override public void claimRectangle(
+	  Rectangle area, IOverlayRenderer overlayRenderer, int priority
+	) {
+		sortedOverlays.add(area, overlayRenderer, priority);
+	}
+	
+	@Override public SortedOverlayCollection getSortedOverlays() {
+		return sortedOverlays;
+	}
+	
+	public abstract SearchBarWidget getSearchBar();
+	
+	public EditHistory getHistory() {
+		return history;
+	}
+	
+	public void setHistory(EditHistory previous) {
+		this.history = new EditHistory(previous);
+	}
+	
+	public void undo() {
+		history.apply(this, false);
+	}
+	
+	public void redo() {
+		history.apply(this, true);
+	}
+	
+	@Override public List<AbstractDialog> getDialogs() {
+		return dialogs;
 	}
 }
-

@@ -1,15 +1,22 @@
 package endorh.simple_config.clothconfig2.gui.entries;
 
+import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
-import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
+import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.clothconfig2.api.*;
+import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
+import endorh.simple_config.clothconfig2.gui.widget.MultiFunctionImageButton;
+import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,50 +26,59 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
-  extends TooltipListEntry<V> {
-	protected static final int BUTTON_HEIGHT = 20;
+public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & IChildListEntry>
+  extends TooltipListEntry<V> implements IChildListEntry {
 	
 	protected final Entry entry;
 	protected final Button button;
+	protected final ResetButton resetButton = new ResetButton(this);
 	protected final Supplier<ITextComponent> buttonLabelSupplier;
-	protected final @Nullable Consumer<V> saveConsumer;
 	protected List<IGuiEventListener> listeners;
+	protected List<IGuiEventListener> childListeners;
+	protected boolean child;
 	
 	public EntryButtonListEntry(
 	  ITextComponent fieldName, Entry entry, Consumer<V> action,
-	  Supplier<ITextComponent> buttonLabelSupplier,
-	  @Nullable Consumer<V> saveConsumer,
-	  @Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier,
-	  ITextComponent resetButtonKey
+	  Supplier<ITextComponent> buttonLabelSupplier
 	) {
-		super(fieldName, tooltipSupplier);
+		super(fieldName);
 		this.entry = entry;
-		this.entry.setParent(this.getParent());
+		entry.setChild(true);
+		entry.setParent(getParentOrNull());
+		entry.setScreen(getConfigScreenOrNull());
+		entry.setName(name);
+		entry.setParentEntry(parentEntry);
+		entry.setListParent(listParent);
+		entry.setExpandableParent(getExpandableParent());
 		this.buttonLabelSupplier = buttonLabelSupplier;
-		this.saveConsumer = saveConsumer;
-		final FontRenderer fr = Minecraft.getInstance().fontRenderer;
-		this.button = new Button(
-		  0, 0, fr.getStringPropertyWidth(resetButtonKey) + 6, BUTTON_HEIGHT,
-		  buttonLabelSupplier.get(), p -> action.accept(getValue()));
-		this.listeners = Util.make(new ArrayList<>(), l -> {
-			l.add(button);
-			l.add(entry);
-		});
-		setReferencableEntries(Util.make(new ArrayList<>(), l -> l.add(entry)));
+		this.button = new MultiFunctionImageButton(
+		  0, 0, 20, 20, 160, 128,
+		  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"),
+		  (w, b) -> {
+			  if (b == 0) {
+				  action.accept(getValue());
+				  return true;
+			  }
+			  return false;
+		  });
+		this.listeners = Lists.newArrayList(this.entry, button, resetButton);
+		this.childListeners = Lists.newArrayList(this.entry, button);
 		setReferenceProviderEntries(Util.make(new ArrayList<>(), l -> l.add(entry)));
 	}
 	
-	@Override public @NotNull AbstractConfigEntry<V> provideReferenceEntry() {
+	@Override public @NotNull AbstractConfigEntry<?> provideReferenceEntry() {
 		return entry; // Test
 	}
 	
 	@Override public void updateSelected(boolean isSelected) {
+		super.updateSelected(isSelected);
 		entry.updateSelected(isSelected);
+		if (!isSelected)
+			EntryButtonListEntry.forceUnFocus(button);
 	}
 	
 	@Override public boolean isEdited() {
-		return saveConsumer != null && entry.isEdited();
+		return saveConsumer != null && super.isEdited();
 	}
 	
 	@Override public V getValue() {
@@ -73,20 +89,11 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
 		entry.setValue(value);
 	}
 	
-	@Override public Optional<V> getDefaultValue() {
-		return entry.getDefaultValue();
-	}
-	
-	@Override public void save() {
-		if (saveConsumer != null)
-			saveConsumer.accept(getValue());
-	}
-	
 	@Override public int getItemHeight() {
 		return entry.getItemHeight();
 	}
 	
-	@Override public Optional<ITextComponent> getError() {
+	@Internal @Override public Optional<ITextComponent> getError() {
 		return entry.getError();
 	}
 	
@@ -95,37 +102,128 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V>>
 		entry.setEditable(editable);
 	}
 	
-	@Override public void render(
+	@Override public void renderEntry(
 	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		entry.setParent(getParent());
-		entry.setScreen(getConfigScreen());
+		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		entry.setEditable(isEditable());
-		entry.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		
 		final MainWindow window = Minecraft.getInstance().getMainWindow();
-		final FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
-		button.setMessage(buttonLabelSupplier.get());
+		final FontRenderer font = Minecraft.getInstance().fontRenderer;
 		button.active = isEditable() && !getError().isPresent();
+		int entryX;
 		this.button.y = y;
-		if (fontRenderer.getBidiFlag()) {
-			fontRenderer.func_238407_a_(
+		if (font.getBidiFlag()) {
+			font.func_238407_a_(
 			  mStack, getDisplayedFieldName().func_241878_f(),
-			  (float)(window.getScaledWidth() - x - fontRenderer.getStringPropertyWidth(getDisplayedFieldName())),
+			  (float)(window.getScaledWidth() - x - font.getStringPropertyWidth(getDisplayedFieldName())),
 			  (float)(y + 6), this.getPreferredTextColor());
-			this.button.x = x;
+			this.resetButton.x = x;
+			entryX = x + 24;
 		} else {
-			fontRenderer.func_238407_a_(
+			font.func_238407_a_(
 			  mStack, getDisplayedFieldName().func_241878_f(), (float) x,
 			  (float) (y + 6), this.getPreferredTextColor());
-			this.button.x = x + entryWidth - button.getWidth();
+			this.resetButton.x = x + entryWidth - button.getWidth();
+			entryX = x + entryWidth - 148;
 		}
-		button.render(mStack, mouseX, mouseY, 0F);
+		resetButton.y = y;
+		resetButton.render(mStack, mouseX, mouseY, delta);
+		renderChild(mStack, entryX, y, 146 - resetButton.getWidth(), 20, mouseX, mouseY, delta);
+	}
+	
+	@Override public void renderChildEntry(
+	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	) {
+		entry.renderChild(mStack, x, y, w - 22, h, mouseX, mouseY, delta);
+		button.x = x + w - 20;
+		button.y = y;
+		button.render(mStack, mouseX, mouseY, delta);
+	}
+	
+	@Override public void setParent(DynamicEntryListWidget<?> parent) {
+		super.setParent(parent);
+		entry.setParent(parent);
+	}
+	
+	@Override public void setScreen(AbstractConfigScreen screen) {
+		super.setScreen(screen);
+		entry.setScreen(screen);
+	}
+	
+	@Override public void setListParent(
+	  @Nullable BaseListEntry<?, ?, ?> listParent
+	) {
+		super.setListParent(listParent);
+		entry.setListParent(listParent);
+	}
+	
+	@Override public void setExpandableParent(IExpandable parent) {
+		super.setExpandableParent(parent);
+		entry.setExpandableParent(parent);
+	}
+	
+	@Override public void setName(String name) {
+		super.setName(name);
+		if (entry != null) entry.setName(name);
+	}
+	
+	@Override public void setParentEntry(AbstractConfigEntry<?> parentEntry) {
+		super.setParentEntry(parentEntry);
+		entry.setParentEntry(parentEntry);
+	}
+	
+	@Override public void setCategory(ConfigCategory category) {
+		super.setCategory(category);
+		entry.setCategory(category);
+	}
+	
+	@Override public void resetValue(boolean commit) {
+		entry.resetValue(commit);
+	}
+	
+	@Override public void restoreValue(boolean commit) {
+		entry.restoreValue(commit);
+	}
+	
+	@Override public boolean isResettable() {
+		return entry.isResettable();
+	}
+	
+	@Override public boolean isRestorable() {
+		return entry.isRestorable();
+	}
+	
+	@Override public void onNavigate() {
+		super.onNavigate();
+		setListener(entry);
+	}
+	
+	@Override public String seekableValueText() {
+		return entry.seekableValueText();
+	}
+	
+	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+		if (button.isMouseOver(mouseX, mouseY))
+			return Optional.of(new ITextComponent[]{buttonLabelSupplier.get()});
+		if (entry instanceof TooltipListEntry) {
+			if (!((TooltipListEntry<?>) entry).getTooltip(mouseX, mouseY).isPresent()
+			    && ((TooltipListEntry<?>) entry).getTooltip().isPresent())
+				return Optional.empty();
+		}
+		return super.getTooltip(mouseX, mouseY);
 	}
 	
 	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
-		return listeners;
+		return isChild()? childListeners : listeners;
+	}
+	
+	@Override public boolean isChild() {
+		return child;
+	}
+	
+	@Override public void setChild(boolean child) {
+		this.child = child;
 	}
 }

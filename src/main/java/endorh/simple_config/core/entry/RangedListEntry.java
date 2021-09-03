@@ -1,5 +1,7 @@
 package endorh.simple_config.core.entry;
 
+import endorh.simple_config.clothconfig2.impl.builders.FieldBuilder;
+import endorh.simple_config.clothconfig2.impl.builders.RangedListFieldBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -10,8 +12,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class RangedListEntry
-  <V extends Comparable<V>, Config, Gui, Self extends RangedListEntry<V, Config, Gui, Self>>
+public abstract class RangedListEntry<
+  V extends Comparable<V>, Config, Gui extends Comparable<Gui>,
+  Self extends RangedListEntry<V, Config, Gui, Self>>
   extends AbstractListEntry<V, Config, Gui, Self> {
 	protected V min;
 	protected V max;
@@ -22,7 +25,8 @@ public abstract class RangedListEntry
 		super(parent, name, value);
 	}
 	
-	public static abstract class Builder<V extends Comparable<V>, Config, Gui,
+	public static abstract class Builder<V extends Comparable<V>, Config,
+	  Gui extends Comparable<Gui>,
 	  Entry extends RangedListEntry<V, Config, Gui, Entry>,
 	  Self extends Builder<V, Config, Gui, Entry, Self>>
 	  extends AbstractListEntry.Builder<V, Config, Gui, Entry, Self> {
@@ -30,36 +34,39 @@ public abstract class RangedListEntry
 		protected V min = null;
 		protected V max = null;
 		
-		public Builder(List<V> value) {
-			super(value);
+		public Builder(List<V> value, Class<?> innerType) {
+			super(value, innerType);
 		}
 		
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
 		public Self min(@Nonnull V min) {
-			this.min = min;
-			elemError(clamp(validator));
-			return self();
+			Self copy = copy();
+			copy.min = min;
+			copy = copy.elemError(clamp(validator));
+			return copy;
 		}
 		
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
 		public Self max(@Nonnull V max) {
-			this.max = max;
-			elemError(clamp(validator));
-			return self();
+			Self copy = copy();
+			copy.max = max;
+			copy = copy.elemError(clamp(validator));
+			return copy;
 		}
 		
 		/**
 		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
 		 */
 		public Self range(V min, V max) {
-			this.min = min;
-			this.max = max;
-			elemError(clamp(validator));
-			return self();
+			Self copy = copy();
+			copy.min = min;
+			copy.max = max;
+			copy = copy.elemError(clamp(validator));
+			return copy;
 		}
 		
 		@Override
@@ -92,5 +99,18 @@ public abstract class RangedListEntry
 			e.max = max;
 			return e;
 		}
+		
+		@Override protected Self copy() {
+			final Self copy = super.copy();
+			copy.min = min;
+			copy.max = max;
+			return copy;
+		}
+	}
+	
+	protected <F extends RangedListFieldBuilder<Gui, ?, ?, F>> F decorate(F builder) {
+		builder = super.decorate(builder);
+		builder.setMin(elemForGui(min)).setMax(elemForGui(max));
+		return builder;
 	}
 }

@@ -3,6 +3,7 @@ package endorh.simple_config.core.entry;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
+import endorh.simple_config.core.TextUtil;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;
@@ -11,9 +12,13 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class CompoundNBTEntry
   extends AbstractSerializableEntry<CompoundNBT, CompoundNBTEntry> {
+	
+	protected static final Pattern STYLE_COMPONENT = Pattern.compile("§[0-9a-f]");
+	
 	@Internal public CompoundNBTEntry(ISimpleConfigEntryHolder parent, String name, CompoundNBT value) {
 		super(parent, name, value, CompoundNBT.class);
 	}
@@ -27,10 +32,14 @@ public class CompoundNBTEntry
 		protected CompoundNBTEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new CompoundNBTEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override protected String serialize(CompoundNBT value) {
-		return value.toFormattedComponent().getString();
+		return STYLE_COMPONENT.matcher(value.toFormattedComponent().getString()).replaceAll("");
 	}
 	
 	@Override protected @Nullable CompoundNBT deserialize(String value) {

@@ -32,8 +32,9 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 		 * Set a Yes/No supplier for this entry
 		 */
 		public Builder displayAs(Function<Boolean, ITextComponent> displayAdapter) {
-			yesNoSupplier = displayAdapter;
-			return this;
+			Builder copy = copy();
+			copy.yesNoSupplier = displayAdapter;
+			return copy;
 		}
 		
 		@Override
@@ -41,6 +42,12 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 			final NonPersistentBooleanEntry e = new NonPersistentBooleanEntry(parent, name, value);
 			e.yesNoSupplier = yesNoSupplier;
 			return e;
+		}
+		
+		@Override protected Builder createCopy() {
+			final Builder copy = new Builder(value);
+			copy.yesNoSupplier = yesNoSupplier;
+			return copy;
 		}
 	}
 	
@@ -51,11 +58,7 @@ public class NonPersistentBooleanEntry extends GUIOnlyEntry<Boolean, Boolean, No
 	) {
 		final BooleanToggleBuilder valBuilder = builder
 		  .startBooleanToggle(getDisplayName(), get())
-		  .setDefaultValue(value)
-		  .setSaveConsumer(saveConsumer())
-		  .setYesNoTextSupplier(yesNoSupplier)
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .setYesNoTextSupplier(yesNoSupplier);
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

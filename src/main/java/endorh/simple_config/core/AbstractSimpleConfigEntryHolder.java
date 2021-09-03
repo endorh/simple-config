@@ -1,16 +1,18 @@
 package endorh.simple_config.core;
 
+import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
+	protected static final Pattern DOT = Pattern.compile("\\.");
 	protected Map<String, ConfigValue<?>> specValues;
 	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
@@ -94,7 +96,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	public AbstractSimpleConfigEntryHolder getChild(String path) {
 		if (path == null || path.isEmpty())
 			return this;
-		final String[] split = path.split("\\.", 2);
+		final String[] split = DOT.split(path, 2);
 		if (split.length < 2) {
 			if (children.containsKey(path))
 				return children.get(path);
@@ -130,7 +132,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
 	protected <T> ConfigValue<T> getSubSpecValue(String path) {
-		final String[] split = path.split("\\.", 2);
+		final String[] split = DOT.split(path, 2);
 		if (split.length < 2)
 			throw new NoSuchConfigEntryError(getPath() + "." + path);
 		if (children.containsKey(split[0]))
@@ -168,12 +170,24 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
 	protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
-		final String[] split = path.split("\\.", 2);
+		final String[] split = DOT.split(path, 2);
 		if (split.length < 2)
 			throw new NoSuchConfigEntryError(getPath() + "." + path);
 		if (children.containsKey(split[0]))
 			return children.get(split[0]).getEntry(split[1]);
 		throw new NoSuchConfigEntryError(getPath() + "." + path);
+	}
+	
+	protected abstract void commitFields();
+	
+	protected void commitFields(String path) {
+		if (path == null || path.isEmpty())
+			commitFields();
+		final String[] split = DOT.split(path, 2);
+		if (children.containsKey(split[0])) {
+			if (split.length < 2) children.get(split[0]).commitFields();
+			else children.get(split[0]).commitFields(split[1]);
+		} else throw new NoSuchConfigGroupError(getPath() + "." + path);
 	}
 	
 	/**
@@ -215,9 +229,10 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	@Internal @Deprecated @Override public <V> void doSet(String path, V value) {
 		try {
-			if (!this.<V, Object>getEntry(path).typeClass.isInstance(value))
+			AbstractConfigEntry<V, ?, Object, ?> entry = this.getEntry(path);
+			if (!entry.typeClass.isInstance(value))
 				throw new InvalidConfigValueTypeException(getPath() + "." + path);
-			this.<V, Object>getEntry(path).set(getSpecValue(path), value);
+			entry.set(getSpecValue(path), value);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
@@ -315,16 +330,49 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	@Override public <G> G getGUI(String path) {
 		try {
-			if (entries.containsKey(path))
-				return this.<Object, G>getEntry(path).getGUI();
-			final String[] split = path.split("\\.", 2);
-			if (split.length < 2)
-				throw new NoSuchConfigEntryError(getPath() + "." + path);
-			if (children.containsKey(split[0]))
-				return children.get(split[0]).getGUI(split[1]);
-			throw new NoSuchConfigEntryError(getPath() + "." + path);
+			return this.<Object, G>getEntry(path).getGUI();
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
+	}
+	
+	public <V> V getFromGUI(String path) {
+		try {
+			return this.<V, Object>getEntry(path).getFromGUI();
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
+		}
+	}
+	
+	public boolean getBooleanFromGUI(String path) {
+		return this.<Boolean>getFromGUI(path);
+	}
+	
+	public byte getByteFromGUI(String path) {
+		return this.<Number>getFromGUI(path).byteValue();
+	}
+	
+	public short getShortFromGUI(String path) {
+		return this.<Number>getFromGUI(path).shortValue();
+	}
+	
+	public int getIntFromGUI(String path) {
+		return this.<Number>getFromGUI(path).intValue();
+	}
+	
+	public long getLongFromGUI(String path) {
+		return this.<Number>getFromGUI(path).longValue();
+	}
+	
+	public float getFloatFromGUI(String path) {
+		return this.<Number>getFromGUI(path).floatValue();
+	}
+	
+	public double getDoubleFromGUI(String path) {
+		return this.<Number>getFromGUI(path).doubleValue();
+	}
+	
+	public char getCharFromGUI(String path) {
+		return this.<Character>getFromGUI(path);
 	}
 }

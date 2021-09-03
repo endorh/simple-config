@@ -28,6 +28,10 @@ public class ResourceLocationEntry
 		protected ResourceLocationEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new ResourceLocationEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override

@@ -23,9 +23,8 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 	}
 	
 	public static class Builder extends RangedListEntry.Builder<Long, Number, Long, LongListEntry, Builder> {
-		
 		public Builder(List<Long> value) {
-			super(value);
+			super(value, Long.class);
 		}
 		
 		/**
@@ -59,6 +58,10 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 		protected LongListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new LongListEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
@@ -73,20 +76,10 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<List<Long>>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<List<Long>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final LongListBuilder valBuilder = builder
-		  .startLongList(getDisplayName(), get())
-		  .setDefaultValue(value)
-		  .setMin(min).setMax(max)
-		  .setInsertInFront(insertInTop)
-		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startLongList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

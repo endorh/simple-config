@@ -53,11 +53,11 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		}
 	}
 	
-	@Override protected Void forConfig(V value) {
+	@Override public Void forConfig(V value) {
 		return null;
 	}
 	
-	@Override protected V fromConfig(@Nullable Void value) {
+	@Override public V fromConfig(@Nullable Void value) {
 		return null;
 	}
 	
@@ -69,6 +69,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	@Override
 	protected final void set(ConfigValue<?> spec, V value) {
 		set(value);
+		bakeField();
 	}
 	
 	protected V get() {

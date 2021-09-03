@@ -32,10 +32,9 @@
   "simple-config.config.error.invalid_nbt": "NBT inválido! %s",
   "simple-config.config.error.invalid_pattern": "Patrón inválido! %s",
   "simple-config.config.error.duplicate_key": "Clave duplicada! \"%s\"",
-  "simple-config.config.error.invalid_enum": "Valor inválido! Debe ser %s",
+  "simple-config.config.error.unknown_enum": "Valor inválido! Debe ser %s",
 
   "simple-config.config.error.min_greater_than_max": "Mín > Máx!",
-  "simple-config.config.error.not_even": "No par! %s",
   "simple-config.config.error.not_lowercase": "No en minúsculas! \"%s\"",
 
   "simple-config.config.text.greeting_text": "Esta es una configuración de muestra como ejemplo para desarrolladores de mods",

@@ -1,17 +1,18 @@
 package endorh.simple_config.core;
 
-import endorh.simple_config.SimpleConfigMod;
-import endorh.simple_config.core.SimpleConfig.IGUIEntry;
-import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simple_config.SimpleConfigMod.ClientConfig;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.impl.builders.FieldBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.SubCategoryBuilder;
+import endorh.simple_config.core.NBTUtil.ExpectedType;
+import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simple_config.core.SimpleConfig.IGUIEntry;
+import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -21,10 +22,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.*;
 
 import static endorh.simple_config.core.ReflectionUtil.setBackingField;
@@ -47,6 +45,9 @@ import static endorh.simple_config.core.TextUtil.splitTtc;
 public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
   implements IGUIEntry {
 	protected final ISimpleConfigEntryHolder parent;
+	/**
+	 * The default value of this entry
+	 */
 	protected final V value;
 	protected String name;
 	protected Class<?> typeClass;
@@ -59,6 +60,15 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
 	protected @Nullable Function<Gui, Optional<ITextComponent[]>> guiTooltipSupplier = null;
 	protected @Nullable BiConsumer<Gui, ISimpleConfigEntryHolder> saver = null;
+	/**
+	 * Returning false makes the entry not editable in the GUI<br>
+	 * Note that users may still be able to modify these entries from the
+	 * config file. This feature is only meant to visually express that
+	 * an entry's value is currently irrelevant, perhaps due to other
+	 * entries' values, but don't overuse it to the point editing the
+	 * config becomes frustrating.
+	 */
+	protected @Nullable Supplier<Boolean> editableSupplier = null;
 	protected @Nullable Field backingField;
 	protected boolean dirty = false;
 	protected @Nullable ITextComponent displayName = null;
@@ -145,7 +155,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	protected boolean debugTranslations() {
-		return SimpleConfigMod.Config.advanced.translation_debug_mode;
+		return ClientConfig.advanced.translation_debug_mode;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -196,7 +206,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Transform value to Gui type
 	 */
-	protected Gui forGui(V value) {
+	public Gui forGui(V value) {
 		//noinspection unchecked
 		return (Gui) value;
 	}
@@ -204,7 +214,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Transform value from Gui type
 	 */
-	protected @Nullable V fromGui(@Nullable Gui value) {
+	@Nullable public V fromGui(@Nullable Gui value) {
 		//noinspection unchecked
 		return (V) value;
 	}
@@ -212,7 +222,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Transform value from Gui type
 	 */
-	protected V fromGuiOrDefault(Gui value) {
+	public V fromGuiOrDefault(Gui value) {
 		final V v = fromGui(value);
 		return v != null ? v : this.value;
 	}
@@ -220,7 +230,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Transform value to Config type
 	 */
-	protected Config forConfig(V value) {
+	public Config forConfig(V value) {
 		//noinspection unchecked
 		return (Config) value;
 	}
@@ -228,7 +238,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Transform value from Config type
 	 */
-	protected @Nullable V fromConfig(@Nullable Config value) {
+	@Nullable public V fromConfig(@Nullable Config value) {
 		//noinspection unchecked
 		return (V) value;
 	}
@@ -242,7 +252,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	/**
-	 * Subclasses may override to prevent nesting at buildEntry time
+	 * Subclasses may override to prevent nesting at build time
 	 */
 	protected boolean canBeNested() {
 		return true;
@@ -265,7 +275,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			// guiEntry = null; // Discard the entry
 			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
-			if (!parent.get(n).equals(v)) {
+			if (!Objects.equals(parent.get(n), v)) {
 				dirty();
 				parent.markDirty().set(n, v);
 			}
@@ -324,12 +334,16 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected <F extends FieldBuilder<?, ?>> F decorate(F builder) {
-		try {
-			// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
-			// builder.requireRestart(requireRestart);
-			builder.requireRestart(false);
-		} catch (UnsupportedOperationException ignored) {}
+	protected <F extends FieldBuilder<Gui, ?, F>> F decorate(F builder) {
+		// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
+		// builder.requireRestart(requireRestart);
+		builder.requireRestart(false)
+		  .setDefaultValue(() -> forGui(value))
+		  .setTooltipSupplier(this::supplyTooltip)
+		  .setErrorSupplier(this::supplyError)
+		  .setSaveConsumer(saveConsumer())
+		  .setEditableSupplier(editableSupplier)
+		  .setName(name);
 		return builder;
 	}
 	
@@ -427,6 +441,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected void set(ConfigValue<?> spec, V value) {
 		//noinspection unchecked
 		((ConfigValue<Config>) spec).set(forConfig(value));
+		bakeField();
 	}
 	
 	protected Gui getGUI() {
@@ -437,16 +452,30 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	protected void setGUI(Gui value) {
 		if (guiEntry != null) {
+			AbstractConfigScreen screen = guiEntry.getConfigScreenOrNull();
+			if (screen != null) screen.getHistory().preserveState(guiEntry);
 			guiEntry.setValue(value);
+			if (screen != null) screen.getHistory().saveState(screen);
 		} else throw new IllegalStateException("Cannot set GUI value without GUI");
 	}
 	protected void setForGUI(V value) {
 		setGUI(forGui(value));
 	}
 	
-	protected void commitField(ISimpleConfigEntryHolder c) throws IllegalAccessException {
+	protected void commitField() throws IllegalAccessException {
+		if (backingField != null)
+			//noinspection unchecked
+			set((V) backingField.get(null));
+	}
+	
+	protected void bakeField() {
 		if (backingField != null) {
-			c.set(name, backingField.get(null));
+			try {
+				setBackingField(backingField, get());
+			} catch (IllegalAccessException e) {
+				throw new ConfigReflectiveOperationException(
+				  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
+			}
 		}
 	}
 	
@@ -499,5 +528,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		addTranslationsDebugInfo(lines);
 		addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new ITextComponent[0]));
+	}
+	
+	public ExpectedType getExpectedType() {
+		return new ExpectedType(typeClass);
 	}
 }

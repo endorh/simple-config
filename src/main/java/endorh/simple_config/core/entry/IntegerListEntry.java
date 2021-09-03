@@ -26,7 +26,7 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 	public static class Builder extends RangedListEntry.Builder<Integer, Number, Integer, IntegerListEntry, Builder> {
 		
 		public Builder(List<Integer> value) {
-			super(value);
+			super(value, Integer.class);
 		}
 		
 		/**
@@ -60,6 +60,10 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 		protected IntegerListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new IntegerListEntry(parent, name, value);
 		}
+		
+		@Override protected Builder createCopy() {
+			return new Builder(value);
+		}
 	}
 	
 	@Override
@@ -74,20 +78,10 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
-	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final IntListBuilder valBuilder = builder
-		  .startIntList(getDisplayName(), get())
-		  .setDefaultValue(value)
-		  .setMin(min).setMax(max)
-		  .setInsertInFront(insertInTop)
-		  .setExpanded(expand)
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .startIntList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

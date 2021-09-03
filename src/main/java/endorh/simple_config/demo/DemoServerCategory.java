@@ -2,8 +2,9 @@ package endorh.simple_config.demo;
 
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.core.SimpleConfig;
+import endorh.simple_config.core.SimpleConfigBuilder;
 import endorh.simple_config.core.annotation.*;
-import endorh.simple_config.demo.DemoServerConfig.demo.demo_group;
+import endorh.simple_config.demo.DemoServerCategory.demo.demo_group;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.IntNBT;
 import net.minecraft.nbt.StringNBT;
@@ -21,9 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static endorh.simple_config.core.SimpleConfig.category;
 import static java.util.Arrays.asList;
 
-public class DemoServerConfig {
+public class DemoServerCategory {
 	// The following utility methods are used in this example to shorten expressions
 	private static String prefix(String key) {
 		return SimpleConfigMod.MOD_ID + ".config." + key;
@@ -33,6 +35,26 @@ public class DemoServerConfig {
 	}
 	private static TranslationTextComponent ttc(String key, Object... args) {
 		return new TranslationTextComponent(key, args);
+	}
+	
+	public static SimpleConfigBuilder.CategoryBuilder getDemoServerCategory() {
+		// In this example, we generate all config entries
+		//   directly in the config class through the use of annotations
+		// This is discouraged, since it's more restrictive than the
+		//   builder. For instance, you may not define lists of
+		//   complex types, such as lists of lists, nor lists of maps
+		//   in the config class.
+		//   Declaring groups and categories like this may require you
+		//   to give their order (relative to its siblings) explicitly
+		//   in their annotations since it's not possible to read inner
+		//   classes in declaration order.
+		// Where possible, you should use the builder to define your
+		//   entries, as it's done in DemoConfigCategory, but this
+		//   class serves as an example for small/simple configs that
+		//   may not require any such features.
+		
+		// We use this class as the backing class
+		return category("demo", demo.class);
 	}
 	
 	public static void registerServerConfig() {
@@ -52,7 +74,7 @@ public class DemoServerConfig {
 		//   may not require any such features.
 		
 		// We use this class as the backing class
-		SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.SERVER, DemoServerConfig.class)
+		SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.SERVER, DemoServerCategory.class)
 		  .buildAndRegister();
 	}
 	
@@ -74,8 +96,9 @@ public class DemoServerConfig {
 	// For instance, this category's label and tooltip would be mapped to the keys
 	//   config.{mod-id}.category.server.demo
 	//   config.{mod-id}.category.server.demo.help (Tooltip, if defined)
-	// Categories may be generated with @Category
-	@Category public static class demo {
+	// Categories may be generated with @Category, though in this case, the category
+	//   is actually generated in the builder, so we use @Bind
+	@Bind public static class demo {
 		// You may also add text entries using the @Text annotation.
 		// The field may be either:
 		//    - A String, which value is ignored

@@ -4,21 +4,24 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class StringMapEntryHolder<V, C, E extends AbstractConfigEntry<V, C, ?, E>>
+public class EntryMapEntryHolder
   implements ISimpleConfigEntryHolder {
 	protected final SimpleConfig root;
-	protected final Map<String, V> values = new HashMap<>();
+	protected final Map<String, Object> values = new HashMap<>();
 	protected int id_gen = 0;
 	
-	@Internal public StringMapEntryHolder(
+	@Internal public EntryMapEntryHolder(
 	  SimpleConfig root
 	) {
 		this.root = root;
 	}
 	
 	public void clear() {
-		values.clear();
+		values.keySet().retainAll(
+		  values.keySet().stream().filter(p -> p.contains("$"))
+		    .collect(Collectors.toSet()));
 		id_gen = 0;
 	}
 	
@@ -38,8 +41,7 @@ public class StringMapEntryHolder<V, C, E extends AbstractConfigEntry<V, C, ?, E
 	}
 	
 	@Override public <T> void doSet(String path, T value) {
-		//noinspection unchecked
-		values.put(path, (V) value);
+		values.put(path, value);
 	}
 	
 	@Override public void markDirty(boolean dirty) {}

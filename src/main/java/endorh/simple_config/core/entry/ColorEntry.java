@@ -2,15 +2,18 @@ package endorh.simple_config.core.entry;
 
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
+import endorh.simple_config.core.IKeyEntry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.ColorFieldBuilder;
+import endorh.simple_config.core.entry.ButtonEntry.Builder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -18,7 +21,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry> {
+public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry>
+  implements IKeyEntry<String, Integer> {
 	protected final boolean alpha;
 	@Internal public ColorEntry(
 	  ISimpleConfigEntryHolder parent, String name, Color value, boolean alpha
@@ -39,18 +43,24 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 		}
 		
 		public Builder alpha(boolean hasAlpha) {
-			alpha = hasAlpha;
-			return self();
+			Builder copy = copy();
+			copy.alpha = hasAlpha;
+			return copy;
 		}
 		
 		@Override
 		protected ColorEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new ColorEntry(parent, name, value, alpha);
 		}
+		
+		@Override protected Builder createCopy() {
+			final Builder copy = new Builder(value);
+			copy.alpha = alpha;
+			return copy;
+		}
 	}
 	
-	@Override
-	protected String forConfig(Color value) {
+	@Override public String forConfig(Color value) {
 		return alpha? String.format("#%08X", value.getRGB()) :
 		       String.format("#%06X", value.getRGB() & 0xFFFFFF);
 	}
@@ -61,8 +71,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\s*");
 	
 	@Override
-	protected @Nullable
-	Color fromConfig(String value) {
+	@Nullable public Color fromConfig(String value) {
 		if (value == null)
 			return null;
 		final Matcher m = (alpha? ALPHA_COLOR_PATTERN : COLOR_PATTERN).matcher(value);
@@ -76,13 +85,12 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	}
 	
 	@Override
-	protected Integer forGui(Color value) {
+	public Integer forGui(Color value) {
 		return alpha? value.getRGB() : value.getRGB() & 0xFFFFFF;
 	}
 	
 	@Override
-	protected @Nullable
-	Color fromGui(@Nullable Integer value) {
+	@Nullable public Color fromGui(@Nullable Integer value) {
 		return value != null ? new Color(value, alpha) : null;
 	}
 	
@@ -105,11 +113,13 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	) {
 		ColorFieldBuilder valBuilder = builder
 		  .startAlphaColorField(getDisplayName(), forGui(get()))
-		  .setAlphaMode(alpha)
-		  .setDefaultValue(forGui(value))
-		  .setSaveConsumer(saveConsumer())
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError);
+		  .setAlphaMode(alpha);
 		return Optional.of(decorate(valBuilder).build());
+	}
+	
+	@Override public Optional<String> deserializeStringKey(
+	  @NotNull String key
+	) {
+		return Optional.of(key);
 	}
 }
