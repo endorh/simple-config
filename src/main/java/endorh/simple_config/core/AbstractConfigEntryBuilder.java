@@ -40,8 +40,6 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected boolean requireRestart = false;
 	protected Class<?> typeClass;
-	protected @Nullable String heldEntryName = null;
-	protected @Nullable AbstractConfigEntryBuilder<?, ?, ?, ?, ?> heldEntryBuilder = null;
 	
 	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
 		this.value = value;
@@ -196,8 +194,6 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 		copy.tooltipArgs = new ArrayList<>(tooltipArgs);
 		copy.requireRestart = requireRestart;
 		copy.typeClass = typeClass;
-		copy.heldEntryName = heldEntryName;
-		copy.heldEntryBuilder = heldEntryBuilder != null? heldEntryBuilder.copy() : null;
 		copy.editableSupplier = editableSupplier;
 		return copy;
 	}

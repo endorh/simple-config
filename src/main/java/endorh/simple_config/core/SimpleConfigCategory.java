@@ -1,12 +1,13 @@
 package endorh.simple_config.core;
 
 import endorh.simple_config.SimpleConfigMod.ClientConfig;
-import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
-import endorh.simple_config.core.SimpleConfig.IGUIEntry;
-import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simple_config.clothconfig2.api.ConfigBuilder;
 import endorh.simple_config.clothconfig2.api.ConfigCategory;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simple_config.core.SimpleConfig.IGUIEntry;
+import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -34,6 +36,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	public final SimpleConfig parent;
 	public final String name;
 	protected final String title;
+	protected final String tooltip;
 	protected final @Nullable Consumer<SimpleConfigCategory> baker;
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
@@ -48,6 +51,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		this.title = title;
 		this.baker = baker;
 		root = parent;
+		this.tooltip = title + ":help";
 	}
 	
 	@Internal protected void build(
@@ -92,8 +96,13 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
-		ConfigCategory category = builder.getOrCreateCategory(getTitle());
-		category.setName(name);
+		ConfigCategory category = builder.getOrCreateCategory(
+		  parent.type.name().toLowerCase() + "." + name);
+		category.setTitle(getTitle());
+		category.setDescription(
+		  () -> I18n.hasKey(tooltip)
+		        ? Optional.of(TextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
+		        : Optional.empty());
 		if (background != null)
 			category.setBackground(background);
 		else if (parent.background != null)

@@ -1,7 +1,6 @@
 package endorh.simple_config.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.clothconfig2.ClothConfigInitializer;
@@ -22,7 +21,6 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.*;
@@ -31,6 +29,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 // TODO: Drop or merge
 @Deprecated public class GlobalizedClothConfigScreen
@@ -38,8 +37,7 @@ import java.util.*;
 	public ClothConfigScreen.ListWidget<AbstractConfigEntry<?>> listWidget;
 	private Widget cancelButton;
 	private Widget exitButton;
-	private final LinkedHashMap<ITextComponent, List<AbstractConfigEntry<?>>> categorizedEntries =
-	  Maps.newLinkedHashMap();
+	// private final LinkedHashMap<ITextComponent, List<AbstractConfigEntry<?>>> categorizedEntries = Maps.newLinkedHashMap();
 	private final ScrollingContainer sideScroller = new ScrollingContainer() {
 		
 		@Override
@@ -98,37 +96,21 @@ import java.util.*;
 	
 	@Internal
 	public GlobalizedClothConfigScreen(
-	  Screen parent, ITextComponent title, Map<ITextComponent, ConfigCategory> categoryMap,
+	  Screen parent, ITextComponent title, Map<String, ConfigCategory> categories,
 	  ResourceLocation backgroundLocation
 	) {
-		super(parent, title, backgroundLocation, categoryMap.values());
-		categoryMap.forEach((categoryName, category) -> {
-			List<AbstractConfigListEntry<?>> entries = Lists.newArrayList();
-			for (Object object : category.getEntries()) {
-				//noinspection unchecked
-				AbstractConfigListEntry<?> entry =
-				  object instanceof Tuple ? ((Tuple<?, AbstractConfigListEntry<?>>) object).getB()
-				                          : (AbstractConfigListEntry<?>) object;
+		super(parent, title, backgroundLocation, categories);
+		for (Entry<String, ConfigCategory> e : categories.entrySet()) {
+			for (AbstractConfigEntry<?> entry : e.getValue().getEntries())
 				entry.setScreen(this);
-				entries.add(entry);
-			}
-			//noinspection unchecked
-			this.categorizedEntries.put(
-			  categoryName, (List<AbstractConfigEntry<?>>) (List<?>) entries);
-		});
+		}
 		this.sideSlider.scrollTo(0.0, false);
 		cancelButton = new Button(0, 0, 0, 0, NarratorChatListener.EMPTY, p -> this.onClose());
 		exitButton = new Button(0, 0, 0, 0, NarratorChatListener.EMPTY, p -> onClose());
 	}
 	
-	@Override
-	public void requestReferenceRebuilding() {
+	@Override public void requestReferenceRebuilding() {
 		this.requestingReferenceRebuilding = true;
-	}
-	
-	@Override
-	public Map<ITextComponent, List<AbstractConfigEntry<?>>> getCategorizedEntries() {
-		return this.categorizedEntries;
 	}
 	
 	protected void init() {
@@ -142,14 +124,15 @@ import java.util.*;
 			 this.height - 32, this.getBackgroundLocation());
 		this.children.add(this.listWidget);
 		this.listWidget.setLeftPos(14);
-		this.categorizedEntries.forEach((category, entries) -> {
+		for (ConfigCategory cat : this.sortedCategories) {
 			if (!this.listWidget.getEntries().isEmpty())
 				this.listWidget.getEntries().add(new EmptyEntry(5));
 			this.listWidget.getEntries().add(new EmptyEntry(4));
-			this.listWidget.getEntries().add(new CategoryTextEntry(category, category.deepCopy().mergeStyle(TextFormatting.BOLD)));
+			this.listWidget.getEntries().add(new CategoryTextEntry(
+			  cat.getTitle(), cat.getTitle().deepCopy().mergeStyle(TextFormatting.BOLD)));
 			this.listWidget.getEntries().add(new EmptyEntry(4));
-			this.listWidget.getEntries().addAll(entries);
-		});
+			this.listWidget.getEntries().addAll(cat.getEntries());
+		}
 		int buttonWidths = Math.min(200, (this.width - 50 - 12) / 3);
 		this.cancelButton = new Button(0, this.height - 26, buttonWidths, 20,
 		                               this.isEdited() ? new TranslationTextComponent(
@@ -164,11 +147,12 @@ import java.util.*;
 			  public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 				  boolean hasErrors = false;
 				  entries:
-				  for (List<AbstractConfigEntry<?>> entries : GlobalizedClothConfigScreen.this.categorizedEntries.values()) {
-					  for (AbstractConfigEntry<?> entry : entries) {
-						  if (!entry.getConfigError().isPresent()) continue;
-						  hasErrors = true;
-						  break entries;
+				  for (ConfigCategory cat : sortedCategories) {
+					  for (AbstractConfigEntry<?> entry : cat.getEntries()) {
+						  if (entry.getConfigError().isPresent()) {
+							  hasErrors = true;
+							  break entries;
+						  }
 					  }
 				  }
 				  this.active = GlobalizedClothConfigScreen.this.isEdited() && !hasErrors;
@@ -183,12 +167,11 @@ import java.util.*;
 	}
 	
 	private void buildReferences() {
-		this.categorizedEntries.forEach((categoryText, entries) -> {
-			this.references.add(new CategoryReference(categoryText));
-			for (AbstractConfigEntry<?> entry : entries) {
-				this.buildReferenceFor(entry, 1);
-			}
-		});
+		for (ConfigCategory cat : sortedCategories) {
+			references.add(new CategoryReference(cat.getTitle()));
+			for (AbstractConfigEntry<?> entry : cat.getEntries())
+				buildReferenceFor(entry, 1);
+		}
 	}
 	
 	private void buildReferenceFor(AbstractConfigEntry<?> entry, int layer) {

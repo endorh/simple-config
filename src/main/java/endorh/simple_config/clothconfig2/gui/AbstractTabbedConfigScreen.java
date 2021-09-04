@@ -13,27 +13,23 @@ import java.util.Map;
 
 public abstract class AbstractTabbedConfigScreen extends AbstractConfigScreen
   implements TabbedConfigScreen {
-	private final Map<ITextComponent, ResourceLocation> categoryBackgroundLocation =
-	  Maps.newHashMap();
+	private final Map<String, ResourceLocation> categoryBackgroundLocation = Maps.newHashMap();
 	
 	protected AbstractTabbedConfigScreen(
 	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
-	  Collection<ConfigCategory> categories
+	  Map<String, ConfigCategory> categories
 	) {
 		super(parent, title, backgroundLocation, categories);
 	}
 	
-	@Override
-	public final void registerCategoryBackground(ITextComponent text, ResourceLocation background) {
+	@Override public final void registerCategoryBackground(String text, ResourceLocation background) {
 		this.categoryBackgroundLocation.put(text, background);
 	}
 	
-	@Override
-	public ResourceLocation getBackgroundLocation() {
-		ITextComponent selectedCategory = this.getSelectedCategory();
-		if (this.categoryBackgroundLocation.containsKey(selectedCategory)) {
-			return this.categoryBackgroundLocation.get(selectedCategory);
-		}
+	@Override public ResourceLocation getBackgroundLocation() {
+		String cat = this.getSelectedCategory();
+		if (this.categoryBackgroundLocation.containsKey(cat))
+			return this.categoryBackgroundLocation.get(cat);
 		return super.getBackgroundLocation();
 	}
 }

@@ -4,8 +4,8 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 
 public interface TabbedConfigScreen extends ConfigScreen {
-	void registerCategoryBackground(ITextComponent key, ResourceLocation background);
+	void registerCategoryBackground(String key, ResourceLocation background);
 	
-	ITextComponent getSelectedCategory();
+	String getSelectedCategory();
 }
 

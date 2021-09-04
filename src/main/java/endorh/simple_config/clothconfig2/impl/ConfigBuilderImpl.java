@@ -31,8 +31,8 @@ import java.util.function.Consumer;
 	protected boolean transparentBackground = false;
 	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
-	protected final Map<ITextComponent, ConfigCategory> categoryMap = Maps.newLinkedHashMap();
-	protected ITextComponent fallbackCategory = null;
+	protected final Map<String, ConfigCategory> categories = Maps.newLinkedHashMap();
+	protected String fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
 	
 	@Internal public ConfigBuilderImpl() {}
@@ -69,7 +69,7 @@ import java.util.function.Consumer;
 	}
 	
 	@Override public ConfigBuilder setFallbackCategory(ConfigCategory fallbackCategory) {
-		this.fallbackCategory = Objects.requireNonNull(fallbackCategory).getCategoryKey();
+		this.fallbackCategory = Objects.requireNonNull(fallbackCategory).getName();
 		return this;
 	}
 	
@@ -100,38 +100,38 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigCategory getOrCreateCategory(ITextComponent categoryKey) {
-		if (this.categoryMap.containsKey(categoryKey)) {
-			return this.categoryMap.get(categoryKey);
+	@Override public ConfigCategory getOrCreateCategory(String name) {
+		if (this.categories.containsKey(name)) {
+			return this.categories.get(name);
 		}
 		if (this.fallbackCategory == null) {
-			this.fallbackCategory = categoryKey;
+			this.fallbackCategory = name;
 		}
-		return this.categoryMap.computeIfAbsent(
-		  categoryKey, key -> new ConfigCategoryImpl(this, categoryKey));
+		return this.categories.computeIfAbsent(
+		  name, key -> new ConfigCategoryImpl(this, name));
 	}
 	
-	@Override public ConfigBuilder removeCategory(ITextComponent category) {
-		if (this.categoryMap.containsKey(category) && this.fallbackCategory.equals(category)) {
+	@Override public ConfigBuilder removeCategory(String name) {
+		if (this.categories.containsKey(name) && this.fallbackCategory.equals(name)) {
 			this.fallbackCategory = null;
 		}
-		if (!this.categoryMap.containsKey(category)) {
+		if (!this.categories.containsKey(name)) {
 			throw new NullPointerException("Category doesn't exist!");
 		}
-		this.categoryMap.remove(category);
+		this.categories.remove(name);
 		return this;
 	}
 	
-	@Override public ConfigBuilder removeCategoryIfExists(ITextComponent category) {
-		if (this.categoryMap.containsKey(category) && this.fallbackCategory.equals(category)) {
+	@Override public ConfigBuilder removeCategoryIfExists(String name) {
+		if (this.categories.containsKey(name) && this.fallbackCategory.equals(name)) {
 			this.fallbackCategory = null;
 		}
-		this.categoryMap.remove(category);
+		this.categories.remove(name);
 		return this;
 	}
 	
-	@Override public boolean hasCategory(ITextComponent name) {
-		return this.categoryMap.containsKey(name);
+	@Override public boolean hasCategory(String name) {
+		return this.categories.containsKey(name);
 	}
 	
 	@Override public ResourceLocation getDefaultBackgroundTexture() {
@@ -153,11 +153,11 @@ import java.util.function.Consumer;
 	}
 	
 	@Override public Screen build() {
-		if (this.categoryMap.isEmpty() || this.fallbackCategory == null)
+		if (this.categories.isEmpty() || this.fallbackCategory == null)
 			throw new NullPointerException("There cannot be no categories or fallback category!");
 		AbstractConfigScreen screen =
-		  this.globalized ? new GlobalizedClothConfigScreen(this.parent, this.title, this.categoryMap, this.defaultBackground)
-		                  : new ClothConfigScreen(this.parent, this.title, this.categoryMap, this.defaultBackground);
+		  this.globalized ? new GlobalizedClothConfigScreen(this.parent, this.title, this.categories, this.defaultBackground)
+		                  : new ClothConfigScreen(this.parent, this.title, this.categories, this.defaultBackground);
 		screen.setSavingRunnable(this.savingRunnable);
 		screen.setEditable(this.editable);
 		screen.setFallbackCategory(this.fallbackCategory);

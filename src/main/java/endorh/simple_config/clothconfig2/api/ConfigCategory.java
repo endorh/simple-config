@@ -14,11 +14,11 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public interface ConfigCategory extends IEntryHolder {
-	ITextComponent getCategoryKey();
+	ITextComponent getTitle();
+	
+	void setTitle(ITextComponent name);
 	
 	@Internal List<AbstractConfigEntry<?>> getEntries();
-	
-	void setName(String name);
 	
 	String getName();
 	
@@ -29,6 +29,10 @@ public interface ConfigCategory extends IEntryHolder {
 	void setBackground(@Nullable ResourceLocation var1);
 	
 	@Nullable ResourceLocation getBackground();
+	
+	int getSortingOrder();
+	
+	void setSortingOrder(int order);
 	
 	@Nullable Supplier<Optional<ITextProperties[]>> getDescription();
 	

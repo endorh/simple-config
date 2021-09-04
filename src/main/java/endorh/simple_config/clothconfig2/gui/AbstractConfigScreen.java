@@ -37,7 +37,6 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -48,22 +47,23 @@ public abstract class AbstractConfigScreen extends Screen
              IOverlayCapableScreen, IEntryHolder, IDialogCapableScreen {
 	protected static final ResourceLocation CONFIG_TEX =
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
-	private final ResourceLocation backgroundLocation;
+	protected final ResourceLocation backgroundLocation;
 	protected boolean confirmUnsaved = confirm.unsaved;
 	protected boolean confirmSave = confirm.save;
 	protected final Screen parent;
-	private boolean alwaysShowTabs = false;
-	private boolean transparentBackground = false;
-	@Nullable private ITextComponent defaultFallbackCategory = null;
+	protected boolean alwaysShowTabs = false;
+	protected boolean transparentBackground = false;
+	@Nullable protected String defaultFallbackCategory = null;
 	public int selectedCategoryIndex = 0;
-	private boolean editable = true;
-	private KeyCodeEntry focusedBinding;
-	private ModifierKeyCode startedKeyCode = null;
-	private final List<Tooltip> tooltips = Lists.newArrayList();
-	@Nullable private Runnable savingRunnable = null;
+	protected boolean editable = true;
+	protected KeyCodeEntry focusedBinding;
+	protected ModifierKeyCode startedKeyCode = null;
+	protected final List<Tooltip> tooltips = Lists.newArrayList();
+	@Nullable protected Runnable savingRunnable = null;
 	@Nullable protected Consumer<Screen> afterInitConsumer = null;
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	protected Map<String, ConfigCategory> categoryMap;
+	protected List<ConfigCategory> sortedCategories;
 	
 	protected SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
 	
@@ -73,12 +73,14 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	protected AbstractConfigScreen(
 	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
-	  Collection<ConfigCategory> categories
+	  Map<String, ConfigCategory> categories
 	) {
 		super(title);
 		this.parent = parent;
 		this.backgroundLocation = backgroundLocation;
-		this.categoryMap = categories.stream().collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> b));
+		this.categoryMap = categories;
+		this.sortedCategories = categories.values().stream()
+		  .sorted(Comparator.comparing(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
 	}
 	
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
@@ -94,8 +96,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public boolean isRequiresRestart() {
-		for (List<AbstractConfigEntry<?>> entries : getCategorizedEntries().values()) {
-			for (AbstractConfigEntry<?> entry : entries) {
+		for (ConfigCategory cat : categoryMap.values()) {
+			for (AbstractConfigEntry<?> entry : cat.getEntries()) {
 				if (entry.getConfigError().isPresent() || !entry.isEdited() ||
 				    !entry.isRequiresRestart()) continue;
 				return true;
@@ -104,20 +106,15 @@ public abstract class AbstractConfigScreen extends Screen
 		return false;
 	}
 	
-	public void setSelectedCategory(ITextComponent title) {
-		final int index = new LinkedList<>(getCategorizedEntries().keySet()).indexOf(title);
-		if (index != -1) setSelectedCategory(index);
-	}
-	
 	public void setSelectedCategory(String name) {
 		final ConfigCategory cat = categoryMap.get(name);
-		if (cat != null)
-			setSelectedCategory(cat.getCategoryKey());
+		if (cat == null) throw new IllegalArgumentException("Unknown category: " + name);
+		setSelectedCategory(sortedCategories.indexOf(cat));
 	}
 	
 	public void setSelectedCategory(int index) {
-		if (index < 0 || index >= getCategorizedEntries().size())
-			throw new IndexOutOfBoundsException("index: " + index + ", size: " + getCategorizedEntries().size());
+		if (index < 0 || index >= categoryMap.size())
+			throw new IndexOutOfBoundsException("index: " + index + ", size: " + categoryMap.size());
 		if (selectedCategoryIndex != index) {
 			selectedCategoryIndex = index;
 			init(Minecraft.getInstance(), width, height);
@@ -125,18 +122,13 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public @Nullable String getSelectedCategoryName() {
-		final ITextComponent displayName = ((List<ITextComponent>) Lists.newArrayList(
-		  getCategorizedEntries().keySet())).get(selectedCategoryIndex);
-		return categoryMap.entrySet().stream().filter(e -> e.getValue().getCategoryKey().equals(displayName))
-		  .map(Entry::getKey).findFirst().orElse(null);
+		return sortedCategories.get(selectedCategoryIndex).getName();
 	}
-	
-	public abstract Map<ITextComponent, List<AbstractConfigEntry<?>>> getCategorizedEntries();
 	
 	@Override
 	public boolean isEdited() {
-		for (List<AbstractConfigEntry<?>> entries : getCategorizedEntries().values()) {
-			for (AbstractConfigEntry<?> entry : entries) {
+		for (ConfigCategory cat : categoryMap.values()) {
+			for (AbstractConfigEntry<?> entry : cat.getEntries()) {
 				if (!entry.isEdited()) continue;
 				return true;
 			}
@@ -149,7 +141,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean isShowingTabs() {
-		return isAlwaysShowTabs() || getCategorizedEntries().size() > 1;
+		return isAlwaysShowTabs() || categoryMap.size() > 1;
 	}
 	
 	public boolean isAlwaysShowTabs() {
@@ -168,22 +160,18 @@ public abstract class AbstractConfigScreen extends Screen
 		this.transparentBackground = transparentBackground;
 	}
 	
-	public ITextComponent getFallbackCategory() {
-		if (defaultFallbackCategory != null) {
-			return defaultFallbackCategory;
-		}
-		return getCategorizedEntries().keySet().iterator().next();
+	public String getFallbackCategory() {
+		if (defaultFallbackCategory != null) return defaultFallbackCategory;
+		return categoryMap.keySet().iterator().next();
 	}
 	
-	@Internal
-	public void setFallbackCategory(@Nullable ITextComponent defaultFallbackCategory) {
+	@Internal public void setFallbackCategory(@Nullable String defaultFallbackCategory) {
 		this.defaultFallbackCategory = defaultFallbackCategory;
-		List<ITextComponent> categories = Lists.newArrayList(getCategorizedEntries().keySet());
-		for (int i = 0; i < categories.size(); ++i) {
-			ITextComponent category = categories.get(i);
-			if (!category.equals(getFallbackCategory())) continue;
-			selectedCategoryIndex = i;
-			break;
+		for (int i = 0; i < sortedCategories.size(); i++) {
+			if (sortedCategories.get(i).getName().equals(defaultFallbackCategory)) {
+				selectedCategoryIndex = i;
+				break;
+			}
 		}
 	}
 	
@@ -209,9 +197,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void doSaveAll(boolean openOtherScreens) {
-		for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(
-		  getCategorizedEntries().values())) {
-			for (AbstractConfigEntry<?> entry : entries) entry.save();
+		for (ConfigCategory cat : categoryMap.values()) {
+			for (AbstractConfigEntry<?> entry : cat.getEntries()) entry.save();
 		}
 		save();
 		if (openOtherScreens && minecraft != null) {
@@ -420,13 +407,13 @@ public abstract class AbstractConfigScreen extends Screen
 			switch (keyCode) {
 				case 266: // Page Up
 					i = selectedCategoryIndex - 1;
-					if (i < 0) i = getCategorizedEntries().size() - 1;
+					if (i < 0) i = categoryMap.size() - 1;
 					setSelectedCategory(i);
 					recomputeFocus();
 					return true;
 				case 267: // Page Down
 					i = selectedCategoryIndex + 1;
-					if (i >= getCategorizedEntries().size()) i = 0;
+					if (i >= categoryMap.size()) i = 0;
 					setSelectedCategory(i);
 					recomputeFocus();
 					return true;

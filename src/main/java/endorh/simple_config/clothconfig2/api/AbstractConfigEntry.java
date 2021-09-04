@@ -95,6 +95,7 @@ public abstract class AbstractConfigEntry<T>
 	public String getCategory() {
 		if (category != null) return category;
 		if (parentEntry != null) return parentEntry.getCategory();
+		if (listParent != null) return listParent.getCategory();
 		return "";
 	}
 	
@@ -415,7 +416,6 @@ public abstract class AbstractConfigEntry<T>
 		final List<Pair<ISeekableComponent, List<ISeekableComponent>>> children =
 		  seekableChildren().stream().map(c -> Pair.of(c, c.search(query)))
 			 .filter(p -> !p.second.isEmpty()).collect(Collectors.toList());
-		// matchingChildren = children.stream().map(p -> p.first).collect(Collectors.toList());
 		final List<ISeekableComponent> result =
 		  children.stream().flatMap(p -> p.second.stream()).collect(Collectors.toList());
 		if (matchesSelf)

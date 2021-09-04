@@ -30,13 +30,13 @@ public interface ConfigBuilder {
 	
 	ConfigBuilder setEditable(boolean editable);
 	
-	ConfigCategory getOrCreateCategory(ITextComponent name);
+	ConfigCategory getOrCreateCategory(String name);
 	
-	ConfigBuilder removeCategory(ITextComponent name);
+	ConfigBuilder removeCategory(String name);
 	
-	ConfigBuilder removeCategoryIfExists(ITextComponent name);
+	ConfigBuilder removeCategoryIfExists(String name);
 	
-	boolean hasCategory(ITextComponent name);
+	boolean hasCategory(String name);
 	
 	ResourceLocation getDefaultBackgroundTexture();
 	

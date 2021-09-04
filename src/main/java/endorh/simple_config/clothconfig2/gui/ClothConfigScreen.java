@@ -1,7 +1,6 @@
 package endorh.simple_config.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.clothconfig2.api.*;
@@ -20,7 +19,6 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextComponent;
@@ -59,10 +57,7 @@ public class ClothConfigScreen
 	};
 	public ListWidget<AbstractConfigEntry<?>> listWidget;
 	public ListWidget<AbstractConfigEntry<?>> resizingListWidget = null;
-	protected final LinkedHashMap<String, List<AbstractConfigEntry<?>>> categoryEntries = Maps.newLinkedHashMap();
-	private final LinkedHashMap<ITextComponent, List<AbstractConfigEntry<?>>> categorizedEntries =
-	  Maps.newLinkedHashMap();
-	private final List<Tuple<ITextComponent, Integer>> tabs;
+	private final List<Pair<ConfigCategory, Integer>> tabs;
 	protected TintedButton quitButton;
 	protected TintedButton saveButton;
 	protected Widget buttonLeftTab;
@@ -74,34 +69,25 @@ public class ClothConfigScreen
 	protected Rectangle tabsRightBounds;
 	protected double tabsMaximumScrolled = -1.0;
 	protected final List<ClothConfigTabButton> tabButtons = Lists.newArrayList();
-	protected final Map<ITextComponent, ConfigCategory> categoryMap;
 	protected TooltipSearchBarWidget searchBar;
 	
 	@Internal public ClothConfigScreen(
-	  Screen parent, ITextComponent title, Map<ITextComponent, ConfigCategory> categoryMap,
+	  Screen parent, ITextComponent title, Map<String, ConfigCategory> categories,
 	  ResourceLocation backgroundLocation
 	) {
-		super(parent, title, backgroundLocation, categoryMap.values());
-		categoryMap.forEach((categoryName, category) -> {
-			List<AbstractConfigEntry<?>> entries = Lists.newArrayList();
-			for (Object object : category.getEntries()) {
-				//noinspection unchecked
-				AbstractConfigListEntry<?> entry =
-				  object instanceof Tuple ? ((Tuple<?, AbstractConfigListEntry<?>>) object).getB()
-				                          : (AbstractConfigListEntry<?>) object;
+		super(parent, title, backgroundLocation, categories);
+		categories.forEach((categoryName, category) -> {
+			for (AbstractConfigEntry<?> entry : category.getEntries()) {
 				entry.setCategory(category);
 				entry.setScreen(this);
-				entries.add(entry);
 			}
-			categoryEntries.put(category.getName(), entries);
-			categorizedEntries.put(categoryName, entries); // FIXME
 			if (category.getBackground() != null)
 				registerCategoryBackground(categoryName, category.getBackground());
 		});
-		tabs = categorizedEntries.keySet().stream().map(s -> new Tuple<>(
-		  s, Minecraft.getInstance().fontRenderer.getStringPropertyWidth(s) + 8)
-		).collect(Collectors.toList());
-		this.categoryMap = categoryMap;
+		tabs = sortedCategories.stream().map(c -> Pair.of(
+		  c, Minecraft.getInstance().fontRenderer.getStringPropertyWidth(c.getTitle()) + 8
+		)).collect(Collectors.toList());
+		this.categoryMap = categories;
 		final WeakReference<ClothConfigScreen> weakSelf = new WeakReference<>(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, weakSelf::get);
 	}
@@ -131,13 +117,8 @@ public class ClothConfigScreen
 		  .collect(Collectors.toList());
 	}
 	
-	@Override public ITextComponent getSelectedCategory() {
-		return tabs.get(selectedCategoryIndex).getA();
-	}
-	
-	@Override
-	public Map<ITextComponent, List<AbstractConfigEntry<?>>> getCategorizedEntries() {
-		return categorizedEntries;
+	@Override public String getSelectedCategory() {
+		return sortedCategories.get(selectedCategoryIndex).getName();
 	}
 	
 	@Override
@@ -159,9 +140,8 @@ public class ClothConfigScreen
 			this.listWidget = new ListWidget<>(
 			  this, minecraft, width, height, isShowingTabs() ? 50 : 24,
 			  height - 28, getBackgroundLocation());
-			if (categorizedEntries.size() > selectedCategoryIndex)
-				this.listWidget.getEntries().addAll(
-				  Lists.newArrayList(categorizedEntries.values()).get(selectedCategoryIndex));
+			if (categoryMap.size() > selectedCategoryIndex)
+				this.listWidget.getEntries().addAll(sortedCategories.get(selectedCategoryIndex).getEntries());
 		} else {
 			listWidget = resizingListWidget;
 			listWidget.resize(width, height, isShowingTabs()? 50 : 24, height - 28);
@@ -178,19 +158,20 @@ public class ClothConfigScreen
 			 widget -> quit());
 		// quitButton.setTintColor(0x80BD4242);
 		addButton(quitButton);
-		saveButton = new TintedButton(width / 2 + 3, height - 24, buttonWidths, 20,
-		                        NarratorChatListener.EMPTY, button -> saveAll(true)) {
+		saveButton = new TintedButton(
+		  width / 2 + 3, height - 24, buttonWidths, 20,
+		  NarratorChatListener.EMPTY, button -> saveAll(true)) {
 			
 			public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 				boolean hasErrors = false;
-				for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(categorizedEntries.values())) {
-					for (AbstractConfigEntry<?> entry : entries) {
-						if (!entry.getConfigError().isPresent()) continue;
-						hasErrors = true;
-						break;
+				for (ConfigCategory cat : sortedCategories) {
+					for (AbstractConfigEntry<?> entry : cat.getEntries()) {
+						if (entry.getConfigError().isPresent()) {
+							hasErrors = true;
+							break;
+						}
 					}
-					if (!hasErrors) continue;
-					break;
+					if (hasErrors) break;
 				}
 				active = isEdited() && !hasErrors;
 				setMessage(
@@ -223,10 +204,10 @@ public class ClothConfigScreen
 			};
 			children.add(buttonLeftTab);
 			int j = 0;
-			for (Tuple<ITextComponent, Integer> tab : tabs) {
+			for (Pair<ConfigCategory, Integer> tab : tabs) {
 				tabButtons.add(new ClothConfigTabButton(
-				  this, j, -100, 26, tab.getB(), 20, tab.getA(),
-				  categoryMap.get(tab.getA()).getDescription()));
+				  this, j, -100, 26, tab.getValue(), 20, tab.getKey().getTitle(),
+				  categoryMap.get(tab.getKey().getName()).getDescription()));
 				++j;
 			}
 			children.addAll(tabButtons);
@@ -348,9 +329,8 @@ public class ClothConfigScreen
 	public double getTabsMaximumScrolled() {
 		if (tabsMaximumScrolled == -1.0) {
 			int[] i = new int[]{0};
-			for (Tuple<ITextComponent, Integer> pair : tabs) {
-				i[0] = i[0] + (pair.getB() + 2);
-			}
+			for (Pair<ConfigCategory, Integer> pair : tabs)
+				i[0] = i[0] + (pair.getValue() + 2);
 			tabsMaximumScrolled = i[0];
 		}
 		return tabsMaximumScrolled + 6.0;
@@ -411,11 +391,9 @@ public class ClothConfigScreen
 		}
 		if (isEditable()) {
 			List<ITextComponent> errors = Lists.newArrayList();
-			for (List<AbstractConfigEntry<?>> entries : Lists.newArrayList(categorizedEntries.values())) {
-				for (AbstractConfigEntry<?> entry : entries) {
-					if (!entry.getConfigError().isPresent()) continue;
-					errors.add(entry.getConfigError().get());
-				}
+			for (ConfigCategory cat : sortedCategories) {
+				for (AbstractConfigEntry<?> entry : cat.getEntries())
+					entry.getConfigError().ifPresent(errors::add);
 			}
 			if (errors.size() > 0) {
 				minecraft.getTextureManager().bindTexture(CONFIG_TEX);
@@ -678,12 +656,12 @@ public class ClothConfigScreen
 	
 	@Override public Pair<Integer, Integer> query(Pattern query) {
 		final Pair<Integer, Integer> result = listWidget.search(query);
-		final ArrayList<String> names = new ArrayList<>(categoryEntries.keySet());
+		final ArrayList<String> names = new ArrayList<>(categoryMap.keySet());
 		final String name = names.get(selectedCategoryIndex);
-		final Map<String, Integer> search = categoryEntries.entrySet().stream().filter(p -> !p.getKey().equals(name))
-		  .collect(Collectors.toMap(
+		final Map<String, Integer> search = categoryMap.entrySet().stream()
+		  .filter(p -> !p.getKey().equals(name)).collect(Collectors.toMap(
 		    Entry::getKey,
-			 p -> (int) p.getValue().stream().mapToLong(e -> e.search(query).size()).sum()));
+			 p -> (int) p.getValue().getEntries().stream().mapToLong(e -> e.search(query).size()).sum()));
 		for (ClothConfigTabButton tabButton : tabButtons) {
 			if (tabButton.index >= 0 && tabButton.index < names.size()) {
 				int count = search.getOrDefault(names.get(tabButton.index), 0);

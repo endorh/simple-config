@@ -54,6 +54,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	public final String modId;
 	
 	protected final String defaultTitle;
+	protected final String tooltip;
 	/**
 	 * Should not be modified
 	 */
@@ -188,6 +189,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.baker = baker;
 		this.saver = saver;
 		this.configClass = configClass;
+		this.tooltip = defaultTitle + ":help";
 		root = this;
 		
 		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
@@ -382,8 +384,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory(getTitle());
-			category.setName(type.name().toLowerCase());
+			final ConfigCategory category = configBuilder.getOrCreateCategory(type.name().toLowerCase());
+			category.setTitle(getTitle());
+			category.setDescription(
+			  () -> I18n.hasKey(tooltip)
+			        ? Optional.of(TextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
+			        : Optional.empty());
+			// category.setDescription(splitTtc(tooltip));
 			if (background != null)
 				category.setBackground(background);
 			for (IGUIEntry entry : order)
