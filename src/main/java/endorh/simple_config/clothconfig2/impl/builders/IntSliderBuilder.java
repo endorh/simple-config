@@ -8,8 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(value = Dist.CLIENT)
-public class IntSliderBuilder
-  extends SliderFieldBuilder<Integer, IntegerSliderEntry, IntSliderBuilder> {
+public class IntSliderBuilder extends SliderFieldBuilder<Integer, IntegerSliderEntry, IntSliderBuilder> {
 		
 	public IntSliderBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, int value, int min, int max
@@ -17,11 +16,8 @@ public class IntSliderBuilder
 		super(builder, name, value, min, max);
 	}
 	
-	@Override
-	@NotNull
-	public IntegerSliderEntry buildEntry() {
-		return new IntegerSliderEntry(
-		  fieldNameKey, min, max, value);
+	@Override @NotNull public IntegerSliderEntry buildEntry() {
+		return new IntegerSliderEntry(fieldNameKey, min, max, value);
 	}
 }
 

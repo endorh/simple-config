@@ -516,11 +516,12 @@ public class ClothConfigScreen
 		
 		@Override protected void renderItem(
 		  MatrixStack matrices, R item, int index, int y, int x, int entryWidth, int entryHeight,
-		  int mouseX, int mouseY, boolean isSelected, float delta
+		  int mouseX, int mouseY, boolean isHovered, float delta
 		) {
 			if (item instanceof AbstractConfigEntry)
 				((AbstractConfigEntry<?>) item).updateSelected(getFocused() == item);
-			super.renderItem(matrices, item, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
+			super.renderItem(matrices, item, index, y, x, entryWidth, entryHeight, mouseX, mouseY,
+			                 isHovered, delta);
 		}
 		
 		@Override protected void renderList(

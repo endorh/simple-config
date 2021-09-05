@@ -113,6 +113,7 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		if (name != null)
 			entry.setName(name);
 		entry.setEditableSupplier(editableSupplier);
+		entry.setIgnoreEdits(ignoreEdits);
 		return entry;
 	}
 	

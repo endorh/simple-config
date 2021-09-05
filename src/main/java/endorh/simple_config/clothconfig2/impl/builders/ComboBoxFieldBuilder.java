@@ -8,9 +8,12 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T>, ComboBoxFieldBuilder<T>> {
 	
 	protected final ITypeWrapper<T> typeWrapper;

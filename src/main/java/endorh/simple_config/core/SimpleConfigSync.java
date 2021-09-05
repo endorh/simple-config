@@ -5,6 +5,8 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import com.electronwill.nightconfig.toml.TomlWriter;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.ConfigPermission;
+import endorh.simple_config.SimpleConfigMod.ServerConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -156,6 +158,7 @@ import java.util.function.Function;
 		  .parse(new ByteArrayInputStream(fileData));
 		
 		modConfig.getConfigData().putAll(sentConfig);
+		modConfig.getSpec().afterReload();
 		
 		tryFireEvent(modConfig, newReloading(modConfig));
 	}
@@ -277,7 +280,7 @@ import java.util.function.Function;
 				throw new IllegalStateException(
 				  "Received server config update from non-player source for mod \"" + modName + "\"");
 			final String senderName = sender.getScoreboardName();
-			if (!sender.hasPermissionLevel(2)) {
+			if (ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW) {
 				LOGGER.warn("Player \"" + senderName + "\" tried to modify " +
 				            "the server config for mod \"" + modName + "\" " +
 				            "without operator privileges");

@@ -1,6 +1,7 @@
 package endorh.simple_config;
 
 import com.google.common.collect.Lists;
+import endorh.simple_config.SimpleConfigMod.ServerConfig.permissions;
 import endorh.simple_config.core.SimpleConfig;
 import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
@@ -9,10 +10,15 @@ import endorh.simple_config.core.entry.Builders;
 import endorh.simple_config.core.entry.StringEntry;
 import endorh.simple_config.demo.DemoConfigCategory;
 import endorh.simple_config.demo.DemoServerCategory;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.Util;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -45,7 +51,7 @@ import static endorh.simple_config.core.entry.Builders.*;
 	
 	static {
 		// Trigger class loading
-		Builders.nonPersistentBool(false);
+		Builders.bool(false);
 	}
 	
 	public SimpleConfigMod() {
@@ -81,7 +87,7 @@ import static endorh.simple_config.core.entry.Builders.*;
 						number(20).min(0).max(1000), list(string(""))))
 			       .add("regex_search_history", caption(
 						number(20).max(1000), list(pattern(""))))
-			       .add("translation_debug_mode", nonPersistentBool(false)))
+			       .add("translation_debug_mode", bool(false).temp()))
 			  // Hook here the demo category
 			  .n(DemoConfigCategory.getDemoCategory())
 			  // Change the background texture
@@ -108,7 +114,8 @@ import static endorh.simple_config.core.entry.Builders.*;
 			return names;
 		});
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream().map(ModInfo::getModId).collect(Collectors.toList());
-		final Supplier<List<String>> roleNameSupplier = () -> SERVER_CONFIG.<List<Pair<String, ?>>>getGUI("permissions.roles").stream().map(Pair::getKey).collect(Collectors.toList());
+		final Supplier<List<String>> roleNameSupplier = () ->
+		  new ArrayList<>(SERVER_CONFIG.<Map<String, List<String>>>getFromGUI("permissions.roles").keySet());
 		StringEntry.Builder modName = string("").suggest(modNameSupplier);
 		StringEntry.Builder roleName = string("").suggest(() -> {
 			  List<String> roles = roleNameSupplier.get();
@@ -138,7 +145,38 @@ import static endorh.simple_config.core.entry.Builders.*;
 					caption(enum_(ListType.WHITELIST), list(modName))))
 		       .add("rules", pairList(
 					roleName, caption(enum_(ConfigPermission.ALLOW), list(modGroupOrName)),
-					Lists.newArrayList(Pair.of("op", Pair.of(ConfigPermission.ALLOW, Lists.newArrayList("[all]")))))))
+					Lists.newArrayList(Pair.of("op", Pair.of(ConfigPermission.ALLOW, Lists.newArrayList("[all]"))))))
+		       // Testing fields
+		       // .add("test_player", string("").ignored())
+		       // .add("test_mod", string("").ignored())
+		       // .text(() -> {
+			    //    final String name = SERVER_CONFIG.getFromGUI("permissions.test_player");
+			    //    final String mod = SERVER_CONFIG.getFromGUI("permissions.test_mod");
+					//  if (!name.isEmpty()) {
+					// 	 final MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+					// 	 final ServerPlayerEntity player = server.getPlayerList().getPlayerByUsername(name);
+					// 	 if (player == null)
+					// 		 return new TranslationTextComponent("simple-config.config.permissions.test.unknown_player", new StringTextComponent(name).mergeStyle(TextFormatting.DARK_RED));
+					// 	 final List<String> mods = permissions.testModsEditableBy(name);
+					// 	 IFormattableTextComponent tc =
+					// 	   new TranslationTextComponent("simple-config.config.permissions.test.player", new StringTextComponent(name).mergeStyle(TextFormatting.DARK_AQUA));
+					// 	 for (String m : mods)
+					// 		 tc = tc.appendString("\n - ").append(new StringTextComponent(m).mergeStyle(TextFormatting.DARK_AQUA));
+					// 	 return tc;
+					//  } else if (!mod.isEmpty()) {
+					// 	 final List<String> players = permissions.testPlayersWithPermissionFor(mod);
+					// 	 if (players.isEmpty())
+					// 		 return new TranslationTextComponent("simple-config.config.permissions.test.empty");
+					// 	 final boolean knownMod = ModList.get().getMods().stream().anyMatch(m -> m.getModId().equals(mod));
+					// 	 IFormattableTextComponent tc = new TranslationTextComponent(
+					// 		"simple-config.config.permissions.test.mod",
+					// 		new StringTextComponent(mod).mergeStyle(knownMod? TextFormatting.DARK_AQUA : TextFormatting.DARK_RED));
+					// 	 for (String pl : players)
+					// 		 tc = tc.appendString("\n - ").append(new StringTextComponent(pl).mergeStyle(TextFormatting.DARK_AQUA));
+					// 	 return tc;
+					//  } else return new TranslationTextComponent("simple-config.config.permissions.test.placeholder");
+		       // })
+		  )
 		  .text("end")
 		  // Register the demo server config category as well
 		  .n(DemoServerCategory.getDemoServerCategory())
@@ -200,17 +238,11 @@ import static endorh.simple_config.core.entry.Builders.*;
 			@Bind public static List<Pair<String, Pair<ConfigPermission, List<String>>>> rules;
 			
 			public static ConfigPermission permissionFor(PlayerEntity player, String mod) {
-				final String name = player.getScoreboardName();
 				final Set<String> roles = permissions.roles.entrySet().stream().filter(
-				  e -> e.getValue().contains(name)
+				  e -> e.getValue().contains(player.getScoreboardName())
 				).map(Entry::getKey).collect(Collectors.toSet());
 				if (player.hasPermissionLevel(2)) roles.add("op");
-				final Set<String> mod_groups = permissions.mod_groups.entrySet().stream().filter(
-				  e -> e.getValue().getKey() == ListType.BLACKLIST
-				       ^ e.getValue().getValue().contains(mod)
-				).map(Entry::getKey).collect(Collectors.toSet());
-				mod_groups.add("[all]");
-				mod_groups.add(mod);
+				final Set<String> mod_groups = modGroups(mod, permissions.mod_groups);
 				ConfigPermission permission = ConfigPermission.DENY;
 				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
 					if (roles.contains(rule.getKey())
@@ -218,6 +250,81 @@ import static endorh.simple_config.core.entry.Builders.*;
 						permission = rule.getValue().getKey();
 				}
 				return permission;
+			}
+			
+			public static List<String> testModsEditableBy(String player) {
+				final Set<String> playerRoles = playerRoles(player, SERVER_CONFIG.getFromGUI("permissions.roles"));
+				final Map<String, Pair<ListType, List<String>>> groups = SERVER_CONFIG.getFromGUI("permissions.mod_groups");
+				final List<Pair<String, Pair<ConfigPermission, List<String>>>> rules = SERVER_CONFIG.getFromGUI("permissions.rules");
+				Map<String, ConfigPermission> permissions = new HashMap<>();
+				ModList.get().getMods().forEach(m -> permissions.put(m.getModId(), ConfigPermission.DENY));
+				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
+					if (playerRoles.contains(rule.getKey())) {
+						for (String id : rule.getValue().getValue()) {
+							if (id.equals("[all]")) {
+								permissions.replaceAll((m, v) -> rule.getValue().getKey());
+							} else if (groups.containsKey(id)) {
+								final Pair<ListType, List<String>> groupList = groups.get(id);
+								for (String m : permissions.keySet()) {
+									if (groupList.getValue().contains(m) ^ groupList.getKey() == ListType.BLACKLIST)
+										permissions.put(m, rule.getValue().getKey());
+								}
+							} else permissions.put(id, rule.getValue().getKey());
+						}
+					}
+				}
+				return permissions.entrySet().stream().filter(e -> e.getValue() == ConfigPermission.ALLOW)
+				  .map(Entry::getKey).sorted().collect(Collectors.toList());
+			}
+			
+			public static List<String> testPlayersWithPermissionFor(String mod) {
+				final Map<String, List<String>> roles = SERVER_CONFIG.getFromGUI("permissions.roles");
+				final Set<String> modGroups = modGroups(mod, SERVER_CONFIG.getFromGUI("permissions.mod_groups"));
+				final List<Pair<String, Pair<ConfigPermission, List<String>>>> rules = SERVER_CONFIG.getFromGUI("permissions.rules");
+				final Map<String, ConfigPermission> players = new HashMap<>();
+				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
+					if (roles.containsKey(rule.getKey())) {
+						if (rule.getValue().getValue().stream().anyMatch(modGroups::contains)) {
+							final List<String> ruleRole = roles.get(rule.getKey());
+							for (String player : ruleRole)
+								players.put(player, rule.getValue().getKey());
+						}
+					} else if (rule.getKey().equals("op")) {
+						final MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+						for (ServerPlayerEntity player : server.getPlayerList().getPlayers())
+							if (player.hasPermissionLevel(2))
+								players.put(player.getScoreboardName(), rule.getValue().getKey());
+						for (String player : server.getPlayerList().getOppedPlayerNames())
+							players.put(player, rule.getValue().getKey());
+					}
+				}
+				return players.entrySet().stream().filter(e -> e.getValue() == ConfigPermission.ALLOW)
+				  .map(Entry::getKey).sorted().collect(Collectors.toList());
+			}
+			
+			@Internal protected static Set<String> playerRoles(
+			  String playerName, Map<String, List<String>> roles
+			) {
+				final MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+				final ServerPlayerEntity player = server.getPlayerList().getPlayerByUsername(playerName);
+				if (player == null) return new HashSet<>();
+				final Set<String> playerRoles = roles.entrySet().stream().filter(
+				  e -> e.getValue().contains(playerName)
+				).map(Entry::getKey).collect(Collectors.toSet());
+				if (player.hasPermissionLevel(2)) playerRoles.add("op");
+				return playerRoles;
+			}
+			
+			@Internal protected static Set<String> modGroups(
+			  String modId, Map<String, Pair<ListType, List<String>>> groups
+			) {
+				final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
+				  e -> e.getValue().getKey() == ListType.BLACKLIST
+				       ^ e.getValue().getValue().contains(modId)
+				).map(Entry::getKey).collect(Collectors.toSet());
+				modGroups.add("[all]");
+				modGroups.add(modId);
+				return modGroups;
 			}
 		}
 	}
@@ -230,7 +337,7 @@ import static endorh.simple_config.core.entry.Builders.*;
 		ALLOW, DENY // VIEW
 	}
 	
-	@SuppressWarnings("unused") public enum MenuButtonPosition {
+	public enum MenuButtonPosition {
 		SPLIT_OPTIONS_BUTTON, LEFT_OF_OPTIONS_BUTTON,
 		TOP_LEFT_CORNER, TOP_RIGHT_CORNER,
 		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER

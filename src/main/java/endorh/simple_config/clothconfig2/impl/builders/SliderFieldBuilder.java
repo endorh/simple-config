@@ -3,11 +3,14 @@ package endorh.simple_config.clothconfig2.impl.builders;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.gui.entries.SliderListEntry;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.function.Function;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class SliderFieldBuilder<
   V extends Comparable<V>, Entry extends SliderListEntry<V>,
   Self extends SliderFieldBuilder<V, Entry, Self>> extends FieldBuilder<V, Entry, Self> {

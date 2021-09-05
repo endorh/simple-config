@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
@@ -520,17 +519,16 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 			RenderHelper.disableStandardItemLighting();
 			renderItem(
 			  mStack, item, renderIndex, y, x, itemWidth, itemHeight, mouseX, mouseY,
-			  isMouseOver(mouseX, mouseY) &&
-			  Objects.equals(getItemAtPosition(mouseX, mouseY), item), delta);
+			  isMouseOver(mouseX, mouseY) && item.isMouseOver(mouseX, mouseY), delta);
 		}
 	}
 	
 	protected void renderItem(
 	  MatrixStack matrices, E item, int index, int y, int x, int entryWidth, int entryHeight,
-	  int mouseX, int mouseY, boolean isSelected, float delta
+	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		item.render(
-		  matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
+		  matrices, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 	}
 	
 	protected int getRowLeft() {
@@ -658,11 +656,6 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		  MatrixStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
 		  boolean isHovered, float delta
 		);
-		
-		// FIXME: This doesn't account for nested entries
-		public boolean isMouseOver(double mouseX, double mouseY) {
-			return Objects.equals(getParent().getItemAtPosition(mouseX, mouseY), this);
-		}
 		
 		public DynamicEntryListWidget<?> getParent() {
 			final DynamicEntryListWidget<?> parent = this.parent.get();

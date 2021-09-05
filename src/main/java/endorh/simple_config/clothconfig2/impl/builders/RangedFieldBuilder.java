@@ -4,8 +4,11 @@ import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.gui.entries.IRangedEntry;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class RangedFieldBuilder<V extends Comparable<V>,
   Entry extends AbstractConfigListEntry<V> & IRangedEntry<V>,
   Self extends RangedFieldBuilder<V, Entry, Self>> extends FieldBuilder<V, Entry, Self> {

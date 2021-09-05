@@ -176,9 +176,11 @@ public class StringEntry
 	@Nullable @Override public String fromConfig(@Nullable String value) {
 		if (value == null)
 			return null;
-		final List<String> choices = getChoices();
-		if (choices != null && restrict && !choices.contains(value))
-			return null;
+		if (restrict) {
+			final List<String> choices = getChoices();
+			if (choices != null && !choices.contains(value))
+				return null;
+		}
 		return value;
 	}
 	

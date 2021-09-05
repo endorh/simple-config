@@ -6,11 +6,13 @@ import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry.Abstr
 import endorh.simple_config.clothconfig2.gui.entries.BaseListCell;
 import endorh.simple_config.clothconfig2.gui.entries.IRangedEntry;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public abstract class RangedListFieldBuilder<
+@OnlyIn(Dist.CLIENT) public abstract class RangedListFieldBuilder<
   V extends Comparable<V>, C extends AbstractListCell<V, C, Entry>,
   Entry extends AbstractListListEntry<V, C, Entry> & IRangedEntry<V>,
   Self extends ListFieldBuilder<V, Entry, Self>>

@@ -1,5 +1,6 @@
 package endorh.simple_config.core;
 
+import com.google.common.collect.Lists;
 import endorh.simple_config.SimpleConfigMod.ClientConfig;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigCategory;
@@ -18,6 +19,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
@@ -74,7 +77,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @Nullable ITextComponent displayName = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
-	protected @Nullable AbstractConfigListEntry<Gui> guiEntry = null;
+	protected @OnlyIn(Dist.CLIENT) @Nullable AbstractConfigListEntry<Gui> guiEntry;
+	protected boolean nonPersistent = false;
+	protected V actualValue = null;
+	protected boolean ignored = false;
 	
 	protected AbstractConfigEntry(
 	  ISimpleConfigEntryHolder parent, String name, V value
@@ -93,19 +99,16 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		} else return name;
 	}
 	
-	@SuppressWarnings("unchecked")
-	protected Self self() {
+	@SuppressWarnings("unchecked") protected Self self() {
 		return (Self) this;
 	}
 	
-	@SuppressWarnings("UnusedReturnValue")
-	protected Self translate(String translation) {
+	@SuppressWarnings("UnusedReturnValue") protected Self translate(String translation) {
 		this.translation = translation;
 		return self();
 	}
 	
-	@SuppressWarnings("UnusedReturnValue")
-	protected Self tooltip(String translation) {
+	@SuppressWarnings("UnusedReturnValue") protected Self tooltip(String translation) {
 		this.tooltip = translation;
 		return self();
 	}
@@ -255,7 +258,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Subclasses may override to prevent nesting at build time
 	 */
 	protected boolean canBeNested() {
-		return true;
+		return !nonPersistent;
 	}
 	
 	protected void dirty() {
@@ -270,6 +273,15 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected Consumer<Gui> saveConsumer() {
 		if (saver != null)
 			return g -> saver.accept(g, parent);
+		if (ignored) return g -> {};
+		if (nonPersistent)
+			return g -> {
+				V v = fromGuiOrDefault(g);
+				if (!Objects.equals(actualValue, v)) {
+					dirty();
+					actualValue = v;
+				}
+			};
 		final String n = name; // Use the current name
 		return g -> {
 			// guiEntry = null; // Discard the entry
@@ -289,20 +301,34 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		Optional<ITextComponent[]> o;
 		if (guiTooltipSupplier != null) {
 			o = guiTooltipSupplier.apply(value);
-			if (o.isPresent()) return o;
+			if (o.isPresent()) return o.map(t -> addExtraTooltip(t, value));
 		}
 		final V v = fromGui(value);
 		if (tooltipSupplier != null) {
 			if (v != null) {
 				o = tooltipSupplier.apply(v);
-				if (o.isPresent()) return o;
+				if (o.isPresent()) return o.map(t -> addExtraTooltip(t, value));
 			}
 		}
 		if (tooltip != null && I18n.hasKey(tooltip)) {
-			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs))
-			                     .toArray(new ITextComponent[0]));
+			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs)).toArray(new ITextComponent[0]))
+			  .map(t -> addExtraTooltip(t, value));
 		}
-		return Optional.empty();
+		final List<ITextComponent> extra = supplyExtraTooltip(value);
+		return extra.isEmpty()? Optional.empty() : Optional.of(extra.toArray(new ITextComponent[0]));
+	}
+	
+	protected ITextComponent[] addExtraTooltip(ITextComponent[] tooltip, Gui value) {
+		return ArrayUtils.addAll(tooltip, supplyExtraTooltip(value).toArray(new ITextComponent[0]));
+	}
+	
+	protected List<ITextComponent> supplyExtraTooltip(Gui value) {
+		final List<ITextComponent> extra = Lists.newArrayList();
+		if (nonPersistent)
+			extra.add(new TranslationTextComponent(
+			  "simple-config.config.help.not_persistent_entry"
+			).mergeStyle(TextFormatting.GRAY));
+		return extra;
 	}
 	
 	public Optional<ITextComponent> supplyError(Gui value) {
@@ -343,7 +369,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		  .setErrorSupplier(this::supplyError)
 		  .setSaveConsumer(saveConsumer())
 		  .setEditableSupplier(editableSupplier)
-		  .setName(name);
+		  .setName(name)
+		  .setIgnoreEdits(ignored);
 		return builder;
 	}
 	
@@ -374,7 +401,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected void buildConfig(
 	  ForgeConfigSpec.Builder builder, Map<String, ConfigValue<?>> specValues
 	) {
-		buildConfigEntry(builder).ifPresent(e -> specValues.put(name, e));
+		if (!nonPersistent)
+			buildConfigEntry(builder).ifPresent(e -> specValues.put(name, e));
 	}
 	
 	/**
@@ -392,7 +420,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Add entry to the GUI<br>
 	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigEntryBuilder)}
 	 */
-	public void buildGUI(SubCategoryBuilder group, ConfigEntryBuilder entryBuilder) {
+	@OnlyIn(Dist.CLIENT) public void buildGUI(SubCategoryBuilder group, ConfigEntryBuilder entryBuilder) {
 		buildGUIEntry(entryBuilder).ifPresent(e -> {
 			this.guiEntry = e;
 			group.add(e);
@@ -414,11 +442,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	protected V get() {
-		return parent.get(name);
+		return nonPersistent ? actualValue : parent.get(name);
 	}
 	
 	protected void set(V value) {
-		parent.set(name, value);
+		if (nonPersistent)
+			actualValue = value;
+		else parent.set(name, value);
 	}
 	
 	/**
@@ -445,12 +475,14 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	protected Gui getGUI() {
+		if (FMLEnvironment.dist != Dist.CLIENT) return forGui(get());
 		return guiEntry != null? guiEntry.getValue() : forGui(get());
 	}
 	protected V getFromGUI() {
+		if (FMLEnvironment.dist != Dist.CLIENT) return get();
 		return guiEntry != null? fromGui(getGUI()) : get();
 	}
-	protected void setGUI(Gui value) {
+	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value) {
 		if (guiEntry != null) {
 			AbstractConfigScreen screen = guiEntry.getConfigScreenOrNull();
 			if (screen != null) screen.getHistory().preserveState(guiEntry);
@@ -458,7 +490,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			if (screen != null) screen.getHistory().saveState(screen);
 		} else throw new IllegalStateException("Cannot set GUI value without GUI");
 	}
-	protected void setForGUI(V value) {
+	@OnlyIn(Dist.CLIENT) protected void setForGUI(V value) {
 		setGUI(forGui(value));
 	}
 	
@@ -476,12 +508,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 				throw new ConfigReflectiveOperationException(
 				  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
 			}
-		}
-	}
-	
-	protected void bakeField(ISimpleConfigEntryHolder c) throws IllegalAccessException {
-		if (backingField != null) {
-			setBackingField(backingField, c.get(name));
 		}
 	}
 	

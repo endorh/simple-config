@@ -10,6 +10,8 @@ import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+@OnlyIn(Dist.CLIENT)
 public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
   C, CE extends AbstractConfigListEntry<C> & IChildListEntry>
   extends TooltipListEntry<Pair<C, List<V>>> implements IExpandable {

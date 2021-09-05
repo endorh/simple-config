@@ -17,6 +17,8 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class SliderListEntry<V extends Comparable<V>>
   extends TooltipListEntry<V> implements IChildListEntry {
 	protected AtomicReference<V> value;

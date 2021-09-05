@@ -6,6 +6,7 @@ import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +41,8 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected boolean requireRestart = false;
 	protected Class<?> typeClass;
+	protected boolean nonPersistent = false;
+	protected boolean ignored = false;
 	
 	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
 		this.value = value;
@@ -150,6 +153,52 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	}
 	
 	/**
+	 * Makes this entry non-persistent.<br>
+	 * Non-persistent entries only appear in the GUI, not in the config file,
+	 * and they're reset on restart
+	 */
+	public Self temp() {
+		return temp(true);
+	}
+	
+	/**
+	 * Makes this entry non-persistent.<br>
+	 * Non-persistent entries only appear in the GUI, not in the config file,
+	 * and they're reset on restart
+	 */
+	public Self temp(boolean nonPersistent) {
+		Self copy = copy();
+		copy.nonPersistent = nonPersistent;
+		if (!nonPersistent)
+			copy.ignored = false;
+		return copy;
+	}
+	
+	/**
+	 * Ignore changes to this entry in the GUI.<br>
+	 * Ignored entries automatically become non-persistent.<br>
+	 * Useful for entries used to provide interaction in the config GUI,
+	 * without actually storing any value
+	 */
+	public Self ignored() {
+		return ignored(true);
+	}
+	
+	/**
+	 * Ignore changes to this entry in the GUI.<br>
+	 * Ignored entries automatically become non-persistent.<br>
+	 * Useful for entries used to provide interaction in the config GUI,
+	 * without actually storing any value
+	 */
+	public Self ignored(boolean ignored) {
+		Self copy = copy();
+		copy.ignored = ignored;
+		if (ignored)
+			copy.nonPersistent = true;
+		return copy;
+	}
+	
+	/**
 	 * Subclasses should instead override
 	 * {@link AbstractConfigEntryBuilder#buildEntry(ISimpleConfigEntryHolder, String)}
 	 * in most cases<br>
@@ -166,6 +215,10 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 		e.tooltipArgs = tooltipArgs;
 		e.typeClass = typeClass;
 		e.editableSupplier = editableSupplier;
+		e.nonPersistent = nonPersistent;
+		if (nonPersistent)
+			e.actualValue = e.value;
+		e.ignored = ignored;
 		return e;
 	}
 	
@@ -195,6 +248,8 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 		copy.requireRestart = requireRestart;
 		copy.typeClass = typeClass;
 		copy.editableSupplier = editableSupplier;
+		copy.nonPersistent = nonPersistent;
+		copy.ignored = ignored;
 		return copy;
 	}
 	

@@ -9,12 +9,15 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+@OnlyIn(Dist.CLIENT)
 public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChildListEntry {
 	protected final Runnable original;
 	protected final Supplier<ITextComponent> buttonLabelSupplier;

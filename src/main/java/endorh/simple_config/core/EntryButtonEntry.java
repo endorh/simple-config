@@ -30,7 +30,7 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 	  Class<?> typeClass
 	) {
 		super(parent, name, value, false, typeClass);
-		this.inner = innerBuilder.build(new DummyEntryHolder<>(parent.getRoot(), innerBuilder), "");
+		this.inner = DummyEntryHolder.build(parent, innerBuilder);
 		this.action = action;
 	}
 	

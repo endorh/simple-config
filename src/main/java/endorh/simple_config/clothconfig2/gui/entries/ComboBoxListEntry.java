@@ -12,6 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +22,7 @@ import java.util.*;
 
 import static java.lang.Math.min;
 
+@OnlyIn(Dist.CLIENT)
 public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildListEntry {
 	protected ITypeWrapper<T> typeWrapper;
 	protected ResetButton resetButton;

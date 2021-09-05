@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-@Internal public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSimpleConfigEntryHolderBuilder<Builder>> {
+public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSimpleConfigEntryHolderBuilder<Builder>> {
 	
 	protected final Map<String, GroupBuilder> groups = new LinkedHashMap<>();
 	protected final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();

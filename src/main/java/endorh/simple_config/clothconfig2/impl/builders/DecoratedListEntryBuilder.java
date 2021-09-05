@@ -6,10 +6,13 @@ import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry;
 import endorh.simple_config.clothconfig2.gui.entries.DecoratedListEntry;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 public class DecoratedListEntryBuilder<V, E extends AbstractListListEntry<V, ?, E>,
   C, CE extends AbstractConfigListEntry<C> & IChildListEntry>
   extends FieldBuilder<Pair<C, List<V>>, DecoratedListEntry<V, E, C, CE>,

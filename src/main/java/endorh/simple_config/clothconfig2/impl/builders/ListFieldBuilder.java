@@ -6,6 +6,8 @@ import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractListListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V, ?, Entry>,
   Self extends ListFieldBuilder<V, Entry, Self>> extends FieldBuilder<List<V>, Entry, Self> {
 	

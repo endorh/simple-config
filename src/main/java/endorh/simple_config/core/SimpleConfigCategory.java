@@ -127,15 +127,10 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	 * Bakes all the backing fields<br>
 	 */
 	protected void bakeFields() {
-		try {
-			for (SimpleConfigGroup group : groups.values())
-				group.bakeFields();
-			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
-				entry.bakeField(this);
-		} catch (IllegalAccessException e) {
-			throw new ConfigReflectiveOperationException(
-			  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);
-		}
+		for (SimpleConfigGroup group : groups.values())
+			group.bakeFields();
+		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+			entry.bakeField();
 	}
 	
 	/**

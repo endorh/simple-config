@@ -5,6 +5,7 @@ import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.TextDescriptionBuilder;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
+import endorh.simple_config.core.AbstractSimpleConfigEntryHolder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -182,8 +183,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Void>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Void>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final TextDescriptionBuilder valBuilder = builder

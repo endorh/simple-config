@@ -12,6 +12,8 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
@@ -206,7 +208,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		  decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
 	}
 	
-	protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
+	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(ConfigEntryBuilder builder) {
 		final KE ke = keyEntryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
@@ -229,7 +231,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		return entry.supplyError(p.getValue());
 	}
 	
-	@Override
+	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<AbstractConfigListEntry<List<Pair<KG, G>>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final EntryPairListBuilder<KG, G, ? extends AbstractConfigListEntry<KG>, AbstractConfigListEntry<G>>
 		  entryBuilder = builder

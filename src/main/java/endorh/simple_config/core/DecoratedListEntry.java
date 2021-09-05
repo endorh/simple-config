@@ -1,6 +1,5 @@
 package endorh.simple_config.core;
 
-import com.google.common.collect.Lists;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
@@ -14,12 +13,13 @@ import endorh.simple_config.core.entry.AbstractListEntry;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -65,9 +65,7 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			final E le = DummyEntryHolder.build(parent, listEntryBuilder).withSaver((v, h) -> {});
-			// final E le = listEntryBuilder.buildEntry(parent, name + "$val");
 			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder).withSaver((v, h) -> {});
-			// final CE ce = captionEntryBuilder.buildEntry(parent, name + "$key");
 			return new DecoratedListEntry<>(parent, name, value, le, ce);
 		}
 		
@@ -154,7 +152,7 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
 	}
 	
-	@SuppressWarnings("unchecked") protected <LGE extends AbstractListListEntry<G, ?, LGE>,
+	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <LGE extends AbstractListListEntry<G, ?, LGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
 	DecoratedListEntryBuilder<G, LGE, CG, CGE> makeGUIEntry(
 	  ConfigEntryBuilder builder, ITextComponent name,
@@ -164,7 +162,7 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		  builder, name, value, (LGE) listEntry, captionEntry.buildChildGUIEntry(builder));
 	}
 	
-	@Override public Optional<AbstractConfigListEntry<Pair<CG, List<G>>>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<G>>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		listEntry.withDisplayName(getDisplayName());
@@ -176,7 +174,7 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		return Optional.of(decorate(entryBuilder).build());
 	}
 	
-	@Override protected <F extends FieldBuilder<Pair<CG, List<G>>, ?, F>> F decorate(F builder) {
+	@OnlyIn(Dist.CLIENT) @Override protected <F extends FieldBuilder<Pair<CG, List<G>>, ?, F>> F decorate(F builder) {
 		return super.decorate(builder);
 	}
 	

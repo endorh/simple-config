@@ -4,6 +4,8 @@ import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simple_config.core.SimpleConfig.NoSuchConfigGroupError;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
@@ -16,8 +18,6 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	protected Map<String, ConfigValue<?>> specValues;
 	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
-	
-	// Configs are loaded all the time, so cyclic references aren't a problem
 	protected SimpleConfig root;
 	protected boolean dirty = false;
 	
@@ -62,7 +62,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * Instead, we mark all entries as not requiring restart initially, and mark them all as
 	 * requiring restart if our own computation is correct.
 	 */
-	protected void markGUIRestart() {
+	@OnlyIn(Dist.CLIENT) protected void markGUIRestart() {
 		entries.values().stream().filter(e -> e.guiEntry != null)
 		  .forEach(e -> e.guiEntry.setRequiresRestart(true));
 		children.values().forEach(AbstractSimpleConfigEntryHolder::markGUIRestart);
@@ -71,7 +71,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	/**
 	 * Remove GUI bindings after saving a GUI
 	 */
-	protected void removeGUI() {
+	@OnlyIn(Dist.CLIENT) protected void removeGUI() {
 		entries.values().forEach(e -> e.guiEntry = null);
 		children.values().forEach(AbstractSimpleConfigEntryHolder::removeGUI);
 	}

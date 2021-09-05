@@ -133,7 +133,7 @@ public class EntryListEntry
 		}));
 	}
 	
-	protected AbstractConfigListEntry<G> buildCell(
+	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(
 	  ConfigEntryBuilder builder
 	) {
 		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -71,13 +72,13 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		}
 	}
 	
-	@Override
-	protected Optional<ITextComponent[]> supplyTooltip(String value) {
-		final IFormattableTextComponent tc = new TranslationTextComponent(
-		  "simple-config.config.help.pattern_flags", displayFlags(flags)
-		).mergeStyle(TextFormatting.GRAY);
-		return flags == 0 ? super.supplyTooltip(value) : Optional.of(super.supplyTooltip(value).map(
-		  a -> ObjectArrays.concat(a, tc)).orElse(new ITextComponent[]{tc}));
+	@Override protected List<ITextComponent> supplyExtraTooltip(String value) {
+		final List<ITextComponent> extra = super.supplyExtraTooltip(value);
+		if (flags != 0)
+			extra.add(0, new TranslationTextComponent(
+			  "simple-config.config.help.pattern_flags", displayFlags(flags)
+			).mergeStyle(TextFormatting.GRAY));
+		return extra;
 	}
 	
 	private static final Map<Integer, String> FLAG_NAMES = new HashMap<>();

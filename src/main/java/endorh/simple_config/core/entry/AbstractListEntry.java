@@ -10,6 +10,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
@@ -192,7 +194,7 @@ public abstract class AbstractListEntry
 		return Optional.of(decorate(builder).defineList(name, value, this::validateElement));
 	}
 	
-	protected <F extends ListFieldBuilder<Gui, ?, F>> F decorate(F builder) {
+	@OnlyIn(Dist.CLIENT) protected <F extends ListFieldBuilder<Gui, ?, F>> F decorate(F builder) {
 		builder = super.decorate(builder);
 		builder.setCellErrorSupplier(this::supplyElementError)
 		  .setExpanded(expand)

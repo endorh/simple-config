@@ -16,8 +16,7 @@ public class DoubleSliderBuilder extends SliderFieldBuilder<Double, DoubleSlider
 	}
 	
 	@NotNull public DoubleSliderEntry buildEntry() {
-		return new DoubleSliderEntry(
-		  fieldNameKey, min, max, value);
+		return new DoubleSliderEntry(fieldNameKey, min, max, value);
 	}
 }
 

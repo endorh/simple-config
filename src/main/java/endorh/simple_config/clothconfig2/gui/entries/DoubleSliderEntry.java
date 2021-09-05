@@ -6,9 +6,6 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-/**
- * Implementation of the missing double slider entry in Cloth API
- */
 @OnlyIn(Dist.CLIENT)
 public class DoubleSliderEntry extends SliderListEntry<Double> {
 	public DoubleSliderEntry(

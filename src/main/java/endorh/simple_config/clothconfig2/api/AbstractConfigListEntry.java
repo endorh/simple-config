@@ -83,6 +83,10 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	
+	@Override public boolean isMouseOver(double mouseX, double mouseY) {
+		return entryArea.contains(mouseX, mouseY);
+	}
+	
 	@Override public int getScrollY() {
 		return (int) round(entryArea.y + getParent().getScroll());
 	}

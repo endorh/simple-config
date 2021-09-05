@@ -10,6 +10,8 @@ import endorh.simple_config.clothconfig2.impl.builders.DecoratedListEntryBuilder
 import endorh.simple_config.core.NBTUtil.ExpectedType;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
@@ -158,7 +160,7 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
 	}
 	
-	@Override public Optional<AbstractConfigListEntry<Pair<CG, List<Pair<KG, G>>>>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<Pair<KG, G>>>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		mapEntry.withDisplayName(getDisplayName());

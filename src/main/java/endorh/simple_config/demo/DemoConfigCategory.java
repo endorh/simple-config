@@ -333,13 +333,17 @@ public class DemoConfigCategory {
 		          // Text entries can also receive format arguments if they
 		          //   are defined by name instead of passing an ITextComponent
 		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).mergeStyle(TextFormatting.GRAY))
-		          // A special type of entry are non-persistent boolean flags
-		          //   These entries do not have an entry in the config file,
-		          //   and revert to their default whenever restarting the game
+		          // Any entry can be made non-persistent, by calling .temp()
+		          //   Non-persistent entries do not appear in the config file
+		          //   and are reset on every restart
 		          // They are rarely useful for enabling special profiling
 		          //   or debugging features
-		          // TODO: allow all entries to be non persistent
-		          .add("non_persistent_bool", nonPersistentBool(false))
+		          .add("non_persistent_bool", bool(false).temp())
+		          // Additionally, entries can also be ignored, ignoring any
+		          //   modifications in the GUI. These can be useful for
+		          //   interactive entries that modify other entries
+		          //   but don't have a relevant value to be stored.
+		          .add("ignored_bool", bool(false).ignored())
 		          // Button entries can execute any arbitrary action
 		          .add("action_button", button(
 		            () -> Util.getOSType().openFile(

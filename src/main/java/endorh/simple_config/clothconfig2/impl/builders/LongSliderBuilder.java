@@ -8,8 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(value = Dist.CLIENT)
-public class LongSliderBuilder
-  extends SliderFieldBuilder<Long, LongSliderEntry, LongSliderBuilder> {
+public class LongSliderBuilder extends SliderFieldBuilder<Long, LongSliderEntry, LongSliderBuilder> {
 	
 	public LongSliderBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, long value, long min, long max
@@ -18,9 +17,7 @@ public class LongSliderBuilder
 	}
 	
 	@Override @NotNull public LongSliderEntry buildEntry() {
-		return new LongSliderEntry(
-		  fieldNameKey, min, max, value
-		);
+		return new LongSliderEntry(fieldNameKey, min, max, value);
 	}
 }
 

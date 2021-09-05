@@ -5,6 +5,8 @@ import endorh.simple_config.clothconfig2.impl.builders.RangedListFieldBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -108,6 +110,7 @@ public abstract class RangedListEntry<
 		}
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	protected <F extends RangedListFieldBuilder<Gui, ?, ?, F>> F decorate(F builder) {
 		builder = super.decorate(builder);
 		builder.setMin(elemForGui(min)).setMax(elemForGui(max));

@@ -318,7 +318,7 @@ public abstract class AbstractConfigEntry<T>
 	}
 	
 	public void save() {
-		if (saveConsumer != null)
+		if (!ignoreEdits && saveConsumer != null)
 			saveConsumer.accept(getValue());
 	}
 	

@@ -15,9 +15,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	@NotNull public FloatSliderEntry buildEntry() {
-		return new FloatSliderEntry(
-		  fieldNameKey, min, max, value
-		);
+		return new FloatSliderEntry(fieldNameKey, min, max, value);
 	}
 }
 

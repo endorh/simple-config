@@ -13,6 +13,8 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +29,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+@OnlyIn(Dist.CLIENT)
 public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry, E extends AbstractConfigListEntry<V>>
   extends AbstractListListEntry<Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>> {
 	// protected final List<ReferenceProvider> referencableEntries = Lists.newArrayList();

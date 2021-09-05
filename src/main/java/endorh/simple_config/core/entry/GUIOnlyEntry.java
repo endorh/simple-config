@@ -1,5 +1,6 @@
 package endorh.simple_config.core.entry;
 
+import com.google.common.collect.Lists;
 import endorh.simple_config.core.AbstractConfigEntry;
 import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
@@ -19,7 +20,6 @@ import java.util.stream.Collectors;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
   extends AbstractConfigEntry<V, Void, Gui, Self> {
-	protected V actualValue;
 	protected boolean addNonPersistentTooltip;
 	
 	public GUIOnlyEntry(
@@ -31,9 +31,11 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	  boolean addNonPersistentTooltip, Class<?> typeClass
 	) {
 		super(parent, name, value);
-		this.actualValue = value;
 		this.addNonPersistentTooltip = addNonPersistentTooltip;
 		this.typeClass = typeClass;
+		
+		nonPersistent = true;
+		this.actualValue = value;
 	}
 	
 	public static abstract class Builder<V, Gui,
@@ -46,6 +48,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		
 		@Override
 		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+			nonPersistent = true;
 			/*if (parent.getRoot().type != Type.CLIENT)
 				throw new IllegalArgumentException(
 				  "Attempt to declare non persistent config entry in a non-client config");*/
@@ -66,37 +69,17 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		return get();
 	}
 	
-	@Override
-	protected final void set(ConfigValue<?> spec, V value) {
+	@Override protected final void set(ConfigValue<?> spec, V value) {
 		set(value);
 		bakeField();
 	}
 	
-	protected V get() {
-		return actualValue;
-	}
-	protected void set(V value) {
-		this.actualValue = value;
-	}
-	
-	@Override
-	protected boolean canBeNested() {
+	@Override protected boolean canBeNested() {
 		return false;
 	}
 	
-	@Override
-	protected Optional<ITextComponent[]> supplyTooltip(Gui value) {
-		if (addNonPersistentTooltip)
-			return Optional.of(super.supplyTooltip(value).map(tooltip -> {
-				final List<ITextComponent> t = Arrays.stream(tooltip).collect(Collectors.toList());
-				t.add(new TranslationTextComponent(
-				  "simple-config.config.help.not_persistent_entry"
-				).mergeStyle(TextFormatting.GRAY));
-				return t.toArray(new ITextComponent[0]);
-			}).orElse(new ITextComponent[]{new TranslationTextComponent(
-			  "simple-config.config.help.not_persistent_entry"
-			).mergeStyle(TextFormatting.GRAY)}));
-		else return super.supplyTooltip(value);
+	@Override protected List<ITextComponent> supplyExtraTooltip(Gui value) {
+		return addNonPersistentTooltip? super.supplyExtraTooltip(value) : Lists.newArrayList();
 	}
 	
 	@Override

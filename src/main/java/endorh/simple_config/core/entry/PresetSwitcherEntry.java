@@ -11,6 +11,8 @@ import endorh.simple_config.core.SelectorEntry;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -76,7 +78,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		  () -> new IllegalArgumentException("At least one preset must be specified"));
 	}
 	
-	public void applyPreset(String name) {
+	@OnlyIn(Dist.CLIENT) public void applyPreset(String name) {
 		if (!presets.containsKey(name))
 			throw new IllegalArgumentException("Unknown preset: \"" + name + "\"");
 		final Map<String, Object> preset = presets.get(name);
@@ -99,7 +101,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		if (screen != null) screen.getHistory().saveBatch(screen);
 	}
 	
-	@Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final EntryButtonListEntry<String, ?> entry = new EntryButtonListEntry<>(

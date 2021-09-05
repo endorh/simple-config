@@ -3,6 +3,8 @@ package endorh.simple_config.core;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -13,7 +15,7 @@ import java.util.Optional;
  * gui entries and thus can be used as keys in map entries
  */
 public interface IKeyEntry<KC, KG> {
-	default <KGE extends AbstractConfigListEntry<KG> & IChildListEntry> KGE buildChildGUIEntry(
+	@OnlyIn(Dist.CLIENT) default <KGE extends AbstractConfigListEntry<KG> & IChildListEntry> KGE buildChildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (this instanceof AbstractConfigEntry) {

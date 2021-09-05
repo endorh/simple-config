@@ -16,6 +16,8 @@ import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@OnlyIn(Dist.CLIENT)
 public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & IChildListEntry>
   extends TooltipListEntry<V> implements IChildListEntry {
 	

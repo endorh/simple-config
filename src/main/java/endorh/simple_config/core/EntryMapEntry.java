@@ -12,6 +12,8 @@ import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
@@ -241,7 +243,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
 	}
 	
-	protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
+	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(
 	  ConfigEntryBuilder builder
 	) {
@@ -275,7 +277,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		return super.saveConsumer().andThen(g -> guiCache = g);
 	}
 	
-	@Override
+	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<AbstractConfigListEntry<List<Pair<KG, G>>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
