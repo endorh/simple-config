@@ -64,13 +64,19 @@ public abstract class TooltipListEntry<T>
 	protected boolean shouldProvideTooltip(
 	  int mouseX, int mouseY, int x, int y, int width, int height
 	) {
-		return isMouseInside(mouseX, mouseY, x, y, width, height);
+		// Do not show the tooltip in annoying positions
+		return isMouseInside(mouseX, mouseY, x, y, width, height)
+		       && mouseX > 24
+		       && (mouseX < entryArea.getMaxX() - 170
+		           || matchedTooltipText != null && !matchedTooltipText.isEmpty()
+		              && mouseX > entryArea.getMaxX() + 8 && mouseX < entryArea.getMaxX() + 26);
 	}
 	
-	private IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
+	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
+		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
 			 component -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
-            component, (int) (getConfigScreen().width * 0.9F)).stream())
+            component, (int) (getConfigScreen().width * 0.6F)).stream())
 		  .toArray(IReorderingProcessor[]::new);
 	}
 	

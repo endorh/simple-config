@@ -389,15 +389,6 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		       && mouseY < marginWidgetY + 9;
 	}
 	
-	@Override protected boolean shouldProvideTooltip(
-	  int mouseX, int mouseY, int x, int y, int entryWidth, int entryHeight
-	) {
-		return mouseX >= entryArea.x - 30
-		       && mouseX < x + entryWidth
-		       && mouseY >= y
-		       && mouseY < y + entryHeight;
-	}
-	
 	public boolean isHeldEntryHovered(int mouseX, int mouseY) {
 		return mouseX >= entryArea.getMaxX() - 148
 		       && mouseX < entryArea.getMaxX() - 4 - resetButton.getWidth()

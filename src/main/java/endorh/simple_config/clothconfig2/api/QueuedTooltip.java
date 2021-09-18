@@ -11,8 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class QueuedTooltip
-  implements Tooltip {
+public class QueuedTooltip implements Tooltip {
 	private final Point location;
 	private final List<IReorderingProcessor> text;
 	
@@ -36,8 +35,7 @@ public class QueuedTooltip
 	}
 	
 	public static QueuedTooltip create(Point location, ITextProperties... text) {
-		return new QueuedTooltip(
-		  location, LanguageMap.getInstance().func_244260_a(Arrays.asList(text)));
+		return new QueuedTooltip(location, LanguageMap.getInstance().func_244260_a(Arrays.asList(text)));
 	}
 	
 	@Override

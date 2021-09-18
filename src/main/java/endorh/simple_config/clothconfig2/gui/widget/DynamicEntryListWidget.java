@@ -23,6 +23,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -113,6 +114,14 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	public E getFocused() {
 		//noinspection unchecked
 		return (E) getListener();
+	}
+	
+	public @Nullable E getSelectedEntry() {
+		INavigableTarget target = getSelectedTarget();
+		while (!(target instanceof Entry) && target != null)
+			target = target.getNavigableParent();
+		//noinspection unchecked
+		return (E) target;
 	}
 	
 	public @Nullable INavigableTarget getSelectedTarget() {
@@ -804,6 +813,13 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 				}
 			}
 			return false;
+		}
+		
+		/**
+		 * Get the error of this target
+		 */
+		default Optional<ITextComponent> getConfigError() {
+			return Optional.empty();
 		}
 	}
 }

@@ -297,8 +297,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	
 	@Override public void updateSelected(boolean isSelected) {
 		super.updateSelected(isSelected);
-		if (!isSelected)
-			forceUnFocus(sliderWidget, resetButton);
+		if (!isSelected) forceUnFocus(sliderWidget, resetButton);
 	}
 	
 	@Override public boolean isChild() {

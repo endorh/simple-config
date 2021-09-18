@@ -226,7 +226,10 @@ public abstract class AbstractConfigEntry<T>
 		lastHistoryTime = System.currentTimeMillis();
 	}
 	
-	public final Optional<ITextComponent> getConfigError() {
+	/**
+	 * Subclasses should instead override {@link AbstractConfigEntry#getError()}
+	 */
+	@Override public Optional<ITextComponent> getConfigError() {
 		if (this.errorSupplier != null) {
 			final Optional<ITextComponent> opt = this.errorSupplier.get();
 			if (opt.isPresent())

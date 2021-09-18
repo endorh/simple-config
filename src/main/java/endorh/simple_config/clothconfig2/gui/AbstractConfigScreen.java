@@ -275,11 +275,9 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (getDragged() != null)
-			return true;
-		if (handleDialogsMouseClicked(mouseX, mouseY, button))
-			return true;
-		if (handleOverlaysMouseClicked(mouseX, mouseY, button))
+		if (getDragged() != null
+		    || handleDialogsMouseClicked(mouseX, mouseY, button)
+		    || handleOverlaysMouseClicked(mouseX, mouseY, button))
 			return true;
 		if (focusedBinding != null && startedKeyCode != null &&
 		    focusedBinding.isAllowMouse()) {

@@ -29,7 +29,10 @@ public abstract class BaseListCell<T> extends FocusableGui
 		return this.getConfigError().isPresent() ? 0xFF5555 : 0xE0E0E0;
 	}
 	
-	public final Optional<ITextComponent> getConfigError() {
+	/**
+	 * Subclasses should instead override {@link BaseListCell#getError()}
+	 */
+	@Override public Optional<ITextComponent> getConfigError() {
 		if (this.errorSupplier != null && this.errorSupplier.get().isPresent())
 			return this.errorSupplier.get();
 		return this.getError();
