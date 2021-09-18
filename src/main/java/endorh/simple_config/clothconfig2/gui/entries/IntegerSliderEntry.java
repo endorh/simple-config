@@ -18,7 +18,7 @@ public class IntegerSliderEntry extends SliderListEntry<Integer> {
 		super(
 		  fieldName, min, max, value,
 		  v -> new TranslationTextComponent(
-		    "simple-config.config.format.slider",
+		    "simple-config.format.slider",
 		    String.format("%d", v)));
 		final IntegerListEntry textEntry =
 		  new IntegerListEntry(StringTextComponent.EMPTY, value);

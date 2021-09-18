@@ -196,8 +196,9 @@ public class SubCategoryListEntry
 		super.updateSelected(isSelected);
 		if (heldEntry != null) {
 			final boolean heldEntrySelected = isSelected && getListener() == heldEntry;
+			final boolean prevSelected = heldEntry.isSelected();
 			heldEntry.updateSelected(heldEntrySelected);
-			if (heldEntrySelected) getConfigScreen().getHistory().preserveState(heldEntry);
+			if (!prevSelected && heldEntrySelected) getConfigScreen().getHistory().preserveState(heldEntry);
 		}
 		for (AbstractConfigListEntry<?> entry : entries)
 			entry.updateSelected(expanded && isSelected && getListener() == entry);
@@ -357,12 +358,16 @@ public class SubCategoryListEntry
 				case 262: // Arrow right
 					if (!parent.isExpanded()) {
 						parent.setExpanded(true, Screen.hasShiftDown());
+						Minecraft.getInstance().getSoundHandler().play(
+						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 						return true;
 					}
 					break;
 				case 263: // Arrow left
 					if (parent.isExpanded()) {
 						parent.setExpanded(false, Screen.hasShiftDown());
+						Minecraft.getInstance().getSoundHandler().play(
+						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 						return true;
 					}
 					break;

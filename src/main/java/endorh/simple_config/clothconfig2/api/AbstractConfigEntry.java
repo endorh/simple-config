@@ -117,7 +117,11 @@ public abstract class AbstractConfigEntry<T>
 	
 	public abstract boolean isRequiresRestart();
 	
-	public abstract void setRequiresRestart(boolean var1);
+	public abstract void setRequiresRestart(boolean requiresRestart);
+	
+	public boolean isSelected() {
+		return isSelected;
+	}
 	
 	public void setExpandableParent(IExpandable parent) {
 		expandableParent = new WeakReference<>(parent);

@@ -18,7 +18,7 @@ public class LongSliderEntry extends SliderListEntry<Long> {
 		super(
 		  fieldName, min, max, value,
 		  v -> new TranslationTextComponent(
-		    "simple-config.config.format.slider",
+		    "simple-config.format.slider",
 		    String.format("%d", v)));
 		final LongListEntry textEntry =
 		  new LongListEntry(StringTextComponent.EMPTY, value);

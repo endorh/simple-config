@@ -21,7 +21,9 @@ public abstract class BaseListCell<T> extends FocusableGui
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	protected boolean isSelected = false;
 	protected long lastHistoryTime = 0;
+	protected boolean lastHistoryRemove = false;
 	protected int historyApplyColor = 0x804242FF;
+	protected int historyRemoveColor = 0x80FF4242;
 	
 	public final int getPreferredTextColor() {
 		return this.getConfigError().isPresent() ? 0xFF5555 : 0xE0E0E0;
@@ -51,9 +53,9 @@ public abstract class BaseListCell<T> extends FocusableGui
 	) {
 		final long t = System.currentTimeMillis() - lastHistoryTime;
 		if (t < 1000) {
-			int color = historyApplyColor;
+			int color = lastHistoryRemove? historyRemoveColor : historyApplyColor;
 			final int offset = getCellDecorationOffset();
-				fill(mStack, 16, y + offset, x + entryWidth, y + getCellHeight() + offset - 4,
+			fill(mStack, 16, y + offset, x + entryWidth, y + getCellHeight() + offset - 4,
 			     color & 0xFFFFFF | (int) ((color >> 24 & 0xFF) * ((1000 - t) / 1000D)) << 24);
 		}
 	}

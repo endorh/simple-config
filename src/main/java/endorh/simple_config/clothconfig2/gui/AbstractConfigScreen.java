@@ -13,6 +13,7 @@ import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget;
 import endorh.simple_config.clothconfig2.impl.EditHistory;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
@@ -393,12 +394,19 @@ public abstract class AbstractConfigScreen extends Screen
 		if (keyCode == 256) { // Escape key
 			if (handleOverlaysEscapeKey())
 				return true;
-			if (shouldCloseOnEsc())
+			if (shouldCloseOnEsc()) {
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return quit();
+			}
 		}
 		if (screenKeyPressed(keyCode, scanCode, modifiers))
 			return true;
 		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+	
+	protected boolean canSave() {
+		return isEdited();
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
@@ -410,15 +418,21 @@ public abstract class AbstractConfigScreen extends Screen
 					if (i < 0) i = categoryMap.size() - 1;
 					setSelectedCategory(i);
 					recomputeFocus();
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				case 267: // Page Down
 					i = selectedCategoryIndex + 1;
 					if (i >= categoryMap.size()) i = 0;
 					setSelectedCategory(i);
 					recomputeFocus();
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				case 59: // Ctrl + S
-					saveAll(true, true);
+					if (canSave()) saveAll(true, true);
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 			}
 		}

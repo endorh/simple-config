@@ -1,5 +1,6 @@
 package endorh.simple_config.clothconfig2.api;
 
+import endorh.simple_config.clothconfig2.gui.entries.IEntryHoldingListEntry;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -13,8 +14,14 @@ public interface IEntryHolder {
 	default @Nullable AbstractConfigEntry<?> getEntry(String path) {
 		final String[] sp = DOT.split(path, 2);
 		final List<AbstractConfigEntry<?>> entries = getEntries();
-		final AbstractConfigEntry<?> entry = entries.stream()
+		AbstractConfigEntry<?> entry = entries.stream()
 		  .filter(e -> e.getName().equals(sp[0])).findFirst().orElse(null);
+		if (entry == null && this instanceof IEntryHoldingListEntry) {
+			final AbstractConfigListEntry<?> heldEntry =
+			  ((IEntryHoldingListEntry) this).getHeldEntry();
+			if (heldEntry != null && heldEntry.getName().equals(sp[0]))
+				entry = heldEntry;
+		}
 		if (sp.length < 2) return entry;
 		if (entry instanceof IEntryHolder)
 			return ((IEntryHolder) entry).getEntry(sp[1]);

@@ -2,6 +2,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.entries.EntryPairListListEntry.EntryPairCell;
@@ -9,6 +10,7 @@ import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
@@ -263,10 +265,14 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 			if (keyCode == 263 && getListener() == valueEntry) {
 				setListener(keyEntry);
 				keyEntry.changeFocus(true);
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (keyCode == 262 && getListener() == keyEntry) {
 				setListener(valueEntry);
 				valueEntry.changeFocus(true);
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 			if (Screen.hasAltDown() && getListEntry().getSelectedIndex() != -1 && (keyCode == 257 || keyCode == 260))

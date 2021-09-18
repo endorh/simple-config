@@ -1,7 +1,6 @@
 package endorh.simple_config;
 
 import com.google.common.collect.Lists;
-import endorh.simple_config.SimpleConfigMod.ServerConfig.permissions;
 import endorh.simple_config.core.SimpleConfig;
 import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
@@ -10,23 +9,26 @@ import endorh.simple_config.core.entry.Builders;
 import endorh.simple_config.core.entry.StringEntry;
 import endorh.simple_config.demo.DemoConfigCategory;
 import endorh.simple_config.demo.DemoServerCategory;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.Util;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
@@ -43,8 +45,12 @@ import static endorh.simple_config.core.SimpleConfig.group;
 import static endorh.simple_config.core.entry.Builders.*;
 
 @Mod(SimpleConfigMod.MOD_ID)
+@EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
 @Internal public class SimpleConfigMod {
 	public static final String MOD_ID = "simple-config";
+	public static SoundEvent UI_TAP;
+	public static SoundEvent UI_DOUBLE_TAP;
+	
 	// Storing the config instances is optional
 	public static SimpleConfig CLIENT_CONFIG;
 	public static SimpleConfig SERVER_CONFIG;
@@ -146,7 +152,6 @@ import static endorh.simple_config.core.entry.Builders.*;
 		       .add("rules", pairList(
 					roleName, caption(enum_(ConfigPermission.ALLOW), list(modGroupOrName)),
 					Lists.newArrayList(Pair.of("op", Pair.of(ConfigPermission.ALLOW, Lists.newArrayList("[all]"))))))
-		       // Testing fields
 		       // .add("test_player", string("").ignored())
 		       // .add("test_mod", string("").ignored())
 		       // .text(() -> {
@@ -341,5 +346,19 @@ import static endorh.simple_config.core.entry.Builders.*;
 		SPLIT_OPTIONS_BUTTON, LEFT_OF_OPTIONS_BUTTON,
 		TOP_LEFT_CORNER, TOP_RIGHT_CORNER,
 		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
+	}
+	
+	@SubscribeEvent
+	protected static void onRegisterSounds(RegistryEvent.Register<SoundEvent> event) {
+		final IForgeRegistry<SoundEvent> r = event.getRegistry();
+		UI_TAP = regSound(r, new ResourceLocation(MOD_ID, "ui_tap"));
+		UI_DOUBLE_TAP = regSound(r, new ResourceLocation(MOD_ID, "ui_double_tap"));
+	}
+	
+	protected static SoundEvent regSound(IForgeRegistry<SoundEvent> registry, ResourceLocation name) {
+		SoundEvent event = new SoundEvent(name);
+		event.setRegistryName(name);
+		registry.register(event);
+		return event;
 	}
 }

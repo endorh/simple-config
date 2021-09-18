@@ -20,7 +20,9 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 	@Internal public ShortEntry(
 	  ISimpleConfigEntryHolder parent, String name, short value
 	) {
-		super(parent, name, value, Short.class);
+		super(parent, name, value);
+		commentMin = Short.MIN_VALUE;
+		commentMax = Short.MAX_VALUE;
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, Builder> {

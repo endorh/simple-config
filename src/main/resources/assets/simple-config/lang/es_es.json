@@ -23,7 +23,7 @@
   "simple-config.config.msg.client_changes_require_restart": "Algunos de tus últimos cambios en la configuración pueden requerir un reinicio para ser efectivos",
   "simple-config.config.msg.server_changes_require_restart": "Algunos de estos cambios pueden requerir un reinicio para ser efectivos",
 
-  "simple-config.config.format.slider": "Valor: %s",
+  "simple-config.format.slider": "Valor: %s",
   "simple-config.config.help.not_persistent_entry": "No persistente",
   "simple-config.config.help.pattern_flags": "Opciones: %s",
   "simple-config.config.error.invalid_value_generic": "Valor inválido! %s",

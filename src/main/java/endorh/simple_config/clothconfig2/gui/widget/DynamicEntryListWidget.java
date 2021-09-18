@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.widget;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
@@ -11,6 +12,8 @@ import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.Entry
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
+import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.gui.*;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -460,6 +463,8 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 			case 263: // Arrow left
 				if (target != null) {
 					navigateTo(target.getNavigableParent());
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				}
 		}
@@ -723,6 +728,8 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	public void changeFocusedMatch(int index) {
 		if (matchingEntries == null || matchingEntries.isEmpty()) {
 			focusedMatch = null;
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return;
 		}
 		if (focusedMatch != null)
@@ -731,6 +738,8 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		focusedMatch.setFocusedMatch(true);
 		if (focusedMatch instanceof INavigableTarget)
 			selectedTarget = ((INavigableTarget) focusedMatch);
+		Minecraft.getInstance().getSoundHandler().play(
+		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	public List<INavigableTarget> getNavigableTargets() {
@@ -754,6 +763,9 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		int target = clamp(i + step, 0, targets.size() - 1);
 		final INavigableTarget t = targets.get(target);
 		t.onNavigate();
+		if (i + step == target)
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	protected @Nullable INavigableTarget getClosestNavigableTarget() {
@@ -786,6 +798,8 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 				final IExpandable ex = (IExpandable) this;
 				if (ex.isExpanded()) {
 					ex.setExpanded(false, Screen.hasShiftDown());
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				}
 			}

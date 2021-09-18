@@ -19,7 +19,9 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	@Internal public LongEntry(
 	  ISimpleConfigEntryHolder parent, String name, long value
 	) {
-		super(parent, name, value, Long.class);
+		super(parent, name, value);
+		commentMin = Long.MIN_VALUE;
+		commentMax = Long.MAX_VALUE;
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, Builder> {

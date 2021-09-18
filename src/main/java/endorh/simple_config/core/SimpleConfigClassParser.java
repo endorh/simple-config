@@ -74,7 +74,7 @@ public class SimpleConfigClassParser {
 		return builder;
 	}
 	
-	protected static <V> void decorateEntry(
+	protected static <V> AbstractConfigEntryBuilder<V, ?, ?, ?, ?> decorateEntry(
 	  AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder, Class<?> cl, Field field
 	) {
 		final Method m = tryGetMethod(cl, field.getName(), "error", field.getType());
@@ -84,14 +84,17 @@ public class SimpleConfigClassParser {
 				  "Invalid return type in config field error supplier method " + getMethodName(m)
 				  + ": " + getMethodTypeName(m) + "\n  Error suppliers must return Optional<ITextComponent>");
 			final String errorMsg = "Reflection error invoking config element error supplier method %s";
-			builder.error(v -> invoke(m, null, errorMsg, v));
+			builder = builder.error(v -> invoke(m, null, errorMsg, v));
 		}
-		addTooltip(builder, cl, field);
+		builder = addTooltip(builder, cl, field);
 		if (field.isAnnotationPresent(RequireRestart.class))
-			builder.restart(true);
+			builder = builder.restart(true);
+		if (field.isAnnotationPresent(NonPersistent.class))
+			builder = builder.temp();
+		return builder;
 	}
 	
-	protected static <V> void addTooltip(
+	protected static <V> AbstractConfigEntryBuilder<V, ?, ?, ?, ?> addTooltip(
 	  AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder, Class<?> cl, Field field
 	) {
 		boolean a = true;
@@ -107,10 +110,11 @@ public class SimpleConfigClassParser {
 				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return Optional<ITextComponent[]>");
 			final String errorMsg = "Reflection error invoking config element tooltip supplier method %s";
 			final Method mm = m;
-			builder.tooltip(
+			builder = builder.tooltip(
 			  a ? v -> invoke(mm, null, errorMsg, v)
 			    : v -> invoke(mm, null, errorMsg));
 		}
+		return builder;
 	}
 	
 	/**
@@ -193,8 +197,7 @@ public class SimpleConfigClassParser {
 				} else throw new SimpleConfigClassParseException(builder,
 				  "Unsupported text supplier in config field " + getFieldName(field) + " of type " + fieldTypeName
 				  + "\n  Should be either String (contents ignored), ITextComponent or Supplier<ITextComponent>");
-				addTooltip(textBuilder, configClass, field);
-				builder.add(getOrder(field), field.getName(), textBuilder);
+				builder.add(getOrder(field), field.getName(), addTooltip(textBuilder, configClass, field));
 				continue;
 			}
 			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
@@ -240,13 +243,13 @@ public class SimpleConfigClassParser {
 								Annotation annotation = field.getAnnotation(annotationClass);
 								for (FieldEntryParser<?, ?> parser : parsers.get(clazz)) {
 									//noinspection unchecked
-									final AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder =
+									AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder =
 									  ((FieldEntryParser<Annotation, Object>) parser).tryParse(annotation, field, value);
 									if (entryBuilder != null) {
 										if (builder.hasEntry(name) || builder.groups.containsKey(name))
 											throw new SimpleConfigClassParseException(
 											  builder, "Cannot create entry with name " + name + ". The name is already used.");
-										decorateEntry(entryBuilder, configClass, field);
+										entryBuilder = decorateEntry(entryBuilder, configClass, field);
 										builder.add(getOrder(field), name, entryBuilder);
 										builder.setBackingField(name, field);
 										continue parseFields;
@@ -378,8 +381,6 @@ public class SimpleConfigClassParser {
 	protected static int getOrder(Field field) {
 		if (field.isAnnotationPresent(Entry.class))
 			return field.getAnnotation(Entry.class).value();
-		else if (field.isAnnotationPresent(Entry.NonPersistent.class))
-			return field.getAnnotation(Entry.NonPersistent.class).value();
 		else if (field.isAnnotationPresent(Text.class))
 			return field.getAnnotation(Text.class).value();
 		else return 0;

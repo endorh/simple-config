@@ -32,36 +32,71 @@ import static endorh.simple_config.core.SimpleConfigClassParser.*;
 @SuppressWarnings("unused")
 public class Builders {
 	// Basic types
+	
+	/**
+	 * Boolean entry<br>
+	 * You may change the text that appears in the button using
+	 * {@link BooleanEntry.Builder#text}
+	 */
 	public static BooleanEntry.Builder bool(boolean value) {
 		return new BooleanEntry.Builder(value);
 	}
+	
 	/**
-	 * Generates an entry in the config GUI, but no entry in the config file<br>
-	 * Modifications are only effective until restart
+	 * Boolean entry<br>
+	 * Uses the labels "Enabled" and "Disabled" instead of the usual "Yes" and "No"<br>
+	 * You may also provide your own labels using {@link BooleanEntry.Builder#text}
 	 */
-	public static NonPersistentBooleanEntry.Builder nonPersistentBool(boolean value) {
-		return new NonPersistentBooleanEntry.Builder(value);
+	public static BooleanEntry.Builder enable(boolean value) {
+		return bool(value).text("simple-config.format.bool.enable");
 	}
+	
+	/**
+	 * String entry
+	 */
 	public static StringEntry.Builder string(String value) {
 		return new StringEntry.Builder(value);
 	}
+	
+	/**
+	 * Enum entry
+	 */
 	public static <E extends Enum<E>> EnumEntry.Builder<E> enum_(E value) {
 		return new EnumEntry.Builder<>(value);
 	}
 	
+	/**
+	 * Button entry<br>
+	 * Displays a button in the GUI that can trigger an arbitrary action.<br>
+	 * The action may receive the immediate parent of the entry as parameter.
+	 */
 	public static ButtonEntry.Builder button(Runnable action) {
 		return new ButtonEntry.Builder(h -> action.run());
 	}
 	
+	/**
+	 * Button entry<br>
+	 * Displays a button in the GUI that can trigger an arbitrary action.<br>
+	 * The action may receive the immediate parent of the entry as parameter.
+	 */
 	public static ButtonEntry.Builder button(Consumer<ISimpleConfigEntryHolder> action) {
 		return new ButtonEntry.Builder(action);
 	}
 	
+	/**
+	 * Add a button to another entry.<br>
+	 * Not persistent. Useful for GUI screen interaction.
+	 */
 	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner, Consumer<V> action
 	) { return button(inner, (v, h) -> action.accept(v)); }
 	
+	
+	/**
+	 * Add a button to another entry.<br>
+	 * Not persistent. Useful for GUI screen interaction.
+	 */
 	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner,
@@ -70,6 +105,9 @@ public class Builders {
 		return new EntryButtonEntry.Builder<>(inner, action);
 	}
 	
+	/**
+	 * Enum-like cycling button between a definite, finite amount of values.<br>
+	 */
 	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
 	SelectorEntry.Builder<V, C, G, E> select(
 	  AbstractConfigEntryBuilder<V, C, ?, E, ?> builder, V... values
@@ -77,6 +115,9 @@ public class Builders {
 		return new SelectorEntry.Builder<>(builder, values);
 	}
 	
+	/**
+	 * Enum-like cycling button between a definite, finite amount of values.
+	 */
 	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
 	SelectorEntry.Builder<V, C, G, E> select(
 	  AbstractConfigEntryBuilder<V, C, G, E, ?> builder, List<V> values
@@ -85,12 +126,24 @@ public class Builders {
 		return new SelectorEntry.Builder<>(builder, (V[]) values.toArray(new Object[0]));
 	}
 	
+	/**
+	 * An entry that lets users apply different presets to the entries, using global paths.<br>
+	 * Create presets using {@link Builders#presets(PresetBuilder...)} and {@link Builders#preset(String)}
+	 * or just create a map your way.
+	 */
 	public static PresetSwitcherEntry.Builder globalPresetSwitcher(
 	  Map<String, Map<String, Object>> presets, String path
 	) {
 		return new PresetSwitcherEntry.Builder(presets, path, true);
 	}
 	
+	
+	/**
+	 * An entry that lets users apply different presets to the entries,
+	 * using local paths from the parent of this entry.<br>
+	 * Create presets using {@link Builders#presets(PresetBuilder...)} and {@link Builders#preset(String)}
+	 * or just create a map your way.
+	 */
 	public static PresetSwitcherEntry.Builder localPresetSwitcher(
 	  Map<String, Map<String, Object>> presets, String path
 	) {
@@ -264,25 +317,50 @@ public class Builders {
 	/**
 	 * Float value between 0 and 1 (inclusive)
 	 */
-	public static FloatEntry.Builder fractional(float value) {
+	public static FloatEntry.Builder fraction(float value) {
 		if (0F > value || value > 1F)
 			throw new IllegalArgumentException(
 			  "Fraction values must be within [0, 1], passed " + value);
-		return number(value, 0F, 1F);
+		return number(value).range(0, 1).slider();
 	}
 	
 	/**
 	 * Double value between 0 and 1 (inclusive)
 	 */
-	public static DoubleEntry.Builder fractional(double value) {
+	public static DoubleEntry.Builder fraction(double value) {
 		if (0D > value || value > 1D)
 			throw new IllegalArgumentException(
 			  "Fraction values must be within [0, 1], passed " + value);
-		return number(value, 0D, 1D);
+		return number(value).range(0, 1).slider();
 	}
 	
 	/**
-	 * Color
+	 * Float entry between 0 and 1 (inclusive)<br>
+	 * Displays a volume label in the slider instead of the usual "Value: %s"
+	 */
+	public static FloatEntry.Builder volume(float value) {
+		return fraction(value).slider("simple-config.format.slider.volume");
+	}
+	
+	/**
+	 * Float entry between 0 and 1 (inclusive) with default value of 1.<br>
+	 * Displays a volume label in the slider instead of the usual "Value: %s"
+	 */
+	public static FloatEntry.Builder volume() {
+		return volume(1F);
+	}
+	
+	/**
+	 * Double entry between 0 and 1 (inclusive)<br>
+	 * Displays a volume label in the slider instead of the usual "Value: %s"
+	 */
+	public static DoubleEntry.Builder volume(double value) {
+		return fraction(value).slider("simple-config.format.slider.volume");
+	}
+	
+	/**
+	 * Color entry<br>
+	 * Use {@link ColorEntry.Builder#alpha()} to allow alpha values
 	 */
 	public static ColorEntry.Builder color(Color value) {
 		return new ColorEntry.Builder(value);
@@ -336,38 +414,78 @@ public class Builders {
 	}
 	
 	// Convenience Minecraft entries
+	
+	/**
+	 * Item entry<br>
+	 * Use {@link Builders#itemName} instead to use ResourceLocations as value,
+	 * to allow unknown items.
+	 */
 	public static ItemEntry.Builder item(@Nullable Item value) {
 		return new ItemEntry.Builder(value);
 	}
 	
+	/**
+	 * Item name entry<br>
+	 * Use {@link Builders#item} instead to use Item objects as value.
+	 */
 	public static ItemNameEntry.Builder itemName(@Nullable ResourceLocation value) {
 		return new ItemNameEntry.Builder(value);
 	}
 	
+	/**
+	 * Item name entry<br>
+	 * Use {@link Builders#item} instead to use Item objects as value.
+	 */
 	public static ItemNameEntry.Builder itemName(Item value) {
 		return itemName(value.getRegistryName());
 	}
 	
+	/**
+	 * Block entry<br>
+	 * Use {@link Builders#blockName} instead to use ResourceLocations as value,
+	 * to allow unknown blocks.
+	 */
 	public static BlockEntry.Builder block(@Nullable Block value) {
 		return new BlockEntry.Builder(value);
 	}
 	
+	/**
+	 * Block name entry<br>
+	 * Use {@link Builders#block} instead to use Block objects as value.
+	 */
 	public static BlockNameEntry.Builder blockName(@Nullable ResourceLocation value) {
 		return new BlockNameEntry.Builder(value);
 	}
 	
+	/**
+	 * Block name entry<br>
+	 * Use {@link Builders#block} instead to use Block objects as value.
+	 */
 	public static BlockNameEntry.Builder blockName(Block value) {
 		return blockName(value.getRegistryName());
 	}
 	
+	/**
+	 * Fluid entry<br>
+	 * Use {@link Builders#fluidName} instead to use ResourceLocations as value,
+	 * to allow unknown fluids.
+	 */
 	public static FluidEntry.Builder fluid(@Nullable Fluid value) {
 		return new FluidEntry.Builder(value);
 	}
 	
+	/**
+	 * Fluid name entry<br>
+	 * Use {@link Builders#fluid} instead to use Fluid objects as value.
+	 */
 	public static FluidNameEntry.Builder fluidName(@Nullable ResourceLocation value) {
 		return new FluidNameEntry.Builder(value);
 	}
 	
+	/**
+	 * Fluid name entry<br>
+	 * Use {@link Builders#fluid} instead to use Fluid objects as value.
+	 */
 	public static FluidNameEntry.Builder fluidName(Fluid value) {
 		return fluidName(value.getRegistryName());
 	}
@@ -385,7 +503,6 @@ public class Builders {
 	public static CompoundNBTEntry.Builder nbtTag(CompoundNBT value) {
 		return new CompoundNBTEntry.Builder(value);
 	}
-	
 	
 	/**
 	 * Generic resource location entry
@@ -460,6 +577,10 @@ public class Builders {
 	
 	// Caption
 	
+	/**
+	 * Attach an entry as the caption of a list entry<br>
+	 * Changes the value to a {@link Pair} of the caption's value and the list's value
+	 */
 	public static <V, C, G, E extends AbstractListEntry<V, C, G, E>,
 	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
 	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
@@ -472,6 +593,10 @@ public class Builders {
 		  Pair.of(getValue(caption), getValue(list)), list, caption);
 	}
 	
+	/**
+	 * Attach an entry as the caption of a map entry<br>
+	 * Changes the value to a {@link Pair} of the caption's value and the map's value
+	 */
 	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
@@ -712,9 +837,6 @@ public class Builders {
 		  decorateListEntry(
 		    byteList((List<Byte>) value)
 		      .min(getMin(field).byteValue()).max(getMax(field).byteValue()), field));
-		
-		registerFieldParser(Entry.NonPersistent.class, Boolean.class, (a, field, value) ->
-		  nonPersistentBool(value != null ? value : false));
 		
 		// Minecraft entry types
 		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));

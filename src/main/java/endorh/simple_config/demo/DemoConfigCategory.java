@@ -124,15 +124,24 @@ public class DemoConfigCategory {
 		            //   If a bound is not specified, it will be unbound
 		            .add("long_value", number(0L).min(0))
 		            // A shortcut exists for float or double values between 0 and 1
-		            //   fractional(v) is equivalent to number(v, 0, 1);
-		            .add("float_value", fractional(0.8F))
+		            //   fraction(v) is equivalent to number(v, 0, 1).slider();
+		            .add("float_value", fraction(0.8F).slider(false))
 		            .add("double_value", number(0.0, -10, 10))
 		            // All numeric entry types can be displayed as sliders, including
 		            //   floats and doubles
+		            // Sliders still let users introduce exact numbers by toggling a text
+		            //   input in the GUI, so don't worry about precision when a slider
+		            //   would be more intuitive for the general user
 		            .add("long_slider", number(5L, 0, 10).slider())
 		            // For obvious reasons, entries displayed as sliders must
 		            //   have finite defined bounds
 		            .add("float_slider", number(80F, 0, 100).slider())
+		            // There's also a shortcut for volume sliders, which display a different
+		            //   translation in the slider widget, and take 1F as their default
+		            // Sliders may take custom translation keys to show in the slider widget.
+		            //   The volume() builder is simply a shortcut for
+		            //   fraction(1F).slider("simple-config.format.slider.volume")
+		            .add("volume_slider", volume())
 		            // String values are also common
 		            .add("string_value", string("Hello World!"))
 		            // You may also use regex entries, which automatically

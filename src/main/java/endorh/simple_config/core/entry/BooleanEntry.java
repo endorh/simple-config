@@ -8,6 +8,7 @@ import endorh.simple_config.core.AbstractConfigEntryBuilder;
 import endorh.simple_config.core.IKeyEntry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -36,9 +37,30 @@ public class BooleanEntry
 			super(value, Boolean.class);
 		}
 		
-		public Builder displayAs(Function<Boolean, ITextComponent> displayAdapter) {
+		/**
+		 * Change the text displayed in the entry's button<br>
+		 * You may also pass a translation key to which '.true' and '.false'
+		 * would be appended if you use {@link Builder#text(String)}
+		 */
+		public Builder text(Function<Boolean, ITextComponent> displayAdapter) {
 			Builder copy = copy();
 			copy.yesNoSupplier = displayAdapter;
+			return copy;
+		}
+		
+		/**
+		 * Change the text displayed in the entry's button<br>
+		 * This method takes a translation key to which '.true' and '.false'
+		 * are appended to retrieve the actual text that will be used.
+		 * You may also provide your own logic using {@link Builder#text(Function)}
+		 */
+		public Builder text(String translation) {
+			Builder copy = copy();
+			final TranslationTextComponent yes =
+			  new TranslationTextComponent(translation + ".true");
+			final TranslationTextComponent no =
+			  new TranslationTextComponent(translation + ".false");
+			copy.yesNoSupplier = b -> b? yes : no;
 			return copy;
 		}
 		

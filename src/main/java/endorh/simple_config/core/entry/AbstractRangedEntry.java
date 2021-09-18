@@ -16,6 +16,9 @@ public abstract class AbstractRangedEntry
   <V extends Comparable<V>, Config, Gui, This extends AbstractRangedEntry<V, Config, Gui, This>>
   extends AbstractConfigEntry<V, Config, Gui, This> {
 	
+	protected double commentMin = Integer.MIN_VALUE;
+	protected double commentMax = Integer.MAX_VALUE;
+	
 	public static abstract class Builder<V extends Comparable<V>, Config, Gui,
 	  Entry extends AbstractRangedEntry<V, Config, Gui, Entry>,
 	  Self extends Builder<V, Config, Gui, Entry, Self>>
@@ -60,14 +63,17 @@ public abstract class AbstractRangedEntry
 		
 		public Self slider(boolean asSlider) {
 			if (asSlider) {
-				return slider(v -> new TranslationTextComponent(
-				  "simple-config.config.format.slider",
-				  String.format(sliderFormat, v)));
+				return slider("simple-config.format.slider");
 			} else {
 				Self copy = copy();
 				copy.asSlider = false;
 				return copy;
 			}
+		}
+		
+		public Self slider(String sliderTextTranslation) {
+			return slider(v -> new TranslationTextComponent(
+			  sliderTextTranslation, String.format(sliderFormat, v)));
 		}
 		
 		public Self slider(Function<V, ITextComponent> sliderTextSupplier) {
@@ -111,8 +117,7 @@ public abstract class AbstractRangedEntry
 	protected Function<V, ITextComponent> sliderTextSupplier;
 	
 	public AbstractRangedEntry(
-	  ISimpleConfigEntryHolder parent, String name,
-	  V value, Class<?> typeClass
+	  ISimpleConfigEntryHolder parent, String name, V value
 	) {
 		super(parent, name, value);
 	}
@@ -127,16 +132,16 @@ public abstract class AbstractRangedEntry
 	}
 	
 	protected String getRangeComment() {
-		/*if (max instanceof Number) {
+		if (max instanceof Number) {
 			final Number x = (Number) max, n = (Number) min;
-			if (x.intValue() == Integer.MAX_VALUE && n.intValue() == Integer.MIN_VALUE) {
+			if (x.doubleValue() >= commentMax && n.doubleValue() <= commentMin) {
 				return "~";
-			} else if (x.intValue() == Integer.MAX_VALUE) {
+			} else if (x.doubleValue() >= commentMax) {
 				return "> " + n;
-			} else if (n.intValue() == Integer.MIN_VALUE) {
+			} else if (n.doubleValue() <= commentMin) {
 				return "< " + x;
 			} else return n + " ~ " + x;
-		}*/
+		}
 		return min + " ~ " + max;
 	}
 	

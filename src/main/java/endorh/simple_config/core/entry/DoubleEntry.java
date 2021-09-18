@@ -19,7 +19,9 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 	@Internal public DoubleEntry(
 	  ISimpleConfigEntryHolder parent, String name, double value
 	) {
-		super(parent, name, value, Double.class);
+		super(parent, name, value);
+		commentMin = Double.MIN_VALUE;
+		commentMax = Double.MAX_VALUE;
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {

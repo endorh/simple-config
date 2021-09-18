@@ -6,8 +6,7 @@ import endorh.simple_config.clothconfig2.gui.widget.TintedButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,6 +26,12 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 		     new TranslationTextComponent("chat.link.open"), screen, securityWarning);
 	}
 	
+	protected IFormattableTextComponent formatLink(String link) {
+		if (link.length() > 256)
+			link = link.substring(0, 253) + "...";
+		return new StringTextComponent(link).mergeStyle(TextFormatting.GRAY);
+	}
+	
 	public ConfirmLinkDialog(
 	  String link, ITextComponent title, List<ITextComponent> body,
 	  ITextComponent cancelText, ITextComponent copyText, ITextComponent confirmText,
@@ -35,7 +40,7 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 		super(b -> {}, title, body, cancelText, confirmText, screen);
 		if (securityWarning)
 			body.add(0, new TranslationTextComponent("chat.link.warning"));
-		body.add(new TranslationTextComponent("simple-config.ui.link.display", link));
+		body.add(new TranslationTextComponent("simple-config.ui.link.display", formatLink(link)));
 		this.link = link;
 		super.setAction(this::action);
 		copyButton = new TintedButton(0, 0, 120, 20, copyText, p -> copy());

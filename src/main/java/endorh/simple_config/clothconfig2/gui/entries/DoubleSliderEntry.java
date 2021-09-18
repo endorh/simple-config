@@ -15,7 +15,7 @@ public class DoubleSliderEntry extends SliderListEntry<Double> {
 		super(
 		  fieldName, min, max, value,
 		  v -> new TranslationTextComponent(
-		    "simple-config.config.format.slider",
+		    "simple-config.format.slider",
 		    String.format("%5.2f", v)));
 		final DoubleListEntry textEntry =
 		  new DoubleListEntry(StringTextComponent.EMPTY, value);

@@ -19,7 +19,9 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 	@Internal public FloatEntry(
 	  ISimpleConfigEntryHolder parent, String name, float value
 	) {
-		super(parent, name, value, Float.class);
+		super(parent, name, value);
+		commentMin = Float.MIN_VALUE;
+		commentMax = Float.MAX_VALUE;
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Float, Number, Float, FloatEntry, Builder> {

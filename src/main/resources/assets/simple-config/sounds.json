@@ -1,0 +1,18 @@
+{
+  "ui_tap": {
+    "sounds": [
+      {
+        "name": "simple-config:ui_tap",
+        "volume": 0.6
+      }
+    ]
+  },
+  "ui_double_tap": {
+    "sounds": [
+      {
+        "name": "simple-config:ui_double_tap",
+        "volume": 0.8
+      }
+    ]
+  }
+}

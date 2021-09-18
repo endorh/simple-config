@@ -6,7 +6,6 @@ import endorh.simple_config.clothconfig2.impl.builders.IntFieldBuilder;
 import endorh.simple_config.clothconfig2.impl.builders.IntSliderBuilder;
 import endorh.simple_config.core.IKeyEntry;
 import endorh.simple_config.core.ISimpleConfigEntryHolder;
-import endorh.simple_config.core.entry.DoubleEntry.Builder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -20,7 +19,7 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 	@Internal public IntegerEntry(
 	  ISimpleConfigEntryHolder parent, String name, int value
 	) {
-		super(parent, name, value, Integer.class);
+		super(parent, name, value);
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Integer, Number, Integer, IntegerEntry, Builder> {

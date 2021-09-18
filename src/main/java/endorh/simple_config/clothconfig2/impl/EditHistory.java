@@ -291,9 +291,8 @@ public class EditHistory {
 					LOGGER.warn("Expected a list entry at path " + listEntry);
 					return EMPTY;
 				}
-				final ListEditRecord record = apply((BaseListEntry<?, ?, ?>) entry);
 				if (claimFocus) entry.claimFocus();
-				return record;
+				return apply((BaseListEntry<?, ?, ?>) entry);
 			}
 			
 			public ListEditRecord apply(BaseListEntry<?, ?, ?> list) {
@@ -310,6 +309,7 @@ public class EditHistory {
 					for (int idx : remove) {
 						add.put(idx, value.get(idx));
 						list.remove(idx);
+						list.markRestoredCell(idx, true);
 						value.remove(idx);
 					}
 					list.setSuppressRecords(false);
@@ -323,7 +323,7 @@ public class EditHistory {
 					add.forEach((i, v) -> {
 						try {
 							l.add(i, v);
-							l.markRestoredCell(i);
+							l.markRestoredCell(i, false);
 							remove.add(i);
 						} catch (ClassCastException e) {
 							LOGGER.warn("Error restoring removed list entry: " + e.getMessage());
@@ -342,7 +342,7 @@ public class EditHistory {
 						try {
 							final Object p = value.get(i);
 							l.set(i, v);
-							l.markRestoredCell(i);
+							l.markRestoredCell(i, false);
 							mod.put(i, p);
 						} catch (ClassCastException e) {
 							LOGGER.warn("Error restoring modified list entry: " + e.getMessage());
@@ -357,7 +357,7 @@ public class EditHistory {
 					list.setSuppressRecords(true);
 					move.forEach((i, j) -> {
 						list.move(i, j);
-						list.markRestoredCell(j);
+						list.markRestoredCell(j, false);
 						l.add(Pair.of(j, i));
 					});
 					l.forEach(p -> m.put(p.getKey(), p.getValue()));

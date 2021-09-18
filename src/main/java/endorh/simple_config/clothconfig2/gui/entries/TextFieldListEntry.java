@@ -3,11 +3,13 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
@@ -198,6 +200,8 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			return true;
 		if (canExpand && button == 0 && isMouseOverLabel(mouseX, mouseY)) {
 			setExpanded(!isExpanded());
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -266,9 +270,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		if (canExpand && Screen.hasAltDown()) {
 			if (keyCode == 262 && !expanded) {
 				setExpanded(true);
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (keyCode == 263 && expanded) {
 				setExpanded(false);
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}

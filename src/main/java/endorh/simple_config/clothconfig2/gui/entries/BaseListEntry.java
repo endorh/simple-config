@@ -2,6 +2,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
@@ -322,9 +323,17 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		cells.get(index).setValue(element);
 	}
 	
-	public void markRestoredCell(int index) {
-		cells.get(index).lastHistoryTime = System.currentTimeMillis();
-		cells.get(index).onNavigate();
+	public void markRestoredCell(int index, boolean forRemoval) {
+		if (index >= cells.size()) return;
+		final C c = cells.get(index);
+		if (forRemoval) {
+			c.lastHistoryTime = System.currentTimeMillis();
+			c.lastHistoryRemove = true;
+		} else {
+			c.lastHistoryTime = System.currentTimeMillis();
+			c.lastHistoryRemove = false;
+			c.onNavigate();
+		}
 	}
 	
 	@Override public Rectangle getEntryArea(int x, int y, int entryWidth, int entryHeight) {
@@ -742,8 +751,9 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			dragMouseX = (int) mouseX;
 			dragMouseY = (int) mouseY;
 			dragCursor = hoverCursor;
-			getConfigScreen().claimRectangle(
-			  dragOverlayRectangle, this, -1);
+			getConfigScreen().claimRectangle(dragOverlayRectangle, this, -1);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -756,6 +766,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				move(dragCursor, target);
 			dragCursor = -1;
 			dragOverlayRectangle.setBounds(0, 0, 0, 0);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 		} else super.endDrag(mouseX, mouseY, button);
 	}
 	
@@ -766,9 +778,13 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			if (keyCode == 257 || keyCode == 260) { // Enter || Insert
 				add(0);
 				cells.get(0).onNavigate();
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (!cells.isEmpty() && (keyCode == 259 || keyCode == 261)) { // Backspace || Delete
 				remove(0);
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}

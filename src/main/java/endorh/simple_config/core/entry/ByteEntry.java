@@ -20,7 +20,9 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 	@Internal public ByteEntry(
 	  ISimpleConfigEntryHolder parent, String name, byte value
 	) {
-		super(parent, name, value, Byte.class);
+		super(parent, name, value);
+		commentMin = Byte.MIN_VALUE;
+		commentMax = Byte.MAX_VALUE;
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, Builder> {

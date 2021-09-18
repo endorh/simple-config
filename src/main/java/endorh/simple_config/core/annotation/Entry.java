@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * be created on this context.<br><br>
  *
  * Some annotations, like {@link Min}, {@link Max}, {@link Slider},
- * {@link HasAlpha} or {@link RequireRestart}
+ * {@link HasAlpha}, {@link RequireRestart} or {@link NonPersistent}
  * allow to configure some of the settings of the generated entries
  * for the types that support them<br>
  *
@@ -62,7 +62,6 @@ import java.lang.annotation.Target;
  * to errors<br>
  * However, for simpler configs, you might want to check out other
  * annotations for different entry types<br>
- * @see Entry.NonPersistent
  * @see Text
  * @see Group
  */
@@ -77,41 +76,4 @@ public @interface Entry {
 	 */
 	int value() default 0;
 	
-	/**
-	 * Mark a <b>static</b> field as a non persistent config entry<br>
-	 * Non persistent config entries have a GUI entry but no file config entry<br><br>
-	 * The only supported non persistent field type is {@code boolean} or {@code Boolean}<br>
-	 * A config entry with the name and type of this field will
-	 * be created on this context.<br><br>
-	 *
-	 * A sibling method with the same name followed by '{@code $error}'
-	 * may be defined, accepting the type of this field and
-	 * returning an {@code Optional<ITextComponent>} with an
-	 * optional error message<br>
-	 * Likewise, a sibling method with the suffix '{@code $tooltip}'
-	 * returning instead an {@code Optional<ITextComponent[]>} with
-	 * an optional tooltip may be defined as well<br>
-	 * <b>Remember that entries get automatically mapped tooltip
-	 * translation keys</b>. Use dynamic tooltips only when
-	 * necessary<br><br>
-	 *
-	 * <b>You're encouraged</b> to generate your entries with
-	 * the {@link SimpleConfigBuilder} methods
-	 * instead, because it provides more options and is less prone
-	 * to errors<br>
-	 * However, for simpler configs, you might want to check out other
-	 * annotations for different entry types<br>
-	 * @see Entry
-	 */
-	@Target(ElementType.FIELD)
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface NonPersistent {
-		/**
-		 * The preferred index where to add this entry, relative to its siblings,
-		 * including config groups on the same level<br>
-		 * Should only be necessary when dealing with nested groups in between entries,
-		 * but the Java reflection specification won't let me guarantee that
-		 */
-		int value() default 0;
-	}
 }

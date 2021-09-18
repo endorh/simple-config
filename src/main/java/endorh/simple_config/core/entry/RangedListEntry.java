@@ -7,6 +7,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.Builder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,6 +22,9 @@ public abstract class RangedListEntry<
   extends AbstractListEntry<V, Config, Gui, Self> {
 	protected V min;
 	protected V max;
+	
+	protected double commentMin = Integer.MIN_VALUE;
+	protected double commentMax = Integer.MAX_VALUE;
 	
 	public RangedListEntry(
 	  ISimpleConfigEntryHolder parent, String name, @Nullable List<V> value
@@ -108,6 +113,30 @@ public abstract class RangedListEntry<
 			copy.max = max;
 			return copy;
 		}
+	}
+	
+	protected String getRangeComment() {
+		if (max instanceof Number) {
+			final Number x = (Number) max, n = (Number) min;
+			if (x.doubleValue() >= commentMax && n.doubleValue() <= commentMin) {
+				return "~";
+			} else if (x.doubleValue() >= commentMax) {
+				return "> " + n;
+			} else if (n.doubleValue() <= commentMin) {
+				return "< " + x;
+			} else return n + " ~ " + x;
+		}
+		return min + " ~ " + max;
+	}
+	
+	@Override protected ForgeConfigSpec.Builder decorate(
+	  ForgeConfigSpec.Builder builder
+	) {
+		builder = super.decorate(builder);
+		String com = comment != null? comment + "\n" : "";
+		com += " Range: " + getRangeComment();
+		builder.comment(com);
+		return builder;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

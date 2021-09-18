@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.widget.*;
 import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget.ISearchHandler;
@@ -10,6 +11,7 @@ import endorh.simple_config.clothconfig2.impl.EasingMethod;
 import endorh.simple_config.clothconfig2.math.Point;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
@@ -257,6 +259,11 @@ public class ClothConfigScreen
 		Optional.ofNullable(afterInitConsumer).ifPresent(consumer -> consumer.accept(this));
 	}
 	
+	@Override protected boolean canSave() {
+		return isEdited() && sortedCategories.stream().anyMatch(
+		  c -> c.getEntries().stream().anyMatch(e -> e.getConfigError().isPresent()));
+	}
+	
 	@Override public void setSelectedCategory(int index) {
 		if (selectedCategoryIndex != index) {
 			getHistory().saveState(this);
@@ -308,11 +315,19 @@ public class ClothConfigScreen
 					if (!searchBar.isExpanded())
 						searchBar.open();
 					setListener(searchBar);
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				case 47: // Ctrl + Z
+					if (getHistory().canUndo(this))
+						Minecraft.getInstance().getSoundHandler().play(
+						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					undo();
 					return true;
 				case 84: // Ctrl + Y
+					if (getHistory().canRedo(this))
+						Minecraft.getInstance().getSoundHandler().play(
+						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					redo();
 					return true;
 			}

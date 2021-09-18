@@ -12,6 +12,7 @@ import endorh.simple_config.clothconfig2.gui.widget.ComboBoxWidget.StringTypeWra
 import endorh.simple_config.clothconfig2.math.Point;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -226,6 +227,8 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		comboBox.setDropDownShown(false);
 		regexComboBox.setDropDownShown(false);
 		expanded = false;
+		Minecraft.getInstance().getSoundHandler().play(
+		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	public void open() {
@@ -236,6 +239,8 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			comboBox.changeFocus(true);
 		comboBox.selectAll();
 		screenSupplier.get().claimRectangle(overlay, this, 50);
+		Minecraft.getInstance().getSoundHandler().play(
+		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {

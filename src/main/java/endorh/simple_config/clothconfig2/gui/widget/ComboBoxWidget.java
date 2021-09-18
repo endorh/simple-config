@@ -13,6 +13,7 @@ import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.block.Block;
 import net.minecraft.client.KeyboardListener;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
@@ -344,6 +345,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	@Override public boolean overlayEscape() {
 		if (isDropDownShown()) {
 			setDropDownShown(false);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -705,15 +708,21 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				final KeyboardListener kl = Minecraft.getInstance().keyboardListener;
 				if (Screen.isCopy(keyCode)) {
 					kl.setClipboardString(getSelectedText());
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				} else if (Screen.isPaste(keyCode)) {
 					if (canEditText())
 						writeText(kl.getClipboardString());
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				} else if (Screen.isCut(keyCode)) {
 					kl.setClipboardString(getSelectedText());
 					if (canEditText())
 						writeText("");
+					Minecraft.getInstance().getSoundHandler().play(
+					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 					return true;
 				} else {
 					switch(keyCode) {
@@ -729,6 +738,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 							return true;
 						case 257: // Enter
 							autoComplete();
+							Minecraft.getInstance().getSoundHandler().play(
+							  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 							return true;
 						case 266: // Page Up
 							moveSuggestionCursor(-max(1, dropDownHeight / getSuggestionHeight() - 1));
@@ -768,6 +779,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	public void moveSuggestionCursor(int step) {
 		if (!isDropDownShown())
 			setDropDownShown(true);
+		int prev = suggestionCursor;
 		suggestionCursor = clamp(suggestionCursor + step, 0, lastSuggestions.size() - 1);
 		// Ensure visible
 		final int suggestionHeight = getSuggestionHeight();
@@ -782,6 +794,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		else if (suggestionCursor >= lastIdx - 1)
 			scrollTo(suggestionHeight * (suggestionCursor + 1.8) - dropDownHeight, animated);
 		lastSuggestionCursorNavigation = t;
+		if (prev != suggestionCursor)
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted") public boolean canWrite() {
@@ -793,6 +808,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			return false;
 		} else if (codePoint == 32 && (modifiers & 2) != 0) {
 			autoComplete();
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		} else if (SharedConstants.isAllowedCharacter(codePoint)) {
 			if (canEditText())
@@ -809,6 +826,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			    || isMouseOverIcon((int) round(mouseX), (int) round(mouseY))) {
 				if (!isFocused()) setFocused(true);
 				setDropDownShown(!isDropDownShown());
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
 			}
 			
@@ -820,6 +839,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				setDropDownShown(!wasShown);
 				if (!wasShown)
 					setText("");
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
 			}
 			

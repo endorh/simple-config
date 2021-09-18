@@ -192,6 +192,8 @@ public class DemoServerCategory {
 			@Entry @Min(0) public static float speed_m_s = 2F;
 			public static float speed_m_tick;
 			
+			@Entry @NonPersistent public static boolean temp_bool = false;
+			
 			// Text entries may be suppliers of ITextComponent instead
 			//   Fon example, the following text entry would change
 			//   if the mod modified the summon_command field

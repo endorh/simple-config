@@ -2,6 +2,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
@@ -9,6 +10,7 @@ import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
@@ -107,6 +109,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	  Function<V, ITextComponent> textGetter
 	) {
 		this.textGetter = textGetter;
+		sliderWidget.setMessage(this.textGetter.apply(getValue()));
 	}
 	
 	@Override public V getValue() {
@@ -247,6 +250,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			return true;
 		if (canUseTextField && entryArea.grow(32, 0, 0, 0).contains(mouseX, mouseY)) {
 			setTextFieldShown(!isTextFieldShown(), true);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(canUseTextField? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -258,7 +263,10 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		    && canUseTextField && codePoint == ' ') {
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
+			boolean change = state != isTextFieldShown();
 			setTextFieldShown(state, true);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return super.charTyped(codePoint, modifiers);
@@ -270,7 +278,10 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		    && canUseTextField && keyCode == 257) {
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
+			boolean change = state != isTextFieldShown();
 			setTextFieldShown(state, true);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return super.keyPressed(keyCode, scanCode, modifiers);

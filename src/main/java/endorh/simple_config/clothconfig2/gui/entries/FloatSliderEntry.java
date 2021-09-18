@@ -16,7 +16,7 @@ public class FloatSliderEntry extends SliderListEntry<Float> {
 		super(
 		  fieldName, min, max, value,
 		  v -> new TranslationTextComponent(
-		    "simple-config.config.format.slider",
+		    "simple-config.format.slider",
 		    String.format("%5.2f", v)));
 		final FloatListEntry textEntry =
 		  new FloatListEntry(StringTextComponent.EMPTY, value);

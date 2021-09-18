@@ -45,14 +45,6 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return false;
 	}
 	
-	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getListener() instanceof NestedListCell && ((NestedListCell<?, ?>) getListener()).isExpandable) {
-			if (((NestedListCell<?, ?>) getListener()).nestedEntry.handleNavigationKey(keyCode, scanCode, modifiers))
-				return true;
-		}
-		return super.handleNavigationKey(keyCode, scanCode, modifiers);
-	}
-	
 	@Override public void setParent(DynamicEntryListWidget<?> parent) {
 		super.setParent(parent);
 		for (NestedListCell<T, Inner> c : cells) c.nestedEntry.setParent(parent);
