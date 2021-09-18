@@ -73,8 +73,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 	  ConfigEntryBuilder builder
 	) {
 		final ButtonListEntry entry =
-		  new ButtonListEntry(forGui(get()), getDisplayName(), buttonLabelSupplier
-		  );
+		  new ButtonListEntry(forGui(get()), getDisplayName(), buttonLabelSupplier);
 		return Optional.of(entry);
 	}
 }

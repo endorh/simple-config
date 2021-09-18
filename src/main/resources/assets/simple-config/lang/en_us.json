@@ -52,7 +52,7 @@
   "simple-config.config.permissions.test.mod": "§7Players who can edit server config for mod \"%s\":",
   "simple-config.config.permissions.test.empty": "§7 - No matches - ",
   "simple-config.config.permissions.test.placeholder": "§7 - No query - ",
-  "simple-config.config.server.end": "Any ingame modification of the server config by any player will produce a warning in the chat visible by all operators, which is also logged.\nA server owner can edit the config by other means, usually requiring a server restart.",
+  "simple-config.config.server.end": "Any ingame modification of the server config by any player will produce a warning in the chat visible by all operators, which is also logged.\nA server owner can edit the config by other means.",
 
   "simple-config.config.enum.menu_button_position.split_options_button": "Split Options Button",
   "simple-config.config.enum.menu_button_position.left_of_options_button": "Left of Options",
@@ -80,14 +80,12 @@
   "simple-config.ui.restore": "Restore",
   "simple-config.ui.restore.shift": "§7Shift to restore group",
   "simple-config.ui.restore.group": "Restore group",
-
   "simple-config.ui.dont_confirm": "Don't ask again",
-
   "simple-config.ui.confirm_save": "Confirm Save",
   "simple-config.ui.confirm_save.msg": "Are you sure you want to save these changes?",
 
-  "simple-config.format.bool.enable.true": "§aEnable",
-  "simple-config.format.bool.enable.false": "§cDisable",
+  "simple-config.format.bool.enable.true": "§aEnabled",
+  "simple-config.format.bool.enable.false": "§cDisabled",
   "simple-config.format.slider": "Value: %s",
   "simple-config.format.slider.volume": "Volume: %s",
   "simple-config.config.help.not_persistent_entry": "Not persistent",
@@ -107,9 +105,21 @@
   "simple-config.config.error.min_greater_than_max": "Min > Max!",
   "simple-config.config.error.not_divisible": "%s is not divisible by %s !",
   "simple-config.config.error.not_lowercase": "Not lowercase! \"%s\"",
-
   "simple-config.config.error.role.reserved": "Reserved Role: \"%s\"",
   "simple-config.config.error.mod_group.reserved": "Reserved Mod Group: \"%s\"",
+
+  "simple-config.label.run": "Run",
+  "simple-config.label.preset.apply": "Apply",
+
+  "simple-config.help.list.move": "Move",
+  "simple-config.help.list.move.drag": "§7Drag with §3Middle Click§7 or §3Alt + Left Click§r",
+
+  "simple-config.debug.copy": "Copy title key",
+  "simple-config.debug.copy.help": "Copy tooltip key",
+
+  "chat.file.open": "Open file",
+
+  "argument.fluid.id.invalid": "Unknown fluid: '%s'",
 
   "simple-config.config.client.demo": "Demo (Client)",
   "simple-config.config.text.greeting_text": "This is a demo config with examples for mod developers",
@@ -256,19 +266,6 @@
   "simple-config.config.enum.direction.South": "South",
   "simple-config.config.enum.direction.West": "West",
   "simple-config.config.enum.direction.East": "East",
-
-  "simple-config.label.run": "Run",
-  "simple-config.label.preset.apply": "Apply",
-
-  "simple-config.help.list.move": "Move",
-  "simple-config.help.list.move.drag": "§7Drag with §3Middle Click§7 or §3Alt + Left Click§r",
-
-  "simple-config.debug.copy": "Copy title key",
-  "simple-config.debug.copy.help": "Copy tooltip key",
-
-  "chat.file.open": "Open file",
-
-  "argument.fluid.id.invalid": "Unknown fluid: '%s'",
 
   "text.cloth-config.save_and_done": "Save & Quit",
   "text.cloth-config.apply": "Apply Changes",
