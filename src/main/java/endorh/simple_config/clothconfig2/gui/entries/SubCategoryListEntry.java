@@ -6,8 +6,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import endorh.simple_config.clothconfig2.impl.EditHistory.EditRecord;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.*;
+
 @OnlyIn(value = Dist.CLIENT)
 public class SubCategoryListEntry
   extends TooltipListEntry<Void>
@@ -45,6 +47,7 @@ public class SubCategoryListEntry
 	protected final List<IGuiEventListener> children;
 	protected final List<IGuiEventListener> expandedChildren;
 	protected boolean expanded;
+	protected ToggleAnimator expandAnimator = new ToggleAnimator();
 	
 	@Internal public SubCategoryListEntry(
 	  ITextComponent categoryName, List<AbstractConfigListEntry<?>> entries
@@ -67,6 +70,10 @@ public class SubCategoryListEntry
 	}
 	
 	@Override public void setExpanded(boolean expanded, boolean recursive) {
+		if (this.expanded != expanded) {
+			expandAnimator.setLength(min(250L, entries.size() * 25L));
+			expandAnimator.setEaseOutTarget(expanded);
+		}
 		this.expanded = expanded;
 		if (recursive)
 			entries.stream().filter(e -> e instanceof IExpandable)
@@ -169,7 +176,10 @@ public class SubCategoryListEntry
 		  label.area.contains(mouseX, mouseY) ? 0xffe6fe16 : 0xffffffff);
 		resetButton.x = x + entryWidth - resetButton.getWidth();
 		resetButton.y = y;
-		if (expanded) {
+		final boolean animating = expandAnimator.isInProgress();
+		if (expanded || animating) {
+			if (animating) ScissorsHandler.INSTANCE.scissor(
+			  new Rectangle(entryArea.x, entryArea.y, entryArea.width, getItemHeight()));
 			int yy = y + 24;
 			for (AbstractConfigListEntry<?> entry : entries) {
 				entry.render(
@@ -177,6 +187,7 @@ public class SubCategoryListEntry
 				  isHovered && getListener() == entry, delta);
 				yy += entry.getItemHeight();
 			}
+			if (animating) ScissorsHandler.INSTANCE.removeLastScissor();
 		}
 		resetButton.render(mStack, mouseX, mouseY, delta);
 		label.render(mStack, mouseX, mouseY, delta);
@@ -245,11 +256,11 @@ public class SubCategoryListEntry
 	}
 	
 	@Override public int getItemHeight() {
-		if (expanded) {
+		if (expanded || expandAnimator.isInProgress()) {
 			int i = 24;
 			for (AbstractConfigListEntry<?> entry : entries)
 				i += entry.getItemHeight();
-			return i;
+			return round(expandAnimator.getEaseOut() * (i - 24)) + 24;
 		}
 		return 24;
 	}
@@ -267,16 +278,8 @@ public class SubCategoryListEntry
 		entries.forEach(AbstractConfigEntry::save);
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
-		Optional<ITextComponent> error = heldEntry != null? heldEntry.getError() : Optional.empty();
-		if (error.isPresent())
-			return error;
-		for (AbstractConfigListEntry<?> entry : entries) {
-			error = entry.getConfigError();
-			if (error.isPresent())
-				return error;
-		}
-		return error;
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
+		return Optional.empty();
 	}
 	
 	@Override public int getFocusedScroll() {
@@ -355,7 +358,7 @@ public class SubCategoryListEntry
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 			final IExpandable parent = getParent();
 			switch (keyCode) {
-				case 262: // Arrow right
+				case 262: // Right
 					if (!parent.isExpanded()) {
 						parent.setExpanded(true, Screen.hasShiftDown());
 						Minecraft.getInstance().getSoundHandler().play(
@@ -363,7 +366,7 @@ public class SubCategoryListEntry
 						return true;
 					}
 					break;
-				case 263: // Arrow left
+				case 263: // Left
 					if (parent.isExpanded()) {
 						parent.setExpanded(false, Screen.hasShiftDown());
 						Minecraft.getInstance().getSoundHandler().play(
@@ -414,5 +417,65 @@ public class SubCategoryListEntry
 			return targets;
 		}
 		return super.getNavigableChildren();
+	}
+	
+	@Internal public static class ToggleAnimator {
+		protected float progress;
+		protected float target;
+		protected float lastProgress;
+		protected long lastChange = 0L;
+		protected long length;
+		
+		public ToggleAnimator() {this(250L);}
+		
+		public ToggleAnimator(long length) {this(0F, length);}
+		
+		public ToggleAnimator(float progress, long length) {
+			this.target = this.lastProgress = this.progress = progress;
+			this.length = length;
+		}
+		
+		public void toggle() {
+			setTarget(target <= 0.5);
+		}
+		public void setTarget(boolean onOff) {
+			this.setTarget(onOff? 1F : 0F);
+		}
+		public void setTarget(float target) {
+			this.lastProgress = getProgress();
+			this.target = target;
+			this.lastChange = System.currentTimeMillis();
+		}
+		
+		public void setEaseOutTarget(boolean onOff) {
+			this.setEaseOutTarget(onOff? 1F : 0F);
+		}
+		public void setEaseOutTarget(float target) {
+			this.lastProgress = getEaseOut();
+			this.target = target;
+			this.lastChange = System.currentTimeMillis();
+		}
+		
+		public void setLength(long length) {
+			this.length = length;
+		}
+		
+		public boolean isInProgress() {
+			return System.currentTimeMillis() - lastChange < length * abs(target - lastProgress);
+		}
+		
+		public float getProgress() {
+			long time = System.currentTimeMillis();
+			float len = length * abs(target - lastProgress);
+			if (time - lastChange < len) {
+				final float t = (time - lastChange) / len;
+				return progress = lastProgress * (1 - t) + target * t;
+			} else return progress = target;
+		}
+		
+		public float getEaseOut() {
+			final float t = getProgress();
+			return target < t? t*t : -t*t + 2*t;
+		}
 	}
 }

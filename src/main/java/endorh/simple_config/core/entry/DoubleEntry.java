@@ -16,6 +16,8 @@ import java.util.Optional;
 
 public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, DoubleEntry>
   implements IKeyEntry<Number, Double> {
+	protected double fieldScale;
+	
 	@Internal public DoubleEntry(
 	  ISimpleConfigEntryHolder parent, String name, double value
 	) {
@@ -24,19 +26,49 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		commentMax = Double.MAX_VALUE;
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
+	public static class Builder extends
+	                            AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
+		protected double fieldScale = 1F;
+		
 		public Builder(Double value) {
 			super(value, Double.class, "%.2f");
 		}
 		
+		/**
+		 * Set min (inclusive)
+		 */
 		public Builder min(double min) {
 			return super.min(min);
 		}
+		
+		/**
+		 * Set max (inclusive)
+		 */
 		public Builder max(double max) {
 			return super.max(max);
 		}
+		
+		/**
+		 * Set inclusive range
+		 */
 		public Builder range(double min, double max) {
 			return super.range(min, max);
+		}
+		
+		/**
+		 * Scale the backing field of this entry by the given scale.<br>
+		 * The scale is applied in both directions, when committing the field's value,
+		 * the inverse of the scale is applied before saving the changes to the config.
+		 *
+		 * @param scale The scale by which the config value is <em>multiplied</em>
+		 *              before being stored in the backing field
+		 */
+		public Builder fieldScale(double scale) {
+			if (scale == 0D || !Double.isFinite(scale))
+				throw new IllegalArgumentException("Scale must be a non-zero finite number");
+			final Builder copy = copy();
+			copy.fieldScale = scale;
+			return copy;
 		}
 		
 		@Override
@@ -51,18 +83,30 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		}
 		
 		@Override
-		public DoubleEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			return new DoubleEntry(parent, name, value);
+		protected DoubleEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			final DoubleEntry entry = new DoubleEntry(parent, name, value);
+			entry.fieldScale = fieldScale;
+			return entry;
 		}
 		
 		@Override protected Builder createCopy() {
-			return new Builder(value);
+			final Builder copy = new Builder(value);
+			copy.fieldScale = fieldScale;
+			return copy;
 		}
 	}
 	
 	@Nullable
 	@Override public Double fromConfig(@Nullable Number value) {
-		return value != null? value.doubleValue() : null;
+		return value != null ? value.doubleValue() : null;
+	}
+	
+	@Override protected void setBackingField(Double value) throws IllegalAccessException {
+		super.setBackingField(value * fieldScale);
+	}
+	
+	@Override protected Double getFromBackingField() throws IllegalAccessException {
+		return super.getFromBackingField() / fieldScale;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -78,7 +122,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		} else {
 			final DoubleSliderBuilder valBuilder =
 			  new DoubleSliderBuilder(builder, getDisplayName(), get(), min, max)
-			  .setTextGetter(sliderTextSupplier);
+				 .setTextGetter(sliderTextSupplier);
 			return Optional.of(decorate(valBuilder).build());
 		}
 	}

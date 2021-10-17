@@ -31,25 +31,34 @@ public abstract class AbstractRangedEntry
 		protected boolean asSlider;
 		protected Function<V, ITextComponent> sliderTextSupplier;
 		
-		public Builder(V value, Class<?> typeClass) { this(value, typeClass, "%d"); }
+		public Builder(V value, Class<?> typeClass) {this(value, typeClass, "%d");}
 		
 		public Builder(V value, Class<?> typeClass, String sliderFormat) {
 			super(value, typeClass);
 			this.sliderFormat = sliderFormat;
 		}
 		
+		/**
+		 * Set min (inclusive)
+		 */
 		public Self min(V min) {
 			Self copy = copy();
 			copy.min = min;
 			return copy;
 		}
 		
+		/**
+		 * Set max (inclusive)
+		 */
 		public Self max(V max) {
 			Self copy = copy();
 			copy.max = max;
 			return copy;
 		}
 		
+		/**
+		 * Set range (inclusive)
+		 */
 		public Self range(V min, V max) {
 			Self copy = copy();
 			copy.min = min;
@@ -57,10 +66,16 @@ public abstract class AbstractRangedEntry
 			return copy;
 		}
 		
+		/**
+		 * Display as slider
+		 */
 		public Self slider() {
 			return slider(true);
 		}
 		
+		/**
+		 * Display or not as slider
+		 */
 		public Self slider(boolean asSlider) {
 			if (asSlider) {
 				return slider("simple-config.format.slider");
@@ -71,11 +86,17 @@ public abstract class AbstractRangedEntry
 			}
 		}
 		
+		/**
+		 * Display as slider with given translation key as slider text.
+		 */
 		public Self slider(String sliderTextTranslation) {
 			return slider(v -> new TranslationTextComponent(
 			  sliderTextTranslation, String.format(sliderFormat, v)));
 		}
 		
+		/**
+		 * Display as slider with given text supplier.
+		 */
 		public Self slider(Function<V, ITextComponent> sliderTextSupplier) {
 			Self copy = copy();
 			copy.asSlider = true;
@@ -125,7 +146,7 @@ public abstract class AbstractRangedEntry
 	@Override
 	protected ForgeConfigSpec.Builder decorate(ForgeConfigSpec.Builder builder) {
 		builder = super.decorate(builder);
-		String com = comment != null? comment + "\n" : "";
+		String com = comment != null ? comment + "\n" : "";
 		com += " Range: " + getRangeComment();
 		builder.comment(com);
 		return builder;

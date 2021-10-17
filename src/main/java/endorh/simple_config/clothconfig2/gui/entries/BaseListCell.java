@@ -1,8 +1,9 @@
 package endorh.simple_config.clothconfig2.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simple_config.clothconfig2.api.AbstractConfigEntry.EntryError;
 import endorh.simple_config.clothconfig2.gui.IExtendedDragAwareNestedGuiEventHandler;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -26,23 +27,24 @@ public abstract class BaseListCell<T> extends FocusableGui
 	protected int historyRemoveColor = 0x80FF4242;
 	
 	public final int getPreferredTextColor() {
-		return this.getConfigError().isPresent() ? 0xFF5555 : 0xE0E0E0;
+		return this.hasErrors() ? 0xFF5555 : 0xE0E0E0;
 	}
 	
 	/**
-	 * Subclasses should instead override {@link BaseListCell#getError()}
+	 * Subclasses should instead override {@link BaseListCell#getErrorMessage()}
 	 */
-	@Override public Optional<ITextComponent> getConfigError() {
-		if (this.errorSupplier != null && this.errorSupplier.get().isPresent())
-			return this.errorSupplier.get();
-		return this.getError();
+	@Override public Optional<EntryError> getError() {
+		Optional<ITextComponent> opt = Optional.empty();
+		if (this.errorSupplier != null) opt = this.errorSupplier.get();
+		if (!opt.isPresent()) opt = getErrorMessage();
+		return opt.map(tc -> EntryError.of(tc, this));
 	}
 	
 	public void setErrorSupplier(Supplier<Optional<ITextComponent>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
 	}
 	
-	public abstract Optional<ITextComponent> getError();
+	public abstract Optional<ITextComponent> getErrorMessage();
 	
 	public abstract int getCellHeight();
 	
@@ -78,7 +80,7 @@ public abstract class BaseListCell<T> extends FocusableGui
 	}
 	
 	public boolean isEdited() {
-		return this.getConfigError().isPresent();
+		return this.hasErrors();
 	}
 	
 	public void onAdd() {}
@@ -91,7 +93,7 @@ public abstract class BaseListCell<T> extends FocusableGui
 	protected abstract void doSetValue(T value);
 	public void setValue(T value) {
 		doSetValue(value);
-		getError();
+		getErrorMessage();
 	}
 	
 	public void setOriginal(T value) {}

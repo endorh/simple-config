@@ -730,10 +730,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 							if (canEditText())
 								delete(-1);
 							return true;
-						case 264: // Arrow down
+						case 264: // Down
 							moveSuggestionCursor(1);
 							return true;
-						case 265: // Arrow up
+						case 265: // Up
 							moveSuggestionCursor(-1);
 							return true;
 						case 257: // Enter
@@ -751,12 +751,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 							if (canEditText())
 								delete(1);
 							return true;
-						case 262: // Arrow right
+						case 262: // Right
 							if (Screen.hasControlDown()) {
 								setCaret(getNthWordFromCaret(1));
 							} else moveCaretBy(1);
 							return true;
-						case 263: // Arrow left
+						case 263: // Left
 							if (Screen.hasControlDown()) {
 								setCaret(getNthWordFromCaret(-1));
 							} else moveCaretBy(-1);

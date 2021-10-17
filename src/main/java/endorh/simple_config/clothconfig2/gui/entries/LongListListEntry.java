@@ -52,7 +52,7 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 			widget.setText(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
 				long l = Long.parseLong(widget.getText());
 				final LongListListEntry listEntry = getListEntry();

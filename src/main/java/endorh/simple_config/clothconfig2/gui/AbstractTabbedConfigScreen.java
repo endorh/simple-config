@@ -27,7 +27,7 @@ public abstract class AbstractTabbedConfigScreen extends AbstractConfigScreen
 	}
 	
 	@Override public ResourceLocation getBackgroundLocation() {
-		String cat = this.getSelectedCategory();
+		String cat = this.getSelectedCategoryName();
 		if (this.categoryBackgroundLocation.containsKey(cat))
 			return this.categoryBackgroundLocation.get(cat);
 		return super.getBackgroundLocation();

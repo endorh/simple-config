@@ -7,9 +7,9 @@ import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
 import endorh.simple_config.clothconfig2.api.ReferenceProvider;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.gui.entries.NestedListListEntry.NestedListCell;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
@@ -87,8 +87,8 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			return nestedEntry.getValue();
 		}
 		
-		public Optional<ITextComponent> getError() {
-			return nestedEntry.getError();
+		public Optional<ITextComponent> getErrorMessage() {
+			return nestedEntry.getErrorMessage();
 		}
 		
 		public int getCellHeight() {

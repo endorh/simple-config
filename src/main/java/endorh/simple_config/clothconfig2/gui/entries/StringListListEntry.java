@@ -39,7 +39,7 @@ public class StringListListEntry
 			this.widget.setText(value);
 		}
 		
-		@Override public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			return Optional.empty();
 		}
 	}

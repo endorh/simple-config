@@ -6,8 +6,10 @@ import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
+import endorh.simple_config.clothconfig2.api.ScissorsHandler;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
+import endorh.simple_config.clothconfig2.gui.entries.SubCategoryListEntry.ToggleAnimator;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simple_config.clothconfig2.gui.widget.ResetButton;
 import endorh.simple_config.clothconfig2.impl.EditHistory;
@@ -39,8 +41,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static java.lang.Math.*;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends BaseListEntry<T, C, Self>>
@@ -53,6 +54,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	@Nullable protected AbstractConfigListEntry<?> heldEntry;
 	
 	protected boolean expanded;
+	protected ToggleAnimator expandAnimator = new ToggleAnimator();
 	protected boolean deleteButtonEnabled;
 	protected boolean insertInFront;
 	protected int caret = -1;
@@ -104,6 +106,10 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public void setExpanded(boolean expanded, boolean recursive) {
+		if (this.expanded != expanded) {
+			expandAnimator.setLength(min(250L, cells.size() * 25L));
+			expandAnimator.setEaseOutTarget(expanded);
+		}
 		this.expanded = expanded;
 		if (recursive)
 			cells.stream().filter(c -> c instanceof IExpandable)
@@ -237,13 +243,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getItemHeight() {
-		if (expanded) {
+		if (expanded || expandAnimator.isInProgress()) {
 			if (cells.isEmpty()) return 24 + placeholder.h;
 			int i = 24;
-			for (BaseListCell<T> entry : cells) {
+			for (BaseListCell<T> entry : cells)
 				i += entry.getCellHeight();
-			}
-			return i;
+			return round(expandAnimator.getEaseOut() * (i - 24)) + 24;
 		}
 		return 24;
 	}
@@ -252,15 +257,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return expanded ? cells.isEmpty() ? expandedEmptyWidgets : widgets : unexpandedWidgets;
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
-		Optional<ITextComponent> error = heldEntry != null? heldEntry.getError() : Optional.empty();
-		if (error.isPresent())
-			return error;
-		List<ITextComponent> errors =
-		  cells.stream().map(BaseListCell::getConfigError).filter(Optional::isPresent)
-			 .map(Optional::get).collect(Collectors.toList());
-		if (!errors.isEmpty())
-			return Optional.of(new TranslationTextComponent("text.cloth-config.multi_error"));
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		return Optional.empty();
 	}
 	
@@ -454,7 +451,10 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			 mouseX, mouseY) && !insideDelete && !insideCreateNew
 		  ? 0xffe6fe16 : getPreferredTextColor());
 		caret = cursor = marginWidgetY = hoverCursor = -1;
-		if (expanded) {
+		final boolean animating = expandAnimator.isInProgress();
+		if (expanded || animating) {
+			if (animating) ScissorsHandler.INSTANCE.scissor(
+			  new Rectangle(entryArea.x, entryArea.y, entryArea.width, getItemHeight()));
 			if (cells.isEmpty())
 				placeholder.render(mStack, mouseX, mouseY, delta);
 			int i = 0;
@@ -550,6 +550,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 						blit(mStack, x - 10, marginWidgetY + 5, 85, isInsideDown(mouseX, mouseY) ? 14 : 5, 7, 4);
 				}
 			}
+			if (animating)
+				ScissorsHandler.INSTANCE.removeLastScissor();
 		}
 		label.render(mStack, mouseX, mouseY, delta);
 		if (heldEntry != null)

@@ -133,21 +133,21 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 					//noinspection SuspiciousMethodCalls
 					int index = listEntry.cells.indexOf(listener);
 					if (Screen.hasControlDown()) { // Move
-						if (keyCode == 264 && index < listEntry.cells.size() - 1) { // Arrow down
+						if (keyCode == 264 && index < listEntry.cells.size() - 1) { // Down
 							listEntry.move(index, index + 1);
 							((BaseListCell<?>) listener).onNavigate();
 							return true;
-						} else if (keyCode == 265 && index > 0) { // Arrow up
+						} else if (keyCode == 265 && index > 0) { // Up
 							listEntry.move(index, index - 1);
 							((BaseListCell<?>) listener).onNavigate();
 							return true;
 						}
 					}
-					if (keyCode == 257 || keyCode == 260) { // Enter || Insert
+					if (keyCode == 257 || keyCode == 260) { // Enter | Insert
 						listEntry.add(index + 1);
 						listEntry.cells.get(index + 1).onNavigate();
 						return true;
-					} else if (index != -1 && (keyCode == 259 || keyCode == 261)) { // Backspace || Delete
+					} else if (index != -1 && (keyCode == 259 || keyCode == 261)) { // Backspace | Delete
 						listEntry.remove(index);
 						if (!listEntry.cells.isEmpty())
 							listEntry.cells.get(clamp(keyCode == 259? index - 1 : index, 0, listEntry.cells.size() - 1)).onNavigate();

@@ -6,6 +6,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -58,15 +59,15 @@ public class IntegerListEntry
 	}
 	
 	@Override
-	public Integer fromString(String s) {
+	public @Nullable Integer fromString(String s) {
 		try {
 			return Integer.valueOf(s);
 		} catch (NumberFormatException e) {
-			return 0;
+			return null;
 		}
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		try {
 			int i = Integer.parseInt(getText());
 			if (i > this.maximum)
@@ -77,7 +78,7 @@ public class IntegerListEntry
 			return Optional.of(
 			  new TranslationTextComponent("text.cloth-config.error.not_valid_number_int"));
 		}
-		return super.getError();
+		return super.getErrorMessage();
 	}
 }
 

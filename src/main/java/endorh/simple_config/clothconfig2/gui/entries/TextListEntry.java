@@ -3,7 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;

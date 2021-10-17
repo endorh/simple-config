@@ -69,7 +69,8 @@ public abstract class TooltipListEntry<T>
 		       && mouseX > 24
 		       && (mouseX < entryArea.getMaxX() - 170
 		           || matchedTooltipText != null && !matchedTooltipText.isEmpty()
-		              && mouseX > entryArea.getMaxX() + 8 && mouseX < entryArea.getMaxX() + 26);
+		              && mouseX > entryArea.getMaxX() + 8 && mouseX < entryArea.getMaxX() + 26
+		           || mouseX >= entryArea.getMaxX() - 20 && mouseX < entryArea.getMaxX());
 	}
 	
 	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {

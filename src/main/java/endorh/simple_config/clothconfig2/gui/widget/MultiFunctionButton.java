@@ -41,7 +41,7 @@ public class MultiFunctionButton extends TintedButton {
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (this.active && this.visible) {
-			if (keyCode != 257 && keyCode != 32 && keyCode != 335) {
+			if (keyCode != 257 && keyCode != 32 && keyCode != 335) { // !(Enter | Space | NumPadEnter)
 				return false;
 			} else {
 				int button = Screen.hasControlDown()? 2 : Screen.hasShiftDown()? 1 : 0;

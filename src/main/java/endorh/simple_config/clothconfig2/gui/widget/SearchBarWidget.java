@@ -366,10 +366,10 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 					}
 					break;
 				case 257: // Enter
-				case 264: // Arrow down
+				case 264: // Down
 					next(true);
 					return true;
-				case 265: // Arrow up
+				case 265: // Up
 					next(false);
 					return true;
 			}

@@ -60,11 +60,11 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 		try {
 			return Double.valueOf(s);
 		} catch (NumberFormatException e) {
-			return 0.0;
+			return null;
 		}
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		try {
 			double i = Double.parseDouble(getText());
 			if (i > this.maximum)
@@ -75,7 +75,7 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 			return Optional.of(
 			  new TranslationTextComponent("text.cloth-config.error.not_valid_number_double"));
 		}
-		return super.getError();
+		return super.getErrorMessage();
 	}
 }
 

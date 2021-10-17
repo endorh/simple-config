@@ -19,7 +19,6 @@ import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
 public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChildListEntry {
-	protected final Runnable original;
 	protected final Supplier<ITextComponent> buttonLabelSupplier;
 	protected final AtomicReference<Runnable> value = new AtomicReference<>();
 	protected final Button button;

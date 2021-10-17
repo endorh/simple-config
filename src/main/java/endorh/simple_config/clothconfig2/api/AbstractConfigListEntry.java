@@ -48,7 +48,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 	}
 	
 	public final int getPreferredTextColor() {
-		return isEditable()? getConfigError().isPresent() ? 0xFFFF5555 : 0xFFFFFFFF : 0xFFA0A0A0;
+		return isEditable() ? hasErrors() ? 0xFFFF5555 : 0xFFFFFFFF : 0xFFA0A0A0;
 	}
 	
 	public Rectangle getEntryArea(int x, int y, int entryWidth, int entryHeight) {

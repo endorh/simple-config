@@ -1,14 +1,22 @@
 package endorh.simple_config.clothconfig2.api;
 
+import com.google.common.collect.Lists;
+import endorh.simple_config.clothconfig2.api.AbstractConfigEntry.EntryError;
 import endorh.simple_config.clothconfig2.gui.entries.IEntryHoldingListEntry;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface IEntryHolder {
-	List<AbstractConfigEntry<?>> getEntries();
+	/**
+	 * The returned list may be mutable
+	 */
+	@Internal List<AbstractConfigEntry<?>> getEntries();
 	
 	Pattern DOT = Pattern.compile("\\.");
 	default @Nullable AbstractConfigEntry<?> getEntry(String path) {
@@ -32,7 +40,9 @@ public interface IEntryHolder {
 	 * Get all the entries recursively
 	 */
 	default List<AbstractConfigEntry<?>> getAllEntries() {
-		final List<AbstractConfigEntry<?>> entries = getEntries();
+		final List<AbstractConfigEntry<?>> entries = Lists.newLinkedList(getEntries());
+		if (this instanceof IEntryHoldingListEntry)
+			entries.add(0, ((IEntryHoldingListEntry) this).getHeldEntry());
 		entries.addAll(entries.stream().filter(e -> e instanceof IEntryHolder)
 		  .flatMap(e -> ((IEntryHolder) e).getAllEntries().stream())
 		  .collect(Collectors.toList()));

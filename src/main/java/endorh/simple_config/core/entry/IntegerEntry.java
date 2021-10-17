@@ -22,17 +22,29 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Integer, Number, Integer, IntegerEntry, Builder> {
+	public static class Builder extends
+	                            AbstractRangedEntry.Builder<Integer, Number, Integer, IntegerEntry, Builder> {
 		public Builder(Integer value) {
 			super(value, Integer.class);
 		}
 		
+		/**
+		 * Set min (inclusive)
+		 */
 		public Builder min(int min) {
 			return super.min(min);
 		}
+		
+		/**
+		 * Set max (inclusive)
+		 */
 		public Builder max(int max) {
 			return super.max(max);
 		}
+		
+		/**
+		 * Set range (inclusive)
+		 */
 		public Builder range(int min, int max) {
 			return super.range(min, max);
 		}
@@ -45,7 +57,7 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 		}
 		
 		@Override
-		public IntegerEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected IntegerEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new IntegerEntry(parent, name, value);
 		}
 		
@@ -56,7 +68,7 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 	
 	@Nullable
 	@Override public Integer fromConfig(@Nullable Number value) {
-		return value != null? value.intValue() : null;
+		return value != null ? value.intValue() : null;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

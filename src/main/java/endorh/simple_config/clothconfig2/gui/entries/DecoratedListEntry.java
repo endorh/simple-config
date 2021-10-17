@@ -5,7 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -132,8 +132,8 @@ public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
 		listEntry.save();
 	}
 	
-	@Override public Optional<ITextComponent> getError() {
-		return listEntry.getConfigError();
+	@Override public Optional<EntryError> getError() {
+		return listEntry.getError();
 	}
 	
 	@Override public void updateSelected(boolean isSelected) {

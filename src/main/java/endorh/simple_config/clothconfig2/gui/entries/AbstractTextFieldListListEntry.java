@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
@@ -90,7 +90,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			if (isSelected && editable) {
 				AbstractTextFieldListCell.fill(
 				  mStack, x, y + 12, x + entryWidth - 12, y + 13,
-				  getConfigError().isPresent() ? 0xffff5555 : 0xffe0e0e0);
+				  hasErrors() ? 0xffff5555 : 0xffe0e0e0);
 			}
 			if (matchedText != null) {
 				fill(

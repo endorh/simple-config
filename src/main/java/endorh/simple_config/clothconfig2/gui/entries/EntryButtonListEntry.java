@@ -96,8 +96,8 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		return entry.getItemHeight();
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
-		return entry.getError();
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
+		return entry.getErrorMessage();
 	}
 	
 	@Override public void setEditable(boolean editable) {
@@ -114,7 +114,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		
 		final MainWindow window = Minecraft.getInstance().getMainWindow();
 		final FontRenderer font = Minecraft.getInstance().fontRenderer;
-		button.active = isEditable() && !getError().isPresent();
+		button.active = isEditable() && !getErrorMessage().isPresent();
 		int entryX;
 		this.button.y = y;
 		if (font.getBidiFlag()) {

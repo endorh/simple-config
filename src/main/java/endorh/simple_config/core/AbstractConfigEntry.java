@@ -494,16 +494,31 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		setGUI(forGui(value));
 	}
 	
+	protected void setBackingField(V value) throws IllegalAccessException {
+		if (backingField != null)
+			ReflectionUtil.setBackingField(backingField, value);
+	}
+	
+	protected V getFromBackingField() throws IllegalAccessException {
+		if (backingField == null)
+			throw new IllegalStateException("Missing backing field");
+		try {
+			//noinspection unchecked
+			return (V) backingField.get(null);
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getPath(), e);
+		}
+	}
+	
 	protected void commitField() throws IllegalAccessException {
 		if (backingField != null)
-			//noinspection unchecked
-			set((V) backingField.get(null));
+			set(getFromBackingField());
 	}
 	
 	protected void bakeField() {
 		if (backingField != null) {
 			try {
-				setBackingField(backingField, get());
+				setBackingField(get());
 			} catch (IllegalAccessException e) {
 				throw new ConfigReflectiveOperationException(
 				  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);

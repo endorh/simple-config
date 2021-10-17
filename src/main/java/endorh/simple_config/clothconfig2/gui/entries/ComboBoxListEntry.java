@@ -116,7 +116,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setSuggestionProvider(provider);
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		return comboBox.getError();
 	}
 	

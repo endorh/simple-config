@@ -9,6 +9,7 @@ import endorh.simple_config.core.entry.Builders;
 import endorh.simple_config.core.entry.StringEntry;
 import endorh.simple_config.demo.DemoConfigCategory;
 import endorh.simple_config.demo.DemoServerCategory;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -18,14 +19,17 @@ import net.minecraft.util.SoundEvent;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.config.ModConfig.Type;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -43,6 +47,10 @@ import java.util.stream.Collectors;
 import static endorh.simple_config.SimpleConfigMod.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
 import static endorh.simple_config.core.SimpleConfig.group;
 import static endorh.simple_config.core.entry.Builders.*;
+import static net.minecraft.client.util.InputMappings.Type.KEYSYM;
+import static net.minecraftforge.client.settings.KeyConflictContext.GUI;
+import static net.minecraftforge.client.settings.KeyModifier.CONTROL;
+import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 
 @Mod(SimpleConfigMod.MOD_ID)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
@@ -360,5 +368,36 @@ import static endorh.simple_config.core.entry.Builders.*;
 		event.setRegistryName(name);
 		registry.register(event);
 		return event;
+	}
+	
+	@EventBusSubscriber(value = Dist.CLIENT, bus = Bus.MOD, modid = MOD_ID)
+	public static class KeyBindings {
+		public static final String CATEGORY = "Simple Config";
+		public static KeyBinding
+		  SEARCH, PREV_PAGE, NEXT_PAGE, UNDO, REDO, PREV_ERROR, NEXT_ERROR, SAVE;
+		
+		@SubscribeEvent public static void register(FMLClientSetupEvent event) {
+			event.enqueueWork(() -> {
+				SEARCH = reg("simple-config.key.search", CONTROL, 70);        // Ctrl + F
+				PREV_PAGE = reg("simple-config.key.prev_page", CONTROL, 266); // Ctrl + PgUp
+				NEXT_PAGE = reg("simple-config.key.next_page", CONTROL, 267); // Ctrl + PgDown
+				UNDO = reg("simple-config.key.undo", CONTROL, 90);            // Ctrl + Z
+				REDO = reg("simple-config.key.redo", CONTROL, 89);            // Ctrl + Y
+				PREV_ERROR = reg("simple-config.key.prev_error", SHIFT, 290); // Shift + F1
+				NEXT_ERROR = reg("simple-config.key.next_error", 290);        // F1
+				SAVE = reg("simple-config.key.save", CONTROL, 83);            // Ctrl + S
+			});
+		}
+		
+		private static KeyBinding reg(String name, int keyCode) {
+			KeyBinding binding = new KeyBinding(name, GUI, KEYSYM.getOrMakeInput(keyCode), CATEGORY);
+			ClientRegistry.registerKeyBinding(binding);
+			return binding;
+		}
+		private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
+			KeyBinding binding = new KeyBinding(name, GUI, modifier, KEYSYM.getOrMakeInput(keyCode), CATEGORY);
+			ClientRegistry.registerKeyBinding(binding);
+			return binding;
+		}
 	}
 }

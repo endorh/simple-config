@@ -27,6 +27,8 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 	protected long duration;
 	protected long last = 0;
 	protected Entry scrollTargetEntry = null;
+	protected Entry followedEntry = null;
+	protected long followEntryStart = 0L;
 	
 	public DynamicNewSmoothScrollingEntryListWidget(
 	  Minecraft client, int width, int height, int top, int bottom,
@@ -121,6 +123,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 	public void scrollTo(Entry entry) {
 		entry.expandParents();
 		scrollTargetEntry = entry;
+		followedEntry = null;
 	}
 	
 	public void scrollBy(double value, boolean animated) {
@@ -153,8 +156,16 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		return t < start + duration || t < last + ClothConfigInitializer.getScrollDuration() / 2;
 	}
 	
+	protected double entryScroll(Entry e) {
+		final int half = (bottom - top) / 2;
+		return max(0, e.getScrollY() - top - half + min(half, e.getCaptionHeight() / 2));
+	}
+	
 	@Override
 	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		long time = System.currentTimeMillis();
+		if (followedEntry != null && time - followEntryStart < duration)
+			this.target = entryScroll(followedEntry);
 		double[] target = new double[]{this.target};
 		double prev = scroll;
 		final int maxScroll = getMaxScroll();
@@ -165,7 +176,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		if (scroll < 0 && prev > scroll)
 			scroll = 0;
 		this.target = target[0];
-		if (System.currentTimeMillis() > start + duration) {
+		if (time > start + duration) {
 			// Animate scroll on height changes
 			if (scroll < 0 || scroll > maxScroll)
 				scrollTo(scroll < 0 ? 0 : maxScroll, true);
@@ -173,10 +184,9 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		}
 		super.render(mStack, mouseX, mouseY, delta);
 		if (scrollTargetEntry != null) {
-			final int half = (bottom - top) / 2;
-			scrollTo(max(
-			  0, scrollTargetEntry.getScrollY() - top - half +
-			     min(half, scrollTargetEntry.getCaptionHeight() / 2)));
+			scrollTo(entryScroll(scrollTargetEntry));
+			followedEntry = scrollTargetEntry;
+			followEntryStart = time;
 			scrollTargetEntry = null;
 		}
 	}

@@ -28,7 +28,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	protected boolean alpha;
 	protected ColorPickerWidget colorPicker;
 	protected int last;
-	private boolean colorPickerVisible = false;
+	protected boolean colorPickerVisible = false;
 	protected Rectangle colorPickerRectangle = new Rectangle();
 	protected Rectangle reportedColorPickerRectangle = new Rectangle();
 	protected List<IGuiEventListener> widgetsWithColorPicker;
@@ -146,7 +146,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	
 	@Override
 	protected void textFieldPreRender(TextFieldWidget widget) {
-		if (!getConfigError().isPresent())
+		if (!hasErrors())
 			widget.setTextColor(0xE0E0E0);
 		else widget.setTextColor(0xFF5555);
 	}
@@ -174,14 +174,14 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 		return getHexColorString(value);
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		ColorValue colorValue = getColorValue(getText());
 		if (colorValue.hasError()) {
 			return Optional.of(new TranslationTextComponent(
 			  "text.cloth-config.error.color." +
 			  colorValue.getError().name().toLowerCase(Locale.ROOT)));
 		}
-		return super.getError();
+		return super.getErrorMessage();
 	}
 	
 	public void withAlpha() {

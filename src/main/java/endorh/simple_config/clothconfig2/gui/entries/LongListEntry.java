@@ -6,6 +6,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -57,15 +58,15 @@ public class LongListEntry
 		this.maximum = maximum != null ? maximum : Long.MAX_VALUE;
 	}
 	
-	@Override protected Long fromString(String s) {
+	@Override protected @Nullable Long fromString(String s) {
 		try {
 			return Long.valueOf(s);
 		} catch (NumberFormatException e) {
-			return 0L;
+			return null;
 		}
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getError() {
+	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		try {
 			long i = Long.parseLong(getText());
 			if (i > this.maximum)
@@ -76,7 +77,7 @@ public class LongListEntry
 			return Optional.of(
 			  new TranslationTextComponent("text.cloth-config.error.not_valid_number_long"));
 		}
-		return super.getError();
+		return super.getErrorMessage();
 	}
 }
 

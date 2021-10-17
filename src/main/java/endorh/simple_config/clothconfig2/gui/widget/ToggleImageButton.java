@@ -56,7 +56,7 @@ public class ToggleImageButton extends ImageButton {
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 257 || keyCode == 32) {
+		if (keyCode == 257 || keyCode == 32 || keyCode == 335) { // Enter | Space | NumPadEnter
 			setValue(!toggle);
 			return true;
 		}

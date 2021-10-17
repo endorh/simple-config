@@ -25,17 +25,29 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 		commentMax = Byte.MAX_VALUE;
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, Builder> {
+	public static class Builder extends
+	                            AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, Builder> {
 		public Builder(Byte value) {
 			super(value, Byte.class);
 		}
 		
+		/**
+		 * Set min (inclusive)
+		 */
 		public Builder min(byte min) {
 			return super.min(min);
 		}
+		
+		/**
+		 * Set max (inclusive)
+		 */
 		public Builder max(byte max) {
 			return super.max(max);
 		}
+		
+		/**
+		 * Set range (inclusive)
+		 */
 		public Builder range(byte min, byte max) {
 			return super.range(min, max);
 		}
@@ -48,7 +60,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 		}
 		
 		@Override
-		public ByteEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ByteEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new ByteEntry(parent, name, value);
 		}
 		
@@ -59,7 +71,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 	
 	@Nullable
 	@Override public Byte fromConfig(@Nullable Number value) {
-		return value != null? value.byteValue() : null;
+		return value != null ? value.byteValue() : null;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

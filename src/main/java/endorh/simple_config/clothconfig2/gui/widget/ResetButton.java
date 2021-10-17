@@ -35,12 +35,15 @@ public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
 	protected WeakReference<AbstractConfigEntry<?>> entry;
 	protected static ITextComponent[] resetTooltip = new ITextComponent[]{
-	  new TranslationTextComponent("text.cloth-config.reset_value")};
+	  new TranslationTextComponent("text.cloth-config.reset_value"),
+	  new TranslationTextComponent("simple-config.ui.restore.alt")};
 	protected static ITextComponent[] resetTooltipShift = new ITextComponent[]{
 	  new TranslationTextComponent("text.cloth-config.reset_value"),
+	  new TranslationTextComponent("simple-config.ui.restore.alt"),
 	  new TranslationTextComponent("text.cloth-config.reset_value.shift")};
 	protected static ITextComponent[] resetTooltipGroup = new ITextComponent[]{
-	  new TranslationTextComponent("text.cloth-config.reset_value.group")};
+	  new TranslationTextComponent("text.cloth-config.reset_value.group"),
+	  new TranslationTextComponent("simple-config.ui.restore.alt")};
 	protected static ITextComponent[] restoreTooltip = new ITextComponent[]{
 	  new TranslationTextComponent("simple-config.ui.restore")};
 	protected static ITextComponent[] restoreTooltipShift = new ITextComponent[]{
@@ -114,7 +117,7 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (this.active && this.visible) {
-			if (keyCode != 257 && keyCode != 32 && keyCode != 335) {
+			if (keyCode != 257 && keyCode != 32 && keyCode != 335) { // !(Enter | Space | NumPadEnter)
 				return false;
 			} else {
 				int button = Screen.hasControlDown() ? 2 : Screen.hasShiftDown() ? 1 : 0;

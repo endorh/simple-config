@@ -52,7 +52,7 @@ public class IntegerListListEntry
 			widget.setText(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
 				int i = Integer.parseInt(widget.getText());
 				final IntegerListListEntry listEntry = getListEntry();

@@ -149,7 +149,7 @@ import java.util.Map.Entry;
 				  entries:
 				  for (ConfigCategory cat : sortedCategories) {
 					  for (AbstractConfigEntry<?> entry : cat.getEntries()) {
-						  if (entry.getConfigError().isPresent()) {
+						  if (entry.hasErrors()) {
 							  hasErrors = true;
 							  break entries;
 						  }

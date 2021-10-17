@@ -55,10 +55,10 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		return this;
 	}
 	
-	@Override public ConfigCategory setCategoryBackground(ResourceLocation identifier) {
+	@Override public ConfigCategory setCategoryBackground(ResourceLocation background) {
 		if (this.builder.hasTransparentBackground()) throw new IllegalStateException(
 		  "Cannot set category background if screen is using transparent background.");
-		this.background = identifier;
+		this.background = background;
 		return this;
 	}
 	

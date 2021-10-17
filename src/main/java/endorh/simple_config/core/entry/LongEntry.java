@@ -24,18 +24,30 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 		commentMax = Long.MAX_VALUE;
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, Builder> {
+	public static class Builder extends
+	                            AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, Builder> {
 		
 		public Builder(Long value) {
 			super(value, Long.class);
 		}
 		
+		/**
+		 * Set min (inclusive)
+		 */
 		public Builder min(long min) {
 			return super.min(min);
 		}
+		
+		/**
+		 * Set max (inclusive)
+		 */
 		public Builder max(long max) {
 			return super.max(max);
 		}
+		
+		/**
+		 * Set range (inclusive)
+		 */
 		public Builder range(long min, long max) {
 			return super.range(min, max);
 		}
@@ -48,7 +60,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 		}
 		
 		@Override
-		public LongEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected LongEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new LongEntry(parent, name, value);
 		}
 		
@@ -59,7 +71,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	
 	@Nullable
 	@Override public Long fromConfig(@Nullable Number value) {
-		return value != null? value.longValue() : null;
+		return value != null ? value.longValue() : null;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

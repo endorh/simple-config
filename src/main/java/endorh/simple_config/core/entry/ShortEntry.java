@@ -30,12 +30,15 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 			super(value, Short.class);
 		}
 		
+		/** Set min (inclusive) */
 		public Builder min(short min) {
 			return super.min(min);
 		}
+		/** Set max (inclusive) */
 		public Builder max(short max) {
 			return super.max(max);
 		}
+		/** Set range (inclusive) */
 		public Builder range(short min, short max) {
 			return super.range(min, max);
 		}
@@ -48,7 +51,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 		}
 		
 		@Override
-		public ShortEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ShortEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
 			return new ShortEntry(parent, name, value);
 		}
 		

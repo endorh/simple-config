@@ -124,13 +124,13 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			textFieldEntry.setValue(value);
 	}
 	
-	@Override public Optional<ITextComponent> getError() {
+	@Override public Optional<ITextComponent> getErrorMessage() {
 		if (isTextFieldShown()) {
-			Optional<ITextComponent> error = textFieldEntry.getError();
+			Optional<ITextComponent> error = textFieldEntry.getErrorMessage();
 			if (error.isPresent())
 				return error;
 		}
-		return super.getError();
+		return super.getErrorMessage();
 	}
 	
 	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
@@ -202,7 +202,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			textFieldEntry.updateSelected(isSelected && getListener() == textFieldEntry);
 			textFieldEntry.setEditable(isEditable());
 			textFieldEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
-			if (!textFieldEntry.getError().isPresent())
+			if (!textFieldEntry.getErrorMessage().isPresent())
 				setValue(textFieldEntry.getValue());
 		} else {
 			sliderWidget.active = isEditable();
@@ -275,7 +275,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		final IGuiEventListener listener = getListener();
 		if ((listener == sliderWidget || listener == textFieldEntry)
-		    && canUseTextField && keyCode == 257) {
+		    && canUseTextField && keyCode == 257) { // Enter
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
 			boolean change = state != isTextFieldShown();
@@ -325,8 +325,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 			if (isEditable()) {
-				boolean left = keyCode == 263;
-				if (left || keyCode == 262) {
+				boolean left = keyCode == 263; // Left
+				if (left || keyCode == 262) { // Right
 					float step = left ? -2.0F : 2.0F;
 					if (Screen.hasShiftDown())
 						step *= 0.25D;

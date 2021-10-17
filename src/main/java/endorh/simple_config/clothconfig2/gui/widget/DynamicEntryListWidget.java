@@ -8,12 +8,12 @@ import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
 import endorh.simple_config.clothconfig2.api.ScissorsHandler;
 import endorh.simple_config.clothconfig2.gui.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.Entry;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.gui.*;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -23,7 +23,6 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -463,13 +462,13 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		if (target != null && target.handleNavigationKey(keyCode, scanCode, modifiers))
 			return true;
 		switch (keyCode) {
-			case 264: // Arrow down
+			case 264: // Down
 				navigateEntries(1);
 				return true;
-			case 265: // Arrow up
+			case 265: // Up
 				navigateEntries(-1);
 				return true;
-			case 263: // Arrow left
+			case 263: // Left
 				if (target != null) {
 					navigateTo(target.getNavigableParent());
 					Minecraft.getInstance().getSoundHandler().play(
@@ -789,37 +788,5 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		while (target != null && !getNavigableTargets().contains(target))
 			target = target.getNavigableParent();
 		if (target != null) target.onNavigate();
-	}
-	
-	public interface INavigableTarget {
-		default @Nullable INavigableTarget getNavigableParent() {
-			return null;
-		}
-		
-		default List<INavigableTarget> getNavigableChildren() {
-			return Lists.newArrayList(this);
-		}
-		
-		void onNavigate();
-		
-		default boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-			if (keyCode == 263 && this instanceof IExpandable) {
-				final IExpandable ex = (IExpandable) this;
-				if (ex.isExpanded()) {
-					ex.setExpanded(false, Screen.hasShiftDown());
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		/**
-		 * Get the error of this target
-		 */
-		default Optional<ITextComponent> getConfigError() {
-			return Optional.empty();
-		}
 	}
 }

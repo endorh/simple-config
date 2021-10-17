@@ -6,7 +6,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.entries.BaseListEntry;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicElementListWidget;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.EditHistory;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -160,7 +160,7 @@ public abstract class AbstractConfigEntry<T>
 	public abstract ITextComponent getFieldName();
 	
 	public ITextComponent getDisplayedFieldName() {
-		boolean hasError = this.getConfigError().isPresent();
+		boolean hasError = this.hasErrors();
 		boolean isEdited = this.isEdited();
 		IFormattableTextComponent text = this.getFieldName().deepCopy();
 		if (matchedText != null && !matchedText.isEmpty()) {
@@ -227,22 +227,22 @@ public abstract class AbstractConfigEntry<T>
 	}
 	
 	/**
-	 * Subclasses should instead override {@link AbstractConfigEntry#getError()}
+	 * Subclasses should instead override {@link AbstractConfigEntry#getErrorMessage()}
 	 */
-	@Override public Optional<ITextComponent> getConfigError() {
-		if (this.errorSupplier != null) {
-			final Optional<ITextComponent> opt = this.errorSupplier.get();
-			if (opt.isPresent())
-				return opt;
-		}
-		return this.getError();
+	@Override public Optional<EntryError> getError() {
+		Optional<ITextComponent> opt = Optional.empty();
+		if (this.errorSupplier != null)
+			opt = this.errorSupplier.get();
+		if (!opt.isPresent())
+			opt = this.getErrorMessage();
+		return opt.map(tc -> EntryError.of(tc, this));
 	}
 	
 	public void setErrorSupplier(@Nullable Supplier<Optional<ITextComponent>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
 	}
 	
-	@Internal public Optional<ITextComponent> getError() {
+	@Internal public Optional<ITextComponent> getErrorMessage() {
 		return Optional.empty();
 	}
 	
@@ -330,18 +330,18 @@ public abstract class AbstractConfigEntry<T>
 	}
 	
 	public boolean isEdited() {
-		return !ignoreEdits && (this.getConfigError().isPresent()
+		return !ignoreEdits && (this.hasErrors()
 		                        || !Objects.equals(getValue(), getOriginal()));
 	}
 	
 	public boolean isResettable() {
 		if (!isEditable()) return false;
-		return !Objects.equals(getValue(), getDefaultValue());
+		return hasErrors() || !Objects.equals(getValue(), getDefaultValue());
 	}
 	
 	public boolean isRestorable() {
 		if (!isEditable()) return false;
-		return !Objects.equals(getValue(), getOriginal());
+		return hasErrors() || !Objects.equals(getValue(), getOriginal());
 	}
 	
 	@Override public int getItemHeight() {
@@ -555,5 +555,39 @@ public abstract class AbstractConfigEntry<T>
 		if (focus)
 			forceFocus(listener);
 		else forceUnFocus(listener);
+	}
+	
+	public static class EntryError {
+		protected ITextComponent error;
+		protected INavigableTarget source;
+		protected AbstractConfigEntry<?> entry;
+		
+		protected EntryError(
+		  ITextComponent error, INavigableTarget source
+		) {
+			this.error = error;
+			this.source = source;
+			this.entry = source.findParentEntry();
+		}
+		
+		public static EntryError of(ITextComponent error, INavigableTarget source) {
+			return new EntryError(error, source);
+		}
+		
+		public static EntryError wrap(ITextComponent error, EntryError cause) {
+			return new EntryError(error, cause.source);
+		}
+		
+		public ITextComponent getError() {
+			return error;
+		}
+		
+		public INavigableTarget getSource() {
+			return source;
+		}
+		
+		public AbstractConfigEntry<?> getEntry() {
+			return entry;
+		}
 	}
 }

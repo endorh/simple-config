@@ -52,7 +52,7 @@ public class FloatListListEntry
 			widget.setText(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
 				float i = Float.parseFloat(widget.getText());
 				final FloatListListEntry listEntry = getListEntry();

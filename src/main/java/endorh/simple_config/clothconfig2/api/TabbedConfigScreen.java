@@ -6,6 +6,7 @@ import net.minecraft.util.text.ITextComponent;
 public interface TabbedConfigScreen extends ConfigScreen {
 	void registerCategoryBackground(String key, ResourceLocation background);
 	
-	String getSelectedCategory();
+	String getSelectedCategoryName();
+	ConfigCategory getSelectedCategory();
 }
 

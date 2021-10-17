@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.KeyBindings;
 import endorh.simple_config.clothconfig2.api.*;
+import endorh.simple_config.clothconfig2.api.AbstractConfigEntry.EntryError;
 import endorh.simple_config.clothconfig2.gui.widget.*;
 import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget.ISearchHandler;
 import endorh.simple_config.clothconfig2.impl.EasingMethod;
@@ -12,6 +14,9 @@ import endorh.simple_config.clothconfig2.math.Point;
 import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
+import net.minecraft.client.gui.AbstractGui;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
@@ -20,6 +25,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -36,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -72,6 +79,7 @@ public class ClothConfigScreen
 	protected double tabsMaximumScrolled = -1.0;
 	protected final List<ClothConfigTabButton> tabButtons = Lists.newArrayList();
 	protected TooltipSearchBarWidget searchBar;
+	protected ErrorDisplayWidget errorDisplayWidget;
 	
 	@Internal public ClothConfigScreen(
 	  Screen parent, ITextComponent title, Map<String, ConfigCategory> categories,
@@ -91,6 +99,7 @@ public class ClothConfigScreen
 		)).collect(Collectors.toList());
 		this.categoryMap = categories;
 		final WeakReference<ClothConfigScreen> weakSelf = new WeakReference<>(this);
+		errorDisplayWidget = new ErrorDisplayWidget(this, 48, 6);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, weakSelf::get);
 	}
 
@@ -119,8 +128,8 @@ public class ClothConfigScreen
 		  .collect(Collectors.toList());
 	}
 	
-	@Override public String getSelectedCategory() {
-		return sortedCategories.get(selectedCategoryIndex).getName();
+	@Override public ConfigCategory getSelectedCategory() {
+		return sortedCategories.get(selectedCategoryIndex);
 	}
 	
 	@Override
@@ -168,7 +177,7 @@ public class ClothConfigScreen
 				boolean hasErrors = false;
 				for (ConfigCategory cat : sortedCategories) {
 					for (AbstractConfigEntry<?> entry : cat.getEntries()) {
-						if (entry.getConfigError().isPresent()) {
+						if (entry.hasErrors()) {
 							hasErrors = true;
 							break;
 						}
@@ -236,6 +245,7 @@ public class ClothConfigScreen
 			tabsLeftBounds = tabsRightBounds = new Rectangle();
 			tabsBounds = tabsRightBounds;
 		}
+		addListener(errorDisplayWidget);
 		undoButton = new MultiFunctionImageButton(
 		  2, 2, 20, 20, 80, 128, CONFIG_TEX, (w, b) -> {
 			  if (b == 0) {
@@ -261,7 +271,7 @@ public class ClothConfigScreen
 	
 	@Override protected boolean canSave() {
 		return isEdited() && sortedCategories.stream().anyMatch(
-		  c -> c.getEntries().stream().anyMatch(e -> e.getConfigError().isPresent()));
+		  c -> c.getEntries().stream().anyMatch(e -> e.hasErrors()));
 	}
 	
 	@Override public void setSelectedCategory(int index) {
@@ -300,38 +310,85 @@ public class ClothConfigScreen
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (super.keyPressed(keyCode, scanCode, modifiers))
 			return true;
-		if (keyCode == 264 || keyCode == 265) {
+		if (keyCode == 264 || keyCode == 265) { // Up | Down
 			setListener(listWidget);
-			return true;
+			return listWidget.keyPressed(keyCode, scanCode, modifiers);
 		}
 		return false;
 	}
 	
 	@Override protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
 		if (super.screenKeyPressed(keyCode, scanCode, modifiers)) return true;
-		if (Screen.hasControlDown()) {
-			switch (keyCode) {
-				case 89: // Ctrl + F
-					if (!searchBar.isExpanded())
-						searchBar.open();
-					setListener(searchBar);
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					return true;
-				case 47: // Ctrl + Z
-					if (getHistory().canUndo(this))
-						Minecraft.getInstance().getSoundHandler().play(
-						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					undo();
-					return true;
-				case 84: // Ctrl + Y
-					if (getHistory().canRedo(this))
-						Minecraft.getInstance().getSoundHandler().play(
-						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					redo();
-					return true;
-			}
+		InputMappings.Input key = InputMappings.getInputByCode(keyCode, scanCode);
+		if (KeyBindings.NEXT_ERROR.isActiveAndMatches(key)) { // F1
+			focusNextError(true);
+			return true;
+		} else if (KeyBindings.PREV_ERROR.isActiveAndMatches(key)) {
+			focusNextError(false);
+			return true;
+		} else if (KeyBindings.SEARCH.isActiveAndMatches(key)) {
+			if (!searchBar.isExpanded())
+				searchBar.open();
+			setListener(searchBar);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			return true;
+		} else if (KeyBindings.UNDO.isActiveAndMatches(key)) {
+			if (getHistory().canUndo(this))
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			undo();
+			return true;
+		} else if (KeyBindings.REDO.isActiveAndMatches(key)) {
+			if (getHistory().canRedo(this))
+				Minecraft.getInstance().getSoundHandler().play(
+				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			redo();
+			return true;
 		}
+		// if (Screen.hasControlDown()) {
+		// 	if (KeyBindings.SEARCH.matchesKey(keyCode, scanCode)) { // Ctrl + F
+		// 		if (!searchBar.isExpanded())
+		// 			searchBar.open();
+		// 		setListener(searchBar);
+		// 		Minecraft.getInstance().getSoundHandler().play(
+		// 		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+		// 		return true;
+		// 	} else if (KeyBindings.UNDO.matchesKey(keyCode, scanCode)) { // Ctrl + Z
+		// 		if (getHistory().canUndo(this))
+		// 			Minecraft.getInstance().getSoundHandler().play(
+		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+		// 		undo();
+		// 		return true;
+		// 	} else if (KeyBindings.REDO.matchesKey(keyCode, scanCode)) { // Ctrl + Y
+		// 		if (getHistory().canRedo(this))
+		// 			Minecraft.getInstance().getSoundHandler().play(
+		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+		// 		redo();
+		// 		return true;
+		// 	}
+			// switch (keyCode) {
+			// 	case 89: // Ctrl + F
+			// 		if (!searchBar.isExpanded())
+			// 			searchBar.open();
+			// 		setListener(searchBar);
+			// 		Minecraft.getInstance().getSoundHandler().play(
+			// 		  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			// 		return true;
+			// 	case 47: // Ctrl + Z
+			// 		if (getHistory().canUndo(this))
+			// 			Minecraft.getInstance().getSoundHandler().play(
+			// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			// 		undo();
+			// 		return true;
+			// 	case 84: // Ctrl + Y
+			// 		if (getHistory().canRedo(this))
+			// 			Minecraft.getInstance().getSoundHandler().play(
+			// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			// 		redo();
+			// 		return true;
+			// }
+		// }
 		return false;
 	}
 	
@@ -404,50 +461,42 @@ public class ClothConfigScreen
 			ClothConfigScreen.drawCenteredString(
 			  mStack, minecraft.fontRenderer, title, width / 2, 8, 0xffffffff);
 		}
-		if (isEditable()) {
-			List<ITextComponent> errors = Lists.newArrayList();
-			for (ConfigCategory cat : sortedCategories) {
-				for (AbstractConfigEntry<?> entry : cat.getEntries())
-					entry.getConfigError().ifPresent(errors::add);
-			}
-			if (errors.size() > 0) {
-				minecraft.getTextureManager().bindTexture(CONFIG_TEX);
-				RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-				String text =
-				  "\u00a7c" + (errors.size() == 1 ? errors.get(0).copyRaw().getString() : I18n.format(
-					 "text.cloth-config.multi_error"));
-				if (isTransparentBackground()) {
-					int stringWidth = minecraft.fontRenderer.getStringWidth(text);
-					Objects.requireNonNull(minecraft.fontRenderer);
-					fillGradient(mStack, 8 + 40, 6, 20 + 40 + stringWidth, 14 + 6, 0xA0000000, 0xA0000000);
-				}
-				blit(mStack, 10 + 40, 7, 24, 36, 3, 11);
-				ClothConfigScreen.drawString(
-				  mStack, minecraft.fontRenderer, text, 18 + 40, 9, 0xffffffff);
-				if (errors.size() > 1) {
-					int stringWidth = minecraft.fontRenderer.getStringWidth(text);
-					if (smX >= 10 + 40 && smY >= 6 && smX <= 18 + 40 + stringWidth && smY <= 14 + 6) {
-						Objects.requireNonNull(minecraft.fontRenderer);
-						addTooltip(Tooltip.of(new Point(mouseX, mouseY), errors.toArray(new ITextComponent[0])));
-					}
-				}
-			}
-		} else if (!isEditable()) {
-			minecraft.getTextureManager().bindTexture(CONFIG_TEX);
-			RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-			String text = "\u00a7c" + I18n.format("text.cloth-config.not_editable");
-			if (isTransparentBackground()) {
-				int stringWidth = minecraft.fontRenderer.getStringWidth(text);
-				Objects.requireNonNull(minecraft.fontRenderer);
-				fillGradient(mStack, 8, 9, 20 + stringWidth, 14 + 9, 0x68000000, 0x68000000);
-			}
-			blit(mStack, 10, 10, 24, 36, 3, 11);
-			ClothConfigScreen.drawString(mStack, minecraft.fontRenderer, text, 18, 12, -1);
-		}
+		errorDisplayWidget.render(mStack, smX, smY);
 		searchBar.render(mStack, hasDialog? -1 : mouseX, hasDialog? -1 : mouseY, delta);
 		if (listWidget.isScrollingNow())
 			removeTooltips(new Rectangle(listWidget.left, listWidget.top, listWidget.width, listWidget.height));
 		super.render(mStack, mouseX, mouseY, delta);
+	}
+	
+	public void focusNextError(boolean forwards) {
+		final List<AbstractConfigEntry<?>> entries = getSelectedCategory().getAllEntries();
+		// Most of the time less entries will have errors, so this traversal is better
+		final Map<Integer, INavigableTarget> errors =
+		  getSelectedCategory().getErrors().stream().collect(Collectors.toMap(
+			 e -> entries.indexOf(e.getEntry()), EntryError::getSource, (a, b) -> a));
+		errors.remove(-1); // There shouldn't be any outside of allEntries
+		AbstractConfigEntry<?> entry = listWidget.getSelectedEntry();
+		int index = entry == null ? forwards? -1 : entries.size() : entries.indexOf(entry);
+		if (!errors.isEmpty()) {
+			Comparator<Integer> order = Comparator.naturalOrder();
+			if (!forwards) order = order.reversed();
+			//noinspection OptionalGetWithoutIsPresent
+			int next = errors.keySet().stream().filter(forwards ? i -> i > index : i -> i < index)
+			  .min(order).orElse(errors.keySet().stream().min(order).get());
+			errors.get(next).onNavigate();
+		} else {
+			int s = sortedCategories.size();
+			Function<Integer, Integer> step = forwards ? j -> (j + 1) % s : j -> (j - 1 + s) % s;
+			for (int i = step.apply(selectedCategoryIndex); i != selectedCategoryIndex; i = step.apply(i)) {
+				ConfigCategory cat = sortedCategories.get(i);
+				final List<EntryError> catErrors = cat.getErrors();
+				if (!catErrors.isEmpty()) {
+					setSelectedCategory(cat.getName());
+					catErrors.get(0).getSource().onNavigate();
+					break;
+				}
+			}
+		}
 	}
 	
 	@SuppressWarnings("SameParameterValue") private void drawTabsShades(
@@ -778,5 +827,73 @@ public class ClothConfigScreen
 		super.redo();
 		if (listWidget.getSelectedTarget() instanceof AbstractConfigEntry)
 			history.preserveState(((AbstractConfigEntry<?>) listWidget.getSelectedTarget()));
+	}
+	
+	public static class ErrorDisplayWidget extends AbstractGui implements IGuiEventListener {
+		protected ClothConfigScreen screen;
+		protected int x, y, w, h;
+		public ErrorDisplayWidget(ClothConfigScreen screen, int x, int y) {
+			this.screen = screen;
+			this.x = x;
+			this.y = y;
+			this.w = 20;
+			this.h = 14;
+		}
+		
+		@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
+			if (!isMouseInside(mouseX, mouseY)) return false;
+			screen.focusNextError(!Screen.hasShiftDown());
+			return true;
+		}
+		
+		public void render(MatrixStack mStack, int mouseX, int mouseY) {
+			Minecraft mc = Minecraft.getInstance();
+			FontRenderer font = mc.fontRenderer;
+			if (screen.isEditable()) {
+				List<ITextComponent> errors = Lists.newArrayList();
+				for (ConfigCategory cat : screen.sortedCategories)
+					cat.getErrors().forEach(e -> errors.add(e.getError()));
+				if (errors.size() > 0) {
+					mc.getTextureManager().bindTexture(CONFIG_TEX);
+					RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+					String text =
+					  "\u00a7c" +
+					  (errors.size() == 1 ? errors.get(0).copyRaw().getString() : I18n.format(
+						 "text.cloth-config.multi_error"));
+					w = 12 + font.getStringWidth(text);
+					if (screen.isTransparentBackground()) {
+						Objects.requireNonNull(font);
+						fillGradient(mStack, x, y, x + w, y + h, 0xA0000000, 0xA0000000);
+					}
+					blit(mStack, x + 2, y + 1, 24, 36, 3, 11);
+					ClothConfigScreen.drawString(
+					  mStack, font, text, x + 10, y + 3, 0xffffffff);
+					if (errors.size() > 1) {
+						if (mouseX >= x && mouseY >= y && mouseX <= x + w && mouseY <= y + h) {
+							Objects.requireNonNull(font);
+							screen.addTooltip(Tooltip.of(
+							  new Point(mouseX, mouseY), errors.toArray(new ITextComponent[0])));
+						}
+					}
+				} else {
+					w = 0;
+				}
+			} else {
+				mc.getTextureManager().bindTexture(CONFIG_TEX);
+				RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+				String text = "\u00a7c" + I18n.format("text.cloth-config.not_editable");
+				w = 12 + mc.fontRenderer.getStringWidth(text);
+				if (screen.isTransparentBackground()) {
+					Objects.requireNonNull(mc.fontRenderer);
+					fillGradient(mStack, x, y, x + w, y + h, 0x68000000, 0x68000000);
+				}
+				blit(mStack, x + 2, y + 3, 24, 36, 3, 11);
+				ClothConfigScreen.drawString(mStack, mc.fontRenderer, text, x + 10, y + 3, -1);
+			}
+		}
+		
+		public boolean isMouseInside(double mouseX, double mouseY) {
+			return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+		}
 	}
 }

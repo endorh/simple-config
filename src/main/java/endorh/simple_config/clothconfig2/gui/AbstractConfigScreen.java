@@ -5,6 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
 import endorh.simple_config.SimpleConfigMod.ClientConfig.confirm;
+import endorh.simple_config.SimpleConfigMod.KeyBindings;
 import endorh.simple_config.clothconfig2.ClothConfigInitializer;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.entries.KeyCodeEntry;
@@ -99,7 +100,7 @@ public abstract class AbstractConfigScreen extends Screen
 	@Override public boolean isRequiresRestart() {
 		for (ConfigCategory cat : categoryMap.values()) {
 			for (AbstractConfigEntry<?> entry : cat.getEntries()) {
-				if (entry.getConfigError().isPresent() || !entry.isEdited() ||
+				if (entry.hasErrors() || !entry.isEdited() ||
 				    !entry.isRequiresRestart()) continue;
 				return true;
 			}
@@ -408,32 +409,55 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
-		if (Screen.hasControlDown()) {
-			int i;
-			switch (keyCode) {
-				case 266: // Page Up
-					i = selectedCategoryIndex - 1;
-					if (i < 0) i = categoryMap.size() - 1;
-					setSelectedCategory(i);
-					recomputeFocus();
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					return true;
-				case 267: // Page Down
-					i = selectedCategoryIndex + 1;
-					if (i >= categoryMap.size()) i = 0;
-					setSelectedCategory(i);
-					recomputeFocus();
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					return true;
-				case 59: // Ctrl + S
-					if (canSave()) saveAll(true, true);
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
-					return true;
-			}
+		InputMappings.Input key = InputMappings.getInputByCode(keyCode, scanCode);
+		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
+			int i = selectedCategoryIndex - 1;
+			if (i < 0) i = categoryMap.size() - 1;
+			setSelectedCategory(i);
+			recomputeFocus();
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			return true;
+		} else if (KeyBindings.PREV_PAGE.isActiveAndMatches(key)) {
+			int i = selectedCategoryIndex + 1;
+			if (i >= categoryMap.size()) i = 0;
+			setSelectedCategory(i);
+			recomputeFocus();
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			return true;
+		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
+			if (canSave()) saveAll(true, true);
+			Minecraft.getInstance().getSoundHandler().play(
+			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			return true;
 		}
+		// if (Screen.hasControlDown()) {
+		// 	int i;
+		// 	switch (keyCode) {
+		// 		case 266: // Page Up
+		// 			i = selectedCategoryIndex - 1;
+		// 			if (i < 0) i = categoryMap.size() - 1;
+		// 			setSelectedCategory(i);
+		// 			recomputeFocus();
+		// 			Minecraft.getInstance().getSoundHandler().play(
+		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+		// 			return true;
+		// 		case 267: // Page Down
+		// 			i = selectedCategoryIndex + 1;
+		// 			if (i >= categoryMap.size()) i = 0;
+		// 			setSelectedCategory(i);
+		// 			recomputeFocus();
+		// 			Minecraft.getInstance().getSoundHandler().play(
+		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+		// 			return true;
+		// 		case 59: // Ctrl + S
+		// 			if (canSave()) saveAll(true, true);
+		// 			Minecraft.getInstance().getSoundHandler().play(
+		// 			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+		// 			return true;
+		// 	}
+		// }
 		return false;
 	}
 	

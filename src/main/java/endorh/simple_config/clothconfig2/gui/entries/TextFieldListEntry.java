@@ -22,6 +22,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -76,10 +77,10 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		return expanded? longTextFieldWidget.getText() : textFieldWidget.getText();
 	}
 	
-	protected abstract V fromString(String s);
+	protected abstract @Nullable V fromString(String s);
 	
-	protected String toString(V v) {
-		return String.valueOf(v);
+	protected String toString(@Nullable V v) {
+		return v != null? String.valueOf(v) : "";
 	}
 	
 	protected String stripAddText(String s) {
@@ -207,8 +208,8 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		return false;
 	}
 	
-	@Override public Optional<ITextComponent> getError() {
-		final Optional<ITextComponent> opt = super.getError();
+	@Override public Optional<ITextComponent> getErrorMessage() {
+		final Optional<ITextComponent> opt = super.getErrorMessage();
 		if (opt.isPresent()) return opt;
 		if (getText().length() < minLength)
 			return Optional.of(

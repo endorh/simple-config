@@ -126,7 +126,15 @@ public class DemoConfigCategory {
 		            // A shortcut exists for float or double values between 0 and 1
 		            //   fraction(v) is equivalent to number(v, 0, 1).slider();
 		            .add("float_value", fraction(0.8F).slider(false))
-		            .add("double_value", number(0.0, -10, 10))
+		            // Float and double values can have a field scale, which is
+		            //   multiplied to their value before being assigned to their
+		            //   backing field. The scale is inversely applied backwards
+		            //   if the field value is committed.
+		            // This helps expose users more understandable units, while your
+		            //   field uses the most useful for your code.
+		            //   For instance, you may expose speed in m/s, but actually use
+		            //   it as m/tick in your code, by multiplying the field by 0.05 as here
+		            .add("double_value", number(0.0, -10, 10).fieldScale(0.05))
 		            // All numeric entry types can be displayed as sliders, including
 		            //   floats and doubles
 		            // Sliders still let users introduce exact numbers by toggling a text

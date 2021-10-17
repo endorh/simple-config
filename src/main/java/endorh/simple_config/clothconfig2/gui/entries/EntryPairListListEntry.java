@@ -7,7 +7,7 @@ import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simple_config.clothconfig2.gui.entries.EntryPairListListEntry.EntryPairCell;
 import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget;
-import endorh.simple_config.clothconfig2.gui.widget.DynamicEntryListWidget.INavigableTarget;
+import endorh.simple_config.clothconfig2.gui.INavigableTarget;
 import endorh.simple_config.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -70,23 +70,13 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 		if (ignoreEdits) return false;
 		final List<Pair<K, V>> original = getOriginal();
 		return !ignoreOrder ? super.isEdited() :
-		       getConfigError().isPresent()
+		       hasErrors()
 		       || heldEntry != null && heldEntry.isEdited()
 		       || original == null
 		       || !cells.stream().map(EntryPairCell::getValue).collect(Collectors.toMap(
 			        Pair::getKey, Pair::getValue, (a, b) -> b))
 		         .equals(original.stream().collect(Collectors.toMap(
 		           Pair::getKey, Pair::getValue, (a, b) -> b)));
-	}
-	
-	@Internal @Override public Optional<ITextComponent> getError() {
-		// This is preferable to just displaying "Multiple issues!" without further info
-		// The names already turn red on each error anyways
-		final List<ITextComponent> errors = cells.stream().map(BaseListCell::getConfigError)
-		  .filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
-		if (!errors.isEmpty())
-			return Optional.ofNullable(errors.get(0));
-		return Optional.empty();
 	}
 	
 	@Override public boolean preserveState() {
@@ -180,8 +170,8 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 			return valueEntry;
 		}
 		
-		public Optional<ITextComponent> getError() {
-			Optional<ITextComponent> e = valueEntry.getError();
+		public Optional<ITextComponent> getErrorMessage() {
+			Optional<ITextComponent> e = valueEntry.getErrorMessage();
 			if (!e.isPresent())
 				e = getListEntry().cellErrorSupplier.apply(getValue());
 			return e;
@@ -220,7 +210,7 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 		  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 		) {
 			super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-			keyOverlayColor = getConfigError().isPresent() ? errorFilter : noFilter;
+			keyOverlayColor = hasErrors() ? errorFilter : noFilter;
 			final FontRenderer fr = Minecraft.getInstance().fontRenderer;
 			int keyX = fr.getBidiFlag() ? x + entryWidth - 150 - keyOffset : x + keyOffset;
 			valueEntry.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
@@ -262,20 +252,20 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 		}
 		
 		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-			if (keyCode == 263 && getListener() == valueEntry) {
+			if (keyCode == 263 && getListener() == valueEntry) { // Left
 				setListener(keyEntry);
 				keyEntry.changeFocus(true);
 				Minecraft.getInstance().getSoundHandler().play(
 				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
-			} else if (keyCode == 262 && getListener() == keyEntry) {
+			} else if (keyCode == 262 && getListener() == keyEntry) { // Right
 				setListener(valueEntry);
 				valueEntry.changeFocus(true);
 				Minecraft.getInstance().getSoundHandler().play(
 				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
-			if (Screen.hasAltDown() && getListEntry().getSelectedIndex() != -1 && (keyCode == 257 || keyCode == 260))
+			if (Screen.hasAltDown() && getListEntry().getSelectedIndex() != -1 && (keyCode == 257 || keyCode == 260)) // Enter | Insert
 				getListEntry().selectKey = true;
 			return super.handleNavigationKey(keyCode, scanCode, modifiers);
 		}

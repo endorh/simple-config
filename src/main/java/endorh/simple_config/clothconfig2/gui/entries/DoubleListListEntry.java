@@ -55,7 +55,7 @@ public class DoubleListListEntry
 			widget.setText(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getError() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
 				double i = Double.parseDouble(widget.getText());
 				final DoubleListListEntry listEntry = getListEntry();

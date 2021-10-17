@@ -52,7 +52,7 @@ public interface IDialogCapableScreen {
 	}
 	
 	default boolean handleDialogsKeyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 256) return handleDialogsEscapeKey();
+		if (keyCode == 256) return handleDialogsEscapeKey(); // Esc
 		if (keyCode == 258) return handleDialogsChangeFocus(!Screen.hasShiftDown());
 		final List<AbstractDialog> dialogs = getDialogs();
 		for (AbstractDialog dialog : Lists.reverse(dialogs)) {
