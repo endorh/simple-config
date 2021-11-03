@@ -80,11 +80,6 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		return addNonPersistentTooltip? super.supplyExtraTooltip(value) : Lists.newArrayList();
 	}
 	
-	@Override
-	protected final void buildConfig(ForgeConfigSpec.Builder builder, Map<String, ConfigValue<?>> specValues) {
-		specValues.put(name, null);
-	}
-	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {}
 	
 	@Override
@@ -96,7 +91,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	protected Consumer<Gui> saveConsumer() {
 		return g -> {
 			dirty();
-			parent.markDirty().set(name, fromGuiOrDefault(g));
+			set(fromGuiOrDefault(g));
 		};
 	}
 	

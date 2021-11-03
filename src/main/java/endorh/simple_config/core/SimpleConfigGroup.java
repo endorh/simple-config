@@ -60,14 +60,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	}
 	
 	@Internal protected void build(
-	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries, Map<String, ConfigValue<?>> specValues,
+	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
 	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder,
 	  @Nullable AbstractConfigEntry<?, ?, ?, ?> heldEntry
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
 		this.entries = entries;
-		this.specValues = specValues;
 		this.groups = groups;
 		children = groups;
 		this.order = guiOrder;

@@ -14,6 +14,7 @@ import endorh.simple_config.core.NBTUtil.ExpectedType;
 import endorh.simple_config.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simple_config.core.SimpleConfig.IGUIEntry;
 import endorh.simple_config.core.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simple_config.core.SimpleConfig.NoSuchConfigEntryError;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -81,6 +82,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @OnlyIn(Dist.CLIENT) @Nullable AbstractConfigListEntry<Gui> guiEntry;
 	protected boolean nonPersistent = false;
 	protected V actualValue = null;
+	protected @Nullable ConfigValue<?> configValue = null;
 	protected boolean ignored = false;
 	
 	protected AbstractConfigEntry(
@@ -310,14 +312,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 					actualValue = v;
 				}
 			};
-		final String n = name; // Use the current name
 		return g -> {
 			// guiEntry = null; // Discard the entry
 			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
-			if (!Objects.equals(parent.get(n), v)) {
+			if (!Objects.equals(get(), v)) {
 				dirty();
-				parent.markDirty().set(n, v);
+				set(v);
 			}
 		};
 	}
@@ -427,10 +428,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * in most cases
 	 */
 	protected void buildConfig(
-	  ForgeConfigSpec.Builder builder, Map<String, ConfigValue<?>> specValues
+	  ForgeConfigSpec.Builder builder
 	) {
 		if (!nonPersistent)
-			buildConfigEntry(builder).ifPresent(e -> specValues.put(name, e));
+			buildConfigEntry(builder).ifPresent(this::setConfigValue);
 	}
 	
 	/**
@@ -482,14 +483,24 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		});
 	}
 	
+	protected void setConfigValue(@Nullable ConfigValue<?> value) {
+		this.configValue = value;
+	}
+	
 	protected V get() {
-		return nonPersistent ? actualValue : parent.get(name);
+		if (nonPersistent) return actualValue;
+		if (configValue == null) throw new NoSuchConfigEntryError(getPath());
+		return get(configValue);
 	}
 	
 	protected void set(V value) {
-		if (nonPersistent)
+		if (nonPersistent) {
 			actualValue = value;
-		else parent.set(name, value);
+		} else if (configValue == null) {
+			throw new NoSuchConfigEntryError(getPath());
+		} else {
+			set(configValue, value);
+		}
 	}
 	
 	/**

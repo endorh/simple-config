@@ -335,7 +335,6 @@ public class SimpleConfigBuilder
 			specBuilder.push(name);
 			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, baker);
 			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
-			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			entries.forEach((name, value) -> {
 				final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(cat, name);
@@ -343,7 +342,7 @@ public class SimpleConfigBuilder
 				translate(entry);
 				if (backingFields.containsKey(name))
 					entry.backingField = backingFields.get(name);
-				entry.buildConfig(specBuilder, specValues);
+				entry.buildConfig(specBuilder);
 			});
 			for (GroupBuilder group : this.groups.values()) {
 				final SimpleConfigGroup g = group.build(cat, specBuilder);
@@ -356,7 +355,7 @@ public class SimpleConfigBuilder
 			).collect(Collectors.toList());
 			cat.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
-			  unmodifiableMap(specValues), unmodifiableList(order));
+			  unmodifiableList(order));
 			specBuilder.pop();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 				cat.decorator = decorator;
@@ -502,7 +501,6 @@ public class SimpleConfigBuilder
 				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded, baker);
 			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded, baker);
 			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
-			final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			final AbstractConfigEntry<?, ?, ?, ?> heldEntry =
 			  heldEntryBuilder != null ? heldEntryBuilder.build(group, heldEntryName) : null;
@@ -511,7 +509,7 @@ public class SimpleConfigBuilder
 				translate(heldEntry);
 				if (backingFields.containsKey(heldEntryName))
 					heldEntry.backingField = backingFields.get(heldEntryName);
-				heldEntry.buildConfig(specBuilder, specValues);
+				heldEntry.buildConfig(specBuilder);
 			}
 			entries.forEach((name, builder) -> {
 				if (builder == heldEntryBuilder) return;
@@ -520,7 +518,7 @@ public class SimpleConfigBuilder
 				translate(entry);
 				if (backingFields.containsKey(name))
 					entry.backingField = backingFields.get(name);
-				entry.buildConfig(specBuilder, specValues);
+				entry.buildConfig(specBuilder);
 			});
 			for (String name : groups.keySet()) {
 				GroupBuilder builder = groups.get(name);
@@ -533,8 +531,8 @@ public class SimpleConfigBuilder
 			  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
 			).collect(Collectors.toList());
 			group.build(
-			  unmodifiableMap(entriesByName), unmodifiableMap(specValues),
-			  unmodifiableMap(groupMap), unmodifiableList(builtOrder), heldEntry);
+			  unmodifiableMap(entriesByName), unmodifiableMap(groupMap),
+			  unmodifiableList(builtOrder), heldEntry);
 			specBuilder.pop();
 			return group;
 		}
@@ -589,7 +587,6 @@ public class SimpleConfigBuilder
 		}
 		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
-		final Map<String, ConfigValue<?>> specValues = new LinkedHashMap<>();
 		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 		entries.forEach((name, value) -> {
 			final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
@@ -597,7 +594,7 @@ public class SimpleConfigBuilder
 			translate(entry);
 			if (backingFields.containsKey(name))
 				entry.backingField = backingFields.get(name);
-			entry.buildConfig(specBuilder, specValues);
+			entry.buildConfig(specBuilder);
 		});
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
@@ -616,8 +613,7 @@ public class SimpleConfigBuilder
 		).collect(Collectors.toList());
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
-		  unmodifiableMap(groupMap), unmodifiableMap(specValues),
-		  unmodifiableList(order), specBuilder.build());
+		  unmodifiableMap(groupMap), unmodifiableList(order), specBuilder.build());
 		ModLoadingContext.get().registerConfig(type, config.spec);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			config.decorator = decorator;

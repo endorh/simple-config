@@ -220,7 +220,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
 	  Map<String, SimpleConfigCategory> categories,
 	  Map<String, SimpleConfigGroup> groups,
-	  Map<String, ConfigValue<?>> specValues,
 	  List<IGUIEntry> order,
 	  ForgeConfigSpec spec
 	) {
@@ -229,7 +228,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.entries = entries;
 		this.categories = categories;
 		this.groups = groups;
-		this.specValues = specValues;
 		this.order = order;
 		this.spec = spec;
 		final Map<String, AbstractSimpleConfigEntryHolder> children = new HashMap<>();

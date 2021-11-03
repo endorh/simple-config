@@ -6,17 +6,18 @@ package endorh.simple_config.core;
 public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
 	
 	protected SimpleConfig root;
-	protected V value;
 	
-	public DummyEntryHolder(SimpleConfig root, AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder) {
+	public DummyEntryHolder(SimpleConfig root) {
 		this.root = root;
-		this.value = builder.value;
 	}
 	
-	public static <E extends AbstractConfigEntry<?, ?, ?, E>> E build(
-	  ISimpleConfigEntryHolder parent, AbstractConfigEntryBuilder<?, ?, ?, E, ?> builder
+	public static <V, E extends AbstractConfigEntry<V, ?, ?, E>> E build(
+	  ISimpleConfigEntryHolder parent, AbstractConfigEntryBuilder<V, ?, ?, E, ?> builder
 	) {
-		return builder.build(new DummyEntryHolder<>(parent.getRoot(), builder), "");
+		final E e = builder.build(new DummyEntryHolder<>(parent.getRoot()), "");
+		e.nonPersistent = true;
+		e.set(builder.value);
+		return e;
 	}
 	
 	@Override public SimpleConfig getRoot() {
@@ -24,8 +25,7 @@ public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
 	}
 	
 	@Override public <T> T get(String path) {
-		//noinspection unchecked
-		return (T) value;
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override public <G> G getGUI(String path) {
@@ -33,8 +33,7 @@ public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
 	}
 	
 	@Override public <T> void doSet(String path, T value) {
-		//noinspection unchecked
-		this.value = (V) value;
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override public void markDirty(boolean dirty) {}

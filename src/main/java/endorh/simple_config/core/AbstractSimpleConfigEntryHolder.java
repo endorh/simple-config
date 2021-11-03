@@ -11,14 +11,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
 	protected static final Pattern DOT = Pattern.compile("\\.");
-	protected Map<String, ConfigValue<?>> specValues;
 	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
 	protected SimpleConfig root;
@@ -157,40 +155,6 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	}
 	
 	/**
-	 * Get the {@link ConfigValue} associated with an entry
-	 * @param path Name or dot-separated path to the entry
-	 * @param <T> Expected type of the entry
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 */
-	protected <T> ConfigValue<T> getSpecValue(String path) {
-		try {
-			if (specValues.containsKey(path))
-				//noinspection unchecked
-				return (ConfigValue<T>) specValues.get(path);
-			else return getSubSpecValue(path);
-		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
-		}
-	}
-	
-	/**
-	 * Get the {@link ConfigValue} from a path containing at least one level<br>
-	 * This method is not intended to be used directly, instead use the
-	 * more general {@link AbstractSimpleConfigEntryHolder#getSpecValue(String)}
-	 * @param path Dot-separated path containing at least one dot
-	 * @param <T> Expected type of the entry
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 */
-	protected <T> ConfigValue<T> getSubSpecValue(String path) {
-		final String[] split = DOT.split(path, 2);
-		if (split.length < 2)
-			throw new NoSuchConfigEntryError(getPath() + "." + path);
-		if (children.containsKey(split[0]))
-			return children.get(split[0]).getSpecValue(split[1]);
-		throw new NoSuchConfigEntryError(getPath() + "." + path);
-	}
-	
-	/**
 	 * Get a config entry by name or dot-separated path
 	 * @param path Name or dot-separated path to the entry
 	 * @param <T> Expected type of the entry
@@ -259,7 +223,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	@Override public <T> T get(String path) {
 		try {
-			return this.<T, Object>getEntry(path).get(getSpecValue(path));
+			return this.<T, Object>getEntry(path).get();
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
@@ -282,7 +246,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 			AbstractConfigEntry<V, ?, Object, ?> entry = this.getEntry(path);
 			if (!entry.typeClass.isInstance(value))
 				throw new InvalidConfigValueTypeException(getPath() + "." + path);
-			entry.set(getSpecValue(path), value);
+			entry.set(value);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}

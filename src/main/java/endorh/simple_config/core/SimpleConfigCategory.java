@@ -14,7 +14,6 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
@@ -57,16 +56,14 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@Internal protected void build(
-	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries, Map<String, SimpleConfigGroup> groups,
-	  Map<String, ConfigValue<?>> specValues,
-	  List<IGUIEntry> order
+	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
+	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> order
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
 		this.entries = entries;
 		this.groups = groups;
 		children = groups;
-		this.specValues = specValues;
 		this.order = order;
 	}
 	

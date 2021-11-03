@@ -10,6 +10,7 @@ import endorh.simple_config.clothconfig2.impl.builders.DecoratedListEntryBuilder
 import endorh.simple_config.core.NBTUtil.ExpectedType;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.util.Util;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -156,8 +157,10 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		  mapEntry.buildGUIEntry(builder);
 		if (!opt.isPresent())
 			throw new IllegalStateException("List entry has no GUI entry");
+		final Pair<CG, List<Pair<KG, G>>> gv = forGui(get());
 		final DecoratedListEntryBuilder<Pair<KG, G>, ?, CG, ?> entryBuilder = builder.makeDecoratedList(
-		  getDisplayName(), (EntryPairListListEntry<KG, G, ?, ?>) opt.get(), captionEntry.buildChildGUIEntry(builder), forGui(get()));
+		  getDisplayName(), (EntryPairListListEntry<KG, G, ?, ?>) opt.get(),
+		  Util.make(captionEntry.buildChildGUIEntry(builder), cge -> cge.setOriginal(gv.getKey())), gv);
 		return Optional.of(decorate(entryBuilder).build());
 	}
 	

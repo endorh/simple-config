@@ -9,8 +9,6 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
@@ -36,13 +34,13 @@ public class EntryListEntry
 	
 	protected final AbstractConfigEntry<V, C, G, E> entry;
 	protected final B entryBuilder;
-	protected ListEntryEntryHolder holder;
+	protected FakeEntryHolder holder;
 	
 	@Internal public EntryListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  @Nullable List<V> value, B entryBuilder) {
 		super(parent, name, value);
-		holder = new ListEntryEntryHolder(parent.getRoot());
+		holder = new FakeEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entry = entryBuilder.build(holder, name).withSaver((g, c) -> {});
 		if (!entry.canBeNested())
@@ -50,9 +48,9 @@ public class EntryListEntry
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
 			  "nested in a list entry");
 		if (translation != null)
-			this.translate(translation);
+			translate(translation);
 		if (tooltip != null)
-			this.tooltip(tooltip);
+			tooltip(tooltip);
 	}
 	
 	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
@@ -133,8 +131,10 @@ public class EntryListEntry
 	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(
 	  ConfigEntryBuilder builder
 	) {
-		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
+		final E e = entryBuilder.build(holder, holder.nextName())
+		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent("•"));
+		e.nonPersistent = true;
 		e.set(e.value);
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(

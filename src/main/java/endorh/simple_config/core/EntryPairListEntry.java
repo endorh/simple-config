@@ -1,6 +1,5 @@
 package endorh.simple_config.core;
 
-import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -46,7 +45,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	protected final E entry;
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
-	protected final EntryMapEntryHolder holder;
+	protected final FakeEntryHolder holder;
 	protected boolean expand;
 	
 	@Internal public EntryPairListEntry(
@@ -54,7 +53,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	  List<Pair<K, V>> value, @Nonnull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
-		holder = new EntryMapEntryHolder(parent.getRoot());
+		holder = new FakeEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entryTypeClass = entryBuilder.typeClass;
 		this.keyEntryBuilder = keyEntryBuilder;
@@ -206,10 +205,13 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(ConfigEntryBuilder builder) {
-		final KE ke = keyEntryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
+		final KE ke = keyEntryBuilder.build(holder, holder.nextName())
+		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
+		ke.nonPersistent = true;
 		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
+		e.nonPersistent = true;
 		ke.set(ke.value);
 		e.set(e.value);
 		KGE kg = ke.buildChildGUIEntry(builder);

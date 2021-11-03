@@ -149,8 +149,10 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	  ConfigEntryBuilder builder, ITextComponent name,
 	  AbstractConfigListEntry<List<G>> listEntry, Pair<CG, List<G>> value
 	) {
+		final CGE cge = captionEntry.buildChildGUIEntry(builder);
+		cge.setOriginal(value.getKey());
 		return new DecoratedListEntryBuilder<>(
-		  builder, name, value, (LGE) listEntry, captionEntry.buildChildGUIEntry(builder));
+		  builder, name, value, (LGE) listEntry, cge);
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<G>>>> buildGUIEntry(

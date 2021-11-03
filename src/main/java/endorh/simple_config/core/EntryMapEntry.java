@@ -54,7 +54,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	protected @Nullable List<Pair<KG, G>> guiCache;
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
-	protected final EntryMapEntryHolder holder;
+	protected final FakeEntryHolder holder;
 	protected boolean expand;
 	protected boolean linked;
 	
@@ -63,7 +63,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	  Map<K, V> value, @Nonnull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
-		holder = new EntryMapEntryHolder(parent.getRoot());
+		holder = new FakeEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entryTypeClass = entryBuilder.typeClass;
 		this.keyEntryBuilder = keyEntryBuilder;
@@ -219,7 +219,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	protected Predicate<Object> configValidator() {
 		return o -> {
 			if (o instanceof String) {
-				final Map<String, C> pre = fromActualConfig((String) o);
+				final Map<String, C> pre = fromActualConfig(o);
 				final Map<K, V> m = fromConfig(pre);
 				if (m == null)
 					return false;
@@ -243,10 +243,14 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(
 	  ConfigEntryBuilder builder
 	) {
-		final KE ke = keyEntryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
+		final KE ke = keyEntryBuilder.build(holder, holder.nextName())
+		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
-		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
+		ke.nonPersistent = true;
+		final E e = entryBuilder.build(holder, holder.nextName())
+		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
+		e.nonPersistent = true;
 		ke.set(ke.value);
 		e.set(e.value);
 		KGE kg = ke.buildChildGUIEntry(builder);
