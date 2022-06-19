@@ -25,8 +25,8 @@ import net.minecraftforge.gradle.common.task.SignJar
 
 // Mod info -----------------------------------------------------------------------
 
-def mod_id = "simple-config"
-group = "endorh.simple_config"
+def mod_id = "simpleconfig"
+group = "endorh.simpleconfig"
 version = "0.2.31"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",

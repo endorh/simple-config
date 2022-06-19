@@ -4,7 +4,7 @@ license="LGPL"
 #issueTrackerURL="${issue_tracker}"
 
 [[mods]]
-    modId="simple-config"
+    modId="simpleconfig"
     version="${version}"
     displayName="${display}"
     #updateJSONURL="${update_json}"
@@ -13,13 +13,13 @@ license="LGPL"
     credits="${credits}"
     authors="${authors}"
     description='''${description}'''
-[[dependencies.simple-config]]
+[[dependencies.simpleconfig]]
     modId="forge"
     mandatory=true
     versionRange="[36,)"
     ordering="NONE"
     side="BOTH"
-[[dependencies.simple-config]]
+[[dependencies.simpleconfig]]
     modId="minecraft"
     mandatory=true
     versionRange="[1.16.5,1.17)"
