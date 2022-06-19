@@ -1,18 +1,12 @@
 buildscript {
     repositories {
-        if (!project.hasProperty("forgeGradleBinFolder")) {
-            maven {
-                url = 'https://files.minecraftforge.net/maven'
-            }
+        maven {
+            url = 'https://files.minecraftforge.net/maven'
         }
         mavenCentral()
     }
     dependencies {
-        if (!project.hasProperty("forgeGradleBinFolder")) {
-            classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '4.+', changing: true
-        } else {
-            implementation files(project.getProperty("forgeGradleBinFolder").toString())
-        }
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
 // Plugins
@@ -21,7 +15,6 @@ plugins {
     id 'maven-publish'
 }
 apply plugin: 'net.minecraftforge.gradle'
-import net.minecraftforge.gradle.common.task.SignJar
 
 // Mod info -----------------------------------------------------------------------
 
@@ -121,9 +114,9 @@ minecraft {
     //
     // Official mappings channel license:
     // https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
-    // mappings channel: 'official', version: '1.16.5'
-    mappings channel: 'snapshot', version: '20201028-1.16.3'
     // mappings channel: 'snapshot', version: '20210810-mixed-1.16.1'
+    mappings channel: 'snapshot', version: '20201028-1.16.3'
+    // mappings channel: 'official', version: '1.16.5'
 
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -243,33 +236,3 @@ publishing {
     }
     println "${project.projectDir.parentFile.toURI()}maven"
 }
-
-// Jar signing
-task signJar(type: SignJar, dependsOn: jar) {
-    onlyIf {
-        project.hasProperty 'keyStore'
-    }
-    keyStore = project.findProperty('keyStore')
-    alias = project.findProperty('keyStoreAlias')
-    storePass = project.findProperty('keyStorePass')
-    keyPass = project.findProperty('keyStoreKeyPass')
-    inputFile = jar.archiveFile
-    outputFile = jar.archiveFile
-}
-build.dependsOn signJar
-
-task loadKeyInfo {
-    onlyIf { return file("keyinfo.properties").exists() }
-
-    doFirst {
-        def props = new Properties()
-        props.load(new FileReader(file("keyinfo.properties")))
-
-        props.each { key, val ->
-            project.ext.set(key, val)
-        }
-
-        if (!project.hasProperty('keyStore')) throw new GradleException("Key information file 'keyinfo.properties' does not contain a keyStore variable, unable to continue.")
-    }
-}
-signJar.dependsOn loadKeyInfo
