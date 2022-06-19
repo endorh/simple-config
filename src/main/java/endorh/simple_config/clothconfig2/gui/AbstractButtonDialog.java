@@ -45,6 +45,15 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 		buttons.add(i, button);
 	}
 	
+	public void removeButton(Widget button) {
+		buttons.remove(button);
+		listeners.remove(button);
+	}
+	
+	public void removeButton(int i) {
+		listeners.remove(buttons.remove(i));
+	}
+	
 	@Override protected void position() {
 		super.position();
 		scroller.area.width = w - 8;

@@ -3,6 +3,8 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
@@ -10,6 +12,7 @@ import endorh.simple_config.clothconfig2.api.Tooltip;
 import endorh.simple_config.clothconfig2.gui.ClothConfigScreen.TooltipSearchBarWidget;
 import endorh.simple_config.clothconfig2.gui.widget.SearchBarWidget;
 import endorh.simple_config.clothconfig2.math.Point;
+import endorh.simple_config.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.*;
@@ -61,13 +64,24 @@ public abstract class TooltipListEntry<T>
 		}
 	}
 	
+	/**
+	 * Base part of {@link TooltipListEntry#shouldProvideTooltip},
+	 * to be reused by subclasses
+	 */
+	protected boolean baseShouldProvideTooltip() {
+		return advanced.tooltip_key.shouldDisplayTooltip() &&
+		       !getConfigScreen().isDragging();
+	}
+	
 	protected boolean shouldProvideTooltip(
 	  int mouseX, int mouseY, int x, int y, int width, int height
 	) {
 		// Do not show the tooltip in annoying positions
-		return isMouseInside(mouseX, mouseY, x, y, width, height)
+		return baseShouldProvideTooltip()
+		       && isMouseInside(mouseX, mouseY, x, y, width, height)
 		       && mouseX > 24
-		       && (mouseX < entryArea.getMaxX() - 170
+		       && (/*mouseX > entryArea.getX() &&*/
+		           mouseX < entryArea.getMaxX() - 170
 		           || matchedTooltipText != null && !matchedTooltipText.isEmpty()
 		              && mouseX > entryArea.getMaxX() + 8 && mouseX < entryArea.getMaxX() + 26
 		           || mouseX >= entryArea.getMaxX() - 20 && mouseX < entryArea.getMaxX());
@@ -77,7 +91,7 @@ public abstract class TooltipListEntry<T>
 		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
 			 component -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
-            component, (int) (getConfigScreen().width * 0.6F)).stream())
+            component, (int) (getConfigScreen().width * advanced.tooltip_max_width)).stream())
 		  .toArray(IReorderingProcessor[]::new);
 	}
 	

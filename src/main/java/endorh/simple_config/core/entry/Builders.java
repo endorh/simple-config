@@ -270,6 +270,14 @@ public class Builders {
 	public static IntegerEntry.Builder number(int value, int min, int max) {
 		return new IntegerEntry.Builder(value).range(min, max);
 	}
+	/**
+	 * Integer percentage, between 0 and 100 (inclusive)<br>
+	 * Displayed as a slider
+	 */
+	public static IntegerEntry.Builder percent(int value) {
+		return number(value, 0, 100)
+		  .slider("simple-config.format.slider.percentage");
+	}
 	
 	// Long
 	/**
@@ -310,6 +318,16 @@ public class Builders {
 	public static FloatEntry.Builder number(float value, float min, float max) {
 		return new FloatEntry.Builder(value).range(min, max);
 	}
+	/**
+	 * Float percentage, between 0 and 100, but stored as a fraction
+	 * between 0.0 and 1.0 in the backing field (not the config file).<br>
+	 * Displayed as a slider
+	 */
+	public static FloatEntry.Builder percent(float value) {
+		return number(value, 0F, 100F)
+		  .slider("simple-config.format.slider.percentage.float")
+		  .fieldScale(0.01F);
+	}
 	
 	// Double
 	/**
@@ -329,6 +347,16 @@ public class Builders {
 	 */
 	public static DoubleEntry.Builder number(double value, double min, double max) {
 		return new DoubleEntry.Builder(value).range(min, max);
+	}
+	/**
+	 * Double percentage, between 0 and 100, but stored as a fraction
+	 * between 0.0 and 1.0 in the backing field (not the config file).<br>
+	 * Displayed as a slider
+	 */
+	public static DoubleEntry.Builder percent(double value) {
+		return number(value, 0D, 100D)
+		  .slider("simple-config.format.slider.percentage.float")
+		  .fieldScale(0.01);
 	}
 	
 	/**

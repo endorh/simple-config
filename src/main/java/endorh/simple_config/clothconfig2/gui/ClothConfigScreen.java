@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simple_config.SimpleConfigMod.KeyBindings;
 import endorh.simple_config.clothconfig2.api.*;
 import endorh.simple_config.clothconfig2.api.AbstractConfigEntry.EntryError;
@@ -80,6 +81,7 @@ public class ClothConfigScreen
 	protected MultiFunctionImageButton undoButton;
 	protected MultiFunctionImageButton redoButton;
 	protected MultiFunctionImageButton editFileButton;
+	protected MultiFunctionImageButton keyboardButton;
 	protected Rectangle tabsBounds;
 	protected Rectangle tabsLeftBounds;
 	protected Rectangle tabsRightBounds;
@@ -245,6 +247,14 @@ public class ClothConfigScreen
 		  .tooltip(() -> Lists.newArrayList(new TranslationTextComponent(
 			 "simple-config.file.open"))));
 		addButton(editFileButton);
+		keyboardButton = new MultiFunctionImageButton(
+		  2, height - 22, 20, 20, SimpleConfigIcons.KEYBOARD,
+		  ButtonAction.of(() -> addDialog(new InfoDialog(
+			 this, new TranslationTextComponent("simple-config.ui.keyboard.title"),
+		    splitTtc("simple-config.ui.keyboard.body", advanced.tooltip_key.getDisplayName()
+		      .mergeStyle(TextFormatting.DARK_AQUA))))
+		  ));
+		addButton(keyboardButton);
 		if (hasClient() && hasServer()) {
 			serverButton = new MultiFunctionImageButton(
 			  width - 24, 26, 20, 20,

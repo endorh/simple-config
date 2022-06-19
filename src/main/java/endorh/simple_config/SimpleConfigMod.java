@@ -6,9 +6,11 @@ import endorh.simple_config.core.SimpleConfigGroup;
 import endorh.simple_config.core.annotation.Bind;
 import endorh.simple_config.core.annotation.NotEntry;
 import endorh.simple_config.core.entry.Builders;
+import endorh.simple_config.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simple_config.core.entry.StringEntry;
 import endorh.simple_config.demo.DemoConfigCategory;
 import endorh.simple_config.demo.DemoServerCategory;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -16,10 +18,7 @@ import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.Util;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraft.util.text.event.HoverEvent.Action;
@@ -42,7 +41,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
@@ -88,6 +87,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			       .add("restore", bool(false))
 			       .add("group_restore", bool(true)))
 			  .n(group("advanced")
+			       .add("tooltip_key", enum_(TooltipDisplayKey.NONE))
+			       .add("tooltip_max_width", percent(60F))
 			       .add("prefer_combo_box", number(8))
 			       .add("max_options_in_config_comment", number(16).min(5))
 			       .add("color_picker_saved_colors", map(
@@ -192,6 +193,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			@Bind public static boolean save;
 		}
 		@Bind public static class advanced {
+			@Bind public static TooltipDisplayKey tooltip_key;
+			@Bind public static float tooltip_max_width;
 			@Bind public static int prefer_combo_box;
 			@Bind public static int max_options_in_config_comment;
 			@Bind public static Map<Integer, Color> color_picker_saved_colors;
@@ -265,6 +268,26 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		SPLIT_OPTIONS_BUTTON, LEFT_OF_OPTIONS_BUTTON,
 		TOP_LEFT_CORNER, TOP_RIGHT_CORNER,
 		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
+	}
+	
+	public enum TooltipDisplayKey implements ITranslatedEnum {
+		NONE(() -> true),
+		CTRL(Screen::hasControlDown),
+		ALT(Screen::hasAltDown),
+		SHIFT(Screen::hasShiftDown);
+		
+		private final Supplier<Boolean> shouldDisplay;
+		TooltipDisplayKey(Supplier<Boolean> shouldDisplay) {
+			this.shouldDisplay = shouldDisplay;
+		}
+		
+		public boolean shouldDisplayTooltip() {
+			return shouldDisplay.get();
+		}
+		
+		@Override public IFormattableTextComponent getDisplayName() {
+			return new TranslationTextComponent("simple-config.config.enum.tooltip_display_key." + name().toLowerCase());
+		}
 	}
 	
 	@SubscribeEvent

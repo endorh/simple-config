@@ -3,6 +3,7 @@ package endorh.simple_config.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simple_config.SimpleConfigMod;
+import endorh.simple_config.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simple_config.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simple_config.clothconfig2.api.IChildListEntry;
 import endorh.simple_config.clothconfig2.api.IExpandable;
@@ -391,6 +392,16 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return mouseX >= entryArea.getMaxX() - 148
 		       && mouseX < entryArea.getMaxX() - 4 - resetButton.getWidth()
 		       && mouseY >= entryArea.y && mouseY < entryArea.getMaxY();
+	}
+	
+	@Override protected boolean shouldProvideTooltip(
+	  int mouseX, int mouseY, int x, int y, int width, int height
+	) {
+		return super.shouldProvideTooltip(mouseX, mouseY, x, y, width, height) ||
+		       baseShouldProvideTooltip() &&
+		       (isInsideInsert(mouseX, mouseY) || isInsideCreateNew(mouseX, mouseY) ||
+		        isInsideDelete(mouseX, mouseY) || isInsideRemove(mouseX, mouseY) ||
+		        isInsideUp(mouseX, mouseY) || isInsideDown(mouseX, mouseY));
 	}
 	
 	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {

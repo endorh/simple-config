@@ -34,6 +34,10 @@
   "simple-config.config.client.confirm.group_restore:help": "Require a drag movement to restore a group/list/map of entries to their value before opening the config\n§7You can restore entries holding §8[§7Alt§8]§7 when clicking a reset button",
   "simple-config.config.client.advanced": "Advanced",
   "simple-config.config.client.advanced:help": "Advanced Options",
+  "simple-config.config.client.advanced.tooltip_key": "Tooltip Key",
+  "simple-config.config.client.advanced.tooltip_key:help": "By default tooltips are displayed when hovering any entry\nSince this can become annoying, you may also require a modifier key to be held down to see the tooltips",
+  "simple-config.config.client.advanced.tooltip_max_width": "Max tooltip width",
+  "simple-config.config.client.advanced.tooltip_max_width:help": "Maximum tooltip width in screen percentage\nNot live previewed",
   "simple-config.config.client.advanced.prefer_combo_box": "Max Options Before Combo Box",
   "simple-config.config.client.advanced.prefer_combo_box:help": "Maximum number of options allowed in cycling buttons before being transformed into combo boxes",
   "simple-config.config.client.advanced.max_options_in_config_comment": "Max Options in Config Comments",
@@ -76,6 +80,10 @@
   "simple-config.config.enum.list_type.blacklist": "Exclude",
   "simple-config.config.enum.config_permission.allow": "Allow",
   "simple-config.config.enum.config_permission.deny": "Deny",
+  "simple-config.config.enum.tooltip_display_key.none": "None",
+  "simple-config.config.enum.tooltip_display_key.ctrl": "Ctrl",
+  "simple-config.config.enum.tooltip_display_key.alt": "Alt",
+  "simple-config.config.enum.tooltip_display_key.shift": "Shift",
 
   "simple-config.config.msg.updated_by": "Server config for mod \"%s\" has been updated by \"%s\"",
   "simple-config.config.msg.tried_to_update_by": "Player \"%s\" tried to update Server config for mod \"%s\" without permission",
@@ -101,6 +109,8 @@
   "simple-config.ui.no_presets_found": "§7No presets found",
   "simple-config.ui.switch.server": "Switch to§b Server Config§r",
   "simple-config.ui.switch.client": "Switch to§a Client Config§r",
+  "simple-config.ui.keyboard.title": "Controls",
+  "simple-config.ui.keyboard.body": "§l§nGeneral§r\n§3Esc§8:§r Discard changes\n§3Ctrl + S§8:§r Save changes\n§3Ctrl + Z§8:§r Undo\n§3Ctrl + Y§8:§r Redo\n\n§l§nSearch§8:§r \n§3Ctrl + F§8:§r Search\n§3Up/Down, Enter/Shift + Enter§8:§r Select next/previous result\n§3Alt + C§8:§r Toggle case sensitivity\n§3Alt + T§8:§r Toggle search within tooltips\n§3Alt + R§8:§r Toggle Regex search §7(Java)§r\n\n§l§nNavigation§r\n§5[Alt] +§3 Up/Down§8:§r Navigate entries §7(Alt helps when entries use Up/Down)§r\n§5[Alt] +§3 Left§8:§r Navigate to parent/Collapse group\n§5[Alt] +§3 Right§8:§r Expand group\n§3Ctrl + Alt + Up/Down§8:§r Move list entries\n§3Middle/Alt + Left drag§8:§r Move list entries\n§3Ctrl + Pg Up/Pg Down§8:§r Change tabs\n\n§l§nColor Picker§r\n§3Left Click§8:§r Use palette/history color\n§3Right Click§8:§r Save palette color\n§3Middle Click§8:§r Delete palette color\n\n§l§nHelp§r\n%s§8:§r Display help tooltip §7(configurable in Simple Config's client settings)§r",
 
   "simple-config.preset.dialog.saving.title": "Saving preset",
   "simple-config.preset.dialog.saving.remote.body": "Uploading preset §7\"§3%s§7\"§r to the server\nThis shouldn't take long",
@@ -138,6 +148,7 @@
   "simple-config.preset.load.server.local": "Load §bServer§r Preset",
   "simple-config.preset.load.server.remote": "Load §bServer§r Preset",
   "simple-config.preset.picker.label": "Preset picker",
+  "simple-config.preset.picker.hint": "Preset name...",
   "simple-config.preset.load.label": "Load preset",
   "simple-config.preset.save.label": "Save preset",
 
@@ -157,7 +168,9 @@
 
   "simple-config.format.bool.enable.true": "§aEnabled",
   "simple-config.format.bool.enable.false": "§cDisabled",
-  "simple-config.format.slider": "Value: %s",
+  "simple-config.format.slider": "%s",
+  "simple-config.format.slider.percentage": "%d %%",
+  "simple-config.format.slider.percentage.float": "%.1f %%",
   "simple-config.format.slider.volume": "Volume: %s",
   "simple-config.config.help.not_persistent_entry": "Not persistent",
   "simple-config.config.help.pattern_flags": "Flags: %s",
@@ -185,7 +198,7 @@
   "simple-config.label.preset.apply": "Apply",
 
   "simple-config.help.list.move": "Move",
-  "simple-config.help.list.move.drag": "§7Drag with §8[§7Middle Click§8]§7 or §8[§7Alt + Left Click§8]§7",
+  "simple-config.help.list.move.drag": "§7Drag with §8[§7Middle Click§8]§7\nor §8[§7Alt + Left Click§8]§7",
 
   "simple-config.debug.copy": "Copy title key",
   "simple-config.debug.copy.help": "Copy tooltip key",

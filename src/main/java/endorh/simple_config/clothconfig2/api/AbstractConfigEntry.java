@@ -401,6 +401,7 @@ public abstract class AbstractConfigEntry<T>
 			parents.add(p);
 			parent = p.expandableParent.get();
 		}
+		
 		AbstractConfigEntry<?> p = parents.get(parents.size() - 1);
 		getParent().setListener(p);
 		for (int i = parents.size() - 2; i >= 0; i--) {

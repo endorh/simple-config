@@ -353,7 +353,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	protected List<ITextComponent> supplyExtraTooltip(Gui value) {
 		final List<ITextComponent> extra = Lists.newArrayList();
-		if (nonPersistent)
+		if (nonPersistent && !(parent instanceof FakeEntryHolder))
 			extra.add(new TranslationTextComponent(
 			  "simple-config.config.help.not_persistent_entry"
 			).mergeStyle(TextFormatting.GRAY));

@@ -48,7 +48,8 @@ public class SimpleConfigIcons {
 	  RIGHT_TAB = b.create(0, 0),
 	  // Two level
 	  // Size 18×18
-	  COPY = b.twoLevel(true).withSize(18, 18).create(128, 64);
+	  COPY = b.twoLevel(true).withSize(18, 18).create(128, 64),
+	  KEYBOARD = b.create(146, 64);
 	
 	public static final AnimatedIcon SPINNING_CUBE = new AnimatedIcon(
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cube.png"),

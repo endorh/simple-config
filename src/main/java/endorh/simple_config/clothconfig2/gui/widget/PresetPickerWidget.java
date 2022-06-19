@@ -93,6 +93,7 @@ public class PresetPickerWidget extends FocusableGui {
 		selector = new ComboBoxWidget<>(
 		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
 		  new TranslationTextComponent("simple-config.preset.picker.label"));
+		selector.setHint(new TranslationTextComponent("simple-config.preset.picker.hint"));
 		final SimpleSortedSuggestionProvider<Preset> provider = new SimpleSortedSuggestionProvider<>(
 		  () -> {
 			  final boolean server = screen.isSelectedCategoryServer();

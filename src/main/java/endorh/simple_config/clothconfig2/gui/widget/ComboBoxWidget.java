@@ -50,7 +50,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
 	@Internal protected WeakReference<IOverlayCapableScreen> screen = new WeakReference<>(null);
 	protected Supplier<IOverlayCapableScreen> screenSupplier;
-	@NotNull protected ITypeWrapper<T> typeWrapper;
+	protected @NotNull ITypeWrapper<T> typeWrapper;
 	protected int borderFocusedColor = 0xffffffff;
 	protected int borderColor = 0xffa0a0a0;
 	protected int backgroundColor = 0xff000000;
@@ -66,15 +66,16 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected long scrollAnimationStart;
 	protected long scrollAnimationDuration = 150L;
 	protected long lastSuggestionCursorNavigation = 0;
+	protected @Nullable ITextComponent hint = null;
 	
-	@NotNull protected ISortedSuggestionProvider<T> suggestionProvider;
+	protected @NotNull ISortedSuggestionProvider<T> suggestionProvider;
 	
 	protected final FontRenderer font;
 	/** Has the current text being edited on the textbox. */
 	protected String text = "";
 	protected T autoCompleteValue = null;
-	@Nullable protected T value = null;
-	@Nullable protected ITextComponent parseError = null;
+	protected @Nullable T value = null;
+	protected @Nullable ITextComponent parseError = null;
 	private boolean isEnabled = true;
 	protected int maxLength = 32;
 	protected int caretCounter;
@@ -151,6 +152,15 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public void setSuggestions(List<T> suggestions) {
 		setSuggestionProvider(new SimpleSortedSuggestionProvider<>(suggestions));
+	}
+	
+	public @Nullable ITextComponent getHint() {
+		return hint;
+	}
+	
+	public ComboBoxWidget<T> setHint(@Nullable ITextComponent hint) {
+		this.hint = hint;
+		return this;
 	}
 	
 	@Override public boolean renderOverlay(
@@ -932,7 +942,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			int iconX = x;
 			int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
 			final int adjustedWidth = getAdjustedWidth();
-			if (isFocused() || value == null) {
+			if (isFocused() || value == null && hint == null) {
 				int color = isEnabled() ? enabledColor : disabledColor;
 				int relCaret = caretPos - hScroll;
 				int relAnchor = anchorPos - hScroll;
@@ -989,7 +999,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					int anchorX = textX + font.getStringWidth(shownString.substring(0, relAnchor));
 					drawSelectionBox(cX, textY - 1, anchorX - 1, textY + 1 + 9);
 				}
-			} else {
+			} else if (text.isEmpty() && value == null) {
+				drawTextComponent(
+				  hint.copyRaw().mergeStyle(TextFormatting.GRAY),
+				  mStack, textX, textY, adjustedWidth, 10, 0x96808080);
+			} else if (value != null) {
 				final ITextComponent display = typeWrapper.getDisplayName(value);
 				drawTextComponent(display, mStack, textX, textY, adjustedWidth, 10, 0xffe0e0e0);
 			}

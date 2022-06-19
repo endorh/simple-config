@@ -27,7 +27,7 @@ import net.minecraftforge.gradle.common.task.SignJar
 
 def mod_id = "simple-config"
 group = "endorh.simple_config"
-version = "0.2.30"
+version = "0.2.31"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
