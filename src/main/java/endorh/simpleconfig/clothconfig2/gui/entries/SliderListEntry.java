@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static net.minecraft.util.math.MathHelper.clamp;
+
 @OnlyIn(Dist.CLIENT)
 public abstract class SliderListEntry<V extends Comparable<V>>
   extends TooltipListEntry<V> implements IChildListEntry {
@@ -333,8 +335,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 						step *= 0.25D;
 					if (Screen.hasControlDown())
 						step *= 4D;
-					final double v = MathHelper.clamp(
-					  value + (double) (step / (float) (this.width - 8)), 0D, 1D);
+					final double v = clamp(value + (double) (step / (float) (this.width - 8)), 0D, 1D);
 					value = v;
 					SliderListEntry.this.setValue(getValue());
 					value = v;

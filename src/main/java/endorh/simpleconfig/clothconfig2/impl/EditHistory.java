@@ -24,6 +24,8 @@ import java.util.Map.Entry;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static net.minecraft.util.math.MathHelper.clamp;
+
 public class EditHistory {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected int maxSize = 100;
@@ -119,7 +121,7 @@ public class EditHistory {
 	}
 	
 	public int getCursor() {
-		cursor = MathHelper.clamp(cursor, 0, records.size());
+		cursor = clamp(cursor, 0, records.size());
 		return cursor;
 	}
 	

@@ -43,6 +43,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
+import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected static final ResourceLocation CONFIG_TEX = new ResourceLocation(
@@ -195,11 +196,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			if (!lastSortedSuggestions.isEmpty()) {
 				final int suggestionHeight = getSuggestionHeight();
 				int firstIdx =
-				  (int) MathHelper.clamp(this.dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+				  (int) clamp(this.dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				int lastIdx =
-				  (int) MathHelper.clamp(
-					 (this.dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0,
-					 lastSortedSuggestions.size() - 1);
+				  (int) clamp((this.dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				
 				int yy = area.y + 1 - ((int) this.dropDownScroll) % suggestionHeight;
 				for (int i = firstIdx; i <= lastIdx; i++) {
@@ -420,7 +419,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void setDropDownScroll(int scroll) {
-		dropDownScroll = MathHelper.clamp(scroll, 0, getMaxDropDownScroll());
+		dropDownScroll = clamp(scroll, 0, getMaxDropDownScroll());
 		dropDownScrollTarget = dropDownScroll;
 		scrollAnimationStart = 0;
 	}
@@ -436,10 +435,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public void scrollTo(double scroll, boolean animated) {
 		if (animated) {
-			dropDownScrollTarget = MathHelper.clamp(scroll, -32, getMaxDropDownScroll() + 32);
+			dropDownScrollTarget = clamp(scroll, -32, getMaxDropDownScroll() + 32);
 			scrollAnimationStart = System.currentTimeMillis();
 		} else {
-			dropDownScroll = dropDownScrollTarget = MathHelper.clamp(scroll, 0, getMaxDropDownScroll());
+			dropDownScroll = dropDownScrollTarget = clamp(scroll, 0, getMaxDropDownScroll());
 			scrollAnimationStart = 0;
 		}
 	}
@@ -693,7 +692,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void clampCaretPosition(int pos) {
-		caretPos = MathHelper.clamp(pos, 0, text.length());
+		caretPos = clamp(pos, 0, text.length());
 	}
 	
 	/**
@@ -805,11 +804,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (!isDropDownShown())
 			setDropDownShown(true);
 		int prev = suggestionCursor;
-		suggestionCursor = MathHelper.clamp(suggestionCursor + step, 0, lastSortedSuggestions.size() - 1);
+		suggestionCursor = clamp(suggestionCursor + step, 0, lastSortedSuggestions.size() - 1);
 		// Ensure visible
 		final int suggestionHeight = getSuggestionHeight();
-		int firstIdx = (int) MathHelper.clamp(dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
-		int lastIdx = (int) MathHelper.clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+		int firstIdx = (int) clamp(dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+		int lastIdx = (int) clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 		
 		final long t = System.currentTimeMillis();
 		// Do not animate for very fast movement for better readability
@@ -1196,7 +1195,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 */
 	public void setAnchor(int pos) {
 		int i = text.length();
-		anchorPos = MathHelper.clamp(pos, 0, i);
+		anchorPos = clamp(pos, 0, i);
 		if (font != null) {
 			if (hScroll > i)
 				hScroll = i;
@@ -1215,7 +1214,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				hScroll = anchorPos;
 			}
 			
-			hScroll = MathHelper.clamp(hScroll, 0, i);
+			hScroll = clamp(hScroll, 0, i);
 		}
 	}
 	

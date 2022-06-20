@@ -28,6 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static net.minecraft.util.math.MathHelper.clamp;
+
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	@Nullable private Supplier<Optional<ITextComponent[]>> tooltipSupplier;
@@ -131,8 +133,8 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 				  .applyFormat(TextFormatting.UNDERLINE);
 				for (String line : lines) {
 					final int l = line.length();
-					int a = MathHelper.clamp(i, 0, l);
-					int b = MathHelper.clamp(j, 0, l);
+					int a = clamp(i, 0, l);
+					int b = clamp(j, 0, l);
 					IFormattableTextComponent ln;
 					if (a != b) {
 						ln = new StringTextComponent(line.substring(0, a))

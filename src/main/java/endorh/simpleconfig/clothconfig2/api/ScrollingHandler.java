@@ -47,9 +47,7 @@ public abstract class ScrollingHandler {
 	}
 	
 	public final double clamp(double v, double clampExtension) {
-		return MathHelper.clamp(
-        v, -clampExtension,
-        (double) getMaxScroll() + clampExtension);
+		return MathHelper.clamp(v, -clampExtension, (double) getMaxScroll() + clampExtension);
 	}
 	
 	public final void offset(double value, boolean animated) {
@@ -198,12 +196,10 @@ public abstract class ScrollingHandler {
 			if (mouseY >= (double) bounds.y && mouseY <= (double) bounds.getMaxY()) {
 				double maxScroll = Math.max(1, getMaxScroll());
 				double int_3 =
-				  MathHelper.clamp((double) (actualHeight * actualHeight) / (double) height,
-                               32.0, actualHeight - 8);
+				  MathHelper.clamp((double) (actualHeight * actualHeight) / (double) height, 32.0, actualHeight - 8);
 				double double_6 = Math.max(1.0, maxScroll / ((double) actualHeight - int_3));
 				float to =
-				  MathHelper.clamp((float) (scrollAmount + dy * double_6), 0.0f,
-				                   (float) getMaxScroll());
+				  MathHelper.clamp((float) (scrollAmount + dy * double_6), 0.0f, (float) getMaxScroll());
 				if (snapToRows) {
 					double nearestRow = (double) Math.round((double) to / rowSize) * rowSize;
 					scrollTo(nearestRow, false);

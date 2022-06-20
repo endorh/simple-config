@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
 import static java.lang.Math.round;
+import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ConfirmDialog extends AbstractButtonDialog {
 	protected List<ITextComponent> body;
@@ -88,12 +89,12 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void position() {
-		w = (int) MathHelper.clamp(screen.width * 0.7, 120, 800);
+		w = (int) clamp(screen.width * 0.7, 120, 800);
 		final int titleWidth = font.width(title);
 		if (titleWidth + 16 > w)
 			w = min(screen.width - 32, titleWidth + 16);
 		lines = getBody().stream().map(l -> font.split(l, w - 16)).collect(Collectors.toList());
-		h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, screen.height * 0.9);
+		h = (int) clamp(60 + getInnerHeight(), 68, screen.height * 0.9);
 		super.position();
 	}
 	

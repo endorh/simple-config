@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
+import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicEntryListWidget<E extends Entry>
@@ -298,7 +299,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		if (maxScroll > 0) {
 			int sbHeight =
 			  (bottom - top) * (bottom - top) / getMaxScrollPosition();
-			sbHeight = MathHelper.clamp(sbHeight, 32, bottom - top - 8);
+			sbHeight = clamp(sbHeight, 32, bottom - top - 8);
 			int sbMinY = (int) getScroll() * (bottom - top - sbHeight) / maxScroll + top;
 			if (sbMinY < top) sbMinY = top;
 			Matrix4f matrix = matrices.last().pose();
@@ -355,7 +356,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	}
 	
 	public void setScroll(double scroll) {
-		this.scroll = MathHelper.clamp(scroll, 0.0, getMaxScroll());
+		this.scroll = clamp(scroll, 0.0, getMaxScroll());
 	}
 	
 	protected int getMaxScroll() {
@@ -432,8 +433,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 			} else {
 				double double_5 = max(1, getMaxScroll());
 				int int_2 = bottom - top;
-				int int_3 = MathHelper.clamp(
-				  (int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
+				int int_3 = clamp((int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
 				double double_6 = max(1.0, double_5 / (double) (int_2 - int_3));
 				setScroll(getScroll() + deltaY * double_6);
 			}
@@ -770,7 +770,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		int i = selectedTarget != null ? targets.indexOf(selectedTarget) : -1;
 		if (i == -1)
 			i = step > 0 ? -1 : targets.size();
-		int target = MathHelper.clamp(i + step, 0, targets.size() - 1);
+		int target = clamp(i + step, 0, targets.size() - 1);
 		final INavigableTarget t = targets.get(target);
 		t.onNavigate();
 		if (i + step == target)
