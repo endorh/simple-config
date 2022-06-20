@@ -53,7 +53,7 @@ public final class ScissorsHandlerImpl
 	public void applyScissors() {
 		final Minecraft mc = Minecraft.getInstance();
 		if (!this.scissorsAreas.isEmpty()) {
-			Rectangle r = this.scissorsAreas.get(0).clone();
+			Rectangle r = this.scissorsAreas.get(0).copy();
 			for (int i = 1; i < this.scissorsAreas.size(); ++i) {
 				Rectangle r1 = this.scissorsAreas.get(i);
 				if (!r.intersects(r1)) {

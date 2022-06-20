@@ -560,7 +560,7 @@ public class ClothConfigScreen
 					currentHeight = thisTimeTarget.height;
 					hasCurrent = true;
 				}
-				target = thisTimeTarget.clone();
+				target = thisTimeTarget.copy();
 				start = lastTouch;
 				duration = 40L;
 			} else if (hasCurrent && target != null) {

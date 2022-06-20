@@ -1,6 +1,6 @@
 package endorh.simpleconfig.clothconfig2.math;
 
-public class Rectangle implements Cloneable {
+public class Rectangle {
 	public int x;
 	public int y;
 	public int width;
@@ -120,7 +120,7 @@ public class Rectangle implements Cloneable {
 		this.y += dy;
 	}
 	
-	public Rectangle clone() {
+	public Rectangle copy() {
 		return this.getBounds();
 	}
 	
