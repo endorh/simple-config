@@ -34,7 +34,7 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 	
 	@Override
 	protected String serialize(INBT value) {
-		return CompoundNBTEntry.STYLE_COMPONENT.matcher(value.toFormattedComponent().getString()).replaceAll("");
+		return CompoundNBTEntry.STYLE_COMPONENT.matcher(value.getPrettyDisplay().getString()).replaceAll("");
 	}
 	
 	@Override

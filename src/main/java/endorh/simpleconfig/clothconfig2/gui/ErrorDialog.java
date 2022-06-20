@@ -36,7 +36,7 @@ public class ErrorDialog extends ProgressDialog {
 		cancelButton.visible = false;
 		confirmButton.visible = true;
 		setConfirmText(confirmText);
-		setError(error.stream().map(t -> t.deepCopy().mergeStyle(TextFormatting.RED))
+		setError(error.stream().map(t -> t.copy().withStyle(TextFormatting.RED))
 		           .collect(Collectors.toList()));
 		setIcon(null);
 	}

@@ -39,7 +39,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	}
 	
 	@Override public boolean preserveState() {
-		if (cells.isEmpty() || !cells.get(0).isExpandable || heldEntry != null && getListener() == heldEntry)
+		if (cells.isEmpty() || !cells.get(0).isExpandable || heldEntry != null && getFocused() == heldEntry)
 			return super.preserveState();
 		else if (preservedState != null) savePreservedState();
 		return false;
@@ -127,7 +127,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			nestedEntry.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
 		}
 		
-		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		public @NotNull List<? extends IGuiEventListener> children() {
 			return Collections.singletonList(nestedEntry);
 		}
 		
@@ -194,14 +194,14 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return super.getNavigableChildren();
 	}
 	
-	@Override public void setListener(IGuiEventListener listener) {
-		if (getEventListeners().contains(listener)) {
-			super.setListener(listener);
+	@Override public void setFocused(IGuiEventListener listener) {
+		if (children().contains(listener)) {
+			super.setFocused(listener);
 		} else {
 			for (NestedListCell<T, Inner> cell : cells) {
 				if (cell.nestedEntry == listener) {
-					super.setListener(cell);
-					cell.setListener(listener);
+					super.setFocused(cell);
+					cell.setFocused(listener);
 					break;
 				}
 			}

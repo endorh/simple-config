@@ -93,7 +93,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	public static class DialogScrollingContainerWidget extends ScrollingContainerWidget {
 		private static final Method Screen$renderComponentHoverEffect =
 		  ObfuscationReflectionHelper.findMethod(
-			 Screen.class, "func_238653_a_",
+			 Screen.class, "renderComponentHoverEffect",
 			 MatrixStack.class, Style.class, int.class, int.class);
 		private static final Logger LOGGER = LogManager.getLogger();
 		private static boolean loggedReflectionError = false;
@@ -143,7 +143,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			return dialog.getInnerHeight();
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> children() {
 			return dialog.bodyListeners;
 		}
 	}

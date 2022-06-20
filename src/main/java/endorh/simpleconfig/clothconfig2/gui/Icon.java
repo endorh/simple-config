@@ -84,7 +84,7 @@ public class Icon {
 	}
 	
 	public void bindTexture() {
-		Minecraft.getInstance().getTextureManager().bindTexture(location);
+		Minecraft.getInstance().getTextureManager().bind(location);
 	}
 	
 	protected void blit(

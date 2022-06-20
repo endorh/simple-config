@@ -52,11 +52,11 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		value = new AtomicReference<>(original);
 		this.original = original;
 		this.canExpand = canExpand;
-		textFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.EMPTY);
-		textFieldWidget.setMaxStringLength(999999);
+		textFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.NO_TITLE);
+		textFieldWidget.setMaxLength(999999);
 		// this.textFieldWidget.setText(String.valueOf(original));
-		longTextFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.EMPTY);
-		longTextFieldWidget.setMaxStringLength(999999);
+		longTextFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.NO_TITLE);
+		longTextFieldWidget.setMaxLength(999999);
 		setValue(original);
 		resetButton = new ResetButton(this);
 		widgets = Lists.newArrayList(textFieldWidget, resetButton);
@@ -75,7 +75,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	public String getText() {
-		return expanded? longTextFieldWidget.getText() : textFieldWidget.getText();
+		return expanded? longTextFieldWidget.getValue() : textFieldWidget.getValue();
 	}
 	
 	protected abstract @Nullable V fromString(String s);
@@ -103,9 +103,9 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		super.renderEntry(
 		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		final Minecraft mc = Minecraft.getInstance();
-		MainWindow window = mc.getMainWindow();
-		mc.getTextureManager().bindTexture(CONFIG_TEX);
-		RenderHelper.disableStandardItemLighting();
+		MainWindow window = mc.getWindow();
+		mc.getTextureManager().bind(CONFIG_TEX);
+		RenderHelper.turnOff();
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		labelArea.setBounds(x - 15, y, entryWidth, 24);
 		resetButton.y = y;
@@ -119,20 +119,20 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			blit(mStack, x - 15, y + 5, 102, v, 9, 9);
 		}
 		
-		longTextFieldWidget.setEnabled(isEditable());
+		longTextFieldWidget.setEditable(isEditable());
 		int textFieldX;
 		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = mc.fontRenderer;
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float) (window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		final FontRenderer font = mc.font;
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
 			  (float) (y + 6), getPreferredTextColor());
 			resetButton.x = x;
 			textFieldX = x + resetButton.getWidth();
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float) x, (float) (y + 6),
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6),
 			  getPreferredTextColor());
 			resetButton.x = x + entryWidth - resetButton.getWidth();
 			textFieldX = x + entryWidth - 148;
@@ -153,7 +153,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		textFieldWidget.setEnabled(isEditable());
+		textFieldWidget.setEditable(isEditable());
 		longTextFieldWidget.visible = false;
 		textFieldWidget.visible = true;
 		textFieldWidget.x = x;
@@ -187,7 +187,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			this.expanded = expanded;
 			HookedTextFieldWidget focused = expanded? longTextFieldWidget : textFieldWidget;
 			if (isEditable())
-				setListener(focused);
+				setFocused(focused);
 			textFieldWidget.setTextNoUpdate(toString(value.get()));
 			longTextFieldWidget.setTextNoUpdate(toString(value.get()));
 		}
@@ -202,8 +202,8 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			return true;
 		if (canExpand && button == 0 && isMouseOverLabel(mouseX, mouseY)) {
 			setExpanded(!isExpanded());
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -220,14 +220,14 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		return Optional.empty();
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childWidgets : expanded? expandedWidgets : widgets;
 	}
 	
 	public void setMaxLength(int maxLength) {
 		this.maxLength = maxLength;
-		textFieldWidget.setMaxStringLength(maxLength);
-		longTextFieldWidget.setMaxStringLength(maxLength);
+		textFieldWidget.setMaxLength(maxLength);
+		longTextFieldWidget.setMaxLength(maxLength);
 	}
 	
 	public void setMinLength(int minLength) {
@@ -236,26 +236,26 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	
 	private class HookedTextFieldWidget extends TextFieldWidget {
 		public HookedTextFieldWidget(int x, int y, int w, int h, ITextComponent title) {
-			super(Minecraft.getInstance().fontRenderer, x, y, w, h, title);
+			super(Minecraft.getInstance().font, x, y, w, h, title);
 			setResponder(t -> value.set(fromString(t)));
 		}
 		
 		public void render(@NotNull MatrixStack matrices, int int_1, int int_2, float float_1) {
 			setFocused(
-			  isSelected && getListener() == this);
+			  isSelected && getFocused() == this);
 			textFieldPreRender(this);
 			super.render(matrices, int_1, int_2, float_1);
 			// drawSelectionBox() leaks its color mask
 			RenderSystem.color4f(1F, 1F, 1F, 1F);
 		}
 		
-		public void writeText(@NotNull String str) {
-			super.writeText(stripAddText(str));
+		public void insertText(@NotNull String str) {
+			super.insertText(stripAddText(str));
 		}
 		
 		public void setTextNoUpdate(String text) {
 			setResponder(t -> {});
-			setText(text);
+			setValue(text);
 			setResponder(t -> value.set(fromString(t)));
 		}
 	}
@@ -272,13 +272,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		if (canExpand && Screen.hasAltDown()) {
 			if (keyCode == 262 && !expanded) {
 				setExpanded(true);
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (keyCode == 263 && expanded) {
 				setExpanded(false);
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}
@@ -286,6 +286,6 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public String seekableValueText() {
-		return expanded? longTextFieldWidget.getText() : textFieldWidget.getText();
+		return expanded? longTextFieldWidget.getValue() : textFieldWidget.getValue();
 	}
 }

@@ -68,7 +68,7 @@ public abstract class BaseListCell<T> extends FocusableGui
 	public void updateSelected(boolean isSelected) {
 		this.isSelected = isSelected;
 		if (!isSelected)
-			setListener(null);
+			setFocused(null);
 	}
 	
 	public boolean drawsLine(int mouseX, int mouseY) {

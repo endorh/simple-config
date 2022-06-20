@@ -84,7 +84,7 @@ public class NBTUtil {
 			}
 			final Map<String, Object> m = new LinkedHashMap<>();
 			INBTType<?> type = null;
-			for (String k : c.keySet()) {
+			for (String k : c.getAllKeys()) {
 				final INBT e = c.get(k);
 				if (e == null) throw new IllegalStateException("Null NBT entry in compound");
 				if (type == null)
@@ -96,29 +96,29 @@ public class NBTUtil {
 			return m;
 		} else if (o instanceof StringNBT) {
 			if (expected != null && Enum.class.isAssignableFrom(expected.type)) {
-				final String s = o.getString();
+				final String s = o.getAsString();
 				final Object[] constants = expected.type.getEnumConstants();
 				return Arrays.stream(constants).filter(
 				  c -> ((Enum<?>) c).name().equalsIgnoreCase(s)
 				).findFirst().orElse(constants[0]);
 			}
-			return o.getString();
+			return o.getAsString();
 		} else if (o instanceof ByteNBT) {
-			return cast(((ByteNBT) o).getByte(), cls);
+			return cast(((ByteNBT) o).getAsByte(), cls);
 		} else if (o instanceof IntNBT) {
-			return cast(((IntNBT) o).getInt(), cls);
+			return cast(((IntNBT) o).getAsInt(), cls);
 		} else if (o instanceof DoubleNBT) {
-			return cast(((DoubleNBT) o).getDouble(), cls);
+			return cast(((DoubleNBT) o).getAsDouble(), cls);
 		} else if (o instanceof LongNBT) {
-			return cast(((LongNBT) o).getLong(), cls);
+			return cast(((LongNBT) o).getAsLong(), cls);
 		} else if (o instanceof ShortNBT) {
-			return cast(((ShortNBT) o).getShort(), cls);
+			return cast(((ShortNBT) o).getAsShort(), cls);
 		} else if (o instanceof FloatNBT) {
-			return cast(((FloatNBT) o).getFloat(), cls);
+			return cast(((FloatNBT) o).getAsFloat(), cls);
 		} else if (o instanceof ByteArrayNBT) {
-			return ((ByteArrayNBT) o).getByteArray();
+			return ((ByteArrayNBT) o).getAsByteArray();
 		} else if (o instanceof IntArrayNBT) {
-			return ((IntArrayNBT) o).getIntArray();
+			return ((IntArrayNBT) o).getAsIntArray();
 		} else if (o instanceof LongArrayNBT) {
 			return ((LongArrayNBT) o).getAsLongArray();
 		} else if (o instanceof ListNBT) {

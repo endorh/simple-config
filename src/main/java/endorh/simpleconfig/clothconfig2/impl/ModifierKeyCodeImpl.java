@@ -26,8 +26,8 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 	}
 	
 	@Override public ModifierKeyCode setKeyCode(InputMappings.Input keyCode) {
-		this.keyCode = keyCode.getType().getOrMakeInput(keyCode.getKeyCode());
-		if (keyCode.equals(InputMappings.INPUT_INVALID)) {
+		this.keyCode = keyCode.getType().getOrCreate(keyCode.getValue());
+		if (keyCode.equals(InputMappings.UNKNOWN)) {
 			setModifier(Modifier.none());
 		}
 		return this;
@@ -52,7 +52,7 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 	}
 	
 	@Override public ITextComponent getLocalizedName() {
-		ITextComponent base = new StringTextComponent(toTitleCase(keyCode.func_237520_d_().getString()));
+		ITextComponent base = new StringTextComponent(toTitleCase(keyCode.getDisplayName().getString()));
 		if (modifier.hasShift())
 			base = new TranslationTextComponent("modifier.cloth-config.shift", base);
 		if (modifier.hasAlt())

@@ -3,7 +3,6 @@ package endorh.simpleconfig.core;
 import com.google.gson.internal.Primitives;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -134,8 +133,6 @@ import java.util.Arrays;
 		return checkTypeParameters(type, 0, types) == types.length;
 	}
 	
-	// Warning: Uses internal proprietary API ParameterizedTypeImpl,
-	//          which could be subject to change in future Java versions
 	private static int checkTypeParameters(ParameterizedType type, int start, Class<?>... types) {
 		final Type[] actualTypes = type.getActualTypeArguments();
 		int j = start;
@@ -144,9 +141,9 @@ import java.util.Arrays;
 			if (types[j] != null) {
 				if (actual instanceof Class<?> && !types[j].equals(actual))
 					return -1;
-				if (actual instanceof ParameterizedTypeImpl && !types[j].equals(((ParameterizedTypeImpl) actual).getRawType()))
-					return -1;
 				if (actual instanceof ParameterizedType) {
+					if (!types[j].equals(((ParameterizedType) actual).getRawType()))
+						return -1;
 					j = checkTypeParameters((ParameterizedType) actual, j + 1, types) - 1;
 					if (j < 0) return -1;
 				}

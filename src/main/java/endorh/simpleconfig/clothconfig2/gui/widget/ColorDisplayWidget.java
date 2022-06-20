@@ -22,7 +22,7 @@ public class ColorDisplayWidget extends Widget {
 	@Nullable public Runnable onClick = null;
 	
 	public ColorDisplayWidget(TextFieldWidget textFieldWidget, int x, int y, int size, int color) {
-		super(x, y, size, size, NarratorChatListener.EMPTY);
+		super(x, y, size, size, NarratorChatListener.NO_TITLE);
 		this.textFieldWidget = textFieldWidget;
 		this.color = color;
 		this.size = size;
@@ -33,7 +33,7 @@ public class ColorDisplayWidget extends Widget {
 		  mStack, this.x, this.y, this.x + this.size, this.y + this.size,
 		  this.textFieldWidget.isFocused() ? -1 : -6250336,
 		  this.textFieldWidget.isFocused() ? -1 : -6250336);
-		Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);
+		Minecraft.getInstance().getTextureManager().bind(CONFIG_TEX);
 		RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();

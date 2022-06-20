@@ -31,8 +31,8 @@ public interface INavigableTarget {
 			final IExpandable ex = (IExpandable) this;
 			if (ex.isExpanded()) {
 				ex.setExpanded(false, Screen.hasShiftDown());
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}

@@ -105,21 +105,21 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		entry.setEditable(isEditable());
 		
-		final MainWindow window = Minecraft.getInstance().getMainWindow();
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
+		final MainWindow window = Minecraft.getInstance().getWindow();
+		final FontRenderer font = Minecraft.getInstance().font;
 		button.active = isEditable() && !getErrorMessage().isPresent();
 		int entryX;
 		this.button.y = y;
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, getDisplayedFieldName().func_241878_f(),
-			  (float)(window.getScaledWidth() - x - font.getStringPropertyWidth(getDisplayedFieldName())),
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, getDisplayedFieldName().getVisualOrderText(),
+			  (float)(window.getGuiScaledWidth() - x - font.width(getDisplayedFieldName())),
 			  (float)(y + 6), this.getPreferredTextColor());
 			this.resetButton.x = x;
 			entryX = x + 24;
 		} else {
-			font.func_238407_a_(
-			  mStack, getDisplayedFieldName().func_241878_f(), (float) x,
+			font.drawShadow(
+			  mStack, getDisplayedFieldName().getVisualOrderText(), (float) x,
 			  (float) (y + 6), this.getPreferredTextColor());
 			this.resetButton.x = x + entryWidth - button.getWidth();
 			entryX = x + entryWidth - 148;
@@ -193,7 +193,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	
 	@Override public void onNavigate() {
 		super.onNavigate();
-		setListener(entry);
+		setFocused(entry);
 	}
 	
 	@Override public String seekableValueText() {
@@ -211,7 +211,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		return super.getTooltip(mouseX, mouseY);
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childListeners : listeners;
 	}
 	

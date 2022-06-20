@@ -254,7 +254,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return 24;
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return expanded ? cells.isEmpty() ? expandedEmptyWidgets : widgets : unexpandedWidgets;
 	}
 	
@@ -314,7 +314,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		cells.remove(cell);
 		widgets.remove(cell);
 		if (prev != -1 && !cells.isEmpty())
-			setListener(cells.get(index == 0? 0 : index - 1));
+			setFocused(cells.get(index == 0? 0 : index - 1));
 	}
 	
 	public void set(int index, T element) {
@@ -429,15 +429,15 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		}
 		if (!isEditable() && isExpanded()) setExpanded(false);
 		label.area.setBounds(x - 24, y, heldEntry != null? entryWidth - 132 : entryWidth + 17 - resetButton.getWidth(), 20);
-		WidgetUtils.forceSetFocus(label, isSelected && getListener() == label && dragCursor == -1
+		WidgetUtils.forceSetFocus(label, isSelected && getFocused() == label && dragCursor == -1
 		                                 && (getListParent() == null || getListParent().dragCursor == -1));
 		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		bindTexture();
 		//noinspection unchecked
 		BaseListCell<T> focused =
-		  !expanded || getListener() == null ||
-		  !(getListener() instanceof BaseListCell)
-		  ? null : (BaseListCell<T>) getListener();
+		  !expanded || getFocused() == null ||
+		  !(getFocused() instanceof BaseListCell)
+		  ? null : (BaseListCell<T>) getFocused();
 		boolean insideCreateNew = isInsideCreateNew(mouseX, mouseY);
 		boolean insideDelete = isInsideDelete(mouseX, mouseY);
 		blit(mStack, x - 15, y + 5, 33,
@@ -456,8 +456,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		resetButton.x = x + entryWidth - resetButton.getWidth();
 		resetButton.y = y;
 		resetButton.render(mStack, mouseX, mouseY, delta);
-		Minecraft.getInstance().fontRenderer.func_238407_a_(
-		  mStack, getDisplayedFieldName().func_241878_f(), (float) labelX, (float) (y + 6),
+		Minecraft.getInstance().font.drawShadow(
+		  mStack, getDisplayedFieldName().getVisualOrderText(), (float) labelX, (float) (y + 6),
 		  label.isMouseOver(mouseX, mouseY) && !resetButton.isMouseOver(
 			 mouseX, mouseY) && !insideDelete && !insideCreateNew
 		  ? 0xffe6fe16 : getPreferredTextColor());
@@ -524,7 +524,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					cell.render(
 					  mStack, i, yy, x + 14, entryWidth - 14, cellHeight, mouseX, mouseY,
 					  getParent().getFocusedItem() != null && getParent().getFocusedItem()
-						 .equals(this) && getListener() != null && getListener().equals(cell), delta);
+						 .equals(this) && getFocused() != null && getFocused().equals(cell), delta);
 				}
 				i++;
 				yy += cellHeight;
@@ -587,7 +587,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		cell.render(
 		  mStack, dragCursor, draggedY, area.x + 14, area.width - 14, cellHeight, mouseX, mouseY,
 		  getParent().getFocusedItem() != null && getParent().getFocusedItem().equals(this)
-		  && getListener() != null && getListener().equals(cell), delta);
+		  && getFocused() != null && getFocused().equals(cell), delta);
 		return true;
 	}
 	
@@ -599,7 +599,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	
 	public boolean preserveState() {
 		int i = getSelectedIndex();
-		if (getListener() == heldEntry && heldEntry != null) i = -2;
+		if (getFocused() == heldEntry && heldEntry != null) i = -2;
 		if (preservedState != null) {
 			if (preservedState.getKey() != i)
 				savePreservedState();
@@ -643,7 +643,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	@Range(from = -1, to = Integer.MAX_VALUE)
 	protected int getSelectedIndex() {
 		//noinspection SuspiciousMethodCalls
-		return cells.indexOf(getListener());
+		return cells.indexOf(getFocused());
 	}
 	
 	protected ListEditRecord wrap(ListEditRecord record) {
@@ -662,7 +662,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		if (this.isSelected && !isSelected) {
 			savePreservedState();
 		} else if (isSelected) {
-			if (getSelectedIndex() == -1 && getListener() != heldEntry)
+			if (getSelectedIndex() == -1 && getFocused() != heldEntry)
 				savePreservedState();
 			else preserveState();
 		}
@@ -670,9 +670,9 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		if (isSelected)
 			getConfigScreen().getHistory().discardPreservedState();
 		if (heldEntry != null)
-			heldEntry.updateSelected(isSelected && getListener() == heldEntry);
+			heldEntry.updateSelected(isSelected && getFocused() == heldEntry);
 		for (BaseListCell<T> cell : cells)
-			cell.updateSelected(isSelected && expanded && getListener() == cell);
+			cell.updateSelected(isSelected && expanded && getFocused() == cell);
 		if (!isSelected)
 			WidgetUtils.forceUnFocus(resetButton);
 	}
@@ -716,35 +716,35 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		if (!(Screen.hasAltDown() && button == 0 || button == 2)) {
 			if (isInsideInsert(mouseX, mouseY)) {
 				add(caret);
-				setListener(cells.get(caret));
+				setFocused(cells.get(caret));
 				caret = -1;
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
 			}
 			if (isInsideRemove(mouseX, mouseY)) {
 				if (getSelectedIndex() == cursor)
-					setListener(cells.isEmpty()? label : cells.get(max(0, cursor - 1)));
+					setFocused(cells.isEmpty()? label : cells.get(max(0, cursor - 1)));
 				remove(cursor);
 				cursor = -1;
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
 			}
 			if (isInsideUp(mouseX, mouseY) && cursor > 0) {
 				final int target = cursor - 1;
 				move(cursor, target);
 				cursor = -1;
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
 			}
 			if (isInsideDown(mouseX, mouseY) && cursor < cells.size() - 1) {
 				int target = cursor + 1;
 				move(cursor, target);
 				cursor = -1;
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 				return true;
 			}
 		}
@@ -756,8 +756,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			dragMouseY = (int) mouseY;
 			dragCursor = hoverCursor;
 			getConfigScreen().claimRectangle(dragOverlayRectangle, this, -1);
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -770,8 +770,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				move(dragCursor, target);
 			dragCursor = -1;
 			dragOverlayRectangle.setBounds(0, 0, 0, 0);
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 		} else super.endDrag(mouseX, mouseY, button);
 	}
 	
@@ -782,13 +782,13 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			if (keyCode == 257 || keyCode == 260) { // Enter || Insert
 				add(0);
 				cells.get(0).onNavigate();
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (!cells.isEmpty() && (keyCode == 259 || keyCode == 261)) { // Backspace || Delete
 				remove(0);
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}
@@ -815,26 +815,26 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					parent.setExpanded(true);
 					final int idx = parent.insertInFront() ? 0 : parent.cells.size();
 					parent.add(idx);
-					parent.setListener(parent.cells.get(idx));
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+					parent.setFocused(parent.cells.get(idx));
+					Minecraft.getInstance().getSoundManager().play(
+					  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 					return true;
 				}
 				if (parent.isDeleteButtonEnabled() && parent.isInsideDelete(mouseX, mouseY)) {
-					IGuiEventListener focused = parent.getListener();
+					IGuiEventListener focused = parent.getFocused();
 					if (parent.isExpanded() && focused instanceof BaseListCell) {
 						final int index = parent.cells.indexOf(focused);
 						if (index >= 0)
 							parent.remove(index);
-						Minecraft.getInstance().getSoundHandler().play(
-						  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+						Minecraft.getInstance().getSoundManager().play(
+						  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 					}
 					return true;
 				}
 				if (area.contains(mouseX, mouseY)) {
 					parent.setExpanded(!parent.isExpanded(), Screen.hasShiftDown());
-					Minecraft.getInstance().getSoundHandler().play(
-					  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1F));
+					Minecraft.getInstance().getSoundManager().play(
+					  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 					return true;
 				}
 			}
@@ -864,10 +864,10 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			y = area.y + 24;
 			w = area.width - 16;
 			h = 12;
-			final FontRenderer font = Minecraft.getInstance().fontRenderer;
-			final List<IReorderingProcessor> lines = font.trimStringToWidth(text, w);
+			final FontRenderer font = Minecraft.getInstance().font;
+			final List<IReorderingProcessor> lines = font.split(text, w);
 			if (!lines.isEmpty()) {
-				font.func_238407_a_(
+				font.drawShadow(
 				  mStack, lines.get(0), x + 2, y + 2,
 				  isMouseInside(mouseX, mouseY)? hoveredTextColor : textColor);
 			}
@@ -946,7 +946,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!cells.contains(listener))
 			return 0;
@@ -960,7 +960,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		else if (listener instanceof BaseListCell)
@@ -972,8 +972,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return cells.stream().map(c -> ((ISeekableComponent) c)).collect(Collectors.toList());
 	}
 	
-	@Override public void setListener(IGuiEventListener listener) {
-		super.setListener(listener);
+	@Override public void setFocused(IGuiEventListener listener) {
+		super.setFocused(listener);
 	}
 }
 

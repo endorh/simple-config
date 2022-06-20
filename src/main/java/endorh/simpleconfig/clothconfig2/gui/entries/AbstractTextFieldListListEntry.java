@@ -42,19 +42,19 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		public AbstractTextFieldListCell(ListEntry listListEntry) {
 			super(listListEntry);
 			// T finalValue = this.substituteDefault(value);
-			widget = new TextFieldWidget(Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
-			                                  NarratorChatListener.EMPTY) {
+			widget = new TextFieldWidget(Minecraft.getInstance().font, 0, 0, 100, 18,
+			                                  NarratorChatListener.NO_TITLE) {
 				
 				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
 				}
 			};
-			widget.setValidator(this::isValidText);
-			widget.setMaxStringLength(Integer.MAX_VALUE);
-			widget.setEnableBackgroundDrawing(false);
+			widget.setFilter(this::isValidText);
+			widget.setMaxLength(Integer.MAX_VALUE);
+			widget.setBordered(false);
 			// this.widget.setText(Objects.toString(finalValue));
-			widget.setCursorPositionZero();
+			widget.moveCursorToStart();
 			widget.setResponder(s -> widget.setTextColor(getPreferredTextColor()));
 		}
 		
@@ -74,7 +74,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		}
 		
 		@Override protected String seekableText() {
-			return widget.getText();
+			return widget.getValue();
 		}
 		
 		@Override public void render(
@@ -86,7 +86,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			widget.x = x;
 			widget.y = y + 1;
 			final boolean editable = getListEntry().isEditable();
-			widget.setEnabled(editable);
+			widget.setEditable(editable);
 			widget.render(mStack, mouseX, mouseY, delta);
 			if (isSelected && editable) {
 				AbstractTextFieldListCell.fill(
@@ -100,7 +100,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			}
 		}
 		
-		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		public @NotNull List<? extends IGuiEventListener> children() {
 			return Collections.singletonList(widget);
 		}
 		
@@ -112,8 +112,8 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 				listEntry.setExpanded(true);
 				listEntry.claimFocus();
 				scrollToSelf();
-				listEntry.setListener(this);
-				widget.setFocused2(true);
+				listEntry.setFocused(this);
+				widget.setFocus(true);
 			}
 		}
 		
@@ -126,9 +126,9 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			listEntry.expandParents();
 			listEntry.claimFocus();
 			listEntry.setExpanded(true);
-			listEntry.setListener(this);
-			setListener(widget);
-			widget.setFocused2(true);
+			listEntry.setFocused(this);
+			setFocused(widget);
+			widget.setFocus(true);
 			scrollToSelf();
 			listEntry.getParent().setSelectedTarget(this);
 		}

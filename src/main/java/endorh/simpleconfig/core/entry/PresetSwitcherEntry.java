@@ -45,7 +45,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		  new ArrayList<>(presets.keySet())
 		).nameProvider(s -> {
 			final String nm = translation + "." + s;
-			if (I18n.hasKey(nm))
+			if (I18n.exists(nm))
 				return new TranslationTextComponent(nm);
 			else return new StringTextComponent(s);
 		}));

@@ -45,19 +45,19 @@ public class DoubleListListEntry
 		
 		@Override public Double getValue() {
 			try {
-				return Double.valueOf(widget.getText());
+				return Double.valueOf(widget.getValue());
 			} catch (NumberFormatException e) {
 				return 0.0;
 			}
 		}
 		
 		@Override public void doSetValue(Double value) {
-			widget.setText(String.valueOf(value));
+			widget.setValue(String.valueOf(value));
 		}
 		
 		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
-				double i = Double.parseDouble(widget.getText());
+				double i = Double.parseDouble(widget.getValue());
 				final DoubleListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
 					return Optional.of(new TranslationTextComponent(

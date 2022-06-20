@@ -44,7 +44,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		index = new AtomicInteger(values.indexOf(value));
 		index.compareAndSet(-1, 0);
 		original = value;
-		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, NarratorChatListener.EMPTY, (w, b) -> {
+		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, NarratorChatListener.NO_TITLE, (w, b) -> {
 			if (b != 2 && !isSelected) {
 				preserveState();
 				isSelected = true;
@@ -85,21 +85,21 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	) {
 		super.renderEntry(
 		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
+		MainWindow window = Minecraft.getInstance().getWindow();
 		resetButton.y = y;
 		int buttonX;
 		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float) (window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		final FontRenderer font = Minecraft.getInstance().font;
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
 			  (float) (y + 6), getPreferredTextColor());
 			resetButton.x = x;
 			buttonX = x + resetButton.getWidth() + 2;
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float) x, (float) (y + 6), getPreferredTextColor());
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6), getPreferredTextColor());
 			resetButton.x = x + entryWidth - resetButton.getWidth();
 			buttonX = x + entryWidth - 150;
 		}
@@ -133,7 +133,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			WidgetUtils.forceUnFocus(buttonWidget, resetButton);
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childWidgets : widgets;
 	}
 	

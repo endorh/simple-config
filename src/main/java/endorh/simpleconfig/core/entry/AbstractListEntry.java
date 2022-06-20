@@ -173,9 +173,9 @@ public abstract class AbstractListEntry
 	}
 	
 	protected static ITextComponent addIndex(ITextComponent message, int index) {
-		return message.copyRaw().appendString(", ").append(new TranslationTextComponent(
+		return message.plainCopy().append(", ").append(new TranslationTextComponent(
 		  "simpleconfig.config.error.at_index",
-		  new StringTextComponent(String.format("%d", index + 1)).mergeStyle(TextFormatting.AQUA)));
+		  new StringTextComponent(String.format("%d", index + 1)).withStyle(TextFormatting.AQUA)));
 	}
 	
 	@Override public Optional<ITextComponent> supplyError(List<Gui> value) {

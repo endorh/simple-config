@@ -104,7 +104,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		category.setTitle(getTitle());
 		category.setIsServer(root.type == Type.SERVER);
 		category.setDescription(
-		  () -> I18n.hasKey(tooltip)
+		  () -> I18n.exists(tooltip)
 		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
 		        : Optional.empty());
 		root.getFilePath().ifPresent(category::setContainingFile);

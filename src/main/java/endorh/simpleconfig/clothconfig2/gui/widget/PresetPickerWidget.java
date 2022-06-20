@@ -135,7 +135,7 @@ public class PresetPickerWidget extends FocusableGui {
 	}
 	
 	protected void position() {
-		if (screen.getListener() != this) forceUnFocus(listeners);
+		if (screen.getFocused() != this) forceUnFocus(listeners);
 		
 		selector.x = x;
 		selector.y = y + 2;
@@ -391,7 +391,7 @@ public class PresetPickerWidget extends FocusableGui {
 				return element.name;
 			}
 			@Override public ITextComponent getDisplayName(@NotNull Preset element) {
-				return new StringTextComponent(element.name).mergeStyle(
+				return new StringTextComponent(element.name).withStyle(
 				  element.remote ? TextFormatting.AQUA : TextFormatting.GREEN);
 			}
 			
@@ -419,7 +419,7 @@ public class PresetPickerWidget extends FocusableGui {
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 }

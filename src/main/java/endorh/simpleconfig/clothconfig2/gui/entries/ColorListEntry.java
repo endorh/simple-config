@@ -84,7 +84,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 			last = getValue();
 			colorPicker.setValue(alpha? Color.ofTransparent(getValue()) : Color.ofOpaque(getValue()), true);
 		}
-		final MainWindow window = Minecraft.getInstance().getMainWindow();
+		final MainWindow window = Minecraft.getInstance().getWindow();
 		colorDisplayWidget.y = y;
 		ColorValue value = getColorValue(getText());
 		if (!value.hasError()) {
@@ -99,11 +99,11 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 		if (isColorPickerVisible()) {
 			colorPicker.y = colorPickerRectangle.y = y;
 			colorPicker.x = colorPickerRectangle.x =
-			  colorDisplayWidget.x < window.getScaledWidth() - (textField.x + textField.getWidth())
+			  colorDisplayWidget.x < window.getGuiScaledWidth() - (textField.x + textField.getWidth())
 			  ? textField.x + textField.getWidth() + 4
 			  : colorDisplayWidget.x - colorPicker.getWidth() - 2;
 			colorPickerRectangle.width = colorPicker.getWidth();
-			colorPickerRectangle.height = colorPicker.getHeightRealms();
+			colorPickerRectangle.height = colorPicker.getHeight();
 			reportedColorPickerRectangle.setBounds(
 			  ScissorsHandler.INSTANCE.getScissorsAreas().stream()
 			    .reduce(colorPickerRectangle, Rectangle::intersection));
@@ -163,7 +163,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	}
 	
 	@Override public int getExtraScrollHeight() {
-		return isColorPickerVisible() ? colorDisplayWidget.getHeightRealms() - 24 : -1;
+		return isColorPickerVisible() ? colorDisplayWidget.getHeight() - 24 : -1;
 	}
 	
 	@Override protected Integer fromString(String s) {
@@ -283,7 +283,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		if (isChild())
 			return isColorPickerVisible()? childWidgetsWithColorPicker : childWidgets;
 		return isColorPickerVisible()? widgetsWithColorPicker : widgets;

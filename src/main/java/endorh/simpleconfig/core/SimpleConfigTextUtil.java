@@ -30,10 +30,10 @@ import java.util.regex.Pattern;
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Internal @Deprecated public static List<ITextComponent> splitTtc(String key, Object... args) {
-		if (I18n.hasKey(key)) {
+		if (I18n.exists(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting
-			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().func_230503_a_(key));
+			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().getOrDefault(key));
 			final String[] lines = NEW_LINE.split(f);
 			final List<ITextComponent> components = new ArrayList<>();
 			for (String line : lines) {
@@ -42,12 +42,12 @@ import java.util.regex.Pattern;
 				int cursor = 0;
 				while (m.find()) {
 					if (m.group("conversion").equals("%")) {
-						built.appendString("%");
+						built.append("%");
 						continue;
 					}
 					final int s = m.start();
 					if (s > cursor)
-						built.appendString(line.substring(cursor, s));
+						built.append(line.substring(cursor, s));
 					// Since we've called addExplicitFormatIndexes,
 					//   the following line must not fail
 					final int i = Integer.parseInt(m.group("index")) - 1;
@@ -55,12 +55,12 @@ import java.util.regex.Pattern;
 						// Format options are ignored when the argument is an ITextComponent
 						if (args[i] instanceof ITextComponent)
 							built.append((ITextComponent) args[i]);
-						else built.appendString(String.format(m.group(), args));
+						else built.append(String.format(m.group(), args));
 					} // else ignore error
 					cursor = m.end();
 				}
 				if (line.length() > cursor)
-					built.appendString(line.substring(cursor));
+					built.append(line.substring(cursor));
 				components.add(built);
 			}
 			return components;

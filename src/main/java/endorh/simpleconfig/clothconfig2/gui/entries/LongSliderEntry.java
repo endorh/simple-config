@@ -36,11 +36,11 @@ public class LongSliderEntry extends SliderListEntry<Long> {
 		}
 		
 		@Override public Long getValue() {
-			return round(min + ((max - min) * sliderValue));
+			return round(min + ((max - min) * value));
 		}
 		
 		@Override public void setValue(Long v) {
-			sliderValue = (double) (v - min) / (double) (max - min);
+			value = (double) (v - min) / (double) (max - min);
 		}
 	}
 }

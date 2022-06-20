@@ -38,7 +38,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	  ITextComponent fieldName, Supplier<ITextComponent> textSupplier, int color
 	) {
 		super(fieldName);
-		font = Minecraft.getInstance().fontRenderer;
+		font = Minecraft.getInstance().font;
 		savedWidth = -1;
 		savedX = -1;
 		savedY = -1;
@@ -59,16 +59,16 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		    || !Objects.equals(text, savedText)) {
 			savedText = text;
 			wrappedLines =
-			  font.trimStringToWidth(text, entryWidth);
+			  font.split(text, entryWidth);
 			savedWidth = entryWidth;
 			savedX = x;
 			savedY = y;
 		}
 		int yy = y + 4;
 		for (IReorderingProcessor string : wrappedLines) {
-			Minecraft.getInstance().fontRenderer.func_238407_a_(
+			Minecraft.getInstance().font.drawShadow(
 			  mStack, string, (float) x, (float) yy, color);
-			Objects.requireNonNull(Minecraft.getInstance().fontRenderer);
+			Objects.requireNonNull(Minecraft.getInstance().font);
 			yy += LINE_HEIGHT;
 		}
 		Style style = getTextAt(mouseX, mouseY);
@@ -103,7 +103,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 			if (textX >= 0 && textY >= 0 && textX <= savedWidth &&
 			    textY < LINE_HEIGHT * lineCount + lineCount && (line = textY / LINE_HEIGHT) < wrappedLines.size()) {
 				IReorderingProcessor orderedText = wrappedLines.get(line);
-				return font.getCharacterManager().func_243239_a(orderedText, textX);
+				return font.getSplitter().componentStyleAtWidth(orderedText, textX);
 			}
 		}
 		return null;
@@ -135,7 +135,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		return getItemHeight() - 4;
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return Collections.emptyList();
 	}
 	

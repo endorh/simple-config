@@ -43,7 +43,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		this.original = value;
 		this.bool = new AtomicBoolean(value);
 		this.buttonWidget = new Button(
-		  0, 0, 150, 20, NarratorChatListener.EMPTY, widget -> {
+		  0, 0, 150, 20, NarratorChatListener.NO_TITLE, widget -> {
 			  if (!isSelected) {
 				  preserveState();
 				  isSelected = true;
@@ -83,21 +83,21 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	) {
 		super.renderEntry(
 		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
+		MainWindow window = Minecraft.getInstance().getWindow();
 		resetButton.y = y;
 		int buttonX;
 		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float) (window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		final FontRenderer font = Minecraft.getInstance().font;
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
 			  (float) (y + 6), 0xFFFFFF);
 			resetButton.x = x;
 			buttonX = x + resetButton.getWidth() + 2;
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float) x, (float) (y + 6),
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6),
 			  getPreferredTextColor());
 			resetButton.x = x + entryWidth - resetButton.getWidth();
 			buttonX = x + entryWidth - 150;
@@ -130,7 +130,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		return super.getTooltip(mouseX, mouseY);
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childWidgets : this.widgets;
 	}
 	

@@ -28,7 +28,7 @@ public interface ModifierKeyCode {
 	}
 	
 	static ModifierKeyCode unknown() {
-		return ModifierKeyCode.of(InputMappings.INPUT_INVALID, Modifier.none());
+		return ModifierKeyCode.of(InputMappings.UNKNOWN, Modifier.none());
 	}
 	
 	static @NotNull ModifierKeyCode parse(@Nullable String key) {
@@ -45,10 +45,10 @@ public interface ModifierKeyCode {
 				final String name = m.group(4);
 				Input in;
 				if (name.startsWith("mouse.") || name.startsWith("keyboard."))
-					in = InputMappings.getInputByName("key." + name);
+					in = InputMappings.getKey("key." + name);
 				else if (!name.contains("."))
-					in = InputMappings.getInputByName("key.keyboard." + name);
-				else in = InputMappings.getInputByName(name);
+					in = InputMappings.getKey("key.keyboard." + name);
+				else in = InputMappings.getKey(name);
 				return of(in, mod);
 			} catch (IllegalArgumentException ignored) {
 				return unknown();
@@ -76,7 +76,7 @@ public interface ModifierKeyCode {
 			mod.append("alt+");
 		if (getModifier().hasShift())
 			mod.append("shift+");
-		return mod.append(getKeyCode().getTranslationKey()).toString();
+		return mod.append(getKeyCode().getName()).toString();
 	}
 	
 	InputMappings.Input getKeyCode();
@@ -97,17 +97,17 @@ public interface ModifierKeyCode {
 	
 	default boolean matchesMouse(int button) {
 		return !this.isUnknown() && this.getType() == InputMappings.Type.MOUSE &&
-		       this.getKeyCode().getKeyCode() == button && this.getModifier().matchesCurrent();
+		       this.getKeyCode().getValue() == button && this.getModifier().matchesCurrent();
 	}
 	
 	default boolean matchesKey(int keyCode, int scanCode) {
 		if (this.isUnknown()) return false;
-		if (keyCode == InputMappings.INPUT_INVALID.getKeyCode()) {
+		if (keyCode == InputMappings.UNKNOWN.getValue()) {
 			return this.getType() == InputMappings.Type.SCANCODE &&
-			       this.getKeyCode().getKeyCode() == scanCode && this.getModifier().matchesCurrent();
+			       this.getKeyCode().getValue() == scanCode && this.getModifier().matchesCurrent();
 		}
 		return this.getType() == InputMappings.Type.KEYSYM &&
-		       this.getKeyCode().getKeyCode() == keyCode && this.getModifier().matchesCurrent();
+		       this.getKeyCode().getValue() == keyCode && this.getModifier().matchesCurrent();
 	}
 	
 	default boolean matchesCurrentMouse() {
@@ -115,8 +115,8 @@ public interface ModifierKeyCode {
 		       && this.getType() == InputMappings.Type.MOUSE
 		       && this.getModifier().matchesCurrent()
 		       && GLFW.glfwGetMouseButton(
-					Minecraft.getInstance().getMainWindow().getHandle(),
-					this.getKeyCode().getKeyCode()) == 1;
+					Minecraft.getInstance().getWindow().getWindow(),
+					this.getKeyCode().getValue()) == 1;
 	}
 	
 	default boolean matchesCurrentKey() {
@@ -124,8 +124,8 @@ public interface ModifierKeyCode {
 		       && this.getType() == InputMappings.Type.KEYSYM
 		       && this.getModifier().matchesCurrent()
 		       && InputMappings.isKeyDown(
-               Minecraft.getInstance().getMainWindow().getHandle(),
-               this.getKeyCode().getKeyCode());
+               Minecraft.getInstance().getWindow().getWindow(),
+               this.getKeyCode().getValue());
 	}
 	
 	default ModifierKeyCode setKeyCodeAndModifier(
@@ -145,7 +145,7 @@ public interface ModifierKeyCode {
 	ITextComponent getLocalizedName();
 	
 	default boolean isUnknown() {
-		return this.getKeyCode().equals(InputMappings.INPUT_INVALID);
+		return this.getKeyCode().equals(InputMappings.UNKNOWN);
 	}
 }
 

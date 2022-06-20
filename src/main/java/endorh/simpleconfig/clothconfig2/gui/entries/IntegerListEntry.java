@@ -39,7 +39,7 @@ public class IntegerListEntry
 	@Override
 	protected void textFieldPreRender(TextFieldWidget widget) {
 		try {
-			double i = Integer.parseInt(widget.getText());
+			double i = Integer.parseInt(widget.getValue());
 			if (i < (double) this.minimum || i > (double) this.maximum) {
 				widget.setTextColor(0xFF5555);
 			} else {

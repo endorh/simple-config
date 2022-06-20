@@ -39,8 +39,8 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
-			suggestionSupplier = () -> Registry.BLOCK.getEntries().stream().map(Entry::getValue)
-			  .filter(b -> b.asItem().getGroup() != null).map(ForgeRegistryEntry::getRegistryName)
+			suggestionSupplier = () -> Registry.BLOCK.entrySet().stream().map(Entry::getValue)
+			  .filter(b -> b.asItem().getItemCategory() != null).map(ForgeRegistryEntry::getRegistryName)
 			  .collect(Collectors.toList());
 		}
 		
@@ -64,7 +64,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;
 				suggestionSupplier = () -> Stream.concat(
 				  supplier != null? supplier.get().stream() : Stream.empty(),
-				  tag.getAllElements().stream().map(ForgeRegistryEntry::getRegistryName)
+				  tag.getValues().stream().map(ForgeRegistryEntry::getRegistryName)
 				).collect(Collectors.toList());
 			}
 			return new BlockNameEntry(parent, name, value);

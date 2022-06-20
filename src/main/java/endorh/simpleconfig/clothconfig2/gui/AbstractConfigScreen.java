@@ -187,7 +187,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean isTransparentBackground() {
-		return transparentBackground && Minecraft.getInstance().world != null;
+		return transparentBackground && Minecraft.getInstance().level != null;
 	}
 	
 	@Internal public void setTransparentBackground(boolean transparentBackground) {
@@ -235,8 +235,8 @@ public abstract class AbstractConfigScreen extends Screen
 		save();
 		if (openOtherScreens && minecraft != null) {
 			if (isRequiresRestart())
-				minecraft.displayGuiScreen(new ClothRequiresRestartScreen(parent));
-			else minecraft.displayGuiScreen(parent);
+				minecraft.setScreen(new ClothRequiresRestartScreen(parent));
+			else minecraft.setScreen(parent);
 		}
 	}
 	
@@ -260,7 +260,7 @@ public abstract class AbstractConfigScreen extends Screen
 		this.focusedBinding = focusedBinding;
 		if (focusedBinding != null) {
 			startedKeyCode = this.focusedBinding.getValue();
-			startedKeyCode.setKeyCodeAndModifier(InputMappings.INPUT_INVALID, Modifier.none());
+			startedKeyCode.setKeyCodeAndModifier(InputMappings.UNKNOWN, Modifier.none());
 		} else {
 			startedKeyCode = null;
 		}
@@ -313,30 +313,30 @@ public abstract class AbstractConfigScreen extends Screen
 		if (focusedBinding != null && startedKeyCode != null &&
 		    focusedBinding.isAllowMouse()) {
 			if (startedKeyCode.isUnknown()) {
-				startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
+				startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
 			} else if (focusedBinding.isAllowModifiers() &&
 			           startedKeyCode.getType() == Type.KEYSYM) {
-				int code = startedKeyCode.getKeyCode().getKeyCode();
-				if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
+				int code = startedKeyCode.getKeyCode().getValue();
+				if (Minecraft.ON_OSX ? code == 343 || code == 347
 				                                : code == 341 || code == 345) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
 					return true;
 				}
 				if (code == 344 || code == 340) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
 					return true;
 				}
 				if (code == 342 || code == 346) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
 					return true;
 				}
 			}
@@ -362,16 +362,16 @@ public abstract class AbstractConfigScreen extends Screen
 		if (focusedBinding != null && (focusedBinding.isAllowKey() || keyCode == 256)) {
 			if (keyCode != 256) {
 				if (startedKeyCode.isUnknown()) {
-					startedKeyCode.setKeyCode(InputMappings.getInputByCode(keyCode, scanCode));
+					startedKeyCode.setKeyCode(InputMappings.getKey(keyCode, scanCode));
 				} else if (focusedBinding.isAllowModifiers()) {
 					if (startedKeyCode.getType() == Type.KEYSYM) {
-						int code = startedKeyCode.getKeyCode().getKeyCode();
-						if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
+						int code = startedKeyCode.getKeyCode().getValue();
+						if (Minecraft.ON_OSX ? code == 343 || code == 347
 						                                : code == 341 || code == 345) {
 							Modifier modifier = startedKeyCode.getModifier();
 							startedKeyCode.setModifier(
 							  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
+							startedKeyCode.setKeyCode(InputMappings.getKey(
 							  keyCode, scanCode));
 							return true;
 						}
@@ -379,7 +379,7 @@ public abstract class AbstractConfigScreen extends Screen
 							Modifier modifier = startedKeyCode.getModifier();
 							startedKeyCode.setModifier(
 							  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
+							startedKeyCode.setKeyCode(InputMappings.getKey(
 							  keyCode, scanCode));
 							return true;
 						}
@@ -387,12 +387,12 @@ public abstract class AbstractConfigScreen extends Screen
 							Modifier modifier = startedKeyCode.getModifier();
 							startedKeyCode.setModifier(
 							  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
+							startedKeyCode.setKeyCode(InputMappings.getKey(
 							  keyCode, scanCode));
 							return true;
 						}
 					}
-					if (Minecraft.IS_RUNNING_ON_MAC ? keyCode == 343 || keyCode == 347
+					if (Minecraft.ON_OSX ? keyCode == 343 || keyCode == 347
 					                                : keyCode == 341 || keyCode == 345) {
 						Modifier modifier = startedKeyCode.getModifier();
 						startedKeyCode.setModifier(
@@ -424,8 +424,8 @@ public abstract class AbstractConfigScreen extends Screen
 			if (handleOverlaysEscapeKey())
 				return true;
 			if (shouldCloseOnEsc()) {
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return quit();
 			}
 		}
@@ -439,23 +439,23 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
-		Input key = InputMappings.getInputByCode(keyCode, scanCode);
+		Input key = InputMappings.getKey(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(true);
 			recomputeFocus();
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		} else if (KeyBindings.PREV_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(false);
 			recomputeFocus();
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
 			if (canSave()) saveAll(true, false);
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -483,7 +483,7 @@ public abstract class AbstractConfigScreen extends Screen
 			dialog.setConfirmButtonTint(0x80BD2424);
 			addDialog(dialog);
 		} else {
-			minecraft.displayGuiScreen(parent);
+			minecraft.setScreen(parent);
 		}
 		return true;
 	}
@@ -494,7 +494,7 @@ public abstract class AbstractConfigScreen extends Screen
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
 		  edited ? new TranslationTextComponent("text.cloth-config.cancel_discard")
 		         : new TranslationTextComponent("gui.cancel")));
-		for (IGuiEventListener child : getEventListeners()) {
+		for (IGuiEventListener child : children()) {
 			if (!(child instanceof ITickableTileEntity)) continue;
 			((ITickableTileEntity) child).tick();
 		}
@@ -544,7 +544,7 @@ public abstract class AbstractConfigScreen extends Screen
 	protected void overlayBackground(
 	  MatrixStack mStack, Rectangle rect, int red, int green, int blue
 	) {
-		overlayBackground(mStack.getLast().getMatrix(), rect, red, green, blue, 255, 255);
+		overlayBackground(mStack.last().pose(), rect, red, green, blue, 255, 255);
 	}
 	
 	@SuppressWarnings("SameParameterValue") protected void overlayBackground(
@@ -552,23 +552,23 @@ public abstract class AbstractConfigScreen extends Screen
 	) {
 		if (minecraft == null || isTransparentBackground()) return;
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
-		minecraft.getTextureManager().bindTexture(getBackgroundLocation());
+		BufferBuilder buffer = tessellator.getBuilder();
+		minecraft.getTextureManager().bind(getBackgroundLocation());
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(matrix, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f)
-		  .tex((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f)
+		buffer.vertex(matrix, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f)
+		  .uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f)
 		  .color(red, green, blue, endAlpha).endVertex();
-		buffer.pos(matrix, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f)
-		  .tex((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f)
+		buffer.vertex(matrix, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f)
+		  .uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f)
 		  .color(red, green, blue, endAlpha).endVertex();
-		buffer.pos(matrix, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f)
-		  .tex((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f)
+		buffer.vertex(matrix, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f)
+		  .uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f)
 		  .color(red, green, blue, startAlpha).endVertex();
-		buffer.pos(matrix, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f)
-		  .tex((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f)
+		buffer.vertex(matrix, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f)
+		  .uv((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f)
 		  .color(red, green, blue, startAlpha).endVertex();
-		tessellator.draw();
+		tessellator.end();
 	}
 	
 	public void renderComponentHoverEffect(

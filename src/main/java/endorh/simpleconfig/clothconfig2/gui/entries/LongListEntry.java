@@ -39,7 +39,7 @@ public class LongListEntry
 	@Override
 	protected void textFieldPreRender(TextFieldWidget widget) {
 		try {
-			double i = Long.parseLong(widget.getText());
+			double i = Long.parseLong(widget.getValue());
 			if (i < (double) this.minimum || i > (double) this.maximum) {
 				widget.setTextColor(0xFF5555);
 			} else {

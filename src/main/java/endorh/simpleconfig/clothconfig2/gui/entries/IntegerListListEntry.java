@@ -42,19 +42,19 @@ public class IntegerListListEntry
 		
 		@Override public Integer getValue() {
 			try {
-				return Integer.valueOf(widget.getText());
+				return Integer.valueOf(widget.getValue());
 			} catch (NumberFormatException e) {
 				return 0;
 			}
 		}
 		
 		@Override public void doSetValue(Integer value) {
-			widget.setText(String.valueOf(value));
+			widget.setValue(String.valueOf(value));
 		}
 		
 		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
-				int i = Integer.parseInt(widget.getText());
+				int i = Integer.parseInt(widget.getValue());
 				final IntegerListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
 					return Optional.of(new TranslationTextComponent(

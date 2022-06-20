@@ -7,6 +7,8 @@ import net.minecraft.util.text.ITextComponent;
 
 import java.util.function.BiPredicate;
 
+import net.minecraft.client.gui.widget.button.Button.ITooltip;
+
 public class MultiFunctionButton extends TintedButton {
 	
 	protected BiPredicate<Button, Integer> pressAction;
@@ -33,7 +35,7 @@ public class MultiFunctionButton extends TintedButton {
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (this.active && this.visible && clicked(mouseX, mouseY) && onPress(button)) {
-			playDownSound(Minecraft.getInstance().getSoundHandler());
+			playDownSound(Minecraft.getInstance().getSoundManager());
 			return true;
 		}
 		return false;
@@ -46,10 +48,10 @@ public class MultiFunctionButton extends TintedButton {
 			} else {
 				int button = Screen.hasControlDown()? 2 : Screen.hasShiftDown()? 1 : 0;
 				if (onPress(button)) {
-					this.playDownSound(Minecraft.getInstance().getSoundHandler());
+					this.playDownSound(Minecraft.getInstance().getSoundManager());
 					return true;
 				} else if (button != 0 && onPress(0)) {
-					this.playDownSound(Minecraft.getInstance().getSoundHandler());
+					this.playDownSound(Minecraft.getInstance().getSoundManager());
 					return true;
 				}
 			}

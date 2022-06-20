@@ -53,19 +53,19 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 	  int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
+		MainWindow window = Minecraft.getInstance().getWindow();
 		int buttonX;
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
+		final FontRenderer font = Minecraft.getInstance().font;
 		final ITextComponent name = getDisplayedFieldName();
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float)(window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float)(window.getGuiScaledWidth() - x - font.width(name)),
 			  (float)(y + 6), getPreferredTextColor());
 			buttonX = x;
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float) x,
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float) x,
 			  (float) (y + 6), getPreferredTextColor());
 			buttonX = x + entryWidth - 150;
 		}
@@ -94,7 +94,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 		return false;
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childListeners : listeners;
 	}
 	

@@ -120,7 +120,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	@Override public void setValue(V value) {
 		this.sliderValue.set(value);
 		this.sliderWidget.setValue(value);
-		this.sliderWidget.func_230979_b_();
+		this.sliderWidget.updateMessage();
 		if (showText && !Objects.equals(textFieldEntry.getValue(), value))
 			textFieldEntry.setValue(value);
 	}
@@ -134,7 +134,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		return super.getErrorMessage();
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return isTextFieldShown()? isChild()? textChildWidgets : textWidgets
 		                         : isChild()? childWidgets : widgets;
 	}
@@ -159,23 +159,23 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		if (showText && (!canUseTextField || getListener() != textFieldEntry))
+		if (showText && (!canUseTextField || getFocused() != textFieldEntry))
 			setTextFieldShown(false, false);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
+		MainWindow window = Minecraft.getInstance().getWindow();
+		final FontRenderer font = Minecraft.getInstance().font;
 		resetButton.y = y;
 		int sliderX;
 		ITextComponent name = getDisplayedFieldName();
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float) (window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
 			  (float) (y + 6), getPreferredTextColor());
 			resetButton.x = x;
 			sliderX = x + resetButton.getWidth() + 3;
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float)x, (float)(y + 6), getPreferredTextColor());
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float)x, (float)(y + 6), getPreferredTextColor());
 			resetButton.x = x + entryWidth - resetButton.getWidth();
 			sliderX = x + entryWidth - 148;
 		}
@@ -200,7 +200,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (isTextFieldShown()) {
-			textFieldEntry.updateSelected(isSelected && getListener() == textFieldEntry);
+			textFieldEntry.updateSelected(isSelected && getFocused() == textFieldEntry);
 			textFieldEntry.setEditable(isEditable());
 			textFieldEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
 			if (!textFieldEntry.getErrorMessage().isPresent())
@@ -228,16 +228,16 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		if (show) {
 			textFieldEntry.setValue(getValue());
 			if (focus) {
-				setListener(textFieldEntry);
+				setFocused(textFieldEntry);
 				WidgetUtils.forceUnFocus(sliderWidget);
 				final TextFieldWidget textFieldWidget = textFieldEntry.textFieldWidget;
-				textFieldEntry.setListener(textFieldWidget);
+				textFieldEntry.setFocused(textFieldWidget);
 				WidgetUtils.forceFocus(textFieldWidget);
-				textFieldWidget.setCursorPosition(textFieldWidget.getText().length());
-				textFieldWidget.setSelectionPos(0);
+				textFieldWidget.moveCursorTo(textFieldWidget.getValue().length());
+				textFieldWidget.setHighlightPos(0);
 			}
 		} else if (focus) {
-			setListener(sliderWidget);
+			setFocused(sliderWidget);
 			WidgetUtils.forceFocus(sliderWidget);
 		}
 	}
@@ -251,38 +251,38 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			return true;
 		if (canUseTextField && entryArea.grow(32, 0, 0, 0).contains(mouseX, mouseY)) {
 			setTextFieldShown(!isTextFieldShown(), true);
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(canUseTextField? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(canUseTextField? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return false;
 	}
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if ((listener == sliderWidget || listener == textFieldEntry)
 		    && canUseTextField && codePoint == ' ') {
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
 			boolean change = state != isTextFieldShown();
 			setTextFieldShown(state, true);
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return super.charTyped(codePoint, modifiers);
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if ((listener == sliderWidget || listener == textFieldEntry)
 		    && canUseTextField && keyCode == 257) { // Enter
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
 			boolean change = state != isTextFieldShown();
 			setTextFieldShown(state, true);
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return super.keyPressed(keyCode, scanCode, modifiers);
@@ -316,12 +316,12 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			super(x, y, width, height, StringTextComponent.EMPTY, 0D);
 		}
 		
-		@Override protected void func_230979_b_() {
+		@Override protected void updateMessage() {
 			setMessage(textGetter.apply(SliderListEntry.this.getValue()));
 		}
 		
-		@Override protected void func_230972_a_() {
-			SliderListEntry.this.sliderValue.set(getValue());
+		@Override protected void applyValue() {
+			sliderValue.set(getValue());
 		}
 		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -333,11 +333,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 						step *= 0.25D;
 					if (Screen.hasControlDown())
 						step *= 4D;
-					final double value = MathHelper.clamp(
-					  sliderValue + (double) (step / (float) (this.width - 8)), 0D, 1D);
-					sliderValue = value;
+					final double v = MathHelper.clamp(
+					  value + (double) (step / (float) (this.width - 8)), 0D, 1D);
+					value = v;
 					SliderListEntry.this.setValue(getValue());
-					sliderValue = value;
+					value = v;
 					return true;
 				}
 			}

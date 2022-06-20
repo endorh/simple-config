@@ -29,8 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
-public abstract class TooltipListEntry<T>
-  extends AbstractConfigListEntry<T> {
+public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	@Nullable private Supplier<Optional<ITextComponent[]>> tooltipSupplier;
 	protected String matchedTooltipText = null;
 	
@@ -87,7 +86,7 @@ public abstract class TooltipListEntry<T>
 	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
 		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
-			 component -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
+			 component -> Minecraft.getInstance().font.split(
             component, (int) (getConfigScreen().width * advanced.tooltip_max_width)).stream())
 		  .toArray(IReorderingProcessor[]::new);
 	}
@@ -127,9 +126,9 @@ public abstract class TooltipListEntry<T>
 				List<ITextComponent> tt = Lists.newArrayList();
 				final String[] lines = NEW_LINE.split(tooltipText);
 				Style style = Style.EMPTY
-				  .applyFormatting(focusedMatch? TextFormatting.GOLD : TextFormatting.YELLOW)
+				  .applyFormat(focusedMatch? TextFormatting.GOLD : TextFormatting.YELLOW)
 				  // .applyFormatting(TextFormatting.BOLD)
-				  .applyFormatting(TextFormatting.UNDERLINE);
+				  .applyFormat(TextFormatting.UNDERLINE);
 				for (String line : lines) {
 					final int l = line.length();
 					int a = MathHelper.clamp(i, 0, l);
@@ -140,7 +139,7 @@ public abstract class TooltipListEntry<T>
 						  .append(new StringTextComponent(line.substring(a, b)).setStyle(style))
 						  .append(new StringTextComponent(line.substring(b)));
 					} else ln = new StringTextComponent(line);
-					tt.add(ln.mergeStyle(TextFormatting.GRAY));
+					tt.add(ln.withStyle(TextFormatting.GRAY));
 					i -= l + 1;
 					j -= l + 1;
 				}
@@ -173,8 +172,8 @@ public abstract class TooltipListEntry<T>
 	protected String seekableTooltipString() {
 		if (this instanceof IChildListEntry && ((IChildListEntry) this).isChild())
 			return "";
-		return getTooltip().map(t -> Arrays.stream(t).map(AbstractConfigEntry::getUnformattedString)
-		  .collect(Collectors.joining("\n"))).orElse("");
+		return getTooltip().map(t -> Arrays.stream(t).map(
+		  AbstractConfigEntry::getUnformattedString
+		  ).collect(Collectors.joining("\n"))).orElse("");
 	}
 }
-

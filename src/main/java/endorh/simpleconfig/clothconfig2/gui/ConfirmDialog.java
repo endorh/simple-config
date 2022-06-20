@@ -62,7 +62,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		confirmButton = new TintedButton(0, 0, 120, 20, confirmText, p -> confirm());
 		addButton(cancelButton);
 		addButton(confirmButton);
-		setListener(cancelButton);
+		setFocused(cancelButton);
 		cancelButton.changeFocus(true);
 		bodyListeners.addAll(Arrays.asList(this.checkBoxes));
 	}
@@ -89,10 +89,10 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	
 	@Override protected void position() {
 		w = (int) MathHelper.clamp(screen.width * 0.7, 120, 800);
-		final int titleWidth = font.getStringPropertyWidth(title);
+		final int titleWidth = font.width(title);
 		if (titleWidth + 16 > w)
 			w = min(screen.width - 32, titleWidth + 16);
-		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
+		lines = getBody().stream().map(l -> font.split(l, w - 16)).collect(Collectors.toList());
 		h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, screen.height * 0.9);
 		super.position();
 	}
@@ -104,7 +104,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		int ty = y + 4;
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
-				font.func_238407_a_(mStack, l, tx, ty, bodyColor);
+				font.drawShadow(mStack, l, tx, ty, bodyColor);
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;
@@ -127,7 +127,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
 				if (mY >= ty && mY < ty + lineHeight && mX >= tx && tx < x + w - 8)
-					return font.getCharacterManager().func_243239_a(l, (int) round(mX - tx));
+					return font.getSplitter().componentStyleAtWidth(l, (int) round(mX - tx));
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;

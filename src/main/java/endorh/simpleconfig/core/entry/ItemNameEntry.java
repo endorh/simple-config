@@ -41,15 +41,15 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
-			suggestionSupplier = () -> Registry.ITEM.getEntries().stream().map(Entry::getValue)
-			  .filter(i -> i.getGroup() != null).map(ForgeRegistryEntry::getRegistryName)
+			suggestionSupplier = () -> Registry.ITEM.entrySet().stream().map(Entry::getValue)
+			  .filter(i -> i.getItemCategory() != null).map(ForgeRegistryEntry::getRegistryName)
 			  .collect(Collectors.toList());
 		}
 		
 		public Builder suggest(Ingredient ingredient) {
 			Builder copy = copy();
 			copy.suggestionSupplier =
-			  () -> Arrays.stream(ingredient.getMatchingStacks()).map(
+			  () -> Arrays.stream(ingredient.getItems()).map(
 			    s -> s.getItem().getRegistryName()
 			  ).filter(Objects::nonNull).collect(Collectors.toList());
 			return copy;
@@ -74,7 +74,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;
 				suggestionSupplier = () -> Stream.concat(
 				  supplier != null? supplier.get().stream() : Stream.empty(),
-				  tag.getAllElements().stream().map(ForgeRegistryEntry::getRegistryName)
+				  tag.getValues().stream().map(ForgeRegistryEntry::getRegistryName)
 				).collect(Collectors.toList());
 			}
 			return new ItemNameEntry(parent, name, value);

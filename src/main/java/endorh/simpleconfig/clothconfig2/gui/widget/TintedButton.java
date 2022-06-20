@@ -6,6 +6,9 @@ import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
 
+import net.minecraft.client.gui.widget.button.Button.IPressable;
+import net.minecraft.client.gui.widget.button.Button.ITooltip;
+
 public class TintedButton extends Button {
 	
 	protected int tintColor = 0x00000000;

@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
+
 @OnlyIn(value = Dist.CLIENT)
 @Internal public class ConfigBuilderImpl implements ConfigBuilder {
 	protected Runnable savingRunnable;

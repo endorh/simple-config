@@ -163,25 +163,25 @@ public abstract class AbstractConfigEntry<T>
 	public ITextComponent getDisplayedFieldName() {
 		boolean hasError = this.hasErrors();
 		boolean isEdited = this.isEdited();
-		IFormattableTextComponent text = this.getFieldName().deepCopy();
+		IFormattableTextComponent text = this.getFieldName().copy();
 		if (matchedText != null && !matchedText.isEmpty()) {
 			final String title = getUnformattedString(getFieldName());
 			final int i = title.indexOf(matchedText);
 			if (i != -1) {
 				text = new StringTextComponent(title.substring(0, i))
 				  .append(new StringTextComponent(title.substring(i, i + matchedText.length()))
-				            .mergeStyle(focusedMatch? TextFormatting.GOLD : TextFormatting.YELLOW)
+				            .withStyle(focusedMatch? TextFormatting.GOLD : TextFormatting.YELLOW)
 				            // .mergeStyle(TextFormatting.BOLD)
-				            .mergeStyle(TextFormatting.UNDERLINE))
-				  .appendString(title.substring(i + matchedText.length()));
+				            .withStyle(TextFormatting.UNDERLINE))
+				  .append(title.substring(i + matchedText.length()));
 			}
 		}
 		if (hasError)
-			text = text.mergeStyle(TextFormatting.RED);
+			text = text.withStyle(TextFormatting.RED);
 		if (isEdited)
-			text = text.mergeStyle(TextFormatting.ITALIC);
+			text = text.withStyle(TextFormatting.ITALIC);
 		if (!hasError && !isEdited)
-			text = text.mergeStyle(TextFormatting.GRAY);
+			text = text.withStyle(TextFormatting.GRAY);
 		return text;
 	}
 	
@@ -295,7 +295,7 @@ public abstract class AbstractConfigEntry<T>
 			if (!(this instanceof IChildListEntry && ((IChildListEntry) this).isChild())) {
 				getConfigScreen().getHistory().preserveState(this);
 			} else if (listParent != null) {
-				listParent.setListener(this);
+				listParent.setFocused(this);
 				listParent.preserveState();
 			}
 		}
@@ -306,10 +306,10 @@ public abstract class AbstractConfigEntry<T>
 		if (isSelected && !this.isSelected) preserveState();
 		this.isSelected = isSelected;
 		if (!isSelected) {
-			final IGuiEventListener listener = getListener();
+			final IGuiEventListener listener = getFocused();
 			if (listener instanceof Widget && ((Widget) listener).isFocused())
 				WidgetUtils.forceUnFocus(listener);
-			setListener(null);
+			setFocused(null);
 		}
 	}
 	
@@ -403,10 +403,10 @@ public abstract class AbstractConfigEntry<T>
 		}
 		
 		AbstractConfigEntry<?> p = parents.get(parents.size() - 1);
-		getParent().setListener(p);
+		getParent().setFocused(p);
 		for (int i = parents.size() - 2; i >= 0; i--) {
 			AbstractConfigEntry<?> n = parents.get(i);
-			p.setListener(n);
+			p.setFocused(n);
 			p = n;
 		}
 		getParent().scrollTo(this);
@@ -506,15 +506,15 @@ public abstract class AbstractConfigEntry<T>
 	}
 	
 	protected void acquireFocus() {
-		final List<? extends IGuiEventListener> listeners = getEventListeners();
+		final List<? extends IGuiEventListener> listeners = children();
 		if (!listeners.isEmpty()) {
 			final IGuiEventListener listener = listeners.get(0);
-			setListener(listener);
+			setFocused(listener);
 			WidgetUtils.forceFocus(listener);
 		}
 	}
 	
-	private static final Pattern STYLE_ESCAPE = Pattern.compile("§[0-9a-f]");
+	private static final Pattern STYLE_ESCAPE = Pattern.compile("§[\\da-f]");
 	protected static String getUnformattedString(ITextComponent component) {
 		return STYLE_ESCAPE.matcher(component.getString()).replaceAll("");
 	}

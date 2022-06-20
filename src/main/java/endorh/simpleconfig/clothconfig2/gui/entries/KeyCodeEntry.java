@@ -40,7 +40,7 @@ public class KeyCodeEntry
 		super(fieldName);
 		this.value = value.copy();
 		original = value.copy();
-		buttonWidget = new Button(0, 0, 150, 20, NarratorChatListener.EMPTY,
+		buttonWidget = new Button(0, 0, 150, 20, NarratorChatListener.NO_TITLE,
 		                               widget -> getConfigScreen().setFocusedBinding(this));
 		resetButton = new ResetButton(this);
 		widgets = Lists.newArrayList(buttonWidget, resetButton);
@@ -107,21 +107,21 @@ public class KeyCodeEntry
 	) {
 		super.renderEntry(
 		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
+		MainWindow window = Minecraft.getInstance().getWindow();
 		resetButton.y = y;
 		int buttonX;
 		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float) (window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		final FontRenderer font = Minecraft.getInstance().font;
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
 			  (float) (y + 6), 0xFFFFFF);
 			resetButton.x = x;
 			buttonX = x + resetButton.getWidth() + 2;
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float) x, (float) (y + 6), getPreferredTextColor());
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6), getPreferredTextColor());
 			resetButton.x = x + entryWidth - resetButton.getWidth();
 			buttonX = x + entryWidth - 150;
 		}
@@ -136,9 +136,9 @@ public class KeyCodeEntry
 		buttonWidget.setMessage(getLocalizedName());
 		if (getConfigScreen().getFocusedBinding() == this) {
 			buttonWidget.setMessage(
-			  new StringTextComponent("> ").mergeStyle(TextFormatting.WHITE).append(
-				 buttonWidget.getMessage().copyRaw().mergeStyle(TextFormatting.YELLOW)).append(
-				 new StringTextComponent(" <").mergeStyle(TextFormatting.WHITE)));
+			  new StringTextComponent("> ").withStyle(TextFormatting.WHITE).append(
+				 buttonWidget.getMessage().plainCopy().withStyle(TextFormatting.YELLOW)).append(
+				 new StringTextComponent(" <").withStyle(TextFormatting.WHITE)));
 		}
 		buttonWidget.x = x;
 		buttonWidget.y = y;
@@ -153,7 +153,7 @@ public class KeyCodeEntry
 			WidgetUtils.forceUnFocus(buttonWidget, resetButton);
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childWidgets : widgets;
 	}
 	

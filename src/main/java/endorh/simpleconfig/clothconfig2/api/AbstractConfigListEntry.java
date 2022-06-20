@@ -77,8 +77,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 	}
 	
 	protected void bindTexture() {
-		Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);
-		RenderHelper.disableStandardItemLighting();
+		Minecraft.getInstance().getTextureManager().bind(CONFIG_TEX);
+		RenderHelper.turnOff();
 		RenderSystem.enableBlend();
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}

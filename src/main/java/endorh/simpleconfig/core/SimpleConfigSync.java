@@ -110,8 +110,8 @@ import java.util.stream.Collectors;
 	
 	private static void broadcastToOperators(ITextComponent message) {
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
-		  .filter(p -> p.hasPermissionLevel(2))
-		  .forEach(p -> p.sendMessage(message, Util.DUMMY_UUID));
+		  .filter(p -> p.hasPermissions(2))
+		  .forEach(p -> p.sendMessage(message, Util.NIL_UUID));
 	}
 	
 	public static class ConfigUpdateReflectionError extends RuntimeException {
@@ -303,12 +303,12 @@ import java.util.stream.Collectors;
 		  new PacketDistributor<>(
 			 (distributor, supplier) -> packet -> {
 				 final ServerPlayerEntity exception = supplier.get();
-				 final MinecraftServer server = exception.world.getServer();
+				 final MinecraftServer server = exception.level.getServer();
 				 if (server == null)
 					 return;
 				 server.getPlayerList().getPlayers()
 					.stream().filter(p -> exception != p)
-					.forEach(p -> p.connection.sendPacket(packet));
+					.forEach(p -> p.connection.send(packet));
 			 }, NetworkDirection.PLAY_TO_CLIENT
 		  );
 		
@@ -316,7 +316,7 @@ import java.util.stream.Collectors;
 			final ClientPlayerEntity player = Minecraft.getInstance().player;
 			if (player == null)
 				return;
-			player.sendMessage(message, Util.DUMMY_UUID);
+			player.sendMessage(message, Util.NIL_UUID);
 		}
 		
 		@Override protected void handle(Context ctx) {
@@ -327,7 +327,7 @@ import java.util.stream.Collectors;
 		public void onClient(Context ctx) {}
 		
 		public void sendTo(ServerPlayerEntity player) {
-			CHANNEL.sendTo(this, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+			CHANNEL.sendTo(this, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
 		}
 		
 		public void sendExcept(ServerPlayerEntity player) {
@@ -368,7 +368,7 @@ import java.util.stream.Collectors;
 				            "the server config for mod \"" + modName + "\" without privileges");
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.tried_to_update_by",
-				  senderName, modName).mergeStyle(TextFormatting.RED));
+				  senderName, modName).withStyle(TextFormatting.RED));
 				// Send back a re-sync packet
 				new SSimpleConfigSyncPacket(modId, fileName, fileData).sendTo(sender);
 				return;
@@ -383,32 +383,32 @@ import java.util.stream.Collectors;
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.error_updating_by_operator",
-				  modName, senderName, e.getMessage()).mergeStyle(TextFormatting.DARK_RED));
+				  modName, senderName, e.getMessage()).withStyle(TextFormatting.DARK_RED));
 			}
 			
 			LOGGER.warn("Server config for mod \"" + modName + "\" " +
 			            "has been updated by operator \"" + senderName + "\"");
 			IFormattableTextComponent msg = new TranslationTextComponent(
 			  "simpleconfig.config.msg.updated_by",
-			  modName, senderName).mergeStyle(TextFormatting.GOLD);
+			  modName, senderName).withStyle(TextFormatting.GOLD);
 			if (requireRestart)
-				msg = msg.appendString("\n").append(new TranslationTextComponent(
+				msg = msg.append("\n").append(new TranslationTextComponent(
 				  "simpleconfig.config.msg.server_changes_require_restart"
-				).mergeStyle(TextFormatting.GOLD));
+				).withStyle(TextFormatting.GOLD));
 			broadcastToOperators(msg);
 			new SSimpleConfigSyncPacket(modId, fileName, fileData).sendExcept(sender);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeString(fileName);
+			buf.writeUtf(modId);
+			buf.writeUtf(fileName);
 			buf.writeByteArray(fileData);
 			buf.writeBoolean(requireRestart);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			fileName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			fileName = buf.readUtf(32767);
 			fileData = buf.readByteArray();
 			requireRestart = buf.readBoolean();
 		}
@@ -436,7 +436,7 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void onClient(Context ctx) {
-			if (!Minecraft.getInstance().isSingleplayer()) {
+			if (!Minecraft.getInstance().hasSingleplayerServer()) {
 				// Ensure the config has been registered as a SimpleConfig
 				SimpleConfig.getInstance(modId, Type.SERVER);
 				final String modName = SimpleConfig.getModNameOrId(modId);
@@ -453,14 +453,14 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeString(fileName);
+			buf.writeUtf(modId);
+			buf.writeUtf(fileName);
 			buf.writeByteArray(fileData);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			fileName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			fileName = buf.readUtf(32767);
 			fileData = buf.readByteArray();
 		}
 	}
@@ -542,16 +542,16 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeString(snapshotName);
+			buf.writeUtf(modId);
+			buf.writeUtf(snapshotName);
 			buf.writeBoolean(fileData != null);
 			if (fileData != null)
 				buf.writeByteArray(fileData);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			snapshotName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			snapshotName = buf.readUtf(32767);
 			fileData = buf.readBoolean() ? buf.readByteArray() : null;
 		}
 	}
@@ -580,17 +580,17 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeString(snapshotName);
+			buf.writeUtf(modId);
+			buf.writeUtf(snapshotName);
 			buf.writeBoolean(errorMsg != null);
 			if (errorMsg != null)
-				buf.writeString(errorMsg);
+				buf.writeUtf(errorMsg);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			snapshotName = buf.readString(32767);
-			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+			modId = buf.readUtf(32767);
+			snapshotName = buf.readUtf(32767);
+			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}
 	}
 	
@@ -625,11 +625,11 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 		}
 	}
 	
@@ -653,17 +653,17 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeVarInt(names.size());
 			for (String name : names)
-				buf.writeString(name);
+				buf.writeUtf(name);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			names = new ArrayList<>();
 			for (int i = buf.readVarInt(); i > 0; i--)
-				names.add(buf.readString(32767));
+				names.add(buf.readUtf(32767));
 		}
 	}
 	
@@ -700,13 +700,13 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeString(snapshotName);
+			buf.writeUtf(modId);
+			buf.writeUtf(snapshotName);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			snapshotName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			snapshotName = buf.readUtf(32767);
 		}
 	}
 	
@@ -742,21 +742,21 @@ import java.util.stream.Collectors;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeString(snapshotName);
+			buf.writeUtf(modId);
+			buf.writeUtf(snapshotName);
 			buf.writeBoolean(fileData != null);
 			if (fileData != null)
 				buf.writeByteArray(fileData);
 			buf.writeBoolean(errorMsg != null);
 			if (errorMsg != null)
-				buf.writeString(errorMsg);
+				buf.writeUtf(errorMsg);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			snapshotName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			snapshotName = buf.readUtf(32767);
 			fileData = buf.readBoolean()? buf.readByteArray() : null;
-			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}
 	}
 	

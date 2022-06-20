@@ -37,7 +37,7 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 	@Override
 	protected void textFieldPreRender(TextFieldWidget widget) {
 		try {
-			double i = Double.parseDouble(widget.getText());
+			double i = Double.parseDouble(widget.getValue());
 			if (i < this.minimum || i > this.maximum) {
 				widget.setTextColor(0xFF5555);
 			} else {

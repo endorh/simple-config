@@ -199,13 +199,13 @@ public class DemoServerCategory {
 			//   if the mod modified the summon_command field
 			@Text private static final Supplier<ITextComponent> _2 = () ->
 			  ttc(prefix("text.some_complex_text"),
-			      stc(summon_command).modifyStyle(style -> style
-				     .setFormatting(TextFormatting.LIGHT_PURPLE)
+			      stc(summon_command).withStyle(style -> style
+				     .withColor(TextFormatting.LIGHT_PURPLE)
 				     // If you're planning to have many clickable links,
 			        // you may want to create a wrapper for this
-				     .setHoverEvent(new HoverEvent(
+				     .withHoverEvent(new HoverEvent(
 					    HoverEvent.Action.SHOW_TEXT, ttc("chat.copy.click")))
-				     .setClickEvent(new ClickEvent(
+				     .withClickEvent(new ClickEvent(
 					    ClickEvent.Action.COPY_TO_CLIPBOARD, summon_command))));
 			
 			// Groups will always be placed after entries with the same order

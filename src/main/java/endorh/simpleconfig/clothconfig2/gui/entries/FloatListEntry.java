@@ -40,7 +40,7 @@ public class FloatListEntry extends TextFieldListEntry<Float> implements IRanged
 	@Override
 	protected void textFieldPreRender(TextFieldWidget widget) {
 		try {
-			double i = Float.parseFloat(widget.getText());
+			double i = Float.parseFloat(widget.getValue());
 			if (i < (double) this.minimum || i > (double) this.maximum) {
 				widget.setTextColor(0xFF5555);
 			} else {

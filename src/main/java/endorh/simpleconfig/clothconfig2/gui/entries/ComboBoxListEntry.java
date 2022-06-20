@@ -60,22 +60,22 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
+		MainWindow window = Minecraft.getInstance().getWindow();
 		resetButton.y = y;
 		
 		int comboBoxX;
 		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
-		if (font.getBidiFlag()) {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(),
-			  (float) (window.getScaledWidth() - x - font.getStringPropertyWidth(name)),
+		final FontRenderer font = Minecraft.getInstance().font;
+		if (font.isBidirectional()) {
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(),
+			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
 			  (float) (y + 6), getPreferredTextColor());
 			resetButton.x = x;
 			comboBoxX = x + resetButton.getWidth() + 4;
 		} else {
-			font.func_238407_a_(
-			  mStack, name.func_241878_f(), (float) x, (float) (y + 6),
+			font.drawShadow(
+			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6),
 			  getPreferredTextColor());
 			resetButton.x = x + entryWidth - resetButton.getWidth();
 			comboBoxX = x + entryWidth - 150 + 2;
@@ -153,7 +153,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		return comboBox.isDropDownShown()? comboBox.getDropDownHeight() : 0;
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return isChild()? childListeners : listeners;
 	}
 	

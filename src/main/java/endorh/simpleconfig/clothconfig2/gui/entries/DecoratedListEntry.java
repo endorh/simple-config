@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry.EntryError;
+
 @OnlyIn(Dist.CLIENT)
 public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
   C, CE extends AbstractConfigListEntry<C> & IChildListEntry>
@@ -122,9 +124,9 @@ public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
 	}
 	
 	@Override protected void acquireFocus() {
-		setListener(listEntry);
+		setFocused(listEntry);
 		listEntry.updateSelected(false);
-		listEntry.setListener(listEntry.label);
+		listEntry.setFocused(listEntry.label);
 		WidgetUtils.forceFocus(listEntry.label);
 	}
 	
@@ -142,7 +144,7 @@ public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
 		listEntry.updateSelected(isSelected);
 	}
 	
-	@Override public IGuiEventListener getListener() {
+	@Override public IGuiEventListener getFocused() {
 		return listEntry;
 	}
 	
@@ -194,7 +196,7 @@ public class DecoratedListEntry<V, E extends AbstractListListEntry<V, ?, E>,
 		return Lists.newArrayList(listEntry);
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return children;
 	}
 	

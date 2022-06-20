@@ -163,17 +163,17 @@ public class SubCategoryListEntry
 	  int mouseY, boolean isHovered, float delta
 	) {
 		label.area.setBounds(x - 24, y, heldEntry != null? entryWidth - 132 : entryWidth + 17 - resetButton.getWidth(), 20);
-		WidgetUtils.forceSetFocus(label, isSelected && getListener() == label);
+		WidgetUtils.forceSetFocus(label, isSelected && getFocused() == label);
 		super.renderEntry(
 		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		Minecraft.getInstance().getTextureManager().bindTexture(CONFIG_TEX);
-		RenderHelper.disableStandardItemLighting();
+		Minecraft.getInstance().getTextureManager().bind(CONFIG_TEX);
+		RenderHelper.turnOff();
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		blit(
 		  mStack, x - 15, y + 5, 24,
 		  (label.area.contains(mouseX, mouseY) ? 18 : 0) + (expanded ? 9 : 0), 9, 9);
-		Minecraft.getInstance().fontRenderer.func_238407_a_(
-		  mStack, getDisplayedFieldName().func_241878_f(), (float) x, (float) (y + 6),
+		Minecraft.getInstance().font.drawShadow(
+		  mStack, getDisplayedFieldName().getVisualOrderText(), (float) x, (float) (y + 6),
 		  label.area.contains(mouseX, mouseY) ? 0xffe6fe16 : 0xffffffff);
 		resetButton.x = x + entryWidth - resetButton.getWidth();
 		resetButton.y = y;
@@ -185,7 +185,7 @@ public class SubCategoryListEntry
 			for (AbstractConfigListEntry<?> entry : entries) {
 				entry.render(
 				  mStack, -1, yy, x + 14, entryWidth - 14, entry.getItemHeight(), mouseX, mouseY,
-				  isHovered && getListener() == entry, delta);
+				  isHovered && getFocused() == entry, delta);
 				yy += entry.getItemHeight();
 			}
 			if (animating) ScissorsHandler.INSTANCE.removeLastScissor();
@@ -207,13 +207,13 @@ public class SubCategoryListEntry
 	@Override public void updateSelected(boolean isSelected) {
 		super.updateSelected(isSelected);
 		if (heldEntry != null) {
-			final boolean heldEntrySelected = isSelected && getListener() == heldEntry;
+			final boolean heldEntrySelected = isSelected && getFocused() == heldEntry;
 			final boolean prevSelected = heldEntry.isSelected();
 			heldEntry.updateSelected(heldEntrySelected);
 			if (!prevSelected && heldEntrySelected) getConfigScreen().getHistory().preserveState(heldEntry);
 		}
 		for (AbstractConfigListEntry<?> entry : entries)
-			entry.updateSelected(expanded && isSelected && getListener() == entry);
+			entry.updateSelected(expanded && isSelected && getFocused() == entry);
 	}
 	
 	@Override public boolean isEdited() {
@@ -270,7 +270,7 @@ public class SubCategoryListEntry
 		return 24;
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	public @NotNull List<? extends IGuiEventListener> children() {
 		return expanded ? expandedChildren : children;
 	}
 	
@@ -284,7 +284,7 @@ public class SubCategoryListEntry
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!entries.contains(listener))
 			return 0;
@@ -301,7 +301,7 @@ public class SubCategoryListEntry
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		if (listener instanceof AbstractConfigListEntry<?>)
@@ -349,8 +349,8 @@ public class SubCategoryListEntry
 			if (area.contains(mouseX, mouseY)) {
 				final IExpandable parent = getParent();
 				parent.setExpanded(!parent.isExpanded(), Screen.hasShiftDown());
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
 				return true;
 			}
 			return false;
@@ -362,16 +362,16 @@ public class SubCategoryListEntry
 				case 262: // Right
 					if (!parent.isExpanded()) {
 						parent.setExpanded(true, Screen.hasShiftDown());
-						Minecraft.getInstance().getSoundHandler().play(
-						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+						Minecraft.getInstance().getSoundManager().play(
+						  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 						return true;
 					}
 					break;
 				case 263: // Left
 					if (parent.isExpanded()) {
 						parent.setExpanded(false, Screen.hasShiftDown());
-						Minecraft.getInstance().getSoundHandler().play(
-						  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+						Minecraft.getInstance().getSoundManager().play(
+						  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 						return true;
 					}
 					break;

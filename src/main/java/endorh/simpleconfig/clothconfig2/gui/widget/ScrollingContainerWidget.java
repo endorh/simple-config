@@ -99,7 +99,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 		);
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 	@Override public Pair<Integer, IGuiEventListener> getDragged() {
@@ -114,21 +114,21 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	@Override public void setDragging(boolean dragging) {
 		this.dragging = dragging;
 	}
-	@Nullable @Override public IGuiEventListener getListener() {
+	@Nullable @Override public IGuiEventListener getFocused() {
 		return listener;
 	}
-	@Override public void setListener(@Nullable IGuiEventListener listener) {
+	@Override public void setFocused(@Nullable IGuiEventListener listener) {
 		this.listener = listener;
 	}
 	
 	@Override public boolean changeFocus(boolean focus) {
 		final boolean change = IExtendedDragAwareNestedGuiEventHandler.super.changeFocus(focus);
 		if (change) {
-			final IGuiEventListener listener = getListener();
+			final IGuiEventListener listener = getFocused();
 			if (listener != null) {
 				if (listener instanceof Widget) {
 					final Widget widget = (Widget) listener;
-					int target = widget.y + widget.getHeightRealms() / 2 - area.y;
+					int target = widget.y + widget.getHeight() / 2 - area.y;
 					scrollTo(target, true);
 				}
 			}
