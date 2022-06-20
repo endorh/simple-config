@@ -529,7 +529,7 @@ public class ClothConfigScreen
 		  int mouseX, int mouseY, boolean isHovered, float delta
 		) {
 			if (item instanceof AbstractConfigEntry)
-				((AbstractConfigEntry<?>) item).updateSelected(getFocused() == item);
+				((AbstractConfigEntry<?>) item).updateSelected(getFocusedItem() == item);
 			super.renderItem(matrices, item, index, y, x, entryWidth, entryHeight, mouseX, mouseY,
 			                 isHovered, delta);
 		}

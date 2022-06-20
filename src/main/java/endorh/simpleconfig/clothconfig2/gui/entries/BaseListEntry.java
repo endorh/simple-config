@@ -523,7 +523,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				} else {
 					cell.render(
 					  mStack, i, yy, x + 14, entryWidth - 14, cellHeight, mouseX, mouseY,
-					  getParent().getFocused() != null && getParent().getFocused()
+					  getParent().getFocusedItem() != null && getParent().getFocusedItem()
 						 .equals(this) && getListener() != null && getListener().equals(cell), delta);
 				}
 				i++;
@@ -586,7 +586,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		fill(mStack, area.x, draggedY + offset, area.getMaxX(), draggedY + cellHeight + offset - 3, 0x42848484);
 		cell.render(
 		  mStack, dragCursor, draggedY, area.x + 14, area.width - 14, cellHeight, mouseX, mouseY,
-		  getParent().getFocused() != null && getParent().getFocused().equals(this)
+		  getParent().getFocusedItem() != null && getParent().getFocusedItem().equals(this)
 		  && getListener() != null && getListener().equals(cell), delta);
 		return true;
 	}

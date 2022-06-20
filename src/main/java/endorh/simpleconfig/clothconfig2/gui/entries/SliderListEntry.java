@@ -33,7 +33,7 @@ import java.util.function.Function;
 @OnlyIn(Dist.CLIENT)
 public abstract class SliderListEntry<V extends Comparable<V>>
   extends TooltipListEntry<V> implements IChildListEntry {
-	protected AtomicReference<V> value;
+	protected AtomicReference<V> sliderValue;
 	protected SliderWidget sliderWidget;
 	protected ResetButton resetButton;
 	protected boolean canUseTextField = true;
@@ -56,7 +56,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		super(fieldName);
 		this.min = min;
 		this.max = max;
-		this.value = new AtomicReference<>(this.original = value);
+		this.sliderValue = new AtomicReference<>(this.original = value);
 		this.textGetter = textGetter;
 		this.resetButton = new ResetButton(this);
 		this.widgets = Lists.newArrayList(resetButton);
@@ -114,11 +114,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override public V getValue() {
-		return value.get();
+		return sliderValue.get();
 	}
 	
 	@Override public void setValue(V value) {
-		this.value.set(value);
+		this.sliderValue.set(value);
 		this.sliderWidget.setValue(value);
 		this.sliderWidget.func_230979_b_();
 		if (showText && !Objects.equals(textFieldEntry.getValue(), value))
@@ -321,7 +321,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		}
 		
 		@Override protected void func_230972_a_() {
-			value.set(getValue());
+			SliderListEntry.this.sliderValue.set(getValue());
 		}
 		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {

@@ -12,6 +12,7 @@ import endorh.simpleconfig.clothconfig2.gui.entries.NestedListListEntry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.util.Util;
+import net.minecraft.util.math.MathHelper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,8 +23,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static net.minecraft.util.math.MathHelper.clamp;
 
 public class EditHistory {
 	private static final Logger LOGGER = LogManager.getLogger();
@@ -120,7 +119,7 @@ public class EditHistory {
 	}
 	
 	public int getCursor() {
-		cursor = clamp(cursor, 0, records.size());
+		cursor = MathHelper.clamp(cursor, 0, records.size());
 		return cursor;
 	}
 	

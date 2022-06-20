@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicEntryListWidget<E extends Entry>
@@ -101,6 +100,9 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		return 220;
 	}
 	
+	/**
+	 * Item under the mouse.
+	 */
 	public E getSelectedItem() {
 		return selectedItem;
 	}
@@ -109,7 +111,10 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		selectedItem = item;
 	}
 	
-	public E getFocused() {
+	/**
+	 * Item with keyboard focus.
+	 */
+	public E getFocusedItem() {
 		//noinspection unchecked
 		return (E) getListener();
 	}
@@ -293,7 +298,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		if (maxScroll > 0) {
 			int sbHeight =
 			  (bottom - top) * (bottom - top) / getMaxScrollPosition();
-			sbHeight = clamp(sbHeight, 32, bottom - top - 8);
+			sbHeight = MathHelper.clamp(sbHeight, 32, bottom - top - 8);
 			int sbMinY = (int) getScroll() * (bottom - top - sbHeight) / maxScroll + top;
 			if (sbMinY < top) sbMinY = top;
 			Matrix4f matrix = matrices.getLast().getMatrix();
@@ -350,7 +355,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	}
 	
 	public void setScroll(double scroll) {
-		this.scroll = clamp(scroll, 0.0, getMaxScroll());
+		this.scroll = MathHelper.clamp(scroll, 0.0, getMaxScroll());
 	}
 	
 	protected int getMaxScroll() {
@@ -408,8 +413,8 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	}
 	
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (getFocused() != null)
-			getFocused().mouseReleased(mouseX, mouseY, button);
+		if (getFocusedItem() != null)
+			getFocusedItem().mouseReleased(mouseX, mouseY, button);
 		return false;
 	}
 	
@@ -427,7 +432,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 			} else {
 				double double_5 = max(1, getMaxScroll());
 				int int_2 = bottom - top;
-				int int_3 = clamp(
+				int int_3 = MathHelper.clamp(
 				  (int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
 				double double_6 = max(1.0, double_5 / (double) (int_2 - int_3));
 				setScroll(getScroll() + deltaY * double_6);
@@ -556,7 +561,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	
 	public int getFocusedScroll() {
 		int y = headerHeight;
-		IGuiEventListener focused = getFocused();
+		IGuiEventListener focused = getFocusedItem();
 		List<? extends Entry> entries = this.entries;
 		final int index = entries.indexOf(focused);
 		if (index < 0)
@@ -569,7 +574,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 	}
 	
 	public int getFocusedHeight() {
-		Entry focused = getFocused();
+		Entry focused = getFocusedItem();
 		if (focused instanceof IExpandable)
 			return ((IExpandable) focused).getFocusedHeight();
 		if (focused != null)
@@ -765,7 +770,7 @@ public abstract class DynamicEntryListWidget<E extends Entry>
 		int i = selectedTarget != null ? targets.indexOf(selectedTarget) : -1;
 		if (i == -1)
 			i = step > 0 ? -1 : targets.size();
-		int target = clamp(i + step, 0, targets.size() - 1);
+		int target = MathHelper.clamp(i + step, 0, targets.size() - 1);
 		final INavigableTarget t = targets.get(target);
 		t.onNavigate();
 		if (i + step == target)

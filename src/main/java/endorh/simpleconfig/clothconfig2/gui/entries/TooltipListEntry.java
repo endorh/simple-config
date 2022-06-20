@@ -13,6 +13,7 @@ import endorh.simpleconfig.clothconfig2.gui.widget.SearchBarWidget;
 import endorh.simpleconfig.clothconfig2.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -26,8 +27,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TooltipListEntry<T>
@@ -133,8 +132,8 @@ public abstract class TooltipListEntry<T>
 				  .applyFormatting(TextFormatting.UNDERLINE);
 				for (String line : lines) {
 					final int l = line.length();
-					int a = clamp(i, 0, l);
-					int b = clamp(j, 0, l);
+					int a = MathHelper.clamp(i, 0, l);
+					int b = MathHelper.clamp(j, 0, l);
 					IFormattableTextComponent ln;
 					if (a != b) {
 						ln = new StringTextComponent(line.substring(0, a))

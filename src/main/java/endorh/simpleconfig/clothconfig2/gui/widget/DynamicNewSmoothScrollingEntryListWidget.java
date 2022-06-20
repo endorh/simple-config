@@ -10,13 +10,13 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Math.*;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends DynamicEntryListWidget.Entry>
@@ -55,7 +55,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 	public void setScroll(double scroll) {
 		if (!smoothScrolling) {
 			this.scroll =
-			  clamp(scroll, 0.0, getMaxScroll());
+			  MathHelper.clamp(scroll, 0.0, getMaxScroll());
 		} else {
 			this.scroll = ScrollingHandler.clampExtension(scroll, getMaxScroll());
 			target = ScrollingHandler.clampExtension(scroll, getMaxScroll());
@@ -69,8 +69,8 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		if (!smoothScrolling) {
 			return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
 		}
-		if (getFocused() != null && isDragging() &&
-		    getFocused().mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
+		if (getFocusedItem() != null && isDragging() &&
+		    getFocusedItem().mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
 			return true;
 		}
 		if (button == 0 && scrolling) {
@@ -81,12 +81,12 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 			} else {
 				double double_5 = Math.max(1, getMaxScroll());
 				int int_2 = bottom - top;
-				int int_3 = clamp(
+				int int_3 = MathHelper.clamp(
               (int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()),
               32, int_2 - 8);
 				double double_6 = Math.max(1.0, double_5 / (double) (int_2 - int_3));
 				setScroll(
-				  clamp(getScroll() + deltaY * double_6, 0.0,
+				  MathHelper.clamp(getScroll() + deltaY * double_6, 0.0,
 				                   getMaxScroll()));
 			}
 			return true;
@@ -103,7 +103,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		if (!smoothScrolling) {
 			scroll += 16.0 * -delta;
 			scroll =
-			  clamp(delta, 0.0, getMaxScroll());
+			  MathHelper.clamp(delta, 0.0, getMaxScroll());
 			return true;
 		}
 		// Do not animate for smaller delta values, since they usually come from
@@ -180,7 +180,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 			// Animate scroll on height changes
 			if (scroll < 0 || scroll > maxScroll)
 				scrollTo(scroll < 0 ? 0 : maxScroll, true);
-			else this.target = clamp(this.target, 0, maxScroll);
+			else this.target = MathHelper.clamp(this.target, 0, maxScroll);
 		}
 		super.render(mStack, mouseX, mouseY, delta);
 		if (scrollTargetEntry != null) {
@@ -202,7 +202,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends Dynamic
 		} else if (maxScroll > 0) {
 			int height =
 			  (bottom - top) * (bottom - top) / getMaxScrollPosition();
-			height = clamp(height, 32, bottom - top - 8);
+			height = MathHelper.clamp(height, 32, bottom - top - 8);
 			height = (int) ((double) height - Math.min(
            scroll < 0.0 ? (int) (-scroll)
                                        : (scroll > (double) getMaxScroll() ?

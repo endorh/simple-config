@@ -5,6 +5,7 @@ import endorh.simpleconfig.clothconfig2.gui.entries.AbstractListListEntry.Abstra
 import endorh.simpleconfig.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -18,8 +19,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, SELF>, SELF extends AbstractListListEntry<T, C, SELF>>
@@ -153,7 +152,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 					} else if (index != -1 && (keyCode == 259 || keyCode == 261)) { // Backspace | Delete
 						listEntry.remove(index);
 						if (!listEntry.cells.isEmpty())
-							listEntry.cells.get(clamp(keyCode == 259? index - 1 : index, 0, listEntry.cells.size() - 1)).onNavigate();
+							listEntry.cells.get(MathHelper.clamp(keyCode == 259 ? index - 1 : index, 0, listEntry.cells.size() - 1)).onNavigate();
 						return true;
 					}
 				}

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -17,7 +18,6 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ProgressDialog extends ConfirmDialog {
 	private static final Logger LOGGER = LogManager.getLogger();
@@ -106,12 +106,12 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override protected void position() {
-		w = (int) clamp(screen.width * 0.7, 120, 800);
+		w = (int) MathHelper.clamp(screen.width * 0.7, 120, 800);
 		final int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
 			w = min(screen.width - 32, titleWidth + 16);
 		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
-		h = (int) clamp(
+		h = (int) MathHelper.clamp(
 		  64 + lines.stream().reduce(
 			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
 				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum),

@@ -40,8 +40,8 @@ public class IntegerSliderEntry extends SliderListEntry<Integer> {
 			return (int) round(min + ((max - min) * sliderValue));
 		}
 		
-		@Override public void setValue(Integer value) {
-			sliderValue = (double) (value - min) / (double) (max - min);
+		@Override public void setValue(Integer v) {
+			sliderValue = (double) (v - min) / (double) (max - min);
 		}
 	}
 }
