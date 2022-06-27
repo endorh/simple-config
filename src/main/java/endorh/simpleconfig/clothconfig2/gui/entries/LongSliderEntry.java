@@ -6,7 +6,8 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import static java.lang.Math.round;
+import static java.lang.Math.*;
+import static java.lang.Math.abs;
 
 @OnlyIn(value = Dist.CLIENT)
 public class LongSliderEntry extends SliderListEntry<Long> {
@@ -24,7 +25,7 @@ public class LongSliderEntry extends SliderListEntry<Long> {
 		  new LongListEntry(StringTextComponent.EMPTY, value);
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
-		textEntry.setChild(true);
+		textEntry.setChildSubEntry(true);
 		initWidgets(new SliderWidget(0, 0, 100, 24), textEntry);
 	}
 	
@@ -33,6 +34,12 @@ public class LongSliderEntry extends SliderListEntry<Long> {
 		  int x, int y, int width, int height
 		) {
 			super(x, y, width, height);
+		}
+		
+		@Override public double getStep(boolean left) {
+			setValue(getValue());
+			final double step = super.getStep(left);
+			return copySign(max(abs(step), 1.001D / (max - min)), step);
 		}
 		
 		@Override public Long getValue() {

@@ -2,9 +2,7 @@ package endorh.simpleconfig.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -15,6 +13,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
@@ -29,25 +28,29 @@ public class ProgressDialog extends ConfirmDialog {
 	protected @Nullable List<ITextComponent> error = null;
 	protected @Nullable Icon iconSave = null;
 	
-	public ProgressDialog(
-	  IOverlayCapableScreen screen, ITextComponent title,
-	  CompletableFuture<?> future
-	) {this(screen, title, Lists.newArrayList(), future);}
-	
-	public ProgressDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, List<ITextComponent> body,
-	  CompletableFuture<?> future
-	) {this(screen, title, body, DialogTexts.GUI_CANCEL, future);}
-	
-	public ProgressDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, List<ITextComponent> body,
-	  ITextComponent cancelText, CompletableFuture<?> future
+	public static ProgressDialog create(
+	  IOverlayCapableScreen screen, ITextComponent title, CompletableFuture<?> future
 	) {
-		super(screen, title, b -> {}, body, cancelText, DialogTexts.GUI_PROCEED);
+		return create(screen, title, future, null);
+	}
+	
+	public static ProgressDialog create(
+	  IOverlayCapableScreen screen, ITextComponent title, CompletableFuture<?> future,
+	  @Nullable Consumer<ProgressDialog> builder
+	) {
+		ProgressDialog dialog = new ProgressDialog(screen, title, future);
+		if (builder != null) builder.accept(dialog);
+		return dialog;
+	}
+	
+	protected ProgressDialog(
+	  IOverlayCapableScreen screen, ITextComponent title, CompletableFuture<?> future
+	) {
+		super(screen, title);
 		this.future = future;
 		setCancelButtonTint(0x80BD2424);
-		confirmButton.visible = false;
-		persistent = true;
+		removeButton(confirmButton);
+		setPersistent(true);
 		updateActualBody();
 		setIcon(SimpleConfigIcons.SPINNING_CUBE);
 	}
@@ -106,7 +109,7 @@ public class ProgressDialog extends ConfirmDialog {
 		return l;
 	}
 	
-	@Override protected void position() {
+	@Override protected void layout() {
 		w = (int) clamp(screen.width * 0.7, 120, 800);
 		final int titleWidth = font.width(title);
 		if (titleWidth + 16 > w)
@@ -115,7 +118,7 @@ public class ProgressDialog extends ConfirmDialog {
 		h = (int) clamp(64 + lines.stream().reduce(
 			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
 				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96, screen.height * 0.9);
-		super.position();
+		super.layout();
 		int bw = min(150, (w - 12) / 2);
 		cancelButton.setWidth(bw);
 		cancelButton.x = x + w / 2 - 2 - bw;
@@ -142,8 +145,7 @@ public class ProgressDialog extends ConfirmDialog {
 	protected void updateActualBody() {
 		actualBody.clear();
 		actualBody.addAll(body);
-		if (error != null)
-			actualBody.addAll(error);
+		if (error != null) actualBody.addAll(error);
 	}
 	
 	public List<ITextComponent> getBody() {
@@ -196,7 +198,14 @@ public class ProgressDialog extends ConfirmDialog {
 		this.iconSave = icon;
 	}
 	
+	protected List<ITextComponent> decorateError(List<ITextComponent> error) {
+		return error.stream()
+		  .map(t -> t.copy().withStyle(TextFormatting.RED))
+		  .collect(Collectors.toList());
+	}
+	
 	public void setError(@Nullable List<ITextComponent> error) {
+		if (error != null) error = decorateError(error);
 		this.error = error;
 		final int height = getInnerHeight();
 		updateActualBody();

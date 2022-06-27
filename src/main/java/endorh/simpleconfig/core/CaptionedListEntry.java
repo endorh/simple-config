@@ -4,9 +4,10 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.AbstractListListEntry;
-import endorh.simpleconfig.clothconfig2.impl.builders.DecoratedListEntryBuilder;
+import endorh.simpleconfig.clothconfig2.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.clothconfig2.impl.builders.FieldBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
@@ -27,15 +28,15 @@ import java.util.function.Predicate;
 import static endorh.simpleconfig.core.NBTUtil.fromNBT;
 import static endorh.simpleconfig.core.NBTUtil.toNBT;
 
-public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>,
+public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>,
   CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>>
   extends AbstractConfigEntry<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
-  DecoratedListEntry<V, C, G, E, CV, CC, CG, CE>> {
+  CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>> {
 	
 	protected final E listEntry;
 	protected final CE captionEntry;
 	
-	protected DecoratedListEntry(
+	protected CaptionedListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  Pair<CV, List<V>> value, E listEntry, CE captionEntry
 	) {
@@ -49,7 +50,7 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	  extends AbstractConfigEntryBuilder<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
-	  DecoratedListEntry<V, C, G, E, CV, CC, CG, CE>, Builder<
+	  CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>, Builder<
 	  V, C, G, E, B, CV, CC, CG, CE, CB>>
 	{
 		protected B listEntryBuilder;
@@ -61,12 +62,12 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 			this.captionEntryBuilder = captionEntryBuilder;
 		}
 		
-		@Override protected DecoratedListEntry<V, C, G, E, CV, CC, CG, CE> buildEntry(
+		@Override protected CaptionedListEntry<V, C, G, E, CV, CC, CG, CE> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			final E le = DummyEntryHolder.build(parent, listEntryBuilder).withSaver((v, h) -> {});
 			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder).withSaver((v, h) -> {});
-			return new DecoratedListEntry<>(parent, name, value, le, ce);
+			return new CaptionedListEntry<>(parent, name, value, le, ce);
 		}
 		
 		@Override protected Builder<V, C, G, E, B, CV, CC, CG, CE, CB> createCopy() {
@@ -101,6 +102,13 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		}
 	}
 	
+	@Override public List<ITextComponent> getErrors(Pair<CG, List<G>> value) {
+		List<ITextComponent> errors = super.getErrors(value);
+		errors.addAll(captionEntry.getErrors(value.getKey()));
+		errors.addAll(listEntry.getErrors(value.getValue()));
+		return errors;
+	}
+	
 	@Override public Pair<CC, List<C>> forConfig(
 	  Pair<CV, List<V>> value
 	) {
@@ -125,32 +133,19 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		               listEntry.fromGuiOrDefault(value.getValue()));
 	}
 	
-	@Override protected Predicate<Object> configValidator() {
-		return o -> {
-			if (o instanceof String) {
-				final Pair<CC, List<C>> pre = fromActualConfig(o);
-				final Pair<CV, List<V>> p = fromConfig(pre);
-				if (p == null) return false;
-				return !supplyError(forGui(p)).isPresent()
-				       && !listEntry.supplyError(listEntry.forGui(p.getValue())).isPresent()
-				       && !captionEntry.supplyError(captionEntry.forGui(p.getKey())).isPresent();
-			} else return false;
-		};
-	}
-	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <LGE extends AbstractListListEntry<G, ?, LGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
-	DecoratedListEntryBuilder<G, LGE, CG, CGE> makeGUIEntry(
+	CaptionedListEntryBuilder<G, LGE, CG, CGE> makeGUIEntry(
 	  ConfigEntryBuilder builder, ITextComponent name,
 	  AbstractConfigListEntry<List<G>> listEntry, Pair<CG, List<G>> value
 	) {
 		final CGE cge = captionEntry.buildChildGUIEntry(builder);
 		cge.setOriginal(value.getKey());
-		return new DecoratedListEntryBuilder<>(
+		return new CaptionedListEntryBuilder<>(
 		  builder, name, value, (LGE) listEntry, cge);
 	}
 	
@@ -160,9 +155,10 @@ public class DecoratedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		listEntry.withDisplayName(getDisplayName());
 		final Optional<AbstractConfigListEntry<List<G>>> opt = listEntry.buildGUIEntry(builder);
 		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
-		
-		final DecoratedListEntryBuilder<G, ?, CG, ?> entryBuilder =
-		  makeGUIEntry(builder, getDisplayName(), opt.get(), forGui(get()));
+		final AbstractConfigListEntry<List<G>> listGUIEntry = opt.get();
+		listGUIEntry.removeEntryFlag(EntryFlag.NON_PERSISTENT);
+		final CaptionedListEntryBuilder<G, ?, CG, ?> entryBuilder =
+		  makeGUIEntry(builder, getDisplayName(), listGUIEntry, forGui(get()));
 		return Optional.of(decorate(entryBuilder).build());
 	}
 	

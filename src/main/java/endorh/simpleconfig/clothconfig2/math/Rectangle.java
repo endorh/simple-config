@@ -1,5 +1,8 @@
 package endorh.simpleconfig.clothconfig2.math;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class Rectangle {
 	public int x;
 	public int y;
@@ -210,6 +213,14 @@ public class Rectangle {
 		th += ty;
 		return !((rw += rx) >= rx && rw <= tx || rh >= ry && rh <= ty || tw >= tx && tw <= rx ||
 		         th >= ty && th <= ry);
+	}
+	
+	public int horizontalIntersection(Rectangle r) {
+		return min(getMaxX(), r.getMaxX()) - max(x, r.x);
+	}
+	
+	public int verticalIntersection(Rectangle r) {
+		return min(getMaxY(), r.getMaxY()) - max(y, r.y);
 	}
 	
 	public Rectangle intersection(Rectangle r) {

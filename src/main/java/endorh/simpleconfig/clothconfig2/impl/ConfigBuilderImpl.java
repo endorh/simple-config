@@ -22,15 +22,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
-
 @OnlyIn(value = Dist.CLIENT)
 @Internal public class ConfigBuilderImpl implements ConfigBuilder {
 	protected Runnable savingRunnable;
+	protected String modId;
 	protected Screen parent;
 	protected ITextComponent title = new TranslationTextComponent("text.cloth-config.config");
-	// protected boolean globalized = false;
-	// protected boolean globalizedExpanded = true;
 	protected boolean editable = true;
 	protected boolean transparentBackground = false;
 	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
@@ -38,16 +35,11 @@ import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
 	protected final Map<String, ConfigCategory> categories = Maps.newLinkedHashMap();
 	protected ConfigCategory fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
-	protected @Nullable SnapshotHandler snapshotHandler;
+	protected @Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler;
 	
-	@Internal public ConfigBuilderImpl() {}
-	
-	// @Override public void setGlobalized(boolean globalized) {
-	// 	this.globalized = globalized;
-	// }
-	// @Override public void setGlobalizedExpanded(boolean globalizedExpanded) {
-	// 	this.globalizedExpanded = globalizedExpanded;
-	// }
+	@Internal public ConfigBuilderImpl(String modId) {
+		this.modId = modId;
+	}
 	
 	@Override public boolean isAlwaysShowTabs() {
 		return this.alwaysShowTabs;
@@ -68,7 +60,7 @@ import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
 	}
 	
 	@Override public ConfigBuilder setSnapshotHandler(
-	  SnapshotHandler handler
+	  IConfigSnapshotHandler handler
 	) {
 		this.snapshotHandler = handler;
 		return this;
@@ -159,13 +151,13 @@ import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
 		return this.afterInitConsumer;
 	}
 	
-	@Override public Screen build() {
+	@Override public AbstractConfigScreen build() {
 		if (this.categories.isEmpty() || this.fallbackCategory == null)
 			throw new NullPointerException("There cannot be no categories or fallback category!");
 		final Map<Boolean, Collection<ConfigCategory>> categorySets = categories.values().stream()
 		  .collect(Collectors.groupingBy(ConfigCategory::isServer, Collectors.toCollection(LinkedHashSet::new)));
 		AbstractConfigScreen screen = new ClothConfigScreen(
-		  this.parent, this.title, categorySets.getOrDefault(false, Collections.emptyList()),
+		  this.parent, this.modId, this.title, categorySets.getOrDefault(false, Collections.emptyList()),
 		  categorySets.getOrDefault(true, Collections.emptyList()), this.defaultBackground);
 		screen.setSavingRunnable(this.savingRunnable);
 		screen.setEditable(this.editable);

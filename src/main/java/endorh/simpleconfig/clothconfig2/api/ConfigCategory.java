@@ -3,7 +3,6 @@ package endorh.simpleconfig.clothconfig2.api;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry.EntryError;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.ITextProperties;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -22,7 +21,7 @@ public interface ConfigCategory extends IEntryHolder {
 	
 	void setTitle(ITextComponent name);
 	
-	@Internal List<AbstractConfigEntry<?>> getEntries();
+	@Internal List<AbstractConfigEntry<?>> getHeldEntries();
 	
 	String getName();
 	
@@ -41,19 +40,14 @@ public interface ConfigCategory extends IEntryHolder {
 	int getSortingOrder();
 	void setSortingOrder(int order);
 	
-	@Nullable Supplier<Optional<ITextProperties[]>> getDescription();
-	void setDescription(@Nullable Supplier<Optional<ITextProperties[]>> var1);
+	@Nullable Supplier<Optional<ITextComponent[]>> getDescription();
+	void setDescription(@Nullable Supplier<Optional<ITextComponent[]>> var1);
 	
-	default void setDescription(@Nullable ITextProperties[] description) {
+	default void setDescription(@Nullable ITextComponent[] description) {
 		this.setDescription(() -> Optional.ofNullable(description));
 	}
 	
 	void removeCategory();
-	
-	default List<EntryError> getErrors() {
-		return getEntries().stream().flatMap(e -> e.getErrors().stream())
-		  .collect(Collectors.toCollection(LinkedList::new));
-	}
 	
 	Optional<Path> getContainingFile();
 	void setContainingFile(Path path);

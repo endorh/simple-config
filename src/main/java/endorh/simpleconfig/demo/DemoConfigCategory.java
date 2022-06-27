@@ -1,9 +1,11 @@
 package endorh.simpleconfig.demo;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
+import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
+import endorh.simpleconfig.core.AbstractRange.DoubleRange;
+import endorh.simpleconfig.core.Range;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigCategory;
 import endorh.simpleconfig.core.SimpleConfigGroup;
@@ -18,6 +20,8 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.Direction;
+import net.minecraft.util.Direction.Axis;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
@@ -27,6 +31,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.awt.*;
 import java.nio.file.Path;
@@ -74,7 +79,7 @@ public class DemoConfigCategory {
 		nbt.putInt("health", 20);
 		
 		// Used below
-		List<String> natoPhoneticAlphabet = Lists.newArrayList(
+		List<String> natoPhoneticAlphabet = asList(
 		  "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf",
 		  "Hotel", "India", "Juliet", "Kilo", "Lima", "Mike", "November", "Oscar",
 		  "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor",
@@ -176,10 +181,10 @@ public class DemoConfigCategory {
 		            //     config.{mod-id}.enum.rock_paper_scissors.rock
 		            //     config.{mod-id}.enum.rock_paper_scissors.paper
 		            //     config.{mod-id}.enum.rock_paper_scissors.scissors
-		            .add("enum_value", enum_(RockPaperScissors.SCISSORS))
+		            .add("enum_value", option(RockPaperScissors.SCISSORS))
 		            // Enums may define their own translations implementing
 		            //   ITranslatedEnum (see the Placement enum)
-		            .add("enum_value_2", enum_(Placement.UPSIDE_DOWN))
+		            .add("enum_value_2", option(Placement.UPSIDE_DOWN))
 		            // String entries can suggest possible values and restrict a maximum length
 		            .add("str_suggest", string("Alpha")
 		              .suggest(natoPhoneticAlphabet).maxLength(20))
@@ -206,6 +211,20 @@ public class DemoConfigCategory {
 		            .add("no_alpha_color", color(Color.BLUE))
 		            // Colors may optionally allow alpha values
 		            .add("alpha_color", color(Color.YELLOW).alpha()))
+		       .n(group("ranges")
+		            // Among number entries, it's common to have two entries to configure a
+		            //   valid range of values. This can be neatly packed in just one entry of
+		            //   Range type, which is a type of pair.
+		            //   Range entries accept min and max arguments, as well as minSize and maxSize
+		            .add("range_entry", range(1, 20).min(0).max(100).minSize(2))
+		            // Ranges can be exclusive, which is displayed in the interface
+		            .add("double_range_entry", range(DoubleRange.exclusive(0.5, 1.5))
+			           .min(0).max(10).allowEmpty(true).maxSize(1D))
+		            .add("half_exclusive_range", range(DoubleRange.of(0, false, 1, true))
+			           .withBounds(-10, 10))
+		            // Range exclusiveness may also be left editable.
+		            .add("editable_exclusiveness_range", range(DoubleRange.of(0, false, 1, true))
+			           .withBounds(-10, 10).allowEmpty(true).canEditExclusiveness(true, true)))
 		       .n(group("lists")
 		            // Lists of basic types are supported
 		            .add("string_list", stringList(asList("Lorem ipsum", "dolor sit amet")))
@@ -217,6 +236,9 @@ public class DemoConfigCategory {
 		            // Of course this includes other lists, but try not to
 		            //   make your config too complex to use
 		            // Each list builder can specify the default for its level
+		            .add("slider_list_list", list(
+						  list(number(0F, 0, 1).slider(), asList(0F)),
+						  asList(asList(0F, 1F), asList(2F, 3F))))
 		            // Additionally, list types can hold another entry of
 		            //   non-expandable types by using caption()
 		            // Held entries are displayed on the blank space at the caption
@@ -226,8 +248,7 @@ public class DemoConfigCategory {
 		              caption(color(Color.GRAY), list(color(Color.BLACK), asList(Color.GRAY))),
 		              asList(
 							 Pair.of(Color.CYAN, asList(Color.YELLOW, Color.BLUE)),
-							 Pair.of(Color.PINK, asList(Color.RED, Color.GREEN)))
-		            ))))
+							 Pair.of(Color.PINK, asList(Color.RED, Color.GREEN)))))))
 		            // If you find yourself needing multiple nested lists or maps
 		            //   in your config, you probably instead want a custom
 		            //   JsonReloadListener to extend your mod through datapacks
@@ -307,9 +328,9 @@ public class DemoConfigCategory {
 		          .add("divisible_int_map_map", caption(number(2), map(
 		            map(number(0)
 		                  .error(i -> {
-			                  int d = CLIENT_CONFIG.<Pair<Integer, Map<String, Map<String, Integer>>>>getGUI(
+			                  Integer d = CLIENT_CONFIG.<Pair<Integer, Map<String, Map<String, Integer>>>>getGUI(
 									  "demo.entries.maps.divisible_int_map_map").getKey();
-			                  return d == 0 || i % d != 0 ? Optional.of(
+			                  return d == null || d == 0 || i % d != 0 ? Optional.of(
 			                    ttc(prefix("error.not_divisible"), i, d)
 			                  ) : Optional.empty();
 		                  }), ImmutableMap.of("", 0)
@@ -346,12 +367,32 @@ public class DemoConfigCategory {
 		          //   complex data, since list and map entries must be all the same type.
 		          .add("instruction_list", pairList(
 						string("move").restrict("move", "rotate", "dig", "tower"),
-						number(1), Lists.newArrayList(
+						number(1), asList(
 						  Pair.of("move", 2), Pair.of("tower", 1))))
 		          .add("key_map", map(
 						key(), string("/execute ..."), ImmutableMap.of(
 						  parse("ctrl+h"), "/tp 0 0 0",
 						  parse("ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true"))))
+		     .n(group("pairs_n_triples", false)
+		          .add("int_pair", pair(number(0, 0, 10), number(10, 0, 10), Pair.of(0, 10)))
+		          .add("slider_pair", pair(number(0.5F, 0F, 1F).slider(), volume(0.5F), Pair.of(0.5F, 0.5F)))
+		          .add("enum_triple", triple(
+		            option(Axis.X), option(Placement.UPSIDE_DOWN), option(Direction.NORTH),
+		            Triple.of(Axis.X, Placement.UPSIDE_DOWN, Direction.NORTH)))
+		          // .add("item_fluid_pair_list", list(pair(
+						// itemName(new ResourceLocation("apple")), fluidName(new ResourceLocation("water")),
+						// Pair.of(new ResourceLocation("apple"), new ResourceLocation("water"))
+		          // ), asList(
+						// Pair.of(new ResourceLocation("apple"), new ResourceLocation("water")),
+						// Pair.of(new ResourceLocation("beetroot"), new ResourceLocation("lava")))))
+		          .add("range", pair(number(0), number(10), Pair.of(0, 10))
+		            .guiError(p -> p != null && p.getLeft() != null && p.getRight() != null && p.getLeft() > p.getRight()?
+		                           Optional.of(ttc("error.min_greater_than_max")) : Optional.empty())
+		            .withMiddleIcon(SimpleConfigIcons.Entries.LESS_EQUAL))
+		          .add("pair_pair", pair(
+						pair(number(0), number(0L), Pair.of(0, 0L)),
+						pair(number(0F), number(0D), Pair.of(0F, 0D)),
+						Pair.of(Pair.of(1, 2L), Pair.of(3F, 4D)))))
 		     // As lists and maps, groups can also hold entries in their captions
 		     //   The held entries belong to the group and have their own entry
 		     //   within it in the config file.
@@ -420,7 +461,7 @@ public class DemoConfigCategory {
 		                .add("preset_test.b", 2)
 		                .add("preset_test.c", 4)
 		                .add("preset_test.d", "\"6\"")
-		                .add("preset_test.e", Lists.newArrayList(8, 10, 12)),
+		                .add("preset_test.e", asList(8, 10, 12)),
 						  // We may also extract common path parts using .n()
 		              preset("odd")
 		                .n(preset("preset_test")
@@ -428,14 +469,14 @@ public class DemoConfigCategory {
 		                     .add("b", 3)
 		                     .add("c", 5)
 		                     .add("d", "\"7\"")
-		                     .add("e", Lists.newArrayList(9, 11, 13))),
+		                     .add("e", asList(9, 11, 13))),
 		              preset("fibonacci")
 		                .n(preset("preset_test")
 		                     .add("a", 1)
 		                     .add("b", 1)
 		                     .add("c", 2)
 		                     .add("d", "\"3\"")
-		                     .add("e", Lists.newArrayList(5, 8, 13)))
+		                     .add("e", asList(5, 8, 13)))
 		              // Or in this case, we could have passed "preset_test" as the path here
 		            ), ""))
 		          // The following entries are used in the presets above

@@ -2,20 +2,25 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
-import endorh.simpleconfig.clothconfig2.gui.entries.SubCategoryListEntry;
+import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
 	protected static final Pattern DOT = Pattern.compile("\\.");
+	private static final Logger LOGGER = LogManager.getLogger();
 	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
 	protected SimpleConfig root;
@@ -28,10 +33,16 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		return root;
 	}
 	
-	/**
-	 * Used in error messages
-	 */
+	@OnlyIn(Dist.CLIENT)
+	@Override public @Nullable AbstractConfigScreen getGUI() {
+		return root.gui;
+	}
+	
 	protected abstract String getPath();
+	
+	protected String getGlobalPath() {
+		return getRoot().getName() + "." + getPath();
+	}
 	
 	protected abstract String getName();
 	
@@ -44,28 +55,26 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		return this;
 	}
 	
+	@Override public boolean isDirty() {
+		return dirty;
+	}
+	
 	@OnlyIn(Dist.CLIENT)
-	protected void saveGUISnapshot(CommentedConfig config) {
+	protected void saveGUISnapshot(CommentedConfig config, @Nullable Set<String> selectedPaths) {
 		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
 			final CommentedConfig subConfig = config.createSubConfig();
-			e.getValue().saveGUISnapshot(subConfig);
-			config.set(e.getKey(), subConfig);
+			e.getValue().saveGUISnapshot(subConfig, selectedPaths);
+			if (!subConfig.isEmpty())
+				config.set(e.getKey(), subConfig);
 		}
 		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
 			//noinspection unchecked
 			final AbstractConfigEntry<?, Object, ?, ?> entry =
 			  (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
-			if (!entry.nonPersistent)
+			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
+			    && !entry.nonPersistent)
 				entry.put(config, entry.guiForConfig());
 		}
-	}
-	
-	protected void buildConfigSpec(ConfigSpec spec, String path) {
-		final String thisPath = path + getName() + '.';
-		for (AbstractConfigEntry<?, ?, ?, ?> e : entries.values())
-			e.buildSpec(spec, thisPath);
-		for (AbstractSimpleConfigEntryHolder child : children.values())
-			child.buildConfigSpec(spec, thisPath);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -79,14 +88,34 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		}
 		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
 			if (config.contains(e.getKey()))
-				trySetConfigForGUI(e.getValue(), config);
+				trySetFromConfigForGUI(e.getValue(), config);
 		}
 	}
 	
-	private static <C> void trySetConfigForGUI(AbstractConfigEntry<?, C, ?, ?> entry, CommentedConfig config) {
+	private static <C> void trySetFromConfigForGUI(AbstractConfigEntry<?, C, ?, ?> entry, CommentedConfig config) {
 		try {
-			entry.setConfigForGUI(entry.get(config));
-		} catch (InvalidConfigValueTypeException ignored) {}
+			entry.setFromConfigForGUI(entry.get(config));
+		} catch (InvalidConfigValueTypeException ignored) {
+			LOGGER.warn("Error loading GUI snapshot. Invalid value type for entry " + entry.getGlobalPath());
+		}
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected void loadGUIExternalChanges() {
+		children.values().forEach(AbstractSimpleConfigEntryHolder::loadGUIExternalChanges);
+		entries.values().forEach(AbstractSimpleConfigEntryHolder::setForGUIAsExternal);
+	}
+	
+	private static <V> void setForGUIAsExternal(AbstractConfigEntry<V, ?, ?, ?> entry) {
+		entry.setForGUIAsExternal(entry.get());
+	}
+	
+	protected void buildConfigSpec(ConfigSpec spec, String path) {
+		final String thisPath = path + getName() + '.';
+		for (AbstractConfigEntry<?, ?, ?, ?> e : entries.values())
+			e.buildSpec(spec, thisPath);
+		for (AbstractSimpleConfigEntryHolder child : children.values())
+			child.buildConfigSpec(spec, thisPath);
 	}
 	
 	protected abstract void bake();
@@ -102,17 +131,6 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 			children.values().forEach(c -> c.markDirty(false));
 			entries.values().forEach(e -> e.dirty(false));
 		}
-	}
-	
-	/**
-	 * Workaround {@link SubCategoryListEntry#isRequiresRestart()} reporting false positives<br>
-	 * Instead, we mark all entries as not requiring restart initially, and mark them all as
-	 * requiring restart if our own computation is correct.
-	 */
-	@OnlyIn(Dist.CLIENT) protected void markGUIRestart() {
-		entries.values().stream().filter(e -> e.guiEntry != null)
-		  .forEach(e -> e.guiEntry.setRequiresRestart(true));
-		children.values().forEach(AbstractSimpleConfigEntryHolder::markGUIRestart);
 	}
 	
 	/**
@@ -339,6 +357,10 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 			} catch (InvalidConfigValueTypeException ignored) {}
 		}
 		doSetForGUI(path, number.doubleValue());
+	}
+	
+	@Override public boolean hasGUI(String path) {
+		return this.getEntry(path).hasGUI();
 	}
 	
 	@Override public <G> G getGUI(String path) {

@@ -6,6 +6,7 @@ import endorh.simpleconfig.clothconfig2.api.ConfigCategory;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
+import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
@@ -68,7 +69,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@Override protected String getPath() {
-		return parent != null? parent.getPath() + "." + name : name;
+		return name;
 	}
 	
 	@Override protected String getName() {
@@ -99,8 +100,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
-		ConfigCategory category = builder.getOrCreateCategory(
-		  parent.type.name().toLowerCase() + "." + name);
+		ConfigCategory category = builder.getOrCreateCategory(name);
 		category.setTitle(getTitle());
 		category.setIsServer(root.type == Type.SERVER);
 		category.setDescription(
@@ -142,6 +142,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	/**
 	 * Commits any changes in the backing fields to the actual config file<br>
 	 * You may also call this method on the root {@link SimpleConfig}
+	 * @throws InvalidConfigValueException if the current value of a field is invalid.
 	 */
 	@Override public void commitFields() {
 		try {

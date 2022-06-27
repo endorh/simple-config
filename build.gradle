@@ -20,7 +20,7 @@ apply plugin: 'net.minecraftforge.gradle'
 
 def mod_id = "simpleconfig"
 group = "endorh.simpleconfig"
-version = "0.2.31"
+version = "1.17.1-0.3.0"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -198,6 +198,7 @@ jar {
 // Process resources
 processResources {
     inputs.properties mod_properties
+    duplicatesStrategy DuplicatesStrategy.INCLUDE
 
     // Exclude development files
     exclude("**/.dev/**")

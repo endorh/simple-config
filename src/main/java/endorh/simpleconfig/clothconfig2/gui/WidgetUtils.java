@@ -29,4 +29,9 @@ public class WidgetUtils {
 		if (listener instanceof Widget && ((Widget) listener).isFocused() == focus) return;
 		if (focus) forceFocus(listener); else forceUnFocus(listener);
 	}
+	
+	public static void forceTransferFocus(IGuiEventListener from, IGuiEventListener to) {
+		forceUnFocus(from);
+		forceFocus(to);
+	}
 }

@@ -80,7 +80,7 @@ public class BooleanEntry
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, value, configValidator()));
+		return Optional.of(decorate(builder).define(name, value, createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)

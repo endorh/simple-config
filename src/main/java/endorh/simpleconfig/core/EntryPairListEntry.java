@@ -5,6 +5,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
 import endorh.simpleconfig.clothconfig2.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
@@ -25,7 +26,6 @@ import org.jetbrains.annotations.Contract;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -183,24 +183,12 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	}
 	
 	@Override
-	protected Predicate<Object> configValidator() {
-		return o -> {
-			if (o instanceof String) {
-				final List<Pair<String, C>> pre = fromActualConfig(o);
-				final List<Pair<K, V>> l = fromConfig(pre);
-				if (l == null) return false;
-				return !supplyError(forGui(l)).isPresent();
-			} else return false;
-		};
-	}
-	
-	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
-		spec.define(parentPath + name, forActualConfig(forConfig(value)), configValidator());
+		spec.define(parentPath + name, forActualConfig(forConfig(value)), createConfigValidator());
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
@@ -212,21 +200,23 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
-		ke.set(ke.value);
-		e.set(e.value);
+		ke.actualValue = ke.value;
+		e.actualValue = e.value;
 		KGE kg = ke.buildChildGUIEntry(builder);
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));
+		g.removeEntryFlag(EntryFlag.NON_PERSISTENT);
 		ke.guiEntry = kg;
 		e.guiEntry = g;
 		return Pair.of(kg, g);
 	}
 	
-	public Optional<ITextComponent> supplyElementError(Pair<KG, G> p) {
-		Optional<ITextComponent> e = keyEntry.supplyError(p.getKey());
-		if (e.isPresent()) return e;
-		return entry.supplyError(p.getValue());
+	@Override public List<ITextComponent> getElementErrors(Pair<KG, G> value) {
+		List<ITextComponent> errors = super.getElementErrors(value);
+		errors.addAll(keyEntry.getErrors(value.getKey()));
+		errors.addAll(entry.getErrors(value.getValue()));
+		return errors;
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
@@ -235,7 +225,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		  entryBuilder = builder
 		  .startEntryPairList(getDisplayName(), forGui(get()), en -> buildCell(builder))
 		  .setIgnoreOrder(true)
-		  .setCellErrorSupplier(this::supplyElementError)
+		  .setCellErrorSupplier(this::getElementError)
 		  .setExpanded(expand);
 		return Optional.of(decorate(entryBuilder).build());
 	}

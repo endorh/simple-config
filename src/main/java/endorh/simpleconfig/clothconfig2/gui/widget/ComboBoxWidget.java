@@ -10,6 +10,8 @@ import endorh.simpleconfig.clothconfig2.api.ScrollingHandler;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.clothconfig2.gui.Icon;
+import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
+import endorh.simpleconfig.clothconfig2.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import net.minecraft.block.Block;
 import net.minecraft.client.KeyboardListener;
@@ -35,7 +37,6 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.*;
 import java.util.regex.Pattern;
@@ -46,14 +47,13 @@ import static java.lang.Math.*;
 import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
-	protected static final ResourceLocation CONFIG_TEX = new ResourceLocation(
-	  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
-	@Internal protected WeakReference<IOverlayCapableScreen> screen = new WeakReference<>(null);
+	@Internal protected IOverlayCapableScreen screen = null;
 	protected Supplier<IOverlayCapableScreen> screenSupplier;
 	protected @NotNull ITypeWrapper<T> typeWrapper;
-	protected int borderFocusedColor = 0xffffffff;
-	protected int borderColor = 0xffa0a0a0;
-	protected int backgroundColor = 0xff000000;
+	protected int focusedBorderColor = 0xFFFFFFFF;
+	protected int borderColor = 0xFFA0A0A0;
+	protected int backgroundColor = 0xFF000000;
+	protected int caretColor = 0xFFD0D0D0;
 	protected boolean dropDownShown = false;
 	protected boolean draggingDropDownScrollBar = false;
 	protected boolean restrictToSuggestions = false;
@@ -66,6 +66,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected long scrollAnimationStart;
 	protected long scrollAnimationDuration = 150L;
 	protected long lastSuggestionCursorNavigation = 0;
+	protected ToggleAnimator expandAnimator = new ToggleAnimator(250L);
 	protected @Nullable ITextComponent hint = null;
 	
 	protected @NotNull ISortedSuggestionProvider<T> suggestionProvider;
@@ -78,10 +79,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected @Nullable ITextComponent parseError = null;
 	private boolean isEnabled = true;
 	protected int maxLength = 32;
-	protected int caretCounter;
+	protected int frame;
 	protected boolean shouldDrawBackground = true;
 	/** if true the textbox can lose focus by clicking elsewhere on the screen */
 	protected boolean canLoseFocus = true;
+	protected boolean canShowDropDown = true;
 	/** The current character index that should be used as start of the rendered text. */
 	protected int hScroll;
 	protected int caretPos;
@@ -121,7 +123,6 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	) {
 		super(x, y, width, height, title);
 		this.typeWrapper = typeWrapper;
-		// this.screen = new WeakReference<>(screen);
 		this.screenSupplier = screen;
 		this.font = font;
 		this.suggestionProvider = new SimpleSortedSuggestionProvider<>(
@@ -129,17 +130,15 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	protected @NotNull IOverlayCapableScreen getScreen() {
-		IOverlayCapableScreen screen = this.screen.get();
+		IOverlayCapableScreen screen = this.screen;
 		if (screen == null) {
 			if (screenSupplier != null) {
 				screen = screenSupplier.get();
-				this.screen = new WeakReference<>(screen);
+				this.screen = screen;
 				screenSupplier = null;
 				return screen;
 			}
-			throw new IllegalStateException(
-			  "The screen of this widget has already been disposed of\n" +
-			  "Do not reuse widget instances");
+			throw new IllegalStateException("Missing screen for combo box widget");
 		}
 		return screen;
 	}
@@ -181,7 +180,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				dropDownScroll = 0;
 			
 			area = dropDownRectangle;
-			final int borderColor = isFocused() ? borderFocusedColor : this.borderColor;
+			final int borderColor = isFocused() ? focusedBorderColor : this.borderColor;
 			fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), borderColor);
 			fill(mStack, area.x + 1, area.y, area.getMaxX() - 1, area.getMaxY() - 1, backgroundColor);
 			fill(
@@ -284,7 +283,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			font.drawShadow(mStack, processors.get(0), (float) x, (float) y, color);
 	}
 	
-	@Override public boolean overlayMouseScrolled(double mouseX, double mouseY, double amount) {
+	@Override public boolean overlayMouseScrolled(Rectangle area, double mouseX, double mouseY, double amount) {
 		final double lastScroll = this.dropDownScroll;
 		final double lastTarget = this.dropDownScrollTarget;
 		final long current = System.currentTimeMillis();
@@ -315,7 +314,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		       && mouseY >= thumbY && mouseY < thumbY + thumbHeight;
 	}
 	
-	@Override public boolean overlayMouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean overlayMouseClicked(Rectangle area, double mouseX, double mouseY, int button) {
 		final Rectangle rect = dropDownRectangle;
 		if (!rect.contains(mouseX, mouseY))
 			return false;
@@ -336,7 +335,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	@Override public boolean overlayMouseDragged(
-	  double mouseX, double mouseY, int button, double dragX, double dragY
+	  Rectangle area, double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
 		if (draggingDropDownScrollBar) {
 			final Rectangle rect = dropDownRectangle;
@@ -352,15 +351,14 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return draggingDropDownScrollBar;
 	}
 	
-	@Override public void overlayMouseDragEnd(double mouseX, double mouseY, int button) {
+	@Override public void overlayMouseDragEnd(Rectangle area, double mouseX, double mouseY, int button) {
 		draggingDropDownScrollBar = false;
 	}
 	
 	@Override public boolean overlayEscape() {
 		if (isDropDownShown()) {
 			setDropDownShown(false);
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			playFeedbackTap(1F);
 			return true;
 		}
 		return false;
@@ -387,7 +385,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void setDropDownShown(boolean expanded) {
+		if (!canShowDropDown()) expanded = false;
 		this.dropDownShown = expanded;
+		expandAnimator.setEaseOutTarget(expanded);
 		suggestionCursor = -1;
 		if (expanded) {
 			getScreen().claimRectangle(reportedDropDownRectangle, this, 100);
@@ -402,8 +402,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public int getDropDownHeight() {
-		return lastSortedSuggestions.isEmpty() ? 12 : min(
-		  dropDownHeight, getSuggestionHeight() * lastSortedSuggestions.size() + 2);
+		return (int) (expandAnimator.getEaseOut() * (
+		  lastSortedSuggestions.isEmpty() ? 12 : min(
+		  dropDownHeight, getSuggestionHeight() * lastSortedSuggestions.size() + 2)
+		));
 	}
 	
 	public int getIconHeight() {
@@ -464,7 +466,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * This serves to animate the caret blinking.
 	 */
 	public void tick() {
-		++caretCounter;
+		++frame;
 	}
 	
 	@Override protected @NotNull IFormattableTextComponent createNarrationMessage() {
@@ -481,8 +483,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (textValidator.test(textIn)) {
 			text = textIn.length() > maxLength ? textIn.substring(0, maxLength) : textIn;
 			
-			caretToEnd();
-			setAnchor(caretPos);
+			moveCaretToEnd();
+			setAnchorPos(caretPos);
 			onTextChanged(textIn);
 		}
 	}
@@ -520,11 +522,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * Adds the given text after the cursor, or replaces the currently
 	 * selected text if the selection is not empty.
 	 */
-	public void writeText(String textToWrite) {
+	public void insertText(String inserted) {
 		int start = min(caretPos, anchorPos);
 		int end = max(caretPos, anchorPos);
 		int allowed = maxLength - text.length() + (end - start);
-		String txt = SharedConstants.filterText(textToWrite);
+		String txt = SharedConstants.filterText(inserted);
 		int length = txt.length();
 		if (allowed < length) {
 			txt = txt.substring(0, allowed);
@@ -534,8 +536,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		final String result = (new StringBuilder(text)).replace(start, end, txt).toString();
 		if (textValidator.test(result)) {
 			text = result;
-			clampCaretPosition(start + length);
-			setAnchor(caretPos);
+			setCaretPosition(start + length);
+			setAnchorPos(caretPos);
 			onTextChanged(text);
 			if (isAutoDropDown() && !isDropDownShown() && !lastSortedSuggestions.isEmpty())
 				setDropDownShown(true);
@@ -564,14 +566,18 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected void updateSuggestions() {
 		String query = text;
 		final Optional<List<T>> opt = suggestionProvider.updateSuggestions(typeWrapper, query);
-		opt.ifPresent(ls -> lastSuggestions = ls);
-		if (opt.isPresent() || !query.equals(lastQuery)) {
-			final Pair<List<T>, List<ITextComponent>> pair =
-			  suggestionProvider.pickAndDecorateSuggestions(typeWrapper, query, lastSuggestions);
-			lastSortedSuggestions = pair.getLeft();
-			decoratedSuggestions = pair.getRight();
-			lastQuery = query;
-			setDropDownScroll(0);
+		if (opt.isPresent()) {
+			List<T> suggestions = opt.get();
+			boolean changed = !suggestions.equals(lastSuggestions);
+			if (changed) lastSuggestions = suggestions;
+			if (!query.equals(lastQuery) || changed) {
+				final Pair<List<T>, List<ITextComponent>> pair =
+				  suggestionProvider.pickAndDecorateSuggestions(typeWrapper, query, lastSuggestions);
+				lastSortedSuggestions = pair.getLeft();
+				decoratedSuggestions = pair.getRight();
+				lastQuery = query;
+				setDropDownScroll(0);
+			}
 		}
 	}
 	
@@ -595,8 +601,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	public void deleteWords(int num) {
 		if (!text.isEmpty()) {
 			if (anchorPos != caretPos) {
-				writeText("");
-			} else deleteFromCaret(getNthWordFromCaret(num) - caretPos);
+				insertText("");
+			} else deleteFromCaret(getWordFromCaret(num) - caretPos);
 		}
 	}
 	
@@ -607,16 +613,16 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	public void deleteFromCaret(int num) {
 		if (!text.isEmpty()) {
 			if (anchorPos != caretPos) {
-				writeText("");
+				insertText("");
 			} else {
 				int i = expandLigaturesFromCaret(num);
-				int j = min(i, caretPos);
-				int k = max(i, caretPos);
-				if (j != k) {
-					String s = (new StringBuilder(text)).delete(j, k).toString();
+				int start = min(i, caretPos);
+				int stop = max(i, caretPos);
+				if (start != stop) {
+					String s = (new StringBuilder(text)).delete(start, stop).toString();
 					if (textValidator.test(s)) {
 						text = s;
-						setCaret(j);
+						moveCaret(start);
 					}
 				}
 			}
@@ -626,35 +632,34 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	/**
 	 * Get the starting index of the word at the specified number of words away from the cursor position.
 	 */
-	public int getNthWordFromCaret(int numWords) {
-		return getNthWordFromPos(numWords, getCaret());
+	public int getWordFromCaret(int numWords) {
+		return getWordFromPos(numWords, getCaret());
 	}
 	
 	/**
 	 * Get the starting index of the word at a distance of the specified number of words away from the given position.
 	 */
-	protected int getNthWordFromPos(int n, int pos) {
-		return getNthWordFromPosWS(n, pos, true);
+	protected int getWordFromPos(int n, int pos) {
+		return getWordFromPosWS(n, pos, true);
 	}
 	
 	/**
 	 * Like getNthWordFromPos (which wraps this), but adds option for skipping consecutive spaces
 	 */
-	protected int getNthWordFromPosWS(int n, int pos, boolean skipWS) {
+	protected int getWordFromPosWS(int n, int pos, boolean skipWS) {
 		int p = pos;
 		for(int k = 0, count = abs(n); k < count; ++k) {
 			if (!(n < 0)) {
-				int l = text.length();
+				int len = text.length();
 				p = text.indexOf(32, p);
 				if (p == -1) {
-					p = l;
+					p = len;
 				} else if (skipWS) {
-					while (p < l && text.charAt(p) == ' ') ++p;
+					while (p < len && text.charAt(p) == ' ') ++p;
 				}
 			} else {
-				if (skipWS) {
+				if (skipWS)
 					while (p > 0 && text.charAt(p - 1) == ' ') --p;
-				}
 				while(p > 0 && text.charAt(p - 1) != ' ') --p;
 			}
 		}
@@ -665,7 +670,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * Moves the text cursor by a specified number of characters and clears the selection
 	 */
 	public void moveCaretBy(int num) {
-		setCaret(expandLigaturesFromCaret(num));
+		moveCaret(expandLigaturesFromCaret(num));
 	}
 	
 	protected int expandLigaturesFromCaret(int chars) {
@@ -677,36 +682,36 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void setSelection(int anchor, int caret) {
-		setCaret(caret);
-		setAnchor(anchor);
+		moveCaret(caret);
+		setAnchorPos(anchor);
 	}
 	
 	/**
 	 * Set the current position of the cursor.
 	 */
-	public void setCaret(int pos) {
-		clampCaretPosition(pos);
+	public void moveCaret(int pos) {
+		setCaretPosition(pos);
 		if (!Screen.hasShiftDown())
-			setAnchor(caretPos);
+			setAnchorPos(caretPos);
 		onTextChanged(text);
 	}
 	
-	public void clampCaretPosition(int pos) {
+	public void setCaretPosition(int pos) {
 		caretPos = clamp(pos, 0, text.length());
 	}
 	
 	/**
 	 * Moves the cursor to the start of this text box.
 	 */
-	public void caretToStart() {
-		setCaret(0);
+	public void moveCaretToStart() {
+		moveCaret(0);
 	}
 	
 	/**
 	 * Moves the cursor to the end of this text box.
 	 */
-	public void caretToEnd() {
-		setCaret(text.length());
+	public void moveCaretToEnd() {
+		moveCaret(text.length());
 	}
 	
 	public void autoComplete() {
@@ -721,32 +726,29 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (!canWrite()) {
+		if (!canConsumeInput()) {
 			return false;
 		} else {
 			if (Screen.isSelectAll(keyCode)) {
-				caretToEnd();
-				setAnchor(0);
+				moveCaretToEnd();
+				setAnchorPos(0);
 				return true;
 			} else {
 				final KeyboardListener kl = Minecraft.getInstance().keyboardHandler;
 				if (Screen.isCopy(keyCode)) {
 					kl.setClipboard(getSelectedText());
-					Minecraft.getInstance().getSoundManager().play(
-					  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+					playFeedbackTap(1F);
 					return true;
 				} else if (Screen.isPaste(keyCode)) {
 					if (canEditText())
-						writeText(kl.getClipboard());
-					Minecraft.getInstance().getSoundManager().play(
-					  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+						insertText(kl.getClipboard());
+					playFeedbackTap(1F);
 					return true;
 				} else if (Screen.isCut(keyCode)) {
 					kl.setClipboard(getSelectedText());
 					if (canEditText())
-						writeText("");
-					Minecraft.getInstance().getSoundManager().play(
-					  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+						insertText("");
+					playFeedbackTap(1F);
 					return true;
 				} else {
 					switch(keyCode) {
@@ -762,8 +764,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 							return true;
 						case 257: // Enter
 							autoComplete();
-							Minecraft.getInstance().getSoundManager().play(
-							  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+							playFeedbackTap(1F);
 							return true;
 						case 266: // Page Up
 							moveSuggestionCursor(-max(1, dropDownHeight / getSuggestionHeight() - 1));
@@ -777,19 +778,19 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 							return true;
 						case 262: // Right
 							if (Screen.hasControlDown()) {
-								setCaret(getNthWordFromCaret(1));
+								moveCaret(getWordFromCaret(1));
 							} else moveCaretBy(1);
 							return true;
 						case 263: // Left
 							if (Screen.hasControlDown()) {
-								setCaret(getNthWordFromCaret(-1));
+								moveCaret(getWordFromCaret(-1));
 							} else moveCaretBy(-1);
 							return true;
 						case 268: // Home
-							caretToStart();
+							moveCaretToStart();
 							return true;
 						case 269: // End
-							caretToEnd();
+							moveCaretToEnd();
 							return true;
 						case 260: // Insert
 						default:
@@ -798,6 +799,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				}
 			}
 		}
+	}
+	
+	private void playFeedbackTap(float volume) {
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	public void moveSuggestionCursor(int step) {
@@ -819,25 +825,23 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			scrollTo(suggestionHeight * (suggestionCursor + 1.8) - dropDownHeight, animated);
 		lastSuggestionCursorNavigation = t;
 		if (prev != suggestionCursor)
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			playFeedbackTap(1F);
 	}
 	
-	@SuppressWarnings("BooleanMethodIsAlwaysInverted") public boolean canWrite() {
-		return getVisible() && isFocused() && isEnabled();
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted") public boolean canConsumeInput() {
+		return isVisible() && isFocused() && isEnabled();
 	}
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {
-		if (!canWrite()) {
+		if (!canConsumeInput()) {
 			return false;
 		} else if (codePoint == 32 && (modifiers & 2) != 0) {
 			autoComplete();
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			playFeedbackTap(1F);
 			return true;
 		} else if (SharedConstants.isAllowedChatCharacter(codePoint)) {
 			if (canEditText())
-				writeText(Character.toString(codePoint));
+				insertText(Character.toString(codePoint));
 			return true;
 		}
 		return false;
@@ -845,7 +849,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (!active) return false;
-		if (getVisible()) {
+		if (isVisible()) {
 			if (isMouseOverArrow((int) round(mouseX), (int) round(mouseY))
 			    || isMouseOverIcon((int) round(mouseX), (int) round(mouseY))) {
 				if (!isFocused()) setFocused(true);
@@ -858,11 +862,13 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			boolean hovered = isMouseOver(mouseX, mouseY);
 			if (isRestrictedToSuggestions() && hovered) {
 				if (!isFocused()) setFocused(true);
-				final boolean wasShown = isDropDownShown();
-				setDropDownShown(!wasShown);
-				if (!wasShown) setText("");
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
+				if (isEnabled()) {
+					final boolean wasShown = isDropDownShown();
+					setDropDownShown(!wasShown);
+					if (!wasShown) setText("");
+					Minecraft.getInstance().getSoundManager().play(
+					  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
+				}
 				return true;
 			}
 			
@@ -870,16 +876,19 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				setFocused(hovered);
 			
 			if (isFocused() && hovered && button == 0) {
-				int i = MathHelper.floor(mouseX) - x;
-				if (shouldDrawBackground())
-					i -= 4;
-				String s = font.plainSubstrByWidth(text.substring(hScroll), getAdjustedWidth());
-				setCaret(font.plainSubstrByWidth(s, i).length() + hScroll);
-				setAnchor(caretPos); // Forced
+				int relX = MathHelper.floor(mouseX) - x;
+				if (hasIcon()) {
+					relX -= getIconWidth() + 1;
+				} else if (shouldDrawBackground()) {
+					relX -= 4;
+				}
+				String s = font.plainSubstrByWidth(text.substring(hScroll), getInnerWidth());
+				moveCaret(font.plainSubstrByWidth(s, relX).length() + hScroll);
+				setAnchorPos(caretPos); // Forced
 				return true;
 			}
 			
-			if (isFocused() && hovered && button == 1 && !isRestrictedToSuggestions()) {
+			if (isEnabled() && isFocused() && hovered && button == 1 && !isRestrictedToSuggestions()) {
 				setText("");
 				return true;
 			}
@@ -909,17 +918,17 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	@Override public void renderButton(
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
 	) {
-		if (getVisible()) {
+		if (isVisible()) {
 			updateSuggestions();
 			if (shouldDrawBackground()) {
-				int borderColor = isFocused() ? 0xffffffff : 0xffa0a0a0;
-				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, borderColor);
-				fill(mStack, x, y, x + width, y + height, 0xff000000);
+				int color = isFocused() ? focusedBorderColor : borderColor;
+				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, color);
+				fill(mStack, x, y, x + width, y + height, backgroundColor);
 				if (!isRestrictedToSuggestions())
-					fill(mStack, x + width - arrowWidth - 1, y, x + width - arrowWidth, y + height, borderColor);
+					fill(mStack, x + width - arrowWidth - 1, y, x + width - arrowWidth, y + height, color);
 			}
 			
-			if (!isFocused())
+			if (!isFocused() || !canShowDropDown())
 				setDropDownShown(false);
 			
 			updateDropDownRectangle();
@@ -939,23 +948,23 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			int textY = shouldDrawBackground ? y + (height - 8) / 2 : y;
 			int iconX = x;
 			int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
-			final int adjustedWidth = getAdjustedWidth();
+			final int adjustedWidth = getInnerWidth();
+			final ITextComponent hint = getHint();
+			int color = isEnabled() ? enabledColor : disabledColor;
 			if (isFocused() || value == null && hint == null) {
-				int color = isEnabled() ? enabledColor : disabledColor;
 				int relCaret = caretPos - hScroll;
 				int relAnchor = anchorPos - hScroll;
 				String shownString = font.plainSubstrByWidth(text.substring(hScroll), adjustedWidth);
 				boolean fitCaret = relCaret >= 0 && relCaret <= shownString.length();
-				boolean showCaret = isFocused() && caretCounter / 6 % 2 == 0 && fitCaret;
+				boolean showCaret = isFocused() && frame / 6 % 2 == 0 && fitCaret;
 				int caretX = textX;
 				
 				int endTextX = textX;
 				// Render pre-caret
 				if (!shownString.isEmpty()) {
-					String preCursor = fitCaret ? shownString.substring(0, relCaret) : shownString;
-					caretX =
-					  font.drawShadow(
-					    mStack, textFormatter.apply(preCursor, hScroll), (float) textX, (float) textY, color);
+					String preCaret = fitCaret ? shownString.substring(0, relCaret) : shownString;
+					caretX = font.drawShadow(
+					  mStack, textFormatter.apply(preCaret, hScroll), textX, textY, color);
 					endTextX = caretX;
 				}
 				
@@ -987,28 +996,38 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				// Render caret
 				if (showCaret) {
 					if (caretIsInsert) {
-						fill(mStack, cX, textY - 1, cX + 1, textY + 1 + 9, 0xffd0d0d0);
+						fill(mStack, cX, textY - 1, cX + 1, textY + 1 + 9, caretColor);
 					} else font.drawShadow(mStack, "_", (float)cX, (float)textY, color);
 				}
 				
+				// Render selection
 				if (relAnchor != relCaret) {
 					if (relAnchor > shownString.length())
 						relAnchor = shownString.length();
 					int anchorX = textX + font.width(shownString.substring(0, relAnchor));
-					drawSelectionBox(cX, textY - 1, anchorX - 1, textY + 1 + 9);
+					renderSelection(cX, textY - 1, anchorX - 1, textY + 1 + 9);
 				}
 			} else if (text.isEmpty() && value == null) {
-				drawTextComponent(
-				  hint.plainCopy().withStyle(TextFormatting.GRAY),
-				  mStack, textX, textY, adjustedWidth, 10, 0x96808080);
+				drawTextComponent(hint.copy().withStyle(TextFormatting.GRAY),
+				  mStack, textX, textY, adjustedWidth, 10, 0x96FFFFFF);
 			} else if (value != null) {
-				final ITextComponent display = typeWrapper.getDisplayName(value);
-				drawTextComponent(display, mStack, textX, textY, adjustedWidth, 10, 0xffe0e0e0);
+				ITextComponent display = typeWrapper.getDisplayName(value);
+				if (!isEnabled()) display = new StringTextComponent(
+				  display.getContents()).withStyle(TextFormatting.GRAY);
+				drawTextComponent(display, mStack, textX, textY, adjustedWidth, 10, 0xFFE0E0E0);
+			} else {
+				String shownString = font.plainSubstrByWidth(text.substring(hScroll), adjustedWidth);
+				font.drawShadow(
+				  mStack, textFormatter.apply(shownString, hScroll), textX, textY, color);
 			}
 			
-			if (hasIcon) typeWrapper.renderIcon(
-			  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
-			  iconX, iconY, iconWidth, iconHeight, mouseX, mouseY, delta);
+			if (hasIcon) {
+				RenderSystem.color4f(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
+				typeWrapper.renderIcon(
+				  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
+				  iconX, iconY, iconWidth, iconHeight, mouseX, mouseY, delta);
+				RenderSystem.color4f(1F, 1F, 1F, 1F);
+			}
 			
 			int arrowX = x + width - arrowWidth, arrowY = y;
 			renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHovered() ? x : arrowX);
@@ -1034,13 +1053,15 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"));
 		if (backgroundX == mouseX || hovered)
 			fill(mStack, backgroundX, y, x + w, y + h, arrowBackground);
-		blit(mStack, x, y + (h - 10) / 2, 116, isDropDownShown()? 74 : 64, 10, 10);
+		RenderSystem.color4f(1F, 1F, 1F, canShowDropDown()? 1F : 0.7F);
+		SimpleConfigIcons.DROP_DOWN_ARROW.renderCentered(mStack, x, y + (h - 10) / 2, 10, 10, isDropDownShown()? 1 : 0);
+		RenderSystem.color4f(1F, 1F, 1F, 1F);
 	}
 	
 	/**
 	 * Draws the blue selection box.
 	 */
-	protected void drawSelectionBox(int startX, int startY, int endX, int endY) {
+	protected void renderSelection(int startX, int startY, int endX, int endY) {
 		if (startX < endX) {
 			final int swap = startX;
 			startX = endX;
@@ -1053,15 +1074,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			endY = swap;
 		}
 		
-		if (endX > x + width)
-			endX = x + width;
-		
-		if (startX > x + width)
-			startX = x + width;
+		if (endX > x + width) endX = x + width;
+		if (startX > x + width) startX = x + width;
 		
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
-		//noinspection deprecation
 		RenderSystem.color4f(0F, 0F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
@@ -1075,7 +1092,6 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		RenderSystem.disableColorLogicOp();
 		RenderSystem.enableTexture();
 		// Do not leak the blue filter
-		//noinspection deprecation
 		RenderSystem.color4f(1F, 1F, 1F, 1F);
 	}
 	
@@ -1143,7 +1159,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	@Override protected void onFocusedChanged(boolean focused) {
 		if (focused) {
-			caretCounter = 0;
+			frame = 0;
 			if (isRestrictedToSuggestions()) {
 				setText("");
 				if (isAutoDropDown())
@@ -1167,6 +1183,15 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return isEnabled();
 	}
 	
+	public boolean canShowDropDown() {
+		return canShowDropDown && isEnabled();
+	}
+	
+	public void setCanShowDropDown(boolean canShowDropDown) {
+		this.canShowDropDown = canShowDropDown;
+		if (!canShowDropDown && isDropDownShown()) setDropDownShown(false);
+	}
+	
 	/**
 	 * Set whether this text box is enabled. Disabled text boxes cannot be typed in.
 	 */
@@ -1177,7 +1202,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	/**
 	 * @return The width of the textbox depending on if background drawing is enabled
 	 */
-	public int getAdjustedWidth() {
+	public int getInnerWidth() {
 		int w = shouldDrawBackground() ? width - 8 : width;
 		if (hasIcon())
 			w += 4 - getIconWidth();
@@ -1193,21 +1218,21 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * If the anchor is set beyond the bounds of the current text,
 	 * it will be put back inside.
 	 */
-	public void setAnchor(int pos) {
+	public void setAnchorPos(int pos) {
 		int i = text.length();
 		anchorPos = clamp(pos, 0, i);
 		if (font != null) {
 			if (hScroll > i)
 				hScroll = i;
 			
-			int j = getAdjustedWidth();
+			int j = getInnerWidth();
 			String s = font.plainSubstrByWidth(text.substring(hScroll), j);
 			int k = s.length() + hScroll;
 			if (anchorPos == hScroll)
 				hScroll -= font.plainSubstrByWidth(text, j, true).length();
 			
 			if (anchorPos > k) {
-				// We can't assume the font is monospace (plus the default actually isn't)
+				// We can't assume the font is monospace (the default actually isn't)
 				final String rev = new StringBuilder(text.substring(0, anchorPos)).reverse().toString();
 				hScroll = anchorPos - font.plainSubstrByWidth(rev, j).length();
 			} else if (anchorPos <= hScroll) {
@@ -1228,7 +1253,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	/**
 	 * @return true if this textbox is visible
 	 */
-	public boolean getVisible() {
+	public boolean isVisible() {
 		return visible;
 	}
 	
@@ -1243,7 +1268,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * Copied from TextFieldWidget, but it's not precisely useful,
 	 * since it doesn't account for the line scroll
 	 */
-	@Deprecated public int textXFor(int pos) {
+	@Deprecated public int getTextXFor(int pos) {
 		return pos > text.length() ? x : x + font.width(text.substring(0, pos));
 	}
 	
@@ -1459,7 +1484,6 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public static class SimpleSortedSuggestionProvider<T> extends AbstractSortedSuggestionProvider<T> {
 		@NotNull protected Supplier<List<T>> suggestions;
-		protected List<T> lastSuggestions = null;
 		protected long lastUpdate = 0L;
 		protected long updateCooldown = 250L;
 		protected @Nullable Function<String, ITextComponent> placeholder = null;
@@ -1483,12 +1507,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			if (time - lastUpdate < updateCooldown)
 				return Optional.empty();
 			lastUpdate = time;
-			final List<T> suggestions = new ArrayList<>(this.suggestions.get());
-			if (!Objects.equals(suggestions, lastSuggestions)) {
-				lastSuggestions = suggestions;
-				return Optional.of(suggestions);
-			}
-			return Optional.empty();
+			return Optional.of(new ArrayList<T>(this.suggestions.get()));
 		}
 		
 		@Override public Optional<ITextComponent> getPlaceHolder(

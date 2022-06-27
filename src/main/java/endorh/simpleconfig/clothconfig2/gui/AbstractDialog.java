@@ -51,7 +51,7 @@ public abstract class AbstractDialog
 		this.screen = (Screen) screen;
 		this.copyTextButton = new MultiFunctionImageButton(
 		  0, 0, 18, 18, SimpleConfigIcons.COPY, ButtonAction.of(this::copyText)
-		  .tooltip(() -> Lists.newArrayList(new TranslationTextComponent("simpleconfig.ui.copy_dialog"))));
+		  .tooltip(new TranslationTextComponent("simpleconfig.ui.copy_dialog")));
 		listeners.add(copyTextButton);
 	}
 	
@@ -69,7 +69,7 @@ public abstract class AbstractDialog
 		cancelled = true;
 	}
 	
-	protected void position() {
+	protected void layout() {
 		final int width = screen.width;
 		final int height = screen.height;
 		x = width / 2 - w / 2;
@@ -80,7 +80,7 @@ public abstract class AbstractDialog
 	
 	public boolean render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		if (cancelled) return false;
-		position();
+		layout();
 		renderBackground(mStack, mouseX, mouseY, delta);
 		renderTitle(mStack, mouseX, mouseY, delta);
 		renderBody(mStack, mouseX, mouseY, delta);

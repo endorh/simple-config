@@ -13,8 +13,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 	interface IOverlayRenderer {
 		/**
 		 * Render the overlay<br>
-		 * @return The rectangle to render the overlay in the next frame,
-		 *         or null if the overlay should not render in the next frame
+		 * @return {@code true} if the overlay should be rendered in the next frame.
 		 */
 		boolean renderOverlay(
 		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
@@ -25,7 +24,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		 * @return True if the event is handled (if the overlay has transparent
 		 *         areas, clicks should fall through them)
 		 */
-		default boolean overlayMouseClicked(double mouseX, double mouseY, int button) {
+		default boolean overlayMouseClicked(Rectangle area, double mouseX, double mouseY, int button) {
 			return false;
 		}
 		
@@ -34,7 +33,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		 * Useful to dismiss overlays when clicked outside them<br>
 		 * Note that this method cannot stop propagation of the click event
 		 */
-		default void overlayMouseClickedOutside(double mouseX, double mouseY, int button) {}
+		default void overlayMouseClickedOutside(Rectangle area, double mouseX, double mouseY, int button) {}
 		
 		/**
 		 * Called when a drag operation starts within the overlay and
@@ -42,7 +41,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		 * @return False to end the drag
 		 */
 		default boolean overlayMouseDragged(
-		  double mouseX, double mouseY, int button, double dragX, double dragY
+		  Rectangle area, double mouseX, double mouseY, int button, double dragX, double dragY
 		) {
 			return false;
 		}
@@ -50,13 +49,13 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		/**
 		 * Called when a drag operation finishes
 		 */
-		default void overlayMouseDragEnd(double mouseX, double mouseY, int button) {}
+		default void overlayMouseDragEnd(Rectangle area, double mouseX, double mouseY, int button) {}
 		
 		/**
 		 * Called when the mouse is released over the overlay<br>
 		 * Not really useful
 		 */
-		default boolean overlayMouseReleased(double mouseX, double mouseY, int button) {
+		default boolean overlayMouseReleased(Rectangle area, double mouseX, double mouseY, int button) {
 			return false;
 		}
 		
@@ -64,7 +63,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		 * Called when the mouse is scrolled over the overlay<br>
 		 * @return True if the scroll is consumed
 		 */
-		default boolean overlayMouseScrolled(double mouseX, double mouseY, double amount) {
+		default boolean overlayMouseScrolled(Rectangle area, double mouseX, double mouseY, double amount) {
 			return false;
 		}
 		
@@ -106,12 +105,12 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		for (OverlayTicket ticket : sortedOverlays.descending()) {
 			if (ticket.area.contains(mouseX, mouseY)) {
-				if (ticket.renderer.overlayMouseClicked(mouseX, mouseY, button)) {
+				if (ticket.renderer.overlayMouseClicked(ticket.area, mouseX, mouseY, button)) {
 					if (ticket.renderer.isOverlayDragging())
 						sortedOverlays.setDragTarget(ticket.renderer);
 					return true;
 				}
-			} else ticket.renderer.overlayMouseClickedOutside(mouseX, mouseY, button);
+			} else ticket.renderer.overlayMouseClickedOutside(ticket.area, mouseX, mouseY, button);
 		}
 		return false;
 	}
@@ -120,7 +119,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		for (OverlayTicket ticket : sortedOverlays.descending()) {
 			if (ticket.area.contains(mouseX, mouseY) &&
-			    ticket.renderer.overlayMouseScrolled(mouseX, mouseY, amount))
+			    ticket.renderer.overlayMouseScrolled(ticket.area, mouseX, mouseY, amount))
 				return true;
 		}
 		return false;
@@ -135,7 +134,9 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 			final Optional<OverlayTicket> target =
 			  sortedOverlays.stream().filter(ticket -> ticket.renderer == dragTarget).findFirst();
 			if (target.isPresent()) {
-				if (target.get().renderer.overlayMouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+				final OverlayTicket ticket = target.get();
+				if (ticket.renderer.overlayMouseDragged(
+				  ticket.area, mouseX, mouseY, button, dragX, dragY)) {
 					return true;
 				} else sortedOverlays.setDragTarget(null);
 			}
@@ -153,7 +154,8 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 			final Optional<OverlayTicket> target =
 			  sortedOverlays.stream().filter(ticket -> ticket.renderer == dragTarget).findFirst();
 			if (target.isPresent()) {
-				target.get().renderer.overlayMouseDragEnd(mouseX, mouseY, button);
+				final OverlayTicket ticket = target.get();
+				ticket.renderer.overlayMouseDragEnd(ticket.area, mouseX, mouseY, button);
 				return true;
 			}
 		}
@@ -168,7 +170,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		for (OverlayTicket ticket : sortedOverlays.descending()) {
 			if (ticket.area.contains(mouseX, mouseY)
-			    && ticket.renderer.overlayMouseReleased(mouseX, mouseY, button))
+			    && ticket.renderer.overlayMouseReleased(ticket.area, mouseX, mouseY, button))
 				return true;
 		}
 		return false;

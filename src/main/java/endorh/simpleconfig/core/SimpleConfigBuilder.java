@@ -132,7 +132,7 @@ public class SimpleConfigBuilder
 	@Override
 	protected void checkName(String name) {
 		super.checkName(name);
-		if (categories.containsKey(name))
+		if (categories.containsKey(name) || type.name().toLowerCase().equals(name))
 			throw new IllegalArgumentException("Duplicate config entry name: " + name);
 	}
 	
@@ -171,8 +171,8 @@ public class SimpleConfigBuilder
 	}
 	
 	@Override protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
-		entry.translate(translation(entry.name));
-		entry.tooltip(tooltip(entry.name));
+		entry.setTranslation(translation(entry.name));
+		entry.setTooltip(tooltip(entry.name));
 	}
 	
 	public SimpleConfigBuilder n(CategoryBuilder cat) {
@@ -314,8 +314,8 @@ public class SimpleConfigBuilder
 		}
 		
 		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
-			entry.translate(translation(entry.name));
-			entry.tooltip(tooltip(entry.name));
+			entry.setTranslation(translation(entry.name));
+			entry.setTooltip(tooltip(entry.name));
 		}
 		
 		@Override public CategoryBuilder n(GroupBuilder group, int index) {
@@ -438,7 +438,10 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		public GroupBuilder caption(String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry) {
+		public <
+		  V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>,
+		  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
+		> GroupBuilder caption(String name, B entry) {
 			if (heldEntryBuilder != null)
 				throw new IllegalArgumentException("Attempt to declare two caption entries for the same config group: " + path);
 			this.heldEntryBuilder = entry;
@@ -477,8 +480,8 @@ public class SimpleConfigBuilder
 		}
 		
 		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
-			entry.translate(translation(entry.name));
-			entry.tooltip(tooltip(entry.name));
+			entry.setTranslation(translation(entry.name));
+			entry.setTooltip(tooltip(entry.name));
 		}
 		
 		protected SimpleConfigGroup build(SimpleConfigGroup parent, ForgeConfigSpec.Builder specBuilder) {

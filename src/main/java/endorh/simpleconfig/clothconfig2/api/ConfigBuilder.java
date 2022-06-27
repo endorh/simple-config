@@ -1,6 +1,7 @@
 package endorh.simpleconfig.clothconfig2.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simpleconfig.clothconfig2.impl.ConfigBuilderImpl;
 import endorh.simpleconfig.clothconfig2.impl.ConfigEntryBuilderImpl;
 import net.minecraft.client.gui.screen.Screen;
@@ -9,16 +10,22 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig.Type;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @OnlyIn(value = Dist.CLIENT)
 public interface ConfigBuilder {
 	static ConfigBuilder create() {
-		return new ConfigBuilderImpl();
+		return create("");
+	}
+	
+	static ConfigBuilder create(String modId) {
+		return new ConfigBuilderImpl(modId);
 	}
 	
 	ConfigBuilder setFallbackCategory(ConfigCategory fallbackCategory);
@@ -81,14 +88,17 @@ public interface ConfigBuilder {
 		return ConfigEntryBuilderImpl.create();
 	}
 	
-	Screen build();
+	AbstractConfigScreen build();
 	
 	boolean hasTransparentBackground();
 	
-	ConfigBuilder setSnapshotHandler(SnapshotHandler handler);
+	ConfigBuilder setSnapshotHandler(IConfigSnapshotHandler handler);
 	
-	interface SnapshotHandler {
-		CommentedConfig preserve(Type type);
+	interface IConfigSnapshotHandler {
+		default CommentedConfig preserve(Type type) {
+			return preserve(type, null);
+		}
+		CommentedConfig preserve(Type type, @Nullable Set<String> selectedPaths);
 		void restore(CommentedConfig config, Type type);
 		boolean canSaveRemote();
 		CommentedConfig getLocal(String name, Type type);
@@ -99,6 +109,11 @@ public interface ConfigBuilder {
 		CompletableFuture<Void> deleteRemote(String name, Type type);
 		List<String> getLocalSnapshotNames();
 		CompletableFuture<List<String>> getRemoteSnapshotNames();
+		void setExternalChangeHandler(IExternalChangeHandler handler);
+		
+		interface IExternalChangeHandler {
+			void handleExternalChange(Type type);
+		}
 	}
 }
 

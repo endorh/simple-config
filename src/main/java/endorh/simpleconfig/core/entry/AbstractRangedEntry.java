@@ -168,11 +168,11 @@ public abstract class AbstractRangedEntry
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, value, configValidator()));
+		return Optional.of(decorate(builder).define(name, value, createConfigValidator()));
 	}
 	
 	@Override
-	protected Predicate<Object> configValidator() {
+	protected Predicate<Object> createConfigValidator() {
 		return o -> {
 			if (o == null)
 				return false;
@@ -192,7 +192,7 @@ public abstract class AbstractRangedEntry
 			} catch (ClassCastException ignored) {
 				return false;
 			}
-			return super.configValidator().test(o);
+			return super.createConfigValidator().test(o);
 		};
 	}
 }

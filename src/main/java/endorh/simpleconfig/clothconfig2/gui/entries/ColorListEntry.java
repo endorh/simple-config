@@ -2,13 +2,13 @@ package endorh.simpleconfig.clothconfig2.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.api.ScissorsHandler;
-import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.clothconfig2.gui.widget.ColorDisplayWidget;
 import endorh.simpleconfig.clothconfig2.gui.widget.ColorPickerWidget;
 import endorh.simpleconfig.clothconfig2.math.Color;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.ITextComponent;
@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-public class ColorListEntry extends TextFieldListEntry<Integer> implements IOverlayRenderer {
+public class ColorListEntry extends TextFieldListEntry<Integer> {
 	protected final ColorDisplayWidget colorDisplayWidget;
 	protected boolean alpha;
 	protected ColorPickerWidget colorPicker;
 	protected int last;
+	protected boolean canShowColorPicker = true;
 	protected boolean colorPickerVisible = false;
 	protected Rectangle colorPickerRectangle = new Rectangle();
 	protected Rectangle reportedColorPickerRectangle = new Rectangle();
@@ -38,17 +39,19 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 		super(fieldName, 0, false);
 		alpha = true;
 		ColorValue colorValue = getColorValue(String.valueOf(value));
-		if (colorValue.hasError())
-			throw new IllegalArgumentException("Invalid Color: " + colorValue.getError().name());
+		ColorError error = colorValue.getError();
+		if (error != null) throw new IllegalArgumentException("Invalid Color: " + error.name());
 		alpha = false;
 		// this.textFieldWidget.setText(this.getHexColorString(value));
 		colorDisplayWidget = new ColorDisplayWidget(
-		  textFieldWidget, 0, 0, 20, this.value.get());
+		  textFieldWidget, 0, 0, 20, displayedValue);
 		colorDisplayWidget.onClick = () -> setColorPickerVisible(!isColorPickerVisible());
 		colorPicker = new ColorPickerWidget(
 		  Color.ofTransparent(value), 48, 24, 142, 84, c -> {
-			  setValue(alpha ? c.getColor() : c.getRGB());
-			  last = getValue();
+			  if (isEditable()) {
+				  setDisplayedValue(alpha ? c.getColor() : c.getRGB());
+				  last = getDisplayedValue();
+			  }
 		  });
 		setOriginal(value);
 		widgets.add(colorDisplayWidget);
@@ -60,50 +63,64 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 		last = value;
 	}
 	
+	public boolean canShowColorPicker() {
+		return canShowColorPicker && isEditable();
+	}
+	
+	public void setCanShowColorPicker(boolean canShowColorPicker) {
+		this.canShowColorPicker = canShowColorPicker;
+		if (!canShowColorPicker) setColorPickerVisible(false);
+	}
+	
 	public void setColorPickerVisible(boolean visible) {
+		if (visible && !canShowColorPicker()) visible = false;
 		colorPickerVisible = visible;
-		if (visible)
-			getConfigScreen().claimRectangle(reportedColorPickerRectangle, this, -1);
+		if (visible) {
+			if (this.isChildSubEntry()) colorPicker.setInitial(toColor(getDisplayedValue()));
+			getScreen().claimRectangle(reportedColorPickerRectangle, this, -1);
+		}
+	}
+	
+	public Color toColor(int color) {
+		return alpha? Color.ofTransparent(color) : Color.ofOpaque(color);
 	}
 	
 	public boolean isColorPickerVisible() {
 		return colorPickerVisible;
 	}
 	
-	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
-	) {
-		super.renderEntry(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-	}
-	
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		if (last != getValue()) {
-			last = getValue();
-			colorPicker.setValue(alpha? Color.ofTransparent(getValue()) : Color.ofOpaque(getValue()), true);
+		if (last != getDisplayedValue()) {
+			last = getDisplayedValue();
+			colorPicker.setValue(toColor(getDisplayedValue()), true);
 		}
-		final MainWindow window = Minecraft.getInstance().getWindow();
+		if (!isFocused() || !canShowColorPicker()) setColorPickerVisible(false);
+		final Minecraft mc = Minecraft.getInstance();
+		final MainWindow window = mc.getWindow();
+		final FontRenderer font = mc.font;
 		colorDisplayWidget.y = y;
 		ColorValue value = getColorValue(getText());
 		if (!value.hasError()) {
 			colorDisplayWidget.setColor(
 			  alpha ? value.getColor() : 0xFF000000 | value.getColor());
 		}
-		final int offset = colorDisplayWidget.getWidth() + 4;
-		super.renderChildEntry(mStack, x + offset, y, w - offset, h, mouseX, mouseY, delta);
-		final TextFieldWidget textField = this.textFieldWidget;
-		colorDisplayWidget.x = textField.x - offset;
+		// An offset of 3 matches the visual offset with the reset button (2 + 1 (border))
+		final int offset = colorDisplayWidget.getWidth() + 3;
+		super.renderChildEntry(mStack, font.isBidirectional()? x : x + offset, y, w - offset, h, mouseX, mouseY, delta);
+		colorDisplayWidget.x = x;
 		colorDisplayWidget.render(mStack, mouseX, mouseY, delta);
 		if (isColorPickerVisible()) {
-			colorPicker.y = colorPickerRectangle.y = y;
-			colorPicker.x = colorPickerRectangle.x =
-			  colorDisplayWidget.x < window.getGuiScaledWidth() - (textField.x + textField.getWidth())
-			  ? textField.x + textField.getWidth() + 4
-			  : colorDisplayWidget.x - colorPicker.getWidth() - 2;
-			colorPickerRectangle.width = colorPicker.getWidth();
-			colorPickerRectangle.height = colorPicker.getHeight();
+			final int cpw = colorPicker.getWidth(), cph = colorPicker.getHeight();
+			final int ww = window.getGuiScaledWidth();
+			colorPicker.y = y;
+			colorPicker.x = x + w / 2 < ww / 2? x + w + 3 : x - cpw - 3;
+			if (colorPicker.x < 4 || colorPicker.x + cpw > ww - 4) { // Wrap
+				colorPicker.y = y + h + 3;
+				colorPicker.x = x + w / 2 < ww / 2? x : x + w - cpw;
+			}
+			colorPickerRectangle.setBounds(colorPicker.x, colorPicker.y, cpw, cph);
 			reportedColorPickerRectangle.setBounds(
 			  ScissorsHandler.INSTANCE.getScissorsAreas().stream()
 			    .reduce(colorPickerRectangle, Rectangle::intersection));
@@ -113,16 +130,25 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	@Override public boolean renderOverlay(
 	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
+		if (area != reportedColorPickerRectangle)
+			return super.renderOverlay(mStack, area, mouseX, mouseY, delta);
 		if (!isColorPickerVisible())
 			return false;
-		getConfigScreen().removeTooltips(area);
+		getScreen().removeTooltips(area);
 		colorPicker.render(mStack, mouseX, mouseY, delta);
 		return true;
 	}
 	
-	@Override public boolean overlayMouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean overlayMouseClicked(Rectangle area, double mouseX, double mouseY, int button) {
+		if (area != reportedColorPickerRectangle)
+			return super.overlayMouseClicked(area, mouseX, mouseY, button);
 		return colorPicker.isMouseOver(mouseX, mouseY) &&
 		       colorPicker.mouseClicked(mouseX, mouseY, button);
+	}
+	
+	@Override public void overlayMouseClickedOutside(Rectangle area, double mouseX, double mouseY, int button) {
+		super.overlayMouseClickedOutside(area, mouseX, mouseY, button);
+		if (!colorDisplayWidget.isMouseOver(mouseX, mouseY)) setColorPickerVisible(false);
 	}
 	
 	@Override public boolean isOverlayDragging() {
@@ -130,7 +156,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	}
 	
 	@Override public boolean overlayMouseDragged(
-	  double mouseX, double mouseY, int button, double dragX, double dragY
+	  Rectangle area, double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
 		colorPicker.onDrag(mouseX, mouseY, dragX, dragY);
 		return true;
@@ -146,24 +172,25 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	
 	@Override
 	protected void textFieldPreRender(TextFieldWidget widget) {
-		if (!hasErrors())
+		if (!hasError())
 			widget.setTextColor(0xE0E0E0);
 		else widget.setTextColor(0xFF5555);
 	}
 	
-	@Override public void updateSelected(boolean isSelected) {
-		super.updateSelected(isSelected);
-		if (!isSelected)
+	@Override public void updateFocused(boolean isFocused) {
+		super.updateFocused(isFocused);
+		if (!isFocused)
 			setColorPickerVisible(false);
 	}
 	
 	@Override public void setOriginal(@Nullable Integer original) {
 		super.setOriginal(original);
-		colorPicker.setInitial(alpha? Color.ofTransparent(getValue()) : Color.ofOpaque(getValue()));
+		if (original != null && colorPicker != null)
+			colorPicker.setInitial(toColor(original));
 	}
 	
 	@Override public int getExtraScrollHeight() {
-		return isColorPickerVisible() ? colorDisplayWidget.getHeight() - 24 : -1;
+		return isColorPickerVisible() ? colorDisplayWidget.getHeight() + colorPickerRectangle.y - entryArea.y : -1;
 	}
 	
 	@Override protected Integer fromString(String s) {
@@ -176,10 +203,11 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 	
 	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		ColorValue colorValue = getColorValue(getText());
-		if (colorValue.hasError()) {
+		ColorError error = colorValue.getError();
+		if (error != null) {
 			return Optional.of(new TranslationTextComponent(
 			  "text.cloth-config.error.color." +
-			  colorValue.getError().name().toLowerCase(Locale.ROOT)));
+			  error.name().toLowerCase(Locale.ROOT)));
 		}
 		return super.getErrorMessage();
 	}
@@ -190,8 +218,10 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 			colorPicker.allowAlpha(true);
 			colorPicker.setWidth(142 + 16);
 		}
+		final Integer original = getOriginal();
 		setOriginal(original);
 		setValue(original);
+		setDisplayedValue(original);
 	}
 	
 	public void withoutAlpha() {
@@ -200,8 +230,10 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 			colorPicker.allowAlpha(false);
 			colorPicker.setWidth(142);
 		}
+		final Integer original = getOriginal();
 		setOriginal(original);
 		setValue(original);
+		setDisplayedValue(original);
 	}
 	
 	protected String stripHexStarter(String hex) {
@@ -283,8 +315,8 @@ public class ColorListEntry extends TextFieldListEntry<Integer> implements IOver
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
-		if (isChild())
+	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+		if (this.isChildSubEntry())
 			return isColorPickerVisible()? childWidgetsWithColorPicker : childWidgets;
 		return isColorPickerVisible()? widgetsWithColorPicker : widgets;
 	}

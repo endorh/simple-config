@@ -1,5 +1,6 @@
 package endorh.simpleconfig.clothconfig2.gui.widget;
 
+import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.api.Tooltip;
 import endorh.simpleconfig.clothconfig2.gui.IMultiTooltipScreen;
@@ -30,8 +31,9 @@ public class MultiFunctionImageButton extends ImageButton {
 	protected Supplier<List<ITextComponent>> defaultTooltip;
 	protected Supplier<Optional<ISound>> defaultSound;
 	protected TreeSet<Pair<Modifier, ButtonAction>> actions =
-	  new TreeSet<>(Comparator.comparing(Pair::getLeft));
+	  new TreeSet<>(Comparator.naturalOrder());
 	protected @NotNull ButtonAction activeAction;
+	protected @NotNull ButtonAction defaultAction;
 	protected Boolean activeOverride = null;
 	
 	public MultiFunctionImageButton(
@@ -54,7 +56,7 @@ public class MultiFunctionImageButton extends ImageButton {
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
 		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		actions.add(Pair.of(Modifier.NONE, defaultAction));
-		activeAction = defaultAction;
+		this.defaultAction = activeAction = defaultAction;
 	}
 	
 	public boolean click(int button) {
@@ -80,7 +82,8 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		return this.active && this.visible && clicked(mouseX, mouseY) && click(button);
+		updateState();
+		return active && visible && clicked(mouseX, mouseY) && click(button);
 	}
 	
 	public MultiFunctionImageButton on(
@@ -96,30 +99,40 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	public @NotNull ButtonAction getActiveAction(int modifiers) {
-		return actions.stream().filter(p -> p.getLeft().isActive(modifiers)).map(Pair::getRight).findFirst()
-		  .orElseThrow(() -> new IllegalStateException("Button without default action"));
+		return actions.stream().filter(
+		  p -> p.getLeft().isActive(modifiers)
+		).map(Pair::getRight).filter(
+		  a -> a.activePredicate == null || a.activePredicate.get()
+		).findFirst().orElse(defaultAction);
+	}
+	
+	protected void updateState() {
+		activeAction = actions.stream().filter(
+		  p -> p.getLeft().isActive()
+		).map(Pair::getRight).filter(
+		  a -> a.activePredicate == null || a.activePredicate.get()
+		).findFirst().orElse(defaultAction);
+		final ButtonAction action = activeAction;
+		active = activeOverride != null? activeOverride : (action.activePredicate != null? action.activePredicate : defaultActivePredicate).get();
 	}
 	
 	@Override public void renderButton(
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
-		activeAction = actions.stream().filter(p -> p.getLeft().isActive()).map(Pair::getRight).findFirst()
-		  .orElseThrow(() -> new IllegalStateException("Button without default action"));
-		final ButtonAction action = this.activeAction;
-		this.active =
-		  activeOverride != null? activeOverride :
-		  (action.activePredicate != null? action.activePredicate : defaultActivePredicate).get();
-		int level = this.active? this.isHovered()? 2 : 1 : 0;
+		updateState();
+		final ButtonAction action = activeAction;
+		int level = active? isHovered()? 2 : 1 : 0;
 		
-		(action.icon != null ? action.icon : defaultIcon)
-		  .renderStretch(mStack, x, y, width, height, level);
-		if (this.isHovered())
-			this.renderToolTip(mStack, mouseX, mouseY);
+		Icon icon = action.icon != null? action.icon.get() : null;
+		if (icon == null) icon = defaultIcon;
+		icon.renderStretch(mStack, x, y, width, height, level);
+		if (isHovered())
+			renderToolTip(mStack, mouseX, mouseY);
 	}
 	
 	private static final ITextComponent[] EMPTY_TEXT_COMPONENT_ARRAY = new ITextComponent[0];
 	@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
-		final ButtonAction action = this.activeAction;
+		final ButtonAction action = activeAction;
 		final List<ITextComponent> ls = (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
@@ -144,7 +157,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	public boolean press(int modifiers) {
-		if (this.active && this.visible) {
+		if (active && visible) {
 			final ButtonAction action = getActiveAction(modifiers);
 			return onClick(action, -1);
 		}
@@ -152,9 +165,15 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		updateState();
 		if (keyCode == 257 || keyCode == 32 || keyCode == 335) // Enter | Space | NumPadEnter
 			return press(modifiers);
 		return false;
+	}
+	
+	@Override public boolean changeFocus(boolean p_231049_1_) {
+		updateState();
+		return super.changeFocus(p_231049_1_);
 	}
 	
 	public Boolean getActiveOverride() {
@@ -165,21 +184,36 @@ public class MultiFunctionImageButton extends ImageButton {
 		this.activeOverride = activeOverride;
 	}
 	
-	public static class ButtonAction {
-		public final @Nullable Icon icon;
+	public void setDefaultIcon(Icon defaultIcon) {
+		this.defaultIcon = defaultIcon;
+	}
+	
+	public static class ButtonAction implements Comparable<ButtonAction> {
+		private static int counter;
+		private final int stamp = counter++;
+		public final int priority;
+		public final @Nullable Supplier<Icon> icon;
+		public final @Nullable Supplier<Integer> tint;
 		public final Consumer<Integer> action;
+		public final @Nullable Supplier<ITextComponent> titleSupplier;
 		public final @Nullable Supplier<List<ITextComponent>> tooltipSupplier;
 		public final @Nullable Supplier<Boolean> activePredicate;
 		public final @Nullable Supplier<Optional<ISound>> sound;
 		
 		public ButtonAction(
-		  @Nullable Icon icon, Consumer<Integer> action,
+		  int priority,
+		  @Nullable Supplier<Icon> icon, @Nullable Supplier<Integer> tint,
+		  Consumer<Integer> action,
+		  @Nullable Supplier<ITextComponent> titleSupplier,
 		  @Nullable Supplier<List<ITextComponent>> tooltipSupplier,
 		  @Nullable Supplier<Boolean> activePredicate,
 		  @Nullable Supplier<Optional<ISound>> sound
 		) {
+			this.priority = priority;
 			this.icon = icon;
+			this.tint = tint;
 			this.action = action;
+			this.titleSupplier = titleSupplier;
 			this.tooltipSupplier = tooltipSupplier;
 			this.activePredicate = activePredicate;
 			this.sound = sound;
@@ -214,9 +248,18 @@ public class MultiFunctionImageButton extends ImageButton {
 			});
 		}
 		
+		@Override public int compareTo(@NotNull MultiFunctionImageButton.ButtonAction o) {
+			int c = Integer.compare(priority, o.priority);
+			if (c != 0) return c;
+			return Integer.compare(stamp, o.stamp);
+		}
+		
 		public static class ButtonActionBuilder {
+			protected int priority = 0;
 			protected final Consumer<Integer> action;
-			protected @Nullable Icon icon = null;
+			protected @Nullable Supplier<Icon> icon = null;
+			protected @Nullable Supplier<Integer> tint = null;
+			protected @Nullable Supplier<ITextComponent> titleSupplier = null;
 			protected @Nullable Supplier<List<ITextComponent>> tooltipSupplier = null;
 			protected @Nullable Supplier<Boolean> activePredicate = null;
 			protected @Nullable Supplier<Optional<ISound>> sound = null;
@@ -225,13 +268,44 @@ public class MultiFunctionImageButton extends ImageButton {
 				this.action = action;
 			}
 			
+			public ButtonActionBuilder priority(int priority) {
+				this.priority = priority;
+				return this;
+			}
+			
 			public ButtonActionBuilder icon(Icon icon) {
+				return icon(() -> icon);
+			}
+			
+			public ButtonActionBuilder tint(@Nullable Integer tint) {
+				return tint(() -> tint);
+			}
+			
+			public ButtonActionBuilder icon(Supplier<Icon> icon) {
 				this.icon = icon;
 				return this;
 			}
 			
+			public ButtonActionBuilder tint(Supplier<Integer> tint) {
+				this.tint = tint;
+				return this;
+			}
+			
+			public ButtonActionBuilder title(Supplier<ITextComponent> title) {
+				titleSupplier = title;
+				return this;
+			}
+			
+			public ButtonActionBuilder tooltip(ITextComponent tooltip) {
+				return tooltip(() -> Lists.newArrayList(tooltip));
+			}
+			
+			public ButtonActionBuilder tooltip(List<ITextComponent> tooltip) {
+				return tooltip(() -> tooltip);
+			}
+			
 			public ButtonActionBuilder tooltip(Supplier<List<ITextComponent>> tooltip) {
-				this.tooltipSupplier = tooltip;
+				tooltipSupplier = tooltip;
 				return this;
 			}
 			
@@ -246,7 +320,7 @@ public class MultiFunctionImageButton extends ImageButton {
 			}
 			
 			protected ButtonAction build() {
-				return new ButtonAction(icon, action, tooltipSupplier, activePredicate, sound);
+				return new ButtonAction(priority, icon, tint, action, titleSupplier, tooltipSupplier, activePredicate, sound);
 			}
 		}
 	}

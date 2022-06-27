@@ -1,0 +1,351 @@
+package endorh.simpleconfig.clothconfig2.gui;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry;
+import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry.EntryError;
+import endorh.simpleconfig.clothconfig2.api.Tooltip;
+import endorh.simpleconfig.clothconfig2.gui.ExternalChangesDialog.ExternalChangeResponse;
+import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
+import endorh.simpleconfig.clothconfig2.gui.StatusDisplayBar.StatusState.StatusStyle;
+import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton;
+import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
+import endorh.simpleconfig.clothconfig2.gui.widget.TintedButton;
+import endorh.simpleconfig.clothconfig2.math.Point;
+import endorh.simpleconfig.clothconfig2.math.Rectangle;
+import endorh.simpleconfig.core.SimpleConfigTextUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.util.Util;
+import net.minecraft.util.text.*;
+import net.minecraft.util.text.event.ClickEvent;
+import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.util.text.event.HoverEvent.Action;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class StatusDisplayBar extends Widget implements IOverlayRenderer {
+	protected ClothConfigScreen screen;
+	protected final NavigableSet<StatusState> states = new TreeSet<>(Comparator.naturalOrder());
+	protected final MultiFunctionImageButton dialogButton;
+	protected StatusState activeState = null;
+	protected int shadowColor = 0xFF000000;
+	
+	protected Rectangle rect = new Rectangle();
+	protected boolean claimed = false;
+	
+	public StatusDisplayBar(
+	  ClothConfigScreen screen
+	) {
+		super(0, 0, screen.width, 14, StringTextComponent.EMPTY);
+		this.screen = screen;
+		dialogButton = new MultiFunctionImageButton(
+		  0, 0, 15, 15, SimpleConfigIcons.ELLIPSIS, ButtonAction.of(
+		  this::createDialog
+		).active(this::hasDialog).tooltip(this::getDialogTooltip));
+		states.add(StatusState.ERROR_STATE);
+		states.add(StatusState.READ_ONLY);
+		states.add(StatusState.EXTERNAL_CHANGES);
+	}
+	
+	@Override public void renderButton(
+	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
+	) {
+		activeState = states.descendingSet().stream()
+		  .filter(s -> s.isActive(screen)).findFirst().orElse(null);
+		width = screen.width;
+		height = 19;
+		x = 0;
+		y = screen.listWidget.bottom - height;
+		rect.setBounds(x, y, width, height);
+		if (activeState != null && !claimed) {
+			screen.claimRectangle(rect, this);
+			claimed = true;
+			onShow();
+		}
+	}
+	
+	public void createDialog() {
+		if (activeState != null) {
+			AbstractDialog dialog = activeState.getDialog(screen);
+			if (dialog != null) screen.addDialog(dialog);
+		}
+	}
+	
+	public boolean hasDialog() {
+		return activeState != null && activeState.getDialog(screen) != null;
+	}
+	
+	public List<ITextComponent> getDialogTooltip() {
+		return activeState != null ? activeState.getTooltip(screen, true) : Collections.emptyList();
+	}
+	
+	@Override public boolean overlayMouseClicked(Rectangle area, double mouseX, double mouseY, int button) {
+		if (!isMouseOver(mouseX, mouseY)) return false;
+		if (hasDialog() && dialogButton.mouseClicked(mouseX, mouseY, button)) return true;
+		if (activeState != null) activeState.onClick(screen, mouseX, mouseY, button);
+		return true;
+	}
+	
+	protected void onShow() {
+		screen.listWidget.setExtraScroll(screen.listWidget.getExtraScroll() + height);
+	}
+	
+	protected void onHide() {
+		screen.listWidget.setExtraScroll(screen.listWidget.getExtraScroll() - height);
+	}
+	
+	@Override public boolean renderOverlay(
+	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	) {
+		if (activeState == null) {
+			claimed = false;
+			onHide();
+			return false;
+		}
+		
+		Minecraft mc = Minecraft.getInstance();
+		FontRenderer font = mc.font;
+		
+		StatusStyle style = activeState.getStyle(screen);
+		fillGradient(mStack, x, y - 4, x + width, y, 0x00000000, shadowColor);
+		fill(mStack, x, y, x + width, y + height, style.backgroundColor);
+		fill(mStack, x, y, x + width, y + 1, style.borderColor);
+		fill(mStack, x, y + height - 1, x + width, y + height, style.borderColor);
+		if (style.icon != null)
+			style.icon.renderCentered(mStack, x + 2, y + 2, 15, 15);
+		ITextComponent title = activeState.getTitle(screen);
+		drawString(mStack, font, title, x + 19, y + 6, 0xFFE0E0E0);
+		if (hasDialog()) {
+			dialogButton.x = x + width - 17;
+			dialogButton.y = y + 2;
+			dialogButton.visible = true;
+		} else dialogButton.visible = false;
+		dialogButton.render(mStack, mouseX, mouseY, delta);
+		
+		if (isMouseOver(mouseX, mouseY) && !dialogButton.isMouseOver(mouseX, mouseY)) {
+			List<ITextComponent> tooltip = activeState.getTooltip(screen, false);
+			if (!tooltip.isEmpty()) {
+				screen.addTooltip(Tooltip.of(
+				  new Point(mouseX, mouseY), tooltip.toArray(new ITextComponent[0])));
+			}
+		}
+		return true;
+	}
+	
+	public static abstract class StatusState implements Comparable<StatusState> {
+		public static final StatusState READ_ONLY = new StatusState(30) {
+			@Override public boolean isActive(ClothConfigScreen screen) {
+				return !screen.isEditable();
+			}
+			
+			@Override public ITextComponent getTitle(ClothConfigScreen screen) {
+				return new TranslationTextComponent("simpleconfig.ui.read_only").withStyle(TextFormatting.AQUA);
+			}
+			
+			@Override public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+				return SimpleConfigTextUtil.splitTtc("simpleconfig.ui.read_only:help");
+			}
+			
+			@Override public StatusStyle getStyle(ClothConfigScreen screen) {
+				return new StatusStyle(SimpleConfigIcons.INFO, 0xF08080F0, 0xA00C5281);
+			}
+		};
+		
+		public static final StatusState EXTERNAL_CHANGES = new StatusState(10) {
+			@Override public boolean isActive(ClothConfigScreen screen) {
+				return screen.getAllMainEntries().stream()
+				  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
+			}
+			
+			@Override
+			public void onClick(ClothConfigScreen screen, double mouseX, double mouseY, int button) {
+				screen.focusNextExternalConflict(!Screen.hasShiftDown());
+			}
+			
+			public String getTypeKey(ClothConfigScreen screen) {
+				return screen.isSelectedCategoryServer() && screen.hasConflictingRemoteChanges()
+				       || !screen.hasConflictingExternalChanges() ? "remote" : "external";
+			}
+			
+			@Override public ITextComponent getTitle(ClothConfigScreen screen) {
+				return new TranslationTextComponent(
+				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected");
+			}
+			
+			@Override
+			public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+				return SimpleConfigTextUtil.splitTtc(
+				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected."
+				  + (menu? "all" : "click"),
+				  KeyBindings.NEXT_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA),
+				  KeyBindings.PREV_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA));
+			}
+			
+			@Override public AbstractDialog getDialog(ClothConfigScreen screen) {
+				final List<AbstractConfigEntry<?>> conflicts = screen.getAllExternalConflicts();
+				final List<ITextComponent> lines = IntStream.range(0, conflicts.size()).mapToObj(i -> {
+					AbstractConfigEntry<?> entry = conflicts.get(i);
+					IFormattableTextComponent title = entry.getTitle().copy();
+					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
+					               .withStyle(TextFormatting.GRAY));
+					title.withStyle(s -> s.withColor(TextFormatting.GOLD)
+					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslationTextComponent(
+						 "simpleconfig.ui.changes.all.link:help")))
+					  .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i)));
+					return title;
+				}).collect(Collectors.toList());
+				return InfoDialog.create(
+				  screen, new TranslationTextComponent("simpleconfig.ui.changes.all.title"), lines,
+				  d -> {
+					  d.setIcon(SimpleConfigIcons.MERGE_CONFLICT);
+					  d.setLinkActionHandler(s -> {
+						  if (s.startsWith("goto/")) {
+							  try {
+								  int pos = Integer.parseInt(s.substring("goto/".length()));
+								  if (pos >= 0 && pos < conflicts.size()) {
+									  d.cancel(true);
+									  INavigableTarget target = conflicts.get(pos);
+									  target.navigate();
+									  target.applyMergeHighlight();
+								  }
+							  } catch (NumberFormatException ignored) {}
+						  }
+					  });
+					  d.addButton(TintedButton.of(
+					    100, 20, 0x8081542F, new TranslationTextComponent(
+						   "simpleconfig.ui.action.accept_all_changes"), b -> {
+						    d.cancel(true);
+						    screen.handleExternalChangeResponse(ExternalChangeResponse.ACCEPT_ALL);
+					    }
+					  ));
+					  d.addButton(Util.make(TintedButton.of(
+					    100, 20, 0x80683498, new TranslationTextComponent(
+						   "simpleconfig.ui.action.accept_non_conflicting_changes"), b -> {
+						    d.cancel(true);
+						    screen.handleExternalChangeResponse(
+							   ExternalChangeResponse.ACCEPT_NON_CONFLICTING);
+					    }
+					  ), b -> b.active = screen.getAllMainEntries().stream()
+					    .anyMatch(e -> e.hasConflictingExternalDiff() && !e.isEdited())));
+				  });
+			}
+			
+			@Override public StatusStyle getStyle(ClothConfigScreen screen) {
+				return new StatusStyle(SimpleConfigIcons.MERGE_CONFLICT, 0xA0F080F0, 0xBD600060);
+			}
+		};
+		
+		public static final StatusState ERROR_STATE = new StatusState(20) {
+			@Override public boolean isActive(ClothConfigScreen screen) {
+				return screen.hasErrors();
+			}
+			
+			@Override public void onClick(
+			  ClothConfigScreen screen, double mouseX, double mouseY, int button
+			) {
+				screen.focusNextError(!Screen.hasShiftDown());
+			}
+			
+			@Override public ITextComponent getTitle(ClothConfigScreen screen) {
+				List<ITextComponent> errors = screen.getErrorsMessages();
+				if (errors.isEmpty()) return StringTextComponent.EMPTY;
+				return (errors.size() == 1 ? errors.get(0).copy() : new TranslationTextComponent(
+				  "simpleconfig.ui.errors.multiple", errors.size(), errors.get(0).copy().getString()
+				)).withStyle(TextFormatting.RED);
+			}
+			
+			@Override public AbstractDialog getDialog(ClothConfigScreen screen) {
+				final List<EntryError> errors = screen.getErrors();
+				final List<ITextComponent> lines = IntStream.range(0, errors.size()).mapToObj(i -> {
+					TranslationTextComponent goToError = new TranslationTextComponent(
+					  "simpleconfig.ui.errors.all.link:help");
+					HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, goToError);
+					ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i);
+					EntryError error = errors.get(i);
+					AbstractConfigEntry<?> entry = error.getEntry();
+					IFormattableTextComponent title = entry.getTitle().copy();
+					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
+					               .withStyle(TextFormatting.DARK_RED));
+					title.withStyle(s -> s.withColor(TextFormatting.RED)
+					  .withHoverEvent(hoverEvent).withClickEvent(clickEvent));
+					IFormattableTextComponent err = new StringTextComponent("  ").append(
+					  error.getError().copy().withStyle(s -> s.withColor(TextFormatting.RED)
+					    .withHoverEvent(hoverEvent).withClickEvent(clickEvent)));
+					return new ITextComponent[] {title, err};
+				}).flatMap(Arrays::stream).collect(Collectors.toList());
+				return InfoDialog.create(
+				  screen, new TranslationTextComponent("simpleconfig.ui.errors.all.title"), lines,
+				  d -> {
+					  d.setIcon(SimpleConfigIcons.ERROR);
+					  d.titleColor = 0xFFFF8080;
+					  d.borderColor = 0xFFFF8080;
+					  d.subBorderColor = 0xFF800000;
+					  d.setLinkActionHandler(s -> {
+						  if (s.startsWith("goto/")) {
+							  try {
+								  int pos = Integer.parseInt(s.substring("goto/".length()));
+								  if (pos >= 0 && pos < errors.size()) {
+									  d.cancel(true);
+									  INavigableTarget target = errors.get(pos).getSource();
+									  target.navigate();
+									  target.applyErrorHighlight();
+								  }
+							  } catch (NumberFormatException ignored) {}
+						  }
+					  });
+				  });
+			}
+			
+			@Override public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+				return SimpleConfigTextUtil.splitTtc(
+				  menu? "simpleconfig.ui.errors.extra:help" : "simpleconfig.ui.errors:help",
+				  KeyBindings.NEXT_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA),
+				  KeyBindings.PREV_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA)
+				);
+			}
+			
+			@Override public StatusStyle getStyle(ClothConfigScreen screen) {
+				return new StatusStyle(SimpleConfigIcons.ERROR, 0xA0F08080, 0xBD600000);
+			}
+		};
+		
+		public final int priority;
+		
+		protected StatusState(int priority) {
+			this.priority = priority;
+		}
+		
+		public abstract boolean isActive(ClothConfigScreen screen);
+		public void onClick(ClothConfigScreen screen, double mouseX, double mouseY, int button) {}
+		public abstract ITextComponent getTitle(ClothConfigScreen screen);
+		public @Nullable AbstractDialog getDialog(ClothConfigScreen screen) {
+			return null;
+		}
+		public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+			return Collections.emptyList();
+		}
+		public abstract StatusStyle getStyle(ClothConfigScreen screen);
+		
+		@Override public int compareTo(@NotNull StatusDisplayBar.StatusState o) {
+			return Integer.compare(priority, o.priority);
+		}
+		
+		public static class StatusStyle {
+			public final @Nullable Icon icon;
+			public final int borderColor;
+			public final int backgroundColor;
+			public StatusStyle(@Nullable Icon icon, int borderColor, int backgroundColor) {
+				this.icon = icon;
+				this.borderColor = borderColor;
+				this.backgroundColor = backgroundColor;
+			}
+		}
+	}
+}

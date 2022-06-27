@@ -5,10 +5,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
 import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
 import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
-import endorh.simpleconfig.clothconfig2.gui.widget.ResetButton;
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.button.Button;
@@ -21,35 +17,31 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Optional;
 
 @OnlyIn(value = Dist.CLIENT)
-public class KeyCodeEntry
-  extends TooltipListEntry<ModifierKeyCode> implements IChildListEntry {
-	protected ModifierKeyCode value;
+public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements IChildListEntry {
+	protected ModifierKeyCode displayedValue;
 	protected final Button buttonWidget;
-	protected final ResetButton resetButton;
 	protected final List<IGuiEventListener> widgets;
 	protected final List<IGuiEventListener> childWidgets;
 	protected boolean allowMouse = true;
 	protected boolean allowKey = true;
 	protected boolean allowModifiers = true;
-	protected boolean child = false;
 	
 	@Internal public KeyCodeEntry(ITextComponent fieldName, ModifierKeyCode value) {
 		super(fieldName);
-		this.value = value.copy();
-		original = value.copy();
+		setOriginal(value.copy());
+		setValue(value.copy());
+		displayedValue = value.copy();
 		buttonWidget = new Button(0, 0, 150, 20, NarratorChatListener.NO_TITLE,
-		                               widget -> getConfigScreen().setFocusedBinding(this));
-		resetButton = new ResetButton(this);
+		                               widget -> getScreen().setFocusedBinding(this));
 		widgets = Lists.newArrayList(buttonWidget, resetButton);
 		childWidgets = Lists.newArrayList(buttonWidget);
 	}
 	
-	@Override public void resetValue(boolean commit) {
-		super.resetValue(commit);
-		getConfigScreen().setFocusedBinding(null);
+	@Override public void resetValue() {
+		super.resetValue();
+		getScreen().setFocusedBinding(null);
 	}
 	
 	public boolean isAllowModifiers() {
@@ -76,13 +68,12 @@ public class KeyCodeEntry
 		this.allowMouse = allowMouse;
 	}
 	
-	@Override
-	public ModifierKeyCode getValue() {
-		return value;
+	@Override public ModifierKeyCode getDisplayedValue() {
+		return displayedValue;
 	}
 	
-	@Override public void setValue(ModifierKeyCode value) {
-		this.value = value;
+	@Override public void setDisplayedValue(ModifierKeyCode value) {
+		displayedValue = value;
 	}
 	
 	@Override public ModifierKeyCode getDefaultValue() {
@@ -91,50 +82,15 @@ public class KeyCodeEntry
 	}
 	
 	private ITextComponent getLocalizedName() {
-		return value.getLocalizedName();
-	}
-	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
-		if (resetButton.isMouseOver(mouseX, mouseY))
-			return resetButton.getTooltip(mouseX, mouseY);
-		return super.getTooltip(mouseX, mouseY);
-	}
-	
-	@Override
-	public void renderEntry(
-	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
-	) {
-		super.renderEntry(
-		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		MainWindow window = Minecraft.getInstance().getWindow();
-		resetButton.y = y;
-		int buttonX;
-		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = Minecraft.getInstance().font;
-		if (font.isBidirectional()) {
-			font.drawShadow(
-			  mStack, name.getVisualOrderText(),
-			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
-			  (float) (y + 6), 0xFFFFFF);
-			resetButton.x = x;
-			buttonX = x + resetButton.getWidth() + 2;
-		} else {
-			font.drawShadow(
-			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6), getPreferredTextColor());
-			resetButton.x = x + entryWidth - resetButton.getWidth();
-			buttonX = x + entryWidth - 150;
-		}
-		renderChild(mStack, buttonX, y, 150 - resetButton.getWidth() - 2, 20, mouseX, mouseY, delta);
-		resetButton.render(mStack, mouseX, mouseY, delta);
+		return getDisplayedValue().getLocalizedName();
 	}
 	
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		buttonWidget.active = isEditable();
+		buttonWidget.active = shouldRenderEditable();
 		buttonWidget.setMessage(getLocalizedName());
-		if (getConfigScreen().getFocusedBinding() == this) {
+		if (getScreen().getFocusedBinding() == this) {
 			buttonWidget.setMessage(
 			  new StringTextComponent("> ").withStyle(TextFormatting.WHITE).append(
 				 buttonWidget.getMessage().plainCopy().withStyle(TextFormatting.YELLOW)).append(
@@ -147,22 +103,13 @@ public class KeyCodeEntry
 		buttonWidget.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	@Override public void updateSelected(boolean isSelected) {
-		super.updateSelected(isSelected);
-		if (!isSelected)
-			WidgetUtils.forceUnFocus(buttonWidget, resetButton);
+	@Override public void updateFocused(boolean isFocused) {
+		super.updateFocused(isFocused);
+		if (!isFocused)
+			WidgetUtils.forceUnFocus(buttonWidget);
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> children() {
-		return isChild()? childWidgets : widgets;
-	}
-	
-	@Override public boolean isChild() {
-		return child;
-	}
-	
-	@Override public void setChild(boolean child) {
-		this.child = child;
+	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+		return this.isChildSubEntry() ? childWidgets : widgets;
 	}
 }
-

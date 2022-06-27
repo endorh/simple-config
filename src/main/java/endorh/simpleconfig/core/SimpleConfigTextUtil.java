@@ -71,9 +71,6 @@ import java.util.regex.Pattern;
 		}
 	}
 	
-	// For some reason, using a lookahead for the last character class
-	//   makes the pattern fail if at the start of the sample
-	//   It's actually a bug from IntelliJ's "Check RegExp" intention
 	protected static final Pattern FS_INDEX_PATTERN = Pattern.compile(
 	  "(?<pre>(?<!%)(?:%%)*+%)(?:(?<d>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)(?<pos>[a-zA-Z])");
 	protected static String addExplicitFormatIndexes(String fmt) {

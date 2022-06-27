@@ -19,6 +19,10 @@ public class CheckboxButton extends ToggleImageButton {
 	protected int textColor = 0xffe0e0e0;
 	protected int realWidth;
 	
+	public static CheckboxButton of(boolean value, @Nullable ITextComponent label) {
+		return new CheckboxButton(value, 0, 0, 18, label, null);
+	}
+	
 	public CheckboxButton(
 	  boolean value, int x, int y, int w, @Nullable ITextComponent label,
 	  @Nullable Consumer<Boolean> onChange

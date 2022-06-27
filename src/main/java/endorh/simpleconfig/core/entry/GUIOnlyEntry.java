@@ -9,6 +9,8 @@ import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.function.Consumer;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
   extends AbstractConfigEntry<V, Void, Gui, Self> {
+	private static final Logger LOGGER = LogManager.getLogger();
 	protected boolean addNonPersistentTooltip;
 	
 	public GUIOnlyEntry(
@@ -75,8 +78,8 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		return false;
 	}
 	
-	@Override protected List<ITextComponent> supplyExtraTooltip(Gui value) {
-		return addNonPersistentTooltip? super.supplyExtraTooltip(value) : Lists.newArrayList();
+	@Override protected List<ITextComponent> addExtraTooltip(Gui value) {
+		return addNonPersistentTooltip ? super.addExtraTooltip(value) : Lists.newArrayList();
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {}
@@ -87,10 +90,11 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	}
 	
 	@Override
-	protected Consumer<Gui> saveConsumer() {
+	protected Consumer<Gui> createSaveConsumer() {
 		return g -> {
 			dirty();
-			set(fromGuiOrDefault(g));
+			if (!trySet(fromGuiOrDefault(g)))
+				LOGGER.warn("Unexpected error saving config entry \"" + getGlobalPath() + "\"");
 		};
 	}
 	

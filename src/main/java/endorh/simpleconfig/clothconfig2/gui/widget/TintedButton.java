@@ -13,6 +13,20 @@ public class TintedButton extends Button {
 	
 	protected int tintColor = 0x00000000;
 	
+	public static TintedButton of(
+	  int width, int height,  ITextComponent title, IPressable pressedAction
+	) {
+		return of(width, height, 0, title, pressedAction);
+	}
+	
+	public static TintedButton of(
+	  int width, int height, int tint, ITextComponent title, IPressable pressedAction
+	) {
+		TintedButton button = new TintedButton(0, 0, width, height, title, pressedAction);
+		button.setTintColor(tint);
+		return button;
+	}
+	
 	public TintedButton(
 	  int x, int y, int width, int height, ITextComponent title, IPressable pressedAction
 	) {

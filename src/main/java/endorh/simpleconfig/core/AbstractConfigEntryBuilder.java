@@ -2,6 +2,7 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.core.SimpleConfig.InvalidDefaultConfigValueException;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
@@ -25,10 +26,11 @@ import java.util.function.Supplier;
  * @param <Self> The actual subtype of this builder to be returned
  *               by builder-like methods
  */
-public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
+public abstract class AbstractConfigEntryBuilder<
+  V, Config, Gui,
   Entry extends AbstractConfigEntry<V, Config, Gui, Entry>,
-  Self extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self>>
-  implements IGUIEntryBuilder, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
+  Self extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self>
+> implements IGUIEntryBuilder, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
 	protected V value;
 	
 	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
@@ -218,6 +220,8 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 		if (nonPersistent)
 			e.actualValue = e.value;
 		e.ignored = ignored;
+		// if (!e.isValidValue(value))
+		// 	throw new InvalidDefaultConfigValueException(e.getGlobalPath(), value);
 		return e;
 	}
 	
@@ -253,7 +257,10 @@ public abstract class AbstractConfigEntryBuilder<V, Config, Gui,
 	}
 	
 	// Accessor
-	protected static AbstractConfigEntryBuilder<?, ?, ?, ?, ?> copy(AbstractConfigEntryBuilder<?, ?, ?, ?, ?> builder) {
+	protected static <
+	  V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
+	> B copyBuilder(B builder) {
 		return builder.copy();
 	}
 }

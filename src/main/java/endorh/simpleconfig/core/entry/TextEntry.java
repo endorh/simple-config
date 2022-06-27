@@ -92,7 +92,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		}
 	}
 	
-	@Override protected Consumer<Void> saveConsumer() {
+	@Override protected Consumer<Void> createSaveConsumer() {
 		return v -> {};
 	}
 	
@@ -107,20 +107,20 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 			return nullAsEmpty(translationSupplier.get());
 		} else {
 			if (translation == null)
-				LOGGER.warn("Malformed config text entry " + getPath());
+				LOGGER.warn("Malformed config text entry " + getGlobalPath());
 			return nullAsEmpty(super.getDisplayName());
 		}
 	}
 	
 	protected ITextComponent nullAsEmpty(@Nullable ITextComponent text) {
 		if (!logged && text == null) {
-			LOGGER.warn("Malformed config text entry " + getPath());
+			LOGGER.warn("Malformed config text entry " + getGlobalPath());
 			logged = true;
 		}
 		return text != null? text : StringTextComponent.EMPTY;
 	}
 	
-	@Override protected List<ITextComponent> supplyExtraTooltip(Void value) {
+	@Override protected List<ITextComponent> addExtraTooltip(Void value) {
 		return Lists.newArrayList();
 	}
 	
@@ -204,7 +204,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	) {
 		final TextDescriptionBuilder valBuilder = builder
 		  .startTextDescription(this::getDisplayName)
-		  .setTooltipSupplier(() -> this.supplyTooltip(null));
+		  .setTooltipSupplier(() -> this.getTooltip(null));
 		return Optional.of(decorate(valBuilder).build());
 	}
 }

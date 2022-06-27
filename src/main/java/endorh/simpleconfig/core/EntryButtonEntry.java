@@ -95,8 +95,8 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 	) {
 		final EntryButtonListEntry<Gui, ?> entry = new EntryButtonListEntry<>(
 		  getDisplayName(), inner.buildChildGUIEntry(builder),
-		  g -> action.accept(fromGuiOrDefault(g), parent), buttonLabelSupplier
-		);
+		  g -> action.accept(fromGuiOrDefault(g), parent), buttonLabelSupplier);
+		entry.entry.setIgnoreEdits(true);
 		return Optional.of(entry);
 	}
 }

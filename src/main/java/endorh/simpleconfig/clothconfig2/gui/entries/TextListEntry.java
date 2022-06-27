@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simpleconfig.clothconfig2.gui.INavigableTarget;
+import endorh.simpleconfig.clothconfig2.gui.widget.ResetButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -48,12 +49,18 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		wrappedLines = Collections.emptyList();
 	}
 	
-	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+	@Override public @Nullable ResetButton getResetButton() {
+		return null;
+	}
+	
+	@Override protected boolean shouldUseHelpButton() {
+		return false;
+	}
+	
+	@Override protected void renderTitle(
+	  MatrixStack mStack, ITextComponent title, float textX, int index, int x, int y, int entryWidth,
+	  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		super.renderEntry(
-		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		final ITextComponent text = getText();
 		if (savedWidth != entryWidth || savedX != x || savedY != y
 		    || !Objects.equals(text, savedText)) {
@@ -72,7 +79,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 			yy += LINE_HEIGHT;
 		}
 		Style style = getTextAt(mouseX, mouseY);
-		AbstractConfigScreen configScreen = getConfigScreen();
+		AbstractConfigScreen configScreen = getScreen();
 		if (style != null)
 			configScreen.renderComponentHoverEffect(mStack, style, mouseX, mouseY);
 	}
@@ -84,14 +91,14 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		return lineCount == 0 ? 0 : 15 + lineCount * LINE_HEIGHT;
 	}
 	
-	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {
 		if (button == 0) {
 			Style style = getTextAt(mouseX, mouseY);
-			AbstractConfigScreen configScreen = getConfigScreen();
+			AbstractConfigScreen configScreen = getScreen();
 			if (configScreen.handleComponentClicked(style))
 				return true;
 		}
-		return super.mouseClicked(mouseX, mouseY, button);
+		return super.onMouseClicked(mouseX, mouseY, button);
 	}
 	
 	@Nullable private Style getTextAt(double x, double y) {
@@ -125,22 +132,24 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		//   .appendString(str.substring(index + matchedText.length()));
 	}
 	
-	@Override public Void getValue() {
-		return null;
+	@Override public boolean isSelectable() {
+		return false;
 	}
-	
-	@Override public void setValue(Void value) {}
 	
 	@Override public int getCaptionHeight() {
 		return getItemHeight() - 4;
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> children() {
+	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
 		return Collections.emptyList();
 	}
 	
 	@Override public String seekableText() {
 		return getUnformattedString(getText());
+	}
+	
+	@Override public boolean isNavigable() {
+		return false;
 	}
 	
 	@Override public List<INavigableTarget> getNavigableChildren() {

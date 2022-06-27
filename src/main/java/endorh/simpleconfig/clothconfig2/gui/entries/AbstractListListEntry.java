@@ -1,15 +1,19 @@
 package endorh.simpleconfig.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.clothconfig2.gui.INavigableTarget;
 import endorh.simpleconfig.clothconfig2.gui.entries.AbstractListListEntry.AbstractListCell;
+import endorh.simpleconfig.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.clothconfig2.impl.ISeekableComponent;
+import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -32,9 +36,8 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	) {
 		super(fieldName, createNewCell);
 		setOriginal(value);
-		for (T f : value)
-			this.cells.add(createCellWithValue(f));
-		this.widgets.addAll(this.cells);
+		setValue(value);
+		setDisplayedValue(value);
 	}
 	
 	public Function<T, Optional<ITextComponent>> getCellErrorSupplier() {
@@ -43,19 +46,9 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	
 	public void setCellErrorSupplier(Function<T, Optional<ITextComponent>> cellErrorSupplier) {
 		this.cellErrorSupplier = cellErrorSupplier;
-		setValue(getValue());
-	}
-	
-	@Override public void setValue(List<T> value) {
-		final boolean original = suppressRecords;
-		if (!original) suppressRecords = true;
-		for (int i = 0; i < cells.size() && i < value.size(); i++)
-			cells.get(i).setValue(value.get(i));
-		while (cells.size() > value.size())
-			remove(cells.size() - 1);
-		while (cells.size() < value.size())
-			add(value.get(cells.size()));
-		suppressRecords = original;
+		final List<T> value = getValue();
+		setValue(value);
+		setDisplayedValue(value);
 	}
 	
 	@Override protected C createCellWithValue(T value) {
@@ -65,28 +58,22 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		return cell;
 	}
 	
-	@Override public void setOriginal(List<T> value) {
-		this.original = new ArrayList<>(value);
-	}
-	
 	@Internal
 	public static abstract class AbstractListCell<V, Self extends AbstractListCell<V, Self, ListEntry>, ListEntry extends AbstractListListEntry<V, Self, ListEntry>>
 	  extends BaseListCell<V> {
-		private final WeakReference<ListEntry> listEntry;
+		private final ListEntry listEntry;
 		protected boolean isFocusedMatch = false;
 		protected String matchedText = null;
+		protected Rectangle rowArea = new Rectangle();
+		private INavigableTarget lastSelectedSubTarget;
 		
 		public AbstractListCell(ListEntry listEntry) {
-			this.listEntry = new WeakReference<>(listEntry);
+			this.listEntry = listEntry;
 			this.setErrorSupplier(() -> Optional.ofNullable(listEntry.cellErrorSupplier)
 			  .flatMap(cellErrorFn -> cellErrorFn.apply(this.getValue())));
 		}
 		
 		protected ListEntry getListEntry() {
-			final ListEntry listEntry = this.listEntry.get();
-			if (listEntry == null)
-				throw new IllegalStateException(
-				  "Illegal attempt to use list entry's cell after its parent list has been disposed");
 			return listEntry;
 		}
 		
@@ -110,6 +97,32 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 			return matches;
 		}
 		
+		@Override public Rectangle getSelectionArea() {
+			return rowArea;
+		}
+		
+		@Override public Rectangle getNavigableArea() {
+			return rowArea;
+		}
+		
+		@Override public @Nullable INavigableTarget getLastSelectedNavigableSubTarget() {
+			return lastSelectedSubTarget;
+		}
+		
+		@Override public void setLastSelectedNavigableSubTarget(@Nullable INavigableTarget target) {
+			lastSelectedSubTarget = target;
+		}
+		
+		@Override public void renderCell(
+		  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
+		  int mouseY, boolean isSelected, float delta
+		) {
+			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
+			ListEntry listEntry = getListEntry();
+			DynamicEntryListWidget<?> entryList = listEntry.getEntryList();
+			rowArea.setBounds(entryList.left, cellArea.y, entryList.right - entryList.left, cellArea.height);
+		}
+		
 		protected String seekableText() {
 			final V value = getValue();
 			return value != null? value.toString() : "";
@@ -128,9 +141,13 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 			
 		}
 		
+		@Override public @Nullable INavigableTarget getNavigableParent() {
+			return getListEntry();
+		}
+		
 		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-			if (Screen.hasAltDown()) {
-				final ListEntry listEntry = getListEntry();
+			final ListEntry listEntry = getListEntry();
+			if (listEntry.isEditable() && Screen.hasAltDown()) {
 				final IGuiEventListener listener = listEntry.getFocused();
 				//noinspection SuspiciousMethodCalls
 				if (listener instanceof BaseListCell && listEntry.cells.contains(listener)) {
@@ -138,24 +155,24 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 					int index = listEntry.cells.indexOf(listener);
 					if (Screen.hasControlDown()) { // Move
 						if (keyCode == 264 && index < listEntry.cells.size() - 1) { // Down
-							listEntry.move(index, index + 1);
-							((BaseListCell<?>) listener).onNavigate();
+							listEntry.moveTransparently(index, index + 1);
+							((BaseListCell<?>) listener).navigate();
 							return true;
 						} else if (keyCode == 265 && index > 0) { // Up
-							listEntry.move(index, index - 1);
-							((BaseListCell<?>) listener).onNavigate();
+							listEntry.moveTransparently(index, index - 1);
+							((BaseListCell<?>) listener).navigate();
 							return true;
 						}
 					}
 					if (keyCode == 257 || keyCode == 260) { // Enter | Insert
-						listEntry.add(index + 1);
-						listEntry.cells.get(index + 1).onNavigate();
+						listEntry.addTransparently(index + 1);
+						listEntry.cells.get(index + 1).navigate();
 						return true;
 					} else if (index != -1 && (keyCode == 259 || keyCode == 261)) { // Backspace | Delete
-						listEntry.remove(index);
+						listEntry.removeTransparently(index);
 						if (!listEntry.cells.isEmpty())
 							listEntry.cells.get(
-							  clamp(keyCode == 259 ? index - 1 : index, 0, listEntry.cells.size() - 1)).onNavigate();
+							  clamp(keyCode == 259 ? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
 						return true;
 					}
 				}

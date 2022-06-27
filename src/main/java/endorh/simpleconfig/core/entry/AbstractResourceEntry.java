@@ -5,11 +5,13 @@ import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSu
 import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -17,7 +19,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<Self>>
-  extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation, Self> {
+  extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation, Self>
+  implements IKeyEntry<String, ResourceLocation> {
 	protected SimpleSortedSuggestionProvider<ResourceLocation> suggestionProvider;
 	
 	public AbstractResourceEntry(
@@ -76,8 +79,12 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 		}
 	}
 	
+	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
+		return Optional.of(key);
+	}
+	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forConfig(value), configValidator()));
+		return Optional.of(decorate(builder).define(name, forConfig(value), createConfigValidator()));
 	}
 	
 	protected ComboBoxFieldBuilder<ResourceLocation> decorate(

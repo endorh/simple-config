@@ -102,7 +102,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forConfig(value), configValidator()));
+		return Optional.of(decorate(builder).define(name, forConfig(value), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)

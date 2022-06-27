@@ -1,8 +1,14 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Abstract container for config entries<br>
@@ -15,6 +21,20 @@ public interface ISimpleConfigEntryHolder {
 	 * Get the root config of this entry holder
 	 */
 	SimpleConfig getRoot();
+	
+	/**
+	 * Get the current configuration GUI of this holder, if any.
+	 */
+	@OnlyIn(Dist.CLIENT)
+	@Nullable AbstractConfigScreen getGUI();
+	
+	/**
+	 * Check if this holder has an associated active configuration GUI.
+	 */
+	default boolean hasGUI() {
+		if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) return false;
+		return getGUI() != null;
+	}
 	
 	/**
 	 * Get a config value<br>
@@ -33,6 +53,13 @@ public interface ISimpleConfigEntryHolder {
 	 * @see ISimpleConfigEntryHolder#getDouble(String)
 	 */
 	<T> T get(String path);
+	
+	/**
+	 * Check if an entry has a currently active config GUI.
+	 * @param path Name or dot-separated path to the value
+	 * @throws SimpleConfig.NoSuchConfigEntryError if the value is not found
+	 */
+	boolean hasGUI(String path);
 	
 	/**
 	 * Get the current candidate value in the config GUI, or just the value
@@ -67,6 +94,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param <V> Type of the value
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 * @throws InvalidConfigValueException if the value is invalid for this entry
 	 */
 	default <V> void set(String path, V value) {
 		if (value instanceof Number) {
@@ -85,6 +113,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param number Value to be set
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
+	 * @throws InvalidConfigValueException if the value is invalid for this entry
 	 */
 	default void set(String path, Number number) {
 		boolean pre;
@@ -125,6 +154,7 @@ public interface ISimpleConfigEntryHolder {
 	/**
 	 * Mark this entry holder as dirty<br>
 	 * When the config screen is saved, only config files containing dirty entries are updated
+	 * @see ISimpleConfigEntryHolder#isDirty
 	 */
 	default ISimpleConfigEntryHolder markDirty() {
 		markDirty(true);
@@ -135,8 +165,15 @@ public interface ISimpleConfigEntryHolder {
 	 * Mark this entry holder as dirty or clean<br>
 	 * The dirty state is propagated to all ancestors<br>
 	 * The clean state is propagated to all descendants<br>
+	 * @see ISimpleConfigEntryHolder#isDirty
 	 */
 	void markDirty(boolean dirty);
+	
+	/**
+	 * Returns {@code true} if marked as dirty.
+	 * @see ISimpleConfigEntryHolder#markDirty
+	 */
+	boolean isDirty();
 	
 	/**
 	 * Get a boolean config value

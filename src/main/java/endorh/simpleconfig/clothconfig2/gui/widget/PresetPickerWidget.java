@@ -4,17 +4,16 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
+import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry;
+import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.clothconfig2.gui.*;
 import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.clothconfig2.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
-import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -81,7 +80,7 @@ public class PresetPickerWidget extends FocusableGui {
 		  "simpleconfig.preset.save.label")
 		).on(Modifier.SHIFT, ButtonAction.of(() -> save(selector.getText(), true))
 		  .icon(SimpleConfigIcons.SAVE_REMOTE)
-		  .active(() -> getHandler() != null && getHandler().canSaveRemote())
+		  .active(() -> getHandler() != null && isValidName(selector.text) && getHandler().canSaveRemote())
 		  .tooltip(() -> getSaveTooltip(false, true))
 		).on(Modifier.ALT, ButtonAction.of(() -> delete(selector.getValue()))
 		  .icon(SimpleConfigIcons.DELETE)
@@ -110,7 +109,7 @@ public class PresetPickerWidget extends FocusableGui {
 	protected List<ITextComponent> getSaveTooltip(
 	  boolean delete, boolean remote
 	) {
-		final SnapshotHandler handler = getHandler();
+		final IConfigSnapshotHandler handler = getHandler();
 		if (handler == null || !isValidName(selector.text))
 			return Lists.newArrayList();
 		boolean server = screen.isSelectedCategoryServer();
@@ -149,7 +148,7 @@ public class PresetPickerWidget extends FocusableGui {
 		saveButton.y = y;
 	}
 	
-	protected SnapshotHandler getHandler() {
+	protected IConfigSnapshotHandler getHandler() {
 		return screen.getSnapshotHandler();
 	}
 	
@@ -210,19 +209,19 @@ public class PresetPickerWidget extends FocusableGui {
 	
 	public void load(Preset preset) {
 		final Type type = screen.currentConfigType();
-		final SnapshotHandler handler = getHandler();
-		screen.getHistory().startBatch(screen, null); {
+		final IConfigSnapshotHandler handler = getHandler();
+		screen.runAtomicTransparentAction(() -> {
 			if (preset.remote) {
 				final CompletableFuture<Void> future = handler.getRemote(preset.name, type)
 				  .thenAccept(config -> handler.restore(config, type));
-				screen.addDialog(
-				  new ProgressDialog(
-					 screen, new TranslationTextComponent(
-						"simpleconfig.preset.dialog.loading.title"),
-					 splitTtc("simpleconfig.preset.dialog.loading.remote.body", preset.name),
-					 future));
+				screen.addDialog(ProgressDialog.create(
+				  screen, new TranslationTextComponent("simpleconfig.preset.dialog.loading.title"),
+				  future, d -> {
+					  d.setBody(splitTtc("simpleconfig.preset.dialog.loading.remote.body", preset.name));
+					  
+				  }));
 			} else handler.restore(handler.getLocal(preset.name, type), type);
-		} screen.getHistory().saveBatch(screen);
+		});
 	}
 	
 	public void save(String name, boolean remote) {
@@ -233,59 +232,64 @@ public class PresetPickerWidget extends FocusableGui {
 	public void save(String name, boolean remote, boolean overwrite) {
 		final Type type = screen.currentConfigType();
 		final boolean server = type == Type.SERVER;
-		final SnapshotHandler handler = getHandler();
-		final CommentedConfig preserved = handler.preserve(type);
+		final IConfigSnapshotHandler handler = getHandler();
+		Set<String> selection = screen.getSelectedEntries().stream()
+		  .map(AbstractConfigEntry::getPath)
+		  .collect(Collectors.toSet());
+		if (selection.isEmpty()) selection = null;
+		final CommentedConfig preserved = handler.preserve(type, selection);
 		final Map<String, Preset> presetMap = getKnownPresets(server, remote);
 		final Map<String, Preset> otherMap = getKnownPresets(server, !remote);
 		if (!overwrite && !userSkipOverwriteDialog && presetMap.containsKey(name)
 		    && presetMap.get(name).server == server) {
-			screen.addDialog(Util.make(new ConfirmDialog(
-			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.title"),
-			  (b, cs) -> {
-				  if (b) {
-					  if (cs[0]) userSkipOverwriteDialog = true;
-					  save(name, remote, true);
-				  }
-			  }, splitTtc("simpleconfig.preset.dialog.overwrite."
-			              + (remote ? "remote." : "local.")
-			              + (server ? "server" : "client"), name),
-			  DialogTexts.GUI_CANCEL, new TranslationTextComponent(
-			  "simpleconfig.preset.dialog.overwrite.confirm"),
-			  new CheckboxButton(false, 0, 0, 0, new TranslationTextComponent(
-				 "simpleconfig.ui.do_not_ask_again_this_session"), null)
-			), d -> d.setConfirmButtonTint(0xAAAA00AA)));
+			screen.addDialog(ConfirmDialog.create(
+			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.title"), d -> {
+				  d.withCheckBoxes((b, cs) -> {
+					  if (b) {
+						  if (cs[0]) userSkipOverwriteDialog = true;
+						  save(name, remote, true);
+					  }
+				  }, CheckboxButton.of(false, new TranslationTextComponent(
+				    "simpleconfig.ui.do_not_ask_again_this_session")));
+				  d.setBody(splitTtc(
+					 "simpleconfig.preset.dialog.overwrite."
+					 + (remote ? "remote." : "local.") + (server ? "server" : "client"), name));
+				  d.setConfirmText(new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.confirm"));
+				  d.setConfirmButtonTint(0xAAAA00AA);
+			  }));
 		} else if (!overwrite && otherMap.containsKey(name) && !presetMap.containsKey(name)) {
 			final String flavor = remote ? "remote" : "local";
-			screen.addDialog(Util.make(new ConfirmDialog(
-			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.mistaken.title"),
-			  b -> {
-				 if (b) save(name, remote, true);
-			  }, splitTtc("simpleconfig.preset.dialog.mistaken." + flavor + ".body", name)), d -> {
-				d.setConfirmText(new TranslationTextComponent(
-				  "simpleconfig.preset.dialog.mistaken.option." + flavor + ".create"));
-				d.setConfirmButtonTint(remote? 0xAA429090 : 0xAA429042);
-				d.addButton(1, Util.make(new TintedButton(0, 0, 0, 20, new TranslationTextComponent(
-				  "simpleconfig.preset.dialog.mistaken.option." + flavor + ".overwrite"),  p -> {
-					save(name, !remote, true);
-					d.cancel(false);
-				}), b -> b.setTintColor(remote ? 0xAA429042 : 0xAA429090)));
-			}));
+			screen.addDialog(ConfirmDialog.create(
+			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.mistaken.title"), d -> {
+				  d.withAction(b -> {
+					  if (b) save(name, remote, true);
+				  });
+				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + flavor + ".body", name));
+				  d.setConfirmText(new TranslationTextComponent(
+					 "simpleconfig.preset.dialog.mistaken.option." + flavor + ".create"));
+				  d.setConfirmButtonTint(remote ? 0xAA429090 : 0xAA429042);
+				  d.addButton(1, TintedButton.of(
+					 0, 20, remote ? 0xAA429042 : 0xAA429090, new TranslationTextComponent(
+						"simpleconfig.preset.dialog.mistaken.option." + flavor + ".overwrite"),  p -> {
+						 save(name, !remote, true);
+						 d.cancel(false);
+					 }));
+			  }));
 		} else if (remote) {
-			final CompletableFuture<Void> future =
-			  handler.saveRemote(name, type, preserved);
-			screen.addDialog(Util.make(new ProgressDialog(
-			  screen, new TranslationTextComponent(
-				 "simpleconfig.preset.dialog.saving.title"),
-			  splitTtc("simpleconfig.preset.dialog.saving.remote.body", name),
-			  future
-			), d -> d.setCancellableByUser(false)));
+			final CompletableFuture<Void> future = handler.saveRemote(name, type, preserved);
+			screen.addDialog(ProgressDialog.create(
+			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.saving.title"),
+			  future, d -> {
+				  d.setBody(splitTtc("simpleconfig.preset.dialog.saving.remote.body", name));
+				  d.setCancellableByUser(false);
+			  }));
 			// Once the packet has been sent, cancellation is not possible
 		} else {
 			handler.saveLocal(name, type, preserved).ifPresent(e ->
-			  screen.addDialog(new ErrorDialog(
+			  screen.addDialog(ErrorDialog.create(
 				 screen, new TranslationTextComponent(
-					"simpleconfig.preset.dialog.saving.error.title"),
-				 e, splitTtc("simpleconfig.preset.dialog.saving.error.local.body", name)))
+					"simpleconfig.preset.dialog.saving.error.title"), e, d -> d.setBody(
+						splitTtc("simpleconfig.preset.dialog.saving.error.local.body", name))))
 			);
 		}
 	}
@@ -294,32 +298,32 @@ public class PresetPickerWidget extends FocusableGui {
 	public void delete(Preset preset) {delete(preset, false);}
 	public void delete(Preset preset, boolean skipConfirm) {
 		final Type type = screen.currentConfigType();
-		final SnapshotHandler handler = getHandler();
+		final IConfigSnapshotHandler handler = getHandler();
 		if (!userSkipConfirmDeleteDialog && !skipConfirm) {
-			screen.addDialog(Util.make(new ConfirmDialog(
-			  screen, new TranslationTextComponent(
-				 "simpleconfig.preset.dialog.delete.confirm.title"),
-			  (b, cs) -> {
-				  if (b) {
-					  if (cs[0]) userSkipConfirmDeleteDialog = true;
-					  delete(preset, true);
-				  }
-			  }, splitTtc("simpleconfig.preset.dialog.delete.confirm."
-			              + (preset.remote? "remote." : "local.")
-			              + (preset.server? "server" : "client"), preset.name),
-			  new CheckboxButton(false, 0, 0, 0, new TranslationTextComponent(
-				 "simpleconfig.ui.do_not_ask_again_this_session"), null)), d -> {
-				d.setConfirmText(new TranslationTextComponent(
-				  "simpleconfig.preset.dialog.delete.confirm.delete", preset.name));
-				d.setConfirmButtonTint(0x80BD2424);
-			}));
+			screen.addDialog(ConfirmDialog.create(
+			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
+				  d.withCheckBoxes((b, cs) -> {
+					  if (b) {
+						  if (cs[0]) userSkipConfirmDeleteDialog = true;
+						  delete(preset, true);
+					  }
+				  }, CheckboxButton.of(false, new TranslationTextComponent(
+				    "simpleconfig.ui.do_not_ask_again_this_session")));
+				  d.setBody(splitTtc(
+					 "simpleconfig.preset.dialog.delete.confirm."
+					 + (preset.remote? "remote." : "local.") + (preset.server? "server" : "client"), preset.name));
+				  d.setConfirmText(new TranslationTextComponent(
+					 "simpleconfig.preset.dialog.delete.confirm.delete", preset.name));
+				  d.setConfirmButtonTint(0x80BD2424);
+			  }));
 		} else if (preset.remote) {
 			final CompletableFuture<Void> future = handler.deleteRemote(preset.name, type);
-			screen.addDialog(Util.make(new ProgressDialog(
-			  screen, new TranslationTextComponent(
-			  "simpleconfig.preset.dialog.deleting.title"),
-			  splitTtc("simpleconfig.preset.dialog.deleting.remote.body", preset.name),
-			  future), d -> d.setCancellableByUser(false)));
+			screen.addDialog(ProgressDialog.create(
+			  screen, new TranslationTextComponent("simpleconfig.preset.dialog.deleting.title"),
+			  future, d -> {
+				  d.setBody(splitTtc("simpleconfig.preset.dialog.deleting.remote.body", preset.name));
+				  d.setCancellableByUser(false);
+			  }));
 			future.thenAccept(v -> update());
 		} else {
 			handler.deleteLocal(preset.name, type);

@@ -7,6 +7,7 @@ import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
 import endorh.simpleconfig.clothconfig2.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.clothconfig2.gui.widget.DynamicEntryListWidget;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.TextFieldWidget;
@@ -35,16 +36,19 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 	}
 	
 	@Internal
-	public static abstract class AbstractTextFieldListCell<T, Self extends AbstractTextFieldListCell<T, Self, ListEntry>, ListEntry extends AbstractTextFieldListListEntry<T, Self, ListEntry>>
-	  extends AbstractListListEntry.AbstractListCell<T, Self, ListEntry> {
+	public static abstract class AbstractTextFieldListCell<
+	    T, Self extends AbstractTextFieldListCell<T, Self, ListEntry>,
+	    ListEntry extends AbstractTextFieldListListEntry<T, Self, ListEntry>
+	  > extends AbstractListListEntry.AbstractListCell<T, Self, ListEntry> {
 		protected TextFieldWidget widget;
 		
 		public AbstractTextFieldListCell(ListEntry listListEntry) {
 			super(listListEntry);
 			// T finalValue = this.substituteDefault(value);
-			widget = new TextFieldWidget(Minecraft.getInstance().font, 0, 0, 100, 18,
-			                                  NarratorChatListener.NO_TITLE) {
-				
+			widget = new TextFieldWidget(
+			  Minecraft.getInstance().font, 0, 0, 100, 18,
+			  NarratorChatListener.NO_TITLE
+			) {
 				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
@@ -69,7 +73,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			return 20;
 		}
 		
-		@Override public int getCellDecorationOffset() {
+		@Override public int getCellAreaOffset() {
 			return -4;
 		}
 		
@@ -77,25 +81,32 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			return widget.getValue();
 		}
 		
-		@Override public void render(
-		  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
+		@Override public void renderCell(
+		  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
 		  int mouseY, boolean isSelected, float delta
 		) {
-			super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isSelected, delta);
-			widget.setWidth(entryWidth - 12);
-			widget.x = x;
+			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
+			FontRenderer font = Minecraft.getInstance().font;
+			ListEntry listEntry = getListEntry();
+			
+			final boolean editable = listEntry.shouldRenderEditable();
+			int fieldWidth = listEntry.getFieldWidth();
+			int fieldX = font.isBidirectional() ? x : x + cellWidth - fieldWidth;
+			widget.setWidth(fieldWidth);
+			widget.x = fieldX;
 			widget.y = y + 1;
-			final boolean editable = getListEntry().isEditable();
 			widget.setEditable(editable);
+			
 			widget.render(mStack, mouseX, mouseY, delta);
 			if (isSelected && editable) {
 				AbstractTextFieldListCell.fill(
-				  mStack, x, y + 12, x + entryWidth - 12, y + 13,
-				  hasErrors() ? 0xffff5555 : 0xffe0e0e0);
+				  mStack, fieldX, y + 12, x + cellWidth, y + 13,
+				  hasError() ? 0xffff5555 : 0xffe0e0e0);
 			}
+			
 			if (matchedText != null) {
 				fill(
-				  mStack, x - 32, y - 2, x + entryWidth, y + entryHeight - 8,
+				  mStack, fieldX, y - 2, x + fieldWidth, y + cellHeight - 2,
 				  isFocusedMatch()? 0x64FFBD42 : 0x64FFFF42);
 			}
 		}
@@ -121,7 +132,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			return Lists.newArrayList(this);
 		}
 		
-		@Override public void onNavigate() {
+		@Override public void navigate() {
 			final ListEntry listEntry = getListEntry();
 			listEntry.expandParents();
 			listEntry.claimFocus();
@@ -130,7 +141,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			setFocused(widget);
 			widget.setFocus(true);
 			scrollToSelf();
-			listEntry.getParent().setSelectedTarget(this);
+			listEntry.getEntryList().setSelectedTarget(this);
 		}
 		
 		protected void scrollToSelf() {
@@ -140,17 +151,12 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			int y = 24;
 			for (int i = 0; i < j; i++)
 				y += listEntry.cells.get(i).getCellHeight();
-			final DynamicEntryListWidget<?> parent = listEntry.getParent();
-			final int half = (parent.bottom - parent.top) / 2;
-			int target = max(
-			  0, listEntry.getScrollY() - parent.top - half
-			     + min(half, listEntry.getCaptionHeight() / 2) + y);
+			final DynamicEntryListWidget<?> parent = listEntry.getEntryList();
+			int listY = listEntry.getScrollY();
+			double listTarget = parent.scrollFor(listY, listEntry.getItemHeight());
+			double target = parent.scrollFor(listY + y, getCellHeight());
 			parent.scrollTo(target);
 		}
-	}
-	
-	@Override public String seekableValueText() {
-		return "";
 	}
 	
 	@Override public List<INavigableTarget> getNavigableChildren() {

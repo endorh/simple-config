@@ -155,7 +155,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid, FluidE
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		assert value.getRegistryName() != null;
 		return Optional.of(decorate(builder).define(
-		  name, value.getRegistryName().toString(), configValidator()));
+		  name, value.getRegistryName().toString(), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Fluid>> buildGUIEntry(

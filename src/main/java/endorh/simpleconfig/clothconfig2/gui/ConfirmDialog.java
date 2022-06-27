@@ -5,14 +5,13 @@ import endorh.simpleconfig.clothconfig2.gui.widget.CheckboxButton;
 import endorh.simpleconfig.clothconfig2.gui.widget.TintedButton;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -21,50 +20,69 @@ import static java.lang.Math.round;
 import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ConfirmDialog extends AbstractButtonDialog {
-	protected List<ITextComponent> body;
+	protected List<ITextComponent> body = Collections.emptyList();
 	protected int bodyColor = 0xffbdbdbd;
 	protected int lineHeight = 10;
 	protected int paragraphMarginDown = 4;
 	protected List<List<IReorderingProcessor>> lines;
 	protected TintedButton cancelButton;
 	protected TintedButton confirmButton;
-	protected BiConsumer<Boolean, boolean[]> action;
+	protected DialogAction action = (ComplexDialogAction) (v, s) -> {};
 	
-	protected CheckboxButton[] checkBoxes;
+	protected CheckboxButton[] checkBoxes = new CheckboxButton[0];
 	
-	public ConfirmDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, Consumer<Boolean> action,
-	  List<ITextComponent> body, CheckboxButton... checkBoxes
-	) { this(screen, title, (v, s) -> action.accept(v), body, checkBoxes); }
-	
-	public ConfirmDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, BiConsumer<Boolean, boolean[]> action,
-	  List<ITextComponent> body, CheckboxButton... checkBoxes
-	) {
-		this(screen, title, action, body, DialogTexts.GUI_CANCEL, DialogTexts.GUI_PROCEED, checkBoxes);
+	@FunctionalInterface public interface DialogAction {
+		void handle(boolean success);
+		default void handle(boolean success, boolean[] checkBoxes) {
+			handle(success);
+		}
 	}
 	
-	public ConfirmDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, Consumer<Boolean> action,
-	  List<ITextComponent> body, ITextComponent cancelText, ITextComponent confirmText,
-	  CheckboxButton... checkBoxes
-	) { this(screen, title, (v, s) -> action.accept(v), body, cancelText, confirmText, checkBoxes); }
+	@FunctionalInterface public interface ComplexDialogAction extends DialogAction {
+		void handleComplex(boolean success, boolean[] checkBoxes);
+		
+		@Override default void handle(boolean success) {
+			throw new UnsupportedOperationException("Illegal implementation");
+		}
+		@Override default void handle(boolean success, boolean[] checkBoxes) {
+			handleComplex(success, checkBoxes);
+		}
+	}
 	
-	public ConfirmDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, BiConsumer<Boolean, boolean[]> action,
-	  List<ITextComponent> body, ITextComponent cancelText, ITextComponent confirmText,
-	  CheckboxButton... checkBoxes
+	public static ConfirmDialog create(
+	  IOverlayCapableScreen screen, ITextComponent title
 	) {
+		return create(screen, title, d -> {});
+	}
+	
+	public static ConfirmDialog create(
+	  IOverlayCapableScreen screen, ITextComponent title, Consumer<ConfirmDialog> builder
+	) {
+		ConfirmDialog dialog = new ConfirmDialog(screen, title);
+		builder.accept(dialog);
+		return dialog;
+	}
+	
+	protected ConfirmDialog(IOverlayCapableScreen screen, ITextComponent title) {
 		super(screen, title);
-		this.body = body;
-		this.action = action;
-		this.checkBoxes = checkBoxes;
-		cancelButton = new TintedButton(0, 0, 120, 20, cancelText, p -> cancel());
-		confirmButton = new TintedButton(0, 0, 120, 20, confirmText, p -> confirm());
+		cancelButton = TintedButton.of(120, 20, DialogTexts.GUI_CANCEL, p -> cancel());
+		confirmButton = TintedButton.of(120, 20, DialogTexts.GUI_PROCEED, p -> confirm());
 		addButton(cancelButton);
 		addButton(confirmButton);
 		setFocused(cancelButton);
 		cancelButton.changeFocus(true);
+	}
+	
+	public void withAction(DialogAction handler) {
+		this.action = handler;
+	}
+	
+	public void withCheckBoxes(
+	  ComplexDialogAction action, CheckboxButton... checkBoxes
+	) {
+		this.action = action;
+		bodyListeners.removeAll(Arrays.asList(this.checkBoxes));
+		this.checkBoxes = checkBoxes;
 		bodyListeners.addAll(Arrays.asList(this.checkBoxes));
 	}
 	
@@ -72,7 +90,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		return checkBoxes;
 	}
 	
-	public boolean[] checkBoxesState() {
+	public boolean[] getCheckBoxesState() {
 		boolean[] state = new boolean[checkBoxes.length];
 		for (int i = 0; i < checkBoxes.length; i++)
 			state[i] = checkBoxes[i].getValue();
@@ -85,17 +103,17 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	
 	@Override public void cancel(boolean success) {
 		super.cancel(success);
-		action.accept(success, checkBoxesState());
+		action.handle(success, getCheckBoxesState());
 	}
 	
-	@Override protected void position() {
+	@Override protected void layout() {
 		w = (int) clamp(screen.width * 0.7, 120, 800);
 		final int titleWidth = font.width(title);
 		if (titleWidth + 16 > w)
 			w = min(screen.width - 32, titleWidth + 16);
 		lines = getBody().stream().map(l -> font.split(l, w - 16)).collect(Collectors.toList());
 		h = (int) clamp(60 + getInnerHeight(), 68, screen.height * 0.9);
-		super.position();
+		super.layout();
 	}
 	
 	@Override public void renderInner(
@@ -153,13 +171,6 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	public void setBody(List<ITextComponent> body) {
 		this.body = body;
-	}
-	
-	public void setAction(BiConsumer<Boolean, boolean[]> action) {
-		this.action = action;
-	}
-	public void setAction(Consumer<Boolean> action) {
-		this.action = (v, s) -> action.accept(v);
 	}
 	
 	public void setCancelText(ITextComponent text) {

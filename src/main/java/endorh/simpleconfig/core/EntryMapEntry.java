@@ -5,6 +5,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
 import endorh.simpleconfig.clothconfig2.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
@@ -19,6 +20,8 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 
@@ -30,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Special config entry containing a map of values of which the values
@@ -47,6 +51,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
   KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
   extends AbstractConfigEntry<
   Map<K, V>, Map<String, C>, List<Pair<KG, G>>, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
+	private static final Logger LOGGER = LogManager.getLogger();
 	protected final KB keyEntryBuilder;
 	protected final KE keyEntry;
 	protected final B entryBuilder;
@@ -216,27 +221,28 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	}
 	
 	@Override
-	protected Predicate<Object> configValidator() {
+	protected Predicate<Object> createConfigValidator() {
 		return o -> {
 			if (o instanceof String) {
 				final Map<String, C> pre = fromActualConfig(o);
 				final Map<K, V> m = fromConfig(pre);
 				if (m == null)
 					return false;
-				// Skip invalid keys
-				// if (pre.size() != m.size()) return false;
-				return !supplyError(forGui(m)).isPresent();
+				// Tolerate skipping invalid keys, but log a warning
+				if (pre.size() != m.size()) LOGGER.warn(
+				  "Map config entry " + getGlobalPath() + " has invalid entries, which have been ignored.");
+				return isValidValue(m);
 			} else return false;
 		};
 	}
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
-		spec.define(parentPath + name, forActualConfig(forConfig(value)), configValidator());
+		spec.define(parentPath + name, forActualConfig(forConfig(value)), createConfigValidator());
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
@@ -251,30 +257,61 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
-		ke.set(ke.value);
-		e.set(e.value);
+		ke.actualValue = ke.value;
+		e.actualValue = e.value;
 		KGE kg = ke.buildChildGUIEntry(builder);
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));
+		g.removeEntryFlag(EntryFlag.NON_PERSISTENT);
 		ke.guiEntry = kg;
 		e.guiEntry = g;
 		return Pair.of(kg, g);
 	}
 	
-	public Optional<ITextComponent> supplyElementError(Pair<KG, G> p) {
-		Optional<ITextComponent> e = keyEntry.supplyError(p.getKey());
-		if (e.isPresent()) return e;
-		e = entry.supplyError(p.getValue());
-		if (e.isPresent()) return e;
-		final K k = keyEntry.fromGui(p.getKey());
-		if (getGUI().stream().filter(entry -> Objects.equals(keyEntry.fromGui(entry.getKey()), k)).count() > 1)
-			return Optional.of(new TranslationTextComponent("simpleconfig.config.error.duplicate_key", k));
+	@Override public List<ITextComponent> getErrors(List<Pair<KG, G>> value) {
+		return Stream.concat(
+		  Stream.of(getError(value)).filter(Optional::isPresent).map(Optional::get),
+		  value.stream().flatMap(p -> getElementErrors(p).stream())
+		  ).collect(Collectors.toList());
+	}
+	
+	@Override public Optional<ITextComponent> getError(List<Pair<KG, G>> value) {
+		Optional<ITextComponent> opt = super.getError(value);
+		if (opt.isPresent()) return opt;
+		Set<KG> set = new HashSet<>();
+		for (Pair<KG, G> pair : value) {
+			final KG key = pair.getKey();
+			if (!set.add(key))
+				return Optional.of(new TranslationTextComponent(
+				  "simpleconfig.config.error.duplicate_key", key));
+		}
 		return Optional.empty();
 	}
 	
-	@Override protected Consumer<List<Pair<KG, G>>> saveConsumer() {
-		return super.saveConsumer().andThen(g -> guiCache = g);
+	public Optional<ITextComponent> getCellError(Pair<KG, G> p) {
+		// Already handled by the GUI
+		// Optional<ITextComponent> e = keyEntry.getError(p.getKey());
+		// if (e.isPresent()) return e;
+		// e = entry.getError(p.getValue());
+		// if (e.isPresent()) return e;
+		final K k = keyEntry.fromGui(p.getKey());
+		if (hasGUI()
+		    && getGUI().stream()
+		         .filter(entry -> Objects.equals(keyEntry.fromGui(entry.getKey()), k))
+		         .count() > 1
+		) return Optional.of(new TranslationTextComponent("simpleconfig.config.error.duplicate_key", k));
+		return Optional.empty();
+	}
+	
+	public List<ITextComponent> getElementErrors(Pair<KG, G> p) {
+		List<ITextComponent> errors = keyEntry.getErrors(p.getKey());
+		errors.addAll(entry.getErrors(p.getValue()));
+		return errors;
+	}
+	
+	@Override protected Consumer<List<Pair<KG, G>>> createSaveConsumer() {
+		return super.createSaveConsumer().andThen(g -> guiCache = g);
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
@@ -288,7 +325,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  entryBuilder = builder
 		  .startEntryPairList(getDisplayName(), guiValue, en -> buildCell(builder))
 		  .setIgnoreOrder(!linked)
-		  .setCellErrorSupplier(this::supplyElementError)
+		  .setCellErrorSupplier(this::getCellError)
 		  .setExpanded(expand);
 		return Optional.of(decorate(entryBuilder).build());
 	}

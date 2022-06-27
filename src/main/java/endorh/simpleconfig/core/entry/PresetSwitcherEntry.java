@@ -84,21 +84,20 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		final Map<String, Object> preset = presets.get(name);
 		final AbstractSimpleConfigEntryHolder h =
 		  (global ? parent.getRoot() : (AbstractSimpleConfigEntryHolder) parent).getChild(path);
-		AbstractConfigScreen screen = null;
 		if (guiEntry != null) {
-			screen = guiEntry.getConfigScreenOrNull();
-			if (screen != null) screen.getHistory().startBatch(screen, null);
+			AbstractConfigScreen screen = guiEntry.getScreen();
+			screen.runAtomicTransparentAction(() -> {
+				for (Entry<String, Object> entry : preset.entrySet()) {
+					try {
+						h.setForGUI(entry.getKey(), entry.getValue());
+					} catch (RuntimeException e) {
+						LOGGER.warn(
+						  "Unable to set preset (" + name + ") entry: \"" + entry.getKey() + "\"\n" +
+						  "Details: " + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
+					}
+				}
+			});
 		}
-		for (Entry<String, Object> entry : preset.entrySet()) {
-			try {
-				h.setForGUI(entry.getKey(), entry.getValue());
-			} catch (RuntimeException e) {
-				LOGGER.warn(
-				  "Unable to set preset (" + name + ") entry: \"" + entry.getKey() + "\"\n" +
-				  "Details: " + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
-			}
-		}
-		if (screen != null) screen.getHistory().saveBatch(screen);
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(

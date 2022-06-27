@@ -146,7 +146,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		assert value.getRegistryName() != null;
 		return Optional.of(decorate(builder).define(
-		  name, value.getRegistryName().toString(), configValidator()));
+		  name, value.getRegistryName().toString(), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override

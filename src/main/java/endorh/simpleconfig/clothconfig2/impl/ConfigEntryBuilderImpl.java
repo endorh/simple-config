@@ -1,19 +1,18 @@
 package endorh.simpleconfig.clothconfig2.impl;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
-import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
+import endorh.simpleconfig.clothconfig2.api.*;
 import endorh.simpleconfig.clothconfig2.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.NestedListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.impl.builders.*;
+import endorh.simpleconfig.core.AbstractRange;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +57,13 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 		SubCategoryBuilder builder = new SubCategoryBuilder(this, name);
 		builder.addAll(entries);
 		return builder;
+	}
+	
+	@Override public <T, HE extends AbstractConfigEntry<T> & IChildListEntry>
+	CaptionedSubCategoryBuilder<T, HE> startCaptionedSubCategory(
+	  ITextComponent name, HE captionEntry
+	) {
+		return new CaptionedSubCategoryBuilder<>(this, name, captionEntry);
 	}
 	
 	@Override public BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value) {
@@ -168,19 +174,48 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 	
 	@Override public <V, E extends AbstractListListEntry<V, ?, E>,
 	  C, CE extends AbstractConfigListEntry<C> & IChildListEntry>
-	DecoratedListEntryBuilder<V, E, C, CE> makeDecoratedList(
+	CaptionedListEntryBuilder<V, E, C, CE> startCaptionedList(
 	  ITextComponent name, E listEntry, CE captionEntry, Pair<C, List<V>> value
 	) {
-		return new DecoratedListEntryBuilder<>(
+		return new CaptionedListEntryBuilder<>(
 		  this, name, value, listEntry, captionEntry);
 	}
 	
-	// @Override public <T> DropdownMenuBuilder<T> startDropdownMenu(
-	//   ITextComponent name, DropdownBoxEntry.SelectionTopCellElement<T> topCellElement,
-	//   DropdownBoxEntry.SelectionCellCreator<T> cellCreator
-	// ) {
-	// 	return new DropdownMenuBuilder<>(
-	// 	  this, name, topCellElement, cellCreator);
-	// }
+	@Override public <
+	  L, R, LE extends AbstractConfigListEntry<L> & IChildListEntry,
+	  RE extends AbstractConfigListEntry<R> & IChildListEntry
+	> PairListEntryBuilder<L, R, LE, RE> startPair(
+	  ITextComponent name, LE leftEntry, RE rightEntry, Pair<L, R> value
+	) {
+		return new PairListEntryBuilder<>(this, name, value, leftEntry, rightEntry);
+	}
+	
+	@Override public <
+	  L, R, M, LE extends AbstractConfigListEntry<L> & IChildListEntry,
+	  ME extends AbstractConfigListEntry<M> & IChildListEntry,
+	  RE extends AbstractConfigListEntry<R> & IChildListEntry
+	> TripleListEntryBuilder<L, M, R, LE, ME, RE> startTriple(
+	  ITextComponent name, LE leftEntry, ME middleEntry, RE rightEntry, Triple<L, M, R> value
+	) {
+		return new TripleListEntryBuilder<>(this, name, value, leftEntry, middleEntry, rightEntry);
+	}
+	
+	@Override public <
+	  V extends Comparable<V>, R extends AbstractRange<V, R>,
+	  E extends AbstractConfigListEntry<V> & IChildListEntry
+	> RangeListEntryBuilder<V, R, E> startRange(
+	  ITextComponent name, R value, FieldBuilder<V, E, ?> entryBuilder
+	) {
+		return new RangeListEntryBuilder<>(this, name, value, entryBuilder);
+	}
+	
+	@Override public <
+	  V extends Comparable<V>, R extends AbstractRange<V, R>,
+	  E extends AbstractConfigListEntry<V> & IChildListEntry
+	> RangeListEntryBuilder<V, R, E> startRange(
+	  ITextComponent name, R value, E minEntry, E maxEntry
+	) {
+		return new RangeListEntryBuilder<>(this, name, value, minEntry, maxEntry);
+	}
 }
 

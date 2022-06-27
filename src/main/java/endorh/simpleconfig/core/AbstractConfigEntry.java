@@ -7,14 +7,10 @@ import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigCategory;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simpleconfig.clothconfig2.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.clothconfig2.impl.builders.FieldBuilder;
-import endorh.simpleconfig.clothconfig2.impl.builders.SubCategoryBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.core.SimpleConfig.*;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -24,12 +20,16 @@ import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 
@@ -49,6 +49,7 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
  */
 public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
   implements IGUIEntry {
+	private static final Logger LOGGER = LogManager.getLogger();
 	protected final ISimpleConfigEntryHolder parent;
 	/**
 	 * The default value of this entry
@@ -93,12 +94,15 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		this.name = name;
 	}
 	
-	/**
-	 * Used in error messages
-	 */
-	protected String getPath() {
+	public String getPath() {
 		if (parent instanceof AbstractSimpleConfigEntryHolder) {
 			return ((AbstractSimpleConfigEntryHolder) parent).getPath() + "." + name;
+		} else return name;
+	}
+	
+	public String getGlobalPath() {
+		if (parent instanceof AbstractSimpleConfigEntryHolder) {
+			return ((AbstractSimpleConfigEntryHolder) parent).getGlobalPath() + "." + name;
 		} else return name;
 	}
 	
@@ -106,32 +110,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return (Self) this;
 	}
 	
-	@SuppressWarnings("UnusedReturnValue") protected Self translate(String translation) {
+	protected void setTranslation(@Nullable String translation) {
 		this.translation = translation;
-		return self();
 	}
 	
-	@SuppressWarnings("UnusedReturnValue") protected Self tooltip(String translation) {
+	protected void setTooltip(@Nullable String translation) {
 		this.tooltip = translation;
-		return self();
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	protected String fillArgs(String translation, V value, List<Object> args) {
-		final Object[] arr = args.stream().map(a -> {
-			if (a instanceof Function) {
-				try {
-					//noinspection unchecked
-					return ((Function<V, ?>) a).apply(value);
-				} catch (ClassCastException e) {
-					throw new InvalidConfigValueTypeException(
-					  getPath(), e, "A translation argument provider expected an invalid value type");
-				}
-			} else if (a instanceof Supplier) {
-				return ((Supplier<?>) a).get();
-			} else return a;
-		}).toArray();
-		return I18n.get(translation, arr);
+		return I18n.get(translation, formatArgs(value, args));
 	}
 	
 	protected Object[] formatArgs(V value, List<Object> args) {
@@ -142,7 +131,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 					return ((Function<V, ?>) a).apply(value);
 				} catch (ClassCastException e) {
 					throw new InvalidConfigValueTypeException(
-					  getPath(), e, "A translation argument provider expected an invalid value type");
+					  getGlobalPath(), e, "A translation argument provider expected an invalid value type");
 				}
 			} else if (a instanceof Supplier) {
 				return ((Supplier<?>) a).get();
@@ -150,12 +139,12 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		}).toArray();
 	}
 	
-	protected Self withSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
+	@Internal public Self withSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
 		this.saver = saver;
 		return self();
 	}
 	
-	protected Self withDisplayName(ITextComponent name) {
+	@Internal public Self withDisplayName(ITextComponent name) {
 		this.displayName = name;
 		return self();
 	}
@@ -252,8 +241,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * Transform value from Config type
 	 */
-	protected V fromConfigOrDefault(Config value) {
-		final V v = self().fromConfig(value);
+	public V fromConfigOrDefault(Config value) {
+		final V v = fromConfig(value);
 		return v != null ? v : this.value;
 	}
 	
@@ -280,7 +269,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			//noinspection unchecked
 			return (Config) value;
 		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(getPath(), e);
+			throw new InvalidConfigValueTypeException(getGlobalPath(), e);
 		}
 	}
 	
@@ -300,31 +289,22 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (dirty) parent.markDirty();
 	}
 	
-	protected Consumer<Gui> saveConsumer() {
+	protected Consumer<Gui> createSaveConsumer() {
 		if (saver != null)
 			return g -> saver.accept(g, parent);
 		if (ignored) return g -> {};
-		if (nonPersistent)
-			return g -> {
-				V v = fromGuiOrDefault(g);
-				if (!Objects.equals(actualValue, v)) {
-					dirty();
-					actualValue = v;
-				}
-			};
 		return g -> {
-			// guiEntry = null; // Discard the entry
-			// The save consumer shouldn't run with invalid values in the first place
 			final V v = fromGuiOrDefault(g);
 			if (!Objects.equals(get(), v)) {
-				dirty();
-				set(v);
+				if (trySet(v)) dirty();
+				else LOGGER.error("Unexpected error saving config entry \"" + getGlobalPath() + "\"");
 			}
+			// guiEntry = null; // Discard the entry
 		};
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected Optional<ITextComponent[]> supplyTooltip(Gui value) {
+	protected Optional<ITextComponent[]> getTooltip(Gui value) {
 		if (debugTranslations())
 			return supplyDebugTooltip(value);
 		Optional<ITextComponent[]> o;
@@ -343,24 +323,25 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs)).toArray(new ITextComponent[0]))
 			  .map(t -> addExtraTooltip(t, value));
 		}
-		final List<ITextComponent> extra = supplyExtraTooltip(value);
+		final List<ITextComponent> extra = addExtraTooltip(value);
 		return extra.isEmpty()? Optional.empty() : Optional.of(extra.toArray(new ITextComponent[0]));
 	}
 	
 	protected ITextComponent[] addExtraTooltip(ITextComponent[] tooltip, Gui value) {
-		return ArrayUtils.addAll(tooltip, supplyExtraTooltip(value).toArray(new ITextComponent[0]));
+		return ArrayUtils.addAll(tooltip, addExtraTooltip(value).toArray(new ITextComponent[0]));
 	}
 	
-	protected List<ITextComponent> supplyExtraTooltip(Gui value) {
-		final List<ITextComponent> extra = Lists.newArrayList();
-		if (nonPersistent && !(parent instanceof FakeEntryHolder))
-			extra.add(new TranslationTextComponent(
-			  "simpleconfig.config.help.not_persistent_entry"
-			).withStyle(TextFormatting.GRAY));
-		return extra;
+	protected List<ITextComponent> addExtraTooltip(Gui value) {
+		return Lists.newArrayList();
 	}
 	
-	public Optional<ITextComponent> supplyError(Gui value) {
+	public List<ITextComponent> getErrors(Gui value) {
+		return Stream.of(getError(value))
+		  .filter(Optional::isPresent).map(Optional::get)
+		  .collect(Collectors.toList());
+	}
+	
+	public Optional<ITextComponent> getError(Gui value) {
 		Optional<ITextComponent> o;
 		if (guiErrorSupplier != null) {
 			o = guiErrorSupplier.apply(value);
@@ -390,25 +371,28 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	@OnlyIn(Dist.CLIENT)
 	protected <F extends FieldBuilder<Gui, ?, F>> F decorate(F builder) {
-		// Worked around with AbstractSimpleConfigEntryHolder#markGUIRestart()
-		// builder.requireRestart(requireRestart);
-		builder.requireRestart(false)
+		builder.requireRestart(requireRestart)
+		  .nonPersistent(nonPersistent)
 		  .setDefaultValue(() -> forGui(value))
-		  .setTooltipSupplier(this::supplyTooltip)
-		  .setErrorSupplier(this::supplyError)
-		  .setSaveConsumer(saveConsumer())
+		  .setTooltipSupplier(this::getTooltip)
+		  .setErrorSupplier(this::getError)
+		  .setSaveConsumer(createSaveConsumer())
 		  .setEditableSupplier(editableSupplier)
 		  .setName(name)
 		  .setIgnoreEdits(ignored);
 		return builder;
 	}
 	
-	protected Predicate<Object> configValidator() {
+	public boolean isValidValue(V value) {
+		return getErrors(forGui(value)).isEmpty();
+	}
+	
+	protected Predicate<Object> createConfigValidator() {
 		return o -> {
 			try {
 				final Config c = fromActualConfig(o);
 				final V v = fromConfig(c);
-				return v != null && !supplyError(forGui(v)).isPresent();
+				return v != null && isValidValue(v);
 			} catch (ClassCastException e) {
 				return false;
 			}
@@ -444,7 +428,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected void buildSpec(
 	  ConfigSpec spec, String parentPath
 	) {
-		spec.define(parentPath + name, forConfig(value), configValidator());
+		spec.define(parentPath + name, forConfig(value), createConfigValidator());
 	}
 	
 	/**
@@ -462,7 +446,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Add entry to the GUI<br>
 	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigEntryBuilder)}
 	 */
-	@OnlyIn(Dist.CLIENT) public void buildGUI(SubCategoryBuilder group, ConfigEntryBuilder entryBuilder) {
+	@OnlyIn(Dist.CLIENT) public void buildGUI(
+	  CaptionedSubCategoryBuilder<?, ?> group, ConfigEntryBuilder entryBuilder
+	) {
 		buildGUIEntry(entryBuilder).ifPresent(e -> {
 			this.guiEntry = e;
 			group.add(e);
@@ -489,18 +475,31 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	protected V get() {
 		if (nonPersistent) return actualValue;
-		if (configValue == null) throw new NoSuchConfigEntryError(getPath());
+		if (configValue == null) throw new NoSuchConfigEntryError(getGlobalPath());
 		return get(configValue);
 	}
 	
 	protected void set(V value) {
+		if (!isValidValue(value))
+			throw new InvalidConfigValueException(getGlobalPath(), value);
 		if (nonPersistent) {
 			actualValue = value;
 		} else if (configValue == null) {
-			throw new NoSuchConfigEntryError(getPath());
+			throw new NoSuchConfigEntryError(getGlobalPath());
 		} else {
 			set(configValue, value);
 		}
+	}
+	
+	protected boolean trySet(V value) {
+		if (isValidValue(value)) {
+			if (nonPersistent) {
+				actualValue = value;
+			} else if (configValue == null) {
+				throw new NoSuchConfigEntryError(getGlobalPath());
+			} else set(configValue, value);
+			return true;
+		} else return false;
 	}
 	
 	/**
@@ -524,7 +523,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		((ConfigValue<Object>) spec).set(forActualConfig(forConfig(value)));
 		bakeField();
 	}
-	
+	protected boolean hasGUI() {
+		if (FMLEnvironment.dist != Dist.CLIENT) return false;
+		return guiEntry != null;
+	}
 	protected Gui getGUI() {
 		if (FMLEnvironment.dist != Dist.CLIENT) return forGui(get());
 		return guiEntry != null? guiEntry.getValue() : forGui(get());
@@ -536,19 +538,47 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected Config guiForConfig() {
 		return forConfig(getFromGUI());
 	}
+	protected Config getForConfig() {
+		return forConfig(get());
+	}
+	
 	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value) {
 		if (guiEntry != null) {
-			AbstractConfigScreen screen = guiEntry.getConfigScreenOrNull();
-			if (screen != null) screen.getHistory().preserveState(guiEntry);
-			guiEntry.setValue(value);
-			if (screen != null) screen.getHistory().saveState(screen);
+			guiEntry.setValueTransparently(value);
+		} else throw new IllegalStateException("Cannot set GUI value without GUI");
+	}
+	@OnlyIn(Dist.CLIENT) protected void setGUIAsExternal(Gui value) {
+		if (guiEntry != null) {
+			guiEntry.setExternalValue(value);
 		} else throw new IllegalStateException("Cannot set GUI value without GUI");
 	}
 	@OnlyIn(Dist.CLIENT) protected void setForGUI(V value) {
 		setGUI(forGui(value));
 	}
-	@OnlyIn(Dist.CLIENT) protected void setConfigForGUI(Config value) {
+	@OnlyIn(Dist.CLIENT) protected void setForGUIAsExternal(V value) {
+		setGUIAsExternal(forGui(value));
+	}
+	@OnlyIn(Dist.CLIENT) protected void setFromConfigForGUI(Config value) {
 		setForGUI(fromConfigOrDefault(value));
+	}
+	@OnlyIn(Dist.CLIENT) protected void setFromConfigForGUIAsExternal(Config value) {
+		setForGUIAsExternal(fromConfigOrDefault(value));
+	}
+	
+	protected void setFromGUI(Gui value) {
+		set(fromGui(value));
+	}
+	
+	protected void trySetFromGUI(Gui value) {
+		trySet(fromGui(value));
+	}
+	
+	protected void setFromConfig(Config value) {
+		set(fromConfigOrDefault(value));
+	}
+	
+	protected void trySetFromConfig(Config value) {
+		trySet(fromConfigOrDefault(value));
 	}
 	
 	protected void setBackingField(V value) throws IllegalAccessException {
@@ -563,7 +593,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			//noinspection unchecked
 			return (V) backingField.get(null);
 		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(getPath(), e);
+			throw new InvalidConfigValueTypeException(getGlobalPath(), e);
 		}
 	}
 	

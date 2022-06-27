@@ -8,15 +8,17 @@ import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.clothconfig2.ClothConfigInitializer;
 import endorh.simpleconfig.clothconfig2.api.*;
-import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.SnapshotHandler;
+import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
+import endorh.simpleconfig.clothconfig2.gui.ExternalChangesDialog.ExternalChangeResponse;
 import endorh.simpleconfig.clothconfig2.gui.entries.KeyCodeEntry;
 import endorh.simpleconfig.clothconfig2.gui.widget.CheckboxButton;
 import endorh.simpleconfig.clothconfig2.gui.widget.SearchBarWidget;
+import endorh.simpleconfig.clothconfig2.gui.widget.TintedButton;
 import endorh.simpleconfig.clothconfig2.impl.EditHistory;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
+import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
@@ -46,31 +48,34 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
-import static java.lang.Math.max;
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 
 public abstract class AbstractConfigScreen extends Screen
   implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler, ScissorsScreen,
-             IOverlayCapableScreen, IEntryHolder, IDialogCapableScreen {
+             IExternalChangeHandler, IOverlayCapableScreen, IEntryHolder, IDialogCapableScreen {
 	protected static final ResourceLocation CONFIG_TEX =
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
 	protected final ResourceLocation backgroundLocation;
-	protected boolean confirmUnsaved = confirm.unsaved;
-	protected boolean confirmSave = confirm.save;
 	protected final Screen parent;
+	protected final List<Tooltip> tooltips = Lists.newArrayList();
+	protected boolean confirmUnsaved = confirm.discard;
+	protected boolean confirmSave = confirm.save;
 	protected boolean alwaysShowTabs = false;
 	protected boolean transparentBackground = false;
 	@Nullable protected ConfigCategory defaultFallbackCategory = null;
 	protected boolean editable = true;
 	protected KeyCodeEntry focusedBinding;
 	protected ModifierKeyCode startedKeyCode = null;
-	protected final List<Tooltip> tooltips = Lists.newArrayList();
 	@Nullable protected Runnable savingRunnable = null;
 	@Nullable protected Consumer<Screen> afterInitConsumer = null;
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	protected Map<String, ConfigCategory> serverCategoryMap;
 	protected Map<String, ConfigCategory> categoryMap;
+	protected boolean insideTransparentAction = false;
+	protected ExternalChangesDialog externalChangesDialog;
 	
 	protected ConfigCategory selectedCategory;
 	protected List<ConfigCategory> sortedClientCategories;
@@ -79,10 +84,10 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	protected SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
 	
-	protected EditHistory history = new EditHistory();
+	protected EditHistory history;
 	
-	protected List<AbstractDialog> dialogs = Lists.newLinkedList();
-	protected @Nullable SnapshotHandler snapshotHandler;
+	private final List<AbstractDialog> dialogs = Lists.newArrayList();
+	protected @Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler;
 	
 	protected AbstractConfigScreen(
 	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
@@ -101,6 +106,33 @@ public abstract class AbstractConfigScreen extends Screen
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
 		this.sortedCategories = new ArrayList<>(sortedClientCategories);
 		sortedCategories.addAll(sortedServerCategories);
+		history = new EditHistory();
+		history.setOwner(this);
+	}
+	
+	public static void fillGradient(
+	  MatrixStack mStack, double xStart, double yStart, double xEnd, double yEnd,
+	  int blitOffset, int from, int to
+	) {
+		float fa = (float) (from >> 24 & 0xFF) / 255F;
+		float fr = (float) (from >> 16 & 0xFF) / 255F;
+		float fg = (float) (from >> 8 & 0xFF) / 255F;
+		float fb = (float) (from & 0xFF) / 255F;
+		float ta = (float) (to >> 24 & 0xFF) / 255F;
+		float tr = (float) (to >> 16 & 0xFF) / 255F;
+		float tg = (float) (to >> 8 & 0xFF) / 255F;
+		float tb = (float) (to & 0xFF) / 255F;
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder bb = tessellator.getBuilder();
+		bb.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		// @formatter:off
+		final Matrix4f m = mStack.last().pose();
+		bb.vertex(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
+		bb.vertex(m, (float) xStart, (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
+		bb.vertex(m, (float) xStart, (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
+		bb.vertex(m, (float) xEnd,   (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
+		// @formatter:on
+		tessellator.end();
 	}
 	
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
@@ -118,13 +150,24 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	@Override public boolean isRequiresRestart() {
 		for (ConfigCategory cat : categoryMap.values()) {
-			for (AbstractConfigEntry<?> entry : cat.getEntries()) {
-				if (entry.hasErrors() || !entry.isEdited() ||
+			for (AbstractConfigEntry<?> entry : cat.getHeldEntries()) {
+				if (entry.hasError() || !entry.isEdited() ||
 				    !entry.isRequiresRestart()) continue;
 				return true;
 			}
 		}
 		return false;
+	}
+	
+	public void selectNextCategory(boolean forward) {
+		int i = sortedCategories.indexOf(selectedCategory);
+		if (i == -1) throw new IllegalStateException();
+		i = (i + (forward? 1 : -1) + sortedCategories.size()) % sortedCategories.size();
+		setSelectedCategory(sortedCategories.get(i));
+	}
+	
+	public ConfigCategory getSelectedCategory() {
+		return selectedCategory;
 	}
 	
 	public void setSelectedCategory(String name) {
@@ -135,26 +178,15 @@ public abstract class AbstractConfigScreen extends Screen
 		else throw new IllegalArgumentException("Unknown category name: " + name);
 	}
 	
-	public void selectNextCategory(boolean forward) {
-		int i = sortedCategories.indexOf(selectedCategory);
-		if (i == -1) throw new IllegalStateException();
-		i = (i + (forward? 1 : -1) + sortedCategories.size()) % sortedCategories.size();
-		setSelectedCategory(sortedCategories.get(i));
-	}
-	
 	public void setSelectedCategory(ConfigCategory category) {
 		if (!categoryMap.containsValue(category) && !serverCategoryMap.containsValue(category))
 			throw new IllegalArgumentException("Unknown category");
 		selectedCategory = category;
 	}
 	
-	public ConfigCategory getSelectedCategory() {
-		return selectedCategory;
-	}
-	
 	@Override public boolean isEdited() {
 		for (ConfigCategory cat : sortedCategories) {
-			for (AbstractConfigEntry<?> entry : cat.getEntries()) {
+			for (AbstractConfigEntry<?> entry : cat.getHeldEntries()) {
 				if (!entry.isEdited()) continue;
 				return true;
 			}
@@ -176,6 +208,33 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public boolean isShowingTabs() {
 		return isAlwaysShowTabs() || (isSelectedCategoryServer()? serverCategoryMap : categoryMap).size() > 1;
+	}
+	
+	/**
+	 * Run an atomic action, which is committed to the history as a single step.
+	 * Atomic actions triggered within the action will also be joined in the same step.
+	 * @param action Action to run
+	 */
+	public void runAtomicTransparentAction(Runnable action) {
+		runAtomicTransparentAction(null, action);
+	}
+	
+	/**
+	 * Run an atomic action, which is committed to the history as a single step.
+	 * Atomic actions triggered within the action will also be joined in the same step.
+	 * @param focus Focus entry of the action, or {@code null}
+	 * @param action Action to run
+	 */
+	public void runAtomicTransparentAction(@Nullable AbstractConfigEntry<?> focus, Runnable action) {
+		getHistory().runAtomicTransparentAction(focus, action);
+	}
+	
+	public Set<AbstractConfigEntry<?>> getSelectedEntries() {
+		return Collections.emptySet();
+	}
+	
+	public boolean canSelectEntries() {
+		return false;
 	}
 	
 	public boolean isAlwaysShowTabs() {
@@ -206,32 +265,83 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public void saveAll(boolean openOtherScreens) {
-		saveAll(openOtherScreens, false);
+		saveAll(openOtherScreens, false, false);
 	}
 	
-	public void saveAll(boolean openOtherScreens, boolean forceConfirm) {
-		if ((confirmSave || forceConfirm) && isEdited()) {
-			final ConfirmDialog dialog = new ConfirmDialog(
-			  this, new TranslationTextComponent("simpleconfig.ui.confirm_save"), (b, s) -> {
-				  if (b) doSaveAll(openOtherScreens);
-				  if (s[0]) CLIENT_CONFIG.set("confirm.save", false);
-			  },
-			  Lists.newArrayList(new TranslationTextComponent("simpleconfig.ui.confirm_save.msg")),
-			  DialogTexts.GUI_CANCEL, new TranslationTextComponent("text.cloth-config.save_and_done"),
-			  new CheckboxButton(
-				 false, 0, 0, 100, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again"),
-				 null));
-			dialog.setConfirmButtonTint(0x8042BD42);
-			addDialog(dialog);
-		} else {
-			doSaveAll(openOtherScreens);
-		}
+	public void saveAll(boolean openOtherScreens, boolean forceConfirm, boolean forceOverwrite) {
+		if (hasErrors() || !isEdited()) return;
+		boolean external = !forceOverwrite && confirm.overwrite_external && hasConflictingExternalChanges();
+		boolean remote = !forceOverwrite && confirm.overwrite_remote && hasConflictingRemoteChanges();
+		if (external || remote) {
+			addDialog(ConfirmDialog.create(
+			  this, new TranslationTextComponent("simpleconfig.ui.confirm_overwrite"), d -> {
+				  List<ITextComponent> body = splitTtc(
+					 "simpleconfig.ui.confirm_overwrite.msg."
+					 + (external ? remote ? "both" : "external" : "remote"));
+				  body.addAll(SimpleConfigTextUtil.splitTtc(
+					 "simpleconfig.ui.confirm_overwrite.msg.overwrite"));
+				  d.setBody(body);
+				  CheckboxButton[] checkBoxes = Stream.concat(
+					 Stream.of(
+						CheckboxButton.of(!confirm.overwrite_external, new TranslationTextComponent(
+						  "simpleconfig.ui.confirm_overwrite.do_not_ask_external"
+						))).filter(p -> external),
+					 Stream.of(CheckboxButton.of(!confirm.overwrite_remote, new TranslationTextComponent(
+						"simpleconfig.ui.confirm_overwrite.do_not_ask_remote"
+					 ))).filter(p -> remote)).toArray(CheckboxButton[]::new);
+				  d.withCheckBoxes((b, s) -> {
+					  if (b) {
+						  if (external) {
+							  String CONFIRM_OVERWRITE_EXTERNAL = "confirm.overwrite_external";
+							  if (CLIENT_CONFIG.hasGUI()) {
+								  CLIENT_CONFIG.setGUI(CONFIRM_OVERWRITE_EXTERNAL, !s[0]);
+								  confirm.overwrite_external = !s[0];
+							  } else CLIENT_CONFIG.set(CONFIRM_OVERWRITE_EXTERNAL, !s[0]);
+						  }
+						  String CONFIRM_OVERWRITE_REMOTE = "confirm.overwrite_remote";
+						  if (remote) {
+							  boolean c = !s[external ? 1 : 0];
+							  if (CLIENT_CONFIG.hasGUI()) {
+								  CLIENT_CONFIG.setGUI(CONFIRM_OVERWRITE_REMOTE, c);
+								  confirm.overwrite_external = c;
+							  } else CLIENT_CONFIG.set(CONFIRM_OVERWRITE_REMOTE, c);
+						  }
+						  doSaveAll(openOtherScreens);
+					  }
+				  }, checkBoxes);
+				  d.setConfirmText(new TranslationTextComponent(
+					 "simpleconfig.ui.confirm_overwrite.overwrite"));
+				  d.setConfirmButtonTint(0x80603070);
+			  }
+			));
+		} else if (confirmSave || forceConfirm) {
+			addDialog(ConfirmDialog.create(
+			  this, new TranslationTextComponent("simpleconfig.ui.confirm_save"), d -> {
+				  d.withCheckBoxes((b, s) -> {
+					  if (b) {
+						  if (s[0]) {
+							  final String CONFIRM_SAVE = "confirm.save";
+							  if (CLIENT_CONFIG.hasGUI()) {
+								  CLIENT_CONFIG.setGUI(CONFIRM_SAVE, false);
+								  confirm.save = false;
+							  } else CLIENT_CONFIG.set(CONFIRM_SAVE, false);
+						  }
+						  doSaveAll(openOtherScreens);
+					  }
+				  }, CheckboxButton.of(
+					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
+				  d.setBody(splitTtc("simpleconfig.ui.confirm_save.msg"));
+				  d.setConfirmText(new TranslationTextComponent("text.cloth-config.save_and_done"));
+				  d.setConfirmButtonTint(0x8042BD42);
+			  }));
+		} else doSaveAll(openOtherScreens);
 	}
 	
 	protected void doSaveAll(boolean openOtherScreens) {
-		for (ConfigCategory cat : sortedCategories) {
-			for (AbstractConfigEntry<?> entry : cat.getEntries()) entry.save();
-		}
+		if (hasErrors()) return;
+		for (ConfigCategory cat : sortedCategories)
+			for (AbstractConfigEntry<?> entry : cat.getHeldEntries())
+				entry.save();
 		save();
 		if (openOtherScreens && minecraft != null) {
 			if (isRequiresRestart())
@@ -240,8 +350,18 @@ public abstract class AbstractConfigScreen extends Screen
 		}
 	}
 	
-	public void save() {
+	protected void save() {
 		Optional.ofNullable(savingRunnable).ifPresent(Runnable::run);
+	}
+	
+	public boolean hasConflictingExternalChanges() {
+		return sortedClientCategories.stream().flatMap(c -> c.getAllMainEntries().stream())
+		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
+	}
+	
+	public boolean hasConflictingRemoteChanges() {
+		return sortedServerCategories.stream().flatMap(c -> c.getAllMainEntries().stream())
+		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
 	}
 	
 	public boolean isEditable() {
@@ -269,7 +389,7 @@ public abstract class AbstractConfigScreen extends Screen
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (focusedBinding != null && startedKeyCode != null &&
 		    !startedKeyCode.isUnknown() && focusedBinding.isAllowMouse()) {
-			focusedBinding.setValue(startedKeyCode);
+			focusedBinding.setDisplayedValue(startedKeyCode);
 			setFocusedBinding(null);
 			return true;
 		}
@@ -298,7 +418,7 @@ public abstract class AbstractConfigScreen extends Screen
 			return true;
 		if (focusedBinding != null && startedKeyCode != null &&
 		    focusedBinding.isAllowKey()) {
-			focusedBinding.setValue(startedKeyCode);
+			focusedBinding.setDisplayedValue(startedKeyCode);
 			setFocusedBinding(null);
 			return true;
 		}
@@ -413,7 +533,7 @@ public abstract class AbstractConfigScreen extends Screen
 					}
 				}
 			} else {
-				focusedBinding.setValue(ModifierKeyCode.unknown());
+				focusedBinding.setDisplayedValue(ModifierKeyCode.unknown());
 				setFocusedBinding(null);
 			}
 			return true;
@@ -424,8 +544,7 @@ public abstract class AbstractConfigScreen extends Screen
 			if (handleOverlaysEscapeKey())
 				return true;
 			if (shouldCloseOnEsc()) {
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+				playFeedbackTap(1F);
 				return quit();
 			}
 		}
@@ -438,50 +557,57 @@ public abstract class AbstractConfigScreen extends Screen
 		return isEdited();
 	}
 	
+	protected void playFeedbackTap(float volume) {
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
+	}
+	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
 		Input key = InputMappings.getKey(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(true);
 			recomputeFocus();
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			playFeedbackTap(1F);
 			return true;
 		} else if (KeyBindings.PREV_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(false);
 			recomputeFocus();
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			playFeedbackTap(1F);
 			return true;
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
-			if (canSave()) saveAll(true, false);
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			if (canSave()) saveAll(true, false, false);
+			playFeedbackTap(1F);
 			return true;
 		}
 		return false;
 	}
-	
+
 	protected final boolean quit() {
 		return quit(false);
 	}
+	
 	protected final boolean quit(boolean skipConfirm) {
 		if (minecraft == null) return false;
 		if (!skipConfirm && confirmUnsaved && isEdited()) {
-			final ConfirmDialog dialog = new ConfirmDialog(
-			  this, new TranslationTextComponent("text.cloth-config.quit_config"), (b, s) -> {
-				  if (s[0]) CLIENT_CONFIG.set("confirm.unsaved", false);
-				  if (b) quit(true);
-			  },
-			  Util.<List<ITextComponent>>make(
-				 new ArrayList<>(),
-				 l -> l.add(new TranslationTextComponent("text.cloth-config.quit_config_sure"))),
-			  new TranslationTextComponent("gui.cancel"),
-			  new TranslationTextComponent("text.cloth-config.quit_discard"),
-			  new CheckboxButton(
-				 false, 0, 0, 100, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again"),
-				 null));
-			dialog.setConfirmButtonTint(0x80BD2424);
-			addDialog(dialog);
+			addDialog(ConfirmDialog.create(
+			  this, new TranslationTextComponent("text.cloth-config.quit_config"), d -> {
+				  d.withCheckBoxes((b, s) -> {
+					  if (b) {
+						  if (s[0]) {
+							  final String CONFIRM_UNSAVED = "confirm.unsaved";
+							  if (CLIENT_CONFIG.hasGUI()) {
+								  CLIENT_CONFIG.setGUI(CONFIRM_UNSAVED, false);
+								  confirm.discard = false;
+							  } else CLIENT_CONFIG.set(CONFIRM_UNSAVED, false);
+						  }
+						  quit(true);
+					  }
+				  }, CheckboxButton.of(
+					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
+				  d.setBody(splitTtc("text.cloth-config.quit_config_sure"));
+				  d.setConfirmText(new TranslationTextComponent("text.cloth-config.quit_discard"));
+				  d.setConfirmButtonTint(0x80BD2424);
+			  }));
 		} else {
 			minecraft.setScreen(parent);
 		}
@@ -505,7 +631,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
-		final boolean hasDialog = !dialogs.isEmpty();
+		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
 		super.render(mStack, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
 		renderOverlays(mStack, hasDialog ? -1 : mouseX, hasDialog ? -1 : mouseY, delta);
@@ -542,32 +668,27 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void overlayBackground(
-	  MatrixStack mStack, Rectangle rect, int red, int green, int blue
+	  MatrixStack mStack, Rectangle rect, int r, int g, int b
 	) {
-		overlayBackground(mStack.last().pose(), rect, red, green, blue, 255, 255);
+		overlayBackground(mStack, rect, r, g, b, 255, 255);
 	}
 	
 	@SuppressWarnings("SameParameterValue") protected void overlayBackground(
-	  Matrix4f matrix, Rectangle rect, int red, int green, int blue, int startAlpha, int endAlpha
+	  MatrixStack mStack, Rectangle rect, int r, int g, int b, int startAlpha, int endAlpha
 	) {
 		if (minecraft == null || isTransparentBackground()) return;
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder buffer = tessellator.getBuilder();
 		minecraft.getTextureManager().bind(getBackgroundLocation());
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+		final Matrix4f m = mStack.last().pose();
+		// @formatter:off
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.vertex(matrix, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f)
-		  .uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f)
-		  .color(red, green, blue, endAlpha).endVertex();
-		buffer.vertex(matrix, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f)
-		  .uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f)
-		  .color(red, green, blue, endAlpha).endVertex();
-		buffer.vertex(matrix, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f)
-		  .uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f)
-		  .color(red, green, blue, startAlpha).endVertex();
-		buffer.vertex(matrix, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f)
-		  .uv((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f)
-		  .color(red, green, blue, startAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
+		// @formatter:on
 		tessellator.end();
 	}
 	
@@ -578,9 +699,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean handleComponentClicked(@Nullable Style style) {
-		if (style == null) {
-			return false;
-		}
+		if (style == null) return false;
 		ClickEvent clickEvent = style.getClickEvent();
 		if (clickEvent != null && clickEvent.getAction() == Action.OPEN_URL) {
 			try {
@@ -593,7 +712,7 @@ public abstract class AbstractConfigScreen extends Screen
 					throw new URISyntaxException(
 					  clickEvent.getValue(), "Unsupported protocol: " + string.toLowerCase(Locale.ROOT));
 				}
-				addDialog(new ConfirmLinkDialog(clickEvent.getValue(), this, true));
+				addDialog(ConfirmLinkDialog.create(clickEvent.getValue(), this, true));
 			} catch (URISyntaxException e) {
 				ClothConfigInitializer.LOGGER.error("Can't open url for {}", clickEvent, e);
 			}
@@ -636,25 +755,84 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public void setHistory(EditHistory previous) {
 		this.history = new EditHistory(previous);
+		this.history.setOwner(this);
+	}
+	
+	public void commitHistory() {
+		history.saveState();
+		final AbstractConfigEntry<?> entry = getFocusedEntry();
+		if (entry != null) entry.preserveState();
 	}
 	
 	public void undo() {
-		history.apply(this, false);
+		history.apply(false);
 	}
 	
 	public void redo() {
-		history.apply(this, true);
+		history.apply(true);
 	}
 	
 	@Override public List<AbstractDialog> getDialogs() {
 		return dialogs;
 	}
 	
-	public void setSnapshotHandler(@Nullable SnapshotHandler snapshotHandler) {
-		this.snapshotHandler = snapshotHandler;
+	public @Nullable ConfigBuilder.IConfigSnapshotHandler getSnapshotHandler() {
+		return snapshotHandler;
 	}
 	
-	public @Nullable SnapshotHandler getSnapshotHandler() {
-		return snapshotHandler;
+	public void setSnapshotHandler(@Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler) {
+		this.snapshotHandler = snapshotHandler;
+		if (snapshotHandler != null) snapshotHandler.setExternalChangeHandler(this);
+	}
+	
+	public @Nullable AbstractConfigEntry<?> getFocusedEntry() {
+		return null;
+	}
+	
+	public boolean isSelecting() {
+		return false;
+	}
+	
+	public void updateSelection() {}
+	
+	@Override public void handleExternalChange(ModConfig.Type type) {
+		// Changes sometimes arrive in batches
+		if (externalChangesDialog != null) externalChangesDialog.cancel(false);
+		externalChangesDialog = ExternalChangesDialog.create(type, this, response -> {
+			handleExternalChangeResponse(response);
+			externalChangesDialog = null;
+		});
+		addDialog(externalChangesDialog);
+	}
+	
+	public void handleExternalChangeResponse(ExternalChangeResponse response) {
+		if (response == ExternalChangeResponse.ACCEPT_ALL) {
+			runAtomicTransparentAction(() -> getAllMainEntries()
+			  .forEach(AbstractConfigEntry::acceptExternalValue));
+		} else if (response == ExternalChangeResponse.ACCEPT_NON_CONFLICTING) {
+			runAtomicTransparentAction(() -> getAllMainEntries().stream()
+			  .filter(e -> !e.isEdited())
+			  .forEach(AbstractConfigEntry::acceptExternalValue));
+		} // else do nothing
+	}
+	
+	public static void fill(
+	  MatrixStack mStack, ResourceLocation texture, float tw, float th,
+	  float x, float y, float w, float h, int tint
+	) {
+		float r = tint >> 16 & 0xFF, g = tint >> 8 & 0xFF, b = tint & 0xFF, a = tint >> 24;
+		Minecraft.getInstance().getTextureManager().bind(texture);
+		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder buffer = tessellator.getBuilder();
+		Matrix4f m = mStack.last().pose();
+		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+		// @formatter:off
+		buffer.vertex(m,     x,     y, 0F).uv(     x  / tw,      y  / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m, x + w,     y, 0F).uv((x + w) / tw,      y  / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m, x + w, y + h, 0F).uv((x + w) / tw, (y + h) / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m,     x, y + h, 0F).uv(     x  / tw, (y + h) / th).color(r, g, b, a).endVertex();
+		// @formatter:on
+		tessellator.end();
 	}
 }

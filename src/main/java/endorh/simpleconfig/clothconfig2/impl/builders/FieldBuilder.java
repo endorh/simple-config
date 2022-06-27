@@ -2,6 +2,7 @@ package endorh.simpleconfig.clothconfig2.impl.builders;
 
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.gui.entries.TooltipListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,8 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -29,6 +29,7 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 	@NotNull protected Function<V, Optional<ITextComponent>> errorSupplier = t -> Optional.empty();
 	@NotNull protected Function<V, Optional<ITextComponent[]>> tooltipSupplier = t -> Optional.empty();
 	@Nullable protected Supplier<Boolean> editableSupplier = null;
+	protected List<EntryFlag> entryFlags = new ArrayList<>();
 	protected boolean ignoreEdits = false;
 	
 	@Internal protected FieldBuilder(
@@ -72,9 +73,27 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		return setTooltipSupplier(() -> Optional.ofNullable(tooltip));
 	}
 	
+	public Self withFlags(EntryFlag... flags) {
+		entryFlags.addAll(Arrays.asList(flags));
+		return self();
+	}
+	
+	public Self withoutFlags(EntryFlag... flags) {
+		entryFlags.removeAll(Arrays.asList(flags));
+		return self();
+	}
+	
 	public Self requireRestart(boolean requireRestart) {
 		this.requireRestart = requireRestart;
+		if (requireRestart) withFlags(EntryFlag.REQUIRES_RESTART);
+		else withoutFlags(EntryFlag.REQUIRES_RESTART);
 		return self();
+	}
+	
+	public Self nonPersistent(boolean nonPersistent) {
+		return nonPersistent
+		       ? withFlags(EntryFlag.NON_PERSISTENT)
+		       : withoutFlags(EntryFlag.NON_PERSISTENT);
 	}
 	
 	public Self setEditableSupplier(@Nullable Supplier<Boolean> editableSupplier) {
@@ -110,8 +129,8 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		if (entry instanceof TooltipListEntry)
 			((TooltipListEntry<?>) entry).setTooltipSupplier(() -> tooltipSupplier.apply(entry.getValue()));
 		entry.setOriginal(value);
-		if (name != null)
-			entry.setName(name);
+		if (name != null) entry.setName(name);
+		entry.getEntryFlags().addAll(entryFlags);
 		entry.setEditableSupplier(editableSupplier);
 		entry.setIgnoreEdits(ignoreEdits);
 		return entry;

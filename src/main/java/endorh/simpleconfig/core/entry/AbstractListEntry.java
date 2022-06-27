@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class AbstractListEntry
   <V, Config, Gui, Self extends AbstractListEntry<V, Config, Gui, Self>>
@@ -178,17 +179,30 @@ public abstract class AbstractListEntry
 		  new StringTextComponent(String.format("%d", index + 1)).withStyle(TextFormatting.AQUA)));
 	}
 	
-	@Override public Optional<ITextComponent> supplyError(List<Gui> value) {
+	@Override public List<ITextComponent> getErrors(List<Gui> value) {
+		return Stream.concat(
+		  Stream.of(getError(value)).filter(Optional::isPresent).map(Optional::get),
+		  value.stream().flatMap(p -> getElementErrors(p).stream())
+		).collect(Collectors.toList());
+	}
+	
+	@Override public Optional<ITextComponent> getError(List<Gui> value) {
 		for (int i = 0; i < value.size(); i++) {
 			Config elem = elemForConfig(elemFromGui(value.get(i)));
 			final Optional<ITextComponent> error = validator.apply(elemFromConfig(elem));
 			if (error.isPresent()) return Optional.of(addIndex(error.get(), i));
 		}
-		return super.supplyError(value);
+		return super.getError(value);
 	}
 	
-	public Optional<ITextComponent> supplyElementError(Gui value) {
+	public Optional<ITextComponent> getElementError(Gui value) {
 		return validator.apply(elemFromGui(value));
+	}
+	
+	public List<ITextComponent> getElementErrors(Gui value) {
+		return Stream.of(getElementError(value))
+		  .filter(Optional::isPresent).map(Optional::get)
+		  .collect(Collectors.toList());
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
@@ -201,7 +215,7 @@ public abstract class AbstractListEntry
 	
 	@OnlyIn(Dist.CLIENT) protected <F extends ListFieldBuilder<Gui, ?, F>> F decorate(F builder) {
 		builder = super.decorate(builder);
-		builder.setCellErrorSupplier(this::supplyElementError)
+		builder.setCellErrorSupplier(this::getElementError)
 		  .setExpanded(expand)
 		  .setCaptionControlsEnabled(false)
 		  .setInsertInFront(false);

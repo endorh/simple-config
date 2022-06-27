@@ -3,10 +3,11 @@ package endorh.simpleconfig.core;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.clothconfig2.api.ConfigCategory;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.entries.SubCategoryListEntry;
-import endorh.simpleconfig.clothconfig2.impl.builders.SubCategoryBuilder;
+import endorh.simpleconfig.clothconfig2.gui.entries.CaptionedSubCategoryListEntry;
+import endorh.simpleconfig.clothconfig2.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
+import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
@@ -65,6 +66,9 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
+		if (heldEntry != null && !(heldEntry instanceof IKeyEntry<?, ?>))
+			throw new IllegalArgumentException(
+			  "Held entry for group " + getPath() + " doesn't implement IKeyEntry");
 		this.entries = entries;
 		this.groups = groups;
 		children = groups;
@@ -194,14 +198,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected SubCategoryListEntry buildGUI(ConfigEntryBuilder entryBuilder) {
-		SubCategoryBuilder group = entryBuilder
-		  .startSubCategory(getTitle())
-		  .setExpanded(expanded)
+	protected CaptionedSubCategoryListEntry<?, ?> buildGUI(ConfigEntryBuilder entryBuilder) {
+		CaptionedSubCategoryBuilder<?, ?> group =
+		  heldEntry != null ? createAndDecorateGUI(entryBuilder, heldEntry) :
+		  entryBuilder.startSubCategory(getTitle());
+		group.setExpanded(expanded)
 		  .setTooltipSupplier(this::getTooltip)
 		  .setName(name);
-		if (heldEntry != null)
-			group.setHeldEntry(((IKeyEntry<?, ?>) heldEntry).buildChildGUIEntry(entryBuilder));
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order) {
 				if (entry instanceof AbstractConfigEntry) {
@@ -212,6 +215,18 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 			}
 		}
 		return group.build();
+	}
+	
+	private <
+	  T, CE extends AbstractConfigEntry<?, ?, T, ?> & IKeyEntry<?, T>
+	> CaptionedSubCategoryBuilder<T, ?> createAndDecorateGUI(
+	  ConfigEntryBuilder entryBuilder, AbstractConfigEntry<?, ?, ?, ?> heldEntry
+	) {
+		//noinspection unchecked
+		final CE cast = (CE) heldEntry;
+		return entryBuilder.startCaptionedSubCategory(
+		  getTitle(), cast.buildChildGUIEntry(entryBuilder))
+		  .setSaveConsumer(cast.createSaveConsumer());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -243,6 +258,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	 * Commits any changes in the backing fields to the actual config file<br>
 	 * You may also call this method on the root {@link SimpleConfig}
 	 * or on the parent {@link SimpleConfigCategory} of this group
+	 * @throws InvalidConfigValueException if the current value of a field is invalid.
 	 */
 	@Override public void commitFields() {
 		try {

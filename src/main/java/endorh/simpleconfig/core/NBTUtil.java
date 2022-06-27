@@ -3,6 +3,7 @@ package endorh.simpleconfig.core;
 import com.google.common.collect.Lists;
 import net.minecraft.nbt.*;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -11,7 +12,7 @@ public class NBTUtil {
 	
 	protected static final Pattern SPLIT = Pattern.compile("^(\\d++):([\\s\\S]++)$");
 	
-	protected static INBT toNBT(Object o) {
+	@Internal public static INBT toNBT(Object o) {
 		if (o instanceof INBT) {
 			return (INBT) o;
 		} else if (o instanceof Map) {
@@ -63,12 +64,12 @@ public class NBTUtil {
 		  "Unsupported value for NBT serialization: " + o.getClass().getName());
 	}
 	
-	protected static Object fromNBT(INBT o) {
+	@Internal public static Object fromNBT(INBT o) {
 		return fromNBT(o, null);
 	}
 	
 	// TODO: Add lenient parameter
-	protected static Object fromNBT(INBT o, ExpectedType expected) {
+	@Internal public static Object fromNBT(INBT o, ExpectedType expected) {
 		if (o == null) return null;
 		Class<?> cls = expected != null? expected.type : null;
 		if (o instanceof CompoundNBT) {
@@ -137,7 +138,7 @@ public class NBTUtil {
 		  "Unsupported NBT type for deserialization: " + o.getType().getName());
 	}
 	
-	protected static Object cast(Object value, Class<?> type) {
+	@Internal public static Object cast(Object value, Class<?> type) {
 		if (type == null) return value;
 		if (Number.class.isAssignableFrom(type)) {
 			if (value instanceof Boolean)

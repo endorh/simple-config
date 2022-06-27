@@ -1,6 +1,8 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 @Internal public class FakeEntryHolder implements ISimpleConfigEntryHolder {
 	protected final SimpleConfig root;
@@ -35,8 +37,17 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 	}
 	
 	@Override public void markDirty(boolean dirty) {}
+	@Override public boolean isDirty() {
+		throw new UnsupportedOperationException();
+	}
 	
-	// Should never be called
+	@Override public @Nullable AbstractConfigScreen getGUI() {
+		throw new UnsupportedOperationException();
+	}
+	@Override public boolean hasGUI(String path) {
+		throw new UnsupportedOperationException();
+	}
+	
 	@Override public <G> G getGUI(String path) {
 		throw new UnsupportedOperationException();
 	}

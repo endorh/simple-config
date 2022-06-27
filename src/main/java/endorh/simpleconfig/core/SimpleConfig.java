@@ -9,8 +9,10 @@ import com.mojang.datafixers.util.Pair;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.clothconfig2.api.ConfigBuilder;
+import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.clothconfig2.api.ConfigCategory;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.SimpleConfigSync.CSimpleConfigSyncPacket;
@@ -35,8 +37,8 @@ import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.naming.NoPermissionException;
 import java.io.*;
 import java.nio.file.Path;
@@ -57,7 +59,6 @@ import static java.util.Collections.*;
  * or {@link SimpleConfig#builder(String, Type, Class)}
  */
 public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
-	
 	private static final Map<Pair<String, ModConfig.Type>, SimpleConfig> INSTANCES =
 	  synchronizedMap(new HashMap<>());
 	
@@ -88,6 +89,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected @Nullable BiConsumer<SimpleConfig, ConfigBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
+	@OnlyIn(Dist.CLIENT)
+	protected @Nullable AbstractConfigScreen gui;
+	protected @Nullable ConfigSnapshotHandler snapshotHandler;
 	
 	@SuppressWarnings("UnusedReturnValue")
 	protected static SimpleConfig getInstance(
@@ -235,9 +239,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.children = unmodifiableMap(children);
 	}
 	
-	/**
-	 * Used in error messages
-	 */
 	@Override protected String getPath() {
 		return getName();
 	}
@@ -270,7 +271,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	/**
-	 * Commits any changes in the backing fields to the actual config file
+	 * Commits any changes in the backing fields to the actual config file.
+	 * @throws InvalidConfigValueException if the current value of the a field is invalid.
 	 */
 	@Override public void commitFields() {
 		try {
@@ -297,6 +299,21 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			group.bake();
 		if (baker != null)
 			baker.accept(this);
+	}
+	
+	@Override protected void removeGUI() {
+		super.removeGUI();
+		gui = null;
+		snapshotHandler = null;
+	}
+	
+	protected void setGUI(AbstractConfigScreen gui, ConfigSnapshotHandler handler) {
+		this.gui = gui;
+		this.snapshotHandler = handler;
+	}
+	
+	protected @Nullable ConfigSnapshotHandler getSnapshotHandler() {
+		return snapshotHandler;
 	}
 	
 	/**
@@ -347,6 +364,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			config.bake();
 			if (type == ModConfig.Type.SERVER)
 				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> config::syncToClients);
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+				ConfigSnapshotHandler handler = config.getSnapshotHandler();
+				if (handler != null) handler.notifyExternalChanges(config);
+			});
 		}
 	}
 	
@@ -503,6 +524,18 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
+	public static class InvalidConfigValueException extends RuntimeException {
+		public InvalidConfigValueException(String path, Object value) {
+			super("Invalid config value set for config entry \"" + path + "\": " + value);
+		}
+	}
+	
+	public static class InvalidDefaultConfigValueException extends RuntimeException {
+		public InvalidDefaultConfigValueException(String path, Object value) {
+			super("Invalid default config value set for config entry \"" + path + "\": " + value);
+		}
+	}
+	
 	public static class InvalidConfigValueTypeException extends RuntimeException {
 		public InvalidConfigValueTypeException(String path) {
 			super("Invalid type requested for config value \"" + path + "\"");
@@ -531,11 +564,12 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		);
 	}
 	
-	protected static class SnapshotHandler implements ConfigBuilder.SnapshotHandler {
+	protected static class ConfigSnapshotHandler implements IConfigSnapshotHandler {
 		private final String modId;
 		private final Map<ModConfig.Type, SimpleConfig> configMap;
+		private IExternalChangeHandler externalChangeHandler;
 		
-		public SnapshotHandler(
+		public ConfigSnapshotHandler(
 		  Map<Type, SimpleConfig> configMap
 		) {
 			this.configMap = configMap;
@@ -543,21 +577,26 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			  .map(c -> c.modId).orElse("");
 		}
 		
-		@Override public CommentedConfig preserve(Type type) {
+		@Override public CommentedConfig preserve(Type type, @Nullable Set<String> selectedPaths) {
 			final SimpleConfig c = configMap.get(type);
 			if (c == null) throw new IllegalArgumentException("Unsupported config type: " + type);
-			final CommentedConfig config =
-			  CommentedConfig.of(LinkedHashMap::new, TomlFormat.instance());
-			c.saveGUISnapshot(config);
+			final CommentedConfig config = CommentedConfig.of(
+			  LinkedHashMap::new, TomlFormat.instance());
+			c.saveGUISnapshot(config, selectedPaths);
 			return config;
 		}
 		
 		@Override public void restore(
 		  CommentedConfig config, Type type
 		) {
-			final SimpleConfig c = configMap.get(type);
-			if (c != null)
-				c.loadGUISnapshot(config);
+			SimpleConfig c = configMap.get(type);
+			if (c == null) return;
+			AbstractConfigScreen screen = c.getGUI();
+			if (screen != null) {
+				screen.runAtomicTransparentAction(() -> {
+					c.loadGUISnapshot(config);
+				});
+			}
 		}
 		
 		@OnlyIn(Dist.CLIENT)
@@ -638,6 +677,19 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			final SimpleConfig c = configMap.get(Type.SERVER);
 			if (c == null) return CompletableFuture.completedFuture(emptyList());
 			return SimpleConfigSync.requestSnapshotList(c.modId);
+		}
+		
+		@Override public void setExternalChangeHandler(IExternalChangeHandler handler) {
+			externalChangeHandler = handler;
+		}
+		
+		public void notifyExternalChanges(SimpleConfig config) {
+			if (externalChangeHandler != null) {
+				if (configMap.containsValue(config)) {
+					config.loadGUIExternalChanges();
+					externalChangeHandler.handleExternalChange(config.type);
+				}
+			}
 		}
 	}
 	

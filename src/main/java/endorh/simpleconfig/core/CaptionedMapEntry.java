@@ -4,12 +4,14 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.gui.entries.EntryPairListListEntry;
-import endorh.simpleconfig.clothconfig2.impl.builders.DecoratedListEntryBuilder;
+import endorh.simpleconfig.clothconfig2.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.Util;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -25,7 +27,7 @@ import java.util.function.Predicate;
 import static endorh.simpleconfig.core.NBTUtil.fromNBT;
 import static endorh.simpleconfig.core.NBTUtil.toNBT;
 
-public class DecoratedMapEntry<K, V, KC, C, KG, G,
+public class CaptionedMapEntry<K, V, KC, C, KG, G,
   E extends AbstractConfigEntry<V, C, G, E>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
   KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
@@ -33,12 +35,12 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
   MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
   CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>>
   extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<String, C>>, Pair<CG, List<Pair<KG, G>>>,
-  DecoratedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>> {
+  CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>> {
 	
 	protected final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry;
 	protected final CE captionEntry;
 	
-	protected DecoratedMapEntry(
+	protected CaptionedMapEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  Pair<CV, Map<K, V>> value, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry, CE captionEntry
 	) {
@@ -54,10 +56,12 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
 	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
 	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
-	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
-	  extends AbstractConfigEntryBuilder<Pair<CV, Map<K, V>>, Pair<CC, Map<String, C>>, Pair<CG, List<Pair<KG, G>>>,
-	  DecoratedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>,
-	  DecoratedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>> {
+	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>
+	> extends AbstractConfigEntryBuilder<
+	  Pair<CV, Map<K, V>>, Pair<CC, Map<String, C>>, Pair<CG, List<Pair<KG, G>>>,
+	  CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>,
+	  CaptionedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
+	> {
 		protected MB mapEntryBuilder;
 		protected CB captionEntryBuilder;
 		
@@ -67,7 +71,7 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 			this.captionEntryBuilder = captionEntryBuilder;
 		}
 		
-		@Override protected DecoratedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE> buildEntry(
+		@Override protected CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> me =
@@ -76,12 +80,12 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 			//   mapEntryBuilder.buildEntry(parent, name + "$val");
 			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder).withSaver((v, h) -> {});
 			// final CE ce = captionEntryBuilder.buildEntry(parent, name + "$key");
-			return new DecoratedMapEntry<>(parent, name, value, me, ce);
+			return new CaptionedMapEntry<>(parent, name, value, me, ce);
 		}
 		
 		@Override protected Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> createCopy() {
 			//noinspection unchecked
-			return new DecoratedMapEntry.Builder<>(
+			return new CaptionedMapEntry.Builder<>(
 			  value, (MB) mapEntryBuilder.copy(), captionEntryBuilder.copy());
 		}
 	}
@@ -109,12 +113,19 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
+	@Override public List<ITextComponent> getErrors(Pair<CG, List<Pair<KG, G>>> value) {
+		List<ITextComponent> errors = super.getErrors(value);
+		errors.addAll(captionEntry.getErrors(value.getKey()));
+		errors.addAll(mapEntry.getErrors(value.getValue()));
+		return errors;
+	}
+	
 	@Override public Pair<CC, Map<String, C>> forConfig(Pair<CV, Map<K, V>> value) {
 		return Pair.of(captionEntry.forConfig(value.getKey()),
 		               mapEntry.forConfig(value.getValue()));
 	}
 	
-	@Nullable @Override public Pair<CV, Map<K, V>> fromConfig(
+	@Override public @Nullable Pair<CV, Map<K, V>> fromConfig(
 	  @Nullable Pair<CC, Map<String, C>> value
 	) {
 		if (value == null) return null;
@@ -126,26 +137,14 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		return Pair.of(captionEntry.forGui(value.getKey()), mapEntry.forGui(value.getValue()));
 	}
 	
-	@Nullable @Override public Pair<CV, Map<K, V>> fromGui(@Nullable Pair<CG, List<Pair<KG, G>>> value) {
+	@Override public @Nullable Pair<CV, Map<K, V>> fromGui(@Nullable Pair<CG, List<Pair<KG, G>>> value) {
 		if (value == null) return null;
 		return Pair.of(captionEntry.fromGuiOrDefault(value.getKey()),
 		               mapEntry.fromGuiOrDefault(value.getValue()));
 	}
 	
-	@Override protected Predicate<Object> configValidator() {
-		return o -> {
-			if (o instanceof String) {
-				final Pair<CC, Map<String, C>> pre = fromActualConfig(o);
-				final Pair<CV, Map<K, V>> p = fromConfig(pre);
-				if (p == null) return false;
-				return !supplyError(forGui(p)).isPresent()
-				       && !captionEntry.supplyError(captionEntry.forGui(p.getKey())).isPresent();
-			} else return false;
-		};
-	}
-	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), configValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<Pair<KG, G>>>>> buildGUIEntry(
@@ -154,11 +153,12 @@ public class DecoratedMapEntry<K, V, KC, C, KG, G,
 		mapEntry.withDisplayName(getDisplayName());
 		final Optional<AbstractConfigListEntry<List<Pair<KG, G>>>> opt =
 		  mapEntry.buildGUIEntry(builder);
-		if (!opt.isPresent())
-			throw new IllegalStateException("List entry has no GUI entry");
+		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
+		final AbstractConfigListEntry<List<Pair<KG, G>>> mapGUIEntry = opt.get();
+		mapGUIEntry.removeEntryFlag(EntryFlag.NON_PERSISTENT);
 		final Pair<CG, List<Pair<KG, G>>> gv = forGui(get());
-		final DecoratedListEntryBuilder<Pair<KG, G>, ?, CG, ?> entryBuilder = builder.makeDecoratedList(
-		  getDisplayName(), (EntryPairListListEntry<KG, G, ?, ?>) opt.get(),
+		final CaptionedListEntryBuilder<Pair<KG, G>, ?, CG, ?> entryBuilder = builder.startCaptionedList(
+		  getDisplayName(), (EntryPairListListEntry<KG, G, ?, ?>) mapGUIEntry,
 		  Util.make(captionEntry.buildChildGUIEntry(builder), cge -> cge.setOriginal(gv.getKey())), gv);
 		return Optional.of(decorate(entryBuilder).build());
 	}

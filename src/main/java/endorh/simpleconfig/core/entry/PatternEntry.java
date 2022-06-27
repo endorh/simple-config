@@ -70,8 +70,8 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		}
 	}
 	
-	@Override protected List<ITextComponent> supplyExtraTooltip(String value) {
-		final List<ITextComponent> extra = super.supplyExtraTooltip(value);
+	@Override protected List<ITextComponent> addExtraTooltip(String value) {
+		final List<ITextComponent> extra = super.addExtraTooltip(value);
 		if (flags != 0)
 			extra.add(0, new TranslationTextComponent(
 			  "simpleconfig.config.help.pattern_flags", displayFlags(flags)

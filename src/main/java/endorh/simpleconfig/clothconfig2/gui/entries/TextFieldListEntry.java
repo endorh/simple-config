@@ -3,20 +3,16 @@ package endorh.simpleconfig.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
+import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
-import endorh.simpleconfig.clothconfig2.gui.widget.ResetButton;
+import endorh.simpleconfig.clothconfig2.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
-import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,59 +23,54 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+
+import static net.minecraft.util.math.MathHelper.lerp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implements IChildListEntry {
-	protected AtomicReference<V> value;
+	protected V displayedValue;
 	protected HookedTextFieldWidget textFieldWidget;
-	protected HookedTextFieldWidget longTextFieldWidget;
-	protected ResetButton resetButton;
 	protected List<IGuiEventListener> widgets;
-	protected List<IGuiEventListener> expandedWidgets;
 	protected List<IGuiEventListener> childWidgets;
-	protected boolean canExpand;
-	protected boolean expanded = false;
+	protected boolean expandable;
+	private boolean expanded = false;
 	protected Rectangle labelArea = new Rectangle();
-	protected boolean child = false;
+	protected ToggleAnimator expandAnimator = new ToggleAnimator(250L);
 	protected int maxLength;
 	protected int minLength;
+	private int frame = 0;
 	
 	@Internal protected TextFieldListEntry(
 	  ITextComponent fieldName, V original, boolean canExpand
 	) {
 		super(fieldName);
-		value = new AtomicReference<>(original);
-		this.original = original;
-		this.canExpand = canExpand;
+		this.expandable = canExpand;
 		textFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.NO_TITLE);
 		textFieldWidget.setMaxLength(999999);
-		// this.textFieldWidget.setText(String.valueOf(original));
-		longTextFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.NO_TITLE);
-		longTextFieldWidget.setMaxLength(999999);
+		setOriginal(original);
 		setValue(original);
-		resetButton = new ResetButton(this);
+		setDisplayedValue(original);
 		widgets = Lists.newArrayList(textFieldWidget, resetButton);
-		expandedWidgets = Lists.newArrayList(longTextFieldWidget, resetButton);
 		childWidgets = Lists.newArrayList(textFieldWidget);
 	}
 	
-	@Override public V getValue() {
-		return value.get();
+	@Override public void setSubEntry(boolean isSubEntry) {
+		super.setSubEntry(isSubEntry);
+		expandAnimator.setLength(isSubEntry? 0L : 250L);
 	}
 	
-	@Override public void setValue(V v) {
-		value.set(v);
+	@Override public V getDisplayedValue() {
+		return displayedValue;
+	}
+	@Override public void setDisplayedValue(V v) {
+		displayedValue = v;
 		textFieldWidget.setTextNoUpdate(toString(v));
-		longTextFieldWidget.setTextNoUpdate(toString(v));
 	}
-	
 	public String getText() {
-		return expanded? longTextFieldWidget.getValue() : textFieldWidget.getValue();
+		return textFieldWidget.getValue();
 	}
 	
 	protected abstract @Nullable V fromString(String s);
-	
 	protected String toString(@Nullable V v) {
 		return v != null? String.valueOf(v) : "";
 	}
@@ -87,80 +78,67 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	protected String stripAddText(String s) {
 		return s;
 	}
-	
 	protected void textFieldPreRender(TextFieldWidget widget) {}
 	
-	@Override public void updateSelected(boolean isSelected) {
-		super.updateSelected(isSelected);
-		if (!isSelected)
-			WidgetUtils.forceUnFocus(textFieldWidget, longTextFieldWidget, resetButton);
+	@Override public void updateFocused(boolean isFocused) {
+		super.updateFocused(isFocused);
+		if (!isFocused)
+			WidgetUtils.forceUnFocus(textFieldWidget);
+	}
+	
+	@Override public void tick() {
+		super.tick();
+		if ((frame++) % 10 == 0) textFieldWidget.tick();
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX,
+	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		super.renderEntry(
-		  mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		final Minecraft mc = Minecraft.getInstance();
-		MainWindow window = mc.getWindow();
-		mc.getTextureManager().bind(CONFIG_TEX);
-		RenderHelper.turnOff();
-		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		labelArea.setBounds(x - 15, y, entryWidth, 24);
-		resetButton.y = y;
-		if (canExpand) {
-			int v = 0;
-			if (expanded)
-				v += 9;
-			if (isMouseOverLabel(mouseX, mouseY) && !textFieldWidget.isMouseOver(mouseX, mouseY)
-			    && !resetButton.isMouseOver(mouseX, mouseY))
-				v += 18;
-			blit(mStack, x - 15, y + 5, 102, v, 9, 9);
+		if (isExpandable()) {
+			SimpleConfigIcons.Entries.TEXT_EXPAND.renderCentered(
+			  mStack, x - 15, y + 5, 9, 9,
+			  (isExpanded()? 1 : 0) + ((
+			    isMouseOverLabel(mouseX, mouseY) && !textFieldWidget.isMouseOver(mouseX, mouseY)
+			    && !resetButton.isMouseOver(mouseX, mouseY))? 2 : 0));
 		}
-		
-		longTextFieldWidget.setEditable(isEditable());
-		int textFieldX;
-		ITextComponent name = getDisplayedFieldName();
-		final FontRenderer font = mc.font;
-		if (font.isBidirectional()) {
-			font.drawShadow(
-			  mStack, name.getVisualOrderText(),
-			  (float) (window.getGuiScaledWidth() - x - font.width(name)),
-			  (float) (y + 6), getPreferredTextColor());
-			resetButton.x = x;
-			textFieldX = x + resetButton.getWidth();
-		} else {
-			font.drawShadow(
-			  mStack, name.getVisualOrderText(), (float) x, (float) (y + 6),
-			  getPreferredTextColor());
-			resetButton.x = x + entryWidth - resetButton.getWidth();
-			textFieldX = x + entryWidth - 148;
-		}
-		if (expanded) {
-			textFieldWidget.visible = false;
-			longTextFieldWidget.visible = true;
-			longTextFieldWidget.x = x + 14;
-			longTextFieldWidget.y = y + 24;
-			longTextFieldWidget.setWidth(entryWidth - 16);
-			longTextFieldWidget.render(mStack, mouseX, mouseY, delta);
-		} else {
-			renderChild(mStack, textFieldX, y, 148 - resetButton.getWidth() - 4, 20, mouseX, mouseY, delta);
-		}
-		resetButton.render(mStack, mouseX, mouseY, delta);
+	}
+	
+	@Override protected boolean isFieldFullWidth() {
+		return isExpanded();
+	}
+	
+	@Override protected void renderField(
+	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+	) {
+		float p = expandAnimator.getEaseOut();
+		int expandedX = Minecraft.getInstance().font.isBidirectional()? fieldX : x + 14;
+		renderChild(
+		  mStack, (int) lerp(p, fieldX, expandedX),
+		  isHeadless()? fieldY : (int) lerp(p, fieldY, y + 24),
+		  (int) lerp(p, fieldWidth,
+		             isHeadless()? entryWidth - 16 - resetButton.getWidth() : entryWidth - 14),
+		  fieldHeight, mouseX, mouseY, delta);
 	}
 	
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		textFieldWidget.setEditable(isEditable());
-		longTextFieldWidget.visible = false;
-		textFieldWidget.visible = true;
-		textFieldWidget.x = x;
+		textFieldWidget.setEditable(shouldRenderEditable());
+		// Text fields render the border outside, so we inset it 1px to match other controls
+		textFieldWidget.x = x + 1;
 		textFieldWidget.y = y + 1;
-		textFieldWidget.setWidth(w);
+		textFieldWidget.setWidth(w - 2);
 		textFieldWidget.setHeight(h - 2);
 		textFieldWidget.render(mStack, mouseX, mouseY, delta);
+	}
+	
+	@Override public void setPreviewingExternal(boolean previewing) {
+		super.setPreviewingExternal(previewing);
+		if (isPreviewingExternal()) setExpanded(false);
 	}
 	
 	protected boolean isMouseOverLabel(double mouseX, double mouseY) {
@@ -168,42 +146,37 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public int getItemHeight() {
-		return expanded? 48 : 24;
+		return 24 + (isHeadless()? 0 : (int) (expandAnimator.getEaseOut() * 24));
 	}
 	
 	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
-		final Optional<ITextComponent[]> tooltip = resetButton.getTooltip(mouseX, mouseY);
-		if (tooltip.isPresent())
-			return tooltip;
 		if (textFieldWidget.isMouseOver(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
 	}
 	
 	public void setExpanded(boolean expanded) {
-		if (!canExpand)
-			expanded = false;
+		if (!isExpandable()) expanded = false;
 		if (this.expanded != expanded) {
+			expandAnimator.setEaseOutTarget(expanded);
 			this.expanded = expanded;
-			HookedTextFieldWidget focused = expanded? longTextFieldWidget : textFieldWidget;
-			if (isEditable())
-				setFocused(focused);
-			textFieldWidget.setTextNoUpdate(toString(value.get()));
-			longTextFieldWidget.setTextNoUpdate(toString(value.get()));
+			if (isEditable()) setFocused(textFieldWidget);
 		}
 	}
 	
 	public boolean isExpanded() {
 		return expanded;
 	}
+	public boolean isExpandable() {
+		return expandable && !isChildSubEntry();
+	}
 	
-	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (super.mouseClicked(mouseX, mouseY, button))
+	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {
+		if (super.onMouseClicked(mouseX, mouseY, button))
 			return true;
-		if (canExpand && button == 0 && isMouseOverLabel(mouseX, mouseY)) {
+		if (isExpandable() && button == 0 && isMouseOverLabel(mouseX, mouseY)) {
 			setExpanded(!isExpanded());
-			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+			playFeedbackTap(1F);
 			return true;
 		}
 		return false;
@@ -220,14 +193,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		return Optional.empty();
 	}
 	
-	public @NotNull List<? extends IGuiEventListener> children() {
-		return isChild()? childWidgets : expanded? expandedWidgets : widgets;
+	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+		return this.isChildSubEntry() ? childWidgets : widgets;
 	}
 	
 	public void setMaxLength(int maxLength) {
 		this.maxLength = maxLength;
 		textFieldWidget.setMaxLength(maxLength);
-		longTextFieldWidget.setMaxLength(maxLength);
 	}
 	
 	public void setMinLength(int minLength) {
@@ -237,14 +209,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	private class HookedTextFieldWidget extends TextFieldWidget {
 		public HookedTextFieldWidget(int x, int y, int w, int h, ITextComponent title) {
 			super(Minecraft.getInstance().font, x, y, w, h, title);
-			setResponder(t -> value.set(fromString(t)));
+			setResponder(t -> displayedValue = fromString(t));
 		}
 		
-		public void render(@NotNull MatrixStack matrices, int int_1, int int_2, float float_1) {
-			setFocused(
-			  isSelected && getFocused() == this);
+		public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float float_1) {
+			setFocused(TextFieldListEntry.this.isFocused() && getFocused() == this);
 			textFieldPreRender(this);
-			super.render(matrices, int_1, int_2, float_1);
+			super.render(matrices, mouseX, mouseY, float_1);
 			// drawSelectionBox() leaks its color mask
 			RenderSystem.color4f(1F, 1F, 1F, 1F);
 		}
@@ -256,29 +227,19 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		public void setTextNoUpdate(String text) {
 			setResponder(t -> {});
 			setValue(text);
-			setResponder(t -> value.set(fromString(t)));
+			setResponder(t -> displayedValue = fromString(t));
 		}
 	}
 	
-	@Override public boolean isChild() {
-		return child;
-	}
-	
-	@Override public void setChild(boolean child) {
-		this.child = child;
-	}
-	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (canExpand && Screen.hasAltDown()) {
-			if (keyCode == 262 && !expanded) {
+		if (isExpandable() && Screen.hasAltDown()) {
+			if (keyCode == 262 && !isExpanded()) {
 				setExpanded(true);
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+				playFeedbackTap(1F);
 				return true;
-			} else if (keyCode == 263 && expanded) {
+			} else if (keyCode == 263 && isExpanded()) {
 				setExpanded(false);
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+				playFeedbackTap(1F);
 				return true;
 			}
 		}
@@ -286,6 +247,6 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public String seekableValueText() {
-		return expanded? longTextFieldWidget.getValue() : textFieldWidget.getValue();
+		return getText();
 	}
 }

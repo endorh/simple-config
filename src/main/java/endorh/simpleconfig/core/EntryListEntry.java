@@ -2,6 +2,7 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.impl.builders.EntryListFieldBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
@@ -48,9 +49,9 @@ public class EntryListEntry
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
 			  "nested in a list entry");
 		if (translation != null)
-			translate(translation);
+			setTranslation(translation);
 		if (tooltip != null)
-			tooltip(tooltip);
+			setTooltip(tooltip);
 	}
 	
 	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
@@ -74,22 +75,22 @@ public class EntryListEntry
 	}
 	
 	@Override
-	protected EntryListEntry<V, C, G, E, B> translate(String translation) {
-		super.translate(translation);
+	protected void setTranslation(String translation) {
+		super.setTranslation(translation);
 		if (translation != null)
-			entry.translate(translation + SUB_ELEMENTS_KEY_SUFFIX);
-		return self();
+			entry.setTranslation(translation + SUB_ELEMENTS_KEY_SUFFIX);
+		self();
 	}
 	
 	@Override
-	protected EntryListEntry<V, C, G, E, B> tooltip(String translation) {
-		super.tooltip(translation);
+	protected void setTooltip(String translation) {
+		super.setTooltip(translation);
 		if (tooltip != null)
 			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX))
-				entry.tooltip(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
-				              + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
-			else entry.tooltip(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
-		return self();
+				entry.setTooltip(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
+				                 + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
+			else entry.setTooltip(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
+		self();
 	}
 	
 	@Override
@@ -112,17 +113,16 @@ public class EntryListEntry
 		return entry.fromGui(value);
 	}
 	
-	@Override public Optional<ITextComponent> supplyElementError(G value) {
-		final Optional<ITextComponent> opt = entry.supplyError(value);
-		if (opt.isPresent())
-			return opt;
-		return super.supplyElementError(value);
+	@Override public List<ITextComponent> getElementErrors(G value) {
+		List<ITextComponent> errors = super.getElementErrors(value);
+		errors.addAll(entry.getErrors(value));
+		return errors;
 	}
 	
 	@Override protected boolean validateElement(Object o) {
 		try {
 			//noinspection unchecked
-			return !entry.supplyError(elemForGui(elemFromConfig((C) o))).isPresent();
+			return !entry.getError(elemForGui(elemFromConfig((C) o))).isPresent();
 		} catch (ClassCastException e) {
 			return false;
 		}
@@ -135,16 +135,17 @@ public class EntryListEntry
 		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent("•"));
 		e.nonPersistent = true;
-		e.set(e.value);
+		e.actualValue = e.value;
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
 		    "List config entry's sub-entry did not produce a GUI entry"));
+		g.removeEntryFlag(EntryFlag.NON_PERSISTENT);
 		e.guiEntry = g;
 		return g;
 	}
 	
-	@Override protected Consumer<List<G>> saveConsumer() {
-		return super.saveConsumer().andThen(l -> holder.clear());
+	@Override protected Consumer<List<G>> createSaveConsumer() {
+		return super.createSaveConsumer().andThen(l -> holder.clear());
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override

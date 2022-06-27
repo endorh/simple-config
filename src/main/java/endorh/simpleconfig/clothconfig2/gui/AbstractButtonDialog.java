@@ -2,12 +2,14 @@ package endorh.simpleconfig.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.clothconfig2.ClothConfigInitializer;
 import endorh.simpleconfig.clothconfig2.gui.widget.ScrollingContainerWidget;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
+import net.minecraft.util.text.event.ClickEvent;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,14 +18,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.lang.Math.*;
 
 public abstract class AbstractButtonDialog extends AbstractDialog {
-	
 	protected List<Widget> buttons = Lists.newArrayList();
 	protected ScrollingContainerWidget scroller;
+	protected Consumer<String> linkActionHandler = s -> {};
 	protected List<IGuiEventListener> bodyListeners = Lists.newArrayList();
 	
 	public AbstractButtonDialog(IOverlayCapableScreen screen, ITextComponent title) {
@@ -38,11 +43,14 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	}
 	
 	public void addButton(int i, Widget button) {
-		if (!buttons.isEmpty()) {
-			listeners.add(i > 0 ? listeners.indexOf(buttons.get(i - 1)) + 1
-			                    : listeners.indexOf(buttons.get(i + 1)), button);
-		} else listeners.add(button);
-		buttons.add(i, button);
+		if (i == buttons.size()) {
+			addButton(button);
+		} else {
+			if (!buttons.isEmpty()) {
+				listeners.add(listeners.indexOf(buttons.get(i)) + 1, button);
+			} else listeners.add(button);
+			buttons.add(i, button);
+		}
 	}
 	
 	public void removeButton(Widget button) {
@@ -54,8 +62,8 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 		listeners.remove(buttons.remove(i));
 	}
 	
-	@Override protected void position() {
-		super.position();
+	@Override protected void layout() {
+		super.layout();
 		scroller.area.width = w - 8;
 		scroller.area.height = h - 60;
 		scroller.area.x = x + 4;
@@ -86,6 +94,36 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	
 	public @Nullable Style getInnerTextAt(int x, int y, int w, int h, double mX, double mY) {
 		return null;
+	}
+	
+	protected boolean handleComponentClicked(
+	  @NotNull Style style, double mouseX, double mouseY, int button
+	) {
+		ClickEvent event = style.getClickEvent();
+		if (event != null && event.getAction() == ClickEvent.Action.OPEN_URL) {
+			String value = event.getValue();
+			if (value.startsWith("action:")) {
+				handleTextAction(
+				  value.substring("action:".length()),
+				  mouseX, mouseY, button, style);
+				return true;
+			}
+		}
+		return screen.handleComponentClicked(style);
+	}
+	
+	protected void handleTextAction(
+	  String action, double mouseX, double mouseY, int button, @NotNull Style style
+	) {
+		if (linkActionHandler != null) linkActionHandler.accept(action);
+	}
+	
+	public Consumer<String> getLinkActionHandler() {
+		return linkActionHandler;
+	}
+	
+	public void setLinkActionHandler(Consumer<String> linkActionHandler) {
+		this.linkActionHandler = linkActionHandler;
 	}
 	
 	public abstract int getInnerHeight();
@@ -135,7 +173,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			final Style style = dialog.getInnerTextAt(
 			  area.x, (int) round(area.y - scrollAmount),
 			  area.width - 8, area.height, mouseX, mouseY);
-			if (style != null && dialog.screen.handleComponentClicked(style)) return true;
+			if (style != null && dialog.handleComponentClicked(style, mouseX, mouseY, button)) return true;
 			return super.mouseClicked(mouseX, mouseY, button);
 		}
 		

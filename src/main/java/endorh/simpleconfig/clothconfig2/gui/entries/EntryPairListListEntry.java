@@ -2,40 +2,38 @@ package endorh.simpleconfig.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.clothconfig2.api.*;
-import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simpleconfig.clothconfig2.gui.INavigableTarget;
 import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
 import endorh.simpleconfig.clothconfig2.gui.entries.EntryPairListListEntry.EntryPairCell;
-import endorh.simpleconfig.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.clothconfig2.impl.ISeekableComponent;
+import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
-public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry, E extends AbstractConfigListEntry<V>>
-  extends AbstractListListEntry<Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>> {
-	// protected final List<ReferenceProvider> referencableEntries = Lists.newArrayList();
+public class EntryPairListListEntry<
+    K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
+    E extends AbstractConfigListEntry<V>
+  > extends AbstractListListEntry<
+    Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
+  > implements IEntryHolder {
 	protected boolean ignoreOrder;
 	protected boolean selectKey;
 	
@@ -51,71 +49,104 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 			  return new EntryPairCell<>(l, pair.getKey(), pair.getValue());
 		  });
 		this.ignoreOrder = ignoreOrder;
-		// for (EntryPairCell<K, V, KE, E> cell : cells)
-		// 	referencableEntries.add(cell.valueEntry);
-		// setReferenceProviderEntries(referencableEntries);
-	}
-	
-	@Override
-	public void updateSelected(boolean isSelected) {
-		super.updateSelected(isSelected);
-		for (EntryPairCell<K, V, KE, E> cell : cells)
-			cell.updateSelected(isSelected && getFocused() == cell && expanded);
-	}
-	
-	@Override public boolean isRequiresRestart() {
-		return super.isRequiresRestart();
-	}
-	
-	@Override public boolean isEdited() {
-		if (ignoreEdits) return false;
-		final List<Pair<K, V>> original = getOriginal();
-		return !ignoreOrder ? super.isEdited() :
-		       hasErrors()
-		       || heldEntry != null && heldEntry.isEdited()
-		       || original == null
-		       || !cells.stream().map(EntryPairCell::getValue).collect(Collectors.toMap(
-			        Pair::getKey, Pair::getValue, (a, b) -> b))
-		         .equals(original.stream().collect(Collectors.toMap(
-		           Pair::getKey, Pair::getValue, (a, b) -> b)));
 	}
 	
 	@Override public boolean preserveState() {
-		if (cells.isEmpty() || !cells.get(0).isExpandable || heldEntry != null && getFocused() == heldEntry)
-			return super.preserveState();
-		else if (preservedState != null) savePreservedState();
 		return false;
 	}
 	
+	@Override
+	public void updateFocused(boolean isFocused) {
+		super.updateFocused(isFocused);
+		for (EntryPairCell<K, V, KE, E> cell : cells)
+			cell.updateSelected(isFocused && getFocused() == cell && expanded);
+	}
+	
+	@Override protected boolean isFieldFullWidth() {
+		return true;
+	}
+	
+	@Override public boolean areEqual(List<Pair<K, V>> value, List<Pair<K, V>> other) {
+		if (value.isEmpty() && other.isEmpty()) return true;
+		if (value.size() != other.size()) return false;
+		EntryPairCell<K, V, KE, E> dummy = !cells.isEmpty() ? cells.get(0)
+		                                                    : createCellWithValue(value.get(0));
+		if (ignoreOrder) {
+			// Keys are actually compared using Object::equals, but keys can only be String
+			//   serializable objects anyway
+			final Map<K, V> vMap = value.stream().collect(
+			  HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+			final Map<K, V> oMap = other.stream().collect(
+			  HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+			for (K key : vMap.keySet())
+				if (!dummy.valueEntry.areEqual(vMap.get(key), oMap.get(key))) return false;
+		} else {
+			final Iterator<Pair<K, V>> iter = other.iterator();
+			for (Pair<K, V> t : value)
+				if (!dummy.areEqual(t, iter.next())) return false;
+		}
+		return true;
+	}
+	
+	@Override public boolean isEdited() {
+		return super.isEdited();
+	}
+	
+	@Override public boolean isResettable() {
+		return super.isResettable();
+	}
+	
+	// @Override public boolean preserveState() {
+	// 	if (cells.isEmpty() || !(cells.get(0).valueEntry instanceof BaseListEntry<?, ?, ?>))
+	// 		return super.preserveState();
+	// 	else if (preservedState != null) savePreservedState();
+	// 	return false;
+	// }
+	
 	@Internal public List<Pair<K, E>> getEntries() {
-		return cells.stream().map(c -> Pair.of(c.keyEntry.getValue(), c.valueEntry)).collect(Collectors.toList());
+		return cells.stream().map(c -> Pair.of(c.keyEntry.getDisplayedValue(), c.valueEntry)).collect(Collectors.toList());
 	}
 	
-	@Override public void setParent(DynamicEntryListWidget<?> parent) {
-		super.setParent(parent);
+	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+		return cells.stream()
+		  .flatMap(c -> Stream.of(c.keyEntry, c.valueEntry))
+		  .collect(Collectors.toList());
+	}
+	
+	@Override public String providePath(AbstractConfigEntry<?> child) {
+		String prefix = getPath() + ".";
+		int i = 0;
 		for (EntryPairCell<K, V, KE, E> cell : cells) {
-			cell.keyEntry.setParent(parent);
-			cell.valueEntry.setParent(parent);
+			if (cell.keyEntry == child) return prefix + "key." + i;
+			if (cell.valueEntry == child) return prefix + "val." + i;
+			i++;
 		}
+		return prefix + "?";
 	}
 	
-	@Override public void setScreen(AbstractConfigScreen screen) {
-		super.setScreen(screen);
-		for (EntryPairCell<K, V, KE, E> cell : cells) {
-			cell.keyEntry.setScreen(screen);
-			cell.valueEntry.setScreen(screen);
-		}
-	}
-	
-	@Override public String seekableValueText() {
-		return "";
+	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+		String[] split = DOT.split(path, 3);
+		boolean isKey = "key".equals(split[0]);
+		if (!isKey && !"val".equals(split[0]) || split.length < 2) return null;
+		try {
+			int i = Integer.parseInt(split[1]);
+			if (i >= 0 && i < cells.size()) {
+				EntryPairCell<K, V, KE, E> cell = cells.get(i);
+				AbstractConfigEntry<?> entry = isKey? cell.keyEntry : cell.valueEntry;
+				if (entry instanceof IEntryHolder && split.length == 3)
+					return ((IEntryHolder) entry).getEntry(split[2]);
+				return entry;
+			}
+		} catch (NumberFormatException ignored) {}
+		return null;
 	}
 	
 	public static class EntryPairCell<
-	  K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry, E extends AbstractConfigListEntry<V>>
-	  extends AbstractListListEntry.AbstractListCell<
-	  Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>>
-	  implements IExpandable, ReferenceProvider {
+	    K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
+	    E extends AbstractConfigListEntry<V>
+	  > extends AbstractListListEntry.AbstractListCell<
+	    Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
+	  > /*implements IExpandable*/ {
 		protected final KE keyEntry;
 		protected final E valueEntry;
 		protected final List<IGuiEventListener> widgets;
@@ -127,33 +158,31 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 		protected int keyOverlayColor = 0x00000000;
 		
 		public EntryPairCell(
-		  EntryPairListListEntry<K, V, KE, E> listEntry,
-		  KE keyEntry, E valueEntry
+		  final EntryPairListListEntry<K, V, KE, E> listEntry, final KE keyEntry, final E valueEntry
 		) {
 			super(listEntry);
 			this.keyEntry = keyEntry;
-			this.keyEntry.setChild(true);
 			this.valueEntry = valueEntry;
-			if (listEntry.areCaptionControlsEnabled())
-				keyOffset = 24;
-			isExpandable = valueEntry instanceof BaseListEntry;
-			widgets = Lists.newArrayList(this.keyEntry, this.valueEntry);
-			final DynamicEntryListWidget<?> parent = listEntry.getParentOrNull();
-			final AbstractConfigScreen screen = listEntry.getConfigScreenOrNull();
-			keyEntry.setParent(parent);
-			valueEntry.setParent(parent);
-			keyEntry.setScreen(screen);
-			valueEntry.setScreen(screen);
-			keyEntry.setExpandableParent(listEntry);
-			valueEntry.setExpandableParent(listEntry);
+			if (listEntry.areCaptionControlsEnabled()) keyOffset = 24;
+			
+			keyEntry.setChildSubEntry(true);
+			keyEntry.setSubEntry(true);
+			valueEntry.setSubEntry(true);
+			keyEntry.setParentEntry(listEntry);
+			valueEntry.setParentEntry(listEntry);
 			keyEntry.setNavigableParent(this);
 			valueEntry.setNavigableParent(this);
-			keyEntry.setListParent(listEntry);
-			valueEntry.setListParent(listEntry);
+			
+			isExpandable = valueEntry instanceof BaseListEntry;
+			widgets = Lists.newArrayList(keyEntry, valueEntry);
 		}
 		
 		@Override public Pair<K, V> getValue() {
-			return Pair.of(keyEntry.getValue(), valueEntry.getValue());
+			return Pair.of(keyEntry.getDisplayedValue(), valueEntry.getDisplayedValue());
+		}
+		
+		@Override public Rectangle getSelectionArea() {
+			return valueEntry.getSelectionArea();
 		}
 		
 		@Override public int getCellHeight() {
@@ -162,24 +191,28 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 		
 		@Override public void updateSelected(boolean isSelected) {
 			super.updateSelected(isSelected);
-			keyEntry.updateSelected(isSelected && getFocused() == keyEntry);
-			valueEntry.updateSelected(isSelected && getFocused() == valueEntry);
+			keyEntry.updateFocused(isSelected && getFocused() == keyEntry);
+			valueEntry.updateFocused(isSelected && getFocused() == valueEntry);
 			if (isSelected) getListEntry().selectKey = getFocused() == keyEntry;
 		}
 		
-		@Override public @NotNull AbstractConfigEntry<?> provideReferenceEntry() {
-			return valueEntry;
+		@Override public List<EntryError> getErrors() {
+			List<EntryError> errors = super.getErrors();
+			errors.addAll(
+			  Stream.concat(keyEntry.getErrors().stream(), valueEntry.getErrors().stream())
+			    .filter(e -> !errors.contains(e))
+			    .collect(Collectors.toList()));
+			return errors;
 		}
 		
 		public Optional<ITextComponent> getErrorMessage() {
-			Optional<ITextComponent> e = valueEntry.getErrorMessage();
-			if (!e.isPresent())
-				e = getListEntry().cellErrorSupplier.apply(getValue());
-			return e;
+			return Optional.empty();
 		}
 		
 		@Override public void doSetValue(Pair<K, V> value) {
+			keyEntry.setDisplayedValue(value.getKey());
 			keyEntry.setValue(value.getKey());
+			valueEntry.setDisplayedValue(value.getValue());
 			valueEntry.setValue(value.getValue());
 		}
 		
@@ -188,35 +221,50 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 			valueEntry.setOriginal(value.getValue());
 		}
 		
-		@Override public boolean isExpanded() {
-			return isExpandable && ((IExpandable) valueEntry).isExpanded();
+		@Override public boolean areEqual(Pair<K, V> left, Pair<K, V> right) {
+			return keyEntry.areEqual(left.getKey(), right.getKey())
+			  && valueEntry.areEqual(left.getValue(), right.getValue());
 		}
 		
-		@Override public void setExpanded(boolean expanded, boolean recursive) {
-			if (isExpandable)
-				((IExpandable) valueEntry).setExpanded(expanded, recursive);
-		}
-		
-		@Override public int getFocusedScroll() {
-			return isExpandable ? ((IExpandable) valueEntry).getFocusedScroll() : 0;
-		}
-		
-		@Override public int getFocusedHeight() {
-			return isExpandable ? ((IExpandable) valueEntry).getFocusedHeight() : getCellHeight();
-		}
+		// @Override public boolean isExpanded() {
+		// 	return isExpandable && ((IExpandable) valueEntry).isExpanded();
+		// }
+		//
+		// @Override public void setExpanded(boolean expanded, boolean recursive) {
+		// 	if (isExpandable)
+		// 		((IExpandable) valueEntry).setExpanded(expanded, recursive);
+		// }
+		//
+		// @Override public int getFocusedScroll() {
+		// 	return isExpandable ? ((IExpandable) valueEntry).getFocusedScroll() : 0;
+		// }
+		//
+		// @Override public int getFocusedHeight() {
+		// 	return isExpandable ? ((IExpandable) valueEntry).getFocusedHeight() : getCellHeight();
+		// }
 		
 		@Override
-		public void render(
-		  MatrixStack mStack, int index, int y, int x, int entryWidth,
-		  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
+		public void renderCell(
+		  MatrixStack mStack, int index, int x, int y, int cellWidth,
+		  int cellHeight, int mouseX, int mouseY, boolean isHovered, float delta
 		) {
-			super.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-			keyOverlayColor = hasErrors() ? errorFilter : noFilter;
+			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
+			keyOverlayColor = hasError() ? errorFilter : noFilter;
 			final FontRenderer fr = Minecraft.getInstance().font;
-			int keyX = fr.isBidirectional() ? x + entryWidth - 150 - keyOffset : x + keyOffset;
-			valueEntry.render(mStack, index, y, x, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-			keyEntry.renderChild(mStack, keyX, y, 120, 20, mouseX, mouseY, delta);
-			fill(mStack, keyX - 2, y, keyX + 124, y + 20, keyOverlayColor);
+			int keyX = fr.isBidirectional() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
+			valueEntry.render(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
+			final EntryPairListListEntry<K, V, KE, E> listEntry = getListEntry();
+			keyEntry.renderChild(mStack, keyX, y, listEntry.getKeyFieldWidth(), 20, mouseX, mouseY, delta);
+			fill(mStack, keyX, y, keyX + listEntry.getKeyFieldWidth(), y + 20, keyOverlayColor);
+		}
+		
+		@Override public void renderLabel(
+		  MatrixStack mStack, ITextComponent label, int textX, int index, int x, int y, int cellWidth,
+		  int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
+		) {}
+		
+		@Override public ITextComponent getLabel() {
+			return StringTextComponent.EMPTY;
 		}
 		
 		@Override public boolean drawsLine(int mouseX, int mouseY) {
@@ -242,47 +290,48 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 			return children;
 		}
 		
-		@Override public void onNavigate() {
+		@Override public List<INavigableTarget> getNavigableSubTargets() {
+			List<INavigableTarget> subTargets = new ArrayList<>();
+			AbstractConfigEntry<?>[] arr = {isExpandable? valueEntry : keyEntry,
+			                                isExpandable? keyEntry : valueEntry};
+			for (AbstractConfigEntry<?> entry : arr) {
+				List<INavigableTarget> entryTargets = entry.getNavigableSubTargets();
+				if (entryTargets.isEmpty()) subTargets.add(entry);
+				else subTargets.addAll(entryTargets);
+			}
+			return subTargets;
+		}
+		
+		@Override public void navigate() {
 			if (getListEntry().selectKey)
-				keyEntry.onNavigate();
-			else valueEntry.onNavigate();
+				keyEntry.navigate();
+			else valueEntry.navigate();
+		}
+		
+		@Override public Rectangle getRowArea() {
+			return valueEntry.getRowArea();
 		}
 		
 		@Override public @Nullable INavigableTarget getNavigableParent() {
 			return getListEntry();
 		}
 		
-		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-			if (keyCode == 263 && getFocused() == valueEntry) { // Left
-				setFocused(keyEntry);
-				keyEntry.changeFocus(true);
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
-				return true;
-			} else if (keyCode == 262 && getFocused() == keyEntry) { // Right
-				setFocused(valueEntry);
-				valueEntry.changeFocus(true);
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
-				return true;
-			}
-			if (Screen.hasAltDown() && getListEntry().getSelectedIndex() != -1 && (keyCode == 257 || keyCode == 260)) // Enter | Insert
-				getListEntry().selectKey = true;
-			return super.handleNavigationKey(keyCode, scanCode, modifiers);
+		@Override public List<INavigableTarget> getNavigableChildren(boolean onlyVisible) {
+			return valueEntry.getNavigableChildren(onlyVisible);
 		}
 		
 		// Modified tab order
-		@Override public boolean changeFocus(boolean focus) {
+		@Override public boolean changeFocus(boolean forward) {
 			IGuiEventListener listener = getFocused();
 			boolean hasListener = listener != null;
 			BaseListEntry<?, ?, ?> subList = isExpandable? (BaseListEntry<?, ?, ?>) valueEntry : null;
-			if (focus && isExpandable && listener == valueEntry && subList.getFocused() == subList.label) {
+			if (forward && isExpandable && listener == valueEntry && subList.getFocused() == subList.label) {
 				subList.changeFocus(false);
 				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
 				setFocused(keyEntry);
 				return true;
 			} else if (
-			  !focus && isExpandable && listener == valueEntry && subList.children().indexOf(subList.getFocused()) == 1
+			  !forward && isExpandable && listener == valueEntry && subList.children().indexOf(subList.getFocused()) == 1
 			) {
 				subList.changeFocus(false);
 				subList.changeFocus(false);
@@ -290,26 +339,26 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 				setFocused(keyEntry);
 				return true;
 			}
-			if (hasListener && listener.changeFocus(focus)) return true;
+			if (hasListener && listener.changeFocus(forward)) return true;
 			
 			if (isExpandable) {
 				if (listener == keyEntry) {
 					final List<? extends IGuiEventListener> subListeners = subList.children();
-					final IGuiEventListener l = focus ? subListeners.get(1) : subListeners.get(0);
+					final IGuiEventListener l = forward ? subListeners.get(1) : subListeners.get(0);
 					WidgetUtils.forceUnFocus(l);
 					setFocused(valueEntry);
 					valueEntry.setFocused(l);
-					if (valueEntry.changeFocus(focus))
+					if (valueEntry.changeFocus(forward))
 						return true;
 				}
 				
-				if (!hasListener && focus) {
+				if (!hasListener && forward) {
 					setFocused(valueEntry);
 					valueEntry.setFocused(subList.label);
 					return true;
 				}
 				
-				if (listener == valueEntry && valueEntry.getFocused() == subList.label && !focus) {
+				if (listener == valueEntry && valueEntry.getFocused() == subList.label && !forward) {
 					valueEntry.changeFocus(false);
 					setFocused(null);
 					return false;
@@ -318,15 +367,15 @@ public class EntryPairListListEntry<K, V, KE extends AbstractConfigListEntry<K> 
 			
 			List<? extends IGuiEventListener> list = children();
 			int index = list.indexOf(listener);
-			int target = hasListener && index >= 0 ? index + (focus ? 1 : 0)
-			                                       : focus ? 0 : list.size();
+			int target = hasListener && index >= 0 ? index + (forward ? 1 : 0)
+			                                       : forward ? 0 : list.size();
 			ListIterator<? extends IGuiEventListener> l = list.listIterator(target);
-			BooleanSupplier hasNext = focus ? l::hasNext : l::hasPrevious;
-			Supplier<? extends IGuiEventListener> supplier = focus ? l::next : l::previous;
+			BooleanSupplier hasNext = forward ? l::hasNext : l::hasPrevious;
+			Supplier<? extends IGuiEventListener> supplier = forward ? l::next : l::previous;
 			
 			while (hasNext.getAsBoolean()) {
 				IGuiEventListener next = supplier.get();
-				if (next.changeFocus(focus)) {
+				if (next.changeFocus(forward)) {
 					setFocused(next);
 					return true;
 				}

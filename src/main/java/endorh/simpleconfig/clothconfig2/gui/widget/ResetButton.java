@@ -4,15 +4,13 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry;
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.IExpandable;
+import endorh.simpleconfig.clothconfig2.api.IEntryHolder;
 import endorh.simpleconfig.clothconfig2.api.ScissorsHandler;
 import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
 import endorh.simpleconfig.clothconfig2.gui.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.clothconfig2.gui.Icon;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
-import endorh.simpleconfig.clothconfig2.gui.entries.IEntryHoldingListEntry;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -20,7 +18,6 @@ import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.NotNull;
@@ -34,20 +31,13 @@ import static net.minecraft.util.math.MathHelper.clamp;
 public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
 	protected static ITextComponent[] resetTooltip = new ITextComponent[]{
-	  new TranslationTextComponent("text.cloth-config.reset_value"),
+	  new TranslationTextComponent("simpleconfig.ui.reset"),
 	  new TranslationTextComponent("simpleconfig.ui.restore.alt")};
-	protected static ITextComponent[] resetTooltipShift = new ITextComponent[]{
-	  new TranslationTextComponent("text.cloth-config.reset_value"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt"),
-	  new TranslationTextComponent("text.cloth-config.reset_value.shift")};
 	protected static ITextComponent[] resetTooltipGroup = new ITextComponent[]{
-	  new TranslationTextComponent("text.cloth-config.reset_value.group"),
+	  new TranslationTextComponent("simpleconfig.ui.reset.group"),
 	  new TranslationTextComponent("simpleconfig.ui.restore.alt")};
 	protected static ITextComponent[] restoreTooltip = new ITextComponent[]{
 	  new TranslationTextComponent("simpleconfig.ui.restore")};
-	protected static ITextComponent[] restoreTooltipShift = new ITextComponent[]{
-	  new TranslationTextComponent("simpleconfig.ui.restore"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.shift")};
 	protected static ITextComponent[] restoreTooltipGroup = new ITextComponent[]{
 	  new TranslationTextComponent("simpleconfig.ui.restore.group")};
 	
@@ -90,6 +80,10 @@ public class ResetButton extends MultiFunctionImageButton
 			defaultIcon = getIcon();
 		}
 		super.render(mStack, mouseX, mouseY, delta);
+		if (isFocused() && !active && entry != null) {
+			entry.changeFocus(false);
+			setFocused(false);
+		}
 	}
 	
 	protected boolean isRestore() {
@@ -97,13 +91,12 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected boolean isGroup() {
-		if (entry == null) return false;
-		if (entry instanceof IEntryHoldingListEntry) {
-			final AbstractConfigListEntry<?> held = ((IEntryHoldingListEntry) entry).getHeldEntry();
-			if (held != null && (isRestore()? held.isRestorable() : held.isResettable()) && !shift)
-				return false;
-		}
-		return entry instanceof IExpandable;
+		if (!entry.isGroup()) return false;
+		if (!(entry instanceof IEntryHolder)) return true;
+		final IEntryHolder entryHolder = (IEntryHolder) entry;
+		return shift ||
+		       (isRestore() ? entryHolder.getSingleRestorableEntry()
+		                    : entryHolder.getSingleResettableEntry()) == null;
 	}
 	
 	protected Icon getIcon() {
@@ -117,59 +110,68 @@ public class ResetButton extends MultiFunctionImageButton
 			if (keyCode != 257 && keyCode != 32 && keyCode != 335) { // !(Enter | Space | NumPadEnter)
 				return false;
 			} else {
-				int button = Screen.hasControlDown() ? 2 : Screen.hasShiftDown() ? 1 : 0;
-				if (!shouldSafeGuard() || confirming) {
-					confirming = false;
-					if (onPress(this, button)) {
-						this.playDownSound(Minecraft.getInstance().getSoundManager());
-						return true;
-					} else if (button != 0 && onPress(this, 0)) {
-						this.playDownSound(Minecraft.getInstance().getSoundManager());
-						return true;
-					}
-					return false;
-				}
-				confirming = true;
-				dragging = false;
-				getScreen().claimRectangle(overlay, this, 20);
-				return true;
+				return activate(Screen.hasControlDown() ? 2 : Screen.hasShiftDown() ? 1 : 0);
 			}
 		}
 		return false;
 	}
 	
+	public boolean activate() {
+		return activate(0);
+	}
+	
+	public boolean activate(int button) {
+		if (!shouldSafeGuard() || confirming) {
+			confirming = false;
+			if (onPress(this, button)) {
+				playDownSound(Minecraft.getInstance().getSoundManager());
+				return true;
+			} else if (button != 0 && onPress(this, 0)) {
+				playDownSound(Minecraft.getInstance().getSoundManager());
+				return true;
+			}
+			return false;
+		}
+		playDownSound(Minecraft.getInstance().getSoundManager());
+		confirming = true;
+		dragging = false;
+		getScreen().claimRectangle(overlay, this, 20);
+		return true;
+	}
+	
 	protected boolean shouldBeActive() {
 		if (entry == null) return false;
-		if (entry.getListParent() != null) // This only creates confusion
-			return false;
-		if (entry instanceof IEntryHoldingListEntry) {
-			final AbstractConfigListEntry<?> held = ((IEntryHoldingListEntry) entry).getHeldEntry();
-			if (held != null && (isRestore()? held.isRestorable() : held.isResettable()) && !shift)
-				return true;
-		}
-		return isRestore()? entry.isRestorable() : entry.isResettable();
+		if (entry.isSubEntry()) return false;
+		return isGroup()? isRestore()? entry.canRestoreGroup() : entry.canResetGroup()
+		                : isRestore()? entry.isRestorable() : entry.isResettable();
 	}
 	
 	protected boolean reset(AbstractConfigEntry<?> entry, int button) {
 		if (button == 0) {
-			if (entry instanceof IEntryHoldingListEntry) {
-				final AbstractConfigListEntry<?> heldEntry = ((IEntryHoldingListEntry) entry).getHeldEntry();
-				if (heldEntry != null && !shift) {
-					if (isRestore() && heldEntry.isRestorable()) {
-						heldEntry.restoreValue();
+			if (entry instanceof IEntryHolder) {
+				final IEntryHolder entryHolder = (IEntryHolder) entry;
+				final AbstractConfigEntry<?> singleEntry = entryHolder.getSingleResettableEntry();
+				if (singleEntry != null && !shift) {
+					if (isRestore() && entry.isRestorable()) {
+						entryHolder.restoreSingleEntry(singleEntry);
 						return true;
-					} else if (!isRestore() && heldEntry.isResettable()) {
-						heldEntry.resetValue();
+					} else if (!isRestore() && entry.isResettable()) {
+						entryHolder.resetSingleEntry(singleEntry);
 						return true;
 					}
+					return false;
 				}
 			}
-			if (isRestore() && entry.isRestorable())
+			if (isRestore() && entry.isRestorable()) {
 				entry.restoreValue();
-			else if (!isRestore() && entry.isResettable())
+				return true;
+			} else if (!isRestore() && entry.isResettable()) {
 				entry.resetValue();
+				return true;
+			}
+			return false;
 		}
-		return true;
+		return false;
 	}
 	
 	public boolean onPress(Button widget, int button) {
@@ -178,7 +180,6 @@ public class ResetButton extends MultiFunctionImageButton
 			if (result) {
 				Minecraft.getInstance().getSoundManager().play(
 				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
-				setFocused(false);
 			}
 			return result;
 		}
@@ -204,7 +205,13 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected AbstractConfigScreen getScreen() {
-		return entry != null ? entry.getConfigScreen() : null;
+		return entry != null ? entry.getScreen() : null;
+	}
+	
+	@Override public boolean overlayMouseDragged(
+	  Rectangle area, double mouseX, double mouseY, int button, double dragX, double dragY
+	) {
+		return IOverlayRenderer.super.overlayMouseDragged(area, mouseX, mouseY, button, dragX, dragY);
 	}
 	
 	@Override public boolean mouseDragged(
@@ -237,12 +244,12 @@ public class ResetButton extends MultiFunctionImageButton
 		if (dragging) {
 			defaultIcon.renderStretch(mStack, x, y, width, height, 0);
 			if (Minecraft.getInstance().font.isBidirectional()) {
-				blit(mStack, x + width, y, 216, 20, 40, 20);
+				SimpleConfigIcons.CONFIRM_DRAG_LEFT.renderStretch(mStack, x + width, y, 40, 20);
 				defaultIcon.renderStretch(mStack, x + width + 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
 					fill(mStack, x + width, y, x + 2 * width + 40, y + height, 0x64FF4242);
 			} else {
-				blit(mStack, x - 40, y, 216, 0, 40, 20);
+				SimpleConfigIcons.CONFIRM_DRAG_RIGHT.renderStretch(mStack, x - 40, y, 40, 20);
 				defaultIcon.renderStretch(mStack, x - width - 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
 					fill(mStack, x - 40, y, x + width, y + height, 0x64FF4242);
@@ -267,9 +274,12 @@ public class ResetButton extends MultiFunctionImageButton
 		return super.changeFocus(focus);
 	}
 	
+	@Override public void setFocused(boolean focused) {
+		super.setFocused(focused);
+	}
+	
 	public ITextComponent[] getTooltip() {
 		if (isGroup()) return isRestore()? restoreTooltipGroup : resetTooltipGroup;
-		if (entry instanceof IExpandable) return isRestore()? restoreTooltipShift : resetTooltipShift;
 		return isRestore()? restoreTooltip : resetTooltip;
 	}
 	

@@ -26,7 +26,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected ITextComponent title;
 	protected int sortingOrder = 0;
 	protected @Nullable ResourceLocation background;
-	protected @Nullable Supplier<Optional<ITextProperties[]>> description = Optional::empty;
+	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
 	protected boolean isServer = false;
 	protected int color;
@@ -45,7 +45,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		this.title = name;
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getEntries() {
+	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
 		return this.entries;
 	}
 	
@@ -103,10 +103,10 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		sortingOrder = order;
 	}
 	
-	@Override public @Nullable Supplier<Optional<ITextProperties[]>> getDescription() {
+	@Override public @Nullable Supplier<Optional<ITextComponent[]>> getDescription() {
 		return this.description;
 	}
-	@Override public void setDescription(@Nullable Supplier<Optional<ITextProperties[]>> description) {
+	@Override public void setDescription(@Nullable Supplier<Optional<ITextComponent[]>> description) {
 		this.description = description;
 	}
 }

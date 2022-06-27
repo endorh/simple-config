@@ -8,12 +8,14 @@ import endorh.simpleconfig.clothconfig2.api.Tooltip;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
+import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
 import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.PatternTypeWrapper;
 import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.StringTypeWrapper;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.clothconfig2.math.Point;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
+import endorh.simpleconfig.core.SimpleConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FocusableGui;
@@ -45,6 +47,9 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	protected static ITextComponent[] REGEX_TOOLTIP = new ITextComponent[] {
 	  new TranslationTextComponent("simpleconfig.ui.search.regex"),
 	  new TranslationTextComponent("modifier.cloth-config.alt", "R").withStyle(TextFormatting.GRAY)};
+	protected static ITextComponent[] FILTER_TOOLTIP = new ITextComponent[] {
+	  new TranslationTextComponent("simpleconfig.ui.search.filter"),
+	  new TranslationTextComponent("modifier.cloth-config.alt", "F").withStyle(TextFormatting.GRAY)};
 	
 	public int x;
 	public int y;
@@ -60,8 +65,10 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	protected MultiFunctionImageButton down;
 	protected MultiFunctionImageButton close;
 	protected MultiFunctionImageButton open;
+	protected List<ToggleImageButton> optionButtons;
 	protected ToggleImageButton regexButton;
 	protected ToggleImageButton caseButton;
+	protected ToggleImageButton filterButton;
 	protected List<IGuiEventListener> expandedListeners;
 	protected List<IGuiEventListener> regexListeners;
 	protected List<IGuiEventListener> closedListeners;
@@ -72,6 +79,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	
 	protected boolean caseSensitive = false;
 	protected boolean regex = false;
+	protected boolean filter = false;
 	
 	protected boolean closeOnClickOutside = false;
 	protected boolean expanded = false;
@@ -111,14 +119,32 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			 b -> next(b != 1)
 		)).on(Modifier.SHIFT, ButtonAction.of(b -> next(b == 1)).icon(SimpleConfigIcons.UP));
 		close = new MultiFunctionImageButton(
-		  x + w - 20, y, 20, 20, SimpleConfigIcons.CLOSE, ButtonAction.of(this::close));
+		  x + w - 20, y, 20, 20, SimpleConfigIcons.CLOSE_SEARCH, ButtonAction.of(this::close));
 		open = new MultiFunctionImageButton(
 		  x + 2, y, 20, 20, SimpleConfigIcons.SEARCH, ButtonAction.of(this::open));
-		caseButton = new ToggleImageButton(false, x, y + 1, 18, 18, SimpleConfigIcons.SEARCH_CASE_SENSITIVE, b -> updateModifiers());
-		regexButton = new ToggleImageButton(false, x + 18, y + 1, 18, 18, SimpleConfigIcons.SEARCH_REGEX, b -> updateModifiers());
-		expandedListeners = Lists.newArrayList(caseButton, regexButton, comboBox, up, down, close);
-		regexListeners = Lists.newArrayList(caseButton, regexButton, regexComboBox, up, down, close);
+		caseButton = ToggleImageButton.of(false, 18, SimpleConfigIcons.SEARCH_CASE_SENSITIVE, b -> updateModifiers());
+		regexButton = ToggleImageButton.of(false,  18, SimpleConfigIcons.SEARCH_REGEX, b -> updateModifiers());
+		filterButton = ToggleImageButton.of(false, 18, SimpleConfigIcons.SEARCH_FILTER, b -> updateModifiers());
+		optionButtons = Lists.newArrayList(caseButton, regexButton, filterButton);
+		expandedListeners = Lists.newArrayList(caseButton, regexButton, filterButton, comboBox, up, down, close);
+		regexListeners = Lists.newArrayList(caseButton, regexButton, filterButton, regexComboBox, up, down, close);
 		closedListeners = Lists.newArrayList(open);
+	}
+	
+	protected void addOptionButton(ToggleImageButton button) {
+		addOptionButton(optionButtons.size(), button);
+	}
+	
+	protected void addOptionButton(int pos, ToggleImageButton button) {
+		optionButtons.add(pos, button);
+		expandedListeners.add(pos, button);
+		regexListeners.add(pos, button);
+	}
+	
+	protected void removeButton(ToggleImageButton button) {
+		optionButtons.remove(button);
+		expandedListeners.remove(button);
+		regexListeners.remove(button);
 	}
 	
 	protected void next(boolean forward) {
@@ -149,7 +175,12 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 				final int size = advanced.regex_search_history_size;
 				final Pair<Integer, List<Pattern>> newHistory = Pair.of(
 				  size, new ArrayList<>(sh.subList(0, min(sh.size(), size))));
-				SimpleConfigMod.CLIENT_CONFIG.set("advanced.regex_search_history", newHistory);
+				SimpleConfig c = SimpleConfigMod.CLIENT_CONFIG;
+				String REGEX_SEARCH_HISTORY = "advanced.regex_search_history";
+				if (c.hasGUI()) {
+					c.setGUI(REGEX_SEARCH_HISTORY, newHistory);
+					advanced.regex_search_history = newHistory.getValue();
+				} else c.set(REGEX_SEARCH_HISTORY, newHistory);
 				regexComboBox.setSuggestions(newHistory.getValue());
 			}
 		} else {
@@ -163,7 +194,12 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 				final int size = advanced.search_history_size;
 				final Pair<Integer, List<String>> newHistory = Pair.of(
 				  size, new ArrayList<>(sh.subList(0, min(sh.size(), size))));
-				SimpleConfigMod.CLIENT_CONFIG.set("advanced.search_history", newHistory);
+				String SEARCH_HISTORY = "advanced.search_history";
+				SimpleConfig c = SimpleConfigMod.CLIENT_CONFIG;
+				if (c.hasGUI()) {
+					c.setGUI(SEARCH_HISTORY, newHistory);
+					advanced.search_history = newHistory.getValue();
+				} else c.set(SEARCH_HISTORY, newHistory);
 				comboBox.setSuggestions(newHistory.getValue());
 			}
 		}
@@ -179,6 +215,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		}
 		caseSensitive = caseButton.getValue();
 		regex = regexButton.getValue();
+		filter = filterButton.getValue();
 		makeQuery();
 		setFocused(getComboBox());
 		if (!getComboBox().isFocused()) getComboBox().changeFocus(true);
@@ -219,8 +256,6 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		comboBox.setDropDownShown(false);
 		regexComboBox.setDropDownShown(false);
 		expanded = false;
-		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	public void open() {
@@ -230,9 +265,8 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		if (!comboBox.isFocused())
 			comboBox.changeFocus(true);
 		comboBox.selectAll();
+		handler.selectMatch(currentMatch);
 		screen.claimRectangle(overlay, this, 50);
-		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
@@ -245,17 +279,19 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 				return Optional.of(CASE_SENSITIVE_TOOLTIP);
 			if (regexButton.isMouseOver(mouseX, mouseY))
 				return Optional.of(REGEX_TOOLTIP);
+			if (filterButton.isMouseOver(mouseX, mouseY))
+				return Optional.of(FILTER_TOOLTIP);
 		}
 		return Optional.empty();
 	}
 	
-	@Override public boolean overlayMouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean overlayMouseClicked(Rectangle area, double mouseX, double mouseY, int button) {
 		mouseClicked(mouseX, mouseY, button);
 		return true;
 	}
 	
-	@Override public void overlayMouseClickedOutside(double mouseX, double mouseY, int button) {
-		if (closeOnClickOutside && isExpanded() && !isMouseOver(mouseX, mouseY)) close();
+	@Override public void overlayMouseClickedOutside(Rectangle area, double mouseX, double mouseY, int button) {
+		if (closeOnClickOutside && isExpanded() && !isFilter() && !isMouseOver(mouseX, mouseY)) close();
 	}
 	
 	@Override public boolean renderOverlay(
@@ -265,7 +301,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		drawBackground(mStack, mouseX, mouseY, delta);
 		final ComboBoxWidget<?> comboBox = getComboBox();
 		setFocused(comboBox);
-		if (!comboBox.isFocused())
+		if (!comboBox.isFocused() && !isFilter())
 			comboBox.setFocused(true);
 		positionExpanded(mStack, mouseX, mouseY, delta);
 		renderExpanded(mStack, mouseX, mouseY, delta);
@@ -292,23 +328,25 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		  String.format("%s / %s", totalMatches > 0 ? currentMatch + 1 : 0, totalMatches);
 		final int textW = font.width(text);
 		int textX = x + w - 42 - textW;
-		int comboWidth = w - 114 - max(42, textW);
-		this.comboBox.setWidth(comboWidth);
-		regexComboBox.setWidth(comboWidth);
-		this.comboBox.x = x + 64;
-		this.comboBox.y = y + 3;
-		regexComboBox.x = x + 64;
-		regexComboBox.y = y + 3;
 		up.x = x + w - 38;
 		up.y = y + 3;
 		down.x = x + w - 20;
 		down.y = y + 3;
 		close.x = x + 2;
 		close.y = y + 2;
-		caseButton.x = x + 24;
-		caseButton.y = y + 3;
-		regexButton.x = x + 42;
-		regexButton.y = y + 3;
+		int bx = x + 24;
+		for (ToggleImageButton b : optionButtons) {
+			b.x = bx;
+			bx += b.getWidth() + 2;
+			b.y = y + 12 - b.getHeight() / 2;
+		}
+		int comboWidth = w - bx - 2 - max(42, textW);
+		this.comboBox.setWidth(comboWidth);
+		regexComboBox.setWidth(comboWidth);
+		this.comboBox.x = bx + 2;
+		this.comboBox.y = y + 3;
+		regexComboBox.x = bx + 2;
+		regexComboBox.y = y + 3;
 		font.drawShadow(mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
 	}
 	
@@ -320,9 +358,8 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	protected void renderExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		if (regex)
 			regexComboBox.render(mStack, mouseX, mouseY, delta);
-		else this.comboBox.render(mStack, mouseX, mouseY, delta);
-		caseButton.render(mStack, mouseX, mouseY, delta);
-		regexButton.render(mStack, mouseX, mouseY, delta);
+		else comboBox.render(mStack, mouseX, mouseY, delta);
+		for (ToggleImageButton b : optionButtons) b.render(mStack, mouseX, mouseY, delta);
 		up.render(mStack, mouseX, mouseY, delta);
 		down.render(mStack, mouseX, mouseY, delta);
 		close.render(mStack, mouseX, mouseY, delta);
@@ -338,12 +375,16 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {
 		if (Screen.hasAltDown()) {
-			if (Character.toLowerCase(codePoint) == 'c') {
-				caseButton.setValue(!caseButton.getValue());
-				return true;
-			} else if (Character.toLowerCase(codePoint) == 'r') {
-				regexButton.setValue(!regexButton.getValue());
-				return true;
+			switch (Character.toLowerCase(codePoint)) {
+				case 'c':
+					caseButton.setValue(!caseButton.getValue());
+					return true;
+				case 'r':
+					regexButton.setValue(!regexButton.getValue());
+					return true;
+				case 'f':
+					filterButton.setValue(!filterButton.getValue());
+					return true;
 			}
 		}
 		return super.charTyped(codePoint, modifiers);
@@ -374,7 +415,12 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 					}
 					break;
 				case 257: // Enter
-					next(!Screen.hasShiftDown());
+					if (isFilter() || Screen.hasControlDown()) {
+						WidgetUtils.forceUnFocus(getComboBox());
+						handler.focusResults();
+					} else {
+						next(!Screen.hasShiftDown());
+					}
 					return true;
 				case 264: // Down
 					next(true);
@@ -391,15 +437,27 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		return expanded;
 	}
 	
+	public boolean isFilter() {
+		return filter;
+	}
+	
+	public boolean isEmpty() {
+		return getComboBox().getText().isEmpty();
+	}
+	
 	@Override public @NotNull List<? extends IGuiEventListener> children() {
-		return expanded? regex? regexListeners : expandedListeners : closedListeners;
+		return isExpanded()? regex? regexListeners : expandedListeners : closedListeners;
 	}
 	
 	@Override public boolean changeFocus(boolean focus) {
-		final boolean result = getComboBox().changeFocus(focus);
-		if (!result)
-			close();
-		return result;
+		if (isExpanded()) {
+			final boolean result = getComboBox().changeFocus(focus);
+			if (!result) {
+				if (isFilter()) handler.focusResults();
+				else close();
+			}
+			return result;
+		} else return open.changeFocus(focus);
 	}
 	
 	public void refresh() {
@@ -416,5 +474,6 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		Pair<Integer, Integer> query(Pattern query);
 		void dismissQuery();
 		void selectMatch(int idx);
+		void focusResults();
 	}
 }

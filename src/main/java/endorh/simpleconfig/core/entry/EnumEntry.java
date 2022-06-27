@@ -74,7 +74,7 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).defineEnum(name, value, configValidator()));
+		return Optional.of(decorate(builder).defineEnum(name, value, createConfigValidator()));
 	}
 	
 	@Override protected void buildSpec(

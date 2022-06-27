@@ -5,12 +5,10 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simpleconfig.clothconfig2.math.Color;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,9 +35,6 @@ import static net.minecraft.util.math.MathHelper.clamp;
  * reuse them (left click).
  */
 public class ColorPickerWidget extends Widget {
-	protected static final ResourceLocation CONFIG_TEX =
-	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
-	
 	protected int colorBg = 0xFF242424;
 	protected int colorBorder = 0xFF646464;
 	protected int colorBorderHover = 0xFFA0A0A0;
@@ -119,8 +114,6 @@ public class ColorPickerWidget extends Widget {
 	
 	@Override
 	public void renderButton(@NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks) {
-		Minecraft minecraft = Minecraft.getInstance();
-		minecraft.getTextureManager().bind(CONFIG_TEX);
 		RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
@@ -214,29 +207,6 @@ public class ColorPickerWidget extends Widget {
 		} else addToHistory(value);
 	}
 	
-	protected void fillChessboard(MatrixStack mStack, int x, int y, int w, int h) {
-		int u = 0; int v = 64;
-		int hh = h, yy = y;
-		while (hh > 40) {
-			int ww = w, xx = x;
-			while (ww > 40) {
-				blit(mStack, xx, yy, u, v, 40, 40);
-				xx += 40;
-				ww -= 40;
-			}
-			blit(mStack, xx, yy, u, v, ww, 40);
-			yy += 40;
-			hh -= 40;
-		}
-		int ww = w, xx = x;
-		while (ww > 40) {
-			blit(mStack, xx, yy, u, v, 40, hh);
-			xx += 40;
-			ww -= 40;
-		}
-		blit(mStack, xx, yy, u, v, ww, hh);
-	}
-	
 	public void allowAlpha(boolean alpha) {
 		allowAlpha = alpha;
 		if (alpha) {
@@ -306,10 +276,9 @@ public class ColorPickerWidget extends Widget {
 					             Color.ofHSB(lastHue, 1F, 1F).getOpaque());
 				} mStack.popPose();
 				fillGradient(mStack, 0, 0, w, h, 0x00000000, 0xFF000000);
-				int v = isMouseOver(mX, mY) ? 89 : 78;
 				int cX = (int) (lastSaturation * (w - 1)) - 5;
 				int cY = (int) ((1F - value.getBrightness()) * (h - 1)) - 5;
-				blit(mStack, cX, cY, 80, v, 11, 11);
+				SimpleConfigIcons.ColorPicker.POINTER.renderCentered(mStack, cX, cY, 11, 11, isMouseOver(mX, mY)? 1 : 0);
 			} mStack.popPose();
 		}
 		
@@ -353,10 +322,10 @@ public class ColorPickerWidget extends Widget {
 				fillGradient(mStack, 0, 4 * h / 6, w, 5 * h / 6, 0xFF0000FF, 0xFFFF00FF);
 				fillGradient(mStack, 0, 5 * h / 6, w, h, 0xFFFF00FF, 0xFFFF0000);
 				
-				int v = isMouseOver(mX, mY) ? 71 : 64;
+				int level = isMouseOver(mX, mY) ? 1 : 0;
 				int aY = (int) (lastHue * (h - 1)) - 3;
-				blit(mStack, -1, aY, 80, v, 5, 7);
-				blit(mStack, w - 4, aY, 85, v, 5, 7);
+				SimpleConfigIcons.ColorPicker.ARROW_RIGHT.renderCentered(mStack, -1, aY, 5, 7, level);
+				SimpleConfigIcons.ColorPicker.ARROW_LEFT.renderCentered(mStack, w - 4, aY, 5, 7, level);
 			} mStack.popPose();
 		}
 		
@@ -382,7 +351,7 @@ public class ColorPickerWidget extends Widget {
 	public class TransparencyBar extends SubWidget {
 		@Override public void render(MatrixStack mStack, int mX, int mY) {
 			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
-			fillChessboard(mStack, x, y, w, h);
+			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, w, h);
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w > h) {
@@ -394,10 +363,10 @@ public class ColorPickerWidget extends Widget {
 				}
 				fillGradient(mStack, 0, 0, w, h, value.getOpaque(), value.getColor() & 0x00FFFFFF);
 				
-				int v = isMouseOver(mX, mY)? 71 : 64;
+				int level = isMouseOver(mX, mY)? 1 : 0;
 				int aY = (int) (((255 - value.getAlpha()) / 255F) * (h - 1)) - 3;
-				blit(mStack, -1, aY, 80, v, 5, 7);
-				blit(mStack, w - 4, aY, 85, v, 5, 7);
+				SimpleConfigIcons.ColorPicker.ARROW_RIGHT.renderCentered(mStack, -1, aY, 5, 7, level);
+				SimpleConfigIcons.ColorPicker.ARROW_LEFT.renderCentered(mStack, w - 4, aY, 5, 7, level);
 			} mStack.popPose();
 		}
 		
@@ -423,7 +392,7 @@ public class ColorPickerWidget extends Widget {
 	public class HistoryBar extends SubWidget {
 		@Override public void render(MatrixStack mStack, int mX, int mY) {
 			final boolean hovered = drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
-			fillChessboard(mStack, x, y, w, h);
+			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, w, h);
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w < h) {
@@ -498,9 +467,9 @@ public class ColorPickerWidget extends Widget {
 		protected void drawPaletteEntry(java.awt.Color color, MatrixStack mStack, int x, int y, int mX, int mY) {
 			drawBox(mStack, x - 1, y - 1, unit + 2, unit + 2, mX, mY);
 			if (color == null) {
-				blit(mStack, x, y, 40, 64, unit, unit);
+				SimpleConfigIcons.ColorPicker.DIAGONAL_TEXTURE.renderFill(mStack, x, y, unit, unit);
 			} else {
-				fillChessboard(mStack, x, y, unit, unit);
+				SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, unit, unit);
 				fill(mStack, x, y, x + unit, y + unit, color.getRGB());
 			}
 		}

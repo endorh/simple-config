@@ -71,8 +71,8 @@ public abstract class AbstractSerializableEntry
 	}
 	
 	@Override
-	public Optional<ITextComponent> supplyError(String value) {
-		final Optional<ITextComponent> opt = super.supplyError(value);
+	public Optional<ITextComponent> getError(String value) {
+		final Optional<ITextComponent> opt = super.getError(value);
 		if (!opt.isPresent() && fromGui(value) == null && value != null) {
 			return getErrorMessage(value);
 		} else return opt;
@@ -80,7 +80,7 @@ public abstract class AbstractSerializableEntry
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(builder.define(name, forConfig(value), configValidator()));
+		return Optional.of(builder.define(name, forConfig(value), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)

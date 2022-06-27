@@ -5,7 +5,8 @@ import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
 import endorh.simpleconfig.clothconfig2.api.ConfigBuilder;
-import endorh.simpleconfig.core.SimpleConfig.SnapshotHandler;
+import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simpleconfig.core.SimpleConfig.ConfigSnapshotHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -97,23 +98,23 @@ public class SimpleConfigGUIManager {
 				default: return 3;
 			}
 		})).collect(Collectors.toList());
-		final ConfigBuilder builder = ConfigBuilder.create()
+		final ConfigSnapshotHandler handler = new ConfigSnapshotHandler(configs);
+		final ConfigBuilder builder = ConfigBuilder.create(modId)
 		  .setParentScreen(parent)
-		  .setSavingRunnable(() -> orderedConfigs.stream()
-		    .filter(c -> c.dirty).forEach(c -> {
-			    if (c.anyDirtyRequiresRestart())
-				    c.markGUIRestart();
-			    c.save();
-			    c.removeGUI();
-		    }))
-		  .setTitle(new TranslationTextComponent(
+		  .setSavingRunnable(() -> orderedConfigs.forEach(c -> {
+			  if (c.isDirty()) c.save();
+			  c.removeGUI();
+		  })).setTitle(new TranslationTextComponent(
 		    "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(new ResourceLocation(
 		  "textures/block/oak_planks.png"))
-		  .setSnapshotHandler(new SnapshotHandler(configs));
+		  .setSnapshotHandler(handler);
 		for (SimpleConfig config : orderedConfigs)
 			config.buildGUI(builder);
-		return builder.build();
+		final AbstractConfigScreen gui = builder.build();
+		for (SimpleConfig config : orderedConfigs)
+			config.setGUI(gui, handler);
+		return gui;
 	}
 	
 	/**

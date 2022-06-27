@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,6 +14,21 @@ import java.util.function.Consumer;
 public class ConfirmLinkDialog extends ConfirmDialog {
 	protected TintedButton copyButton;
 	protected String link;
+	
+	public static ConfirmLinkDialog create(
+	  String link, IOverlayCapableScreen screen, boolean securityWarning
+	) {
+		return create(link, screen, securityWarning, null);
+	}
+	
+	public static ConfirmLinkDialog create(
+	  String link, IOverlayCapableScreen screen, boolean securityWarning,
+	  @Nullable Consumer<ConfirmLinkDialog> builder
+	) {
+		ConfirmLinkDialog dialog = new ConfirmLinkDialog(link, screen, securityWarning);
+		if (builder != null) builder.accept(dialog);
+		return dialog;
+	}
 	
 	public ConfirmLinkDialog(
 	  String link, IOverlayCapableScreen screen, boolean securityWarning
@@ -34,12 +50,15 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	  ITextComponent cancelText, ITextComponent copyText, ITextComponent confirmText,
 	  IOverlayCapableScreen screen, boolean securityWarning
 	) {
-		super(screen, title, b -> {}, body, cancelText, confirmText);
+		super(screen, title);
+		setCancelText(cancelText);
+		setConfirmText(confirmText);
+		withAction(this::action);
 		if (securityWarning)
 			body.add(0, new TranslationTextComponent("chat.link.warning"));
 		body.add(new TranslationTextComponent("simpleconfig.ui.link.display", formatLink(link)));
+		setBody(body);
 		this.link = link;
-		super.setAction(this::action);
 		copyButton = new TintedButton(0, 0, 120, 20, copyText, p -> copy());
 		copyButton.setTintColor(0x802424BD);
 		addButton(1, copyButton);
@@ -53,10 +72,6 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	
 	public void action(boolean go) {
 		if (go) Util.getPlatform().openUri(link);
-	}
-	
-	@Override public void setAction(Consumer<Boolean> action) {
-		throw new UnsupportedOperationException("Confirm link dialog cannot have a custom action");
 	}
 	
 	public void setCopyButtonTint(int color) {

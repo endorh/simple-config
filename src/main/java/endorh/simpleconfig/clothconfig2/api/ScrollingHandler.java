@@ -70,9 +70,8 @@ public abstract class ScrollingHandler {
 	
 	public void updatePosition(float delta) {
 		double[] target = new double[]{scrollTarget};
-		scrollAmount =
-		  ScrollingHandler.handleScrollingPosition(target, scrollAmount, getMaxScroll(),
-		                                           delta, start, duration);
+		scrollAmount = ScrollingHandler.handleScrollingPosition(
+		  target, scrollAmount, getMaxScroll(), delta, start, duration);
 		scrollTarget = target[0];
 	}
 	

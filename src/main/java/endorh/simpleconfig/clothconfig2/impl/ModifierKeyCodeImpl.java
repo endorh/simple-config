@@ -3,9 +3,7 @@ package endorh.simpleconfig.clothconfig2.impl;
 import endorh.simpleconfig.clothconfig2.api.Modifier;
 import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
 import net.minecraft.client.util.InputMappings;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -51,14 +49,34 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 		return sb.toString();
 	}
 	
-	@Override public ITextComponent getLocalizedName() {
-		ITextComponent base = new StringTextComponent(toTitleCase(keyCode.getDisplayName().getString()));
+	private static final Pattern KEY_PATTERN = Pattern.compile("^key\\.keyboard\\.(?<key>\\w)$");
+	
+	public ITextComponent getLayoutAgnosticLocalizedName(Style modifiers, Style key) {
+		final String name = keyCode.getName();
+		final Matcher m = KEY_PATTERN.matcher(name);
+		ITextComponent base;
+		if (m.matches()) {
+			base = new StringTextComponent(m.group("key").toUpperCase()).withStyle(key);
+		} else {
+			base = new StringTextComponent(toTitleCase(keyCode.getDisplayName().getString())).withStyle(key);
+		}
 		if (modifier.hasShift())
-			base = new TranslationTextComponent("modifier.cloth-config.shift", base);
+			base = new TranslationTextComponent("modifier.cloth-config.shift", base).withStyle(modifiers);
 		if (modifier.hasAlt())
-			base = new TranslationTextComponent("modifier.cloth-config.alt", base);
+			base = new TranslationTextComponent("modifier.cloth-config.alt", base).withStyle(modifiers);
 		if (modifier.hasControl())
-			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base);
+			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base).withStyle(modifiers);
+		return base;
+	}
+	
+	@Override public ITextComponent getLocalizedName(Style modifiers, Style key) {
+		ITextComponent base = new StringTextComponent(toTitleCase(keyCode.getDisplayName().getString())).withStyle(key);
+		if (modifier.hasShift())
+			base = new TranslationTextComponent("modifier.cloth-config.shift", base).withStyle(modifiers);
+		if (modifier.hasAlt())
+			base = new TranslationTextComponent("modifier.cloth-config.alt", base).withStyle(modifiers);
+		if (modifier.hasControl())
+			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base).withStyle(modifiers);
 		return base;
 	}
 	

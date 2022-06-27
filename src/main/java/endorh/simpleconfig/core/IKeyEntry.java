@@ -2,6 +2,7 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.EntryFlag;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -33,10 +34,12 @@ public interface IKeyEntry<KC, KG> {
 				  "gui entry that cannot be used as key, violating its IKeyEntry contract");
 			//noinspection unchecked
 			((AbstractConfigEntry<?, ?, KG, ?>) this).guiEntry = guiEntry;
+			// Child entries are persistent through their parents
+			guiEntry.removeEntryFlag(EntryFlag.NON_PERSISTENT);
 			//noinspection unchecked
 			return (KGE) guiEntry;
 		} else throw new IllegalStateException(
-		  "The IKeyEntry interface should be implemented by " +
+		  "The IKeyEntry interface should only be implemented by " +
 		  "endorh.simpleconfig.core.AbstractConfigEntry objects");
 	}
 	

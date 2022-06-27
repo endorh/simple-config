@@ -121,7 +121,7 @@ public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & 
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(
 	  ForgeConfigSpec.Builder builder
 	) {
-		return Optional.of(decorate(builder).define(name, forConfig(value), configValidator()));
+		return Optional.of(decorate(builder).define(name, forConfig(value), createConfigValidator()));
 	}
 	
 	@Override protected ForgeConfigSpec.Builder decorate(

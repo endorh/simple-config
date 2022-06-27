@@ -21,7 +21,7 @@ public class DoubleSliderEntry extends SliderListEntry<Double> {
 		  new DoubleListEntry(StringTextComponent.EMPTY, value);
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
-		textEntry.setChild(true);
+		textEntry.setChildSubEntry(true);
 		initWidgets(new DoubleSliderEntry.SliderWidget(0, 0, 100, 24), textEntry);
 	}
 	
@@ -36,8 +36,8 @@ public class DoubleSliderEntry extends SliderListEntry<Double> {
 			return min + ((max - min) * value);
 		}
 		
-		@Override public void setValue(Double value) {
-			value = (value - min) / (max - min);
+		@Override public void setValue(final Double v) {
+			value = (v - min) / (max - min);
 		}
 	}
 }

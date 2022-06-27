@@ -15,14 +15,27 @@ public class AnimatedIcon extends Icon {
 	protected long lastFrameTime = 0L;
 	
 	public AnimatedIcon(
-	  ResourceLocation location, int u, int v, int w, int h, int tw, int th,
+	  ResourceLocation location, int u, int v, int w, int h,   int tw, int th,
 	  int rows, int cols, long delay
 	) {
-		super(location, u, v, w, h, tw, th);
+		this(location, u, v, w, h, Integer.MAX_VALUE, Integer.MAX_VALUE, tw, th, false, 0, rows, cols, delay);
+	}
+	
+	public AnimatedIcon(
+	  ResourceLocation location, int u, int v, int w, int h, int lX, int lY, int tw, int th,
+	  boolean twoLevel, int tint, int rows, int cols, long delay
+	) {
+		super(location, u, v, w, h, lX, lY, tw, th, twoLevel, tint);
 		this.rows = rows;
 		this.cols = cols;
 		this.delay = delay;
 		frames = rows * cols;
+	}
+	
+	@Override public AnimatedIcon withTint(int tint) {
+		return new AnimatedIcon(
+		  location, u, v, w, h, levelOffsetX, levelOffsetY, tw, th,
+		  twoLevel, tint, rows, cols, delay);
 	}
 	
 	@Override public int translateLevel(int level) {
@@ -37,25 +50,9 @@ public class AnimatedIcon extends Icon {
 		return v + (lastFrame / rows) * h;
 	}
 	
-	@Override public void renderCentered(MatrixStack mStack, int x, int y, int w, int h, int level) {
-		bindTexture();
-		int xx = x + w / 2 - this.w / 2;
-		int yy = y + h / 2 - this.h / 2;
-		final int ww = min(w, this.w);
-		final int hh = min(h, this.h);
-		final int u = getU();
-		final int v = getV();
-		blit(
-		  mStack, max(x, xx), max(y, yy), ww, hh,
-		  max(u + x - xx, u), max(v + y - yy, v) + translateLevel(level) * this.h,
-		  ww, hh, tw, th);
-	}
-	
-	@Override public void renderStretch(MatrixStack mStack, int x, int y, int w, int h, int level) {
+	@Override protected void beforeRender() {
+		super.beforeRender();
 		update();
-		bindTexture();
-		blit(mStack, x, y, w, h, getU(), getV() + translateLevel(level) * this.h,
-		     this.w, this.h, tw, th);
 	}
 	
 	public void reset() {
@@ -84,6 +81,9 @@ public class AnimatedIcon extends Icon {
 		private int th = 256;
 		private int w = 24;
 		private int h = 24;
+		private int lX = Integer.MAX_VALUE;
+		private int lY = Integer.MAX_VALUE;
+		private boolean twoLevel = false;
 		private long delay = 40;
 		private int rows = 1;
 		private int cols = 1;
@@ -118,17 +118,32 @@ public class AnimatedIcon extends Icon {
 			return this;
 		}
 		
+		public AnimatedIconBuilder withLevelOffset(Integer lX, Integer lY) {
+			this.lX = lX != null? lX : Integer.MAX_VALUE;
+			this.lY = lY != null? lY : Integer.MAX_VALUE;
+			return this;
+		}
+		
+		public AnimatedIconBuilder twoLevel(boolean twoLevel) {
+			this.twoLevel = twoLevel;
+			return this;
+		}
+		
 		public AnimatedIconBuilder withFPS(float fps) {
 			this.delay = (long) (1000F / fps);
 			return this;
 		}
 		
 		public AnimatedIcon create(int u, int v) {
-			return new AnimatedIcon(location, u, v, w, h, tw, th, rows, cols, delay);
+			return new AnimatedIcon(
+			  location, u, v, w, h, lX, lY, tw, th,
+			  twoLevel, 0, rows, cols, delay);
 		}
 		
 		public AnimatedIcon create(int u, int v, int w, int h) {
-			return new AnimatedIcon(location, u, v, w, h, tw, th, rows, cols, delay);
+			return new AnimatedIcon(
+			  location, u, v, w, h, lX, lY, tw, th,
+			  twoLevel, 0, rows, cols, delay);
 		}
 	}
 }

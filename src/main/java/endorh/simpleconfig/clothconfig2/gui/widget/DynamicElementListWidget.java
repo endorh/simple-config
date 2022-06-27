@@ -25,14 +25,9 @@ public abstract class DynamicElementListWidget<E extends ElementEntry>
 		return change;
 	}
 	
-	@Override
-	protected boolean isSelected(int index) {
-		return false;
-	}
-	
 	@OnlyIn(value = Dist.CLIENT)
 	public static abstract class ElementEntry
-	  extends DynamicEntryListWidget.Entry
+	  extends ListEntry
 	  implements IExtendedDragAwareNestedGuiEventHandler {
 		private IGuiEventListener focused;
 		private boolean dragging;

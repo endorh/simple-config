@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.client.util.InputMappings.Input;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -44,11 +46,15 @@ public interface ModifierKeyCode {
 			try {
 				final String name = m.group(4);
 				Input in;
-				if (name.startsWith("mouse.") || name.startsWith("keyboard."))
+				if (name.startsWith("mouse.") || name.startsWith("keyboard.")) {
 					in = InputMappings.getKey("key." + name);
-				else if (!name.contains("."))
+				} else if (!name.contains(".")) {
 					in = InputMappings.getKey("key.keyboard." + name);
-				else in = InputMappings.getKey(name);
+				} else try {
+					in = InputMappings.getKey(name);
+				} catch (IllegalArgumentException ignored) {
+					in = InputMappings.getKey("key.keyboard." + name);
+				}
 				return of(in, mod);
 			} catch (IllegalArgumentException ignored) {
 				return unknown();
@@ -142,7 +148,24 @@ public interface ModifierKeyCode {
 	
 	String toString();
 	
-	ITextComponent getLocalizedName();
+	default ITextComponent getLayoutAgnosticLocalizedName() {
+		return getLayoutAgnosticLocalizedName(Style.EMPTY, Style.EMPTY);
+	}
+	
+	default ITextComponent getLayoutAgnosticLocalizedName(TextFormatting modifiers, TextFormatting key) {
+		return getLayoutAgnosticLocalizedName(Style.EMPTY.applyFormat(modifiers), Style.EMPTY.applyFormat(key));
+	}
+	
+	default ITextComponent getLocalizedName() {
+		return getLocalizedName(Style.EMPTY, Style.EMPTY);
+	}
+	
+	default ITextComponent getLocalizedName(TextFormatting modifiers, TextFormatting key) {
+		return getLocalizedName(Style.EMPTY.applyFormat(modifiers), Style.EMPTY.applyFormat(key));
+	}
+	
+	ITextComponent getLayoutAgnosticLocalizedName(Style modifiers, Style key);
+	ITextComponent getLocalizedName(Style modifiers, Style key);
 	
 	default boolean isUnknown() {
 		return this.getKeyCode().equals(InputMappings.UNKNOWN);

@@ -146,7 +146,7 @@ public class StringEntry
 			final StringEntry entry = new StringEntry(parent, name, value);
 			if (value.length() > maxLength)
 				throw new IllegalArgumentException(
-				  "Config entry's default value is longer than its max length: " + entry.getPath());
+				  "Config entry's default value is longer than its max length: " + entry.getGlobalPath());
 			// if (value.length() < minLength)
 			// 	throw new IllegalArgumentException(
 			// 	  "Config entry's default value is shorter than its min length: " + entry.getPath());
@@ -182,8 +182,8 @@ public class StringEntry
 		return value;
 	}
 	
-	@Override public Optional<ITextComponent> supplyError(String value) {
-		final Optional<ITextComponent> opt = super.supplyError(value);
+	@Override public Optional<ITextComponent> getError(String value) {
+		final Optional<ITextComponent> opt = super.getError(value);
 		if (opt.isPresent()) return opt;
 		if (value.length() < minLength)
 			return Optional.of(
@@ -196,7 +196,7 @@ public class StringEntry
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, value, configValidator()));
+		return Optional.of(decorate(builder).define(name, value, createConfigValidator()));
 	}
 	
 	@Override protected ForgeConfigSpec.Builder decorate(

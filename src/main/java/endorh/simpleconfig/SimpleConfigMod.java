@@ -6,13 +6,10 @@ import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.annotation.Bind;
 import endorh.simpleconfig.core.annotation.NotEntry;
 import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simpleconfig.core.entry.StringEntry;
 import endorh.simpleconfig.demo.DemoConfigCategory;
 import endorh.simpleconfig.demo.DemoServerCategory;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
@@ -82,13 +79,15 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			  .add("menu_button_position", enum_(SPLIT_OPTIONS_BUTTON))
 			  .n(group("confirm")
 			       .add("save", bool(true))
-			       .add("unsaved", bool(true))
+			       .add("discard", bool(true))
+			       .add("overwrite_external", bool(true))
+			       .add("overwrite_remote", bool(true))
 			       .add("reset", bool(false))
 			       .add("group_reset", bool(true))
 			       .add("restore", bool(false))
 			       .add("group_restore", bool(true)))
 			  .n(group("advanced")
-			       .add("tooltip_key", enum_(TooltipDisplayKey.NONE))
+			       .add("show_ui_tips", bool(true))
 			       .add("tooltip_max_width", percent(60F))
 			       .add("prefer_combo_box", number(8))
 			       .add("max_options_in_config_comment", number(16).min(5))
@@ -186,15 +185,17 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		@Bind public static boolean add_pause_menu_button;
 		@Bind public static MenuButtonPosition menu_button_position;
 		@Bind public static class confirm {
+			@Bind public static boolean save;
+			@Bind public static boolean discard;
+			@Bind public static boolean overwrite_external;
+			@Bind public static boolean overwrite_remote;
 			@Bind public static boolean reset;
 			@Bind public static boolean restore;
 			@Bind public static boolean group_reset;
 			@Bind public static boolean group_restore;
-			@Bind public static boolean unsaved;
-			@Bind public static boolean save;
 		}
 		@Bind public static class advanced {
-			@Bind public static TooltipDisplayKey tooltip_key;
+			@Bind public static boolean show_ui_tips;
 			@Bind public static float tooltip_max_width;
 			@Bind public static int prefer_combo_box;
 			@Bind public static int max_options_in_config_comment;
@@ -271,26 +272,6 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
 	}
 	
-	public enum TooltipDisplayKey implements ITranslatedEnum {
-		NONE(() -> true),
-		CTRL(Screen::hasControlDown),
-		ALT(Screen::hasAltDown),
-		SHIFT(Screen::hasShiftDown);
-		
-		private final Supplier<Boolean> shouldDisplay;
-		TooltipDisplayKey(Supplier<Boolean> shouldDisplay) {
-			this.shouldDisplay = shouldDisplay;
-		}
-		
-		public boolean shouldDisplayTooltip() {
-			return shouldDisplay.get();
-		}
-		
-		@Override public IFormattableTextComponent getDisplayName() {
-			return new TranslationTextComponent("simpleconfig.config.enum.tooltip_display_key." + name().toLowerCase());
-		}
-	}
-	
 	@SubscribeEvent
 	protected static void onRegisterSounds(RegistryEvent.Register<SoundEvent> event) {
 		final IForgeRegistry<SoundEvent> r = event.getRegistry();
@@ -309,18 +290,19 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static class KeyBindings {
 		public static final String CATEGORY = "Simple Config";
 		public static KeyBinding
-		  SEARCH, PREV_PAGE, NEXT_PAGE, UNDO, REDO, PREV_ERROR, NEXT_ERROR, SAVE;
+		  SEARCH, PREV_PAGE, NEXT_PAGE, UNDO, REDO, PREV_ERROR, NEXT_ERROR, SAVE, RESET_RESTORE;
 		
 		@SubscribeEvent public static void register(FMLClientSetupEvent event) {
 			event.enqueueWork(() -> {
-				SEARCH = reg("search", CONTROL, 70);        // Ctrl + F
-				PREV_PAGE = reg("prev_page", CONTROL, 266); // Ctrl + PgUp
-				NEXT_PAGE = reg("next_page", CONTROL, 267); // Ctrl + PgDown
-				UNDO = reg("undo", CONTROL, 90);            // Ctrl + Z
-				REDO = reg("redo", CONTROL, 89);            // Ctrl + Y
-				PREV_ERROR = reg("prev_error", SHIFT, 290); // Shift + F1
-				NEXT_ERROR = reg("next_error", 290);        // F1
-				SAVE = reg("save", CONTROL, 83);            // Ctrl + S
+				SEARCH = reg("search", CONTROL, 70);               // Ctrl + F
+				PREV_PAGE = reg("prev_page", CONTROL, 266);        // Ctrl + PgUp
+				NEXT_PAGE = reg("next_page", CONTROL, 267);        // Ctrl + PgDown
+				UNDO = reg("undo", CONTROL, 90);                   // Ctrl + Z
+				REDO = reg("redo", CONTROL, 89);                   // Ctrl + Y
+				PREV_ERROR = reg("prev_error", SHIFT, 290);        // Shift + F1
+				NEXT_ERROR = reg("next_error", 290);               // F1
+				SAVE = reg("save", CONTROL, 83);                   // Ctrl + S
+				RESET_RESTORE = reg("reset_restore", CONTROL, 82); // Ctrl + R
 			});
 		}
 		

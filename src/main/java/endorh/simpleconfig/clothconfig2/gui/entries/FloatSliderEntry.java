@@ -22,7 +22,7 @@ public class FloatSliderEntry extends SliderListEntry<Float> {
 		  new FloatListEntry(StringTextComponent.EMPTY, value);
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
-		textEntry.setChild(true);
+		textEntry.setChildSubEntry(true);
 		initWidgets(new SliderWidget(0, 0, 100, 24), textEntry);
 	}
 	
@@ -37,8 +37,8 @@ public class FloatSliderEntry extends SliderListEntry<Float> {
 			return min + (float) ((max - min) * value);
 		}
 		
-		@Override public void setValue(Float value) {
-			value = (value - min) / (max - min);
+		@Override public void setValue(final Float v) {
+			value = (v - min) / (max - min);
 		}
 	}
 }

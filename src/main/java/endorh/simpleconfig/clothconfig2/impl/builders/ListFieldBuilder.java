@@ -20,13 +20,19 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
   Self extends ListFieldBuilder<V, Entry, Self>> extends FieldBuilder<List<V>, Entry, Self> {
 	
 	@NotNull protected Function<V, Optional<ITextComponent>> cellErrorSupplier = v -> Optional.empty();
-	protected ITextComponent addTooltip = new TranslationTextComponent("text.cloth-config.list.add");
-	protected ITextComponent removeTooltip = new TranslationTextComponent("text.cloth-config.list.remove");
+	protected ITextComponent[] addTooltip = new ITextComponent[] {
+	  new TranslationTextComponent("simpleconfig.help.list.insert"),
+	  new TranslationTextComponent("simpleconfig.help.list.insert:key")
+	};
+	protected ITextComponent[] removeTooltip = new ITextComponent[] {
+	  new TranslationTextComponent("simpleconfig.help.list.remove"),
+	  new TranslationTextComponent("simpleconfig.help.list.remove:key")
+	};
 	protected boolean expanded = false;
 	protected boolean insertInFront = false;
 	protected boolean deleteButtonEnabled = true;
 	protected boolean captionControlsEnabled = false;
-	protected @Nullable AbstractConfigListEntry<?> heldEntry = null;
+	// protected @Nullable AbstractConfigListEntry<?> heldEntry = null;
 	
 	protected ListFieldBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, List<V> value
@@ -39,12 +45,12 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 		return self();
 	}
 	
-	public Self setAddButtonTooltip(ITextComponent addTooltip) {
+	public Self setAddButtonTooltip(ITextComponent[] addTooltip) {
 		this.addTooltip = addTooltip;
 		return self();
 	}
 	
-	public Self setRemoveButtonTooltip(ITextComponent removeTooltip) {
+	public Self setRemoveButtonTooltip(ITextComponent[] removeTooltip) {
 		this.removeTooltip = removeTooltip;
 		return self();
 	}
@@ -69,15 +75,15 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 		return self();
 	}
 	
-	public <E extends AbstractConfigListEntry<?> & IChildListEntry> Self setHeldEntry(E entry) {
-		heldEntry = entry;
-		return self();
-	}
-	
-	protected <E extends AbstractConfigListEntry<?> & IChildListEntry> E getHeldEntry() {
-		//noinspection unchecked
-		return (E) heldEntry;
-	}
+	// public <E extends AbstractConfigListEntry<?> & IChildListEntry> Self setHeldEntry(E entry) {
+	// 	heldEntry = entry;
+	// 	return self();
+	// }
+	//
+	// protected <E extends AbstractConfigListEntry<?> & IChildListEntry> E getHeldEntry() {
+	// 	//noinspection unchecked
+	// 	return (E) heldEntry;
+	// }
 	
 	@Override public @NotNull Entry build() {
 		final Entry entry = super.build();
@@ -88,8 +94,8 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 		entry.setDeleteButtonEnabled(deleteButtonEnabled);
 		entry.setInsertInFront(insertInFront);
 		entry.setCaptionControlsEnabled(captionControlsEnabled);
-		if (heldEntry != null)
-			entry.setHeldEntry(getHeldEntry());
+		// if (heldEntry != null)
+		// 	entry.setHeldEntry(getHeldEntry());
 		return entry;
 	}
 }

@@ -3,9 +3,12 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.clothconfig2.api.Modifier;
 import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
 import endorh.simpleconfig.core.*;
+import endorh.simpleconfig.core.AbstractRange.DoubleRange;
+import endorh.simpleconfig.core.AbstractRange.LongRange;
 import endorh.simpleconfig.core.annotation.Entry;
 import endorh.simpleconfig.core.annotation.HasAlpha;
 import endorh.simpleconfig.core.annotation.Slider;
+import endorh.simpleconfig.core.Range;
 import endorh.simpleconfig.core.entry.KeyBindEntry.Builder;
 import net.minecraft.block.Block;
 import net.minecraft.client.settings.KeyBinding;
@@ -16,6 +19,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -65,8 +69,16 @@ public class Builders {
 	
 	/**
 	 * Enum entry
+	 * @deprecated Use {@link Builders#option} instead
 	 */
-	public static <E extends Enum<E>> EnumEntry.Builder<E> enum_(E value) {
+	@Deprecated public static <E extends Enum<E>> EnumEntry.Builder<E> enum_(E value) {
+		return new EnumEntry.Builder<>(value);
+	}
+	
+	/**
+	 * Enum entry
+	 */
+	public static <E extends Enum<E>> EnumEntry.Builder<E> option(E value) {
 		return new EnumEntry.Builder<>(value);
 	}
 	
@@ -404,6 +416,41 @@ public class Builders {
 	}
 	
 	/**
+	 * Double range entry, which defines a min and max values, optionally exclusive.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 * @see DoubleRange
+	 */
+	public static DoubleRangeEntry.Builder range(DoubleRange range) {
+		return new DoubleRangeEntry.Builder(range);
+	}
+	/**
+	 * Double range entry, which defines a min and max values, inclusive by default.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 * @see DoubleRange
+	 */
+	public static DoubleRangeEntry.Builder range(double min, double max) {
+		return range(DoubleRange.inclusive(min, max));
+	}
+	
+	/**
+	 * Long range entry, which defines a min and max values, optionally exclusive.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 * @see LongRange
+	 */
+	public static LongRangeEntry.Builder range(LongRange range) {
+		return new LongRangeEntry.Builder(range);
+	}
+	
+	/**
+	 * Long range entry, which defines a min and max values, inclusive by default.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 * @see LongRange
+	 */
+	public static LongRangeEntry.Builder range(long min, long max) {
+		return range(LongRange.inclusive(min, max));
+	}
+	
+	/**
 	 * Color entry<br>
 	 * Use {@link ColorEntry.Builder#alpha()} to allow alpha values
 	 */
@@ -721,11 +768,11 @@ public class Builders {
 	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
 	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
-	DecoratedListEntry.Builder<V, C, G, E, B, CV, CC, CG, CE, CB> caption(
+	CaptionedListEntry.Builder<V, C, G, E, B, CV, CC, CG, CE, CB> caption(
 	  CB caption, B list
 	) {
 		//noinspection deprecation
-		return new DecoratedListEntry.Builder<>(
+		return new CaptionedListEntry.Builder<>(
 		  Pair.of(getValue(caption), getValue(list)), list, caption);
 	}
 	
@@ -740,12 +787,10 @@ public class Builders {
 	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
 	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
-	DecoratedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
-	caption(
-	  CB caption, MB map
-	) {
+	CaptionedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
+	caption(CB caption, MB map) {
 		//noinspection deprecation
-		return new DecoratedMapEntry.Builder<>(
+		return new CaptionedMapEntry.Builder<>(
 		  Pair.of(getValue(caption), getValue(map)), map, caption);
 	}
 	
@@ -896,6 +941,53 @@ public class Builders {
 	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
 	) { return new EntryPairListEntry.Builder<>(value, keyEntry, entry); }
+	
+	// Pairs
+	
+	/**
+	 * Pair of other two entries.
+	 * Keys can be any valid key entry for maps.
+	 * Non string-serializable entries won't compile.
+	 * Like maps, currently serializes to NBT in the config file.
+	 * @param leftEntry The entry for the left
+	 * @param rightEntry The entry for the right
+	 * @param value Entry value
+	 */
+	public static <L, R, LC, RC, LG, RG,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
+	> EntryPairEntry.Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> pair(
+	  LB leftEntry, RB rightEntry, Pair<L, R> value
+	) {
+		return new EntryPairEntry.Builder<>(value, leftEntry, rightEntry);
+	}
+	
+	// Triple
+	
+	/**
+	 * Triple of other three entries.
+	 * Keys can be any valid key entry for maps.
+	 * Non string-serializable entries won't compile.
+	 * Like maps, currently serializes to NBT in the config file.
+	 * @param leftEntry The entry for the left
+	 * @param middleEntry The entry for the middle
+	 * @param rightEntry The entry for the right
+	 * @param value Entry value
+	 */
+	public static <L, M, R, LC, MC, RC, LG, MG, RG,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MC, MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
+	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
+	> EntryTripleEntry.Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> triple(
+	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
+	) {
+		return new EntryTripleEntry.Builder<>(value, leftEntry, middleEntry, rightEntry);
+	}
 	
 	// Register reflection field parsers ------------------------------------------------------------
 	

@@ -3,6 +3,7 @@ package endorh.simpleconfig.clothconfig2.gui;
 
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.INestedGuiEventHandler;
+import net.minecraft.client.gui.widget.Widget;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -17,19 +18,25 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	@Override default boolean mouseClicked(double mouseX, double mouseY, int button) {
 		for(IGuiEventListener listener : this.children()) {
 			if (listener.mouseClicked(mouseX, mouseY, button)) {
-				this.setFocused(listener);
-				if ((!isDragging() || (getDragged() != null && getDragged().getLeft() == button)) && (
-				  button == 0
-				  || listener instanceof IExtendedDragAwareNestedGuiEventHandler
-				  || listener instanceof IExtendedDragAwareGuiEventListener)
-				) {
-					this.setDragging(true);
-					this.setDragged(Pair.of(button, listener));
-				}
+				onMouseClickedForListener(listener, mouseX, mouseY, button);
 				return true;
 			}
 		}
 		return false;
+	}
+	
+	default void onMouseClickedForListener(
+	  IGuiEventListener listener, double mouseX, double mouseY, int button
+	) {
+		this.setFocused(listener);
+		if ((!isDragging() || (getDragged() != null && getDragged().getLeft() == button)) && (
+		  button == 0
+		  || listener instanceof IExtendedDragAwareNestedGuiEventHandler
+		  || listener instanceof IExtendedDragAwareGuiEventListener)
+		) {
+			this.setDragging(true);
+			this.setDragged(Pair.of(button, listener));
+		}
 	}
 	
 	@Override default boolean mouseDragged(
