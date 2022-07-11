@@ -1,6 +1,6 @@
 modLoader="javafml"
 loaderVersion="[36,)"
-license="LGPL"
+license="${license}"
 #issueTrackerURL="${issue_tracker}"
 
 [[mods]]

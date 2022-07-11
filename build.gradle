@@ -23,7 +23,7 @@ apply from: 'antlr.gradle'
 
 def mod_id = "simpleconfig"
 group = "endorh.simpleconfig"
-version = "1.16.5-0.4.0"
+version = "1.16.5-0.5.0"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -183,7 +183,7 @@ shadowJar {
         attributes(jar_attributes)
     }
 
-    // Include only Cloth Config API in the shadow jar
+    // Include only ANTLR4 runtime in the shadow jar
     dependencies {
         //noinspection GroovyAssignabilityCheck
         include dependency("org.antlr:antlr4:$antlr_version")
