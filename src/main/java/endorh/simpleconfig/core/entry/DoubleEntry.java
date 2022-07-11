@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.impl.builders.DoubleFieldBuilder;
-import endorh.simpleconfig.clothconfig2.impl.builders.DoubleSliderBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.DoubleFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.DoubleSliderBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;

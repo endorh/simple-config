@@ -2,11 +2,11 @@ package endorh.simpleconfig.core;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.api.EntryFlag;
-import endorh.simpleconfig.clothconfig2.gui.entries.EntryPairListListEntry;
-import endorh.simpleconfig.clothconfig2.impl.builders.CaptionedListEntryBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.EntryFlag;
+import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
+import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import static endorh.simpleconfig.core.NBTUtil.fromNBT;
 import static endorh.simpleconfig.core.NBTUtil.toNBT;

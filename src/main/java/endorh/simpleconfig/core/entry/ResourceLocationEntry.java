@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;

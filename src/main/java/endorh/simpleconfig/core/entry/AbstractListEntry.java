@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import com.electronwill.nightconfig.core.ConfigSpec;
-import endorh.simpleconfig.clothconfig2.impl.builders.ListFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IErrorEntry;

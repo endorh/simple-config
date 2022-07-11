@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;

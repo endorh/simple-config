@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
-import endorh.simpleconfig.clothconfig2.impl.builders.RangeListEntryBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.AbstractRange.AbstractSizedRange;
 import net.minecraft.util.text.ITextComponent;

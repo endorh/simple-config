@@ -1,8 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.highlight.HighlighterManager;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;

@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.Ingredient;
@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder.ofItemName;
+import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofItemName;
 
 public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 	

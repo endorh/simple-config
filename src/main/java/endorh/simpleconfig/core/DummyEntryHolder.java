@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import org.jetbrains.annotations.Nullable;
 
 /**

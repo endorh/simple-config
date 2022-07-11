@@ -1,7 +1,7 @@
 package endorh.simpleconfig.highlight;
 
 import com.google.gson.*;
-import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.highlight.HighlighterManager.HighlightRule.RuleDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.HighlighterDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.StyleDeserializer;

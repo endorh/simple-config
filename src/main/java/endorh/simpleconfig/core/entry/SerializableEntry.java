@@ -1,7 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
-import endorh.simpleconfig.core.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import org.jetbrains.annotations.ApiStatus.Internal;
 

@@ -1,14 +1,13 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.Modifier;
-import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.api.Modifier;
+import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
 import endorh.simpleconfig.core.AbstractRange.LongRange;
 import endorh.simpleconfig.core.annotation.Entry;
 import endorh.simpleconfig.core.annotation.HasAlpha;
 import endorh.simpleconfig.core.annotation.Slider;
-import endorh.simpleconfig.core.Range;
 import endorh.simpleconfig.core.entry.KeyBindEntry.Builder;
 import net.minecraft.block.Block;
 import net.minecraft.client.settings.KeyBinding;

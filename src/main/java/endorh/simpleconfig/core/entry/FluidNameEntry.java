@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder.ofFluidName;
+import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofFluidName;
 
 public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 	

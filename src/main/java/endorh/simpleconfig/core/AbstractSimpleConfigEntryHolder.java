@@ -2,7 +2,7 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
-import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;

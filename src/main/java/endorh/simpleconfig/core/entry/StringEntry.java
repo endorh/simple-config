@@ -2,11 +2,11 @@ package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
-import endorh.simpleconfig.clothconfig2.impl.builders.TextFieldBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder.ofString;
+import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofString;
 
 public class StringEntry
   extends AbstractConfigEntry<String, String, String, StringEntry>

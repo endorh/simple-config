@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.AbstractConfigScreen;
-import endorh.simpleconfig.clothconfig2.gui.entries.EntryButtonListEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.DummyEntryHolder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;

@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder.ofItem;
+import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofItem;
 
 public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry> {
 	protected @NotNull Predicate<Item> filter;

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.impl.builders.RangedListFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;

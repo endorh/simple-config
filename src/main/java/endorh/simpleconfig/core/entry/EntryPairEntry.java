@@ -2,10 +2,10 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.Icon;
-import endorh.simpleconfig.clothconfig2.impl.builders.PairListEntryBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.impl.builders.PairListEntryBuilder;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.NBTUtil.ExpectedType;
 import net.minecraft.nbt.CompoundNBT;
@@ -20,8 +20,6 @@ import org.jetbrains.annotations.Range;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static endorh.simpleconfig.core.NBTUtil.fromNBT;
 import static endorh.simpleconfig.core.NBTUtil.toNBT;

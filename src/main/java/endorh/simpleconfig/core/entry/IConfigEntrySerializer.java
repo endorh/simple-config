@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 
 import java.util.Optional;
 

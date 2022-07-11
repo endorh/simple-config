@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
-import endorh.simpleconfig.clothconfig2.api.ConfigBuilder;
-import endorh.simpleconfig.clothconfig2.api.ConfigCategory;
-import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigBuilder;
+import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;

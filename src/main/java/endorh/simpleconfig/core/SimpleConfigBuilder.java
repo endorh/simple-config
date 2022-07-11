@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.clothconfig2.api.ConfigBuilder;
-import endorh.simpleconfig.clothconfig2.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigBuilder;
+import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.entry.Builders;

@@ -2,10 +2,9 @@ package endorh.simpleconfig.demo;
 
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.clothconfig2.api.ModifierKeyCode;
-import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
-import endorh.simpleconfig.core.Range;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigCategory;
 import endorh.simpleconfig.core.SimpleConfigGroup;
@@ -43,7 +42,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
-import static endorh.simpleconfig.clothconfig2.api.ModifierKeyCode.parse;
+import static endorh.simpleconfig.ui.api.ModifierKeyCode.parse;
 import static endorh.simpleconfig.core.SimpleConfig.category;
 import static endorh.simpleconfig.core.SimpleConfig.group;
 import static endorh.simpleconfig.core.entry.Builders.*;

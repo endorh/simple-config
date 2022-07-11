@@ -1,7 +1,5 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
-
 public interface ISerializableConfigEntry<T extends ISerializableConfigEntry<T>> {
 	/**
 	 * An {@link IConfigEntrySerializer} for this entry type
