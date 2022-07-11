@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.clothconfig2.impl.builders.TextFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -83,13 +84,18 @@ public abstract class AbstractSerializableEntry
 		return Optional.of(builder.define(name, forConfig(value), createConfigValidator()));
 	}
 	
+	protected ITextFormatter getTextFormatter() {
+		return ITextFormatter.DEFAULT;
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder
-		  .startTextField(getDisplayName(), forGui(get()));
+		  .startTextField(getDisplayName(), forGui(get()))
+		  .setTextFormatter(getTextFormatter());
 		return Optional.of(decorate(valBuilder).build());
 	}
 	

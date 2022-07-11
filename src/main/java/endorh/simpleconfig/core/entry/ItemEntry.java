@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -153,7 +153,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 	public Optional<AbstractConfigListEntry<Item>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final ComboBoxFieldBuilder<Item> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofItem(), forGui(get()))
-		    .setSuggestionProvider(new SimpleSortedSuggestionProvider<>(this::supplyOptions))
+		    .setSuggestionProvider(new SimpleComboBoxModel<>(this::supplyOptions))
 			 .setSuggestionMode(false);
 		return Optional.of(decorate(entryBuilder).build());
 	}

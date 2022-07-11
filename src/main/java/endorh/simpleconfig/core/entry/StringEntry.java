@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.clothconfig2.impl.builders.TextFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -36,14 +36,14 @@ public class StringEntry
   extends AbstractConfigEntry<String, String, String, StringEntry>
   implements IKeyEntry<String, String> {
 	protected Supplier<List<String>> choiceSupplier;
-	protected SimpleSortedSuggestionProvider<String> suggestionProvider;
+	protected SimpleComboBoxModel<String> suggestionProvider;
 	protected boolean restrict;
 	protected int maxLength;
 	protected int minLength;
 	
 	@Internal public StringEntry(ISimpleConfigEntryHolder parent, String name, String value) {
 		super(parent, name, value);
-		suggestionProvider = new SimpleSortedSuggestionProvider<>(
+		suggestionProvider = new SimpleComboBoxModel<>(
 		  () -> choiceSupplier != null? choiceSupplier.get() : Lists.newArrayList());
 	}
 	

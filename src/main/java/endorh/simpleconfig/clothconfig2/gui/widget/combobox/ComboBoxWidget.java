@@ -1,19 +1,19 @@
-package endorh.simpleconfig.clothconfig2.gui.widget;
+package endorh.simpleconfig.clothconfig2.gui.widget.combobox;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.clothconfig2.api.ScissorsHandler;
 import endorh.simpleconfig.clothconfig2.api.ScrollingHandler;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
-import endorh.simpleconfig.clothconfig2.gui.Icon;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simpleconfig.clothconfig2.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
-import net.minecraft.block.Block;
 import net.minecraft.client.KeyboardListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -24,36 +24,35 @@ import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.*;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.*;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.subText;
 import static java.lang.Math.*;
 import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	@Internal protected IOverlayCapableScreen screen = null;
 	protected Supplier<IOverlayCapableScreen> screenSupplier;
-	protected @NotNull ITypeWrapper<T> typeWrapper;
+	protected final @NotNull ITypeWrapper<T> typeWrapper;
 	protected int focusedBorderColor = 0xFFFFFFFF;
 	protected int borderColor = 0xFFA0A0A0;
 	protected int backgroundColor = 0xFF000000;
-	protected int caretColor = 0xFFD0D0D0;
 	protected boolean dropDownShown = false;
 	protected boolean draggingDropDownScrollBar = false;
 	protected boolean restrictToSuggestions = false;
@@ -69,7 +68,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected ToggleAnimator expandAnimator = new ToggleAnimator(250L);
 	protected @Nullable ITextComponent hint = null;
 	
-	protected @NotNull ISortedSuggestionProvider<T> suggestionProvider;
+	protected @NotNull IComboBoxModel<T> suggestionProvider;
 	
 	protected final FontRenderer font;
 	/** Has the current text being edited on the textbox. */
@@ -79,7 +78,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected @Nullable ITextComponent parseError = null;
 	private boolean isEnabled = true;
 	protected int maxLength = 32;
-	protected int frame;
+	protected long lastInteraction;
+	protected long lastClick;
 	protected boolean shouldDrawBackground = true;
 	/** if true the textbox can lose focus by clicking elsewhere on the screen */
 	protected boolean canLoseFocus = true;
@@ -89,6 +89,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected int caretPos;
 	/** other selection position, maybe the same as the cursor */
 	protected int anchorPos;
+	protected int lastClickWordPos = -1;
+	protected boolean draggingText = false;
 	protected int enabledColor = 0xe0e0e0;
 	protected int disabledColor = 0x707070;
 	protected Consumer<String> textListener;
@@ -99,9 +101,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected String lastQuery = "";
 	protected List<ITextComponent> decoratedSuggestions = Lists.newArrayList();
 	/** Called to check if the text is valid */
-	protected Predicate<String> textValidator = Objects::nonNull;
-	protected BiFunction<String, Integer, IReorderingProcessor> textFormatter =
-	  (text, scroll) -> IReorderingProcessor.forward(text, Style.EMPTY);
+	protected Predicate<String> filter = Objects::nonNull;
+	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
 	protected Rectangle dropDownRectangle = new Rectangle();
 	protected Rectangle reportedDropDownRectangle = new Rectangle();
 	protected long lastDropDownScroll = 0;
@@ -123,9 +124,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	) {
 		super(x, y, width, height, title);
 		this.typeWrapper = typeWrapper;
+		ITextFormatter formatter = typeWrapper.getTextFormatter();
+		if (formatter != null) this.formatter = formatter;
 		this.screenSupplier = screen;
 		this.font = font;
-		this.suggestionProvider = new SimpleSortedSuggestionProvider<>(
+		this.suggestionProvider = new SimpleComboBoxModel<>(
 		  Lists.newArrayList());
 	}
 	
@@ -143,14 +146,14 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return screen;
 	}
 	
-	public void setSuggestionProvider(@NotNull ISortedSuggestionProvider<T> provider) {
+	public void setSuggestionProvider(@NotNull IComboBoxModel<T> provider) {
 		this.suggestionProvider = provider;
 		updateSuggestions();
 		// onTextChanged(text);
 	}
 	
 	public void setSuggestions(List<T> suggestions) {
-		setSuggestionProvider(new SimpleSortedSuggestionProvider<>(suggestions));
+		setSuggestionProvider(new SimpleComboBoxModel<>(suggestions));
 	}
 	
 	public @Nullable ITextComponent getHint() {
@@ -457,17 +460,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		this.valueListener = listener;
 	}
 	
-	public void setTextFormatter(BiFunction<String, Integer, IReorderingProcessor> textFormatterIn) {
-		textFormatter = textFormatterIn;
+	public void setTextFormatter(ITextFormatter formatter) {
+		this.formatter = formatter;
 	}
 	
-	/**
-	 * Increments the caret counter.<br>
-	 * This serves to animate the caret blinking.
-	 */
-	public void tick() {
-		++frame;
-	}
+	public void tick() {}
 	
 	@Override protected @NotNull IFormattableTextComponent createNarrationMessage() {
 		ITextComponent itextcomponent = getMessage();
@@ -480,7 +477,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * Set the text of the textbox, and moves the cursor to the end.
 	 */
 	public void setText(String textIn) {
-		if (textValidator.test(textIn)) {
+		if (filter.test(textIn)) {
 			text = textIn.length() > maxLength ? textIn.substring(0, maxLength) : textIn;
 			
 			moveCaretToEnd();
@@ -505,6 +502,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return text;
 	}
 	
+	public boolean hasSelection() {
+		return anchorPos != caretPos;
+	}
+	
 	/**
 	 * @return The selected text
 	 */
@@ -514,8 +515,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		       : text.substring(anchorPos, caretPos);
 	}
 	
-	public void setTextValidator(Predicate<String> validator) {
-		textValidator = validator;
+	public void setFilter(Predicate<String> validator) {
+		filter = validator;
 	}
 	
 	/**
@@ -523,6 +524,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * selected text if the selection is not empty.
 	 */
 	public void insertText(String inserted) {
+		if (formatter != null) inserted = formatter.stripInsertText(inserted);
+		
 		int start = min(caretPos, anchorPos);
 		int end = max(caretPos, anchorPos);
 		int allowed = maxLength - text.length() + (end - start);
@@ -534,7 +537,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		}
 		
 		final String result = (new StringBuilder(text)).replace(start, end, txt).toString();
-		if (textValidator.test(result)) {
+		if (filter.test(result)) {
 			text = result;
 			setCaretPosition(start + length);
 			setAnchorPos(caretPos);
@@ -587,7 +590,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	protected void delete(int num) {
-		if (Screen.hasControlDown()) {
+		if (hasSelection()) {
+			insertText("");
+		} else if (Screen.hasControlDown()) {
 			deleteWords(num);
 		} else {
 			deleteFromCaret(num);
@@ -600,9 +605,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 */
 	public void deleteWords(int num) {
 		if (!text.isEmpty()) {
-			if (anchorPos != caretPos) {
+			if (hasSelection()) {
 				insertText("");
-			} else deleteFromCaret(getWordFromCaret(num) - caretPos);
+			} else deleteFromCaret(getWordPosFromCaret(num) - caretPos);
 		}
 	}
 	
@@ -610,19 +615,26 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 * Delete the given number of characters from the current cursor's position, unless there is currently a selection,
 	 * in which case the selection is deleted instead.
 	 */
-	public void deleteFromCaret(int num) {
+	public void deleteFromCaret(int chars) {
 		if (!text.isEmpty()) {
-			if (anchorPos != caretPos) {
+			if (hasSelection()) {
 				insertText("");
 			} else {
-				int i = expandLigaturesFromCaret(num);
+				int i = expandLigaturesFromCaret(chars);
 				int start = min(i, caretPos);
 				int stop = max(i, caretPos);
 				if (start != stop) {
-					String s = (new StringBuilder(text)).delete(start, stop).toString();
-					if (textValidator.test(s)) {
-						text = s;
-						moveCaret(start);
+					String text = getText();
+					if (formatter != null && chars == -1 && stop - start == 1 && stop < text.length()) {
+						String context = new StringBuilder(text).delete(start, stop + 1).toString();
+						String closingPair = formatter.closingPair(text.charAt(start), context, start);
+						if (closingPair != null && text.substring(stop).startsWith(closingPair))
+							stop = stop + closingPair.length();
+					}
+					String s = new StringBuilder(text).delete(start, stop).toString();
+					if (filter.test(s)) {
+						this.text = s;
+						moveCaretWithAnchor(start);
 					}
 				}
 			}
@@ -632,38 +644,46 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	/**
 	 * Get the starting index of the word at the specified number of words away from the cursor position.
 	 */
-	public int getWordFromCaret(int numWords) {
-		return getWordFromPos(numWords, getCaret());
+	public int getWordPosFromCaret(int numWords) {
+		return getWordPosFromPos(numWords, getCaret());
 	}
 	
-	/**
-	 * Get the starting index of the word at a distance of the specified number of words away from the given position.
-	 */
-	protected int getWordFromPos(int n, int pos) {
-		return getWordFromPosWS(n, pos, true);
-	}
 	
+	private static final Pattern WORD_BREAK_RIGHT_PATTERN = Pattern.compile(
+	  "(?<=\\p{Alnum})(?=\\P{Alnum})" +
+	  "|(?<=\\p{Alnum})(?=\\p{Lu}[\\p{Ll}\\d])" +
+	  "|(?<=[\\p{Ll}\\d])(?=\\p{Lu})" +
+	  "|(?<=[\\P{Alnum}&&\\S&&[^_]])(?=[\\p{Alnum}\\s_])");
+	private static final Pattern WORD_BREAK_LEFT_PATTERN = Pattern.compile(
+	  "(?<=\\p{Alnum})(?=\\P{Alnum})" +
+	  "|(?<=[\\p{Ll}\\d]\\p{Lu})(?=\\p{Lu})" +
+	  "|(?<=\\p{Lu})(?=[\\p{Ll}\\d])" +
+	  "|(?<=[\\P{Alnum}&&\\S&&[^_]])(?=[\\p{Alnum}\\s_])");
 	/**
-	 * Like getNthWordFromPos (which wraps this), but adds option for skipping consecutive spaces
+	 * Get the starting index of the word at a distance of the specified number of words away
+	 * from the given position.
 	 */
-	protected int getWordFromPosWS(int n, int pos, boolean skipWS) {
-		int p = pos;
-		for(int k = 0, count = abs(n); k < count; ++k) {
-			if (!(n < 0)) {
-				int len = text.length();
-				p = text.indexOf(32, p);
-				if (p == -1) {
-					p = len;
-				} else if (skipWS) {
-					while (p < len && text.charAt(p) == ' ') ++p;
-				}
-			} else {
-				if (skipWS)
-					while (p > 0 && text.charAt(p - 1) == ' ') --p;
-				while(p > 0 && text.charAt(p - 1) != ' ') --p;
+	public int getWordPosFromPos(int wordStep, int pos) {
+		if (wordStep == 0) return pos;
+		String text = getText();
+		int length = text.length();
+		boolean reverse = wordStep < 0;
+		if (reverse) {
+			text = new StringBuilder(text).reverse().toString();
+			wordStep = -wordStep;
+			pos = length - pos;
+		}
+		Matcher m = (reverse? WORD_BREAK_LEFT_PATTERN : WORD_BREAK_RIGHT_PATTERN).matcher(text);
+		int r = -1;
+		while (wordStep > 0 && m.find()) {
+			if (m.end() > pos) {
+				wordStep--;
+				r = m.end();
 			}
 		}
-		return p;
+		if (wordStep > 0) r = length;
+		if (reverse) r = length - r;
+		return r;
 	}
 	
 	/**
@@ -694,6 +714,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (!Screen.hasShiftDown())
 			setAnchorPos(caretPos);
 		onTextChanged(text);
+	}
+	
+	public void moveCaretWithAnchor(int pos) {
+		moveCaret(pos);
+		setAnchorPos(pos);
 	}
 	
 	public void setCaretPosition(int pos) {
@@ -729,6 +754,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (!canConsumeInput()) {
 			return false;
 		} else {
+			lastInteraction = System.currentTimeMillis();
 			if (Screen.isSelectAll(keyCode)) {
 				moveCaretToEnd();
 				setAnchorPos(0);
@@ -740,21 +766,23 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					playFeedbackTap(1F);
 					return true;
 				} else if (Screen.isPaste(keyCode)) {
-					if (canEditText())
+					if (isEditable())
 						insertText(kl.getClipboard());
 					playFeedbackTap(1F);
 					return true;
 				} else if (Screen.isCut(keyCode)) {
 					kl.setClipboard(getSelectedText());
-					if (canEditText())
+					if (isEditable())
 						insertText("");
 					playFeedbackTap(1F);
 					return true;
 				} else {
 					switch(keyCode) {
 						case 259: // Backspace
-							if (canEditText())
-								delete(-1);
+							if (isEditable()) delete(-1);
+							return true;
+						case 261: // Delete
+							if (isEditable()) delete(1);
 							return true;
 						case 264: // Down
 							moveSuggestionCursor(1);
@@ -772,18 +800,18 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 						case 267: // Page Down
 							moveSuggestionCursor(max(1, dropDownHeight / getSuggestionHeight() - 1));
 							return true;
-						case 261: // Delete
-							if (canEditText())
-								delete(1);
-							return true;
 						case 262: // Right
-							if (Screen.hasControlDown()) {
-								moveCaret(getWordFromCaret(1));
+							if (hasSelection() && !Screen.hasShiftDown()) {
+								moveCaretWithAnchor(max(anchorPos, caretPos));
+							} else if (Screen.hasControlDown()) {
+								moveCaret(getWordPosFromCaret(1));
 							} else moveCaretBy(1);
 							return true;
 						case 263: // Left
-							if (Screen.hasControlDown()) {
-								moveCaret(getWordFromCaret(-1));
+							if (hasSelection() && !Screen.hasShiftDown()) {
+								moveCaretWithAnchor(min(anchorPos, caretPos));
+							} else if (Screen.hasControlDown()) {
+								moveCaret(getWordPosFromCaret(-1));
 							} else moveCaretBy(-1);
 							return true;
 						case 268: // Home
@@ -803,7 +831,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	private void playFeedbackTap(float volume) {
 		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
+	}
+	
+	private void playFeedbackClick(float volume) {
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
 	}
 	
 	public void moveSuggestionCursor(int step) {
@@ -840,8 +873,25 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			playFeedbackTap(1F);
 			return true;
 		} else if (SharedConstants.isAllowedChatCharacter(codePoint)) {
-			if (canEditText())
+			if (isEditable()) {
+				String closingPair = null;
+				if (formatter != null) {
+					int caret = getCaret();
+					String text = getText();
+					if (caret < text.length() && text.charAt(caret) == codePoint
+					    && formatter.shouldSkipClosingPair(codePoint, text, caret)) {
+						moveCaretWithAnchor(caret + 1);
+						return true;
+					}
+					closingPair = formatter.closingPair(codePoint, text, caret);
+				}
 				insertText(Character.toString(codePoint));
+				if (closingPair != null && !closingPair.isEmpty()) {
+					int caret = getCaret();
+					insertText(closingPair);
+					moveCaretWithAnchor(caret);
+				}
+			}
 			return true;
 		}
 		return false;
@@ -850,16 +900,22 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (!active) return false;
 		if (isVisible()) {
+			lastInteraction = System.currentTimeMillis();
+			lastClickWordPos = -1;
+			draggingText = false;
+			
+			// Click arrow
 			if (isMouseOverArrow((int) round(mouseX), (int) round(mouseY))
 			    || isMouseOverIcon((int) round(mouseX), (int) round(mouseY))) {
 				if (!isFocused()) setFocused(true);
 				setDropDownShown(!isDropDownShown());
-				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
+				playFeedbackClick(1F);
 				return true;
 			}
 			
 			boolean hovered = isMouseOver(mouseX, mouseY);
+			
+			// Click dropdown box
 			if (isRestrictedToSuggestions() && hovered) {
 				if (!isFocused()) setFocused(true);
 				if (isEnabled()) {
@@ -875,25 +931,84 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			if (!(canLoseFocus && isFocused()))
 				setFocused(hovered);
 			
+			// Click text
 			if (isFocused() && hovered && button == 0) {
-				int relX = MathHelper.floor(mouseX) - x;
+				draggingText = true;
+				double relX = mouseX - x;
 				if (hasIcon()) {
 					relX -= getIconWidth() + 1;
-				} else if (shouldDrawBackground()) {
-					relX -= 4;
+				} else if (shouldDrawBackground()) relX -= 4;
+				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+				if (lastInteraction - lastClick < 250) { // Double click;
+					int left = getWordPosFromPos(-1, clickedPos);
+					int right = getWordPosFromPos(1, clickedPos);
+					if (anchorPos == left && caretPos == right) { // Select line
+						moveCaretToEnd();
+						setAnchorPos(0);
+						draggingText = false;
+					} else { // Select word
+						moveCaret(right);
+						setAnchorPos(left);
+						lastClickWordPos = clickedPos;
+					}
+				} else { // Move caret
+					moveCaret(clickedPos);
+					setAnchorPos(caretPos);
 				}
-				String s = font.plainSubstrByWidth(text.substring(hScroll), getInnerWidth());
-				moveCaret(font.plainSubstrByWidth(s, relX).length() + hScroll);
-				setAnchorPos(caretPos); // Forced
+				lastClick = lastInteraction;
 				return true;
 			}
 			
+			// Clear text
 			if (isEnabled() && isFocused() && hovered && button == 1 && !isRestrictedToSuggestions()) {
 				setText("");
 				return true;
 			}
 		}
 		return false;
+	}
+	
+	@Override public boolean mouseDragged(
+	  double mouseX, double mouseY, int button, double dragX, double dragY
+	) {
+		if (isVisible() && isFocused() && button == 0 && draggingText) {
+			lastInteraction = System.currentTimeMillis();
+			double relX = mouseX - x;
+			if (hasIcon()) {
+				relX -= getIconWidth() + 1;
+			} else if (shouldDrawBackground()) relX -= 4;
+			int prevAnchor = anchorPos;
+			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+			if (lastClickWordPos != -1) {
+				int left = getWordPosFromPos(-1, lastClickWordPos);
+				int right = getWordPosFromPos(1, lastClickWordPos);
+				if (draggedPos < left) {
+					moveCaret(getWordPosFromPos(-1, draggedPos));
+					setAnchorPos(right);
+				} else if (draggedPos > right) {
+					moveCaret(getWordPosFromPos(1, draggedPos));
+					setAnchorPos(left);
+				} else {
+					boolean r = draggedPos > (left + right) / 2;
+					moveCaret(r? right : left);
+					setAnchorPos(r? left : right);
+				}
+			} else {
+				moveCaret(draggedPos);
+				setAnchorPos(prevAnchor);
+			}
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+	
+	protected int getClickedCaretPos(IFormattableTextComponent line, double relX) {
+		int lineLength = line.getString().length();
+		int floor = font.substrByWidth(line, (int) relX).getString().length();
+		if (floor >= lineLength) return lineLength;
+		int left = font.width(subText(line, 0, floor));
+		int right = font.width(subText(line, 0, floor + 1));
+		return relX < (left + right) * 0.5? floor: floor + 1;
 	}
 	
 	@Override public void setFocused(boolean focused) {
@@ -913,6 +1028,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		    .reduce(dropDownRectangle, Rectangle::intersection));
 		if (reportedDropDownRectangle.isEmpty())
 			reportedDropDownRectangle.setBounds(0, 0, 0, 0);
+	}
+	
+	public IFormattableTextComponent getDisplayedText() {
+		return formatter.formatText(getText());
 	}
 	
 	@Override public void renderButton(
@@ -948,77 +1067,67 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			int textY = shouldDrawBackground ? y + (height - 8) / 2 : y;
 			int iconX = x;
 			int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
-			final int adjustedWidth = getInnerWidth();
+			final int innerWidth = getInnerWidth();
 			final ITextComponent hint = getHint();
 			int color = isEnabled() ? enabledColor : disabledColor;
 			if (isFocused() || value == null && hint == null) {
 				int relCaret = caretPos - hScroll;
 				int relAnchor = anchorPos - hScroll;
-				String shownString = font.plainSubstrByWidth(text.substring(hScroll), adjustedWidth);
-				boolean fitCaret = relCaret >= 0 && relCaret <= shownString.length();
-				boolean showCaret = isFocused() && frame / 6 % 2 == 0 && fitCaret;
-				int caretX = textX;
 				
+				IFormattableTextComponent displayedText = subText(getDisplayedText(), hScroll);
+				String shown = font.substrByWidth(displayedText, innerWidth).getString();
+				int fitLength = shown.length();
+				displayedText = subText(displayedText, 0, fitLength);
+				
+				boolean fitCaret = relCaret >= 0 && relCaret <= fitLength;
+				boolean showCaret = isFocused() && fitCaret
+				                    && (System.currentTimeMillis() - lastInteraction) % 1000 < 500;
+				int caretX = fitCaret? textX + font.width(subText(displayedText, 0, relCaret)) - 1
+				                     : relCaret > 0? textX + innerWidth - 1 : textX;
 				int endTextX = textX;
-				// Render pre-caret
-				if (!shownString.isEmpty()) {
-					String preCaret = fitCaret ? shownString.substring(0, relCaret) : shownString;
-					caretX = font.drawShadow(
-					  mStack, textFormatter.apply(preCaret, hScroll), textX, textY, color);
-					endTextX = caretX;
-				}
 				
-				boolean caretIsInsert = caretPos < text.length() || text.length() >= getMaxLength();
-				int cX = caretX;
-				if (!fitCaret)
-					cX = relCaret > 0 ? textX + width : textX;
-				else if (caretIsInsert)
-					cX = --caretX;
+				// Render text
+				if (!shown.isEmpty())
+					endTextX += font.drawShadow(mStack, displayedText, textX, textY, color);
 				
-				// Render post-caret
-				if (!shownString.isEmpty() && fitCaret && relCaret < shownString.length()) {
-					endTextX = font.drawShadow(
-					  mStack, textFormatter.apply(shownString.substring(relCaret), caretPos),
-					  (float) caretX, (float) textY, color);
-				}
-				
+				// Render autocompletion
 				if (isDropDownShown() && autoCompleteValue != null) {
-					final String autoComplete = typeWrapper.getName(autoCompleteValue);
+					String autoComplete = typeWrapper.getName(autoCompleteValue);
 					String shownAutocomplete =
 					  autoComplete.startsWith(text)
-					  ? autoComplete.substring(text.length())
-					  : "→" + autoComplete;
-					shownAutocomplete = font.plainSubstrByWidth(shownAutocomplete, adjustedWidth - endTextX + textX);
+					  ? autoComplete.substring(text.length()) : "→" + autoComplete;
+					shownAutocomplete = font.plainSubstrByWidth(shownAutocomplete, innerWidth - endTextX + textX);
 					font.drawShadow(
-					  mStack, textFormatter.apply(shownAutocomplete, 0), (float) endTextX, (float) textY, 0x96808080);
+					  mStack, shownAutocomplete, (float) endTextX, (float) textY, 0x96808080);
 				}
 				
 				// Render caret
 				if (showCaret) {
-					if (caretIsInsert) {
-						fill(mStack, cX, textY - 1, cX + 1, textY + 1 + 9, caretColor);
-					} else font.drawShadow(mStack, "_", (float)cX, (float)textY, color);
+					renderCaret(mStack, caretX, textY - 2, 1, 12);
 				}
 				
 				// Render selection
 				if (relAnchor != relCaret) {
-					if (relAnchor > shownString.length())
-						relAnchor = shownString.length();
-					int anchorX = textX + font.width(shownString.substring(0, relAnchor));
-					renderSelection(cX, textY - 1, anchorX - 1, textY + 1 + 9);
+					if (relAnchor > fitLength) relAnchor = fitLength;
+					int anchorX = textX + font.width(shown.substring(0, relAnchor));
+					renderSelection(mStack, caretX, textY - 3, anchorX - 1, textY + 2 + 9);
 				}
 			} else if (text.isEmpty() && value == null) {
+				// Render hint
 				drawTextComponent(hint.copy().withStyle(TextFormatting.GRAY),
-				  mStack, textX, textY, adjustedWidth, 10, 0x96FFFFFF);
+				  mStack, textX, textY, innerWidth, 10, 0x96FFFFFF);
 			} else if (value != null) {
+				// Render value
 				ITextComponent display = typeWrapper.getDisplayName(value);
 				if (!isEnabled()) display = new StringTextComponent(
 				  display.getContents()).withStyle(TextFormatting.GRAY);
-				drawTextComponent(display, mStack, textX, textY, adjustedWidth, 10, 0xFFE0E0E0);
+				drawTextComponent(display, mStack, textX, textY, innerWidth, 10, 0xFFE0E0E0);
 			} else {
-				String shownString = font.plainSubstrByWidth(text.substring(hScroll), adjustedWidth);
-				font.drawShadow(
-				  mStack, textFormatter.apply(shownString, hScroll), textX, textY, color);
+				// Render text
+				IFormattableTextComponent displayedText = subText(getDisplayedText(), hScroll);
+				displayedText = subText(
+				  displayedText, 0, font.substrByWidth(displayedText, innerWidth).getString().length());
+				font.drawShadow(mStack, displayedText, textX, textY, color);
 			}
 			
 			if (hasIcon) {
@@ -1032,6 +1141,24 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			int arrowX = x + width - arrowWidth, arrowY = y;
 			renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHovered() ? x : arrowX);
 		}
+	}
+	
+	protected void renderCaret(MatrixStack mStack, int x, int y, int w, int h) {
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder bb = tessellator.getBuilder();
+		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.disableTexture();
+		RenderSystem.enableColorLogicOp();
+		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		Matrix4f m = mStack.last().pose();
+		bb.begin(7, DefaultVertexFormats.POSITION);
+		bb.vertex(m,     x, y + h, 0F).endVertex();
+		bb.vertex(m, x + w, y + h, 0F).endVertex();
+		bb.vertex(m, x + w,     y, 0F).endVertex();
+		bb.vertex(m,     x,     y, 0F).endVertex();
+		tessellator.end();
+		RenderSystem.disableColorLogicOp();
+		RenderSystem.enableTexture();
 	}
 	
 	public boolean isMouseOverArrow(int mouseX, int mouseY) {
@@ -1061,21 +1188,20 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	/**
 	 * Draws the blue selection box.
 	 */
-	protected void renderSelection(int startX, int startY, int endX, int endY) {
-		if (startX < endX) {
-			final int swap = startX;
-			startX = endX;
-			endX = swap;
+	protected void renderSelection(MatrixStack mStack, int sX, int sY, int eX, int eY) {
+		if (sX < eX) {
+			final int swap = sX;
+			sX = eX;
+			eX = swap;
+		}
+		if (sY < eY) {
+			final int swap = sY;
+			sY = eY;
+			eY = swap;
 		}
 		
-		if (startY < endY) {
-			final int swap = startY;
-			startY = endY;
-			endY = swap;
-		}
-		
-		if (endX > x + width) endX = x + width;
-		if (startX > x + width) startX = x + width;
+		if (eX > x + width) eX = x + width;
+		if (sX > x + width) sX = x + width;
 		
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
@@ -1083,11 +1209,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		Matrix4f m = mStack.last().pose();
 		bb.begin(7, DefaultVertexFormats.POSITION);
-		bb.vertex(startX, endY, 0.0D).endVertex();
-		bb.vertex(endX, endY, 0.0D).endVertex();
-		bb.vertex(endX, startY, 0.0D).endVertex();
-		bb.vertex(startX, startY, 0.0D).endVertex();
+		bb.vertex(m, sX, eY, 0F).endVertex();
+		bb.vertex(m, eX, eY, 0F).endVertex();
+		bb.vertex(m, eX, sY, 0F).endVertex();
+		bb.vertex(m, sX, sY, 0F).endVertex();
 		tessellator.end();
 		RenderSystem.disableColorLogicOp();
 		RenderSystem.enableTexture();
@@ -1150,6 +1277,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	@Override public boolean changeFocus(boolean focus) {
+		lastInteraction = System.currentTimeMillis();
 		return visible && isEnabled() && super.changeFocus(focus);
 	}
 	
@@ -1159,7 +1287,6 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	@Override protected void onFocusedChanged(boolean focused) {
 		if (focused) {
-			frame = 0;
 			if (isRestrictedToSuggestions()) {
 				setText("");
 				if (isAutoDropDown())
@@ -1179,7 +1306,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return isEnabled;
 	}
 	
-	protected boolean canEditText() {
+	protected boolean isEditable() {
 		return isEnabled();
 	}
 	
@@ -1278,616 +1405,5 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public Optional<ITextComponent> getError() {
 		return Optional.ofNullable(parseError);
-	}
-	
-	// Extension
-	
-	public interface ISortedSuggestionProvider<T> {
-		Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
-		  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions);
-		Optional<List<T>> updateSuggestions(ITypeWrapper<T> typeWrapper, String query);
-		default Optional<ITextComponent> getPlaceHolder(ITypeWrapper<T> typeWrapper, String query) {
-			return Optional.of(new TranslationTextComponent("text.cloth-config.dropdown.value.unknown"));
-		}
-	}
-	
-	public static abstract class AbstractSortedSuggestionProvider<T> implements ISortedSuggestionProvider<T> {
-		/**
-		 * Splits word parts
-		 */
-		protected static Pattern TOKEN_SPLITTER = Pattern.compile("[\\s_]++|(?<=[a-z])(?=[A-Z])");
-		
-		/**
-		 * Extract a formatted substring from an {@link ITextComponent}.<br>
-		 * Should be called on the client side only, if the component may contain translations.<br>
-		 * <br>
-		 * See {@code endorh.util.text.TextUtil} from the {@code endorh-util} mod
-		 * @param text Component to slice
-		 * @param start Start index of the substring.
-		 *              Negative values are corrected counting from the end.
-		 * @param end End index of the substring.
-		 *            Negative values are corrected counting from the end.
-		 *            Defaults to the end of the component.
-		 */
-		protected static IFormattableTextComponent subText(ITextComponent text, int start, int end) {
-			final int n = text.getString().length();
-			if (start > n) throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
-			if (start < 0) {
-				if (n + start < 0) throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
-				start = n + start;
-			}
-			if (end > n) throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
-			if (end < 0) {
-				if (n + end < 0) throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
-				end = n + end;
-			}
-			if (end <= start) return new StringTextComponent("");
-			boolean started = false;
-			final List<ITextComponent> siblings = text.getSiblings();
-			IFormattableTextComponent res = new StringTextComponent("");
-			String str = text.getContents();
-			if (start < str.length()) {
-				started = true;
-				res = res.append(new StringTextComponent(
-				  str.substring(start, Math.min(str.length(), end))).setStyle(text.getStyle()));
-				if (end < str.length()) return res;
-			}
-			int o = str.length();
-			for (ITextComponent sibling : siblings) {
-				str = sibling.getContents();
-				if (started || start - o < str.length()) {
-					res = res.append(new StringTextComponent(
-					  str.substring(started? 0 : start - o, Math.min(str.length(), end - o))
-					).setStyle(sibling.getStyle()));
-					started = true;
-					if (end - o < str.length()) return res;
-				}
-				o += str.length();
-			}
-			return res;
-		}
-		
-		/**
-		 * Matches at word part starts
-		 */
-		protected static List<String> tokenMatches(String target, String query) {
-			query = query.trim();
-			target = target.trim();
-			if (query.length() > target.length())
-				return Collections.emptyList();
-			final String[] q = TOKEN_SPLITTER.split(query);
-			final String[] t = TOKEN_SPLITTER.split(target);
-			if (t.length == 0)
-				return Collections.emptyList();
-			List<String> result = Lists.newArrayList();
-			int r = -1;
-			String rem;
-			for (String qq : q) {
-				qq = qq.toLowerCase();
-				if (++r < t.length) {
-					rem = t[r];
-				} else return Collections.emptyList();
-				while (!qq.isEmpty()) {
-					int j = 0;
-					int m = min(qq.length(), rem.length());
-					while (j < m && qq.charAt(j) == Character.toLowerCase(rem.charAt(j))) j++;
-					if (j == 0) {
-						if (++r < t.length) {
-							rem = t[r];
-							continue;
-						} else return Collections.emptyList();
-					}
-					result.add(rem.substring(0, j));
-					qq = qq.substring(j);
-					if (qq.isEmpty())
-						break;
-					if (++r < t.length) {
-						rem = t[r];
-					} else return Collections.emptyList();
-				}
-			}
-			return result;
-		}
-		
-		@Override public Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
-		  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions
-		) {
-			if (query.isEmpty())
-				return Pair.of(suggestions, suggestions.stream()
-				  .map(typeWrapper::getDisplayName).collect(Collectors.toList()));
-			if (suggestions.isEmpty()) return Pair.of(suggestions, new ArrayList<>());
-			Set<T> set = new LinkedHashSet<>();
-			List<ITextComponent> names = new ArrayList<>();
-			suggestions.stream()
-			  .map(e -> {
-				  final String n = typeWrapper.getName(e);
-				  return Triple.of(e, n, tokenMatches(n, query));
-			  }).filter(t -> !t.getRight().isEmpty())
-			  .sorted(Comparator.<Triple<T, String, List<String>>>comparingInt(
-				 t -> t.getRight().stream().mapToInt(String::length).reduce(0, (a, b) -> a * b)
-			  ).thenComparingInt(t -> t.getMiddle().length()))
-			  .forEachOrdered(t -> {
-				  final T value = t.getLeft();
-				  if (set.add(value)) {
-					  final String name = t.getMiddle();
-					  String n = name;
-					  final String[] sp = TOKEN_SPLITTER.split(name);
-					  final List<String> matches = t.getRight();
-					  int i = 0, o = 0;
-					  IFormattableTextComponent stc = new StringTextComponent("");
-					  for (final String frag : sp) {
-						  if (i >= matches.size()) break;
-						  final int s = n.indexOf(frag);
-						  if (s > 0) {
-							  stc = stc.append(getNonMatch(typeWrapper, value, name, o, n.substring(0, s)));
-							  o += s;
-							  n = n.substring(s);
-						  }
-						  final String tar = matches.get(i);
-						  final int j = frag.indexOf(tar);
-						  if (j == -1) {
-							  stc = stc.append(getNonMatch(typeWrapper, value, name, o, frag));
-						  } else {
-							  stc = stc.append(getNonMatch(typeWrapper, value, name, o, frag.substring(0, j)))
-							    .append(getMatch(typeWrapper, value, name, o, frag, o + j, tar))
-							    .append(getNonMatch(typeWrapper, value, name, o + j + tar.length(), frag.substring(j + tar.length())));
-							  i++;
-						  }
-						  o += frag.length();
-						  n = n.substring(frag.length());
-					  }
-					  stc = stc.append(getNonMatch(typeWrapper, value, name, o, n));
-					  names.add(stc);
-				  }
-			  });
-			suggestions.stream()
-			  .filter(e -> !set.contains(e))
-			  .map(e -> Pair.of(e, typeWrapper.getName(e)))
-			  .filter(p -> p.getRight().contains(query))
-			  .sorted(Comparator
-				         .<Pair<T, String>>comparingInt(p -> p.getRight().length())
-				         .thenComparingInt(p -> p.getRight().indexOf(query))
-				         .thenComparing(Pair::getRight))
-			  .forEachOrdered(p -> {
-				  final T value = p.getKey();
-				  if (set.add(value)) {
-					  final String name = p.getRight();
-					  final int i = name.indexOf(query);
-					  names.add(getNonMatch(typeWrapper, value, name, 0, name.substring(0, i)).copy()
-					              .append(getMatch(typeWrapper, value, name, 0, name, i, query))
-					              .append(getNonMatch(typeWrapper, value, name, i + query.length(), name.substring(i + query.length()))));
-				  }
-			  });
-			return Pair.of(new ArrayList<>(set), names);
-		}
-		
-		protected Style getMatchStyle() {
-			return Style.EMPTY.applyFormats(TextFormatting.BLUE);
-		}
-		
-		protected ITextComponent getMatch(
-		  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
-		  String fragment, int matchPos, String match
-		) {
-			return new StringTextComponent(match).setStyle(getMatchStyle());
-		}
-		
-		protected ITextComponent getNonMatch(
-		  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
-		) {
-			final ITextComponent title = typeWrapper.getDisplayName(item);
-			if (!title.getString().equals(name))
-				return new StringTextComponent(fragment);
-			return subText(title, fragmentPos, fragmentPos + fragment.length());
-		}
-	}
-	
-	public static class SimpleSortedSuggestionProvider<T> extends AbstractSortedSuggestionProvider<T> {
-		@NotNull protected Supplier<List<T>> suggestions;
-		protected long lastUpdate = 0L;
-		protected long updateCooldown = 250L;
-		protected @Nullable Function<String, ITextComponent> placeholder = null;
-		
-		public SimpleSortedSuggestionProvider(
-		  @NotNull List<T> suggestions
-		) {
-			this.suggestions = () -> suggestions;
-		}
-		
-		public SimpleSortedSuggestionProvider(
-		  @NotNull Supplier<List<T>> suggestionSupplier
-		) {
-			this.suggestions = suggestionSupplier;
-		}
-		
-		@Override public Optional<List<T>> updateSuggestions(
-		  ITypeWrapper<T> typeWrapper, String query
-		) {
-			final long time = System.currentTimeMillis();
-			if (time - lastUpdate < updateCooldown)
-				return Optional.empty();
-			lastUpdate = time;
-			return Optional.of(new ArrayList<T>(this.suggestions.get()));
-		}
-		
-		@Override public Optional<ITextComponent> getPlaceHolder(
-		  ITypeWrapper<T> typeWrapper, String query
-		) {
-			return placeholder != null? Optional.of(placeholder.apply(query))
-			                          : super.getPlaceHolder(typeWrapper, query);
-		}
-		
-		/**
-		 * Set the minimum cooldown between suggestion update checks.<br>
-		 * Defaults to 500ms.
-		 */
-		public void setUpdateCooldown(long cooldownMs) {
-			this.updateCooldown = cooldownMs;
-		}
-		public void setPlaceholder(@Nullable Function<String, ITextComponent> getter) {
-			this.placeholder = getter;
-		}
-		public void setPlaceholder(ITextComponent placeholder) {
-			setPlaceholder(s -> placeholder);
-		}
-	}
-	
-	public interface ITypeWrapper<T> {
-		Icon ICON_ERROR = new Icon(new ResourceLocation(
-		  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"), 96, 84, 20, 20, 256, 256);
-		Icon ICON_UNKNOWN = new Icon(new ResourceLocation(
-		  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"), 96, 64, 20, 20, 256, 256);
-		
-		/**
-		 * Whether this type has an icon to display in combo boxes<br>
-		 * Subclasses that return yes should also override {@link ITypeWrapper#renderIcon}
-		 */
-		default boolean hasIcon() {
-			return false;
-		}
-		
-		/**
-		 * Only queried if {@link ITypeWrapper#hasIcon} returns true
-		 * @return The height reserved for the icon of this type
-		 */
-		default int getIconHeight() {
-			return 20;
-		}
-		
-		/**
-		 * Only queried if {@link ITypeWrapper#hasIcon()} returns true.
-		 * @return The width reserved for the icons of this type.
-		 *         Defaults to {@link ITypeWrapper#getIconHeight()}.
-		 */
-		default int getIconWidth() {
-			return getIconHeight();
-		}
-		
-		/**
-		 * Render the icon for an element, by default calls {@link ITypeWrapper#getIcon}
-		 * and renders it if present.
-		 */
-		default void renderIcon(
-		  @Nullable T element, String text, @NotNull MatrixStack mStack, int x, int y, int w, int h,
-		  int mouseX, int mouseY, float delta
-		) {
-			final Optional<Icon> opt = getIcon(element, text);
-			opt.ifPresent(icon -> icon.renderCentered(mStack, x, y, w, h));
-		}
-		
-		/**
-		 * Get the icon of an element.<br>
-		 * Implementations may alternatively override
-		 * {@link ITypeWrapper#renderIcon} directly.
-		 *
-		 * @param element The element being rendered, possibly null.
-		 * @param text The text written by the user, possibly not matching
-		 *             any valid element if element is null.
-		 */
-		default Optional<Icon> getIcon(@Nullable T element, String text) {
-			return Optional.empty();
-		}
-		
-		/**
-		 * Parse an element from its string representation, if possible
-		 * @return A pair containing the parsed element (or empty)
-		 *         and an optional parse error message
-		 */
-		Pair<Optional<T>, Optional<ITextComponent>> parseElement(@NotNull String text);
-		
-		/**
-		 * Get the display name of the element.<br>
-		 * It should have the same text as the lookup name,
-		 * otherwise the lookup will use the string name.
-		 */
-		ITextComponent getDisplayName(@NotNull T element);
-		
-		/**
-		 * Get a string name of the element to be used
-		 * for query lookup by the {@link ISortedSuggestionProvider}<br>
-		 * Should have the same text as the namme returned by {@link ITypeWrapper#getDisplayName}
-		 */
-		default String getName(@NotNull T element) {
-			return STYLE_COMPONENT.matcher(getDisplayName(element).getString()).replaceAll("");
-		}
-	}
-	
-	private static final Pattern STYLE_COMPONENT = Pattern.compile("§[0-9a-f]");
-	
-	public static class StringTypeWrapper implements ITypeWrapper<String> {
-		@Override public Pair<Optional<String>, Optional<ITextComponent>> parseElement(@NotNull String text) {
-			return Pair.of(Optional.of(text), Optional.empty());
-		}
-		
-		@Override public ITextComponent getDisplayName(@NotNull String element) {
-			return new StringTextComponent(element);
-		}
-	}
-	
-	public static class PatternTypeWrapper implements ITypeWrapper<Pattern> {
-		
-		protected int flags;
-		
-		public PatternTypeWrapper() {
-			this(0);
-		}
-		
-		public PatternTypeWrapper(int flags) {
-			this.flags = flags;
-		}
-		
-		@Override public Pair<Optional<Pattern>, Optional<ITextComponent>> parseElement(
-		  @NotNull String text
-		) {
-			try {
-				return Pair.of(Optional.of(Pattern.compile(text, flags)), Optional.empty());
-			} catch (PatternSyntaxException e) {
-				return Pair.of(Optional.empty(), Optional.of(new StringTextComponent(e.getLocalizedMessage())));
-			}
-		}
-		
-		@Override public ITextComponent getDisplayName(@NotNull Pattern element) {
-			return new StringTextComponent(element.pattern());
-		}
-	}
-	
-	public static class ResourceLocationTypeWrapper implements ITypeWrapper<ResourceLocation> {
-		
-		boolean hasIcon = false;
-		int iconHeight = 20;
-		int iconWidth = 20;
-		
-		public ResourceLocationTypeWrapper() {}
-		
-		protected ResourceLocationTypeWrapper(int iconSize) {
-			this(iconSize, iconSize);
-		}
-		
-		protected ResourceLocationTypeWrapper(int iconWidth, int iconHeight) {
-			hasIcon = true;
-			this.iconHeight = iconHeight;
-			this.iconWidth = iconWidth;
-		}
-		
-		@Override public boolean hasIcon() {
-			return hasIcon;
-		}
-		
-		@Override public int getIconHeight() {
-			return hasIcon ? iconHeight : ITypeWrapper.super.getIconHeight();
-		}
-		
-		@Override public int getIconWidth() {
-			return hasIcon ? iconWidth : ITypeWrapper.super.getIconWidth();
-		}
-		
-		@Override public Pair<Optional<ResourceLocation>, Optional<ITextComponent>> parseElement(
-		  @NotNull String text
-		) {
-			try {
-				return Pair.of(Optional.of(new ResourceLocation(text)), Optional.empty());
-			} catch (ResourceLocationException e) {
-				return Pair.of(Optional.empty(), Optional.of(new StringTextComponent(e.getLocalizedMessage())));
-			}
-		}
-		
-		@Override public ITextComponent getDisplayName(@NotNull ResourceLocation element) {
-			if (element.getNamespace().equals("minecraft"))
-				return new StringTextComponent(element.getPath());
-			return new StringTextComponent(element.getNamespace()).withStyle(TextFormatting.GRAY)
-			  .append(new StringTextComponent(":").withStyle(TextFormatting.GRAY))
-			  .append(new StringTextComponent(element.getPath()).withStyle(TextFormatting.WHITE));
-		}
-		
-		@Override public String getName(@NotNull ResourceLocation element) {
-			return element.getNamespace().equals("minecraft") ? element.getPath() : element.toString();
-		}
-	}
-	
-	public static class ItemNameTypeWrapper extends ResourceLocationTypeWrapper {
-		public ItemNameTypeWrapper() {
-			super(20);
-		}
-		
-		@Override public void renderIcon(
-		  @Nullable ResourceLocation element, String text, @NotNull MatrixStack mStack,
-		  int x, int y, int w, int h, int mouseX,
-		  int mouseY, float delta
-		) {
-			final Optional<Item> opt = Registry.ITEM.getOptional(element);
-			if (opt.isPresent()) {
-				Minecraft.getInstance().getItemRenderer()
-				  .renderGuiItem(new ItemStack(opt.get()), x + 2, y + 2);
-			} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
-		}
-	}
-	
-	public static class BlockNameTypeWrapper extends ResourceLocationTypeWrapper {
-		public BlockNameTypeWrapper() {
-			super(20);
-		}
-		
-		@Override public void renderIcon(
-		  @Nullable ResourceLocation element, String text, @NotNull MatrixStack mStack,
-		  int x, int y, int w, int h, int mouseX, int mouseY, float delta
-		) {
-			final Optional<Block> opt = Registry.BLOCK.getOptional(element);
-			if (opt.isPresent()) {
-				Minecraft.getInstance().getItemRenderer()
-				  .renderGuiItem(new ItemStack(opt.get()), x + 2, y + 2);
-			} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
-		}
-	}
-	
-	public static class FluidNameTypeWrapper extends ResourceLocationTypeWrapper {
-		public FluidNameTypeWrapper() {
-			super(20);
-		}
-		
-		@Override public void renderIcon(
-		  @Nullable ResourceLocation element, String text, @NotNull MatrixStack mStack,
-		  int x, int y, int w, int h,
-		  int mouseX, int mouseY, float delta
-		) {
-			final Optional<Fluid> opt = Registry.FLUID.getOptional(element);
-			if (opt.isPresent()) {
-				Minecraft.getInstance().getItemRenderer().renderGuiItem(
-				  new ItemStack(opt.get().getBucket()), x + 2, y + 2);
-			} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
-		}
-	}
-	
-	public static abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
-		protected boolean hasIcon = false;
-		protected int iconSize = 20;
-		
-		protected RegistryObjectTypeWrapper() {}
-		protected RegistryObjectTypeWrapper(int iconSize) {
-			hasIcon = true;
-			this.iconSize = iconSize;
-		}
-		
-		@Override public boolean hasIcon() {
-			return hasIcon;
-		}
-		
-		@Override public int getIconHeight() {
-			return iconSize;
-		}
-		
-		protected abstract ResourceLocation getRegistryName(@NotNull T element);
-		protected abstract @Nullable T getFromRegistryName(@NotNull ResourceLocation name);
-		protected abstract ITextComponent getUnknownError(ResourceLocation name);
-		
-		@Override public String getName(@NotNull T element) {
-			final ResourceLocation name = getRegistryName(element);
-			return name.getNamespace().equals("minecraft") ? name.getPath() : name.toString();
-		}
-		
-		@Override public Pair<Optional<T>, Optional<ITextComponent>> parseElement(
-		  @NotNull String text
-		) {
-			try {
-				final ResourceLocation name = new ResourceLocation(text);
-				final T element = getFromRegistryName(name);
-				if (element != null)
-					return Pair.of(Optional.of(element), Optional.empty());
-				return Pair.of(Optional.empty(), Optional.of(getUnknownError(name)));
-			} catch (ResourceLocationException e) {
-				return Pair.of(Optional.empty(), Optional.of(new StringTextComponent(e.getLocalizedMessage())));
-			}
-		}
-		
-		@Override public ITextComponent getDisplayName(@NotNull T element) {
-			final ResourceLocation name = getRegistryName(element);
-			if (name.getNamespace().equals("minecraft"))
-				return new StringTextComponent(name.getPath());
-			return new StringTextComponent(name.getNamespace()).withStyle(TextFormatting.GRAY)
-			  .append(new StringTextComponent(":").withStyle(TextFormatting.GRAY))
-			  .append(new StringTextComponent(name.getPath()).withStyle(TextFormatting.WHITE));
-		}
-	}
-	
-	public static class ItemTypeWrapper extends RegistryObjectTypeWrapper<Item> {
-		public ItemTypeWrapper() {
-			super(20);
-		}
-		
-		@Override protected ResourceLocation getRegistryName(@NotNull Item element) {
-			return element.getRegistryName();
-		}
-		
-		@Override protected @Nullable Item getFromRegistryName(@NotNull ResourceLocation name) {
-			return Registry.ITEM.getOptional(name).orElse(null);
-		}
-		
-		@Override protected ITextComponent getUnknownError(ResourceLocation name) {
-			return new TranslationTextComponent("argument.item.id.invalid", name);
-		}
-		
-		@Override public void renderIcon(
-		  @Nullable Item element, String text, @NotNull MatrixStack mStack, int x, int y,
-		  int w, int h, int mouseX, int mouseY, float delta
-		) {
-			if (element != null) {
-				Minecraft.getInstance().getItemRenderer()
-				  .renderGuiItem(new ItemStack(element), x + 2, y + 2);
-			} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
-		}
-	}
-	
-	public static class BlockTypeWrapper extends RegistryObjectTypeWrapper<Block> {
-		public BlockTypeWrapper() {
-			super(20);
-		}
-		
-		@Override protected ResourceLocation getRegistryName(@NotNull Block element) {
-			return element.getRegistryName();
-		}
-		
-		@Override protected @Nullable Block getFromRegistryName(@NotNull ResourceLocation name) {
-			return Registry.BLOCK.getOptional(name).orElse(null);
-		}
-		
-		@Override protected ITextComponent getUnknownError(ResourceLocation name) {
-			return new TranslationTextComponent("argument.block.id.invalid", name);
-		}
-		
-		@Override public void renderIcon(
-		  @Nullable Block element, String text, @NotNull MatrixStack mStack, int x, int y,
-		  int w, int h, int mouseX, int mouseY, float delta
-		) {
-			if (element != null) {
-				Minecraft.getInstance().getItemRenderer().renderGuiItem(new ItemStack(element), x + 2, y + 2);
-			} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
-		}
-	}
-	
-	public static class FluidTypeWrapper extends RegistryObjectTypeWrapper<Fluid> {
-		public FluidTypeWrapper() {
-			super(20);
-		}
-		
-		@Override protected ResourceLocation getRegistryName(@NotNull Fluid element) {
-			return element.getRegistryName();
-		}
-		
-		@Override protected @Nullable Fluid getFromRegistryName(@NotNull ResourceLocation name) {
-			return Registry.FLUID.getOptional(name).orElse(null);
-		}
-		
-		@Override protected ITextComponent getUnknownError(ResourceLocation name) {
-			return new TranslationTextComponent("argument.fluid.id.invalid", name);
-		}
-		
-		@Override public void renderIcon(
-		  @Nullable Fluid element, String text, @NotNull MatrixStack mStack, int x, int y,
-		  int w, int h, int mouseX, int mouseY, float delta
-		) {
-			if (element != null) {
-				Minecraft.getInstance().getItemRenderer().renderGuiItem(
-				  new ItemStack(element.getBucket()), x + 2, y + 2);
-			} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
-		}
 	}
 }

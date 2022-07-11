@@ -1,6 +1,6 @@
 package endorh.simpleconfig.clothconfig2.gui.entries;
 
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -9,45 +9,16 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 @OnlyIn(value = Dist.CLIENT)
 public class IntegerListEntry
   extends TextFieldListEntry<Integer> implements IRangedEntry<Integer> {
-	private static final Function<String, String> stripCharacters = s -> {
-		StringBuilder builder = new StringBuilder();
-		char[] var2 = s.toCharArray();
-		int var3 = var2.length;
-		for (char c : var2) {
-			if (!Character.isDigit(c) && c != '-') continue;
-			builder.append(c);
-		}
-		return builder.toString();
-	};
 	private int minimum = Integer.MIN_VALUE;
 	private int maximum = Integer.MAX_VALUE;
 	
 	@Internal public IntegerListEntry(ITextComponent fieldName, Integer value) {
 		super(fieldName, value, false);
-	}
-	
-	@Override
-	protected String stripAddText(String s) {
-		return stripCharacters.apply(s);
-	}
-	
-	@Override
-	protected void textFieldPreRender(TextFieldWidget widget) {
-		try {
-			double i = Integer.parseInt(widget.getValue());
-			if (i < (double) this.minimum || i > (double) this.maximum) {
-				widget.setTextColor(0xFF5555);
-			} else {
-				widget.setTextColor(0xE0E0E0);
-			}
-		} catch (NumberFormatException ex) {
-			widget.setTextColor(0xFF5555);
-		}
+		setTextFormatter(ITextFormatter.numeric(true));
 	}
 	
 	@Override public void setMinimum(Integer minimum) {

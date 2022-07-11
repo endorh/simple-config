@@ -2,17 +2,17 @@ package endorh.simpleconfig.clothconfig2.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
 import endorh.simpleconfig.clothconfig2.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
+import endorh.simpleconfig.clothconfig2.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -28,8 +28,7 @@ import static net.minecraft.util.math.MathHelper.lerp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implements IChildListEntry {
-	protected V displayedValue;
-	protected HookedTextFieldWidget textFieldWidget;
+	protected TextFieldWidgetEx textFieldWidget;
 	protected List<IGuiEventListener> widgets;
 	protected List<IGuiEventListener> childWidgets;
 	protected boolean expandable;
@@ -39,14 +38,17 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	protected int maxLength;
 	protected int minLength;
 	private int frame = 0;
+	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	@Internal protected TextFieldListEntry(
 	  ITextComponent fieldName, V original, boolean canExpand
 	) {
 		super(fieldName);
 		this.expandable = canExpand;
-		textFieldWidget = new HookedTextFieldWidget(0, 0, 150, 18, NarratorChatListener.NO_TITLE);
+		textFieldWidget = new TextFieldWidgetEx(
+		  Minecraft.getInstance().font, 0, 0, 150, 18, NarratorChatListener.NO_TITLE);
 		textFieldWidget.setMaxLength(999999);
+		textFieldWidget.setFormatter(ITextFormatter.cached(textFormatter));
 		setOriginal(original);
 		setValue(original);
 		setDisplayedValue(original);
@@ -60,25 +62,19 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public V getDisplayedValue() {
-		return displayedValue;
+		return fromString(textFieldWidget.getText());
 	}
 	@Override public void setDisplayedValue(V v) {
-		displayedValue = v;
-		textFieldWidget.setTextNoUpdate(toString(v));
+		textFieldWidget.setText(toString(v));
 	}
 	public String getText() {
-		return textFieldWidget.getValue();
+		return textFieldWidget.getText();
 	}
 	
 	protected abstract @Nullable V fromString(String s);
 	protected String toString(@Nullable V v) {
 		return v != null? String.valueOf(v) : "";
 	}
-	
-	protected String stripAddText(String s) {
-		return s;
-	}
-	protected void textFieldPreRender(TextFieldWidget widget) {}
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
@@ -89,6 +85,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	@Override public void tick() {
 		super.tick();
 		if ((frame++) % 10 == 0) textFieldWidget.tick();
+		textFieldWidget.setBorderColor(hasError()? 0xFF8080 : 0xFFFFFF);
 	}
 	
 	@Override public void renderEntry(
@@ -206,29 +203,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		this.minLength = minLength;
 	}
 	
-	private class HookedTextFieldWidget extends TextFieldWidget {
-		public HookedTextFieldWidget(int x, int y, int w, int h, ITextComponent title) {
-			super(Minecraft.getInstance().font, x, y, w, h, title);
-			setResponder(t -> displayedValue = fromString(t));
-		}
-		
-		public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float float_1) {
-			setFocused(TextFieldListEntry.this.isFocused() && getFocused() == this);
-			textFieldPreRender(this);
-			super.render(matrices, mouseX, mouseY, float_1);
-			// drawSelectionBox() leaks its color mask
-			RenderSystem.color4f(1F, 1F, 1F, 1F);
-		}
-		
-		public void insertText(@NotNull String str) {
-			super.insertText(stripAddText(str));
-		}
-		
-		public void setTextNoUpdate(String text) {
-			setResponder(t -> {});
-			setValue(text);
-			setResponder(t -> displayedValue = fromString(t));
-		}
+	public void setTextFormatter(ITextFormatter textFormatter) {
+		this.textFormatter = textFormatter;
+		textFieldWidget.setFormatter(ITextFormatter.cached(textFormatter));
+	}
+	
+	public ITextFormatter getTextFormatter() {
+		return textFormatter;
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {

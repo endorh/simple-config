@@ -2,7 +2,8 @@ package endorh.simpleconfig.clothconfig2.impl.builders;
 
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
 import endorh.simpleconfig.clothconfig2.gui.entries.ComboBoxListEntry;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.*;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.*;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.*;
 import net.minecraft.block.Block;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
@@ -18,7 +19,7 @@ public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T
 	
 	protected final ITypeWrapper<T> typeWrapper;
 	protected List<T> suggestions = null;
-	protected ISortedSuggestionProvider<T> suggestionProvider;
+	protected IComboBoxModel<T> suggestionProvider;
 	protected boolean suggestionMode = true;
 	protected int maxLength = Integer.MAX_VALUE;
 	
@@ -45,7 +46,7 @@ public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T
 	 * with {@link ComboBoxFieldBuilder#setSuggestions}
 	 */
 	public ComboBoxFieldBuilder<T> setSuggestionProvider(
-	  ISortedSuggestionProvider<T> suggestionProvider
+	  IComboBoxModel<T> suggestionProvider
 	) {
 		this.suggestionProvider = suggestionProvider;
 		return self();

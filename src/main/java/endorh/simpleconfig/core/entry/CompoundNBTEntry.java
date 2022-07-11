@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
@@ -13,9 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-public class CompoundNBTEntry
-  extends AbstractSerializableEntry<CompoundNBT, CompoundNBTEntry> {
-	
+public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, CompoundNBTEntry> {
 	protected static final Pattern STYLE_COMPONENT = Pattern.compile("§[0-9a-f]");
 	
 	@Internal public CompoundNBTEntry(ISimpleConfigEntryHolder parent, String name, CompoundNBT value) {
@@ -53,6 +52,10 @@ public class CompoundNBTEntry
 	protected Optional<ITextComponent> getErrorMessage(String value) {
 		return Optional.of(new TranslationTextComponent(
 		  "simpleconfig.config.error.invalid_nbt"));
+	}
+	
+	@Override protected ITextFormatter getTextFormatter() {
+		return ITextFormatter.forLanguageOrDefault("snbt", ITextFormatter.DEFAULT);
 	}
 }
 

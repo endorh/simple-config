@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.JsonToNBT;
@@ -50,5 +51,9 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 	protected Optional<ITextComponent> getErrorMessage(String value) {
 		return Optional.of(new TranslationTextComponent(
 		  "simpleconfig.config.error.invalid_nbt"));
+	}
+	
+	@Override protected ITextFormatter getTextFormatter() {
+		return ITextFormatter.forLanguageOrDefault("snbt", ITextFormatter.DEFAULT);
 	}
 }

@@ -1,6 +1,7 @@
 package endorh.simpleconfig.clothconfig2.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.clothconfig2.api.ScissorsHandler;
 import endorh.simpleconfig.clothconfig2.gui.widget.ColorDisplayWidget;
 import endorh.simpleconfig.clothconfig2.gui.widget.ColorPickerWidget;
@@ -10,7 +11,6 @@ import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.StringUtils;
@@ -43,8 +43,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		if (error != null) throw new IllegalArgumentException("Invalid Color: " + error.name());
 		alpha = false;
 		// this.textFieldWidget.setText(this.getHexColorString(value));
-		colorDisplayWidget = new ColorDisplayWidget(
-		  textFieldWidget, 0, 0, 20, displayedValue);
+		colorDisplayWidget = new ColorDisplayWidget(textFieldWidget, 0, 0, 20, value);
 		colorDisplayWidget.onClick = () -> setColorPickerVisible(!isColorPickerVisible());
 		colorPicker = new ColorPickerWidget(
 		  Color.ofTransparent(value), 48, 24, 142, 84, c -> {
@@ -60,6 +59,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		widgetsWithColorPicker.add(colorPicker);
 		childWidgetsWithColorPicker = new LinkedList<>(childWidgets);
 		childWidgetsWithColorPicker.add(colorPicker);
+		setTextFormatter(ITextFormatter.forColor());
 		last = value;
 	}
 	
@@ -168,13 +168,6 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 			return true;
 		}
 		return false;
-	}
-	
-	@Override
-	protected void textFieldPreRender(TextFieldWidget widget) {
-		if (!hasError())
-			widget.setTextColor(0xE0E0E0);
-		else widget.setTextColor(0xFF5555);
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
@@ -321,4 +314,3 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		return isColorPickerVisible()? widgetsWithColorPicker : widgets;
 	}
 }
-

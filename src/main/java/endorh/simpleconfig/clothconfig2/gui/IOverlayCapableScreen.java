@@ -3,6 +3,7 @@ package endorh.simpleconfig.clothconfig2.gui;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.api.ScissorsHandler;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
+import net.minecraft.client.gui.IGuiEventListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -86,6 +87,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 	SortedOverlayCollection getSortedOverlays();
 	
 	void claimRectangle(Rectangle area, IOverlayRenderer overlayRenderer, int priority);
+	
 	default void claimRectangle(Rectangle area, IOverlayRenderer overlayRenderer) {
 		claimRectangle(area, overlayRenderer, 0);
 	}

@@ -3,7 +3,7 @@ package endorh.simpleconfig.clothconfig2.api;
 import endorh.simpleconfig.clothconfig2.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.NestedListListEntry;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.impl.ConfigEntryBuilderImpl;
 import endorh.simpleconfig.clothconfig2.impl.builders.*;
 import endorh.simpleconfig.clothconfig2.math.Color;
@@ -38,7 +38,6 @@ public interface ConfigEntryBuilder {
 	startCaptionedSubCategory(ITextComponent name, HE captionEntry);
 	
 	BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value);
-	StringFieldBuilder startStrField(ITextComponent name, String value);
 	ColorFieldBuilder startColorField(ITextComponent name, int value);
 	
 	<V, E extends AbstractConfigListEntry<V>> EntryListFieldBuilder<V, E> startEntryList(

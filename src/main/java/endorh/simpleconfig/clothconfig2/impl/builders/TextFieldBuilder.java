@@ -1,6 +1,7 @@
 package endorh.simpleconfig.clothconfig2.impl.builders;
 
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.clothconfig2.gui.entries.StringListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,8 +12,8 @@ import java.util.Objects;
 
 @OnlyIn(value = Dist.CLIENT)
 public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, TextFieldBuilder> {
-	
 	protected int maxLength = Integer.MAX_VALUE;
+	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	public TextFieldBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, String value
@@ -25,11 +26,17 @@ public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, Text
 		return self();
 	}
 	
+	public TextFieldBuilder setTextFormatter(ITextFormatter textFormatter) {
+		this.textFormatter = textFormatter;
+		return self();
+	}
+	
 	@Override
 	@NotNull
 	public StringListEntry buildEntry() {
 		final StringListEntry entry = new StringListEntry(fieldNameKey, value);
 		entry.setMaxLength(maxLength);
+		entry.setTextFormatter(textFormatter);
 		return entry;
 	}
 }

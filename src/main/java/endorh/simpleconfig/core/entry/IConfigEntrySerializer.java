@@ -1,5 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
+
 import java.util.Optional;
 
 public interface IConfigEntrySerializer<T> {
@@ -9,5 +11,9 @@ public interface IConfigEntrySerializer<T> {
 	
 	default Class<?> getClass(T value) {
 		return value.getClass();
+	}
+	
+	default ITextFormatter getConfigTextFormatter() {
+		return ITextFormatter.DEFAULT;
 	}
 }

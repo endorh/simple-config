@@ -1,8 +1,8 @@
 package endorh.simpleconfig.clothconfig2.api;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simpleconfig.clothconfig2.ClothConfigInitializer;
 import endorh.simpleconfig.clothconfig2.impl.EasingMethod;
+import endorh.simpleconfig.clothconfig2.impl.EasingMethod.EasingMethodImpl;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import endorh.simpleconfig.clothconfig2.math.impl.PointHelper;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -55,7 +55,7 @@ public abstract class ScrollingHandler {
 	}
 	
 	public final void scrollTo(double value, boolean animated) {
-		scrollTo(value, animated, ClothConfigInitializer.getScrollDuration());
+		scrollTo(value, animated, 200L);
 	}
 	
 	public final void scrollTo(double value, boolean animated, long duration) {
@@ -80,7 +80,7 @@ public abstract class ScrollingHandler {
 	) {
 		return ScrollingHandler.handleScrollingPosition(
 		  target, scroll, maxScroll, delta, start, duration,
-		  ClothConfigInitializer.getBounceBackMultiplier(), ClothConfigInitializer.getEasingMethod());
+		  -10.0, EasingMethodImpl.CIRC);
 	}
 	
 	public static double handleScrollingPosition(

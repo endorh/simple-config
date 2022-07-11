@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -9,16 +10,13 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Doesn't have a GUI<br>
- * To create your custom type of entry with GUI,
- * extend this class or {@link AbstractConfigEntry} directly
- *
+ * Simple serializable entry.
  * @param <V> Type of the value
  */
-public class SerializableEntry<V>
-  extends AbstractSerializableEntry<V, SerializableEntry<V>> {
+public class SerializableEntry<V> extends AbstractSerializableEntry<V, SerializableEntry<V>> {
 	public Function<V, String> serializer;
 	public Function<String, Optional<V>> deserializer;
+	public ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	@Internal public SerializableEntry(
 	  ISimpleConfigEntryHolder parent, String name, V value,
@@ -34,6 +32,7 @@ public class SerializableEntry<V>
 	public static class Builder<V> extends AbstractSerializableEntry.Builder<V, SerializableEntry<V>, Builder<V>> {
 		protected Function<V, String> serializer;
 		protected Function<String, Optional<V>> deserializer;
+		protected ITextFormatter formatter = ITextFormatter.DEFAULT;
 		
 		public Builder(V value, Function<V, String> serializer, Function<String, Optional<V>> deserializer) {
 			super(value);
@@ -44,11 +43,18 @@ public class SerializableEntry<V>
 		public Builder(V value, IConfigEntrySerializer<V> serializer) {
 			this(value, serializer::serializeConfigEntry, serializer::deserializeConfigEntry);
 			this.typeClass = serializer.getClass(value);
+			this.formatter = serializer.getConfigTextFormatter();
 		}
 		
 		public Builder<V> fieldClass(Class<?> fieldClass) {
 			Builder<V> copy = copy();
 			copy.typeClass = fieldClass;
+			return copy;
+		}
+		
+		public Builder<V> setTextFormatter(ITextFormatter formatter) {
+			Builder<V> copy = copy();
+			copy.formatter = formatter;
 			return copy;
 		}
 		
@@ -66,6 +72,10 @@ public class SerializableEntry<V>
 		public SelfSerializableBuilder(V value) {
 			super(value, value.getConfigSerializer());
 		}
+	}
+	
+	@Override protected ITextFormatter getTextFormatter() {
+		return textFormatter;
 	}
 	
 	@Override

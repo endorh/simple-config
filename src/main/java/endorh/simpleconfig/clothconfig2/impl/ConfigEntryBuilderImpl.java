@@ -4,7 +4,7 @@ import endorh.simpleconfig.clothconfig2.api.*;
 import endorh.simpleconfig.clothconfig2.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.clothconfig2.gui.entries.NestedListListEntry;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.impl.builders.*;
 import endorh.simpleconfig.core.AbstractRange;
 import net.minecraft.util.text.ITextComponent;
@@ -68,10 +68,6 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 	
 	@Override public BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value) {
 		return new BooleanToggleBuilder(this, name, value);
-	}
-	
-	@Override public StringFieldBuilder startStrField(ITextComponent name, String value) {
-		return new StringFieldBuilder(this, name, value);
 	}
 	
 	@Override public ColorFieldBuilder startColorField(ITextComponent name, int value) {

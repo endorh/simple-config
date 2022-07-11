@@ -3,9 +3,9 @@ package endorh.simpleconfig.clothconfig2.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ISortedSuggestionProvider;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.ComboBoxWidget;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.IComboBoxModel;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.ITypeWrapper;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -80,7 +80,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setSuggestions(suggestions);
 	}
 	
-	public void setSuggestionProvider(ISortedSuggestionProvider<T> provider) {
+	public void setSuggestionProvider(IComboBoxModel<T> provider) {
 		comboBox.setSuggestionProvider(provider);
 	}
 	

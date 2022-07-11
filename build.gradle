@@ -9,18 +9,21 @@ buildscript {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
+
 // Plugins
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 apply plugin: 'net.minecraftforge.gradle'
+apply from: 'antlr.gradle'
 
 // Mod info -----------------------------------------------------------------------
 
 def mod_id = "simpleconfig"
 group = "endorh.simpleconfig"
-version = "1.17.1-0.3.0"
+version = "1.16.5-0.4.0"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -48,7 +51,8 @@ def license = "LGPL"
 // Dependencies
 def mc_version = "1.16.5",
     forge = "36.1.0",
-    forge_version = "${mc_version}-${forge}"
+    forge_version = "${mc_version}-${forge}",
+    antlr_version = "4.9.1"
 
 //noinspection GroovyUnusedAssignment
 def cloth_config_api_version = "4.11.26"
@@ -106,15 +110,6 @@ java {
 // Minecraft options --------------------------------------------------------------
 
 minecraft {
-    // Mappings:
-    // |_Channel__|_Version___|________________________________________
-    // | snapshot | YYYYMMDD  | Built nightly
-    // | stable   | #         | Built at the discretion of the MCP team
-    // | official | MCVersion | From Mojang mapping files
-    //
-    // Official mappings channel license:
-    // https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
-    // mappings channel: 'snapshot', version: '20210810-mixed-1.16.1'
     // mappings channel: 'snapshot', version: '20201028-1.16.3'
     mappings channel: 'official', version: '1.16.5'
 
@@ -171,8 +166,9 @@ repositories {
 
 dependencies {
     // IDE
-    implementation 'org.jetbrains:annotations:22.0.0'
-    implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    implementation 'org.jetbrains:annotations:23.0.0'
+    implementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    antlr "org.antlr:antlr4:$antlr_version" // use ANTLR version 4
 
     // Minecraft
     minecraft "net.minecraftforge:forge:${forge_version}"
@@ -181,6 +177,30 @@ dependencies {
 // Tasks --------------------------------------------------------------------------
 
 classes.dependsOn extractNatives // Make sure the natives are extracted on compile
+
+shadowJar {
+    manifest {
+        attributes(jar_attributes)
+    }
+
+    // Include only Cloth Config API in the shadow jar
+    dependencies {
+        //noinspection GroovyAssignabilityCheck
+        include dependency("org.antlr:antlr4:$antlr_version")
+    }
+
+    // Relocate the root package
+    relocate "org.antlr", "endorh.simpleconfig.shadowed.org.antlr"
+
+    classifier '' // Replace default jar
+
+    // Preferred method to reobfuscate the jar file
+    finalizedBy 'reobfJar'
+}
+
+reobf {
+    shadowJar {}
+}
 
 // Jar attributes
 jar {
@@ -193,6 +213,11 @@ jar {
 
     // Preferred method to reobfuscate the jar file
     finalizedBy 'reobfJar'
+}
+
+artifacts {
+    archives shadowJar
+    // archives deobfJar
 }
 
 // Process resources

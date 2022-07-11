@@ -189,7 +189,10 @@ public class CaptionedSubCategoryListEntry<
 	@Override public boolean isSelected() {
 		return isSelectable() && isShown() && entries.stream()
 		  .filter(e -> e.isSelectable() && e.isShown())
-		  .allMatch(AbstractConfigEntry::isSelected);
+		  .allMatch(AbstractConfigEntry::isSelected)
+		  && entries.stream()
+		         .filter(e -> e.isSelectable() && e.isShown())
+		         .anyMatch(e -> true);
 	}
 	
 	@Override public void setSelected(boolean isSelected) {

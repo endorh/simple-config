@@ -114,7 +114,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		SearchBarWidget bar = getScreen().getSearchBar();
 		AbstractConfigEntry<?> parent = getParentEntry();
 		return isSubEntry()? parent != null && parent.isShown()
-		                   : !bar.isExpanded() || !bar.isFilter() || matchesSearch() || bar.isEmpty();
+		                   : !bar.isExpanded() || !bar.isFilter() || matchesSearch()
+		                     || parent != null && parent.shouldShowChildren() || bar.isEmpty();
 	}
 	
 	public CheckboxButton getSelectionCheckbox() {

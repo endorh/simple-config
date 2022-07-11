@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<Self>>
   extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation, Self>
   implements IKeyEntry<String, ResourceLocation> {
-	protected SimpleSortedSuggestionProvider<ResourceLocation> suggestionProvider;
+	protected SimpleComboBoxModel<ResourceLocation> suggestionProvider;
 	
 	public AbstractResourceEntry(
 	  ISimpleConfigEntryHolder parent, String name, @Nullable ResourceLocation value
@@ -54,7 +54,7 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 		
 		@Override protected Entry build(ISimpleConfigEntryHolder parent, String name) {
 			final Entry entry = super.build(parent, name);
-			entry.suggestionProvider = new SimpleSortedSuggestionProvider<>(suggestionSupplier);
+			entry.suggestionProvider = new SimpleComboBoxModel<>(suggestionSupplier);
 			return entry;
 		}
 		

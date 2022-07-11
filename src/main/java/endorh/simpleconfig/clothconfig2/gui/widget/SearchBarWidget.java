@@ -9,15 +9,15 @@ import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen;
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.PatternTypeWrapper;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.StringTypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.ComboBoxWidget;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.PatternTypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.StringTypeWrapper;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.clothconfig2.math.Point;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import endorh.simpleconfig.core.SimpleConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -178,7 +179,10 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 				SimpleConfig c = SimpleConfigMod.CLIENT_CONFIG;
 				String REGEX_SEARCH_HISTORY = "advanced.regex_search_history";
 				if (c.hasGUI()) {
-					c.setGUI(REGEX_SEARCH_HISTORY, newHistory);
+					Pair<Integer, List<String>> newGUIHistory = Pair.of(
+					  newHistory.getLeft(), newHistory.getRight().stream()
+						 .map(Pattern::pattern).collect(Collectors.toList()));
+					c.setGUI(REGEX_SEARCH_HISTORY, newGUIHistory);
 					advanced.regex_search_history = newHistory.getValue();
 				} else c.set(REGEX_SEARCH_HISTORY, newHistory);
 				regexComboBox.setSuggestions(newHistory.getValue());
@@ -314,7 +318,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	
 	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final ComboBoxWidget<?> comboBox = getComboBox();
-		overlay.setBounds(x, y, w, comboBox.isDropDownShown()? h + comboBox.dropDownHeight : h);
+		overlay.setBounds(x, y, w, comboBox.isDropDownShown()? h + comboBox.getDropDownHeight() : h);
 		if (!expanded) {
 			positionNotExpanded(mStack, mouseX, mouseY, delta);
 			renderNotExpanded(mStack, mouseX, mouseY, delta);

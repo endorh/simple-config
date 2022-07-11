@@ -1,6 +1,7 @@
 package endorh.simpleconfig.clothconfig2.gui.entries;
 
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import endorh.simpleconfig.clothconfig2.api.ITextFormatter;
+import endorh.simpleconfig.clothconfig2.impl.format.NumberTextFormatter;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -9,45 +10,16 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 @OnlyIn(value = Dist.CLIENT)
 public class LongListEntry
   extends TextFieldListEntry<Long> implements IRangedEntry<Long> {
-	private static final Function<String, String> stripCharacters = s -> {
-		StringBuilder stringBuilder_1 = new StringBuilder();
-		char[] var2 = s.toCharArray();
-		int var3 = var2.length;
-		for (char c : var2) {
-			if (!Character.isDigit(c) && c != '-') continue;
-			stringBuilder_1.append(c);
-		}
-		return stringBuilder_1.toString();
-	};
 	private long minimum = Long.MIN_VALUE;
 	private long maximum = Long.MAX_VALUE;
 	
 	@Internal public LongListEntry(ITextComponent fieldName, Long value) {
 		super(fieldName, value, false);
-	}
-	
-	@Override
-	protected String stripAddText(String s) {
-		return stripCharacters.apply(s);
-	}
-	
-	@Override
-	protected void textFieldPreRender(TextFieldWidget widget) {
-		try {
-			double i = Long.parseLong(widget.getValue());
-			if (i < (double) this.minimum || i > (double) this.maximum) {
-				widget.setTextColor(0xFF5555);
-			} else {
-				widget.setTextColor(0xE0E0E0);
-			}
-		} catch (NumberFormatException ex) {
-			widget.setTextColor(0xFF5555);
-		}
+		setTextFormatter(ITextFormatter.numeric(true));
 	}
 	
 	@Override public void setMinimum(Long minimum) {

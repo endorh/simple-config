@@ -2,7 +2,6 @@ package endorh.simpleconfig.clothconfig2.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.clothconfig2.ClothConfigInitializer;
 import endorh.simpleconfig.clothconfig2.gui.widget.ScrollingContainerWidget;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;

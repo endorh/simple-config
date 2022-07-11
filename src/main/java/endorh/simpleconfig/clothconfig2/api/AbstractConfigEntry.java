@@ -11,6 +11,7 @@ import endorh.simpleconfig.clothconfig2.gui.entries.BaseListEntry;
 import endorh.simpleconfig.clothconfig2.gui.widget.DynamicElementListWidget;
 import endorh.simpleconfig.clothconfig2.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.clothconfig2.gui.widget.ResetButton;
+import endorh.simpleconfig.clothconfig2.gui.widget.SearchBarWidget;
 import endorh.simpleconfig.clothconfig2.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -175,6 +176,11 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		if (!isSelectable()) return;
 		this.isSelected = isSelected;
 		getScreen().updateSelection();
+	}
+	
+	public boolean shouldShowChildren() {
+		AbstractConfigEntry<?> parent = getParentEntry();
+		return !isSubEntry() && matchesSearch() || parent != null && parent.shouldShowChildren();
 	}
 	
 	public @Nullable AbstractConfigEntry<?> getParentEntry() {

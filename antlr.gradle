@@ -1,0 +1,163 @@
+/**
+ * ANTLR has no notion of packages, and the official Gradle ANTLR plugin
+ * is not able to resolve dependencies between split grammars if they're
+ * not all located in a flat directory.
+ *
+ * In order to store grammar source files in folders, be able to split grammars
+ * and generate output files respecting their package structure, we use a
+ * different source directory for ANTLR files,
+ *    src/main/grammar
+ * Due to how the default input directory is hardcoded in the Gradle
+ * plugin, we need to copy all input files flatly to the default input directory
+ *    src/main/antlr
+ * which is removed after each generation. This also means that, despite
+ * being in separate packages, ALL INPUT FILES MUST HAVE DISTINCT NAMES.
+ *
+ * DO NOT USE THE DEFAULT INPUT DIRECTORY AS IT IS REMOVED ON EACH GENERATION (src/main/antlr)
+ * After copying input files flatly to the default input directory, the built-in
+ * generation task produces outputs in "$buildDir/antlr-build".
+ *
+ * The temporary files in $buildDir/antlr-build are not deleted after generation
+ * (only on clean), since they are used by the IDE ANTLR plugin to provide
+ * autocompletion for split grammars (might need to be configured on your IDE).
+ *
+ * Finally, all java output files are copied to the true output directory
+ *    src/main/genGrammar
+ * automatically sorted within folders according to their package declaration,
+ * and the default input directory (src/main/antlr) is removed.
+ *
+ * For the last step, it's necessary that all input files specify their
+ * package in a @header declaration. The directory structure of the source files
+ * is ignored for this regard.
+ */
+
+apply plugin: 'antlr'
+apply plugin: 'idea'
+
+// Settings
+
+def antlrInput = "src/main/antlr",    // Removed on each generation (DO NOT USE)
+    antlrSource = "src/main/grammar", // True source directory for ANTLR files
+    antlrTempOutputDirectory = "$buildDir/generated-src/antlr/main",
+    grammarGenSource = "src/main/genGrammar",
+    defaultGrammarPackage = "endorh.simpleconfig.grammar"
+
+// Project settings
+
+idea {
+    module {
+        excludeDirs += file(antlrInput)
+        excludeDirs += file(antlrTempOutputDirectory)
+        sourceDirs += file(antlrSource)
+        // Generated source dirs must also be source dirs
+        sourceDirs += file(grammarGenSource)
+        generatedSourceDirs += file(grammarGenSource)
+    }
+}
+
+// Add dependency on grammar source set
+sourceSets.main.java.srcDir(file(grammarGenSource))
+sourceSets.test.java.srcDir(file(grammarGenSource))
+
+// Task settings
+
+clean {
+    delete(antlrTempOutputDirectory)
+    delete(antlrInput)
+}
+
+task prepareGenerateGrammarSource {
+    group = "grammar"
+    doFirst {
+        syncAntlrInputFilesToFlatInputDirectory(antlrSource, antlrInput)
+    }
+
+    inputs.dir(antlrSource)
+    outputs.dir(grammarGenSource)
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(prepareGenerateGrammarSource)) {
+        if (file(antlrInput).exists() && file(antlrInput).list().length > 0)
+            throw new GradleException(
+                "The default input directory for ANTLR (src/main/antlr) is not empty. " +
+                "Please remove all files from this directory before generating the grammar.")
+    }
+}
+
+task cleanAfterGenerateGrammarSource {
+    group = "grammar"
+    onlyIf {
+        !prepareGenerateGrammarSource.state.upToDate
+    }
+    doLast {
+        project.delete file(antlrInput)
+    }
+}
+
+generateGrammarSource {
+    group = "grammar"
+    dependsOn(prepareGenerateGrammarSource)
+
+    onlyIf {
+        !prepareGenerateGrammarSource.state.upToDate
+    }
+
+    outputDirectory = file(antlrTempOutputDirectory)
+    maxHeapSize = '64m'
+
+    arguments += ['-visitor', '-long-messages']
+
+    // UP-TO-DATE checks are handled by the prepareGenerateGrammarSource task
+    outputs.upToDateWhen { false }
+
+    doLast {
+        project.delete file(grammarGenSource)
+        copyAntlrGeneratedFilesToTheirPackages(antlrTempOutputDirectory, grammarGenSource, defaultGrammarPackage)
+    }
+    finalizedBy(cleanAfterGenerateGrammarSource)
+}
+
+generateTestGrammarSource {
+    group = "grammar"
+}
+
+def syncAntlrInputFilesToFlatInputDirectory(sourceDirectory, antlrInputDirectory) {
+    project.delete fileTree(antlrInputDirectory).include('*.*')
+    def flatInput = file(antlrInputDirectory)
+    flatInput.mkdirs()
+    fileTree(sourceDirectory).matching {
+        include("**/*.g4")
+    }.forEach { file ->
+        copy {
+            from file
+            into flatInput
+        }
+    }
+}
+
+def copyAntlrGeneratedFilesToTheirPackages(antlrOutput, destFolder, defaultPackage) {
+    fileTree(antlrOutput).matching {
+        include("**/*.java")
+    }.each { file ->
+        final packageName = extractPackageNameFromJavaFile(file, defaultPackage)
+        copy {
+            from file
+            into destFolder + "/" + packageName.replaceAll("\\.", "/")
+        }
+        project.delete file
+    }
+}
+
+static def extractPackageNameFromJavaFile(File javaFile, defaultPackage) {
+    final packageRegex = ~/^\s*+package\s++([a-zA-Z]++[a-zA-Z\d._]*+)\s*+;\s*+$/
+    def packageName = defaultPackage
+    for (def line in javaFile.readLines()) {
+        def m = packageRegex.matcher(line)
+        if (m.matches()) {
+            packageName = m.group(1)
+            break
+        }
+    }
+    return packageName
+}

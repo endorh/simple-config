@@ -9,18 +9,29 @@ import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.core.entry.StringEntry;
 import endorh.simpleconfig.demo.DemoConfigCategory;
 import endorh.simpleconfig.demo.DemoServerCategory;
+import endorh.simpleconfig.grammar.nbt.SNBTLexer;
+import endorh.simpleconfig.grammar.nbt.SNBTParser;
+import endorh.simpleconfig.grammar.regex.RegexLexer;
+import endorh.simpleconfig.grammar.regex.RegexParser;
+import endorh.simpleconfig.highlight.HighlighterManager;
+import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.Util;
-import net.minecraft.util.text.*;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -39,7 +50,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
@@ -65,6 +76,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	// Storing the config instances is optional
 	public static SimpleConfig CLIENT_CONFIG;
 	public static SimpleConfig SERVER_CONFIG;
+	
+	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
 	
 	static {
 		// Trigger class loading
@@ -176,6 +189,16 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		  .n(DemoServerCategory.getDemoServerCategory())
 		  .setBackground("minecraft:blackstone_bricks")
 		  .buildAndRegister();
+	}
+	
+	@SubscribeEvent
+	public static void registerReloadListener(ParticleFactoryRegisterEvent event) {
+		IReloadableResourceManager manager = (IReloadableResourceManager) Minecraft.getInstance().getResourceManager();
+		manager.registerReloadListener(JSON_HIGHLIGHTER_MANAGER);
+		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
+		  "regex", RegexLexer::new, RegexParser::new, RegexParser::root));
+		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
+		  "snbt", SNBTLexer::new, SNBTParser::new, SNBTParser::root));
 	}
 	
 	/**

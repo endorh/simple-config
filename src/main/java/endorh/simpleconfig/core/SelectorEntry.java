@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigListEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigEntryBuilder;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.clothconfig2.impl.builders.SelectorBuilder;
 import net.minecraft.util.text.ITextComponent;

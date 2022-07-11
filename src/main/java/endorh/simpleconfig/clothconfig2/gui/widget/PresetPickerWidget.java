@@ -7,11 +7,12 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.clothconfig2.api.AbstractConfigEntry;
 import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.clothconfig2.gui.*;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.ITypeWrapper;
-import endorh.simpleconfig.clothconfig2.gui.widget.ComboBoxWidget.SimpleSortedSuggestionProvider;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.ComboBoxWidget;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.clothconfig2.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.clothconfig2.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.SimpleComboBoxModel;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
@@ -63,7 +64,7 @@ public class PresetPickerWidget extends FocusableGui {
 		loadButton = new MultiFunctionImageButton(0, 0, 20, 20, SimpleConfigIcons.LOAD, ButtonAction.of(() -> {
 			  final Preset value = selector.getValue();
 			  if (value != null) load(value);
-		}).active(() -> getHandler() != null && isKnownPreset(selector.text, screen.isSelectedCategoryServer()))
+		}).active(() -> getHandler() != null && isKnownPreset(selector.getText(), screen.isSelectedCategoryServer()))
 		  .tooltip(() -> {
 			  final Preset value = selector.getValue();
 			  if (value == null) return Lists.newArrayList();
@@ -76,11 +77,11 @@ public class PresetPickerWidget extends FocusableGui {
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, SimpleConfigIcons.SAVE, ButtonAction.of(
 		  () -> save(selector.getText(), false)
 		).tooltip(() -> getSaveTooltip(false, false))
-		  .active(() -> getHandler() != null && isValidName(selector.text)), new TranslationTextComponent(
+		  .active(() -> getHandler() != null && isValidName(selector.getText())), new TranslationTextComponent(
 		  "simpleconfig.preset.save.label")
 		).on(Modifier.SHIFT, ButtonAction.of(() -> save(selector.getText(), true))
 		  .icon(SimpleConfigIcons.SAVE_REMOTE)
-		  .active(() -> getHandler() != null && isValidName(selector.text) && getHandler().canSaveRemote())
+		  .active(() -> getHandler() != null && isValidName(selector.getText()) && getHandler().canSaveRemote())
 		  .tooltip(() -> getSaveTooltip(false, true))
 		).on(Modifier.ALT, ButtonAction.of(() -> delete(selector.getValue()))
 		  .icon(SimpleConfigIcons.DELETE)
@@ -93,7 +94,7 @@ public class PresetPickerWidget extends FocusableGui {
 		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
 		  new TranslationTextComponent("simpleconfig.preset.picker.label"));
 		selector.setHint(new TranslationTextComponent("simpleconfig.preset.picker.hint"));
-		final SimpleSortedSuggestionProvider<Preset> provider = new SimpleSortedSuggestionProvider<>(
+		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
 		  () -> {
 			  final boolean server = screen.isSelectedCategoryServer();
 			  return Stream.concat(
@@ -110,7 +111,7 @@ public class PresetPickerWidget extends FocusableGui {
 	  boolean delete, boolean remote
 	) {
 		final IConfigSnapshotHandler handler = getHandler();
-		if (handler == null || !isValidName(selector.text))
+		if (handler == null || !isValidName(selector.getText()))
 			return Lists.newArrayList();
 		boolean server = screen.isSelectedCategoryServer();
 		final ArrayList<ITextComponent> tt = Lists.newArrayList(
@@ -164,7 +165,7 @@ public class PresetPickerWidget extends FocusableGui {
 			 p -> (p.server ? knownLocalServerPresets : knownLocalClientPresets).put(p.name, p));
 		final Preset value = selector.getValue();
 		if (value != null && !isKnownPreset(value))
-			selector.setText(selector.text);
+			selector.setText(selector.getText());
 		if (lastFuture == null) {
 			lastFuture = getHandler().getRemoteSnapshotNames().thenAccept(l -> {
 				knownRemoteClientPresets.clear();
@@ -179,7 +180,7 @@ public class PresetPickerWidget extends FocusableGui {
 				lastFuture = null;
 				final Preset vv = selector.getValue();
 				if (vv != null && !isKnownPreset(vv))
-					selector.setText(selector.text);
+					selector.setText(selector.getText());
 			});
 		}
 	}

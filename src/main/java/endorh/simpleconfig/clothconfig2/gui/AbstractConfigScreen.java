@@ -6,14 +6,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
-import endorh.simpleconfig.clothconfig2.ClothConfigInitializer;
 import endorh.simpleconfig.clothconfig2.api.*;
 import endorh.simpleconfig.clothconfig2.api.ConfigBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.clothconfig2.gui.ExternalChangesDialog.ExternalChangeResponse;
 import endorh.simpleconfig.clothconfig2.gui.entries.KeyCodeEntry;
 import endorh.simpleconfig.clothconfig2.gui.widget.CheckboxButton;
 import endorh.simpleconfig.clothconfig2.gui.widget.SearchBarWidget;
-import endorh.simpleconfig.clothconfig2.gui.widget.TintedButton;
 import endorh.simpleconfig.clothconfig2.impl.EditHistory;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
@@ -30,7 +28,6 @@ import net.minecraft.client.util.InputMappings.Input;
 import net.minecraft.client.util.InputMappings.Type;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
@@ -39,6 +36,8 @@ import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.ClickEvent.Action;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,8 +55,7 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 public abstract class AbstractConfigScreen extends Screen
   implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler, ScissorsScreen,
              IExternalChangeHandler, IOverlayCapableScreen, IEntryHolder, IDialogCapableScreen {
-	protected static final ResourceLocation CONFIG_TEX =
-	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
+	private static final Logger LOGGER = LogManager.getLogger();
 	protected final ResourceLocation backgroundLocation;
 	protected final Screen parent;
 	protected final List<Tooltip> tooltips = Lists.newArrayList();
@@ -426,6 +424,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		SearchBarWidget searchBar = getSearchBar();
+		if (searchBar.isMouseOver(mouseX, mouseY)) setFocused(searchBar);
 		if (getDragged() != null
 		    || handleDialogsMouseClicked(mouseX, mouseY, button)
 		    || handleOverlaysMouseClicked(mouseX, mouseY, button))
@@ -438,7 +438,8 @@ public abstract class AbstractConfigScreen extends Screen
 			           startedKeyCode.getType() == Type.KEYSYM) {
 				int code = startedKeyCode.getKeyCode().getValue();
 				if (Minecraft.ON_OSX ? code == 343 || code == 347
-				                                : code == 341 || code == 345) {
+				                     : code == 341 || code == 345
+				) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
@@ -714,7 +715,7 @@ public abstract class AbstractConfigScreen extends Screen
 				}
 				addDialog(ConfirmLinkDialog.create(clickEvent.getValue(), this, true));
 			} catch (URISyntaxException e) {
-				ClothConfigInitializer.LOGGER.error("Can't open url for {}", clickEvent, e);
+				LOGGER.error("Can't open url for {}", clickEvent, e);
 			}
 			return true;
 		}

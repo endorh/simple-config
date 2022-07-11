@@ -6,12 +6,12 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.clothconfig2.api.IChildListEntry;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import endorh.simpleconfig.clothconfig2.gui.WidgetUtils;
+import endorh.simpleconfig.clothconfig2.gui.widget.TextFieldWidgetEx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.AbstractSlider;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -214,11 +214,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			if (focus) {
 				setFocused(textFieldEntry);
 				WidgetUtils.forceUnFocus(sliderWidget);
-				final TextFieldWidget textFieldWidget = textFieldEntry.textFieldWidget;
+				final TextFieldWidgetEx textFieldWidget = textFieldEntry.textFieldWidget;
 				textFieldEntry.setFocused(textFieldWidget);
 				WidgetUtils.forceFocus(textFieldWidget);
-				textFieldWidget.moveCursorTo(textFieldWidget.getValue().length());
-				textFieldWidget.setHighlightPos(0);
+				textFieldWidget.moveCaretToEnd();
+				textFieldWidget.setAnchorPos(0);
 			}
 		} else if (focus) {
 			setFocused(sliderWidget);

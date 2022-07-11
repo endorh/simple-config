@@ -6,7 +6,6 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.clothconfig2.gui.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -16,12 +15,12 @@ public class ColorDisplayWidget extends Widget {
 	protected static final ResourceLocation CONFIG_TEX =
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
 	
-	protected TextFieldWidget textFieldWidget;
+	protected TextFieldWidgetEx textFieldWidget;
 	protected int color;
 	protected int size;
 	@Nullable public Runnable onClick = null;
 	
-	public ColorDisplayWidget(TextFieldWidget textFieldWidget, int x, int y, int size, int color) {
+	public ColorDisplayWidget(TextFieldWidgetEx textFieldWidget, int x, int y, int size, int color) {
 		super(x, y, size, size, NarratorChatListener.NO_TITLE);
 		this.textFieldWidget = textFieldWidget;
 		this.color = color;

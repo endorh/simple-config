@@ -1,0 +1,100 @@
+{
+  "rules": {
+    "number": {},
+    "byte": {
+      "rules": ["byteValue"]
+    },
+    "short": {
+      "rules": ["shortValue"]
+    },
+    "int": {
+      "rules": ["intValue"]
+    },
+    "long": {
+      "rules": ["longValue"]
+    },
+    "float": {
+      "rules": ["floatValue"]
+    },
+    "double": {
+      "rules": ["doubleValue"]
+    },
+    "string": {
+      "rules": ["string"]
+    },
+    "singleString": {
+      "rules": ["singleString"]
+    },
+    "doubleString": {
+      "rules": ["doubleString"]
+    },
+    "stringEscape": {
+      "tokens": ["DoubleStringEscape", "SingleStringEscape"]
+    },
+    "tag": {
+      "rules": ["tag"]
+    },
+    "list": {
+      "rules": ["list"]
+    },
+    "compound": {
+      "rules": ["compound"]
+    },
+    "byteArray": {
+      "rules": ["byteArray"]
+    },
+    "intArray": {
+      "rules": ["intArray"]
+    },
+    "longArray": {
+      "rules": ["longArray"]
+    },
+    "boolean": {
+      "rules": ["booleanValue"]
+    },
+    "true": {
+      "tokens": ["TRUE"]
+    },
+    "false": {
+      "tokens": ["FALSE"]
+    },
+    "comma": {
+      "tokens": ["COMMA"]
+    },
+    "colon": {
+      "tokens": ["COLON"]
+    }
+  },
+  "token_pairs": {
+    "DoubleStringStart": "\"",
+    "SingleStringStart": "'",
+    "ListStart": "]",
+    "CompoundStart": "}"
+  },
+  "styles": {
+    "default": {"color": "#F0F0F0"},
+    "error": {"color": "#FF1010", "underlined": true},
+    "number": {"color": "#4B96EE"},
+    "byte": "number",
+    "short": "number",
+    "int": "number",
+    "long": "number",
+    "float": "number",
+    "double": "number",
+    "string": {"color": "#2AAF4E"},
+    "singleString": "string",
+    "doubleString": "string",
+    "stringEscape": {"color": "#AF5D15"},
+    "compound": {"color": "#FFA080"},
+    "list": {"color": "#FF80A0"},
+    "tag": {"color": "#9060C0"},
+    "comma": {"color": "#E0A080"},
+    "colon": "comma",
+    "byteArray": "list",
+    "intArray": "list",
+    "longArray": "list",
+    "boolean": {"color": "#FFA080"},
+    "true": {"color": "#2EC038"},
+    "false": {"color": "#FF4242"}
+  }
+}

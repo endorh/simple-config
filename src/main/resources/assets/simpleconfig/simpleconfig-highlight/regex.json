@@ -1,0 +1,108 @@
+{
+  "rules": {
+    "literal": {
+      "rules": [
+        "literal",
+        "characterClassLiteral"
+      ]
+    },
+    "escape": {
+      "rules": [
+        "escape",
+        "characterClassEscape"
+      ]
+    },
+    "anchor": {
+      "rules": ["anchor"]
+    },
+    "meta": {
+      "tokens": [
+        "PIPE",
+        "CharacterClassStart",
+        "CharacterNegatedClassStart",
+        "InnerCharacterClassStart",
+        "InnerNegatedCharacterClass",
+        "CharacterClassEnd",
+        "INTERSECTION",
+        "RANGE"
+      ]
+    },
+    "characterClass": {
+      "rules": [
+        "characterClass",
+        "characterClassEscape",
+        "characterClassLiteral"
+      ]
+    },
+    "flags": {
+      "rules": ["flagSwitch"]
+    },
+    "quantifierModifier": {
+      "rules": [
+        "possessiveQuantifier",
+        "reluctantQuantifier"
+      ]
+    },
+    "quantifier": {
+      "rules": [
+        "quantifier",
+        "quantifierBody"
+      ]
+    },
+    "group": {
+      "rules": ["group"]
+    },
+    "atomicGroup": {
+      "rules": ["atomicGroup"]
+    },
+    "nonCapturingGroup": {
+      "rules": ["nonCapturingGroup"]
+    },
+    "namedGroup": {
+      "rules": ["namedGroup"]
+    },
+    "groupName": {
+      "tokens": ["GroupName"]
+    },
+    "lookAhead": {
+      "rules": ["lookAhead"]
+    },
+    "negativeLookAhead": {
+      "rules": ["negativeLookAhead"]
+    },
+    "lookBehind": {
+      "rules": ["lookBehind"]
+    },
+    "negativeLookBehind": {
+      "rules": ["negativeLookBehind"]
+    }
+  },
+  "token_pairs": {
+    "CapturingGroupStart": ")",
+    "CharacterClassStart": "]",
+    "NamedGroupStart": ">"
+  },
+  "char_pairs": {
+    "{": "}"
+  },
+  "styles": {
+    "default": {"color": "#F0F0F0"},
+    "error": {"color": "#FF8080", "underlined": true},
+    "literal": {"color": "#80FFA0"},
+    "escape": {"color": "#FFA080"},
+    "anchor": {"color": "#FFA0A0"},
+    "meta": {"color": "#FFE080"},
+    "flags": {"color": "#A080FF"},
+    "quantifier": {"color": "#BD80FF"},
+    "quantifierModifier": {"color": "#E080FF"},
+    "group": {"color": "#FFE080"},
+    "namedGroup": "group",
+    "groupName": {"color": "#80A0FF"},
+    "atomicGroup": {"color": "#FF80E0"},
+    "nonCapturingGroup": {"color": "#8090E0"},
+    "lookAhead": {"color": "#FFE080"},
+    "lookBehind": "lookAhead",
+    "negativeLookAhead": {"color": "#FFA080"},
+    "negativeLookBehind": "negativeLookAhead"
+  }
+}

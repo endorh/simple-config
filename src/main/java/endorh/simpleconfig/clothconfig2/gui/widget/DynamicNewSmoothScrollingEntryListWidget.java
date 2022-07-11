@@ -1,9 +1,10 @@
 package endorh.simpleconfig.clothconfig2.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.clothconfig2.ClothConfigInitializer;
 import endorh.simpleconfig.clothconfig2.api.ScrollingHandler;
 import endorh.simpleconfig.clothconfig2.gui.widget.DynamicEntryListWidget.ListEntry;
+import endorh.simpleconfig.clothconfig2.impl.EasingMethod;
+import endorh.simpleconfig.clothconfig2.impl.EasingMethod.EasingMethodImpl;
 import endorh.simpleconfig.clothconfig2.math.Rectangle;
 import endorh.simpleconfig.clothconfig2.math.impl.PointHelper;
 import net.minecraft.client.Minecraft;
@@ -114,7 +115,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 		}
 		// Do not animate for smaller delta values, since they usually come from
 		//   scrolling macros or special mouse wheels that already produce a smooth visual
-		scrollBy(ClothConfigInitializer.getScrollStep() * -delta, abs(delta) >= 1.0);
+		scrollBy(16.0 * -delta, abs(delta) >= 1.0);
 		return true;
 	}
 	
@@ -142,7 +143,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	}
 	
 	public void scrollTo(double value, boolean animated) {
-		scrollTo(value, animated, ClothConfigInitializer.getScrollDuration());
+		scrollTo(value, animated, 200L);
 	}
 	
 	public void scrollTo(double value, boolean animated, long duration) {
@@ -159,7 +160,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	
 	public boolean isScrollingNow() {
 		final long t = System.currentTimeMillis();
-		return t < start + duration || t < last + ClothConfigInitializer.getScrollDuration() / 2;
+		return t < start + duration || t < last + 200L / 2;
 	}
 	
 	protected double entryScroll(ListEntry e) {
@@ -258,7 +259,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	
 	public static class Interpolation {
 		public static double expoEase(double start, double end, double amount) {
-			return start + (end - start) * ClothConfigInitializer.getEasingMethod().apply(amount);
+			return start + (end - start) * ((EasingMethod) EasingMethodImpl.CIRC).apply(amount);
 		}
 	}
 }

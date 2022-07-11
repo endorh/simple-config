@@ -1,6 +1,8 @@
 package endorh.simpleconfig.clothconfig2.gui.widget;
 
 import endorh.simpleconfig.clothconfig2.gui.IOverlayCapableScreen;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.ComboBoxWidget;
+import endorh.simpleconfig.clothconfig2.gui.widget.combobox.wrapper.StringTypeWrapper;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
