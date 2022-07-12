@@ -42,7 +42,7 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	protected IFormattableTextComponent formatLink(String link) {
 		if (link.length() > 256)
 			link = link.substring(0, 253) + "...";
-		return new StringTextComponent(link).withStyle(TextFormatting.GRAY);
+		return new StringTextComponent(link).mergeStyle(TextFormatting.GRAY);
 	}
 	
 	public ConfirmLinkDialog(
@@ -67,11 +67,11 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	
 	public void copy() {
 		cancel(false);
-		Minecraft.getInstance().keyboardHandler.setClipboard(link);
+		Minecraft.getInstance().keyboardListener.setClipboardString(link);
 	}
 	
 	public void action(boolean go) {
-		if (go) Util.getPlatform().openUri(link);
+		if (go) Util.getOSType().openURI(link);
 	}
 	
 	public void setCopyButtonTint(int color) {

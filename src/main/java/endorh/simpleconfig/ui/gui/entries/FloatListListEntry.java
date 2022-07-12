@@ -42,19 +42,19 @@ public class FloatListListEntry
 		
 		@Override public Float getValue() {
 			try {
-				return Float.valueOf(widget.getValue());
+				return Float.valueOf(widget.getText());
 			} catch (NumberFormatException e) {
 				return 0.0f;
 			}
 		}
 		
 		@Override public void doSetValue(Float value) {
-			widget.setValue(String.valueOf(value));
+			widget.setText(String.valueOf(value));
 		}
 		
 		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
-				float i = Float.parseFloat(widget.getValue());
+				float i = Float.parseFloat(widget.getText());
 				final FloatListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
 					return Optional.of(new TranslationTextComponent(

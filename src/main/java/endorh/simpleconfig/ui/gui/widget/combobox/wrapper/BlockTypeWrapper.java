@@ -34,7 +34,7 @@ public class BlockTypeWrapper extends RegistryObjectTypeWrapper<Block> {
 	) {
 		if (element != null) {
 			Minecraft.getInstance().getItemRenderer()
-			  .renderGuiItem(new ItemStack(element), x + 2, y + 2);
+			  .renderItemIntoGUI(new ItemStack(element), x + 2, y + 2);
 		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 	}
 }

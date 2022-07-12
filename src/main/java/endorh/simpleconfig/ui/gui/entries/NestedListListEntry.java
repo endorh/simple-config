@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+
 @OnlyIn(value = Dist.CLIENT)
 public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
   extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListListEntry<T, Inner>>
@@ -170,7 +172,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			  cellWidth, nestedEntry.getCaptionHeight(), mouseX, mouseY, isSelected, delta);
 		}
 		
-		public @NotNull List<? extends IGuiEventListener> children() {
+		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return Collections.singletonList(nestedEntry);
 		}
 		
@@ -255,14 +257,14 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return false;
 	}
 	
-	@Override public void setFocused(IGuiEventListener listener) {
-		if (children().contains(listener)) {
-			super.setFocused(listener);
+	@Override public void setListener(IGuiEventListener listener) {
+		if (getEventListeners().contains(listener)) {
+			super.setListener(listener);
 		} else {
 			for (NestedListCell<T, Inner> cell : cells) {
 				if (cell.nestedEntry == listener) {
-					super.setFocused(cell);
-					cell.setFocused(listener);
+					super.setListener(cell);
+					cell.setListener(listener);
 					break;
 				}
 			}

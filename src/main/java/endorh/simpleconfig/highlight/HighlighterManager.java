@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HighlighterManager extends JsonReloadListener {
-	private static final Gson GSON = LootSerializers.createConditionSerializer()
+	private static final Gson GSON = LootSerializers.func_237386_a_()
 	  .registerTypeAdapter(HighlightRule.class, new RuleDeserializer())
 	  .registerTypeAdapter(LanguageHighlightingRules.class, new HighlighterDeserializer())
 	  .registerTypeAdapter(Style.class, new StyleDeserializer())
@@ -92,7 +92,7 @@ public class HighlighterManager extends JsonReloadListener {
 			private final CommonTokenStream tokens;
 			private final LanguageHighlightingRules highlighter;
 			private Style defaultStyle = Style.EMPTY;
-			private Style errorStyle = Style.EMPTY.withColor(TextFormatting.RED).withUnderlined(true);
+			private Style errorStyle = Style.EMPTY.setFormatting(TextFormatting.RED).func_244282_c(true);
 			private IFormattableTextComponent result = null;
 			private int lastIndex = 0;
 			private final Stack<Style> styleStack = new Stack<>();
@@ -117,7 +117,7 @@ public class HighlighterManager extends JsonReloadListener {
 			}
 			
 			public IFormattableTextComponent getResult() {
-				return result != null? result : StringTextComponent.EMPTY.copy();
+				return result != null? result : StringTextComponent.EMPTY.deepCopy();
 			}
 			
 			protected void appendFragment(String fragment, Style style) {
@@ -150,7 +150,7 @@ public class HighlighterManager extends JsonReloadListener {
 				String tokenName = parser.getVocabulary().getSymbolicName(node.getSymbol().getType());
 				String ruleName = highlighter.getRuleForToken(tokenName);
 				if (ruleName != null)
-					style = highlighter.getStyles().getOrDefault(ruleName, style).applyTo(style);
+					style = highlighter.getStyles().getOrDefault(ruleName, style).mergeStyle(style);
 				appendFragment(node.getText(), style);
 			}
 			
@@ -165,7 +165,7 @@ public class HighlighterManager extends JsonReloadListener {
 				if (highlightingRule != null) {
 					Style style = highlighter.getStyles().getOrDefault(highlightingRule, defaultStyle);
 					Style last = styleStack.isEmpty()? Style.EMPTY : styleStack.peek();
-					styleStack.push(style.applyTo(last));
+					styleStack.push(style.mergeStyle(last));
 				}
 			}
 			
@@ -176,7 +176,7 @@ public class HighlighterManager extends JsonReloadListener {
 		}
 		
 		public IFormattableTextComponent highlight(String text) {
-			if (text.isEmpty()) return StringTextComponent.EMPTY.copy();
+			if (text.isEmpty()) return StringTextComponent.EMPTY.deepCopy();
 			Lexer lexer = lexerFactory.apply(CharStreams.fromString(text));
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			P parser = parserFactory.apply(tokens);
@@ -320,11 +320,11 @@ public class HighlighterManager extends JsonReloadListener {
 				if (!json.isJsonObject())
 					throw new JsonParseException("Highlighter must be a JSON object");
 				JsonObject obj = json.getAsJsonObject();
-				JsonObject rulesObj = JSONUtils.getAsJsonObject(obj, "rules");
+				JsonObject rulesObj = JSONUtils.getJsonObject(obj, "rules");
 				Map<String, HighlightRule> rules = new LinkedHashMap<>();
 				rulesObj.entrySet().forEach(
 				  e -> rules.put(e.getKey(), context.deserialize(e.getValue(), HighlightRule.class)));
-				JsonObject stylesObj = JSONUtils.getAsJsonObject(obj, "styles");
+				JsonObject stylesObj = JSONUtils.getJsonObject(obj, "styles");
 				Map<String, Object> styleDefs = new LinkedHashMap<>();
 				stylesObj.entrySet().forEach(e -> styleDefs.put(
 				  e.getKey(), e.getValue().isJsonPrimitive()
@@ -347,15 +347,15 @@ public class HighlighterManager extends JsonReloadListener {
 				});
 				Map<String, String> tokenPairs = new LinkedHashMap<>();
 				if (obj.has("token_pairs")) {
-					JsonObject tokenPairsObj = JSONUtils.getAsJsonObject(obj, "token_pairs");
+					JsonObject tokenPairsObj = JSONUtils.getJsonObject(obj, "token_pairs");
 					tokenPairsObj.entrySet().forEach(
-					  e -> tokenPairs.put(e.getKey(), JSONUtils.getAsString(tokenPairsObj, e.getKey())));
+					  e -> tokenPairs.put(e.getKey(), JSONUtils.getString(tokenPairsObj, e.getKey())));
 				}
 				Map<String, String> charPairs = new LinkedHashMap<>();
 				if (obj.has("char_pairs")) {
-					JsonObject charPairsObj = JSONUtils.getAsJsonObject(obj, "char_pairs");
+					JsonObject charPairsObj = JSONUtils.getJsonObject(obj, "char_pairs");
 					charPairsObj.entrySet().forEach(
-					  e -> charPairs.put(e.getKey(), JSONUtils.getAsString(charPairsObj, e.getKey())));
+					  e -> charPairs.put(e.getKey(), JSONUtils.getString(charPairsObj, e.getKey())));
 				}
 				return new LanguageHighlightingRules(rules, styles, tokenPairs, charPairs);
 			}
@@ -369,22 +369,22 @@ public class HighlighterManager extends JsonReloadListener {
 				if (!json.isJsonObject())
 					throw new JsonParseException("Style must be a JSON object");
 				JsonObject obj = json.getAsJsonObject();
-				String color = JSONUtils.getAsString(obj, "color", "#F0F0F0");
+				String color = JSONUtils.getString(obj, "color", "#F0F0F0");
 				if (!COLOR_PATTERN.matcher(color).matches())
 					throw new JsonParseException("Invalid hex color: " + color);
 				if (color.length() == 4)
 					color = color.substring(1, 1) + color.substring(1, 1)
 					        + color.substring(2, 2) + color.substring(2, 2)
 					        + color.substring(3, 3) + color.substring(3, 3);
-				boolean bold = JSONUtils.getAsBoolean(obj, "bold", false);
-				boolean italic = JSONUtils.getAsBoolean(obj, "italic", false);
-				boolean underlined = JSONUtils.getAsBoolean(obj, "underlined", false);
-				boolean strikethrough = JSONUtils.getAsBoolean(obj, "strikethrough", false);
-				return Style.EMPTY.withColor(
-				  Color.parseColor(color)
-				).withBold(bold)
-				  .withItalic(italic)
-				  .withUnderlined(underlined)
+				boolean bold = JSONUtils.getBoolean(obj, "bold", false);
+				boolean italic = JSONUtils.getBoolean(obj, "italic", false);
+				boolean underlined = JSONUtils.getBoolean(obj, "underlined", false);
+				boolean strikethrough = JSONUtils.getBoolean(obj, "strikethrough", false);
+				return Style.EMPTY.setColor(
+				  Color.fromHex(color)
+				).setBold(bold)
+				  .setItalic(italic)
+				  .func_244282_c(underlined)
 				  .setStrikethrough(strikethrough);
 			}
 		}
@@ -414,7 +414,7 @@ public class HighlighterManager extends JsonReloadListener {
 				if (!json.isJsonObject())
 					throw new JsonParseException("Highlight rule must be a JSON object");
 				JsonObject obj = json.getAsJsonObject();
-				JsonArray arr = JSONUtils.getAsJsonArray(obj, "tokens", null);
+				JsonArray arr = JSONUtils.getJsonArray(obj, "tokens", null);
 				List<String> tokens = new ArrayList<>();
 				if (arr != null) {
 					for (JsonElement element : arr) {
@@ -422,7 +422,7 @@ public class HighlighterManager extends JsonReloadListener {
 						tokens.add(str);
 					}
 				}
-				arr = JSONUtils.getAsJsonArray(obj, "rules", null);
+				arr = JSONUtils.getJsonArray(obj, "rules", null);
 				List<String> rules = new ArrayList<>();
 				if (arr != null) {
 					for (JsonElement element : arr) {

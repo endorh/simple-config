@@ -42,13 +42,13 @@ public interface ConfigBuilder {
 	
 	ConfigBuilder setEditable(boolean editable);
 	
-	ConfigCategory getOrCreateCategory(String name);
+	ConfigCategory getOrCreateCategory(String name, boolean isServer);
 	
-	ConfigBuilder removeCategory(String name);
+	ConfigBuilder removeCategory(String name, boolean isServer);
 	
-	ConfigBuilder removeCategoryIfExists(String name);
+	ConfigBuilder removeCategoryIfExists(String name, boolean isServer);
 	
-	boolean hasCategory(String name);
+	boolean hasCategory(String name, boolean isServer);
 	
 	ResourceLocation getDefaultBackgroundTexture();
 	

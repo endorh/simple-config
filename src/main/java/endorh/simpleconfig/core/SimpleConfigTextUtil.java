@@ -38,7 +38,7 @@ import static java.lang.Math.max;
 		int length = component.getString().length();
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
 		SubTextVisitor visitor = new SubTextVisitor(start, Integer.MAX_VALUE);
-		component.visit(visitor, Style.EMPTY);
+		component.getComponentWithStyle(visitor, Style.EMPTY);
 		return visitor.getResult();
 	}
 	
@@ -57,7 +57,7 @@ import static java.lang.Math.max;
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
 		if (end < 0 || end > length) throw new StringIndexOutOfBoundsException(end);
 		SubTextVisitor visitor = new SubTextVisitor(start, end);
-		component.visit(visitor, Style.EMPTY);
+		component.getComponentWithStyle(visitor, Style.EMPTY);
 		return visitor.getResult();
 	}
 	
@@ -74,8 +74,8 @@ import static java.lang.Math.max;
 		
 		private void appendFragment(String fragment, Style style) {
 			if (result == null) {
-				result = new StringTextComponent(fragment).withStyle(style);
-			} else result.append(new StringTextComponent(fragment).withStyle(style));
+				result = new StringTextComponent(fragment).mergeStyle(style);
+			} else result.append(new StringTextComponent(fragment).mergeStyle(style));
 		}
 		
 		@Override public @NotNull Optional<Boolean> accept(
@@ -93,7 +93,7 @@ import static java.lang.Math.max;
 		}
 		
 		public IFormattableTextComponent getResult() {
-			return result != null? result : StringTextComponent.EMPTY.copy();
+			return result != null? result : StringTextComponent.EMPTY.deepCopy();
 		}
 	}
 	
@@ -105,10 +105,10 @@ import static java.lang.Math.max;
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Internal public static List<ITextComponent> splitTtc(String key, Object... args) {
-		if (I18n.exists(key)) {
+		if (I18n.hasKey(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting
-			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().getOrDefault(key));
+			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().func_230503_a_(key));
 			final String[] lines = NEW_LINE.split(f);
 			final List<ITextComponent> components = new ArrayList<>();
 			for (String line : lines) {
@@ -117,12 +117,12 @@ import static java.lang.Math.max;
 				int cursor = 0;
 				while (m.find()) {
 					if (m.group("conversion").equals("%")) {
-						built.append("%");
+						built.appendString("%");
 						continue;
 					}
 					final int s = m.start();
 					if (s > cursor)
-						built.append(line.substring(cursor, s));
+						built.appendString(line.substring(cursor, s));
 					// Since we've called addExplicitFormatIndexes,
 					//   the following line must not fail
 					final int i = Integer.parseInt(m.group("index")) - 1;
@@ -130,12 +130,12 @@ import static java.lang.Math.max;
 						// Format options are ignored when the argument is an ITextComponent
 						if (args[i] instanceof ITextComponent)
 							built.append((ITextComponent) args[i]);
-						else built.append(String.format(m.group(), args));
+						else built.appendString(String.format(m.group(), args));
 					} // else ignore error
 					cursor = m.end();
 				}
 				if (line.length() > cursor)
-					built.append(line.substring(cursor));
+					built.appendString(line.substring(cursor));
 				components.add(built);
 			}
 			return components;

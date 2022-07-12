@@ -190,7 +190,7 @@ public class Icon {
 	}
 	
 	public void bindTexture() {
-		Minecraft.getInstance().getTextureManager().bind(location);
+		Minecraft.getInstance().getTextureManager().bindTexture(location);
 	}
 	
 	public int getU() {

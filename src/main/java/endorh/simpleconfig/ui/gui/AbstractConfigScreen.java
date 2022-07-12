@@ -121,16 +121,16 @@ public abstract class AbstractConfigScreen extends Screen
 		float tg = (float) (to >> 8 & 0xFF) / 255F;
 		float tb = (float) (to & 0xFF) / 255F;
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bb = tessellator.getBuilder();
+		BufferBuilder bb = tessellator.getBuffer();
 		bb.begin(7, DefaultVertexFormats.POSITION_COLOR);
 		// @formatter:off
-		final Matrix4f m = mStack.last().pose();
-		bb.vertex(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
-		bb.vertex(m, (float) xStart, (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
-		bb.vertex(m, (float) xStart, (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
-		bb.vertex(m, (float) xEnd,   (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
+		final Matrix4f m = mStack.getLast().getMatrix();
+		bb.pos(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
+		bb.pos(m, (float) xStart, (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
+		bb.pos(m, (float) xStart, (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
+		bb.pos(m, (float) xEnd,   (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
 		// @formatter:on
-		tessellator.end();
+		tessellator.draw();
 	}
 	
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
@@ -244,7 +244,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean isTransparentBackground() {
-		return transparentBackground && Minecraft.getInstance().level != null;
+		return transparentBackground && Minecraft.getInstance().world != null;
 	}
 	
 	@Internal public void setTransparentBackground(boolean transparentBackground) {
@@ -343,8 +343,8 @@ public abstract class AbstractConfigScreen extends Screen
 		save();
 		if (openOtherScreens && minecraft != null) {
 			if (isRequiresRestart())
-				minecraft.setScreen(new ClothRequiresRestartScreen(parent));
-			else minecraft.setScreen(parent);
+				minecraft.displayGuiScreen(new ClothRequiresRestartScreen(parent));
+			else minecraft.displayGuiScreen(parent);
 		}
 	}
 	
@@ -378,7 +378,7 @@ public abstract class AbstractConfigScreen extends Screen
 		this.focusedBinding = focusedBinding;
 		if (focusedBinding != null) {
 			startedKeyCode = this.focusedBinding.getValue();
-			startedKeyCode.setKeyCodeAndModifier(InputMappings.UNKNOWN, Modifier.none());
+			startedKeyCode.setKeyCodeAndModifier(InputMappings.INPUT_INVALID, Modifier.none());
 		} else {
 			startedKeyCode = null;
 		}
@@ -425,7 +425,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		SearchBarWidget searchBar = getSearchBar();
-		if (searchBar.isMouseOver(mouseX, mouseY)) setFocused(searchBar);
+		if (searchBar.isMouseOver(mouseX, mouseY)) setListener(searchBar);
 		if (getDragged() != null
 		    || handleDialogsMouseClicked(mouseX, mouseY, button)
 		    || handleOverlaysMouseClicked(mouseX, mouseY, button))
@@ -433,31 +433,31 @@ public abstract class AbstractConfigScreen extends Screen
 		if (focusedBinding != null && startedKeyCode != null &&
 		    focusedBinding.isAllowMouse()) {
 			if (startedKeyCode.isUnknown()) {
-				startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
+				startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 			} else if (focusedBinding.isAllowModifiers() &&
 			           startedKeyCode.getType() == Type.KEYSYM) {
-				int code = startedKeyCode.getKeyCode().getValue();
-				if (Minecraft.ON_OSX ? code == 343 || code == 347
+				int code = startedKeyCode.getKeyCode().getKeyCode();
+				if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
 				                     : code == 341 || code == 345
 				) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 				if (code == 344 || code == 340) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 				if (code == 342 || code == 346) {
 					Modifier modifier = startedKeyCode.getModifier();
 					startedKeyCode.setModifier(
 					  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrCreate(button));
+					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
 					return true;
 				}
 			}
@@ -483,16 +483,16 @@ public abstract class AbstractConfigScreen extends Screen
 		if (focusedBinding != null && (focusedBinding.isAllowKey() || keyCode == 256)) {
 			if (keyCode != 256) {
 				if (startedKeyCode.isUnknown()) {
-					startedKeyCode.setKeyCode(InputMappings.getKey(keyCode, scanCode));
+					startedKeyCode.setKeyCode(InputMappings.getInputByCode(keyCode, scanCode));
 				} else if (focusedBinding.isAllowModifiers()) {
 					if (startedKeyCode.getType() == Type.KEYSYM) {
-						int code = startedKeyCode.getKeyCode().getValue();
-						if (Minecraft.ON_OSX ? code == 343 || code == 347
+						int code = startedKeyCode.getKeyCode().getKeyCode();
+						if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
 						                                : code == 341 || code == 345) {
 							Modifier modifier = startedKeyCode.getModifier();
 							startedKeyCode.setModifier(
 							  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-							startedKeyCode.setKeyCode(InputMappings.getKey(
+							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
 							  keyCode, scanCode));
 							return true;
 						}
@@ -500,7 +500,7 @@ public abstract class AbstractConfigScreen extends Screen
 							Modifier modifier = startedKeyCode.getModifier();
 							startedKeyCode.setModifier(
 							  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-							startedKeyCode.setKeyCode(InputMappings.getKey(
+							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
 							  keyCode, scanCode));
 							return true;
 						}
@@ -508,12 +508,12 @@ public abstract class AbstractConfigScreen extends Screen
 							Modifier modifier = startedKeyCode.getModifier();
 							startedKeyCode.setModifier(
 							  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-							startedKeyCode.setKeyCode(InputMappings.getKey(
+							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
 							  keyCode, scanCode));
 							return true;
 						}
 					}
-					if (Minecraft.ON_OSX ? keyCode == 343 || keyCode == 347
+					if (Minecraft.IS_RUNNING_ON_MAC ? keyCode == 343 || keyCode == 347
 					                                : keyCode == 341 || keyCode == 345) {
 						Modifier modifier = startedKeyCode.getModifier();
 						startedKeyCode.setModifier(
@@ -559,12 +559,12 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void playFeedbackTap(float volume) {
-		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
+		Minecraft.getInstance().getSoundHandler().play(
+		  SimpleSound.master(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
-		Input key = InputMappings.getKey(keyCode, scanCode);
+		Input key = InputMappings.getInputByCode(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(true);
 			recomputeFocus();
@@ -610,7 +610,7 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else {
-			minecraft.setScreen(parent);
+			minecraft.displayGuiScreen(parent);
 		}
 		return true;
 	}
@@ -621,7 +621,7 @@ public abstract class AbstractConfigScreen extends Screen
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
 		  edited ? new TranslationTextComponent("text.cloth-config.cancel_discard")
 		         : new TranslationTextComponent("gui.cancel")));
-		for (IGuiEventListener child : children()) {
+		for (IGuiEventListener child : getEventListeners()) {
 			if (!(child instanceof ITickableTileEntity)) continue;
 			((ITickableTileEntity) child).tick();
 		}
@@ -679,18 +679,18 @@ public abstract class AbstractConfigScreen extends Screen
 	) {
 		if (minecraft == null || isTransparentBackground()) return;
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuilder();
-		minecraft.getTextureManager().bind(getBackgroundLocation());
+		BufferBuilder buffer = tessellator.getBuffer();
+		minecraft.getTextureManager().bindTexture(getBackgroundLocation());
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-		final Matrix4f m = mStack.last().pose();
+		final Matrix4f m = mStack.getLast().getMatrix();
 		// @formatter:off
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
-		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
-		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
-		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
+		buffer.pos(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).tex((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
+		buffer.pos(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).tex((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
+		buffer.pos(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).tex((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
+		buffer.pos(m, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f).tex((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
 		// @formatter:on
-		tessellator.end();
+		tessellator.draw();
 	}
 	
 	public void renderComponentHoverEffect(
@@ -822,18 +822,18 @@ public abstract class AbstractConfigScreen extends Screen
 	  float x, float y, float w, float h, int tint
 	) {
 		float r = tint >> 16 & 0xFF, g = tint >> 8 & 0xFF, b = tint & 0xFF, a = tint >> 24;
-		Minecraft.getInstance().getTextureManager().bind(texture);
+		Minecraft.getInstance().getTextureManager().bindTexture(texture);
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuilder();
-		Matrix4f m = mStack.last().pose();
+		BufferBuilder buffer = tessellator.getBuffer();
+		Matrix4f m = mStack.getLast().getMatrix();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		// @formatter:off
-		buffer.vertex(m,     x,     y, 0F).uv(     x  / tw,      y  / th).color(r, g, b, a).endVertex();
-		buffer.vertex(m, x + w,     y, 0F).uv((x + w) / tw,      y  / th).color(r, g, b, a).endVertex();
-		buffer.vertex(m, x + w, y + h, 0F).uv((x + w) / tw, (y + h) / th).color(r, g, b, a).endVertex();
-		buffer.vertex(m,     x, y + h, 0F).uv(     x  / tw, (y + h) / th).color(r, g, b, a).endVertex();
+		buffer.pos(m,     x,     y, 0F).tex(     x  / tw,      y  / th).color(r, g, b, a).endVertex();
+		buffer.pos(m, x + w,     y, 0F).tex((x + w) / tw,      y  / th).color(r, g, b, a).endVertex();
+		buffer.pos(m, x + w, y + h, 0F).tex((x + w) / tw, (y + h) / th).color(r, g, b, a).endVertex();
+		buffer.pos(m,     x, y + h, 0F).tex(     x  / tw, (y + h) / th).color(r, g, b, a).endVertex();
 		// @formatter:on
-		tessellator.end();
+		tessellator.draw();
 	}
 }

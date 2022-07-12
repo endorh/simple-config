@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.impl;
 
-import com.google.common.collect.Maps;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -15,12 +14,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
 @Internal public class ConfigBuilderImpl implements ConfigBuilder {
@@ -32,7 +28,8 @@ import java.util.stream.Collectors;
 	protected boolean transparentBackground = false;
 	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
-	protected final Map<String, ConfigCategory> categories = Maps.newLinkedHashMap();
+	protected final Map<String, ConfigCategory> serverCategories = new LinkedHashMap<>();
+	protected final Map<String, ConfigCategory> clientCategories = new LinkedHashMap<>();
 	protected ConfigCategory fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
 	protected @Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler;
@@ -42,7 +39,7 @@ import java.util.stream.Collectors;
 	}
 	
 	@Override public boolean isAlwaysShowTabs() {
-		return this.alwaysShowTabs;
+		return alwaysShowTabs;
 	}
 	
 	@Override public ConfigBuilder setAlwaysShowTabs(boolean alwaysShowTabs) {
@@ -51,18 +48,18 @@ import java.util.stream.Collectors;
 	}
 	
 	@Override public ConfigBuilder setTransparentBackground(boolean transparent) {
-		this.transparentBackground = transparent;
+		transparentBackground = transparent;
 		return this;
 	}
 	
 	@Override public boolean hasTransparentBackground() {
-		return this.transparentBackground;
+		return transparentBackground;
 	}
 	
 	@Override public ConfigBuilder setSnapshotHandler(
 	  IConfigSnapshotHandler handler
 	) {
-		this.snapshotHandler = handler;
+		snapshotHandler = handler;
 		return this;
 	}
 	
@@ -77,7 +74,7 @@ import java.util.stream.Collectors;
 	}
 	
 	@Override public Screen getParentScreen() {
-		return this.parent;
+		return parent;
 	}
 	
 	@Override public ConfigBuilder setParentScreen(Screen parent) {
@@ -86,7 +83,7 @@ import java.util.stream.Collectors;
 	}
 	
 	@Override public ITextComponent getTitle() {
-		return this.title;
+		return title;
 	}
 	
 	@Override public ConfigBuilder setTitle(ITextComponent title) {
@@ -95,7 +92,7 @@ import java.util.stream.Collectors;
 	}
 	
 	@Override public boolean isEditable() {
-		return this.editable;
+		return editable;
 	}
 	
 	@Override public ConfigBuilder setEditable(boolean editable) {
@@ -103,73 +100,71 @@ import java.util.stream.Collectors;
 		return this;
 	}
 	
-	@Override public ConfigCategory getOrCreateCategory(String name) {
-		final ConfigCategory cat = this.categories.computeIfAbsent(
-		  name, key -> new ConfigCategoryImpl(this, name));
-		if (this.fallbackCategory == null) this.fallbackCategory = cat;
+	@Override public ConfigCategory getOrCreateCategory(String name, boolean isServer) {
+		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+		ConfigCategory cat = categories.computeIfAbsent(
+		  name, key -> new ConfigCategoryImpl(this, name, isServer));
+		if (fallbackCategory == null) fallbackCategory = cat;
 		return cat;
 	}
 	
-	@Override public ConfigBuilder removeCategory(String name) {
-		if (this.categories.containsKey(name) && this.fallbackCategory.getName().equals(name)) {
-			this.fallbackCategory = null;
-		}
-		if (!this.categories.containsKey(name)) {
-			throw new NullPointerException("Category doesn't exist!");
-		}
-		this.categories.remove(name);
+	@Override public ConfigBuilder removeCategory(String name, boolean isServer) {
+		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+		if (!categories.containsKey(name))
+			throw new IllegalArgumentException("Category " + name + " does not exist");
+		if (categories.get(name) == fallbackCategory)
+			fallbackCategory = null;
+		categories.remove(name);
 		return this;
 	}
 	
-	@Override public ConfigBuilder removeCategoryIfExists(String name) {
-		if (this.categories.containsKey(name) && this.fallbackCategory.getName().equals(name)) {
-			this.fallbackCategory = null;
-		}
-		this.categories.remove(name);
+	@Override public ConfigBuilder removeCategoryIfExists(String name, boolean isServer) {
+		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+		if (categories.containsKey(name))
+			removeCategory(name, isServer);
 		return this;
 	}
 	
-	@Override public boolean hasCategory(String name) {
-		return this.categories.containsKey(name);
+	@Override public boolean hasCategory(String name, boolean isServer) {
+		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+		return categories.containsKey(name);
 	}
 	
 	@Override public ResourceLocation getDefaultBackgroundTexture() {
-		return this.defaultBackground;
+		return defaultBackground;
 	}
 	
 	@Override public ConfigBuilder setDefaultBackgroundTexture(ResourceLocation texture) {
-		this.defaultBackground = texture;
+		defaultBackground = texture;
 		return this;
 	}
 	
 	@Override public ConfigBuilder setSavingRunnable(Runnable runnable) {
-		this.savingRunnable = runnable;
+		savingRunnable = runnable;
 		return this;
 	}
 	
 	@Override public Consumer<Screen> getAfterInitConsumer() {
-		return this.afterInitConsumer;
+		return afterInitConsumer;
 	}
 	
 	@Override public AbstractConfigScreen build() {
-		if (this.categories.isEmpty() || this.fallbackCategory == null)
-			throw new NullPointerException("There cannot be no categories or fallback category!");
-		final Map<Boolean, Collection<ConfigCategory>> categorySets = categories.values().stream()
-		  .collect(Collectors.groupingBy(ConfigCategory::isServer, Collectors.toCollection(LinkedHashSet::new)));
+		if (serverCategories.isEmpty() && clientCategories.isEmpty() || fallbackCategory == null)
+			throw new IllegalStateException("Config screen without categories or fallback category");
 		AbstractConfigScreen screen = new ClothConfigScreen(
-		  this.parent, this.modId, this.title, categorySets.getOrDefault(false, Collections.emptyList()),
-		  categorySets.getOrDefault(true, Collections.emptyList()), this.defaultBackground);
-		screen.setSavingRunnable(this.savingRunnable);
-		screen.setEditable(this.editable);
-		screen.setFallbackCategory(this.fallbackCategory);
-		screen.setTransparentBackground(this.transparentBackground);
-		screen.setAlwaysShowTabs(this.alwaysShowTabs);
-		screen.setAfterInitConsumer(this.afterInitConsumer);
-		screen.setSnapshotHandler(this.snapshotHandler);
+		  parent, modId, title, clientCategories.values(),
+		  serverCategories.values(), defaultBackground);
+		screen.setSavingRunnable(savingRunnable);
+		screen.setEditable(editable);
+		screen.setFallbackCategory(fallbackCategory);
+		screen.setTransparentBackground(transparentBackground);
+		screen.setAlwaysShowTabs(alwaysShowTabs);
+		screen.setAfterInitConsumer(afterInitConsumer);
+		screen.setSnapshotHandler(snapshotHandler);
 		return screen;
 	}
 	
 	@Override public Runnable getSavingRunnable() {
-		return this.savingRunnable;
+		return savingRunnable;
 	}
 }

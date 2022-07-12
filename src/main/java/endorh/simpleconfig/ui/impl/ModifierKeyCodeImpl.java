@@ -24,8 +24,8 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 	}
 	
 	@Override public ModifierKeyCode setKeyCode(InputMappings.Input keyCode) {
-		this.keyCode = keyCode.getType().getOrCreate(keyCode.getValue());
-		if (keyCode.equals(InputMappings.UNKNOWN)) {
+		this.keyCode = keyCode.getType().getOrMakeInput(keyCode.getKeyCode());
+		if (keyCode.equals(InputMappings.INPUT_INVALID)) {
 			setModifier(Modifier.none());
 		}
 		return this;
@@ -52,31 +52,31 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 	private static final Pattern KEY_PATTERN = Pattern.compile("^key\\.keyboard\\.(?<key>\\w)$");
 	
 	public ITextComponent getLayoutAgnosticLocalizedName(Style modifiers, Style key) {
-		final String name = keyCode.getName();
+		final String name = keyCode.getTranslationKey();
 		final Matcher m = KEY_PATTERN.matcher(name);
 		ITextComponent base;
 		if (m.matches()) {
-			base = new StringTextComponent(m.group("key").toUpperCase()).withStyle(key);
+			base = new StringTextComponent(m.group("key").toUpperCase()).mergeStyle(key);
 		} else {
-			base = new StringTextComponent(toTitleCase(keyCode.getDisplayName().getString())).withStyle(key);
+			base = new StringTextComponent(toTitleCase(keyCode.func_237520_d_().getString())).mergeStyle(key);
 		}
 		if (modifier.hasShift())
-			base = new TranslationTextComponent("modifier.cloth-config.shift", base).withStyle(modifiers);
+			base = new TranslationTextComponent("modifier.cloth-config.shift", base).mergeStyle(modifiers);
 		if (modifier.hasAlt())
-			base = new TranslationTextComponent("modifier.cloth-config.alt", base).withStyle(modifiers);
+			base = new TranslationTextComponent("modifier.cloth-config.alt", base).mergeStyle(modifiers);
 		if (modifier.hasControl())
-			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base).withStyle(modifiers);
+			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base).mergeStyle(modifiers);
 		return base;
 	}
 	
 	@Override public ITextComponent getLocalizedName(Style modifiers, Style key) {
-		ITextComponent base = new StringTextComponent(toTitleCase(keyCode.getDisplayName().getString())).withStyle(key);
+		ITextComponent base = new StringTextComponent(toTitleCase(keyCode.func_237520_d_().getString())).mergeStyle(key);
 		if (modifier.hasShift())
-			base = new TranslationTextComponent("modifier.cloth-config.shift", base).withStyle(modifiers);
+			base = new TranslationTextComponent("modifier.cloth-config.shift", base).mergeStyle(modifiers);
 		if (modifier.hasAlt())
-			base = new TranslationTextComponent("modifier.cloth-config.alt", base).withStyle(modifiers);
+			base = new TranslationTextComponent("modifier.cloth-config.alt", base).mergeStyle(modifiers);
 		if (modifier.hasControl())
-			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base).withStyle(modifiers);
+			base = new TranslationTextComponent("modifier.cloth-config.ctrl", base).mergeStyle(modifiers);
 		return base;
 	}
 	

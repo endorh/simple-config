@@ -35,13 +35,16 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 	
 	@Override
 	protected String serialize(INBT value) {
-		return CompoundNBTEntry.STYLE_COMPONENT.matcher(value.getPrettyDisplay().getString()).replaceAll("");
+		return CompoundNBTEntry.STYLE_COMPONENT.matcher(value.toFormattedComponent().getString()).replaceAll("");
 	}
 	
 	@Override
 	protected @Nullable INBT deserialize(String value) {
 		try {
-			return new JsonToNBT(new StringReader(value)).readValue();
+			StringReader reader = new StringReader(value);
+			INBT tag = new JsonToNBT(reader).readValue();
+			reader.skipWhitespace();
+			return reader.canRead()? null : tag;
 		} catch (CommandSyntaxException ignored) {
 			return null;
 		}

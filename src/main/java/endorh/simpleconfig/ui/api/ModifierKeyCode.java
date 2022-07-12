@@ -30,7 +30,7 @@ public interface ModifierKeyCode {
 	}
 	
 	static ModifierKeyCode unknown() {
-		return ModifierKeyCode.of(InputMappings.UNKNOWN, Modifier.none());
+		return ModifierKeyCode.of(InputMappings.INPUT_INVALID, Modifier.none());
 	}
 	
 	static @NotNull ModifierKeyCode parse(@Nullable String key) {
@@ -47,13 +47,13 @@ public interface ModifierKeyCode {
 				final String name = m.group(4);
 				Input in;
 				if (name.startsWith("mouse.") || name.startsWith("keyboard.")) {
-					in = InputMappings.getKey("key." + name);
+					in = InputMappings.getInputByName("key." + name);
 				} else if (!name.contains(".")) {
-					in = InputMappings.getKey("key.keyboard." + name);
+					in = InputMappings.getInputByName("key.keyboard." + name);
 				} else try {
-					in = InputMappings.getKey(name);
+					in = InputMappings.getInputByName(name);
 				} catch (IllegalArgumentException ignored) {
-					in = InputMappings.getKey("key.keyboard." + name);
+					in = InputMappings.getInputByName("key.keyboard." + name);
 				}
 				return of(in, mod);
 			} catch (IllegalArgumentException ignored) {
@@ -82,7 +82,7 @@ public interface ModifierKeyCode {
 			mod.append("alt+");
 		if (getModifier().hasShift())
 			mod.append("shift+");
-		return mod.append(getKeyCode().getName()).toString();
+		return mod.append(getKeyCode().getTranslationKey()).toString();
 	}
 	
 	InputMappings.Input getKeyCode();
@@ -103,17 +103,17 @@ public interface ModifierKeyCode {
 	
 	default boolean matchesMouse(int button) {
 		return !this.isUnknown() && this.getType() == InputMappings.Type.MOUSE &&
-		       this.getKeyCode().getValue() == button && this.getModifier().matchesCurrent();
+		       this.getKeyCode().getKeyCode() == button && this.getModifier().matchesCurrent();
 	}
 	
 	default boolean matchesKey(int keyCode, int scanCode) {
 		if (this.isUnknown()) return false;
-		if (keyCode == InputMappings.UNKNOWN.getValue()) {
+		if (keyCode == InputMappings.INPUT_INVALID.getKeyCode()) {
 			return this.getType() == InputMappings.Type.SCANCODE &&
-			       this.getKeyCode().getValue() == scanCode && this.getModifier().matchesCurrent();
+			       this.getKeyCode().getKeyCode() == scanCode && this.getModifier().matchesCurrent();
 		}
 		return this.getType() == InputMappings.Type.KEYSYM &&
-		       this.getKeyCode().getValue() == keyCode && this.getModifier().matchesCurrent();
+		       this.getKeyCode().getKeyCode() == keyCode && this.getModifier().matchesCurrent();
 	}
 	
 	default boolean matchesCurrentMouse() {
@@ -121,8 +121,8 @@ public interface ModifierKeyCode {
 		       && this.getType() == InputMappings.Type.MOUSE
 		       && this.getModifier().matchesCurrent()
 		       && GLFW.glfwGetMouseButton(
-					Minecraft.getInstance().getWindow().getWindow(),
-					this.getKeyCode().getValue()) == 1;
+					Minecraft.getInstance().getMainWindow().getHandle(),
+					this.getKeyCode().getKeyCode()) == 1;
 	}
 	
 	default boolean matchesCurrentKey() {
@@ -130,8 +130,8 @@ public interface ModifierKeyCode {
 		       && this.getType() == InputMappings.Type.KEYSYM
 		       && this.getModifier().matchesCurrent()
 		       && InputMappings.isKeyDown(
-               Minecraft.getInstance().getWindow().getWindow(),
-               this.getKeyCode().getValue());
+               Minecraft.getInstance().getMainWindow().getHandle(),
+               this.getKeyCode().getKeyCode());
 	}
 	
 	default ModifierKeyCode setKeyCodeAndModifier(
@@ -153,7 +153,7 @@ public interface ModifierKeyCode {
 	}
 	
 	default ITextComponent getLayoutAgnosticLocalizedName(TextFormatting modifiers, TextFormatting key) {
-		return getLayoutAgnosticLocalizedName(Style.EMPTY.applyFormat(modifiers), Style.EMPTY.applyFormat(key));
+		return getLayoutAgnosticLocalizedName(Style.EMPTY.applyFormatting(modifiers), Style.EMPTY.applyFormatting(key));
 	}
 	
 	default ITextComponent getLocalizedName() {
@@ -161,14 +161,14 @@ public interface ModifierKeyCode {
 	}
 	
 	default ITextComponent getLocalizedName(TextFormatting modifiers, TextFormatting key) {
-		return getLocalizedName(Style.EMPTY.applyFormat(modifiers), Style.EMPTY.applyFormat(key));
+		return getLocalizedName(Style.EMPTY.applyFormatting(modifiers), Style.EMPTY.applyFormatting(key));
 	}
 	
 	ITextComponent getLayoutAgnosticLocalizedName(Style modifiers, Style key);
 	ITextComponent getLocalizedName(Style modifiers, Style key);
 	
 	default boolean isUnknown() {
-		return this.getKeyCode().equals(InputMappings.UNKNOWN);
+		return this.getKeyCode().equals(InputMappings.INPUT_INVALID);
 	}
 }
 

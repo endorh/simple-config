@@ -100,11 +100,10 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
-		ConfigCategory category = builder.getOrCreateCategory(name);
+		ConfigCategory category = builder.getOrCreateCategory(name, root.type == Type.SERVER);
 		category.setTitle(getTitle());
-		category.setIsServer(root.type == Type.SERVER);
 		category.setDescription(
-		  () -> I18n.exists(tooltip)
+		  () -> I18n.hasKey(tooltip)
 		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
 		        : Optional.empty());
 		root.getFilePath().ifPresent(category::setContainingFile);

@@ -178,7 +178,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			return dialog.getInnerHeight();
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> children() {
+		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return dialog.bodyListeners;
 		}
 	}

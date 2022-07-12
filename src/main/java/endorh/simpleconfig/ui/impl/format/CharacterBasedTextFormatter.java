@@ -27,7 +27,7 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 			Style style = getCharacterStyle(text, i, c, last);
 			if (style != last) {
 				IFormattableTextComponent added =
-				  new StringTextComponent(builder.toString()).withStyle(last);
+				  new StringTextComponent(builder.toString()).mergeStyle(last);
 				last = style;
 				builder = new StringBuilder().append(c);
 				if (res == null) res = added;
@@ -37,7 +37,7 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 		}
 		if (builder.length() > 0) {
 			IFormattableTextComponent added =
-			  new StringTextComponent(builder.toString()).withStyle(last);
+			  new StringTextComponent(builder.toString()).mergeStyle(last);
 			if (res == null) res = added;
 			else res.append(added);
 		}

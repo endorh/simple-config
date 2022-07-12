@@ -45,7 +45,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		super(fieldName);
 		this.expandable = canExpand;
 		textFieldWidget = new TextFieldWidgetEx(
-		  Minecraft.getInstance().font, 0, 0, 150, 18, NarratorChatListener.NO_TITLE);
+		  Minecraft.getInstance().fontRenderer, 0, 0, 150, 18, NarratorChatListener.EMPTY);
 		textFieldWidget.setMaxLength(999999);
 		textFieldWidget.setFormatter(ITextFormatter.cached(textFormatter));
 		setOriginal(original);
@@ -111,7 +111,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		float p = expandAnimator.getEaseOut();
-		int expandedX = Minecraft.getInstance().font.isBidirectional()? fieldX : x + 14;
+		int expandedX = Minecraft.getInstance().fontRenderer.getBidiFlag()? fieldX : x + 14;
 		renderChild(
 		  mStack, (int) MathHelper.lerp(p, fieldX, expandedX),
 		  isHeadless()? fieldY : (int) MathHelper.lerp(p, fieldY, y + 24),
@@ -156,7 +156,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		if (this.expanded != expanded) {
 			expandAnimator.setEaseOutTarget(expanded);
 			this.expanded = expanded;
-			if (isEditable()) setFocused(textFieldWidget);
+			if (isEditable()) setListener(textFieldWidget);
 		}
 	}
 	

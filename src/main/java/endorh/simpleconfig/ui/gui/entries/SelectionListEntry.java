@@ -38,7 +38,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		if (displayedIndex == -1) displayedIndex = 0;
 		setOriginal(value);
 		setValue(value);
-		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, NarratorChatListener.NO_TITLE, (w, b) -> {
+		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, NarratorChatListener.EMPTY, (w, b) -> {
 			if (b != 2 && !isFocused()) {
 				preserveState();
 				setFocused(true);

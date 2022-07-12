@@ -27,6 +27,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+
 @OnlyIn(Dist.CLIENT)
 public class EntryPairListListEntry<
     K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
@@ -59,7 +61,7 @@ public class EntryPairListListEntry<
 	public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		for (EntryPairCell<K, V, KE, E> cell : cells)
-			cell.updateSelected(isFocused && getFocused() == cell && expanded);
+			cell.updateSelected(isFocused && getListener() == cell && expanded);
 	}
 	
 	@Override protected boolean isFieldFullWidth() {
@@ -191,9 +193,9 @@ public class EntryPairListListEntry<
 		
 		@Override public void updateSelected(boolean isSelected) {
 			super.updateSelected(isSelected);
-			keyEntry.updateFocused(isSelected && getFocused() == keyEntry);
-			valueEntry.updateFocused(isSelected && getFocused() == valueEntry);
-			if (isSelected) getListEntry().selectKey = getFocused() == keyEntry;
+			keyEntry.updateFocused(isSelected && getListener() == keyEntry);
+			valueEntry.updateFocused(isSelected && getListener() == valueEntry);
+			if (isSelected) getListEntry().selectKey = getListener() == keyEntry;
 		}
 		
 		@Override public List<EntryError> getErrors() {
@@ -250,8 +252,8 @@ public class EntryPairListListEntry<
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			keyOverlayColor = hasError() ? errorFilter : noFilter;
-			final FontRenderer fr = Minecraft.getInstance().font;
-			int keyX = fr.isBidirectional() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
+			final FontRenderer fr = Minecraft.getInstance().fontRenderer;
+			int keyX = fr.getBidiFlag() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
 			valueEntry.render(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			final EntryPairListListEntry<K, V, KE, E> listEntry = getListEntry();
 			keyEntry.renderChild(mStack, keyX, y, listEntry.getKeyFieldWidth(), 20, mouseX, mouseY, delta);
@@ -271,7 +273,7 @@ public class EntryPairListListEntry<
 			return isExpandable && ((BaseListEntry<?, ?, ?>) valueEntry).expanded && mouseY > 18;
 		}
 		
-		@Override public @Nonnull List<? extends IGuiEventListener> children() {
+		@Override public @Nonnull List<? extends IGuiEventListener> getEventListeners() {
 			return widgets;
 		}
 		
@@ -322,50 +324,50 @@ public class EntryPairListListEntry<
 		
 		// Modified tab order
 		@Override public boolean changeFocus(boolean forward) {
-			IGuiEventListener listener = getFocused();
+			IGuiEventListener listener = getListener();
 			boolean hasListener = listener != null;
 			BaseListEntry<?, ?, ?> subList = isExpandable? (BaseListEntry<?, ?, ?>) valueEntry : null;
-			if (forward && isExpandable && listener == valueEntry && subList.getFocused() == subList.label) {
+			if (forward && isExpandable && listener == valueEntry && subList.getListener() == subList.label) {
 				subList.changeFocus(false);
 				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
-				setFocused(keyEntry);
+				setListener(keyEntry);
 				return true;
 			} else if (
-			  !forward && isExpandable && listener == valueEntry && subList.children().indexOf(subList.getFocused()) == 1
+			  !forward && isExpandable && listener == valueEntry && subList.getEventListeners().indexOf(subList.getListener()) == 1
 			) {
 				subList.changeFocus(false);
 				subList.changeFocus(false);
 				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
-				setFocused(keyEntry);
+				setListener(keyEntry);
 				return true;
 			}
 			if (hasListener && listener.changeFocus(forward)) return true;
 			
 			if (isExpandable) {
 				if (listener == keyEntry) {
-					final List<? extends IGuiEventListener> subListeners = subList.children();
+					final List<? extends IGuiEventListener> subListeners = subList.getEventListeners();
 					final IGuiEventListener l = forward ? subListeners.get(1) : subListeners.get(0);
 					WidgetUtils.forceUnFocus(l);
-					setFocused(valueEntry);
-					valueEntry.setFocused(l);
+					setListener(valueEntry);
+					valueEntry.setListener(l);
 					if (valueEntry.changeFocus(forward))
 						return true;
 				}
 				
 				if (!hasListener && forward) {
-					setFocused(valueEntry);
-					valueEntry.setFocused(subList.label);
+					setListener(valueEntry);
+					valueEntry.setListener(subList.label);
 					return true;
 				}
 				
-				if (listener == valueEntry && valueEntry.getFocused() == subList.label && !forward) {
+				if (listener == valueEntry && valueEntry.getListener() == subList.label && !forward) {
 					valueEntry.changeFocus(false);
-					setFocused(null);
+					setListener(null);
 					return false;
 				}
 			}
 			
-			List<? extends IGuiEventListener> list = children();
+			List<? extends IGuiEventListener> list = getEventListeners();
 			int index = list.indexOf(listener);
 			int target = hasListener && index >= 0 ? index + (forward ? 1 : 0)
 			                                       : forward ? 0 : list.size();
@@ -376,12 +378,12 @@ public class EntryPairListListEntry<
 			while (hasNext.getAsBoolean()) {
 				IGuiEventListener next = supplier.get();
 				if (next.changeFocus(forward)) {
-					setFocused(next);
+					setListener(next);
 					return true;
 				}
 			}
 			
-			setFocused(null);
+			setListener(null);
 			return false;
 		}
 	}
@@ -396,14 +398,14 @@ public class EntryPairListListEntry<
 		return super.getNavigableChildren();
 	}
 	
-	@Override public void setFocused(IGuiEventListener listener) {
-		if (children().contains(listener)) {
-			super.setFocused(listener);
+	@Override public void setListener(IGuiEventListener listener) {
+		if (getEventListeners().contains(listener)) {
+			super.setListener(listener);
 		} else {
 			for (EntryPairCell<K, V, KE, E> cell : cells) {
 				if (cell.keyEntry == listener || cell.valueEntry == listener) {
-					super.setFocused(cell);
-					cell.setFocused(listener);
+					super.setListener(cell);
+					cell.setListener(listener);
 					break;
 				}
 			}

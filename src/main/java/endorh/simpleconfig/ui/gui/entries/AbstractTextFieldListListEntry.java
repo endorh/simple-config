@@ -22,9 +22,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 @OnlyIn(value = Dist.CLIENT)
 public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFieldListCell<T, C, Self>, Self extends AbstractTextFieldListListEntry<T, C, Self>>
   extends AbstractListListEntry<T, C, Self> {
@@ -46,19 +43,19 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			super(listListEntry);
 			// T finalValue = this.substituteDefault(value);
 			widget = new TextFieldWidget(
-			  Minecraft.getInstance().font, 0, 0, 100, 18,
-			  NarratorChatListener.NO_TITLE
+			  Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
+			  NarratorChatListener.EMPTY
 			) {
 				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
 				}
 			};
-			widget.setFilter(this::isValidText);
-			widget.setMaxLength(Integer.MAX_VALUE);
-			widget.setBordered(false);
+			widget.setValidator(this::isValidText);
+			widget.setMaxStringLength(Integer.MAX_VALUE);
+			widget.setEnableBackgroundDrawing(false);
 			// this.widget.setText(Objects.toString(finalValue));
-			widget.moveCursorToStart();
+			widget.setCursorPositionZero();
 			widget.setResponder(s -> widget.setTextColor(getPreferredTextColor()));
 		}
 		
@@ -78,7 +75,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		}
 		
 		@Override protected String seekableText() {
-			return widget.getValue();
+			return widget.getText();
 		}
 		
 		@Override public void renderCell(
@@ -86,16 +83,16 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		  int mouseY, boolean isSelected, float delta
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
-			FontRenderer font = Minecraft.getInstance().font;
+			FontRenderer font = Minecraft.getInstance().fontRenderer;
 			ListEntry listEntry = getListEntry();
 			
 			final boolean editable = listEntry.shouldRenderEditable();
 			int fieldWidth = listEntry.getFieldWidth();
-			int fieldX = font.isBidirectional() ? x : x + cellWidth - fieldWidth;
+			int fieldX = font.getBidiFlag() ? x : x + cellWidth - fieldWidth;
 			widget.setWidth(fieldWidth);
 			widget.x = fieldX;
 			widget.y = y + 1;
-			widget.setEditable(editable);
+			widget.setEnabled(editable);
 			
 			widget.render(mStack, mouseX, mouseY, delta);
 			if (isSelected && editable) {
@@ -111,7 +108,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			}
 		}
 		
-		public @NotNull List<? extends IGuiEventListener> children() {
+		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return Collections.singletonList(widget);
 		}
 		
@@ -123,8 +120,8 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 				listEntry.setExpanded(true);
 				listEntry.claimFocus();
 				scrollToSelf();
-				listEntry.setFocused(this);
-				widget.setFocus(true);
+				listEntry.setListener(this);
+				widget.setFocused2(true);
 			}
 		}
 		
@@ -137,9 +134,9 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			listEntry.expandParents();
 			listEntry.claimFocus();
 			listEntry.setExpanded(true);
-			listEntry.setFocused(this);
-			setFocused(widget);
-			widget.setFocus(true);
+			listEntry.setListener(this);
+			setListener(widget);
+			widget.setFocused2(true);
 			scrollToSelf();
 			listEntry.getEntryList().setSelectedTarget(this);
 		}

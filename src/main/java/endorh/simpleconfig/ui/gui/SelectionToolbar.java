@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SelectionToolbar extends FocusableGui implements INestedGuiEventHandler {
+public class SelectionToolbar extends FocusableGui {
 	private final List<IGuiEventListener> children = new ArrayList<>();
 	private final List<Widget> buttons = new ArrayList<>();
 	
@@ -50,7 +50,7 @@ public class SelectionToolbar extends FocusableGui implements INestedGuiEventHan
 		acceptButton = new MultiFunctionImageButton(
 		  x, y, 20, 20, SimpleConfigIcons.MERGE_ACCEPT_GROUP, ButtonAction.of(
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries()
-			   .forEach(e -> e.isSelected()))
+			   .forEach(AbstractConfigEntry::isSelected))
 		).tooltip(new TranslationTextComponent("simpleconfig.ui.merge.accept.selected"))
 		  .active(() -> false));
 		addButton(acceptButton);
@@ -87,7 +87,7 @@ public class SelectionToolbar extends FocusableGui implements INestedGuiEventHan
 		buttons.add(widget);
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> children() {
+	@Override public @NotNull List<IGuiEventListener> getEventListeners() {
 		return children;
 	}
 }

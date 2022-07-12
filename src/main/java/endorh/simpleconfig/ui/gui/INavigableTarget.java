@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 /**
  * Designed for row based interfaces
  */

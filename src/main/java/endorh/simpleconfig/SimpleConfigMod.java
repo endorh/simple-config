@@ -135,9 +135,9 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			final List<String> names = Lists.newArrayList();
 			if (server != null) {
 				final PlayerList pl = server.getPlayerList();
-				final List<String> ops = Arrays.asList(pl.getOpNames());
-				final List<String> whl = Arrays.asList(pl.getWhiteListNames());
-				final List<String> nms = Arrays.asList(pl.getPlayerNamesArray());
+				final List<String> ops = Arrays.asList(pl.getOppedPlayerNames());
+				final List<String> whl = Arrays.asList(pl.getWhitelistedPlayerNames());
+				final List<String> nms = Arrays.asList(pl.getOnlinePlayerNames());
 				whl.removeAll(ops);
 				nms.removeAll(ops);
 				nms.removeAll(whl);
@@ -194,7 +194,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	@SubscribeEvent
 	public static void registerReloadListener(ParticleFactoryRegisterEvent event) {
 		IReloadableResourceManager manager = (IReloadableResourceManager) Minecraft.getInstance().getResourceManager();
-		manager.registerReloadListener(JSON_HIGHLIGHTER_MANAGER);
+		manager.addReloadListener(JSON_HIGHLIGHTER_MANAGER);
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
 		  "regex", RegexLexer::new, RegexParser::new, RegexParser::root));
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
@@ -262,9 +262,9 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 				final Set<String> roles = permissions.roles.entrySet().stream().filter(
 				  e -> e.getValue().contains(player.getScoreboardName())
 				).map(Entry::getKey).collect(Collectors.toSet());
-				if (player.hasPermissions(4)) // Top level admins/single-player cheats
+				if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
 					return ConfigPermission.ALLOW;
-				if (player.hasPermissions(2)) roles.add("op");
+				if (player.hasPermissionLevel(2)) roles.add("op");
 				final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
 				  e -> e.getValue().getKey() == ListType.BLACKLIST ^ e.getValue().getValue().contains(mod)
 				).map(Entry::getKey).collect(Collectors.toSet());
@@ -330,12 +330,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		}
 		
 		private static KeyBinding reg(String name, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
+			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrMakeInput(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
 		private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
+			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrMakeInput(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
@@ -344,12 +344,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	private static IFormattableTextComponent makeLink(
 	  String key, @Nullable String tooltipKey, String url, TextFormatting... styles
 	) {
-		return new TranslationTextComponent(key).withStyle(s -> {
-			s = s.applyFormats(styles);
+		return new TranslationTextComponent(key).modifyStyle(s -> {
+			s = s.createStyleFromFormattings(styles);
 			if (tooltipKey != null)
-				s = s.withHoverEvent(new HoverEvent(
+				s = s.setHoverEvent(new HoverEvent(
 				  Action.SHOW_TEXT, new TranslationTextComponent(tooltipKey)));
-			return s.withClickEvent(new ClickEvent(
+			return s.setClickEvent(new ClickEvent(
 			  ClickEvent.Action.OPEN_URL, url));
 		});
 	}

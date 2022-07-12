@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
 
+import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+
 @OnlyIn(value = Dist.CLIENT)
 public class CaptionedSubCategoryListEntry<
   T, HE extends AbstractConfigEntry<T> & IChildListEntry
@@ -146,7 +148,7 @@ public class CaptionedSubCategoryListEntry<
 	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		label.setFocused(isFocused() && getFocused() == label);
+		label.setFocused(isFocused() && getListener() == label);
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		SimpleConfigIcons.Entries.GROUP_PLUS.renderCentered(
@@ -164,7 +166,7 @@ public class CaptionedSubCategoryListEntry<
 				if (entry.isShown()) {
 					entry.render(
 					  mStack, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
-					  mouseX, mouseY, isHovered && getFocused() == entry, delta);
+					  mouseX, mouseY, isHovered && getListener() == entry, delta);
 					yy += entry.getItemHeight();
 				}
 			}
@@ -219,14 +221,14 @@ public class CaptionedSubCategoryListEntry<
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (captionEntry != null) {
-			final boolean heldEntrySelected = isFocused && getFocused() == captionEntry;
+			final boolean heldEntrySelected = isFocused && getListener() == captionEntry;
 			final boolean prevSelected = captionEntry.isFocused();
 			captionEntry.updateFocused(heldEntrySelected);
 			if (!prevSelected && heldEntrySelected) getScreen().getHistory().preserveState(
 			  captionEntry);
 		}
 		for (AbstractConfigListEntry<?> entry : entries)
-			entry.updateFocused(isExpanded() && isFocused && getFocused() == entry);
+			entry.updateFocused(isExpanded() && isFocused && getListener() == entry);
 	}
 	
 	@Override public boolean isEdited() {
@@ -327,7 +329,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getFocused();
+		final IGuiEventListener listener = getListener();
 		//noinspection SuspiciousMethodCalls
 		if (!entries.contains(listener))
 			return 0;
@@ -344,7 +346,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getFocused();
+		final IGuiEventListener listener = getListener();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		if (listener instanceof AbstractConfigListEntry<?>)
@@ -377,7 +379,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getFocused() == label && keyCode == 263 && isExpanded()) { // Left
+		if (getListener() == label && keyCode == 263 && isExpanded()) { // Left
 			setExpanded(false, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;

@@ -2,7 +2,6 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.core.SimpleConfig.InvalidDefaultConfigValueException;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 

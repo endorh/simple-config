@@ -2,9 +2,6 @@ package endorh.simpleconfig.ui.gui;
 
 import net.minecraft.util.ResourceLocation;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 public class AnimatedIcon extends Icon {
 	public final int rows;
 	public final int cols;

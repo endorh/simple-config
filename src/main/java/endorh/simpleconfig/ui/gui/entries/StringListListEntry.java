@@ -32,11 +32,11 @@ public class StringListListEntry
 		}
 		
 		@Override public String getValue() {
-			return this.widget.getValue();
+			return this.widget.getText();
 		}
 		
 		@Override public void doSetValue(String value) {
-			this.widget.setValue(value);
+			this.widget.setText(value);
 		}
 		
 		@Override public Optional<ITextComponent> getErrorMessage() {

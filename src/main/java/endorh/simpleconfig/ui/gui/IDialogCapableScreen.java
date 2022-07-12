@@ -21,15 +21,15 @@ public interface IDialogCapableScreen {
 	default void renderDialogs(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		List<AbstractDialog> dialogs = Lists.newArrayList(getDialogs());
 		List<AbstractDialog> removed = Lists.newArrayList();
-		mStack.pushPose(); {
+		mStack.push(); {
 			mStack.translate(0D, 0D, 200D);
 			for (AbstractDialog dialog : dialogs) // New dialogs could be added within the loop
 				if (!dialog.render(mStack, mouseX, mouseY, delta)) removed.add(dialog);
-		} mStack.popPose();
+		} mStack.pop();
 		dialogs = getDialogs();
 		dialogs.removeAll(removed);
 		if (!dialogs.isEmpty() && this instanceof INestedGuiEventHandler)
-			((INestedGuiEventHandler) this).setFocused(dialogs.get(dialogs.size() - 1));
+			((INestedGuiEventHandler) this).setListener(dialogs.get(dialogs.size() - 1));
 	}
 	
 	default boolean handleDialogsEscapeKey() {

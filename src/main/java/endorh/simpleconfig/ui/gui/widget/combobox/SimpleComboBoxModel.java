@@ -36,7 +36,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 		if (time - lastUpdate < updateCooldown)
 			return Optional.empty();
 		lastUpdate = time;
-		return Optional.of(new ArrayList<T>(this.suggestions.get()));
+		return Optional.of(new ArrayList<>(this.suggestions.get()));
 	}
 	
 	@Override public Optional<ITextComponent> getPlaceHolder(

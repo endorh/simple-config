@@ -22,6 +22,8 @@ import java.util.List;
 
 import static java.lang.Math.max;
 
+import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+
 public class RangeListEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>,
   E extends AbstractConfigEntry<V> & IChildListEntry
@@ -80,10 +82,10 @@ public class RangeListEntry<
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		minEntry.updateFocused(isFocused && getFocused() == minEntry);
-		maxEntry.updateFocused(isFocused && getFocused() == maxEntry);
-		WidgetUtils.forceSetFocus(minExclusivenessButton, isFocused && getFocused() == minExclusivenessButton);
-		WidgetUtils.forceSetFocus(maxExclusivenessButton, isFocused && getFocused() == maxExclusivenessButton);
+		minEntry.updateFocused(isFocused && getListener() == minEntry);
+		maxEntry.updateFocused(isFocused && getListener() == maxEntry);
+		WidgetUtils.forceSetFocus(minExclusivenessButton, isFocused && getListener() == minExclusivenessButton);
+		WidgetUtils.forceSetFocus(maxExclusivenessButton, isFocused && getListener() == maxExclusivenessButton);
 	}
 	
 	@Override public boolean isGroup() {
@@ -103,7 +105,7 @@ public class RangeListEntry<
 		int buttonWidth = minExclusivenessButton.getWidth();
 		int centerWidth = buttonWidth * 2 + 2 * 2 + iconWidth;
 		int leftWidth = (int) ((w - centerWidth) * 0.5D);
-		int rightWidth = (int) (w - centerWidth - leftWidth);
+		int rightWidth = w - centerWidth - leftWidth;
 		minExclusivenessButton.x = x + leftWidth + 2;
 		minExclusivenessButton.y = y + 1;
 		maxExclusivenessButton.x = x + leftWidth + buttonWidth + 2 + iconWidth;
@@ -137,7 +139,7 @@ public class RangeListEntry<
 	}
 	
 	@Override public boolean charTyped(char chr, int modifiers) {
-		IGuiEventListener f = getFocused();
+		IGuiEventListener f = getListener();
 		ToggleImageButton button =
 		  f == minEntry || f == minExclusivenessButton
 		  ? minExclusivenessButton :

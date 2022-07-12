@@ -145,7 +145,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 			final ListEntry listEntry = getListEntry();
 			if (listEntry.isEditable() && Screen.hasAltDown()) {
-				final IGuiEventListener listener = listEntry.getFocused();
+				final IGuiEventListener listener = listEntry.getListener();
 				//noinspection SuspiciousMethodCalls
 				if (listener instanceof BaseListCell && listEntry.cells.contains(listener)) {
 					//noinspection SuspiciousMethodCalls

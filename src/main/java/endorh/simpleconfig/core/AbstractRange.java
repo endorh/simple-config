@@ -1,6 +1,5 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.core.entry.DoubleRangeEntry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;

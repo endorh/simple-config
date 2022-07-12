@@ -20,7 +20,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -105,7 +104,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
 		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
-			 component -> Minecraft.getInstance().font.split(
+			 component -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
             component, (int) (getScreen().width * advanced.tooltip_max_width)).stream())
 		  .toArray(IReorderingProcessor[]::new);
 	}
@@ -168,9 +167,9 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 				List<ITextComponent> tt = Lists.newArrayList();
 				final String[] lines = NEW_LINE.split(tooltipText);
 				Style style = Style.EMPTY
-				  .applyFormat(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
+				  .applyFormatting(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
 				  // .applyFormatting(TextFormatting.BOLD)
-				  .applyFormat(TextFormatting.UNDERLINE);
+				  .applyFormatting(TextFormatting.UNDERLINE);
 				for (String line : lines) {
 					final int l = line.length();
 					int a = MathHelper.clamp(i, 0, l);
@@ -181,7 +180,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 						  .append(new StringTextComponent(line.substring(a, b)).setStyle(style))
 						  .append(new StringTextComponent(line.substring(b)));
 					} else ln = new StringTextComponent(line);
-					tt.add(ln.withStyle(TextFormatting.GRAY));
+					tt.add(ln.mergeStyle(TextFormatting.GRAY));
 					i -= l + 1;
 					j -= l + 1;
 				}

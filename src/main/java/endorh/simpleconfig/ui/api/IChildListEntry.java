@@ -5,6 +5,7 @@ import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import net.minecraft.client.gui.AbstractGui;
 
 import static java.lang.Math.min;
+import static net.minecraft.client.gui.AbstractGui.fill;
 
 /**
  * Marker interface for {@link AbstractConfigListEntry} which support being
@@ -41,7 +42,7 @@ public interface IChildListEntry {
 			final long t = System.currentTimeMillis() - self.lastFocusHighlightTime - self.focusHighlightLength;
 			if (t < 1000) {
 				int color = self.focusHighlightColor;
-				AbstractGui.fill(mStack, 0, y, self.getScreen().width, y + self.getCaptionHeight(),
+				fill(mStack, 0, y, self.getScreen().width, y + self.getCaptionHeight(),
 				     color & 0xFFFFFF | (int) ((color >> 24 & 0xFF) * (min(1000, 1000 - t) / 1000D) * 0.3D) << 24);
 			}
 		}
@@ -62,20 +63,20 @@ public interface IChildListEntry {
 			final AbstractConfigListEntry<?> self = (AbstractConfigListEntry<?>) this;
 			// Uneditable gray overlay
 			if (!self.shouldRenderEditable())
-				AbstractGui.fill(mStack, x, y, x + w, y + h, 0x42BDBDBD);
+				fill(mStack, x, y, x + w, y + h, 0x42BDBDBD);
 			
 			// Yellow match overlay
 			final String matchedValueText = self.matchedValueText;
 			if (matchedValueText != null && !matchedValueText.isEmpty()) {
 				final int color = self.isFocusedMatch() ? self.focusedMatchColor : self.matchColor;
-				AbstractGui.fill(mStack, x, y, x + w, y + h, color);
+				fill(mStack, x, y, x + w, y + h, color);
 			}
 			
 			// Focus overlay
 			final long t = System.currentTimeMillis() - self.lastFocusHighlightTime - self.focusHighlightLength;
 			if (t < 1000) {
 				int color = self.focusHighlightColor;
-				AbstractGui.fill(mStack, x, y, x + w, y + self.getCaptionHeight(),
+				fill(mStack, x, y, x + w, y + self.getCaptionHeight(),
 				     color & 0xFFFFFF | (int) ((color >> 24 & 0xFF) * (min(1000, 1000 - t) / 1000D)) << 24);
 			}
 		}

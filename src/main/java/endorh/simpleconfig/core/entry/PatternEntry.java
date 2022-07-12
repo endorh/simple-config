@@ -76,7 +76,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		if (flags != 0)
 			extra.add(0, new TranslationTextComponent(
 			  "simpleconfig.config.help.pattern_flags", displayFlags(flags)
-			).withStyle(TextFormatting.GRAY));
+			).mergeStyle(TextFormatting.GRAY));
 		return extra;
 	}
 	

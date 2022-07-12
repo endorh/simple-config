@@ -23,7 +23,7 @@ apply from: 'antlr.gradle'
 
 def mod_id = "simpleconfig"
 group = "endorh.simpleconfig"
-version = "1.16.5-0.5.0"
+version = "1.16.5-0.7.2"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -110,8 +110,8 @@ java {
 // Minecraft options --------------------------------------------------------------
 
 minecraft {
-    // mappings channel: 'snapshot', version: '20201028-1.16.3'
-    mappings channel: 'official', version: '1.16.5'
+    mappings channel: 'snapshot', version: '20201028-1.16.3'
+    // mappings channel: 'official', version: '1.16.5'
 
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -260,5 +260,5 @@ publishing {
             url "${project.projectDir.parentFile.toURI()}maven"
         }
     }
-    println "${project.projectDir.parentFile.toURI()}maven"
+    println "Local mods maven repository: ${project.projectDir.parentFile.toURI()}maven"
 }

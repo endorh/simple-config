@@ -15,7 +15,7 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	void setDragged(Pair<Integer, IGuiEventListener> dragged);
 	
 	@Override default boolean mouseClicked(double mouseX, double mouseY, int button) {
-		for(IGuiEventListener listener : this.children()) {
+		for(IGuiEventListener listener : this.getEventListeners()) {
 			if (listener.mouseClicked(mouseX, mouseY, button)) {
 				onMouseClickedForListener(listener, mouseX, mouseY, button);
 				return true;
@@ -27,7 +27,7 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	default void onMouseClickedForListener(
 	  IGuiEventListener listener, double mouseX, double mouseY, int button
 	) {
-		this.setFocused(listener);
+		this.setListener(listener);
 		if ((!isDragging() || (getDragged() != null && getDragged().getLeft() == button)) && (
 		  button == 0
 		  || listener instanceof IExtendedDragAwareNestedGuiEventHandler
@@ -41,11 +41,11 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	@Override default boolean mouseDragged(
 	  double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
-		return this.getFocused() != null && this.isDragging()
+		return this.getListener() != null && this.isDragging()
 		       && (button == 0
-		           || getFocused() instanceof IExtendedDragAwareNestedGuiEventHandler
-		           || getFocused() instanceof IExtendedDragAwareGuiEventListener)
-		       && this.getFocused().mouseDragged(mouseX, mouseY, button, dragX, dragY);
+		           || getListener() instanceof IExtendedDragAwareNestedGuiEventHandler
+		           || getListener() instanceof IExtendedDragAwareGuiEventListener)
+		       && this.getListener().mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 	
 	default void endDrag(double mouseX, double mouseY, int button) {

@@ -39,16 +39,16 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		private final ITextComponent title;
 		private final String prefix;
 		private final List<ITextComponent> lines = Lists.newArrayList();
-		private Style categoryStyle = Style.EMPTY.withBold(true).withUnderlined(true);
-		private Style keyStyle = Style.EMPTY.withColor(TextFormatting.DARK_AQUA);
-		private Style keyBindStyle = Style.EMPTY.withColor(TextFormatting.DARK_GREEN);
-		private Style unboundKeyBindStyle = Style.EMPTY.withColor(TextFormatting.DARK_RED);
-		private Style modifierStyle = Style.EMPTY.withColor(TextFormatting.DARK_PURPLE);
-		private Style helpStyle = Style.EMPTY.withColor(TextFormatting.GRAY);
+		private Style categoryStyle = Style.EMPTY.setBold(true).func_244282_c(true);
+		private Style keyStyle = Style.EMPTY.setFormatting(TextFormatting.DARK_AQUA);
+		private Style keyBindStyle = Style.EMPTY.setFormatting(TextFormatting.DARK_GREEN);
+		private Style unboundKeyBindStyle = Style.EMPTY.setFormatting(TextFormatting.DARK_RED);
+		private Style modifierStyle = Style.EMPTY.setFormatting(TextFormatting.DARK_PURPLE);
+		private Style helpStyle = Style.EMPTY.setFormatting(TextFormatting.GRAY);
 		private CheckboxButton[] checkBoxes = new CheckboxButton[0];
 		private ComplexDialogAction action = (v, s) -> {};
 		private ITextComponent confirmText = DialogTexts.GUI_DONE;
-		private @Nullable Function<Screen, Screen> controlsScreenSupplier = s -> new ControlsScreen(s, Minecraft.getInstance().options);
+		private @Nullable Function<Screen, Screen> controlsScreenSupplier = s -> new ControlsScreen(s, Minecraft.getInstance().gameSettings);
 		
 		private Builder(String prefix, ITextComponent title) {
 			this.prefix = prefix.endsWith(".")? prefix : prefix + ".";
@@ -58,18 +58,18 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		private IFormattableTextComponent parseSingle(String key) {
 			if (key.endsWith("!"))
 				return ModifierKeyCode.parse(key.substring(0, key.length() - 1))
-				  .getLayoutAgnosticLocalizedName(modifierStyle, keyStyle).copy();
-			return ModifierKeyCode.parse(key).getLocalizedName(modifierStyle, keyStyle).copy();
+				  .getLayoutAgnosticLocalizedName(modifierStyle, keyStyle).deepCopy();
+			return ModifierKeyCode.parse(key).getLocalizedName(modifierStyle, keyStyle).deepCopy();
 		}
 		
 		private IFormattableTextComponent parse(String keys) {
-			final IFormattableTextComponent comma = new StringTextComponent(", ").withStyle(keyStyle);
-			final IFormattableTextComponent slash = new StringTextComponent("/").withStyle(keyStyle);
+			final IFormattableTextComponent comma = new StringTextComponent(", ").mergeStyle(keyStyle);
+			final IFormattableTextComponent slash = new StringTextComponent("/").mergeStyle(keyStyle);
 			return Arrays.stream(COMMA.split(keys)).map(
 			  s -> Arrays.stream(SLASH.split(s))
 			    .map(this::parseSingle)
-				 .reduce((a, b) -> a.append(slash).append(b)).orElse(StringTextComponent.EMPTY.copy())
-			).reduce((a, b) -> a.append(comma).append(b)).orElse(StringTextComponent.EMPTY.copy());
+				 .reduce((a, b) -> a.append(slash).append(b)).orElse(StringTextComponent.EMPTY.deepCopy())
+			).reduce((a, b) -> a.append(comma).append(b)).orElse(StringTextComponent.EMPTY.deepCopy());
 		}
 		
 		private static final Pattern TITLE_CASE_PATTERN = Pattern.compile("(?<!\\w)\\w");
@@ -136,7 +136,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		
 		public Builder category(String name, Consumer<CategoryBuilder> builder) {
 			lines.add(new TranslationTextComponent(prefix + "category." + name)
-			            .withStyle(categoryStyle));
+			            .mergeStyle(categoryStyle));
 			builder.accept(new CategoryBuilder(name));
 			lines.add(StringTextComponent.EMPTY);
 			return this;
@@ -161,7 +161,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			if (controlsScreenSupplier != null) {
 				d.addButton(0, MultiFunctionIconButton.of(
 				  SimpleConfigIcons.KEYBOARD, -1, -1, ButtonAction.of(() -> {
-					  Minecraft.getInstance().setScreen(controlsScreenSupplier.apply((Screen) screen));
+					  Minecraft.getInstance().displayGuiScreen(controlsScreenSupplier.apply((Screen) screen));
 					  d.cancel();
 				  }).title(() -> new TranslationTextComponent("simpleconfig.ui.controls.edit_controls"))
 					 .tint(0x80815C2E)
@@ -179,20 +179,20 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			
 			public CategoryBuilder key(String help, String keys) {
 				final IFormattableTextComponent keyHelp =
-				  new TranslationTextComponent(prefix + name + "." + help).withStyle(helpStyle);
+				  new TranslationTextComponent(prefix + name + "." + help).mergeStyle(helpStyle);
 				lines.add(
 				  parse(keys)
-					 .append(new StringTextComponent(": ").withStyle(TextFormatting.DARK_GRAY))
+					 .append(new StringTextComponent(": ").mergeStyle(TextFormatting.DARK_GRAY))
 					 .append(keyHelp));
 				return this;
 			}
 			
 			public CategoryBuilder key(String help, KeyBinding key) {
-				final IFormattableTextComponent keyHelp = new TranslationTextComponent(prefix + name + "." + help).withStyle(helpStyle);
-				final String keyName = key.isUnbound()? "---" : toTitleCase(key.getTranslatedKeyMessage().getString());
+				final IFormattableTextComponent keyHelp = new TranslationTextComponent(prefix + name + "." + help).mergeStyle(helpStyle);
+				final String keyName = key.isInvalid()? "---" : toTitleCase(key.func_238171_j_().getString());
 				lines.add(
-				  new StringTextComponent(keyName).withStyle(key.isUnbound()? unboundKeyBindStyle : keyBindStyle)
-					 .append(new StringTextComponent(": ").withStyle(TextFormatting.DARK_GRAY))
+				  new StringTextComponent(keyName).mergeStyle(key.isInvalid()? unboundKeyBindStyle : keyBindStyle)
+					 .append(new StringTextComponent(": ").mergeStyle(TextFormatting.DARK_GRAY))
 					 .append(keyHelp));
 				return this;
 			}

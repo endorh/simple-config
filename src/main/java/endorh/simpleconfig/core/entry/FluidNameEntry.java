@@ -40,9 +40,9 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
-			suggestionSupplier = () -> Registry.FLUID.entrySet().stream().map(Entry::getValue)
-			  .filter(f -> f.getBucket().getItemCategory() != null)
-			  .filter(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getSource() == f)
+			suggestionSupplier = () -> Registry.FLUID.getEntries().stream().map(Entry::getValue)
+			  .filter(f -> f.getFilledBucket().getGroup() != null)
+			  .filter(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getStillFluid() == f)
 			  .map(ForgeRegistryEntry::getRegistryName).collect(Collectors.toList());
 		}
 		
@@ -66,7 +66,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;
 				suggestionSupplier = () -> Stream.concat(
 				  supplier != null? supplier.get().stream() : Stream.empty(),
-				  tag.getValues().stream().map(ForgeRegistryEntry::getRegistryName)
+				  tag.getAllElements().stream().map(ForgeRegistryEntry::getRegistryName)
 				).collect(Collectors.toList());
 			}
 			return new FluidNameEntry(parent, name, value);

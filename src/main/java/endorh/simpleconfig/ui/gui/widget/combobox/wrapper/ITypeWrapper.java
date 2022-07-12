@@ -88,7 +88,7 @@ public interface ITypeWrapper<T> {
 	 */
 	ITextComponent getDisplayName(@NotNull T element);
 	
-	@Internal Pattern STYLE_ESCAPE = Pattern.compile("§[0-9a-f]");
+	@Internal Pattern STYLE_ESCAPE = Pattern.compile("§[\\da-f]");
 	
 	/**
 	 * Get a string name of the element to be used

@@ -51,11 +51,11 @@ public class CheckboxButton extends ToggleImageButton {
 		super.renderButton(mStack, mouseX, mouseY, delta);
 		width = w;
 		if (label != null) {
-			final FontRenderer font = Minecraft.getInstance().font;
+			final FontRenderer font = Minecraft.getInstance().fontRenderer;
 			final List<IReorderingProcessor> lines =
-			  font.split(label, width - 24);
+			  font.trimStringToWidth(label, width - 24);
 			if (!lines.isEmpty())
-				font.drawShadow(mStack, lines.get(0), x + 22, y + 6, textColor);
+				font.func_238407_a_(mStack, lines.get(0), x + 22, y + 6, textColor);
 		}
 	}
 	

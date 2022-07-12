@@ -121,7 +121,7 @@ public class SimpleConfigGUIManager {
 	 * Build a config GUI for the specified mod id, using the current screen as parent
 	 */
 	public static Screen getConfigGUI(String modId) {
-		return getConfigGUI(modId, Minecraft.getInstance().screen);
+		return getConfigGUI(modId, Minecraft.getInstance().currentScreen);
 	}
 	
 	/**
@@ -129,7 +129,7 @@ public class SimpleConfigGUIManager {
 	 */
 	@SuppressWarnings("unused")
 	public static void showConfigGUI(String modId) {
-		Minecraft.getInstance().setScreen(getConfigGUI(modId));
+		Minecraft.getInstance().displayGuiScreen(getConfigGUI(modId));
 	}
 	
 	/**
@@ -137,7 +137,7 @@ public class SimpleConfigGUIManager {
 	 */
 	public static void showModListGUI() {
 		final Minecraft mc = Minecraft.getInstance();
-		mc.setScreen(new ModListScreen(mc.screen));
+		mc.displayGuiScreen(new ModListScreen(mc.currentScreen));
 	}
 	
 	/**
@@ -198,7 +198,7 @@ public class SimpleConfigGUIManager {
 		for (Widget widget : widgets) {
 			if (widget instanceof Button) {
 				Button but = (Button) widget;
-				if (but.getMessage().getString().equals(I18n.get("menu.options"))) {
+				if (but.getMessage().getString().equals(I18n.format("menu.options"))) {
 					if (but.x == x && but.y == y && but.getWidth() == 98) {
 						return Optional.of(but);
 					}

@@ -40,7 +40,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	  int x, int y, int width, int height, @NotNull Icon icon,
 	  ButtonActionBuilder action
 	) {
-		this(x, y, width, height, icon, action, NarratorChatListener.NO_TITLE);
+		this(x, y, width, height, icon, action, NarratorChatListener.EMPTY);
 	}
 	
 	public MultiFunctionImageButton(
@@ -49,12 +49,12 @@ public class MultiFunctionImageButton extends ImageButton {
 	) {
 		super(
 		  x, y, width, height, icon.u, icon.v, icon.h, icon.location,
-		  icon.tw, icon.th, b -> {}, NO_TOOLTIP, title);
+		  icon.tw, icon.th, b -> {}, field_238486_s_, title);
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
-		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		actions.add(Pair.of(Modifier.NONE, defaultAction));
 		this.defaultAction = activeAction = defaultAction;
 	}
@@ -75,7 +75,7 @@ public class MultiFunctionImageButton extends ImageButton {
 		if ((action.activePredicate != null? action.activePredicate : defaultActivePredicate).get()) {
 			action.action.accept(button);
 			(action.sound != null ? action.sound : defaultSound).get()
-			  .ifPresent(s -> Minecraft.getInstance().getSoundManager().play(s));
+			  .ifPresent(s -> Minecraft.getInstance().getSoundHandler().play(s));
 			return true;
 		}
 		return false;
@@ -135,12 +135,12 @@ public class MultiFunctionImageButton extends ImageButton {
 		final ButtonAction action = activeAction;
 		final List<ITextComponent> ls = (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 		if (!ls.isEmpty()) {
-			final Screen screen = Minecraft.getInstance().screen;
+			final Screen screen = Minecraft.getInstance().currentScreen;
 			if (screen instanceof IMultiTooltipScreen) {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
 				  new Point(mouseX, mouseY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
 			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, mouseX, mouseY, Minecraft.getInstance().font);
+				screen.renderWrappedToolTip(mStack, ls, mouseX, mouseY, Minecraft.getInstance().fontRenderer);
 		}
 	}
 	
@@ -171,9 +171,9 @@ public class MultiFunctionImageButton extends ImageButton {
 		return false;
 	}
 	
-	@Override public boolean changeFocus(boolean p_231049_1_) {
+	@Override public boolean changeFocus(boolean focus) {
 		updateState();
-		return super.changeFocus(p_231049_1_);
+		return super.changeFocus(focus);
 	}
 	
 	public Boolean getActiveOverride() {

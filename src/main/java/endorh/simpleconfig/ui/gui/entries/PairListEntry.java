@@ -19,6 +19,8 @@ import java.util.List;
 
 import static java.lang.Math.max;
 
+import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+
 public class PairListEntry<
   L, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
   RE extends AbstractConfigEntry<R> & IChildListEntry
@@ -69,8 +71,8 @@ public class PairListEntry<
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		leftEntry.updateFocused(isFocused && getFocused() == leftEntry);
-		rightEntry.updateFocused(isFocused && getFocused() == rightEntry);
+		leftEntry.updateFocused(isFocused && getListener() == leftEntry);
+		rightEntry.updateFocused(isFocused && getListener() == rightEntry);
 	}
 	
 	@Override public boolean isGroup() {

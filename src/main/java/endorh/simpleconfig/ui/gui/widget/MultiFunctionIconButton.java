@@ -55,14 +55,14 @@ public class MultiFunctionIconButton extends TintedButton {
 	  int x, int y, int minWidth, int maxWidth, @NotNull Icon icon,
 	  ButtonActionBuilder action
 	) {
-		super(x, y, minWidth, 20, StringTextComponent.EMPTY, b -> {}, NO_TOOLTIP);
+		super(x, y, minWidth, 20, StringTextComponent.EMPTY, b -> {}, field_238486_s_);
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
 		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : () -> StringTextComponent.EMPTY;
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
 		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(
-		  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		actions.add(Pair.of(Modifier.NONE, defaultAction));
 		this.defaultAction = activeAction = defaultAction;
 		this.minWidth = minWidth;
@@ -89,7 +89,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		if ((action.activePredicate != null? action.activePredicate : defaultActivePredicate).get()) {
 			action.action.accept(button);
 			(action.sound != null ? action.sound : defaultSound).get()
-			  .ifPresent(s -> Minecraft.getInstance().getSoundManager().play(s));
+			  .ifPresent(s -> Minecraft.getInstance().getSoundHandler().play(s));
 			return true;
 		}
 		return false;
@@ -127,11 +127,11 @@ public class MultiFunctionIconButton extends TintedButton {
 		active = activeOverride != null? activeOverride : (action.activePredicate != null? action.activePredicate : defaultActivePredicate).get();
 		
 		Minecraft mc = Minecraft.getInstance();
-		FontRenderer font = mc.font;
+		FontRenderer font = mc.fontRenderer;
 		ITextComponent title = action.titleSupplier != null ? action.titleSupplier.get() : defaultTitle.get();
 		Icon icon = action.icon != null ? action.icon.get() : null;
 		if (icon == null) icon = defaultIcon;
-		final int textWidth = font.width(title);
+		final int textWidth = font.getStringPropertyWidth(title);
 		final int iconWidth = icon != Icon.EMPTY ? 20 : 4;
 		final int contentWidth = textWidth + iconWidth + 4;
 		if (minWidth != -1 && maxWidth != -1) {
@@ -146,13 +146,13 @@ public class MultiFunctionIconButton extends TintedButton {
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		
-		mc.getTextureManager().bind(WIDGETS_LOCATION);
+		mc.getTextureManager().bindTexture(WIDGETS_LOCATION);
 		int i = getYImage(isHovered());
 		blit(mStack, x, y, 0, 46 + i * 20, width / 2, height);
 		blit(mStack, x + width / 2, y, 200 - width / 2, 46 + i * 20, width / 2, height);
 		renderBg(mStack, mc, mouseX, mouseY);
 		int color = getFGColor();
-		mStack.pushPose(); {
+		mStack.push(); {
 			if (contentWidth < width) mStack.translate((width - contentWidth) / 2.0, 0.0, 0.0);
 			if (icon != Icon.EMPTY) {
 				RenderSystem.color4f(0.1F, 0.1F, 0.1F, 0.8F);
@@ -169,7 +169,7 @@ public class MultiFunctionIconButton extends TintedButton {
 					ScissorsHandler.INSTANCE.removeLastScissor();
 				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
 			}
-		} mStack.popPose();
+		} mStack.pop();
 		
 		if (isHovered())
 			renderToolTip(mStack, mouseX, mouseY);
@@ -180,12 +180,12 @@ public class MultiFunctionIconButton extends TintedButton {
 		final ButtonAction action = activeAction;
 		final List<ITextComponent> ls = (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 		if (!ls.isEmpty()) {
-			final Screen screen = Minecraft.getInstance().screen;
+			final Screen screen = Minecraft.getInstance().currentScreen;
 			if (screen instanceof IMultiTooltipScreen) {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
 				  new Point(mouseX, mouseY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
 			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, mouseX, mouseY, Minecraft.getInstance().font);
+				screen.renderWrappedToolTip(mStack, ls, mouseX, mouseY, Minecraft.getInstance().fontRenderer);
 		}
 	}
 	
@@ -258,11 +258,11 @@ public class MultiFunctionIconButton extends TintedButton {
 		final ButtonAction action = actions.stream().filter(p -> p.getLeft().isActive()).map(Pair::getRight).findFirst()
 		  .orElseThrow(() -> new IllegalStateException("Button without default action"));
 		Minecraft mc = Minecraft.getInstance();
-		FontRenderer font = mc.font;
+		FontRenderer font = mc.fontRenderer;
 		ITextComponent title = action.titleSupplier != null ? action.titleSupplier.get() : defaultTitle.get();
 		Icon icon = action.icon != null ? action.icon.get() : null;
 		if (icon == null) icon = defaultIcon;
-		final int textWidth = font.width(title);
+		final int textWidth = font.getStringPropertyWidth(title);
 		final int contentWidth = textWidth + (icon != Icon.EMPTY? 20 : 4) + 4;
 		return max(minWidth, min(maxWidth, (contentWidth + 1) / 2 * 2));
 	}

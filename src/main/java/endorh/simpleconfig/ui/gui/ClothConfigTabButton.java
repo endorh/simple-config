@@ -41,9 +41,9 @@ public class ClothConfigTabButton extends MultiFunctionIconButton {
 			   .collect(Collectors.toList())
 			 : Collections::emptyList
 		  ).active(() -> screen.selectedCategory != category)
-		  .title(() -> screen.isSelecting() ? title.copy().append(new StringTextComponent(
+		  .title(() -> screen.isSelecting() ? title.deepCopy().append(new StringTextComponent(
 		    " [" + category.getAllMainEntries().stream().filter(AbstractConfigEntry::isSelected).count() + "]"
-		  ).withStyle(TextFormatting.AQUA)) : title));
+		  ).mergeStyle(TextFormatting.AQUA)) : title));
 		this.category = category;
 		this.screen = screen;
 	}

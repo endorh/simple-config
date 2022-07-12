@@ -10,11 +10,11 @@ public class PointHelper {
 	public static Point ofMouse() {
 		Minecraft client = Minecraft.getInstance();
 		double mx =
-		  client.mouseHandler.xpos() * (double) client.getWindow().getGuiScaledWidth() /
-		  (double) client.getWindow().getScreenWidth();
+		  client.mouseHelper.getMouseX() * (double) client.getMainWindow().getScaledWidth() /
+		  (double) client.getMainWindow().getWidth();
 		double my =
-		  client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() /
-		  (double) client.getWindow().getScreenHeight();
+		  client.mouseHelper.getMouseY() * (double) client.getMainWindow().getScaledHeight() /
+		  (double) client.getMainWindow().getHeight();
 		return new Point(mx, my);
 	}
 	

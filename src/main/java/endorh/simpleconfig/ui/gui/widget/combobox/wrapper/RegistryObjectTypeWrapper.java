@@ -61,9 +61,9 @@ public abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
 		final ResourceLocation name = getRegistryName(element);
 		if (name.getNamespace().equals("minecraft"))
 			return new StringTextComponent(name.getPath());
-		return new StringTextComponent(name.getNamespace()).withStyle(TextFormatting.GRAY)
-		  .append(new StringTextComponent(":").withStyle(TextFormatting.GRAY))
-		  .append(new StringTextComponent(name.getPath()).withStyle(TextFormatting.WHITE));
+		return new StringTextComponent(name.getNamespace()).mergeStyle(TextFormatting.GRAY)
+		  .append(new StringTextComponent(":").mergeStyle(TextFormatting.GRAY))
+		  .append(new StringTextComponent(name.getPath()).mergeStyle(TextFormatting.WHITE));
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {

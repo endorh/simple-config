@@ -42,6 +42,6 @@ public class PatternTypeWrapper implements ITypeWrapper<Pattern> {
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {
 		return ITextFormatter.forLanguageOrDefault("regex", ITextFormatter.plain(
-		  Style.EMPTY.withColor(Color.fromRgb(0xFFA080))));
+		  Style.EMPTY.setColor(Color.fromInt(0xFFA080))));
 	}
 }

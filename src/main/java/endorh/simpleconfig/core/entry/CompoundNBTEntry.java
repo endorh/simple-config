@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, CompoundNBTEntry> {
-	protected static final Pattern STYLE_COMPONENT = Pattern.compile("§[0-9a-f]");
+	protected static final Pattern STYLE_COMPONENT = Pattern.compile("§[\\da-f]");
 	
 	@Internal public CompoundNBTEntry(ISimpleConfigEntryHolder parent, String name, CompoundNBT value) {
 		super(parent, name, value, CompoundNBT.class);
@@ -37,12 +37,15 @@ public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, Com
 	}
 	
 	@Override protected String serialize(CompoundNBT value) {
-		return STYLE_COMPONENT.matcher(value.getPrettyDisplay().getString()).replaceAll("");
+		return STYLE_COMPONENT.matcher(value.toFormattedComponent().getString()).replaceAll("");
 	}
 	
 	@Override protected @Nullable CompoundNBT deserialize(String value) {
 		try {
-			return new JsonToNBT(new StringReader(value)).readStruct();
+			StringReader reader = new StringReader(value);
+			CompoundNBT compound = new JsonToNBT(reader).readStruct();
+			reader.skipWhitespace();
+			return reader.canRead()? null : compound;
 		} catch (CommandSyntaxException ignored) {
 			return null;
 		}

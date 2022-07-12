@@ -56,9 +56,9 @@ public class ResourceLocationTypeWrapper implements ITypeWrapper<ResourceLocatio
 	@Override public ITextComponent getDisplayName(@NotNull ResourceLocation element) {
 		if (element.getNamespace().equals("minecraft"))
 			return new StringTextComponent(element.getPath());
-		return new StringTextComponent(element.getNamespace()).withStyle(TextFormatting.GRAY)
-		  .append(new StringTextComponent(":").withStyle(TextFormatting.GRAY))
-		  .append(new StringTextComponent(element.getPath()).withStyle(TextFormatting.WHITE));
+		return new StringTextComponent(element.getNamespace()).mergeStyle(TextFormatting.GRAY)
+		  .append(new StringTextComponent(":").mergeStyle(TextFormatting.GRAY))
+		  .append(new StringTextComponent(element.getPath()).mergeStyle(TextFormatting.WHITE));
 	}
 	
 	@Override public String getName(@NotNull ResourceLocation element) {

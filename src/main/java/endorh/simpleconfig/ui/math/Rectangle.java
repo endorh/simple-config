@@ -402,9 +402,7 @@ public class Rectangle {
 			} else if (x0 > Integer.MAX_VALUE) {
 				x0 = Integer.MAX_VALUE;
 			}
-			if ((x1 -= x0) < Integer.MIN_VALUE) {
-				x1 = Integer.MIN_VALUE;
-			} else if (x1 > Integer.MAX_VALUE) {
+			if ((x1 -= x0) > Integer.MAX_VALUE) {
 				x1 = Integer.MAX_VALUE;
 			}
 		}
@@ -423,9 +421,7 @@ public class Rectangle {
 			} else if (y0 > Integer.MAX_VALUE) {
 				y0 = Integer.MAX_VALUE;
 			}
-			if ((y1 -= y0) < Integer.MIN_VALUE) {
-				y1 = Integer.MIN_VALUE;
-			} else if (y1 > Integer.MAX_VALUE) {
+			if ((y1 -= y0) > Integer.MAX_VALUE) {
 				y1 = Integer.MAX_VALUE;
 			}
 		}

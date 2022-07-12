@@ -65,9 +65,9 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	}
 	
 	protected static final Pattern COLOR_PATTERN = Pattern.compile(
-	  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3}|[0-9a-f]{6})\\s*");
+	  "\\s*(?:0x|#)(?i)(?<color>[\\da-f]{3}|[\\da-f]{6})\\s*");
 	protected static final Pattern ALPHA_COLOR_PATTERN = Pattern.compile(
-	  "\\s*(?:0x|#)(?i)(?<color>[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})\\s*");
+	  "\\s*(?:0x|#)(?i)(?<color>[\\da-f]{3,4}|[\\da-f]{6}|[\\da-f]{8})\\s*");
 	
 	@Override
 	@Nullable public Color fromConfig(String value) {

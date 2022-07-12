@@ -163,7 +163,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			CompoundNBT m = new JsonToNBT(new StringReader(str)).readStruct();
 			final Map<String, C> map = new LinkedHashMap<>();
 			if (linked) {
-				m.getAllKeys().stream().map(
+				m.keySet().stream().map(
 				  k -> {
 					  final Matcher s = NBTUtil.SPLIT.matcher(k);
 					  return s.matches() ? Triple.of(Integer.parseInt(s.group(1)), s.group(2), m.get(k))
@@ -173,7 +173,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 					  map.put(t.getMiddle(), (C) NBTUtil.fromNBT(t.getRight(), getExpectedType().next.get(0)));
 				  });
 			} else {
-				for (String k : m.getAllKeys())
+				for (String k : m.keySet())
 					//noinspection unchecked
 					map.put(k, (C) NBTUtil.fromNBT(m.get(k), getExpectedType().next.get(0)));
 			}

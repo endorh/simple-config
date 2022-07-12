@@ -56,8 +56,8 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override public boolean escapeKeyPressed() {
-		if (getFocused() != cancelButton) {
-			setFocused(cancelButton);
+		if (getListener() != cancelButton) {
+			setListener(cancelButton);
 		} else cancel(false);
 		return true;
 	}
@@ -97,12 +97,12 @@ public class ProgressDialog extends ConfirmDialog {
 		final StackTraceElement[] trace = e.getStackTrace();
 		final List<ITextComponent> l = Lists.newArrayList(
 		  new StringTextComponent(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage())
-			 .withStyle(TextFormatting.RED));
+			 .mergeStyle(TextFormatting.RED));
 		if (trace.length > 0)
-			l.add(new StringTextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).withStyle(TextFormatting.RED));
+			l.add(new StringTextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).mergeStyle(TextFormatting.RED));
 		if (e.getCause() != null) {
 			final List<ITextComponent> c = renderException(e.getCause());
-			c.set(0, new StringTextComponent("caused by: ").withStyle(TextFormatting.RED)
+			c.set(0, new StringTextComponent("caused by: ").mergeStyle(TextFormatting.RED)
 			  .append(c.get(0)));
 			l.addAll(c);
 		}
@@ -111,10 +111,10 @@ public class ProgressDialog extends ConfirmDialog {
 	
 	@Override protected void layout() {
 		w = (int) MathHelper.clamp(screen.width * 0.7, 120, 800);
-		final int titleWidth = font.width(title);
+		final int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
 			w = min(screen.width - 32, titleWidth + 16);
-		lines = getBody().stream().map(l -> font.split(l, w - 16)).collect(Collectors.toList());
+		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
 		h = (int) MathHelper.clamp(64 + lines.stream().reduce(
 			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
 				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96, screen.height * 0.9);
@@ -134,7 +134,7 @@ public class ProgressDialog extends ConfirmDialog {
 		int ty = y + 4;
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
-				font.drawShadow(mStack, l, tx, ty, bodyColor);
+				font.func_238407_a_(mStack, l, tx, ty, bodyColor);
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;
@@ -200,7 +200,7 @@ public class ProgressDialog extends ConfirmDialog {
 	
 	protected List<ITextComponent> decorateError(List<ITextComponent> error) {
 		return error.stream()
-		  .map(t -> t.copy().withStyle(TextFormatting.RED))
+		  .map(t -> t.deepCopy().mergeStyle(TextFormatting.RED))
 		  .collect(Collectors.toList());
 	}
 	

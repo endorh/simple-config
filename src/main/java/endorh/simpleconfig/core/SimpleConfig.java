@@ -53,6 +53,8 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static java.util.Collections.*;
 
+import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
+
 /**
  * Simple config class. Requires Cloth Config API (Forge) for the GUI menu<br>
  * Create and register your config with {@link SimpleConfig#builder(String, Type)}
@@ -338,7 +340,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			if (player != null) {
 				player.sendMessage(new TranslationTextComponent(
 				  "simpleconfig.config.msg.client_changes_require_restart"
-				).withStyle(TextFormatting.GOLD), Util.NIL_UUID);
+				).mergeStyle(TextFormatting.GOLD), Util.DUMMY_UUID);
 			}
 		}
 	}
@@ -400,7 +402,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected ITextComponent getTitle() {
-		if (I18n.exists(defaultTitle))
+		if (I18n.hasKey(defaultTitle))
 			return new TranslationTextComponent(defaultTitle);
 		return new TranslationTextComponent(
 		  "simpleconfig.config.category." + type.name().toLowerCase());
@@ -422,12 +424,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory(type.name().toLowerCase());
+			final ConfigCategory category = configBuilder.getOrCreateCategory(type.name().toLowerCase(), type == Type.SERVER);
 			category.setTitle(getTitle());
-			category.setIsServer(type == Type.SERVER);
 			getFilePath().ifPresent(category::setContainingFile);
 			category.setDescription(
-			  () -> I18n.exists(tooltip)
+			  () -> I18n.hasKey(tooltip)
 			        ? Optional.of(splitTtc(tooltip).toArray(new ITextComponent[0]))
 			        : Optional.empty());
 			if (background != null)
@@ -593,9 +594,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			if (c == null) return;
 			AbstractConfigScreen screen = c.getGUI();
 			if (screen != null) {
-				screen.runAtomicTransparentAction(() -> {
-					c.loadGUISnapshot(config);
-				});
+				screen.runAtomicTransparentAction(() -> c.loadGUISnapshot(config));
 			}
 		}
 		

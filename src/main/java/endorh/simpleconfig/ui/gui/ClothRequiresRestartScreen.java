@@ -14,9 +14,9 @@ public class ClothRequiresRestartScreen
 		super(
 		  t -> {
 			  if (t) {
-				  Minecraft.getInstance().stop();
+				  Minecraft.getInstance().shutdown();
 			  } else {
-				  Minecraft.getInstance().setScreen(parent);
+				  Minecraft.getInstance().displayGuiScreen(parent);
 			  }
 		  }, new TranslationTextComponent("text.cloth-config.restart_required"),
         new TranslationTextComponent("text.cloth-config.restart_required_sub"),

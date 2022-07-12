@@ -34,7 +34,7 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 		@Override public int getScrollY() {
 			return 0;
 		}
-		@Override public @NotNull List<? extends IGuiEventListener> children() {
+		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return Collections.emptyList();
 		}
 	}

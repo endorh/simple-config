@@ -61,7 +61,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
 				"simpleconfig.ui.merge.accept." + (getScreen().isSelectedCategoryServer() ? "remote" : "external"))
-			   .withStyle(TextFormatting.LIGHT_PURPLE))));
+			   .mergeStyle(TextFormatting.LIGHT_PURPLE))));
 		mergeButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.MERGE_CONFLICT, ButtonAction.of(
 			 () -> setPreviewingExternal(true)
@@ -69,7 +69,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
 			   "simpleconfig.ui.view_" + (getScreen().isSelectedCategoryServer() ? "remote" : "external") + "_changes")
-			   .withStyle(TextFormatting.GOLD)))
+			   .mergeStyle(TextFormatting.GOLD)))
 		) {
 			@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
 				if (advanced.show_ui_tips) super.renderToolTip(mStack, mouseX, mouseY - 16);
@@ -80,7 +80,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
 			   "simpleconfig.ui.accepted_" + (getScreen().isSelectedCategoryServer() ? "remote" : "external") + "_changes")
-			   .withStyle(TextFormatting.DARK_GREEN)))
+			   .mergeStyle(TextFormatting.DARK_GREEN)))
 		).on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(
 		  () -> setPreviewingExternal(false)
 		).active(this::isPreviewingExternal)
@@ -193,25 +193,25 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 			selectionCheckbox.render(mStack, mouseX, mouseY, delta);
 		}
 		ResetButton resetButton = getResetButton();
-		FontRenderer font = Minecraft.getInstance().font;
+		FontRenderer font = Minecraft.getInstance().fontRenderer;
 		int fieldWidth = getFieldWidth();
 		int fieldHeight = getFieldHeight();
-		int fieldX = font.isBidirectional()? x : x + entryWidth - fieldWidth;
+		int fieldX = font.getBidiFlag()? x : x + entryWidth - fieldWidth;
 		if (!isSubEntry()) {
 			ITextComponent title = getDisplayedTitle();
-			float textX = (float) (font.isBidirectional() ? x + entryWidth - font.width(title) : x);
+			float textX = (float) (font.getBidiFlag() ? x + entryWidth - font.getStringPropertyWidth(title) : x);
 			renderTitle(
 			  mStack, title, textX, index, x, y, entryWidth, entryHeight,
 			  mouseX, mouseY, isHovered, delta);
 		}
 		
-		int resetButtonOffset = 0;
+		int resetButtonOffset;
 		if (resetButton != null) {
 			resetButtonOffset = resetButton.getWidth() + 2;
 			fieldWidth -= resetButtonOffset;
 			resetButton.y = y;
-			resetButton.x = font.isBidirectional()? x : x + entryWidth - resetButton.getWidth();
-			fieldX += font.isBidirectional()? resetButton.getWidth() : 0;
+			resetButton.x = font.getBidiFlag()? x : x + entryWidth - resetButton.getWidth();
+			fieldX += font.getBidiFlag()? resetButton.getWidth() : 0;
 			if (!isPreviewingExternal())
 				resetButton.render(mStack, mouseX, mouseY, delta);
 		}
@@ -225,7 +225,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 			if (isPreviewingExternal()) {
 				int cH = max(0, getCaptionHeight());
 				int pWidth = getPreviewFieldWidth();
-				int pX = font.isBidirectional() ? x - 36 : x + entryWidth - pWidth - 8;
+				int pX = font.getBidiFlag() ? x - 36 : x + entryWidth - pWidth - 8;
 				previewOverlayRectangle.setBounds(
 				  pX, y - 32 - 2, pWidth + 44, entryHeight + 32 + 4);
 			}
@@ -283,12 +283,12 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 	) {
 		if (area == previewOverlayRectangle) {
 			if (!isPreviewingExternal()) return false;
-			FontRenderer font = Minecraft.getInstance().font;
+			FontRenderer font = Minecraft.getInstance().fontRenderer;
 			final boolean isServer = getScreen().isSelectedCategoryServer();
 			TranslationTextComponent caption = new TranslationTextComponent(
 			  "simpleconfig.ui." + (isServer ? "remote_changes" : "external_changes"));
 			
-			final int captionWidth = font.width(caption);
+			final int captionWidth = font.getStringPropertyWidth(caption);
 			final int l = area.x + 4, t = area.y + 32 + 2 - 4, r = area.getMaxX() - 4, b = area.getMaxY() - 4 + 2;
 			
 			// Caption
@@ -333,8 +333,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 				
 				// Caption
 				fill(mStack, cX + 2, cY + 2, cX + cW - 2, t + 2, externalPreviewBgColor);
-				font.drawShadow(
-				  mStack, font.split(caption, fW - 16).get(0), cX + 6, cY + 8,
+				font.func_238407_a_(
+				  mStack, font.trimStringToWidth(caption, fW - 16).get(0), cX + 6, cY + 8,
 				  externalPreviewTextColor);
 				
 				// Controls
@@ -405,20 +405,20 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 	  MatrixStack mStack, ITextComponent title, float textX, int index, int x, int y,
 	  int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		final FontRenderer font = Minecraft.getInstance().font;
-		font.drawShadow(
-		  mStack, title.getVisualOrderText(), textX, (float) y + 6, getPreferredTextColor());
+		final FontRenderer font = Minecraft.getInstance().fontRenderer;
+		font.func_238407_a_(
+		  mStack, title.func_241878_f(), textX, (float) y + 6, getPreferredTextColor());
 		final NavigableSet<EntryFlag> entryFlags = getEntryFlags();
 		if (!entryFlags.isEmpty()) {
-			final int textW = font.width(title);
+			final int textW = font.getStringPropertyWidth(title);
 			int flagsX =
-			  font.isBidirectional()
+			  font.getBidiFlag()
 			  ? max((int) textX - textW - 4 - 14 * entryFlags.size(), x + getFieldWidth() + 16)
 			  : min((int) textX + textW + 4, x + entryWidth - getFieldWidth() - 16);
-			int flagsY = y + 6 + font.lineHeight / 2 - 7;
+			int flagsY = y + 6 + font.FONT_HEIGHT / 2 - 7;
 			flagsRectangle.setBounds(flagsX, flagsY, 14 * entryFlags.size(), 14);
 			int xx = flagsX;
-			for (EntryFlag entryFlag : font.isBidirectional() ? entryFlags.descendingSet() : entryFlags) {
+			for (EntryFlag entryFlag : font.getBidiFlag() ? entryFlags.descendingSet() : entryFlags) {
 				entryFlag.icon.renderCentered(mStack, xx, flagsY, 14, 14);
 				xx += 14;
 			}
@@ -442,7 +442,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		return (int) round(entryArea.y - entryList.top + entryList.getScroll());
 	}
 	
-	@Override public final @NotNull List<? extends IGuiEventListener> children() {
+	@Override public final @NotNull List<? extends IGuiEventListener> getEventListeners() {
 		if (isPreviewingExternal())
 			return previewListeners;
 		return getEntryListeners();

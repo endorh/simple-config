@@ -37,7 +37,7 @@ public abstract class AbstractDialog
 	protected Icon icon = Icon.EMPTY;
 	
 	protected int x, y, w, h;
-	protected FontRenderer font = Minecraft.getInstance().font;
+	protected FontRenderer font = Minecraft.getInstance().fontRenderer;
 	
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	
@@ -56,7 +56,7 @@ public abstract class AbstractDialog
 	}
 	
 	public void copyText() {
-		Minecraft.getInstance().keyboardHandler.setClipboard(getText());
+		Minecraft.getInstance().keyboardListener.setClipboardString(getText());
 	}
 	
 	public String getText() {
@@ -128,7 +128,7 @@ public abstract class AbstractDialog
 		return true;
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 		return listeners;
 	}
 	@Override public Pair<Integer, IGuiEventListener> getDragged() {

@@ -33,7 +33,7 @@ public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements I
 		setOriginal(value.copy());
 		setValue(value.copy());
 		displayedValue = value.copy();
-		buttonWidget = new Button(0, 0, 150, 20, NarratorChatListener.NO_TITLE,
+		buttonWidget = new Button(0, 0, 150, 20, NarratorChatListener.EMPTY,
 		                               widget -> getScreen().setFocusedBinding(this));
 		widgets = Lists.newArrayList(buttonWidget, resetButton);
 		childWidgets = Lists.newArrayList(buttonWidget);
@@ -92,9 +92,9 @@ public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements I
 		buttonWidget.setMessage(getLocalizedName());
 		if (getScreen().getFocusedBinding() == this) {
 			buttonWidget.setMessage(
-			  new StringTextComponent("> ").withStyle(TextFormatting.WHITE).append(
-				 buttonWidget.getMessage().plainCopy().withStyle(TextFormatting.YELLOW)).append(
-				 new StringTextComponent(" <").withStyle(TextFormatting.WHITE)));
+			  new StringTextComponent("> ").mergeStyle(TextFormatting.WHITE).append(
+				 buttonWidget.getMessage().copyRaw().mergeStyle(TextFormatting.YELLOW)).append(
+				 new StringTextComponent(" <").mergeStyle(TextFormatting.WHITE)));
 		}
 		buttonWidget.x = x;
 		buttonWidget.y = y;

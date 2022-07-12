@@ -57,9 +57,9 @@ public final class ScissorsHandlerImpl
 			for (int i = 1; i < this.scissorsAreas.size(); ++i) {
 				Rectangle r1 = this.scissorsAreas.get(i);
 				if (!r.intersects(r1)) {
-					if (mc.screen instanceof ScissorsScreen) {
+					if (mc.currentScreen instanceof ScissorsScreen) {
 						this._applyScissor(
-						  ((ScissorsScreen) mc.screen).handleScissor(
+						  ((ScissorsScreen) mc.currentScreen).handleScissor(
 							 new Rectangle()));
 					} else {
 						this._applyScissor(new Rectangle());
@@ -71,15 +71,15 @@ public final class ScissorsHandlerImpl
 			r.setBounds(
 			  min(r.x, r.x + r.width), min(r.y, r.y + r.height),
 			  abs(r.width), abs(r.height));
-			if (mc.screen instanceof ScissorsScreen) {
+			if (mc.currentScreen instanceof ScissorsScreen) {
 				this._applyScissor(
-				  ((ScissorsScreen) mc.screen).handleScissor(r));
+				  ((ScissorsScreen) mc.currentScreen).handleScissor(r));
 			} else {
 				this._applyScissor(r);
 			}
-		} else if (mc.screen instanceof ScissorsScreen) {
+		} else if (mc.currentScreen instanceof ScissorsScreen) {
 			this._applyScissor(
-			  ((ScissorsScreen) mc.screen).handleScissor(null));
+			  ((ScissorsScreen) mc.currentScreen).handleScissor(null));
 		} else {
 			this._applyScissor(null);
 		}
@@ -91,11 +91,11 @@ public final class ScissorsHandlerImpl
 			if (r.isEmpty()) {
 				GL11.glScissor(0, 0, 0, 0);
 			} else {
-				MainWindow window = Minecraft.getInstance().getWindow();
-				double scaleFactor = window.getGuiScale();
+				MainWindow window = Minecraft.getInstance().getMainWindow();
+				double scaleFactor = window.getGuiScaleFactor();
 				GL11.glScissor(
               (int) ((double) r.x * scaleFactor),
-              (int) ((double) (window.getGuiScaledHeight() - r.height - r.y) * scaleFactor),
+              (int) ((double) (window.getScaledHeight() - r.height - r.y) * scaleFactor),
               (int) ((double) r.width * scaleFactor),
               (int) ((double) r.height * scaleFactor));
 			}

@@ -42,19 +42,19 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 		
 		@Override public Long getValue() {
 			try {
-				return Long.valueOf(widget.getValue());
+				return Long.valueOf(widget.getText());
 			} catch (NumberFormatException e) {
 				return 0L;
 			}
 		}
 		
 		@Override public void doSetValue(Long value) {
-			widget.setValue(String.valueOf(value));
+			widget.setText(String.valueOf(value));
 		}
 		
 		@Override public Optional<ITextComponent> getErrorMessage() {
 			try {
-				long l = Long.parseLong(widget.getValue());
+				long l = Long.parseLong(widget.getText());
 				final LongListListEntry listEntry = getListEntry();
 				if (l > listEntry.maximum)
 					return Optional.of(new TranslationTextComponent(

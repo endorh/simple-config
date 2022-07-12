@@ -29,7 +29,6 @@ public interface ConfigCategory extends IEntryHolder {
 	@Nullable ResourceLocation getBackground();
 	
 	boolean isServer();
-	void setIsServer(boolean isServer);
 	
 	void setColor(int color);
 	int getColor();

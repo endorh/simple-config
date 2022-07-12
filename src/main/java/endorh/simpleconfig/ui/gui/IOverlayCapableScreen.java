@@ -180,7 +180,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 	default void renderOverlays(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		final List<OverlayTicket> removed = new LinkedList<>();
-		mStack.pushPose(); {
+		mStack.push(); {
 			mStack.translate(0D, 0D, 100D);
 			for (OverlayTicket ticket : sortedOverlays) {
 				removeTooltips(ticket.area);
@@ -189,7 +189,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 					removed.add(ticket);
 				ScissorsHandler.INSTANCE.removeLastScissor();
 			}
-		} mStack.popPose();
+		} mStack.pop();
 		sortedOverlays.removeAll(removed);
 	}
 	

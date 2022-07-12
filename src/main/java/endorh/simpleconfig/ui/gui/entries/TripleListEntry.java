@@ -20,6 +20,8 @@ import java.util.List;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+
 public class TripleListEntry<
   L, M, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
   ME extends AbstractConfigEntry<M> & IChildListEntry,
@@ -84,9 +86,9 @@ public class TripleListEntry<
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		leftEntry.updateFocused(isFocused && getFocused() == leftEntry);
-		middleEntry.updateFocused(isFocused && getFocused() == middleEntry);
-		rightEntry.updateFocused(isFocused && getFocused() == rightEntry);
+		leftEntry.updateFocused(isFocused && getListener() == leftEntry);
+		middleEntry.updateFocused(isFocused && getListener() == middleEntry);
+		rightEntry.updateFocused(isFocused && getListener() == rightEntry);
 	}
 	
 	@Override public boolean isGroup() {

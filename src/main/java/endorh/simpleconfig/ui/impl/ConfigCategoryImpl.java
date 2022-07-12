@@ -27,14 +27,15 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected @Nullable ResourceLocation background;
 	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
-	protected boolean isServer = false;
+	protected boolean isServer;
 	protected int color;
 	
-	ConfigCategoryImpl(ConfigBuilder builder, String name) {
+	ConfigCategoryImpl(ConfigBuilder builder, String name, boolean isServer) {
 		this.builder = builder;
 		this.entries = Lists.newArrayList();
 		this.name = name;
 		this.title = new StringTextComponent(name);
+		this.isServer = isServer;
 	}
 	
 	@Override public ITextComponent getTitle() {
@@ -63,7 +64,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		return this;
 	}
 	@Override public void removeCategory() {
-		this.builder.removeCategory(this.name);
+		this.builder.removeCategory(this.name, isServer);
 	}
 	
 	@Override public Optional<Path> getContainingFile() {
@@ -83,9 +84,6 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	
 	@Override public boolean isServer() {
 		return isServer;
-	}
-	@Override public void setIsServer(boolean isServer) {
-		this.isServer = isServer;
 	}
 	
 	@Override public void setColor(int color) {

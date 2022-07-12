@@ -138,7 +138,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		try {
 			CompoundNBT m = new JsonToNBT(new StringReader(str)).readStruct();
 			final List<Pair<String, C>> list = new ArrayList<>();
-			m.getAllKeys().stream().map(k -> {
+			m.keySet().stream().map(k -> {
 				final Matcher s = NBTUtil.SPLIT.matcher(k);
 				return s.matches() ? Triple.of(Integer.parseInt(s.group(1)), s.group(2), m.get(k))
 				                   : Triple.of(Integer.MAX_VALUE, k, m.get(k));

@@ -135,7 +135,7 @@ public class PresetPickerWidget extends FocusableGui {
 	}
 	
 	protected void position() {
-		if (screen.getFocused() != this) forceUnFocus(listeners);
+		if (screen.getListener() != this) forceUnFocus(listeners);
 		
 		selector.x = x;
 		selector.y = y + 2;
@@ -217,10 +217,7 @@ public class PresetPickerWidget extends FocusableGui {
 				  .thenAccept(config -> handler.restore(config, type));
 				screen.addDialog(ProgressDialog.create(
 				  screen, new TranslationTextComponent("simpleconfig.preset.dialog.loading.title"),
-				  future, d -> {
-					  d.setBody(splitTtc("simpleconfig.preset.dialog.loading.remote.body", preset.name));
-					  
-				  }));
+				  future, d -> d.setBody(splitTtc("simpleconfig.preset.dialog.loading.remote.body", preset.name))));
 			} else handler.restore(handler.getLocal(preset.name, type), type);
 		});
 	}
@@ -396,7 +393,7 @@ public class PresetPickerWidget extends FocusableGui {
 				return element.name;
 			}
 			@Override public ITextComponent getDisplayName(@NotNull Preset element) {
-				return new StringTextComponent(element.name).withStyle(
+				return new StringTextComponent(element.name).mergeStyle(
 				  element.remote ? TextFormatting.AQUA : TextFormatting.GREEN);
 			}
 			
@@ -424,7 +421,7 @@ public class PresetPickerWidget extends FocusableGui {
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 		return listeners;
 	}
 }

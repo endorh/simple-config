@@ -7,7 +7,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import static java.lang.Math.*;
-import static java.lang.Math.abs;
 
 @OnlyIn(value = Dist.CLIENT)
 public class LongSliderEntry extends SliderListEntry<Long> {
@@ -43,11 +42,11 @@ public class LongSliderEntry extends SliderListEntry<Long> {
 		}
 		
 		@Override public Long getValue() {
-			return round(min + ((max - min) * value));
+			return round(min + ((max - min) * sliderValue));
 		}
 		
 		@Override public void setValue(Long v) {
-			value = (double) (v - min) / (double) (max - min);
+			sliderValue = (double) (v - min) / (double) (max - min);
 		}
 	}
 }
