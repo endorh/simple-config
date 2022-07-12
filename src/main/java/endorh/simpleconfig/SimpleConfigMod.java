@@ -17,6 +17,7 @@ import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.resources.IReloadableResourceManager;
 import net.minecraft.server.MinecraftServer;
@@ -61,7 +62,6 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.SimpleConfigMod.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
 import static endorh.simpleconfig.core.SimpleConfig.group;
 import static endorh.simpleconfig.core.entry.Builders.*;
-import static net.minecraft.client.util.InputMappings.Type.KEYSYM;
 import static net.minecraftforge.client.settings.KeyConflictContext.GUI;
 import static net.minecraftforge.client.settings.KeyModifier.CONTROL;
 import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
@@ -330,12 +330,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		}
 		
 		private static KeyBinding reg(String name, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, KEYSYM.getOrCreate(keyCode), CATEGORY);
+			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
 		private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, KEYSYM.getOrCreate(keyCode), CATEGORY);
+			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}

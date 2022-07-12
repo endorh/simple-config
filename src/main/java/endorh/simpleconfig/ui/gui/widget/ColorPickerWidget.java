@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.math.Color;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.Math.*;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 /**
  * Simple color picker with a brightness+saturation frame, a hue bar,
@@ -297,8 +297,8 @@ public class ColorPickerWidget extends Widget {
 		}
 		
 		protected void dragBrightnessSaturation(double mouseX, double mouseY) {
-			final float s = lastSaturation = clamp((float) ((mouseX - x) / (w - 1)), 0F, 1F);
-			final float b = 1F - clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
+			final float s = lastSaturation = MathHelper.clamp((float) ((mouseX - x) / (w - 1)), 0F, 1F);
+			final float b = 1F - MathHelper.clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
 			updateValue(Color.ofHSBA(lastHue, s, b, value.getAlpha()));
 		}
 	}
@@ -343,7 +343,7 @@ public class ColorPickerWidget extends Widget {
 		}
 		
 		protected void dragHue(double mouseX, double mouseY) {
-			final float h = lastHue = clamp((float) ((mouseY - y) / (this.h - 1)), 0F, 1F);
+			final float h = lastHue = MathHelper.clamp((float) ((mouseY - y) / (this.h - 1)), 0F, 1F);
 			updateValue(Color.ofHSBA(h, value.getSaturation(), value.getBrightness(), value.getAlpha()));
 		}
 	}
@@ -384,7 +384,7 @@ public class ColorPickerWidget extends Widget {
 		}
 		
 		protected void dragTransparency(double mouseX, double mouseY) {
-			final float a = 1F - clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
+			final float a = 1F - MathHelper.clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
 			updateValue(Color.ofTransparent(value.getColor() & 0xFFFFFF | round(a * 255F) << 24));
 		}
 	}

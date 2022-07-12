@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ClothConfigScreen
@@ -206,7 +205,7 @@ public class ClothConfigScreen
 		addWidget(selectionToolbar);
 		
 		// Right toolbar
-		presetPickerWidget.w = clamp(width / 3, 80, 250);
+		presetPickerWidget.w = MathHelper.clamp(width / 3, 80, 250);
 		presetPickerWidget.x = width - presetPickerWidget.w - 2;
 		presetPickerWidget.y = 2;
 		addWidget(presetPickerWidget);
@@ -815,11 +814,11 @@ public class ClothConfigScreen
 		}
 		
 		@Override public int getFieldWidth() {
-			return (int) clamp((right - left) * 0.3F, 80, 250);
+			return (int) MathHelper.clamp((right - left) * 0.3F, 80, 250);
 		}
 		
 		@Override public int getKeyFieldWidth() {
-			return (int) clamp((right - left) * 0.25F, 80, 250);
+			return (int) MathHelper.clamp((right - left) * 0.25F, 80, 250);
 		}
 		
 		@Override protected int getScrollBarPosition() {

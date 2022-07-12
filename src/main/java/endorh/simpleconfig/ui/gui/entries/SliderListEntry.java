@@ -12,6 +12,7 @@ import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.AbstractSlider;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,8 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class SliderListEntry<V extends Comparable<V>>
@@ -312,7 +311,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 				boolean left = keyCode == 263; // Left
 				if (left || keyCode == 262) { // Right
 					final double step = getStep(left);
-					final double v = clamp(value + step, 0D, 1D);
+					final double v = MathHelper.clamp(value + step, 0D, 1D);
 					value = v;
 					SliderListEntry.this.setDisplayedValue(getValue());
 					value = v;

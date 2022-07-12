@@ -24,6 +24,7 @@ import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.Util;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -38,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Math.*;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends BaseListEntry<T, C, Self>>
@@ -527,7 +527,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					childDrawsLine = cell.drawsLine(mouseX - 14, mouseY - yy);
 				}
 				if (dragCursor == i) {
-					int overlayY = clamp(mouseY - draggingOffset, y + 12, y + entryHeight - ch + 12);
+					int overlayY = MathHelper.clamp(mouseY - draggingOffset, y + 12, y + entryHeight - ch + 12);
 					dragOverlayRectangle.setBounds(
 					  x, overlayY + min(0, o),
 					  entryWidth, ch + abs(o));

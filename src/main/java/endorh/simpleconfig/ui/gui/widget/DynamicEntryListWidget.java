@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicEntryListWidget<E extends ListEntry>
@@ -334,7 +333,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	) {
 		if (maxScroll > 0) {
 			int sbHeight = (bottom - top) * (bottom - top) / getMaxScrollPosition();
-			sbHeight = clamp(sbHeight, 32, bottom - top - 8);
+			sbHeight = MathHelper.clamp(sbHeight, 32, bottom - top - 8);
 			int sbMinY = (int) getScroll() * (bottom - top - sbHeight) / maxScroll + top;
 			if (sbMinY < top) sbMinY = top;
 			int alpha = 190;
@@ -367,7 +366,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	public double scrollFor(double y, double height) {
-		double margin = clamp(
+		double margin = MathHelper.clamp(
 		  (bottom - top - height) / 2.0, forcedScrollMargin, preferredScrollMargin);
 		final double relY = y - scroll;
 		if (relY < margin) return max(0, y - margin);
@@ -403,7 +402,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	public void setScroll(double scroll) {
-		this.scroll = clamp(scroll, 0.0, getMaxScroll());
+		this.scroll = MathHelper.clamp(scroll, 0.0, getMaxScroll());
 	}
 	
 	protected int getMaxScroll() {
@@ -480,7 +479,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 			} else {
 				double double_5 = max(1, getMaxScroll());
 				int int_2 = bottom - top;
-				int int_3 = clamp((int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
+				int int_3 = MathHelper.clamp((int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
 				double double_6 = max(1.0, double_5 / (double) (int_2 - int_3));
 				setScroll(getScroll() + deltaY * double_6);
 			}
@@ -830,7 +829,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		INavigableTarget subTarget = getSelectedSubTarget();
 		int i = selected != null ? targets.indexOf(selected) : -1;
 		if (i == -1) i = step > 0 ? -1 : targets.size();
-		int target = clamp(i + step, 0, targets.size() - 1);
+		int target = MathHelper.clamp(i + step, 0, targets.size() - 1);
 		if (target != i) {
 			INavigableTarget parent = targets.get(target), t = parent;
 			List<INavigableTarget> subTargets = t.getNavigableSubTargets();
@@ -856,7 +855,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		if (subTargets.isEmpty()) return false;
 		int i = subTarget != null? subTargets.indexOf(subTarget) : -1;
 		if (i == -1) i = step > 0? -1 : subTargets.size();
-		int target = clamp(i + step, 0, subTargets.size() - 1);
+		int target = MathHelper.clamp(i + step, 0, subTargets.size() - 1);
 		if (target != i) {
 			INavigableTarget t = subTargets.get(target);
 			selected.setLastSelectedNavigableSubTarget(t);

@@ -17,6 +17,7 @@ import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.SoundEvents;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,7 +29,6 @@ import java.util.function.Supplier;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.ceil;
 
 public class MultiFunctionIconButton extends TintedButton {
 	protected Icon defaultIcon;
@@ -165,9 +165,9 @@ public class MultiFunctionIconButton extends TintedButton {
 			if (width > iconWidth) {
 				if (contentWidth > width) {
 					ScissorsHandler.INSTANCE.scissor(new Rectangle(x, y, width, height));
-					drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | ceil(alpha * 255.0F) << 24);
+					drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
 					ScissorsHandler.INSTANCE.removeLastScissor();
-				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | ceil(alpha * 255.0F) << 24);
+				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
 			}
 		} mStack.popPose();
 		

@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -21,8 +22,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, SELF>, SELF extends AbstractListListEntry<T, C, SELF>>
@@ -170,7 +169,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 						listEntry.removeTransparently(index);
 						if (!listEntry.cells.isEmpty())
 							listEntry.cells.get(
-							  clamp(keyCode == 259 ? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
+							  MathHelper.clamp(keyCode == 259 ? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
 						return true;
 					}
 				}

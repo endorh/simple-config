@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -23,8 +24,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
-
-import static net.minecraft.util.math.MathHelper.lerp;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implements IChildListEntry {
@@ -114,9 +113,9 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		float p = expandAnimator.getEaseOut();
 		int expandedX = Minecraft.getInstance().font.isBidirectional()? fieldX : x + 14;
 		renderChild(
-		  mStack, (int) lerp(p, fieldX, expandedX),
-		  isHeadless()? fieldY : (int) lerp(p, fieldY, y + 24),
-		  (int) lerp(p, fieldWidth,
+		  mStack, (int) MathHelper.lerp(p, fieldX, expandedX),
+		  isHeadless()? fieldY : (int) MathHelper.lerp(p, fieldY, y + 24),
+		  (int) MathHelper.lerp(p, fieldWidth,
 		             isHeadless()? entryWidth - 16 - resetButton.getWidth() : entryWidth - 14),
 		  fieldHeight, mouseX, mouseY, delta);
 	}

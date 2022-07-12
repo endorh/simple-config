@@ -18,6 +18,7 @@ import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.SoundEvents;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,6 @@ import java.util.Optional;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.round;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
@@ -220,8 +220,8 @@ public class ResetButton extends MultiFunctionImageButton
 		if (!dragging) return false;
 		dragOffset = (int) round(mouseX - x - dragAnchor);
 		if (Minecraft.getInstance().font.isBidirectional())
-			dragOffset = clamp(dragOffset, 0, 40 + width);
-		else dragOffset = clamp(dragOffset, -40 - width, 0);
+			dragOffset = MathHelper.clamp(dragOffset, 0, 40 + width);
+		else dragOffset = MathHelper.clamp(dragOffset, -40 - width, 0);
 		return true;
 	}
 	
