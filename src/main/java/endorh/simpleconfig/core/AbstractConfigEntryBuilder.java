@@ -1,5 +1,7 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
+import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import net.minecraft.util.text.ITextComponent;
@@ -43,10 +45,15 @@ public abstract class AbstractConfigEntryBuilder<
 	protected Class<?> typeClass;
 	protected boolean nonPersistent = false;
 	protected boolean ignored = false;
+	protected BackingFieldBuilder<V, ?> backingFieldBuilder;
+	protected List<BackingFieldBinding<V, ?>> backingFieldBindings = new ArrayList<>();
 	
 	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
 		this.value = value;
 		this.typeClass = typeClass;
+		backingFieldBuilder = typeClass != null? BackingFieldBuilder.<V, V>of(
+		  Function.identity(), typeClass
+		).withCommitter(Function.identity()) : null;
 	}
 	
 	protected abstract Entry buildEntry(ISimpleConfigEntryHolder parent, String name);
@@ -127,6 +134,57 @@ public abstract class AbstractConfigEntryBuilder<
 		}
 		copy.nameArgs.clear();
 		copy.nameArgs.addAll(Arrays.asList(args));
+		return copy;
+	}
+	
+	/**
+	 * Add a secondary field with the given suffix to the entry
+	 * @param suffix Suffix for the field name
+	 * @param mapper Transformation to apply for this field
+	 * @param type   Type of the field
+	 */
+	public <F> Self addField(String suffix, Function<V, F> mapper, Class<F> type) {
+		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, type)));
+	}
+	
+	/**
+	 * Add a secondary field with the given snake_case suffix to the entry
+	 * @param suffix Suffix for the field name (will be prepended with '_')
+	 * @param mapper Transformation to apply for this field
+	 * @param type   Type of the field
+	 */
+	public <F> Self add_field(String suffix, Function<V, F> mapper, Class<F> type) {
+		return addField("_" + suffix, mapper, type);
+	}
+	
+	/**
+	 * Apply a field mapper to the main backing field of the entry.<br>
+	 * @param mapper The transformation to apply to the main backing field
+	 * @param reader Optional reading function to use when committing this field.
+	 * @param type   The type of the field, used for checking
+	 */
+	public <F> Self field(Function<V, F> mapper, Function<F, V> reader, Class<F> type) {
+		Self copy = copy();
+		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type).withCommitter(reader);
+		return copy;
+	}
+	
+	/**
+	 * Apply a field mapper to the main backing field of the entry.<br>
+	 * <b>This entry won't be committable from this field</b> unless a reader
+	 * function is also passed.
+	 * @param mapper The transformation to apply to the main backing field
+	 * @param type   The type of the field, used for checking
+	 */
+	public <F> Self field(Function<V, F> mapper, Class<F> type) {
+		Self copy = copy();
+		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type);
+		return copy;
+	}
+	
+	protected <F> Self addField(BackingFieldBinding<V, F> binding) {
+		Self copy = copy();
+		copy.backingFieldBindings.add(binding);
 		return copy;
 	}
 	
@@ -252,6 +310,7 @@ public abstract class AbstractConfigEntryBuilder<
 		copy.editableSupplier = editableSupplier;
 		copy.nonPersistent = nonPersistent;
 		copy.ignored = ignored;
+		copy.backingFieldBindings = new ArrayList<>(backingFieldBindings);
 		return copy;
 	}
 	

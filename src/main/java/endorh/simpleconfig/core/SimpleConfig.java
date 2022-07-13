@@ -8,6 +8,7 @@ import com.electronwill.nightconfig.toml.TomlWriter;
 import com.mojang.datafixers.util.Pair;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
+import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.api.ConfigCategory;
@@ -47,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -274,6 +276,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	/**
 	 * Commits any changes in the backing fields to the actual config file.
+	 * Entries with non-readable backing fields are ignored.
+	 * (see {@link BackingFieldBuilder#withCommitter}
 	 * @throws InvalidConfigValueException if the current value of the a field is invalid.
 	 */
 	@Override public void commitFields() {
@@ -542,11 +546,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			super("Invalid type requested for config value \"" + path + "\"");
 		}
 		
-		public InvalidConfigValueTypeException(String path, ClassCastException cause) {
+		public InvalidConfigValueTypeException(String path, Throwable cause) {
 			super("Invalid type requested for config value \"" + path + "\"", cause);
 		}
 		
-		public InvalidConfigValueTypeException(String path, ClassCastException cause, String extra) {
+		public InvalidConfigValueTypeException(String path, Throwable cause, String extra) {
 			super("Invalid type requested for config value \"" + path + "\"\n  " + extra, cause);
 		}
 	}

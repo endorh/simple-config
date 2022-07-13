@@ -182,7 +182,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		entryArea.setBounds(x, y, entryWidth, entryHeight);
 		final DynamicEntryListWidget<?> parent = getEntryList();
-		rowArea.setBounds(parent.left, entryArea.y, parent.right - parent.left, 20);
+		rowArea.setBounds(parent.left, entryArea.y, parent.right - parent.left, getFieldHeight());
 		selectionCheckbox.x = parent.left + 2;
 		selectionCheckbox.y = y + 12 - 10;
 		selectionCheckbox.setToggle(isSelected());

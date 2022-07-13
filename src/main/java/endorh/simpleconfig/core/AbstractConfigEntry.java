@@ -4,13 +4,13 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
+import endorh.simpleconfig.core.NBTUtil.ExpectedType;
+import endorh.simpleconfig.core.SimpleConfig.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import endorh.simpleconfig.core.SimpleConfig.*;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,7 +26,10 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -75,7 +78,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * the config becomes frustrating.
 	 */
 	protected @Nullable Supplier<Boolean> editableSupplier = null;
-	protected @Nullable Field backingField;
+	protected @Nullable BackingField<V, ?> backingField;
+	protected @Nullable Field backingField2;
+	protected @Nullable List<BackingField<V, ?>> secondaryBackingFields;
 	protected boolean dirty = false;
 	protected @Nullable ITextComponent displayName = null;
 	protected List<Object> nameArgs = new ArrayList<>();
@@ -583,22 +588,27 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	protected void setBackingField(V value) throws IllegalAccessException {
 		if (backingField != null)
-			ReflectionUtil.setBackingField(backingField, value);
+			backingField.setValue(value);
+		if (secondaryBackingFields != null) {
+			for (BackingField<V, ?> field : secondaryBackingFields)
+				field.setValue(value);
+		}
 	}
 	
 	protected V getFromBackingField() throws IllegalAccessException {
 		if (backingField == null)
-			throw new IllegalStateException("Missing backing field");
+			throw new IllegalStateException("Missing backing field for entry " + getGlobalPath());
+		if (!backingField.canBeRead())
+			throw new IllegalStateException("Backing field for entry " + getGlobalPath() + " is not readable");
 		try {
-			//noinspection unchecked
-			return (V) backingField.get(null);
-		} catch (ClassCastException e) {
+			return backingField.readValue();
+		} catch (InvalidConfigValueTypeException e) {
 			throw new InvalidConfigValueTypeException(getGlobalPath(), e);
 		}
 	}
 	
 	protected void commitField() throws IllegalAccessException {
-		if (backingField != null)
+		if (backingField != null && backingField.canBeRead())
 			set(getFromBackingField());
 	}
 	

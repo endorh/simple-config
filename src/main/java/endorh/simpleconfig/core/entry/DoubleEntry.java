@@ -16,8 +16,6 @@ import java.util.Optional;
 
 public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, DoubleEntry>
   implements IKeyEntry<Number, Double> {
-	protected double fieldScale;
-	
 	@Internal public DoubleEntry(
 	  ISimpleConfigEntryHolder parent, String name, double value
 	) {
@@ -26,10 +24,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		commentMax = Double.MAX_VALUE;
 	}
 	
-	public static class Builder extends
-	                            AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
-		protected double fieldScale = 1F;
-		
+	public static class Builder extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
 		public Builder(Double value) {
 			super(value, Double.class, "%.2f");
 		}
@@ -66,9 +61,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		public Builder fieldScale(double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
-			final Builder copy = copy();
-			copy.fieldScale = scale;
-			return copy;
+			return field(d -> d * scale, d -> d / scale, Double.class);
 		}
 		
 		@Override
@@ -84,29 +77,17 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		
 		@Override
 		protected DoubleEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			final DoubleEntry entry = new DoubleEntry(parent, name, value);
-			entry.fieldScale = fieldScale;
-			return entry;
+			return new DoubleEntry(parent, name, value);
 		}
 		
 		@Override protected Builder createCopy() {
-			final Builder copy = new Builder(value);
-			copy.fieldScale = fieldScale;
-			return copy;
+			return new Builder(value);
 		}
 	}
 	
 	@Nullable
 	@Override public Double fromConfig(@Nullable Number value) {
 		return value != null ? value.doubleValue() : null;
-	}
-	
-	@Override protected void setBackingField(Double value) throws IllegalAccessException {
-		super.setBackingField(value * fieldScale);
-	}
-	
-	@Override protected Double getFromBackingField() throws IllegalAccessException {
-		return super.getFromBackingField() / fieldScale;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

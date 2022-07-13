@@ -1067,6 +1067,8 @@ public class Builders {
 		
 		// Minecraft entry types
 		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));
+		registerFieldParser(Entry.class, Block.class, (a, field, value) -> block(value));
+		registerFieldParser(Entry.class, Fluid.class, (a, field, value) -> fluid(value));
 		registerFieldParser(Entry.class, INBT.class, (a, field, value) -> nbtValue(value));
 		registerFieldParser(Entry.class, CompoundNBT.class, (a, field, value) -> nbtTag(value));
 		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) -> resource(value));

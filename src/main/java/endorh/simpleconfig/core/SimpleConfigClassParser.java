@@ -1,6 +1,7 @@
 package endorh.simpleconfig.core;
 
-import com.google.gson.internal.Primitives;
+import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
+import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
@@ -166,9 +167,37 @@ public class SimpleConfigClassParser {
 	  AbstractSimpleConfigEntryHolderBuilder<?> builder
 	) {
 		builders.put(configClass, builder);
+		Set<Field> secondaryBackingFields = new HashSet<>();
+		for (String name : builder.entries.keySet()) {
+			List<? extends BackingFieldBinding<?, ?>> bindings = builder.getSecondaryBackingFieldBindings(name);
+			if (bindings.isEmpty()) continue;
+			List<BackingField<?, ?>> backingFields = new ArrayList<>();
+			for (BackingFieldBinding<?, ?> f : bindings) {
+				String fieldName = f.buildName(name);
+				try {
+					Field field = configClass.getDeclaredField(fieldName);
+					field.setAccessible(true);
+					if (!Modifier.isStatic(field.getModifiers()))
+						throw new SimpleConfigClassParseException(builder,
+						  "Config class members must be static. Found non-static field " + getFieldName(field));
+					BackingField<?, ?> backingField = f.build(field);
+					backingFields.add(backingField);
+					secondaryBackingFields.add(field);
+					if (hasAnyConfigAnnotation(field)) LOGGER.warn(
+					  "Config field " + getFieldName(field) + " has config annotations but is already " +
+					  "defined by the builder. Its annotations will be ignored.");
+				} catch (NoSuchFieldException e) {
+					throw new SimpleConfigClassParseException(builder,
+					  "Missing backing field \"" + configClass.getSimpleName() + "#" + fieldName +
+					  "\" for entry \"" + name + "\"");
+				}
+			}
+			builder.setSecondaryBackingFields(name, backingFields);
+		}
 		final String className = configClass.getName();
 		parseFields:for (Field field : configClass.getDeclaredFields()) {
 			final String name = field.getName();
+			if (secondaryBackingFields.contains(field)) continue;
 			final String fieldTypeName = field.getGenericType().getTypeName();
 			if (!Modifier.isStatic(field.getModifiers()))
 				throw new SimpleConfigClassParseException(builder,
@@ -201,8 +230,8 @@ public class SimpleConfigClassParser {
 				continue;
 			}
 			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
-				final Class<?> typeClass = builder.getEntry(name).typeClass;
-				if (typeClass == null) {
+				BackingFieldBuilder<?, ?> fieldBuilder = builder.getEntry(name).backingFieldBuilder;
+				if (fieldBuilder == null) {
 					LOGGER.warn(
 					  "Found config backing field " + getFieldName(field) + " for entry " +
 					  "of type " + builder.getEntry(name).getClass().getSimpleName() + ", " +
@@ -210,19 +239,11 @@ public class SimpleConfigClassParser {
 					  "Rename the field or annotate it with @NotEntry to suppress this warning.");
 					continue;
 				}
-				final Class<?> entryClass = Primitives.unwrap(typeClass);
-				final Class<?> fieldClass = Primitives.unwrap(field.getType());
-				// Warning: This does not check if generics match
-				if (fieldClass != entryClass)
-					throw new SimpleConfigClassParseException(builder,
-					  "Config field " + getFieldName(field) + " of type " + fieldTypeName + " does not " +
-					  "match its entry's type: " + entryClass.getTypeName() +
-					  "\nAnnotate this field with @NotEntry to suppress this error");
+				BackingField<?, ?> backingField = fieldBuilder.build(field);
 				if (builder.backingFields.containsKey(name))
 					throw new SimpleConfigClassParseException(
 					  builder, "Config entry " + name + " cannot have two backing fields");
-				builder.setBackingField(name, field);
-				// builder.getEntry(name).backingField = field;
+				builder.setBackingField(name, backingField);
 				if (hasAnyConfigAnnotation(field))
 					LOGGER.warn(
 					  "Config field " + getFieldName(field) + " has config annotations but is already " +
@@ -251,7 +272,17 @@ public class SimpleConfigClassParser {
 											  builder, "Cannot create entry with name " + name + ". The name is already used.");
 										entryBuilder = decorateEntry(entryBuilder, configClass, field);
 										builder.add(getOrder(field), name, entryBuilder);
-										builder.setBackingField(name, field);
+										BackingFieldBuilder<?, ?> fieldBuilder = entryBuilder.backingFieldBuilder;
+										if (fieldBuilder == null) throw new SimpleConfigClassParseException(builder,
+										  "Config entry generated from field does not support backing fields");
+										try {
+											BackingField<?, ?> backingField = fieldBuilder.build(field);
+											builder.setBackingField(name, backingField);
+										} catch (SimpleConfigClassParseException e) {
+											throw new SimpleConfigClassParseException(builder,
+											  "Backing field for config entry generated from field \"" +
+											  getFieldName(field) + "\" doesn't match its expected type.");
+										}
 										continue parseFields;
 									}
 								}
@@ -374,8 +405,15 @@ public class SimpleConfigClassParser {
 				if (field.isAnnotationPresent(clazz))
 					return false;
 		}
-		return field.isAnnotationPresent(Text.class)
-		       || field.isAnnotationPresent(RequireRestart.class);
+		return hasAnyAnnotation(
+		  field, Text.class, RequireRestart.class, Min.class, Max.class,
+		  HasAlpha.class, Slider.class, NonPersistent.class);
+	}
+	
+	@SafeVarargs protected static boolean hasAnyAnnotation(Field field, Class<? extends Annotation>... annotations) {
+		for (Class<? extends Annotation> annotation : annotations)
+			if (field.isAnnotationPresent(annotation)) return true;
+		return false;
 	}
 	
 	protected static int getOrder(Field field) {

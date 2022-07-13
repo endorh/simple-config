@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class TextListEntry extends TooltipListEntry<Void> {
-	public static final int LINE_HEIGHT = 12;
 	protected FontRenderer font;
 	protected int color;
 	protected Supplier<ITextComponent> textSupplier;
@@ -72,11 +71,12 @@ public class TextListEntry extends TooltipListEntry<Void> {
 			savedY = y;
 		}
 		int yy = y + 4;
+		int lineHeight = getLineHeightWithMargin();
 		for (IReorderingProcessor string : wrappedLines) {
 			Minecraft.getInstance().fontRenderer.func_238407_a_(
 			  mStack, string, (float) x, (float) yy, color);
 			Objects.requireNonNull(Minecraft.getInstance().fontRenderer);
-			yy += LINE_HEIGHT;
+			yy += lineHeight;
 		}
 		Style style = getTextAt(mouseX, mouseY);
 		AbstractConfigScreen configScreen = getScreen();
@@ -84,11 +84,19 @@ public class TextListEntry extends TooltipListEntry<Void> {
 			configScreen.renderComponentHoverEffect(mStack, style, mouseX, mouseY);
 	}
 	
+	public int getLineHeight() {
+		return Minecraft.getInstance().fontRenderer.FONT_HEIGHT;
+	}
+	
+	public int getLineHeightWithMargin() {
+		return getLineHeight() + 3;
+	}
+	
 	@Override public int getItemHeight() {
-		if (savedWidth == -1)
-			return LINE_HEIGHT;
+		int lh = getLineHeightWithMargin();
+		if (savedWidth == -1) return lh;
 		int lineCount = wrappedLines.size();
-		return lineCount == 0 ? 0 : 15 + lineCount * LINE_HEIGHT;
+		return lineCount == 0 ? 0 : 15 + lineCount * lh;
 	}
 	
 	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {
@@ -101,14 +109,19 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		return super.onMouseClicked(mouseX, mouseY, button);
 	}
 	
+	@Override public int getFieldHeight() {
+		return getItemHeight() - 3;
+	}
+	
 	@Nullable private Style getTextAt(double x, double y) {
 		int lineCount = wrappedLines.size();
 		if (lineCount > 0) {
 			int line;
 			int textX = MathHelper.floor(x - (double) savedX);
 			int textY = MathHelper.floor(y - 4.0 - (double) savedY);
+			int lineHeight = getLineHeightWithMargin();
 			if (textX >= 0 && textY >= 0 && textX <= savedWidth &&
-			    textY < LINE_HEIGHT * lineCount + lineCount && (line = textY / LINE_HEIGHT) < wrappedLines.size()) {
+			    textY < lineHeight * lineCount + lineCount && (line = textY / lineHeight) < wrappedLines.size()) {
 				IReorderingProcessor orderedText = wrappedLines.get(line);
 				return font.getCharacterManager().func_243239_a(orderedText, textX);
 			}

@@ -1,12 +1,15 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.entry.TextEntry;
 import net.minecraft.util.text.ITextComponent;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -16,14 +19,33 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 	protected final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
 	protected final Map<String, Integer> guiOrder = new LinkedHashMap<>();
 	protected boolean requireRestart = false;
-	protected final Map<String, Field> backingFields = new HashMap<>();
+	protected final Map<String, BackingField<?, ?>> backingFields = new HashMap<>();
+	protected final Map<String, List<BackingField<?, ?>>> secondaryBackingFields = new HashMap<>();
 	
 	protected abstract void addEntry(int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry);
 	protected abstract AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name);
 	protected abstract boolean hasEntry(String name);
 	
-	protected void setBackingField(String name, Field field) {
+	@Internal protected void setBackingField(String name, BackingField<?, ?> field) {
 		backingFields.put(name, field);
+	}
+	
+	@Internal protected List<? extends BackingFieldBinding<?, ?>> getSecondaryBackingFieldBindings(String name) {
+		return getEntry(name).backingFieldBindings;
+	}
+	
+	@Internal protected void setSecondaryBackingFields(String name, List<BackingField<?, ?>> fields) {
+		if (secondaryBackingFields.containsKey(name))
+			throw new IllegalStateException("Secondary backing fields already set for entry: " + name);
+		secondaryBackingFields.put(name, fields);
+	}
+	
+	@SuppressWarnings("unchecked") protected <T> BackingField<T, ?> getBackingField(String name) {
+		return (BackingField<T, ?>) backingFields.get(name);
+	}
+	
+	@SuppressWarnings("unchecked") protected <T> List<BackingField<T, ?>> getSecondaryBackingFields(String name) {
+		return ((List<BackingField<T, ?>>) (List<?>) secondaryBackingFields.get(name));
 	}
 	
 	protected void checkName(String name) {

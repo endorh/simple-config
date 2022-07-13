@@ -1,5 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.BackingField;
+import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -42,6 +44,11 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 		public Builder(V value, IConfigEntrySerializer<V> serializer) {
 			this(value, serializer::serializeConfigEntry, serializer::deserializeConfigEntry);
 			this.typeClass = serializer.getClass(value);
+			//noinspection unchecked
+			this.backingFieldBuilder =
+			  typeClass != null
+			  ? BackingField.<V, V>field(Function.identity(), (Class<V>) typeClass)
+			    .withCommitter(Function.identity()) : null;
 			this.formatter = serializer.getConfigTextFormatter();
 		}
 		

@@ -1,11 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatSliderBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,8 +16,6 @@ import java.util.Optional;
 
 public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatEntry>
   implements IKeyEntry<Number, Float> {
-	protected float fieldScale = 1F;
-	
 	@Internal public FloatEntry(
 	  ISimpleConfigEntryHolder parent, String name, float value
 	) {
@@ -26,10 +24,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		commentMax = Float.MAX_VALUE;
 	}
 	
-	public static class Builder extends
-	                            AbstractRangedEntry.Builder<Float, Number, Float, FloatEntry, Builder> {
-		protected float fieldScale = 1F;
-		
+	public static class Builder extends AbstractRangedEntry.Builder<Float, Number, Float, FloatEntry, Builder> {
 		public Builder(Float value) {
 			super(value, Float.class, "%.2f");
 		}
@@ -66,9 +61,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		public Builder fieldScale(float scale) {
 			if (scale == 0F || !Float.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
-			final Builder copy = copy();
-			copy.fieldScale = scale;
-			return copy;
+			return field(f -> f * scale, f -> f / scale, Float.class);
 		}
 		
 		@Override
@@ -84,29 +77,17 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		
 		@Override
 		protected FloatEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			final FloatEntry entry = new FloatEntry(parent, name, value);
-			entry.fieldScale = fieldScale;
-			return entry;
+			return new FloatEntry(parent, name, value);
 		}
 		
 		@Override protected Builder createCopy() {
-			final Builder copy = new Builder(value);
-			copy.fieldScale = fieldScale;
-			return copy;
+			return new Builder(value);
 		}
 	}
 	
 	@Nullable
 	@Override public Float fromConfig(@Nullable Number value) {
 		return value != null ? value.floatValue() : null;
-	}
-	
-	@Override protected void setBackingField(Float value) throws IllegalAccessException {
-		super.setBackingField(value * fieldScale);
-	}
-	
-	@Override protected Float getFromBackingField() throws IllegalAccessException {
-		return super.getFromBackingField() / fieldScale;
 	}
 	
 	@OnlyIn(Dist.CLIENT)

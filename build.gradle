@@ -23,7 +23,7 @@ apply from: 'antlr.gradle'
 
 def mod_id = "simpleconfig"
 group = "endorh.simpleconfig"
-version = "1.16.5-0.7.2"
+version = "1.16.5-0.7.4"
 def group_slashed = project.group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
     maven_artifact = "${group}:${mod_id}:${version}"
@@ -168,6 +168,8 @@ dependencies {
     // IDE
     implementation 'org.jetbrains:annotations:23.0.0'
     implementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+
+    // ANTLR
     antlr "org.antlr:antlr4:$antlr_version" // use ANTLR version 4
 
     // Minecraft

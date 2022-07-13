@@ -1,10 +1,10 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.ui.api.ConfigBuilder;
-import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.entry.Builders;
+import endorh.simpleconfig.ui.api.ConfigBuilder;
+import endorh.simpleconfig.ui.api.ConfigCategory;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -339,8 +339,8 @@ public class SimpleConfigBuilder
 				final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(cat, name);
 				entriesByName.put(name, entry);
 				translate(entry);
-				if (backingFields.containsKey(name))
-					entry.backingField = backingFields.get(name);
+				entry.backingField = getBackingField(name);
+				entry.secondaryBackingFields = getSecondaryBackingFields(name);
 				entry.buildConfig(specBuilder);
 			});
 			for (GroupBuilder group : this.groups.values()) {
@@ -509,8 +509,8 @@ public class SimpleConfigBuilder
 			if (heldEntry != null) {
 				entriesByName.put(heldEntryName, heldEntry);
 				translate(heldEntry);
-				if (backingFields.containsKey(heldEntryName))
-					heldEntry.backingField = backingFields.get(heldEntryName);
+				heldEntry.backingField = getBackingField(heldEntryName);
+				heldEntry.secondaryBackingFields = getSecondaryBackingFields(heldEntryName);
 				heldEntry.buildConfig(specBuilder);
 			}
 			entries.forEach((name, builder) -> {
@@ -518,8 +518,8 @@ public class SimpleConfigBuilder
 				final AbstractConfigEntry<?, ?, ?, ?> entry = builder.build(group, name);
 				entriesByName.put(name, entry);
 				translate(entry);
-				if (backingFields.containsKey(name))
-					entry.backingField = backingFields.get(name);
+				entry.backingField = getBackingField(name);
+				entry.secondaryBackingFields = getSecondaryBackingFields(name);
 				entry.buildConfig(specBuilder);
 			});
 			for (String name : groups.keySet()) {
@@ -594,8 +594,8 @@ public class SimpleConfigBuilder
 			final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
 			entriesByName.put(name, entry);
 			translate(entry);
-			if (backingFields.containsKey(name))
-				entry.backingField = backingFields.get(name);
+			entry.backingField = getBackingField(name);
+			entry.secondaryBackingFields = getSecondaryBackingFields(name);
 			entry.buildConfig(specBuilder);
 		});
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
