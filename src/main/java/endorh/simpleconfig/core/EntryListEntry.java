@@ -1,22 +1,22 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.impl.builders.EntryListFieldBuilder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import endorh.simpleconfig.core.entry.AbstractListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Special config entry containing a list of values managed
@@ -93,6 +93,24 @@ public class EntryListEntry
 		self();
 	}
 	
+	@Override public Object forActualConfig(@Nullable List<C> value) {
+		if (value == null) return null;
+		return value.stream().map(entry::forActualConfig).collect(Collectors.toList());
+	}
+	
+	@Override @Nullable public List<C> fromActualConfig(@Nullable Object value) {
+		if (!(value instanceof List<?>)) return null;
+		boolean fail = false;
+		List<C> list = new ArrayList<>();
+		for (Object elem : (List<?>) value) {
+			C c = entry.fromActualConfig(elem);
+			if (c != null) {
+				list.add(c);
+			} else fail = true;
+		}
+		return list.isEmpty() && fail? null : list;
+	}
+	
 	@Override
 	protected C elemForConfig(V value) {
 		return entry.forConfig(value);
@@ -119,6 +137,10 @@ public class EntryListEntry
 		return errors;
 	}
 	
+	@Override protected @Nullable String getListTypeComment() {
+		return entry.getConfigCommentTooltip();
+	}
+	
 	@Override protected boolean validateElement(Object o) {
 		try {
 			//noinspection unchecked
@@ -135,7 +157,7 @@ public class EntryListEntry
 		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent("•"));
 		e.nonPersistent = true;
-		e.actualValue = e.value;
+		e.actualValue = e.defValue;
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
 		    "List config entry's sub-entry did not produce a GUI entry"));
@@ -156,9 +178,5 @@ public class EntryListEntry
 		final EntryListFieldBuilder<G, AbstractConfigListEntry<G>> valBuilder =
 		  builder.startEntryList(getDisplayName(), forGui(get()), en -> buildCell(builder));
 		return Optional.of(decorate(valBuilder).build());
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, entry.getExpectedType());
 	}
 }

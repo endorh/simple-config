@@ -28,8 +28,8 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	protected Consumer<String> linkActionHandler = s -> {};
 	protected List<IGuiEventListener> bodyListeners = Lists.newArrayList();
 	
-	public AbstractButtonDialog(IOverlayCapableScreen screen, ITextComponent title) {
-		super(screen, title);
+	public AbstractButtonDialog(ITextComponent title) {
+		super(title);
 		scroller = new DialogScrollingContainerWidget(x, y, (int) (w * 0.9), (int) (h * 0.5), this);
 		listeners.add(scroller);
 	}
@@ -106,7 +106,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 				return true;
 			}
 		}
-		return screen.handleComponentClicked(style);
+		return getScreen().handleComponentClicked(style);
 	}
 	
 	protected void handleTextAction(
@@ -150,7 +150,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			if (style != null) {
 				try {
 					Screen$renderComponentHoverEffect.invoke(
-					  dialog.screen, mStack, style, mouseX, mouseY);
+					  dialog.getScreen(), mStack, style, mouseX, mouseY);
 				} catch (IllegalAccessException | InvocationTargetException e) {
 					if (!loggedReflectionError) {
 						loggedReflectionError = true;

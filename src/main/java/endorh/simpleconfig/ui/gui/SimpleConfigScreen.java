@@ -6,6 +6,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.core.SimpleConfigGUIManager;
+import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 import endorh.simpleconfig.ui.gui.widget.*;
@@ -13,8 +15,6 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget.ISearchHandler;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.math.Rectangle;
-import endorh.simpleconfig.core.SimpleConfigGUIManager;
-import endorh.simpleconfig.core.SimpleConfigGroup;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.DialogTexts;
@@ -35,6 +35,8 @@ import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +54,7 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static java.lang.Math.min;
 
 @OnlyIn(value = Dist.CLIENT)
-public class ClothConfigScreen
+public class SimpleConfigScreen
   extends AbstractTabbedConfigScreen implements ISearchHandler {
 	private final ScrollingHandler tabsScroller = new ScrollingHandler() {
 		@Override public Rectangle getBounds() {
@@ -71,6 +73,7 @@ public class ClothConfigScreen
 	public Map<ConfigCategory, ListWidget<AbstractConfigEntry<?>>> listWidgets = new HashMap<>();
 	public ListWidget<AbstractConfigEntry<?>> listWidget;
 	public final String modId;
+	protected ITextComponent displayTitle;
 	protected TintedButton quitButton;
 	protected TintedButton saveButton;
 	protected MultiFunctionIconButton clientButton;
@@ -100,12 +103,13 @@ public class ClothConfigScreen
 	protected ConfigCategory lastClientCategory = null;
 	protected ConfigCategory lastServerCategory = null;
 	
-	@Internal public ClothConfigScreen(
+	@Internal public SimpleConfigScreen(
 	  Screen parent, String modId, ITextComponent title, Collection<ConfigCategory> categories,
 	  Collection<ConfigCategory> serverCategories, ResourceLocation backgroundLocation
 	) {
 		super(parent, title, backgroundLocation, categories, serverCategories);
 		this.modId = modId;
+		this.displayTitle = new StringTextComponent(getModNameOrId(modId));
 		for (ConfigCategory category : sortedCategories) {
 			for (AbstractConfigEntry<?> entry : category.getHeldEntries()) {
 				entry.setCategory(category);
@@ -120,8 +124,15 @@ public class ClothConfigScreen
 		else lastClientCategory = selectedCategory;
 	}
 	
-	protected static final Pattern DOT = Pattern.compile("\\.");
+	protected static String getModNameOrId(String modId) {
+		final Optional<ModInfo> first = ModList.get().getMods().stream()
+		  .filter(m -> modId.equals(m.getModId())).findFirst();
+		if (first.isPresent())
+			return first.get().getDisplayName();
+		return modId;
+	}
 	
+	protected static final Pattern DOT = Pattern.compile("\\.");
 	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
 		final String[] split = DOT.split(path, 3);
 		if (split.length < 2) return null;
@@ -348,14 +359,16 @@ public class ClothConfigScreen
 	@Override public void setSelectedCategory(ConfigCategory category) {
 		if (selectedCategory != category) {
 			// Switching sides is prevented while selecting
-			if (isSelecting() && isSelectedCategoryServer() != category.isServer()) return;
-			if (isSelectedCategoryServer())
+			boolean typeChange = isSelectedCategoryServer() != category.isServer();
+			if (isSelecting() && typeChange) return;
+			if (isSelectedCategoryServer()) {
 				lastServerCategory = selectedCategory;
-			else lastClientCategory = selectedCategory;
+			} else lastClientCategory = selectedCategory;
 			super.setSelectedCategory(category);
 			ListWidget<AbstractConfigEntry<?>> prevListWidget = listWidget;
 			init(Minecraft.getInstance(), width, height);
 			prevListWidget.onReplaced(listWidget);
+			if (typeChange) presetPickerWidget.refresh();
 			if (isShowingTabs()) {
 				final int index = getTabbedCategories().indexOf(category);
 				int x = 0;
@@ -584,7 +597,7 @@ public class ClothConfigScreen
 	}
 	
 	public ITextComponent getDisplayedTitle() {
-		return title;
+		return displayTitle;
 	}
 	
 	public @Nullable INavigableTarget getNext(Predicate<INavigableTarget> predicate, boolean forwards) {
@@ -724,7 +737,7 @@ public class ClothConfigScreen
 		  }, CheckboxButton.of(
 		    advanced.getGUIBoolean(SHOW_UI_TIPS),
 		    new TranslationTextComponent("simpleconfig.ui.controls.show_ui_tips")))
-		  .build(this);
+		  .build();
 	}
 	
 	public static class ListWidget<R extends AbstractConfigEntry<?>> extends DynamicElementListWidget<R> {
@@ -1080,7 +1093,7 @@ public class ClothConfigScreen
 		protected EditConfigFileDialog(
 		  AbstractConfigScreen screen, Path file
 		) {
-			super(screen, new TranslationTextComponent("simpleconfig.file.dialog.title"));
+			super(new TranslationTextComponent("simpleconfig.file.dialog.title"));
 			withAction(b -> {
 				if (b) open(file);
 			});

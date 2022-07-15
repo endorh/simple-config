@@ -1,15 +1,13 @@
 package endorh.simpleconfig.core;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.Config.Entry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.JsonToNBT;
+import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,21 +17,19 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static endorh.simpleconfig.core.NBTUtil.fromNBT;
-import static endorh.simpleconfig.core.NBTUtil.toNBT;
-
 public class CaptionedMapEntry<K, V, KC, C, KG, G,
   E extends AbstractConfigEntry<V, C, G, E>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
   KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
   MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>>
-  extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<String, C>>, Pair<CG, List<Pair<KG, G>>>,
+  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>>
+  extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>,
   CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>> {
 	
 	protected final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry;
@@ -51,13 +47,13 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 	public static class Builder<K, V, KC, C, KG, G,
 	  E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
 	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>
 	> extends AbstractConfigEntryBuilder<
-	  Pair<CV, Map<K, V>>, Pair<CC, Map<String, C>>, Pair<CG, List<Pair<KG, G>>>,
+	  Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>,
 	  CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>,
 	  CaptionedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
 	> {
@@ -89,27 +85,31 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
-	public String forActualConfig(@Nullable Pair<CC, Map<String, C>> value) {
-		if (value == null) return "";
-		final CompoundNBT nbt = new CompoundNBT();
-		nbt.put("k", toNBT(value.getKey()));
-		nbt.put("v", toNBT(value.getValue()));
-		return nbt.toString();
+	public Map<Object, Object> forActualConfig(@Nullable Pair<CC, Map<KC, C>> value) {
+		if (value == null) return null;
+		return Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
+		  captionEntry.forActualConfig(value.getKey()),
+		  mapEntry.forActualConfig(value.getValue())));
 	}
 	
-	public @Nullable Pair<CC, Map<String, C>> fromActualConfig(@Nullable Object value) {
-		if (!(value instanceof String)) return null;
-		final String str = (String) value;
-		try {
-			final CompoundNBT nbt = new JsonToNBT(new StringReader(str)).readStruct();
-			//noinspection unchecked
-			final CC key = (CC) fromNBT(nbt.get("k"), getExpectedType().next.get(0));
-			//noinspection unchecked
-			final Map<String, C> val = (Map<String, C>) fromNBT(nbt.get("v"), getExpectedType().next.get(1));
-			return Pair.of(key, val);
-		} catch (CommandSyntaxException | IllegalArgumentException | ClassCastException e) {
-			return null;
+	public @Nullable Pair<CC, Map<KC, C>> fromActualConfig(@Nullable Object value) {
+		if (value instanceof Map) {
+			Map<?, ?> m = (Map<?, ?>) value;
+			if (m.size() != 1) return null;
+			Map.Entry<?, ?> entry = m.entrySet().stream().findFirst()
+			  .orElseThrow(ConcurrentModificationException::new);
+			CC key = captionEntry.fromActualConfig(entry.getKey());
+			Map<KC, C> map = mapEntry.fromActualConfig(entry.getValue());
+			return key != null && map != null? Pair.of(key, map) : null;
+		} else if (value instanceof Config) {
+			Optional<? extends Entry> opt = ((Config) value).entrySet().stream().findFirst();
+			if (!opt.isPresent()) return null;
+			Entry entry = opt.get();
+			CC key = captionEntry.fromActualConfig(entry.getKey());
+			Map<KC, C> map = mapEntry.fromActualConfig(entry.getValue());
+			return key != null && map != null? Pair.of(key, map) : null;
 		}
+		return null;
 	}
 	
 	@Override public List<ITextComponent> getErrors(Pair<CG, List<Pair<KG, G>>> value) {
@@ -119,13 +119,13 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		return errors;
 	}
 	
-	@Override public Pair<CC, Map<String, C>> forConfig(Pair<CV, Map<K, V>> value) {
+	@Override public Pair<CC, Map<KC, C>> forConfig(Pair<CV, Map<K, V>> value) {
 		return Pair.of(captionEntry.forConfig(value.getKey()),
 		               mapEntry.forConfig(value.getValue()));
 	}
 	
 	@Override public @Nullable Pair<CV, Map<K, V>> fromConfig(
-	  @Nullable Pair<CC, Map<String, C>> value
+	  @Nullable Pair<CC, Map<KC, C>> value
 	) {
 		if (value == null) return null;
 		return Pair.of(captionEntry.fromConfigOrDefault(value.getKey()),
@@ -142,8 +142,16 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		               mapEntry.fromGuiOrDefault(value.getValue()));
 	}
 	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String captionTooltip = captionEntry.getConfigCommentTooltip();
+		if (!captionTooltip.isEmpty()) tooltips.add("Caption: " + captionTooltip);
+		tooltips.addAll(mapEntry.getConfigCommentTooltips());
+		return tooltips;
+	}
+	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<Pair<KG, G>>>>> buildGUIEntry(
@@ -160,9 +168,5 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		  getDisplayName(), (EntryPairListListEntry<KG, G, ?, ?>) mapGUIEntry,
 		  Util.make(captionEntry.buildChildGUIEntry(builder), cge -> cge.setOriginal(gv.getKey())), gv);
 		return Optional.of(decorate(entryBuilder).build());
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, captionEntry.getExpectedType(), mapEntry.getExpectedType());
 	}
 }

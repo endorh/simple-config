@@ -2,15 +2,15 @@ package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.core.AbstractConfigEntry;
+import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,10 +31,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofString;
+import static java.lang.Math.min;
 
 public class StringEntry
   extends AbstractConfigEntry<String, String, String, StringEntry>
-  implements IKeyEntry<String, String> {
+  implements IKeyEntry<String> {
 	protected Supplier<List<String>> choiceSupplier;
 	protected SimpleComboBoxModel<String> suggestionProvider;
 	protected boolean restrict;
@@ -196,33 +197,26 @@ public class StringEntry
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, value, createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, defValue, createConfigValidator()));
 	}
 	
-	@Override protected ForgeConfigSpec.Builder decorate(
-	  ForgeConfigSpec.Builder builder
-	) {
-		builder = super.decorate(builder);
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		boolean added = false;
 		if (choiceSupplier != null) {
-			final List<String> choices = getChoices();
+			List<String> choices = getChoices();
 			if (!choices.isEmpty()) {
 				int max = advanced.max_options_in_config_comment;
-				String omittedSuffix =
-				  choices.size() > max ? ", ... (omitted " + (choices.size() - max) + " more)" : "";
-				if (restrict) {
-					builder = builder.comment(
-					  " Allowed values: " + choices.subList(0, max).stream()
-						 .map(s -> "\"" + s + "\"").collect(Collectors.joining(", "))
-					  + omittedSuffix);
-				} else {
-					builder = builder.comment(
-					  " Suggested values: " + choices.subList(0, max).stream()
-						 .map(s -> "\"" + s + "\"").collect(Collectors.joining(", "))
-					  + omittedSuffix);
-				}
+				String omittedSuffix = choices.size() > max
+				                       ? ", ... (omitted " + (choices.size() - max) + " more)" : "";
+				String prefix = restrict? "Options: " : "Suggestions: ";
+				tooltips.add(prefix + choices.subList(0, min(max, choices.size())).stream()
+				  .map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")) + omittedSuffix);
+				added = true;
 			}
 		}
-		return builder;
+		if (!added) tooltips.add("Text");
+		return tooltips;
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
@@ -241,10 +235,6 @@ public class StringEntry
 			    .setMaxLength(maxLength);
 			return Optional.of(decorate(valBuilder).build());
 		}
-	}
-	
-	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
-		return Optional.of(key);
 	}
 	
 }

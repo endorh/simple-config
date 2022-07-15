@@ -1,16 +1,16 @@
 package endorh.simpleconfig.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
+import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -19,19 +19,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,10 +45,10 @@ import java.util.stream.Stream;
 public class EntryMapEntry<K, V, KC, C, KG, G,
   E extends AbstractConfigEntry<V, C, G, E>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
   KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
   extends AbstractConfigEntry<
-  Map<K, V>, Map<String, C>, List<Pair<KG, G>>, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
+  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected final KB keyEntryBuilder;
 	protected final KE keyEntry;
@@ -65,7 +63,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	
 	@Internal public EntryMapEntry(
 	  ISimpleConfigEntryHolder parent, String name,
-	  Map<K, V> value, @Nonnull B entryBuilder, KB keyEntryBuilder
+	  Map<K, V> value, @NotNull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
 		holder = new FakeEntryHolder(parent.getRoot());
@@ -79,27 +77,19 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
 			  "nested in a map entry");
-		if (entry.value == null)
+		if (entry.defValue == null)
 			throw new IllegalArgumentException(
 			  "Unsupported value type for map config entry. The values " +
 			  "cannot be null");
-		try {
-			NBTUtil.toNBT(entry.forConfig(entry.value));
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException(
-			  "Unsupported value type for map config entry: "
-			  + entry.typeClass.getName() + "\n  Map config entry values" +
-			  "must be serializable as NBT", e);
-		}
 	}
 	
 	public static class Builder<K, V, KC, C, KG, G,
 	  E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
 	  extends AbstractConfigEntryBuilder<
-	  Map<K, V>, Map<String, C>, List<Pair<KG, G>>,
+	  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
 	  EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB>,
 	  Builder<K, V, KC, C, KG, G, E, B, KE, KB>> {
 		protected final KB keyEntryBuilder;
@@ -152,55 +142,79 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
-	public String forActualConfig(Map<String, C> value) {
-		return NBTUtil.toNBT(value).toString();
+	@Override public Object forActualConfig(Map<KC, C> value) {
+		if (linked) {
+			return value.entrySet().stream()
+			  .map(e -> Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
+				 keyEntry.forActualConfig(e.getKey()), entry.forActualConfig(e.getValue())))
+			  ).collect(Collectors.toList());
+		} else return NonConfigMap.wrap(value);
 	}
 	
-	protected @Nullable Map<String, C> fromActualConfig(@Nullable Object value) {
-		if (!(value instanceof String)) return null;
-		final String str = (String) value;
-		try {
-			CompoundNBT m = new JsonToNBT(new StringReader(str)).readStruct();
-			final Map<String, C> map = new LinkedHashMap<>();
-			if (linked) {
-				m.keySet().stream().map(
-				  k -> {
-					  final Matcher s = NBTUtil.SPLIT.matcher(k);
-					  return s.matches() ? Triple.of(Integer.parseInt(s.group(1)), s.group(2), m.get(k))
-					                     : Triple.of(Integer.MAX_VALUE, k, m.get(k));
-				  }).sorted(Comparator.comparingInt(Triple::getLeft)).forEachOrdered(t -> {
-					  //noinspection unchecked
-					  map.put(t.getMiddle(), (C) NBTUtil.fromNBT(t.getRight(), getExpectedType().next.get(0)));
-				  });
-			} else {
-				for (String k : m.keySet())
-					//noinspection unchecked
-					map.put(k, (C) NBTUtil.fromNBT(m.get(k), getExpectedType().next.get(0)));
+	@Override public @Nullable Map<KC, C> fromActualConfig(@Nullable Object value) {
+		if (value instanceof List) {
+			//noinspection unchecked
+			List<Object> seq = (List<Object>) value;
+			Map<KC, C> map = new LinkedHashMap<>();
+			for (Object o : seq) {
+				if (o instanceof Map) {
+					((Map<?, ?>) o).entrySet().stream().findFirst().ifPresent(e -> {
+						KC key = keyEntry.fromActualConfig(e.getKey());
+						C val = entry.fromActualConfig(e.getValue());
+						if (key == null) return;
+						if (val == null) val = entry.forConfig(entry.defValue);
+						map.put(key, val);
+					});
+				}
+				if (o instanceof Config) {
+					Config config = (Config) o;
+					config.entrySet().stream().findFirst().ifPresent(e -> {
+						KC key = keyEntry.fromActualConfig(e.getKey());
+						C val = entry.fromActualConfig(e.getValue());
+						if (key == null) return;
+						if (val == null) val = entry.forConfig(entry.defValue);
+						map.put(key, val);
+					});
+				}
 			}
 			return map;
-		} catch (CommandSyntaxException | IllegalArgumentException | ClassCastException e) {
-			return null;
+		} else if (value instanceof Config) {
+			Map<KC, C> map = new LinkedHashMap<>();
+			((CommentedConfig) value).entrySet().forEach(e -> {
+				KC key = keyEntry.fromActualConfig(e.getKey());
+				C val = entry.fromActualConfig(e.getValue());
+				if (key == null) return;
+				if (val == null) val = entry.forConfig(entry.defValue);
+				map.put(key, val);
+			});
+			return map;
+		} else if (value instanceof Map) {
+			Map<KC, C> map = new LinkedHashMap<>();
+			((Map<?, ?>) value).forEach((k, v) -> {
+				KC key = keyEntry.fromActualConfig(k);
+				C val = entry.fromActualConfig(v);
+				if (key == null) return;
+				if (val == null) val = entry.forConfig(entry.defValue);
+				map.put(key, val);
+			});
+			return map;
 		}
+		return null;
 	}
 	
-	@Override public Map<String, C> forConfig(Map<K, V> value) {
-		final Map<String, C> m = new LinkedHashMap<>();
-		int i = 0;
-		for (Entry<K, V> e : value.entrySet()) {
-			String k = keyEntry.serializeStringKey(keyEntry.forConfig(e.getKey()));
-			if (linked) k = i++ + ":" + k;
-			m.put(k, entry.forConfig(e.getValue()));
-		}
+	@Override public Map<KC, C> forConfig(Map<K, V> value) {
+		final Map<KC, C> m = new LinkedHashMap<>();
+		for (Entry<K, V> e : value.entrySet())
+			m.put(keyEntry.forConfig(e.getKey()), entry.forConfig(e.getValue()));
 		return m;
 	}
 	
 	@Nullable @Override @Contract("null->null")
-	public Map<K, V> fromConfig(@Nullable Map<String, C> value) {
+	public Map<K, V> fromConfig(@Nullable Map<KC, C> value) {
 		if (value == null) return null;
 		// Invalid keys are ignored
 		final Map<K, V> m = new LinkedHashMap<>();
-		value.forEach((s, v) -> keyEntry.deserializeStringKey(s).ifPresent(
-		  k -> m.put(keyEntry.fromConfigOrDefault(k), entry.fromConfigOrDefault(v))));
+		value.forEach((k, v) -> m.put(keyEntry.fromConfigOrDefault(k), entry.fromConfigOrDefault(v)));
 		return m;
 	}
 	
@@ -223,26 +237,42 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	@Override
 	protected Predicate<Object> createConfigValidator() {
 		return o -> {
-			if (o instanceof String) {
-				final Map<String, C> pre = fromActualConfig(o);
+			try {
+				final Map<KC, C> pre = fromActualConfig(o);
 				final Map<K, V> m = fromConfig(pre);
-				if (m == null)
-					return false;
+				if (m == null) return false;
 				// Tolerate skipping invalid keys, but log a warning
 				if (pre.size() != m.size()) LOGGER.warn(
-				  "Map config entry " + getGlobalPath() + " has invalid entries, which have been ignored.");
+				  "Map config entry " + getGlobalPath() +
+				  " has invalid entries, which have been ignored.");
 				return isValidValue(m);
-			} else return false;
+			} catch (ClassCastException e) {
+				return false;
+			}
 		};
+	}
+	
+	protected @Nullable String getMapTypeComment() {
+		String keyComment = keyEntry.getConfigCommentTooltip();
+		String valueComment = entry.getConfigCommentTooltip();
+		return (keyComment.isEmpty()? "?" : keyComment) + " >> " +
+		       (valueComment.isEmpty()? "?" : valueComment);
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String typeComment = getMapTypeComment();
+		if (typeComment != null) tooltips.add((linked? "Sorted Map: " : "Map: ") + typeComment);
+		return tooltips;
 	}
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
-		spec.define(parentPath + name, forActualConfig(forConfig(value)), createConfigValidator());
+		spec.define(parentPath + name, forActualConfig(forConfig(defValue)), createConfigValidator());
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
@@ -257,8 +287,8 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  .withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
-		ke.actualValue = ke.value;
-		e.actualValue = e.value;
+		ke.actualValue = ke.defValue;
+		e.actualValue = e.defValue;
 		KGE kg = ke.buildChildGUIEntry(builder);
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
@@ -328,9 +358,5 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  .setCellErrorSupplier(this::getCellError)
 		  .setExpanded(expand);
 		return Optional.of(decorate(entryBuilder).build());
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, entry.getExpectedType());
 	}
 }

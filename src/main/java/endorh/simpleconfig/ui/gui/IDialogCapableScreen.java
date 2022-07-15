@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screen.Screen;
 
 import java.util.List;
 
-public interface IDialogCapableScreen {
+public interface IDialogCapableScreen extends IOverlayCapableScreen {
 	List<AbstractDialog> getDialogs();
 	
 	default boolean hasDialogs() {
@@ -15,6 +15,7 @@ public interface IDialogCapableScreen {
 	}
 	
 	default void addDialog(AbstractDialog dialog) {
+		dialog.setScreen(this);
 		getDialogs().add(dialog);
 	}
 	

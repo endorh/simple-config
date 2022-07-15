@@ -9,18 +9,17 @@ import endorh.simpleconfig.ui.impl.builders.FloatSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatEntry>
-  implements IKeyEntry<Number, Float> {
+  implements IKeyEntry<Float> {
 	@Internal public FloatEntry(
 	  ISimpleConfigEntryHolder parent, String name, float value
 	) {
 		super(parent, name, value);
-		commentMin = Float.MIN_VALUE;
+		commentMin = -Float.MAX_VALUE;
 		commentMax = Float.MAX_VALUE;
 	}
 	
@@ -108,11 +107,4 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		}
 	}
 	
-	@Override public Optional<Number> deserializeStringKey(@NotNull String key) {
-		try {
-			return Optional.of(Float.parseFloat(key));
-		} catch (NumberFormatException e) {
-			return Optional.empty();
-		}
-	}
 }

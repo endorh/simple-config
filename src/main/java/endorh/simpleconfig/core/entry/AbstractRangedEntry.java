@@ -7,7 +7,9 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -143,32 +145,39 @@ public abstract class AbstractRangedEntry
 		super(parent, name, value);
 	}
 	
-	@Override
-	protected ForgeConfigSpec.Builder decorate(ForgeConfigSpec.Builder builder) {
-		builder = super.decorate(builder);
-		String com = comment != null ? comment + "\n" : "";
-		com += " Range: " + getRangeComment();
-		builder.comment(com);
-		return builder;
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String typeComment = getTypeComment();
+		if (typeComment != null) tooltips.add(typeComment);
+		tooltips.add("Range: " + getRangeComment());
+		return tooltips;
+	}
+	
+	protected @Nullable String getTypeComment() {
+		return typeClass.getSimpleName();
 	}
 	
 	protected String getRangeComment() {
-		if (max instanceof Number) {
+		if (max == null && min == null) return "~";
+		if (max instanceof Number || min instanceof Number) {
+			assert max == null || max instanceof Number;
+			assert min == null || min instanceof Number;
 			final Number x = (Number) max, n = (Number) min;
-			if (x.doubleValue() >= commentMax && n.doubleValue() <= commentMin) {
-				return "~";
-			} else if (x.doubleValue() >= commentMax) {
-				return "> " + n;
-			} else if (n.doubleValue() <= commentMin) {
-				return "< " + x;
-			} else return n + " ~ " + x;
+			boolean noMax = x == null || x.doubleValue() >= commentMax;
+			boolean noMin = n == null || n.doubleValue() <= commentMin;
+			if (noMax && noMin) return "~";
+			if (noMax) return ">= " + n;
+			if (noMin) return "<= " + x;
+			return n + " ~ " + x;
 		}
+		if (max == null) return ">= " + min;
+		if (min == null) return "<= " + max;
 		return min + " ~ " + max;
 	}
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, value, createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, defValue, createConfigValidator()));
 	}
 	
 	@Override

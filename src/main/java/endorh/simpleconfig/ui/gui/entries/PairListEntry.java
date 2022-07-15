@@ -19,8 +19,6 @@ import java.util.List;
 
 import static java.lang.Math.max;
 
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
-
 public class PairListEntry<
   L, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
   RE extends AbstractConfigEntry<R> & IChildListEntry

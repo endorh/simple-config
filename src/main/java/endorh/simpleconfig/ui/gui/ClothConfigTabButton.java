@@ -19,22 +19,23 @@ import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ClothConfigTabButton extends MultiFunctionIconButton {
-	protected final ClothConfigScreen screen;
+	protected final SimpleConfigScreen screen;
 	protected final ConfigCategory category;
 	
 	public ClothConfigTabButton(
-	  ClothConfigScreen screen, ConfigCategory category, int x, int y, ITextComponent title
+	  SimpleConfigScreen screen, ConfigCategory category, int x, int y, ITextComponent title
 	) {
 		this(screen, category, x, y, title, null);
 	}
 	
 	public ClothConfigTabButton(
-	  ClothConfigScreen screen, ConfigCategory category, int x, int y,
+	  SimpleConfigScreen screen, ConfigCategory category, int x, int y,
 	  ITextComponent title, @Nullable Supplier<Optional<ITextComponent[]>> descriptionSupplier
 	) {
 		super(x, y, 20, 200, Icon.EMPTY, ButtonAction.of(() -> {
 			if (category != null) screen.setSelectedCategory(category);
 		}).tint(category.getColor())
+		  .icon(category.getIcon())
 		  .tooltip(
 			 descriptionSupplier != null
 			 ? () -> Arrays.stream(descriptionSupplier.get().orElse(new ITextComponent[0]))

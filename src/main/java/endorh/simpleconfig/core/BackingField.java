@@ -3,6 +3,7 @@ package endorh.simpleconfig.core;
 import com.google.gson.internal.Primitives;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfigClassParser.SimpleConfigClassParseException;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.lang.reflect.Field;
 import java.util.function.Function;
@@ -110,19 +111,24 @@ public class BackingField<V, F> {
 			this.fieldType = fieldType;
 		}
 		
-		public BackingField<V, F> build(Field field) {
-			if (fieldType != null && Primitives.unwrap(field.getType()) != Primitives.unwrap(fieldType)) {
-				throw new SimpleConfigClassParseException(field.getDeclaringClass(),
-				  "Backing field " + field.getDeclaringClass().getCanonicalName() + "."
-				  + field.getName() + " doesn't match its expected type: " + fieldType.getSimpleName() +
+		public BackingFieldBuilder<V, F> withCommitter(Function<F, V> committer) {
+			return new BackingFieldBuilder<>(fieldMapper, committer, fieldType);
+		}
+		
+		@Internal protected BackingField<V, F> build(Field field) {
+			if (!matchesType(field)) {
+				throw new SimpleConfigClassParseException(
+				  field.getDeclaringClass(),
+				  "Backing field " + field.getDeclaringClass().getCanonicalName() + "." +
+				  field.getName() + " doesn't match its expected type: " + fieldType.getSimpleName() +
 				  "\nIf this is the default field for this entry, you may annotate it with @NotEntry " +
 				  "to suppress this error");
 			}
 			return new BackingField<>(field, fieldMapper, committer);
 		}
 		
-		public BackingFieldBuilder<V, F> withCommitter(Function<F, V> committer) {
-			return new BackingFieldBuilder<>(fieldMapper, committer, fieldType);
+		@Internal protected boolean matchesType(Field field) {
+			return fieldType == null || Primitives.unwrap(field.getType()) == Primitives.unwrap(fieldType);
 		}
 	}
 }

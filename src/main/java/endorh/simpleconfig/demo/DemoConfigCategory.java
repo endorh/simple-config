@@ -2,8 +2,6 @@ package endorh.simpleconfig.demo;
 
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigCategory;
@@ -11,6 +9,8 @@ import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.annotation.Bind;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simpleconfig.core.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.ui.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluids;
@@ -30,7 +30,6 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 import java.awt.*;
 import java.nio.file.Path;
@@ -42,10 +41,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
-import static endorh.simpleconfig.ui.api.ModifierKeyCode.parse;
 import static endorh.simpleconfig.core.SimpleConfig.category;
 import static endorh.simpleconfig.core.SimpleConfig.group;
 import static endorh.simpleconfig.core.entry.Builders.*;
+import static endorh.simpleconfig.ui.api.ModifierKeyCode.parse;
 import static java.lang.Math.abs;
 import static java.util.Arrays.asList;
 
@@ -89,6 +88,18 @@ public class DemoConfigCategory {
 		//   for instance, an inner static class, or none at all
 		//noinspection ArraysAsListWithZeroOrOneArgument
 		return category("demo", DemoConfigCategory.class)
+		  // Categories may have an icon and a color, which are used in its tab button
+		  //   when more than one category is available.
+		  .withIcon(SimpleConfigIcons.INFO)
+		  .withColor(0x80607080)
+		  // Categories can also have an associated background
+		  //   The whole config may also define a default background
+		  //   for all categories
+		  // Note that the background won't display in-game, unless
+		  //   you call .withSolidInGameBackground() in the config builder
+		  //   because configs are transparent by default in-game
+		  // It will always display when opened from the main menu however.
+		  .withBackground("textures/block/warped_planks.png")
 		  // You may add text to the config GUI in using .text()
 		  .text(ttc(prefix("text.greeting_text")))
 		  // Adding entries is done with .add() and the various entry
@@ -194,7 +205,7 @@ public class DemoConfigCategory {
 		            //   by using select(), resulting in an enum-like GUI control
 		            // A user setting may transform these enum-like controls with
 		            //   too many options into combo boxes for a better interface
-		            .add("str_select", select(string("Alpha"), natoPhoneticAlphabet))
+		            // .add("str_select", select(string("Alpha"), natoPhoneticAlphabet))
 		            // Key binding entries also exist, HOWEVER,
 		            //   PLEASE REGISTER YOUR KEY BINDINGS THROUGH
 		            //   ClientRegistry.registerKeyBinding INSTEAD, to
@@ -373,25 +384,27 @@ public class DemoConfigCategory {
 						  parse("ctrl+h"), "/tp 0 0 0",
 						  parse("ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true"))))
 		     .n(group("pairs_n_triples", false)
-		          .add("int_pair", pair(number(0, 0, 10), number(10, 0, 10), Pair.of(0, 10)))
-		          .add("slider_pair", pair(number(0.5F, 0F, 1F).slider(), volume(0.5F), Pair.of(0.5F, 0.5F)))
+		          .add("int_pair", pair(number(0, 0, 10), number(10, 0, 10)))
+		          .add("slider_pair", pair(number(0.5F, 0F, 1F).slider(), volume(0.5F)))
 		          .add("enum_triple", triple(
-		            option(Axis.X), option(Placement.UPSIDE_DOWN), option(Direction.NORTH),
-		            Triple.of(Axis.X, Placement.UPSIDE_DOWN, Direction.NORTH)))
-		          // .add("item_fluid_pair_list", list(pair(
-						// itemName(new ResourceLocation("apple")), fluidName(new ResourceLocation("water")),
-						// Pair.of(new ResourceLocation("apple"), new ResourceLocation("water"))
-		          // ), asList(
-						// Pair.of(new ResourceLocation("apple"), new ResourceLocation("water")),
-						// Pair.of(new ResourceLocation("beetroot"), new ResourceLocation("lava")))))
-		          .add("range", pair(number(0), number(10), Pair.of(0, 10))
+		            option(Axis.X), option(Placement.UPSIDE_DOWN), option(Direction.NORTH)))
+		          .add("item_fluid_pair_list", caption(pair(
+						itemName(new ResourceLocation("apple")), fluidName(new ResourceLocation("water"))),
+		               list(pair(
+							  itemName(new ResourceLocation("apple")), fluidName(new ResourceLocation("water"))
+		               ), asList(
+							  Pair.of(new ResourceLocation("apple"), new ResourceLocation("water")),
+							  Pair.of(new ResourceLocation("beetroot"), new ResourceLocation("lava"))))))
+		          .add("mixed_pair", pair(number(0), string("str")))
+		          // Pairs can also be used to create ranges, but remember that there is already a
+		          //   range entry for this purpose, which supports configurable exclusive bounds
+		          .add("range_pair", pair(number(0), number(10))
 		            .guiError(p -> p != null && p.getLeft() != null && p.getRight() != null && p.getLeft() > p.getRight()?
 		                           Optional.of(ttc("error.min_greater_than_max")) : Optional.empty())
 		            .withMiddleIcon(SimpleConfigIcons.Entries.LESS_EQUAL))
 		          .add("pair_pair", pair(
-						pair(number(0), number(0L), Pair.of(0, 0L)),
-						pair(number(0F), number(0D), Pair.of(0F, 0D)),
-						Pair.of(Pair.of(1, 2L), Pair.of(3F, 4D)))))
+						pair(number(0), number(0L)),
+						pair(number(0F), number(0D)))))
 		     // As lists and maps, groups can also hold entries in their captions
 		     //   The held entries belong to the group and have their own entry
 		     //   within it in the config file.
@@ -563,23 +576,17 @@ public class DemoConfigCategory {
 		  .text("end", new TranslationTextComponent("simpleconfig.text.wiki")
 		    .modifyStyle(style -> style.setFormatting(TextFormatting.AQUA)
 		      .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
-		  // Set a specific background for this category
-		  //   The whole config may also define a default background
-		  //   for all categories
-		  // Note that the background won't display ingame, unless
-		  //   you call .solidIngameBackground() in the config builder
-		  //   because configs are transparent by default ingame
-		  .setBackground("textures/block/warped_planks.png")
 		  // Finally, we may manually set a baker method
 		  //   for this config/category/group
 		  // The baker method will receive the built config/category/group
 		  //   when called, after all backing fields have been baked
-		  // If a method named 'bake' with the correct signature is
-		  //   found in the backing class, it will be set as baker
-		  //   automatically
-		  .setBaker(DemoConfigCategory::bakeDemoCategory);
+		  // This isn't usually necessary, since if a method named 'bake'
+		  //   with the correct signature is found in the backing class,
+		  //   it will be set as baker automatically
+		  .withBaker(DemoConfigCategory::bakeDemoCategory);
 		// Since here we're only building a category, we don't need
 		//   to finish the call by calling .buildAndRegister()
+		// This is done in the SimpleConfigMod class
 	}
 	
 	// Sometimes baking isn't as simple as setting a few fields

@@ -4,13 +4,14 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
 import endorh.simpleconfig.core.SimpleConfig.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
+import endorh.simpleconfig.yaml.NodeComments;
+import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -24,17 +25,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.comments.CommentLine;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
 
 /**
  * An abstract config entry, which may or may not produce an entry in
@@ -53,16 +53,16 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
   implements IGUIEntry {
 	private static final Logger LOGGER = LogManager.getLogger();
+	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	protected final ISimpleConfigEntryHolder parent;
 	/**
 	 * The default value of this entry
 	 */
-	protected final V value;
+	public final V defValue;
 	protected String name;
 	protected Class<?> typeClass;
 	protected @Nullable String translation = null;
 	protected @Nullable String tooltip = null;
-	protected @Nullable String comment = null;
 	protected boolean requireRestart = false;
 	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
 	protected @Nullable Function<V, Optional<ITextComponent[]>> tooltipSupplier = null;
@@ -79,7 +79,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	protected @Nullable Supplier<Boolean> editableSupplier = null;
 	protected @Nullable BackingField<V, ?> backingField;
-	protected @Nullable Field backingField2;
 	protected @Nullable List<BackingField<V, ?>> secondaryBackingFields;
 	protected boolean dirty = false;
 	protected @Nullable ITextComponent displayName = null;
@@ -92,15 +91,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected boolean ignored = false;
 	
 	protected AbstractConfigEntry(
-	  ISimpleConfigEntryHolder parent, String name, V value
+	  ISimpleConfigEntryHolder parent, String name, V defValue
 	) {
 		this.parent = parent;
-		this.value = value;
+		this.defValue = defValue;
 		this.name = name;
 	}
 	
 	public String getPath() {
-		if (parent instanceof AbstractSimpleConfigEntryHolder) {
+		if (parent instanceof SimpleConfig) {
+			return name;
+		} else if (parent instanceof AbstractSimpleConfigEntryHolder) {
 			return ((AbstractSimpleConfigEntryHolder) parent).getPath() + "." + name;
 		} else return name;
 	}
@@ -224,7 +225,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	public V fromGuiOrDefault(Gui value) {
 		final V v = fromGui(value);
-		return v != null ? v : this.value;
+		return v != null ? v : this.defValue;
 	}
 	
 	/**
@@ -240,7 +241,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	@Nullable public V fromConfig(@Nullable Config value) {
 		//noinspection unchecked
-		return (V) value;
+		return typeClass.isInstance(value)? (V) value : null;
 	}
 	
 	/**
@@ -248,7 +249,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	public V fromConfigOrDefault(Config value) {
 		final V v = fromConfig(value);
-		return v != null ? v : this.value;
+		return v != null ? v : this.defValue;
 	}
 	
 	protected void put(CommentedConfig config, Config value) {
@@ -256,7 +257,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	protected Config get(CommentedConfig config) {
-		return fromActualConfig(config.getOrElse(name, forActualConfig(forConfig(value))));
+		return fromActualConfig(config.getOrElse(name, forActualConfig(forConfig(defValue))));
 	}
 	
 	/**
@@ -269,7 +270,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	/**
 	 * First conversion step before reading from the config
 	 */
-	protected @Nullable Config fromActualConfig(@Nullable Object value) {
+	public @Nullable Config fromActualConfig(@Nullable Object value) {
 		try {
 			//noinspection unchecked
 			return (Config) value;
@@ -362,15 +363,60 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return Optional.empty();
 	}
 	
+	protected @Nullable NodeComments getNodeComments(@Nullable NodeComments previous) {
+		if (previous == null) previous = new NodeComments();
+		List<CommentLine> blockComments = previous.getBlockComments();
+		String configComment = getConfigComment();
+		if (configComment.endsWith("\n")) configComment = configComment.substring(0, configComment.length() - 1);
+		if (!configComment.isEmpty()) {
+			if (blockComments == null) blockComments = Lists.newArrayList();
+			blockComments.clear();
+			Arrays.stream(LINE_BREAK.split(configComment))
+			  .map(line -> SimpleConfigCommentedYamlWriter.commentLine(" " + line))
+			  .forEach(blockComments::add);
+			previous.setBlockComments(blockComments);
+		}
+		return previous.isNotEmpty()? previous : null;
+	}
+	
+	@Internal public List<String> getConfigCommentTooltips() {
+		ArrayList<String> tooltips = Lists.newArrayList();
+		if (requireRestart) tooltips.add("Requires restart!");
+		return tooltips;
+	}
+	
+	@Internal public String getConfigCommentTooltip() {
+		return getConfigCommentTooltips().stream()
+		  .map(t -> "[" + t + "]")
+		  .collect(Collectors.joining(" "));
+	}
+	
+	@Internal public String getConfigComment() {
+		StringBuilder builder = new StringBuilder();
+		if (translation != null && I18n.hasKey(translation)) {
+			String name = stripFormattingCodes(I18n.format(
+			  translation, formatArgs(null, nameArgs)
+			).trim());
+			builder.append(name).append('\n');
+			if (tooltip != null && I18n.hasKey(tooltip)) {
+				String tooltip = "  " + stripFormattingCodes(I18n.format(
+				  this.tooltip, formatArgs(get(), tooltipArgs)
+				).trim().replace("\n", "\n  "));
+				builder.append(tooltip).append('\n');
+			}
+		}
+		builder.append(getConfigCommentTooltip()).append('\n');
+		return builder.toString();
+	}
+	
 	protected ForgeConfigSpec.Builder decorate(ForgeConfigSpec.Builder builder) {
-		if (comment != null)
-			builder = builder.comment(comment);
-		// This doesn't work
-		// It seems that Config translations are not implemented in Forge's end
-		// Also, mods I18n entries load after configs registration, which
-		// makes impossible to set the comments to the tooltip translations
-		if (tooltip != null)
-			builder = builder.translation(tooltip);
+		// Forge's comment change detection is too buggy to use and runs before
+		// I18n entries have been loaded, so it can't use the entries' descriptions.
+		// String comment = getConfigComment();
+		// if (comment != null)
+		// 	builder = builder.comment(comment);
+		// if (tooltip != null)
+		// 	builder = builder.translation(tooltip);
 		return builder;
 	}
 	
@@ -378,7 +424,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected <F extends FieldBuilder<Gui, ?, F>> F decorate(F builder) {
 		builder.requireRestart(requireRestart)
 		  .nonPersistent(nonPersistent)
-		  .setDefaultValue(() -> forGui(value))
+		  .setDefaultValue(() -> forGui(defValue))
 		  .setTooltipSupplier(this::getTooltip)
 		  .setErrorSupplier(this::getError)
 		  .setSaveConsumer(createSaveConsumer())
@@ -433,7 +479,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected void buildSpec(
 	  ConfigSpec spec, String parentPath
 	) {
-		spec.define(parentPath + name, forConfig(value), createConfigValidator());
+		spec.define(parentPath + name, forConfig(defValue), createConfigValidator());
 	}
 	
 	/**
@@ -666,9 +712,5 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		addTranslationsDebugInfo(lines);
 		addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new ITextComponent[0]));
-	}
-	
-	public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass);
 	}
 }

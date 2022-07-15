@@ -1,37 +1,28 @@
 package endorh.simpleconfig.core.entry;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.builders.PairListEntryBuilder;
-import endorh.simpleconfig.core.*;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
 import java.util.List;
 import java.util.Optional;
 
-import static endorh.simpleconfig.core.NBTUtil.fromNBT;
-import static endorh.simpleconfig.core.NBTUtil.toNBT;
-
 public class EntryPairEntry<
   L, R, LC, RC, LG, RG,
-  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
-  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>
+  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>
 > extends AbstractConfigEntry<
   Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>,
   EntryPairEntry<L, R, LC, RC, LG, RG, LE, RE>
-> implements IKeyEntry<Pair<LC, RC>, Pair<LG, RG>> {
+> implements IKeyEntry<Pair<LG, RG>> {
 	protected final LE leftEntry;
 	protected final RE rightEntry;
 	protected float splitPos = 0.5F;
@@ -48,8 +39,8 @@ public class EntryPairEntry<
 	
 	public static class Builder<
 	  L, R, LC, RC, LG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
 	> extends AbstractConfigEntryBuilder<
@@ -105,27 +96,28 @@ public class EntryPairEntry<
 		}
 	}
 	
-	@Override public String forActualConfig(@Nullable Pair<LC, RC> value) {
-		if (value == null) return "";
-		final CompoundNBT nbt = new CompoundNBT();
-		nbt.put("l", toNBT(value.getLeft()));
-		nbt.put("r", toNBT(value.getRight()));
-		return nbt.toString();
+	@Override public Pair<Object, Object> forActualConfig(@Nullable Pair<LC, RC> value) {
+		if (value == null) return null;
+		return Pair.of(leftEntry.forActualConfig(value.getLeft()), rightEntry.forActualConfig(value.getRight()));
 	}
 	
-	@Nullable @Override protected Pair<LC, RC> fromActualConfig(@Nullable Object value) {
-		if (!(value instanceof String)) return null;
-		final String str = (String) value;
-		try {
-			final CompoundNBT nbt = new JsonToNBT(new StringReader(str)).readStruct();
-			//noinspection unchecked
-			final LC left = (LC) fromNBT(nbt.get("l"), getExpectedType().next.get(0));
-			//noinspection unchecked
-			final RC right = (RC) fromNBT(nbt.get("r"), getExpectedType().next.get(1));
-			return Pair.of(left, right);
-		} catch (CommandSyntaxException | IllegalArgumentException | ClassCastException e) {
-			return null;
-		}
+	@Nullable @Override public Pair<LC, RC> fromActualConfig(@Nullable Object value) {
+		LC left;
+		RC right;
+		if (value instanceof List<?>) {
+			List<?> list = (List<?>) value;
+			if (list.size() != 2) return null;
+			left = leftEntry.fromActualConfig(list.get(0));
+			right = rightEntry.fromActualConfig(list.get(1));
+		} else if (value instanceof Pair) {
+			final Pair<?, ?> pair = (Pair<?, ?>) value;
+			left = leftEntry.fromActualConfig(pair.getLeft());
+			right = rightEntry.fromActualConfig(pair.getRight());
+		} else return null;
+		if (left == null && right == null) return null;
+		if (left == null) left = leftEntry.forConfig(leftEntry.defValue);
+		if (right == null) right = rightEntry.forConfig(rightEntry.defValue);
+		return Pair.of(left, right);
 	}
 	
 	@Override public List<ITextComponent> getErrors(Pair<LG, RG> value) {
@@ -157,16 +149,17 @@ public class EntryPairEntry<
 		               rightEntry.fromGuiOrDefault(value.getRight()));
 	}
 	
-	@Override public Optional<Pair<LC, RC>> deserializeStringKey(@NotNull String key) {
-		return Optional.ofNullable(fromActualConfig(key));
-	}
-	
-	@Override public String serializeStringKey(@NotNull Pair<LC, RC> key) {
-		return forActualConfig(key);
-	}
-	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String leftComment = leftEntry.getConfigCommentTooltip();
+		String rightComment = rightEntry.getConfigCommentTooltip();
+		tooltips.add("Pair: " + (leftComment.isEmpty()? "?" : leftComment) + ", " +
+		             (rightComment.isEmpty()? "?" : rightComment));
+		return tooltips;
 	}
 	
 	@Override public Optional<AbstractConfigListEntry<Pair<LG, RG>>> buildGUIEntry(
@@ -180,9 +173,5 @@ public class EntryPairEntry<
 		  .withMiddleIcon(middleIcon)
 		  .withSplitPos(splitPos);
 		return Optional.of(decorate(entryBuilder).build());
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, leftEntry.getExpectedType(), rightEntry.getExpectedType());
 	}
 }

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse;
@@ -14,7 +15,6 @@ import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
 import endorh.simpleconfig.ui.impl.EditHistory;
 import endorh.simpleconfig.ui.math.Rectangle;
-import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -54,7 +54,7 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 
 public abstract class AbstractConfigScreen extends Screen
   implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler, ScissorsScreen,
-             IExternalChangeHandler, IOverlayCapableScreen, IEntryHolder, IDialogCapableScreen {
+             IExternalChangeHandler, IEntryHolder, IDialogCapableScreen {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected final ResourceLocation backgroundLocation;
 	protected final Screen parent;
@@ -272,7 +272,7 @@ public abstract class AbstractConfigScreen extends Screen
 		boolean remote = !forceOverwrite && confirm.overwrite_remote && hasConflictingRemoteChanges();
 		if (external || remote) {
 			addDialog(ConfirmDialog.create(
-			  this, new TranslationTextComponent("simpleconfig.ui.confirm_overwrite"), d -> {
+			  new TranslationTextComponent("simpleconfig.ui.confirm_overwrite"), d -> {
 				  List<ITextComponent> body = splitTtc(
 					 "simpleconfig.ui.confirm_overwrite.msg."
 					 + (external ? remote ? "both" : "external" : "remote"));
@@ -314,7 +314,7 @@ public abstract class AbstractConfigScreen extends Screen
 			));
 		} else if (confirmSave || forceConfirm) {
 			addDialog(ConfirmDialog.create(
-			  this, new TranslationTextComponent("simpleconfig.ui.confirm_save"), d -> {
+			  new TranslationTextComponent("simpleconfig.ui.confirm_save"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -591,7 +591,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (minecraft == null) return false;
 		if (!skipConfirm && confirmUnsaved && isEdited()) {
 			addDialog(ConfirmDialog.create(
-			  this, new TranslationTextComponent("text.cloth-config.quit_config"), d -> {
+			  new TranslationTextComponent("text.cloth-config.quit_config"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -713,7 +713,7 @@ public abstract class AbstractConfigScreen extends Screen
 					throw new URISyntaxException(
 					  clickEvent.getValue(), "Unsupported protocol: " + string.toLowerCase(Locale.ROOT));
 				}
-				addDialog(ConfirmLinkDialog.create(clickEvent.getValue(), this, true));
+				addDialog(ConfirmLinkDialog.create(clickEvent.getValue(), true));
 			} catch (URISyntaxException e) {
 				LOGGER.error("Can't open url for {}", clickEvent, e);
 			}
@@ -799,7 +799,7 @@ public abstract class AbstractConfigScreen extends Screen
 	@Override public void handleExternalChange(ModConfig.Type type) {
 		// Changes sometimes arrive in batches
 		if (externalChangesDialog != null) externalChangesDialog.cancel(false);
-		externalChangesDialog = ExternalChangesDialog.create(type, this, response -> {
+		externalChangesDialog = ExternalChangesDialog.create(type, response -> {
 			handleExternalChangeResponse(response);
 			externalChangesDialog = null;
 		});

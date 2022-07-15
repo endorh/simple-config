@@ -2,24 +2,33 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
-import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import com.google.common.collect.Lists;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import endorh.simpleconfig.yaml.NodeComments;
+import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.comments.CommentLine;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.blankLine;
+
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
 	protected static final Pattern DOT = Pattern.compile("\\.");
+	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
@@ -46,6 +55,26 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	protected abstract String getName();
 	
+	protected String getConfigComment() {
+		return "";
+	}
+	
+	protected @Nullable NodeComments getNodeComments(@Nullable NodeComments previous) {
+		if (previous == null) previous = new NodeComments();
+		List<CommentLine> blockComments = previous.getBlockComments();
+		String configComment = getConfigComment();
+		if (configComment.endsWith("\n")) configComment = configComment.substring(0, configComment.length() - 1);
+		if (!configComment.isEmpty()) {
+			if (blockComments == null) blockComments = Lists.newArrayList();
+			blockComments.clear();
+			Arrays.stream(LINE_BREAK.split(configComment))
+			  .map(line -> SimpleConfigCommentedYamlWriter.commentLine(" " + line))
+			  .forEach(blockComments::add);
+			previous.setBlockComments(blockComments);
+		}
+		return previous.isNotEmpty()? previous : null;
+	}
+	
 	/**
 	 * Mark this entry holder as dirty<br>
 	 * When the config screen is saved, only config files containing dirty entries are updated
@@ -57,6 +86,51 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	@Override public boolean isDirty() {
 		return dirty;
+	}
+	
+	protected void saveSnapshot(
+	  CommentedConfig config, boolean fromGUI, @Nullable Set<String> selectedPaths
+	) {
+		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
+			final CommentedConfig subConfig = config.createSubConfig();
+			e.getValue().saveSnapshot(subConfig, fromGUI, selectedPaths);
+			if (!subConfig.isEmpty())
+				config.set(e.getKey(), subConfig);
+		}
+		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
+			//noinspection unchecked
+			final AbstractConfigEntry<?, Object, ?, ?> entry =
+			  (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
+			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
+			    && !entry.nonPersistent)
+				entry.put(config, fromGUI? entry.guiForConfig() : entry.getForConfig());
+		}
+	}
+	
+	protected void loadSnapshot(
+	  CommentedConfig config, boolean intoGUI, @Nullable Set<String> selectedPaths
+	) {
+		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
+			if (config.contains(e.getKey())) {
+				final Object sub = config.get(e.getKey());
+				if (sub instanceof CommentedConfig)
+					e.getValue().loadSnapshot(((CommentedConfig) sub), intoGUI, selectedPaths);
+			}
+		}
+		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
+			//noinspection unchecked
+			AbstractConfigEntry<?, Object, ?, ?> entry = (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
+			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
+			    && config.contains(e.getKey())) {
+				try {
+					if (intoGUI) {
+						entry.setFromConfigForGUI(entry.get(config));
+					} else entry.setFromConfig(entry.get(config));
+				} catch (InvalidConfigValueTypeException ignored) {
+					LOGGER.warn("Error loading config snapshot. Invalid value type for entry " + entry.getGlobalPath());
+				}
+			}
+		}
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -78,29 +152,6 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected void loadGUISnapshot(CommentedConfig config) {
-		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
-			if (config.contains(e.getKey())) {
-				final Object sub = config.get(e.getKey());
-				if (sub instanceof CommentedConfig)
-					e.getValue().loadGUISnapshot(((CommentedConfig) sub));
-			}
-		}
-		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
-			if (config.contains(e.getKey()))
-				trySetFromConfigForGUI(e.getValue(), config);
-		}
-	}
-	
-	private static <C> void trySetFromConfigForGUI(AbstractConfigEntry<?, C, ?, ?> entry, CommentedConfig config) {
-		try {
-			entry.setFromConfigForGUI(entry.get(config));
-		} catch (InvalidConfigValueTypeException ignored) {
-			LOGGER.warn("Error loading GUI snapshot. Invalid value type for entry " + entry.getGlobalPath());
-		}
-	}
-	
-	@OnlyIn(Dist.CLIENT)
 	protected void loadGUIExternalChanges() {
 		children.values().forEach(AbstractSimpleConfigEntryHolder::loadGUIExternalChanges);
 		entries.values().forEach(AbstractSimpleConfigEntryHolder::setForGUIAsExternal);
@@ -108,6 +159,32 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	private static <V> void setForGUIAsExternal(AbstractConfigEntry<V, ?, ?, ?> entry) {
 		entry.setForGUIAsExternal(entry.get());
+	}
+	
+	protected void updateComments(Map<String, NodeComments> comments) {
+		String type = root.getType().extension();
+		boolean first = true;
+		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
+			String path = entry.getPath();
+			if (path.startsWith(type + ".")) path = path.substring(type.length() + 1);
+			NodeComments nodeComments = entry.getNodeComments(comments.get(path));
+			if (nodeComments != null) {
+				first = false;
+				comments.put(path, nodeComments);
+			} else comments.remove(path);
+		}
+		for (AbstractSimpleConfigEntryHolder child : children.values()) {
+			String path = child.getPath();
+			if (path.startsWith(type + ".")) path = path.substring(type.length() + 1);
+			NodeComments nodeComments = child.getNodeComments(comments.get(path));
+			if (first) {
+				first = false;
+			} else nodeComments = NodeComments.prefix(blankLine()).appendAsPrefix(nodeComments, false);
+			if (nodeComments != null && nodeComments.isNotEmpty())
+				comments.put(path, nodeComments);
+			else comments.remove(path);
+			child.updateComments(comments);
+		}
 	}
 	
 	protected void buildConfigSpec(ConfigSpec spec, String path) {

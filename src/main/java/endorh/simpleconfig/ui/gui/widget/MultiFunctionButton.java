@@ -7,8 +7,6 @@ import net.minecraft.util.text.ITextComponent;
 
 import java.util.function.BiPredicate;
 
-import net.minecraft.client.gui.widget.button.Button.ITooltip;
-
 public class MultiFunctionButton extends TintedButton {
 	
 	protected BiPredicate<Button, Integer> pressAction;

@@ -1,12 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.BackingField;
-import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.function.Function;
 

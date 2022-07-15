@@ -1,23 +1,23 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.AbstractConfigEntry;
+import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.Modifier;
 import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.impl.builders.KeyCodeBuilder;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -32,13 +32,13 @@ import java.util.Optional;
  * <b>KeyBindings registered the proper way can be configured altogether with
  * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
  * The only encouraged use of KeyBind entries is when you need further
- * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
+ * flexibility, such as <em>a map of KeyBinds to user-defined actions of some kind</em>.
  * Use wisely.
  */
 @OnlyIn(Dist.CLIENT)
 public class KeyBindEntry extends AbstractConfigEntry<
-  ModifierKeyCode, String, ModifierKeyCode, KeyBindEntry>
-  implements IKeyEntry<String, ModifierKeyCode> {
+  ModifierKeyCode, String, ModifierKeyCode, KeyBindEntry
+> implements IKeyEntry<ModifierKeyCode> {
 	protected boolean allowKey = true;
 	protected boolean allowModifiers = true;
 	protected boolean allowMouse = true;
@@ -125,6 +125,8 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		}
 		
 		@Override protected KeyBindEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+			if (!allowKey && !allowMouse) throw new IllegalArgumentException(
+			  "KeyBindEntry must allow either keys, mouse or both");
 			final KeyBindEntry entry = new KeyBindEntry(parent, name, value);
 			entry.allowModifiers = allowModifiers;
 			entry.allowKey = allowKey;
@@ -142,17 +144,38 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	}
 	
 	@Override public String forConfig(ModifierKeyCode value) {
-		return value != null? value.toConfig() : "";
+		return value != null ? value.serializedName() : "";
 	}
 	
 	@Nullable @Override public ModifierKeyCode fromConfig(@Nullable String value) {
 		return ModifierKeyCode.parse(value);
 	}
 	
+	protected String getTypeComment() {
+		if (allowKey && allowMouse) {
+			return "Mouse/Keyboard Key";
+		} else if (allowKey) {
+			return "Key";
+		} else return "Mouse Key";
+	}
+	
+	protected String getFormatComment() {
+		StringBuilder b = new StringBuilder();
+		if (allowModifiers) b.append("[ctrl+][shift+][alt+]");
+		b.append("key");
+		return b.toString();
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		tooltips.add(getTypeComment() + ": " + getFormatComment());
+		return tooltips;
+	}
+	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(
 	  ForgeConfigSpec.Builder builder
 	) {
-		return Optional.of(decorate(builder).define(name, value, createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, defValue, createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
@@ -167,7 +190,4 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		return Optional.of(decorate(valBuilder).build());
 	}
 	
-	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
-		return Optional.of(key);
-	}
 }

@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.impl;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.ClothConfigScreen;
+import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.ResourceLocation;
@@ -151,7 +151,7 @@ import java.util.function.Consumer;
 	@Override public AbstractConfigScreen build() {
 		if (serverCategories.isEmpty() && clientCategories.isEmpty() || fallbackCategory == null)
 			throw new IllegalStateException("Config screen without categories or fallback category");
-		AbstractConfigScreen screen = new ClothConfigScreen(
+		AbstractConfigScreen screen = new SimpleConfigScreen(
 		  parent, modId, title, clientCategories.values(),
 		  serverCategories.values(), defaultBackground);
 		screen.setSavingRunnable(savingRunnable);

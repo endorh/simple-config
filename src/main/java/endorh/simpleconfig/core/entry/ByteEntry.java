@@ -1,28 +1,25 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 @Deprecated
 public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEntry>
-  implements IKeyEntry<Number, Byte> {
+  implements IKeyEntry<Byte> {
 	@Internal public ByteEntry(
 	  ISimpleConfigEntryHolder parent, String name, byte value
 	) {
 		super(parent, name, value);
-		commentMin = Byte.MIN_VALUE;
-		commentMax = Byte.MAX_VALUE;
 	}
 	
 	public static class Builder extends
@@ -92,11 +89,4 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 		}
 	}
 	
-	@Override public Optional<Number> deserializeStringKey(@NotNull String key) {
-		try {
-			return Optional.of(Byte.parseByte(key));
-		} catch (NumberFormatException e) {
-			return Optional.empty();
-		}
-	}
 }

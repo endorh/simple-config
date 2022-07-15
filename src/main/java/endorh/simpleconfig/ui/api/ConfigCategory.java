@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
+import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -32,6 +33,9 @@ public interface ConfigCategory extends IEntryHolder {
 	
 	void setColor(int color);
 	int getColor();
+	
+	void setIcon(Icon icon);
+	Icon getIcon();
 	
 	int getSortingOrder();
 	void setSortingOrder(int order);

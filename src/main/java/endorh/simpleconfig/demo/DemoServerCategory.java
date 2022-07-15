@@ -5,6 +5,7 @@ import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigBuilder;
 import endorh.simpleconfig.core.annotation.*;
 import endorh.simpleconfig.demo.DemoServerCategory.demo.demo_group;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.IntNBT;
 import net.minecraft.nbt.StringNBT;
@@ -15,7 +16,6 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
-import net.minecraftforge.fml.config.ModConfig.Type;
 
 import java.awt.*;
 import java.util.List;
@@ -54,28 +54,9 @@ public class DemoServerCategory {
 		//   may not require any such features.
 		
 		// We use this class as the backing class
-		return category("demo", demo.class);
-	}
-	
-	public static void registerServerConfig() {
-		// In this example, we generate all config entries
-		//   directly in the config class through the use of annotations
-		// This is discouraged, since it's more restrictive than the
-		//   builder. For instance, you may not define lists of
-		//   complex types, such as lists of lists, nor lists of maps
-		//   in the config class.
-		//   Declaring groups and categories like this may require you
-		//   to give their order (relative to its siblings) explicitly
-		//   in their annotations since it's not possible to read inner
-		//   classes in declaration order.
-		// Where possible, you should use the builder to define your
-		//   entries, as it's done in DemoConfigCategory, but this
-		//   class serves as an example for small/simple configs that
-		//   may not require any such features.
-		
-		// We use this class as the backing class
-		SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.SERVER, DemoServerCategory.class)
-		  .buildAndRegister();
+		return category("demo", demo.class)
+		  .withIcon(SimpleConfigIcons.INFO)
+		  .withColor(0x80607080);
 	}
 	
 	// A bake method is automatically recognized in the backing class

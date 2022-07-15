@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
-import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
+public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
   extends GUIOnlyEntry<V, Gui, EntryButtonEntry<V, Gui, Inner>> {
 	
 	protected Inner inner;
@@ -31,7 +31,7 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 		this.action = action;
 	}
 	
-	public static class Builder<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
+	public static class Builder<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
 	  extends GUIOnlyEntry.Builder<V, Gui, EntryButtonEntry<V, Gui, Inner>, Builder<V, Gui, Inner>> {
 		
 		protected AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner;

@@ -1,15 +1,12 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
+import endorh.simpleconfig.core.DummyEntryHolder;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
-import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
-import endorh.simpleconfig.core.DummyEntryHolder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SelectorEntry;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,7 +22,7 @@ import java.util.Optional;
 public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwitcherEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	
-	protected SelectorEntry<String, String, String, StringEntry> inner;
+	protected StringEntry inner;
 	protected Map<String, Map<String, Object>> presets;
 	protected boolean global;
 	protected String path;
@@ -40,15 +37,9 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		this.presets = presets;
 		this.path = path;
 		this.global = global;
-		inner = DummyEntryHolder.build(parent, Builders.select(
-		  Builders.string(firstKey(presets)),
-		  new ArrayList<>(presets.keySet())
-		).nameProvider(s -> {
-			final String nm = translation + "." + s;
-			if (I18n.hasKey(nm))
-				return new TranslationTextComponent(nm);
-			else return new StringTextComponent(s);
-		}));
+		inner = DummyEntryHolder.build(parent, Builders.string(firstKey(presets))
+		  .restrict(new ArrayList<>(presets.keySet())
+		));
 	}
 	
 	public static class Builder extends GUIOnlyEntry.Builder<String, String, PresetSwitcherEntry, Builder> {

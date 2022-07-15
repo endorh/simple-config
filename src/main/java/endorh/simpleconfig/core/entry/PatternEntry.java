@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -117,6 +117,12 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 			  "simpleconfig.config.error.invalid_pattern",
 			  e.getMessage().trim().replace("\r\n", ": ")));
 		}
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		if (flags != 0) tooltips.add("Flags: " + displayFlags(flags));
+		return tooltips;
 	}
 	
 	@Override protected ITextFormatter getTextFormatter() {

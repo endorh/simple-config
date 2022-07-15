@@ -1,26 +1,25 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleSliderBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, DoubleEntry>
-  implements IKeyEntry<Number, Double> {
+  implements IKeyEntry<Double> {
 	@Internal public DoubleEntry(
 	  ISimpleConfigEntryHolder parent, String name, double value
 	) {
 		super(parent, name, value);
-		commentMin = Double.MIN_VALUE;
+		commentMin = -Double.MAX_VALUE;
 		commentMax = Double.MAX_VALUE;
 	}
 	
@@ -108,11 +107,4 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		}
 	}
 	
-	@Override public Optional<Number> deserializeStringKey(@NotNull String key) {
-		try {
-			return Optional.of(Double.parseDouble(key));
-		} catch (NumberFormatException e) {
-			return Optional.empty();
-		}
-	}
 }

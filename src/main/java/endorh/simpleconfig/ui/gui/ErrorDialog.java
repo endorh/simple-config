@@ -9,38 +9,38 @@ import java.util.function.Consumer;
 
 public class ErrorDialog extends ProgressDialog {
 	public static ErrorDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, Throwable error
+	  ITextComponent title, Throwable error
 	) {
-		return create(screen, title, error, null);
+		return create(title, error, null);
 	}
 	
 	public static ErrorDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, Throwable error, @Nullable Consumer<ErrorDialog> builder
+	  ITextComponent title, Throwable error, @Nullable Consumer<ErrorDialog> builder
 	) {
-		ErrorDialog dialog = new ErrorDialog(screen, title, error);
+		ErrorDialog dialog = new ErrorDialog(title, error);
 		if (builder != null) builder.accept(dialog);
 		return dialog;
 	}
 	
 	public static ErrorDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, List<ITextComponent> error
+	  ITextComponent title, List<ITextComponent> error
 	) {
-		return create(screen, title, error, null);
+		return create(title, error, null);
 	}
 	
 	public static ErrorDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, List<ITextComponent> error,
+	  ITextComponent title, List<ITextComponent> error,
 	  @Nullable Consumer<ErrorDialog> builder
 	) {
-		ErrorDialog dialog = new ErrorDialog(screen, title, error);
+		ErrorDialog dialog = new ErrorDialog(title, error);
 		if (builder != null) builder.accept(dialog);
 		return dialog;
 	}
 	
 	public ErrorDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, Throwable error
+	  ITextComponent title, Throwable error
 	) {
-		super(screen, title, null);
+		super(title, null);
 		setError(error);
 		removeButton(cancelButton);
 		setConfirmText(new TranslationTextComponent("gui.ok"));
@@ -48,9 +48,9 @@ public class ErrorDialog extends ProgressDialog {
 	}
 	
 	public ErrorDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, List<ITextComponent> error
+	  ITextComponent title, List<ITextComponent> error
 	) {
-		super(screen, title, null);
+		super(title, null);
 		setError(error);
 		removeButton(cancelButton);
 		setConfirmText(new TranslationTextComponent("gui.ok"));

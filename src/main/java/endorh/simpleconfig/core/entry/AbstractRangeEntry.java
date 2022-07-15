@@ -1,18 +1,18 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.*;
+import endorh.simpleconfig.core.AbstractRange.AbstractSizedRange;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
-import endorh.simpleconfig.core.*;
-import endorh.simpleconfig.core.AbstractRange.AbstractSizedRange;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,11 +20,13 @@ import java.util.regex.Pattern;
 public abstract class AbstractRangeEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>,
   E extends AbstractRangeEntry<V, R, E>
-> extends AbstractConfigEntry<R, String, R, E> implements IKeyEntry<String, R> {
+> extends AbstractConfigEntry<R, String, R, E> implements IKeyEntry<R> {
 	protected @Nullable V min = null;
 	protected @Nullable V max = null;
 	protected boolean canEditMinExclusiveness = false;
 	protected boolean canEditMaxExclusiveness = false;
+	protected double commentMin = -Double.MAX_VALUE;
+	protected double commentMax = Double.MAX_VALUE;
 	
 	protected AbstractRangeEntry(
 	  ISimpleConfigEntryHolder parent, String name, R value
@@ -123,7 +125,37 @@ public abstract class AbstractRangeEntry<
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
 		return Optional.of(decorate(builder).define(
-		  name, forActualConfig(forConfig(value)), createConfigValidator()));
+		  name, forActualConfig(forConfig(defValue)), createConfigValidator()));
+	}
+	
+	protected String getRangeComment() {
+		if (max == null && min == null) return "~";
+		if (max instanceof Number || min instanceof Number) {
+			assert max == null || max instanceof Number;
+			assert min == null || min instanceof Number;
+			final Number x = (Number) max, n = (Number) min;
+			boolean noMax = x == null || x.doubleValue() >= commentMax;
+			boolean noMin = n == null || n.doubleValue() <= commentMin;
+			if (noMax && noMin) return "~";
+			if (noMax) return ">= " + n;
+			if (noMin) return "<= " + x;
+			return n + " ~ " + x;
+		}
+		if (max == null) return ">= " + min;
+		if (min == null) return "<= " + max;
+		return min + " ~ " + max;
+	}
+	
+	protected String getTypeComment() {
+		return "Range: " + (canEditMinExclusiveness? "[(" : defValue.isExclusiveMin()? "(" : "[")
+		       + "min, max" + (canEditMaxExclusiveness? ")]" : defValue.isExclusiveMax()? ")" : "]");
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		tooltips.add(getTypeComment());
+		tooltips.add("Bounds: " + getRangeComment());
+		return tooltips;
 	}
 	
 	protected static final Pattern RANGE_PATTERN = Pattern.compile(
@@ -136,11 +168,7 @@ public abstract class AbstractRangeEntry<
 		boolean maxEx = m.group("rp").contains(")");
 		V min = deserializeElement(m.group("l"));
 		V max = deserializeElement(m.group("r"));
-		return this.value.create(min != null? min : this.min, max != null? max : this.max, minEx, maxEx);
-	}
-	
-	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
-		return Optional.of(key);
+		return this.defValue.create(min != null? min : this.min, max != null? max : this.max, minEx, maxEx);
 	}
 	
 	@Override public Optional<AbstractConfigListEntry<R>> buildGUIEntry(ConfigEntryBuilder builder) {

@@ -99,7 +99,7 @@ public interface ConfigBuilder {
 			return preserve(type, null);
 		}
 		CommentedConfig preserve(Type type, @Nullable Set<String> selectedPaths);
-		void restore(CommentedConfig config, Type type);
+		void restore(CommentedConfig config, Type type, @Nullable Set<String> selectedPaths);
 		boolean canSaveRemote();
 		CommentedConfig getLocal(String name, Type type);
 		CompletableFuture<CommentedConfig> getRemote(String name, Type type);

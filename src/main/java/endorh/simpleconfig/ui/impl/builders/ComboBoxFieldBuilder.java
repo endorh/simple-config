@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.entries.ComboBoxListEntry;
-import endorh.simpleconfig.ui.gui.widget.combobox.*;
+import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.*;
 import net.minecraft.block.Block;
 import net.minecraft.fluid.Fluid;

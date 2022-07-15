@@ -3,7 +3,10 @@ package endorh.simpleconfig.ui.impl;
 import endorh.simpleconfig.ui.api.Modifier;
 import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import net.minecraft.client.util.InputMappings;
-import net.minecraft.util.text.*;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

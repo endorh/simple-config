@@ -1,20 +1,17 @@
 package endorh.simpleconfig.core.entry;
 
-import com.electronwill.nightconfig.core.CommentedConfig;
-import com.electronwill.nightconfig.core.ConfigSpec;
-import com.electronwill.nightconfig.core.EnumGetMethod;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
-import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.core.SelectorEntry.TypeWrapper;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,24 +19,33 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class EnumEntry<E extends Enum<E>>
-  extends AbstractConfigEntry<E, E, E, EnumEntry<E>> implements IKeyEntry<E, E> {
+  extends AbstractConfigEntry<E, E, E, EnumEntry<E>> implements IKeyEntry<E> {
 	protected final Class<E> enumClass;
+	protected final Map<String, E> nameMap;
+	protected final Map<String, E> lowerCaseNameMap;
 	protected @Nullable Boolean useComboBox;
 	
 	@Internal public EnumEntry(ISimpleConfigEntryHolder parent, String name, E value) {
 		super(parent, name, value);
 		enumClass = value.getDeclaringClass();
+		nameMap = Arrays.stream(enumClass.getEnumConstants())
+		  .collect(Collectors.toMap(Enum::name, Function.identity()));
+		lowerCaseNameMap = Arrays.stream(enumClass.getEnumConstants())
+		  .collect(Collectors.toMap(e -> e.name().toLowerCase(), Function.identity(), (a, b) -> a));
 	}
 	
-	public static class Builder<E extends Enum<E>> extends AbstractConfigEntryBuilder<E, E, E, EnumEntry<E>, Builder<E>> {
+	public static class Builder<E extends Enum<E>> extends AbstractConfigEntryBuilder<
+	  E, E, E, EnumEntry<E>, Builder<E>> {
 		protected final Class<E> enumClass;
 		protected @Nullable Boolean useComboBox = null;
 		
@@ -74,17 +80,38 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).defineEnum(name, value, createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
-	@Override protected void buildSpec(
-	  ConfigSpec spec, String parentPath
-	) {
-		spec.defineEnum(parentPath + name, value, EnumGetMethod.NAME_IGNORECASE);
+	public String presentName(E value) {
+		String name = value.name();
+		String lowerCaseName = name.toLowerCase();
+		if (lowerCaseNameMap.get(lowerCaseName) == value) name = lowerCaseName;
+		return name; //.replace('_', ' ');
 	}
 	
-	@Override protected E get(CommentedConfig config) {
-		return config.getEnumOrElse(name, value, EnumGetMethod.NAME_IGNORECASE);
+	public @Nullable E parseName(String name) {
+		name = name.trim().replace(' ', '_');
+		E exact = nameMap.get(name);
+		return exact != null? exact : lowerCaseNameMap.get(name.toLowerCase());
+	}
+	
+	@Override public String forActualConfig(@Nullable E value) {
+		if (value == null) return null;
+		return presentName(value);
+	}
+	
+	@Override public @Nullable E fromActualConfig(@Nullable Object value) {
+		if (!(value instanceof String)) return null;
+		return parseName(((String) value));
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		E[] choices = enumClass.getEnumConstants();
+		tooltips.add("Options: " + Arrays.stream(choices)
+		  .map(c -> "'" + presentName(c) + "'").collect(Collectors.joining(", ")));
+		return tooltips;
 	}
 	
 	@Override protected ITextComponent getDebugDisplayName() {
@@ -97,7 +124,7 @@ public class EnumEntry<E extends Enum<E>>
 				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
 				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
 			}
-			boolean correct = value instanceof ITranslatedEnum
+			boolean correct = defValue instanceof ITranslatedEnum
 			                  || Arrays.stream(enumClass.getEnumConstants())
 			                    .allMatch(e -> I18n.hasKey(getEnumTranslationKey(e)));
 			status = status.append(
@@ -112,7 +139,7 @@ public class EnumEntry<E extends Enum<E>>
 	@OnlyIn(Dist.CLIENT) @Override protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
 		super.addTranslationsDebugInfo(tooltip);
 		if (parent != null) {
-			if (value instanceof ITranslatedEnum)
+			if (defValue instanceof ITranslatedEnum)
 				tooltip.add(new StringTextComponent(" + Enum provides its own translations").mergeStyle(
 				  TextFormatting.GRAY));
 			tooltip.add(
@@ -122,7 +149,7 @@ public class EnumEntry<E extends Enum<E>>
 				final IFormattableTextComponent status =
 				  I18n.hasKey(key)
 				  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-				  : (value instanceof ITranslatedEnum)
+				  : (defValue instanceof ITranslatedEnum)
 				    ? new StringTextComponent("(not present)").mergeStyle(TextFormatting.DARK_GRAY)
 				    : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
 				tooltip.add(new StringTextComponent("   > ").mergeStyle(TextFormatting.GRAY)
@@ -133,7 +160,7 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	protected String getEnumTranslationKey(E item) {
-		return parent.getRoot().modId + ".config.enum." +
+		return parent.getRoot().getModId() + ".config.enum." +
 		       CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, enumClass.getSimpleName()) +
 		       "." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, item.name());
 	}
@@ -171,8 +198,4 @@ public class EnumEntry<E extends Enum<E>>
 		}
 	}
 	
-	@Override public Optional<E> deserializeStringKey(@NotNull String key) {
-		return Arrays.stream(enumClass.getEnumConstants())
-		  .filter(e -> e.name().equals(key)).findFirst();
-	}
 }

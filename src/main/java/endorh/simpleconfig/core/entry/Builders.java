@@ -1,14 +1,15 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.ui.api.Modifier;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
 import endorh.simpleconfig.core.AbstractRange.LongRange;
 import endorh.simpleconfig.core.annotation.Entry;
 import endorh.simpleconfig.core.annotation.HasAlpha;
 import endorh.simpleconfig.core.annotation.Slider;
+import endorh.simpleconfig.core.entry.BooleanEntry.BooleanDisplayer;
 import endorh.simpleconfig.core.entry.KeyBindEntry.Builder;
+import endorh.simpleconfig.ui.api.Modifier;
+import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import net.minecraft.block.Block;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -52,11 +53,29 @@ public class Builders {
 	
 	/**
 	 * Boolean entry<br>
-	 * Uses the labels "Enabled" and "Disabled" instead of the usual "Yes" and "No"<br>
+	 * Uses the labels "Yes" and "No" instead of the usual "true" and "false"<br>
+	 * You may also provide your own labels using {@link BooleanEntry.Builder#text}
+	 */
+	public static BooleanEntry.Builder yesNo(boolean value) {
+		return new BooleanEntry.Builder(value).text(BooleanDisplayer.YES_NO);
+	}
+	
+	/**
+	 * Boolean entry<br>
+	 * Uses the labels "Enabled" and "Disabled" instead of the usual "true" and "false"<br>
 	 * You may also provide your own labels using {@link BooleanEntry.Builder#text}
 	 */
 	public static BooleanEntry.Builder enable(boolean value) {
-		return bool(value).text("simpleconfig.format.bool.enable");
+		return bool(value).text(BooleanDisplayer.ENABLED_DISABLED);
+	}
+	
+	/**
+	 * Boolean entry<br>
+	 * Uses the labels "ON" and "OFF" instead of the usual "true" and "false"<br>
+	 * You may also provide your own labels using {@link BooleanEntry.Builder#text}
+	 */
+	public static BooleanEntry.Builder onOff(boolean value) {
+		return bool(value).text(BooleanDisplayer.ON_OFF);
 	}
 	
 	/**
@@ -103,7 +122,7 @@ public class Builders {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner, Consumer<V> action
 	) { return button(inner, (v, h) -> action.accept(v)); }
@@ -113,7 +132,7 @@ public class Builders {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<?, Gui>>
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner,
 	  BiConsumer<V, ISimpleConfigEntryHolder> action
@@ -121,26 +140,26 @@ public class Builders {
 		return new EntryButtonEntry.Builder<>(inner, action);
 	}
 	
-	/**
+/*	*//**
 	 * Enum-like cycling button between a definite, finite amount of values.<br>
-	 */
-	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
+	 *//*
+	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>>
 	SelectorEntry.Builder<V, C, G, E> select(
 	  AbstractConfigEntryBuilder<V, C, ?, E, ?> builder, V... values
 	) {
 		return new SelectorEntry.Builder<>(builder, values);
 	}
 	
-	/**
+	*//**
 	 * Enum-like cycling button between a definite, finite amount of values.
-	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
+	 *//*
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>>
 	SelectorEntry.Builder<V, C, G, E> select(
 	  AbstractConfigEntryBuilder<V, C, G, E, ?> builder, List<V> values
 	) {
 		//noinspection unchecked
 		return new SelectorEntry.Builder<>(builder, (V[]) values.toArray(new Object[0]));
-	}
+	}*/
 	
 	/**
 	 * An entry that lets users apply different presets to the entries, using global paths.<br>
@@ -765,7 +784,7 @@ public class Builders {
 	 */
 	public static <V, C, G, E extends AbstractListEntry<V, C, G, E>,
 	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	CaptionedListEntry.Builder<V, C, G, E, B, CV, CC, CG, CE, CB> caption(
 	  CB caption, B list
@@ -780,11 +799,11 @@ public class Builders {
 	 * Changes the value to a {@link Pair} of the caption's value and the map's value
 	 */
 	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
 	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	CaptionedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
 	caption(CB caption, MB map) {
@@ -843,7 +862,7 @@ public class Builders {
 	 */
 	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryMapEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry
@@ -863,7 +882,7 @@ public class Builders {
 	 */
 	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryMapEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
@@ -915,7 +934,7 @@ public class Builders {
 	 */
 	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry
@@ -935,7 +954,7 @@ public class Builders {
 	 */
 	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
@@ -944,17 +963,39 @@ public class Builders {
 	// Pairs
 	
 	/**
-	 * Pair of other two entries.
-	 * Keys can be any valid key entry for maps.
-	 * Non string-serializable entries won't compile.
-	 * Like maps, currently serializes to NBT in the config file.
+    * Pair of other two entries.<br>
+    * Keys can be any valid key entry for maps.<br>
+    * Non string-serializable entries won't compile.<br>
+    * Like maps, currently serializes to NBT in the config file.<br>
+	 * The value can be explicitly specified, or inferred from the entries.<br>
+    *
+    * @param leftEntry  The entry for the left
+    * @param rightEntry The entry for the right
+    */
+	public static <L, R, LC, RC, LG, RG,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
+	> EntryPairEntry.Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> pair(
+	  LB leftEntry, RB rightEntry
+	) {
+		return pair(leftEntry, rightEntry, Pair.of(getValue(leftEntry), getValue(rightEntry)));
+	}
+	
+	/**
+	 * Pair of other two entries.<br>
+	 * Keys can be any valid key entry for maps.<br>
+	 * Non string-serializable entries won't compile.<br>
+	 * Like maps, currently serializes to NBT in the config file.<br>
+	 *
 	 * @param leftEntry The entry for the left
 	 * @param rightEntry The entry for the right
-	 * @param value Entry value
+	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
 	public static <L, R, LC, RC, LG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
 	> EntryPairEntry.Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> pair(
@@ -966,19 +1007,45 @@ public class Builders {
 	// Triple
 	
 	/**
-	 * Triple of other three entries.
-	 * Keys can be any valid key entry for maps.
-	 * Non string-serializable entries won't compile.
-	 * Like maps, currently serializes to NBT in the config file.
+    * Triple of other three entries.<br>
+    * Keys can be any valid key entry for maps.<br>
+    * Non string-serializable entries won't compile.<br>
+    * Like maps, currently serializes to NBT in the config file.<br>
+	 * The value can be explicitly specified, or inferred from the entries.<br>
+    *
+    * @param leftEntry   The entry for the left
+    * @param middleEntry The entry for the middle
+    * @param rightEntry  The entry for the right
+    */
+	public static <L, M, R, LC, MC, RC, LG, MG, RG,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
+	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
+	> EntryTripleEntry.Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> triple(
+	  LB leftEntry, MB middleEntry, RB rightEntry
+	) {
+		return triple(leftEntry, middleEntry, rightEntry, Triple.of(
+		  getValue(leftEntry), getValue(middleEntry), getValue(rightEntry)));
+	}
+	
+	/**
+	 * Triple of other three entries.<br>
+	 * Keys can be any valid key entry for maps.<br>
+	 * Non string-serializable entries won't compile.<br>
+	 * Like maps, currently serializes to NBT in the config file.<br>
+	 *
 	 * @param leftEntry The entry for the left
 	 * @param middleEntry The entry for the middle
 	 * @param rightEntry The entry for the right
-	 * @param value Entry value
+	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
 	public static <L, M, R, LC, MC, RC, LG, MG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
-	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MC, MG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
@@ -1069,8 +1136,8 @@ public class Builders {
 		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));
 		registerFieldParser(Entry.class, Block.class, (a, field, value) -> block(value));
 		registerFieldParser(Entry.class, Fluid.class, (a, field, value) -> fluid(value));
-		registerFieldParser(Entry.class, INBT.class, (a, field, value) -> nbtValue(value));
 		registerFieldParser(Entry.class, CompoundNBT.class, (a, field, value) -> nbtTag(value));
+		registerFieldParser(Entry.class, INBT.class, (a, field, value) -> nbtValue(value));
 		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) -> resource(value));
 	}
 }

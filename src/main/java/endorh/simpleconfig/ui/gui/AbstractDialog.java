@@ -12,6 +12,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -26,8 +27,7 @@ public abstract class AbstractDialog
 	protected int backgroundColor = 0xff242424;
 	protected int backgroundOverlayColor = 0xff343434;
 	protected int screenColor = 0x80101010;
-	protected IOverlayCapableScreen overlayScreen;
-	protected Screen screen;
+	private Screen screen;
 	protected List<IGuiEventListener> listeners = Lists.newArrayList();
 	/**
 	 * Set to true to avoid cancelling when clicking outside
@@ -41,18 +41,25 @@ public abstract class AbstractDialog
 	
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	
-	public AbstractDialog(
-	  IOverlayCapableScreen screen, ITextComponent title
-	) {
+	public AbstractDialog(ITextComponent title) {
 		this.title = title;
-		this.overlayScreen = screen;
-		if (!(screen instanceof Screen))
-			throw new IllegalArgumentException("Unknown Screen class: " + screen.getClass().getName());
-		this.screen = (Screen) screen;
 		this.copyTextButton = new MultiFunctionImageButton(
 		  0, 0, 18, 18, SimpleConfigIcons.COPY, ButtonAction.of(this::copyText)
 		  .tooltip(new TranslationTextComponent("simpleconfig.ui.copy_dialog")));
 		listeners.add(copyTextButton);
+	}
+	
+	@Internal protected void setScreen(IDialogCapableScreen screen) {
+		if (!(screen instanceof Screen)) throw new IllegalArgumentException(
+		  "Invalid screen type: " + screen.getClass().getName() + " does not implement " +
+		  "IDialogCapableScreen");
+		this.screen = ((AbstractConfigScreen) screen);
+	}
+	
+	@SuppressWarnings("unchecked") public <T extends Screen & IDialogCapableScreen> T getScreen() {
+		if (screen == null) throw new IllegalStateException(
+		  "Cannot retrieve screen of dialog before showing the dialog");
+		return (T) screen;
 	}
 	
 	public void copyText() {
@@ -70,8 +77,8 @@ public abstract class AbstractDialog
 	}
 	
 	protected void layout() {
-		final int width = screen.width;
-		final int height = screen.height;
+		final int width = getScreen().width;
+		final int height = getScreen().height;
 		x = width / 2 - w / 2;
 		y = height / 2 - h / 2;
 		copyTextButton.x = x + w - 21;
@@ -100,7 +107,7 @@ public abstract class AbstractDialog
 	}
 	
 	public void renderBackground(MatrixStack mStack, int mouseX, int mouseY, float delta) {
-		fill(mStack, 0, 0, screen.width, screen.height, screenColor);
+		fill(mStack, 0, 0, getScreen().width, getScreen().height, screenColor);
 		fill(mStack, x - 8, y - 8, x + w + 8, y + h + 8, 0x24242424);
 		fill(mStack, x - 6, y - 6, x + w + 6, y + h + 6, 0x48242424);
 		fill(mStack, x - 4, y - 4, x + w + 4, y + h + 4, 0x80242424);

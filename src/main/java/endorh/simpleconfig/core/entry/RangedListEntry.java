@@ -1,15 +1,14 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -46,7 +45,7 @@ public abstract class RangedListEntry<
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Self min(@Nonnull V min) {
+		public Self min(@NotNull V min) {
 			Self copy = copy();
 			copy.min = min;
 			copy = copy.elemError(clamp(validator));
@@ -56,7 +55,7 @@ public abstract class RangedListEntry<
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Self max(@Nonnull V max) {
+		public Self max(@NotNull V max) {
 			Self copy = copy();
 			copy.max = max;
 			copy = copy.elemError(clamp(validator));
@@ -114,27 +113,25 @@ public abstract class RangedListEntry<
 	}
 	
 	protected String getRangeComment() {
-		if (max instanceof Number) {
+		if (max == null && min == null) return "~";
+		if (max instanceof Number || min instanceof Number) {
+			assert max == null || max instanceof Number;
+			assert min == null || min instanceof Number;
 			final Number x = (Number) max, n = (Number) min;
-			if (x.doubleValue() >= commentMax && n.doubleValue() <= commentMin) {
-				return "~";
-			} else if (x.doubleValue() >= commentMax) {
-				return "> " + n;
-			} else if (n.doubleValue() <= commentMin) {
-				return "< " + x;
-			} else return n + " ~ " + x;
+			boolean noMax = x == null || x.doubleValue() >= commentMax;
+			boolean noMin = n == null || n.doubleValue() <= commentMin;
+			if (noMax && noMin) return "~";
+			if (noMax) return ">= " + n;
+			if (noMin) return "<= " + x;
+			return n + " ~ " + x;
 		}
+		if (max == null) return ">= " + min;
+		if (min == null) return "<= " + max;
 		return min + " ~ " + max;
 	}
 	
-	@Override protected ForgeConfigSpec.Builder decorate(
-	  ForgeConfigSpec.Builder builder
-	) {
-		builder = super.decorate(builder);
-		String com = comment != null? comment + "\n" : "";
-		com += " Range: " + getRangeComment();
-		builder.comment(com);
-		return builder;
+	@Override protected @Nullable String getListTypeComment() {
+		return innerType.getSimpleName() + ", Range: " + getRangeComment();
 	}
 	
 	@OnlyIn(Dist.CLIENT)

@@ -12,8 +12,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse.*;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse.*;
 
 public class ExternalChangesDialog extends ConfirmDialog {
 	TintedButton acceptAllButton;
@@ -21,24 +21,24 @@ public class ExternalChangesDialog extends ConfirmDialog {
 	protected @Nullable Consumer<ExternalChangeResponse> responseAction;
 	
 	public static ExternalChangesDialog create(
-	  Type type, IOverlayCapableScreen screen, Consumer<ExternalChangeResponse> handler
+	  Type type, Consumer<ExternalChangeResponse> handler
 	) {
-		return create(type, screen, handler, null);
+		return create(type, handler, null);
 	}
 	
 	public static ExternalChangesDialog create(
-	  Type type, IOverlayCapableScreen screen, Consumer<ExternalChangeResponse> handler,
+	  Type type, Consumer<ExternalChangeResponse> handler,
 	  @Nullable Consumer<ExternalChangesDialog> builder
 	) {
-		ExternalChangesDialog dialog = new ExternalChangesDialog(type, screen, handler);
+		ExternalChangesDialog dialog = new ExternalChangesDialog(type, handler);
 		if (builder != null) builder.accept(dialog);
 		return dialog;
 	}
 	
 	protected ExternalChangesDialog(
-	  Type type, IOverlayCapableScreen screen, @NotNull Consumer<ExternalChangeResponse> action
+	  Type type, @NotNull Consumer<ExternalChangeResponse> action
 	) {
-		super(screen, new TranslationTextComponent(
+		super(new TranslationTextComponent(
 		  type == Type.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		  "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;

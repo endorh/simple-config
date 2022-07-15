@@ -23,6 +23,11 @@ import static java.lang.Math.max;
 	protected static final Pattern NEW_LINE = Pattern.compile("\\R");
 	protected static final Pattern FS_PATTERN = Pattern.compile(
 	  "%(?:(?<index>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)?(?<width>\\d+)?(?<precision>\\.\\d+)?(?<t>[tT])?(?<conversion>[a-zA-Z%])");
+	protected static final Pattern FORMATTING_CODE_PATTERN = Pattern.compile("§[\\da-fklmnor]");
+	
+	public static String stripFormattingCodes(String text) {
+		return FORMATTING_CODE_PATTERN.matcher(text).replaceAll("");
+	}
 	
 	/**
     * Extract formatted subText from {@link ITextComponent}.<br>

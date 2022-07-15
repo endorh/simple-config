@@ -2,7 +2,10 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.*;
+import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.api.IEntryHolder;
 import endorh.simpleconfig.ui.gui.INavigableTarget;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry.EntryPairCell;
@@ -17,17 +20,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 
 @OnlyIn(Dist.CLIENT)
 public class EntryPairListListEntry<
@@ -273,7 +274,7 @@ public class EntryPairListListEntry<
 			return isExpandable && ((BaseListEntry<?, ?, ?>) valueEntry).expanded && mouseY > 18;
 		}
 		
-		@Override public @Nonnull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return widgets;
 		}
 		

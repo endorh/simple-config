@@ -5,10 +5,10 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.IExpandable;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.gui.ClothConfigScreen.ListWidget;
-import endorh.simpleconfig.ui.gui.ClothConfigScreen.ListWidget.EntryDragAction.ExpandedDragAction;
 import endorh.simpleconfig.ui.gui.INavigableTarget;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
+import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.ExpandedDragAction;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
@@ -39,8 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Math.*;
-
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends BaseListEntry<T, C, Self>>

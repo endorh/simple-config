@@ -1,13 +1,14 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
-import endorh.simpleconfig.ui.api.ConfigBuilder;
-import endorh.simpleconfig.ui.api.ConfigCategory;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.ui.api.ConfigBuilder;
+import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -17,13 +18,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
 
 /**
  * A Config category<br>
@@ -43,10 +46,12 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected List<IGUIEntry> order;
 	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategory> decorator;
 	protected @Nullable ResourceLocation background;
+	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
 	
 	@Internal protected SimpleConfigCategory(
-	  SimpleConfig parent, String name, String title, @Nullable Consumer<SimpleConfigCategory> baker
+	  SimpleConfig parent, String name, String title,
+	  @Nullable Consumer<SimpleConfigCategory> baker
 	) {
 		this.parent = parent;
 		this.name = name;
@@ -58,7 +63,8 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
-	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> order
+	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> order,
+	  Icon icon, int color
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
@@ -66,6 +72,8 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		this.groups = groups;
 		children = groups;
 		this.order = order;
+		this.icon = icon;
+		this.color = color;
 	}
 	
 	@Override protected String getPath() {
@@ -74,6 +82,20 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@Override protected String getName() {
 		return name;
+	}
+	
+	@Override protected String getConfigComment() {
+		StringBuilder builder = new StringBuilder();
+		if (title != null && I18n.hasKey(title)) {
+			String name = stripFormattingCodes(I18n.format(title).trim());
+			builder.append(name).append('\n');
+			if (I18n.hasKey(tooltip)) {
+				String tooltip = "  " + stripFormattingCodes(
+				  I18n.format(this.tooltip).trim().replace("\n", "\n  "));
+				builder.append(tooltip).append('\n');
+			}
+		}
+		return builder.toString();
 	}
 	
 	@Override public void markDirty(boolean dirty) {
@@ -100,7 +122,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
-		ConfigCategory category = builder.getOrCreateCategory(name, root.type == Type.SERVER);
+		ConfigCategory category = builder.getOrCreateCategory(name, root.getType() == Type.SERVER);
 		category.setTitle(getTitle());
 		category.setDescription(
 		  () -> I18n.hasKey(tooltip)
@@ -111,8 +133,8 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 			category.setBackground(background);
 		else if (parent.background != null)
 			category.setBackground(parent.background);
-		if (color != 0)
-			category.setColor(color);
+		category.setColor(color);
+		category.setIcon(icon);
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder);

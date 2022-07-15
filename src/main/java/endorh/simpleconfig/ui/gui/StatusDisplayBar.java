@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 import endorh.simpleconfig.ui.api.Tooltip;
@@ -13,7 +14,6 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import endorh.simpleconfig.ui.math.Point;
 import endorh.simpleconfig.ui.math.Rectangle;
-import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.Screen;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class StatusDisplayBar extends Widget implements IOverlayRenderer {
-	protected ClothConfigScreen screen;
+	protected SimpleConfigScreen screen;
 	protected final NavigableSet<StatusState> states = new TreeSet<>(Comparator.naturalOrder());
 	protected final MultiFunctionImageButton dialogButton;
 	protected StatusState activeState = null;
@@ -41,7 +41,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 	protected boolean claimed = false;
 	
 	public StatusDisplayBar(
-	  ClothConfigScreen screen
+	  SimpleConfigScreen screen
 	) {
 		super(0, 0, screen.width, 14, StringTextComponent.EMPTY);
 		this.screen = screen;
@@ -141,46 +141,46 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 	
 	public static abstract class StatusState implements Comparable<StatusState> {
 		public static final StatusState READ_ONLY = new StatusState(30) {
-			@Override public boolean isActive(ClothConfigScreen screen) {
+			@Override public boolean isActive(SimpleConfigScreen screen) {
 				return !screen.isEditable();
 			}
 			
-			@Override public ITextComponent getTitle(ClothConfigScreen screen) {
+			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
 				return new TranslationTextComponent("simpleconfig.ui.read_only").mergeStyle(TextFormatting.AQUA);
 			}
 			
-			@Override public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+			@Override public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc("simpleconfig.ui.read_only:help");
 			}
 			
-			@Override public StatusStyle getStyle(ClothConfigScreen screen) {
+			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
 				return new StatusStyle(SimpleConfigIcons.INFO, 0xF08080F0, 0xA00C5281);
 			}
 		};
 		
 		public static final StatusState EXTERNAL_CHANGES = new StatusState(10) {
-			@Override public boolean isActive(ClothConfigScreen screen) {
+			@Override public boolean isActive(SimpleConfigScreen screen) {
 				return screen.getAllMainEntries().stream()
 				  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
 			}
 			
 			@Override
-			public void onClick(ClothConfigScreen screen, double mouseX, double mouseY, int button) {
+			public void onClick(SimpleConfigScreen screen, double mouseX, double mouseY, int button) {
 				screen.focusNextExternalConflict(!Screen.hasShiftDown());
 			}
 			
-			public String getTypeKey(ClothConfigScreen screen) {
+			public String getTypeKey(SimpleConfigScreen screen) {
 				return screen.isSelectedCategoryServer() && screen.hasConflictingRemoteChanges()
 				       || !screen.hasConflictingExternalChanges() ? "remote" : "external";
 			}
 			
-			@Override public ITextComponent getTitle(ClothConfigScreen screen) {
+			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
 				return new TranslationTextComponent(
 				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected");
 			}
 			
 			@Override
-			public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+			public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc(
 				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected."
 				  + (menu? "all" : "click"),
@@ -188,7 +188,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				  KeyBindings.PREV_ERROR.func_238171_j_().deepCopy().mergeStyle(TextFormatting.DARK_AQUA));
 			}
 			
-			@Override public AbstractDialog getDialog(ClothConfigScreen screen) {
+			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<AbstractConfigEntry<?>> conflicts = screen.getAllExternalConflicts();
 				final List<ITextComponent> lines = IntStream.range(0, conflicts.size()).mapToObj(i -> {
 					AbstractConfigEntry<?> entry = conflicts.get(i);
@@ -202,7 +202,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 					return title;
 				}).collect(Collectors.toList());
 				return InfoDialog.create(
-				  screen, new TranslationTextComponent("simpleconfig.ui.changes.all.title"), lines,
+				  new TranslationTextComponent("simpleconfig.ui.changes.all.title"), lines,
 				  d -> {
 					  d.setIcon(SimpleConfigIcons.MERGE_CONFLICT);
 					  d.setLinkActionHandler(s -> {
@@ -237,23 +237,23 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				  });
 			}
 			
-			@Override public StatusStyle getStyle(ClothConfigScreen screen) {
+			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
 				return new StatusStyle(SimpleConfigIcons.MERGE_CONFLICT, 0xA0F080F0, 0xBD600060);
 			}
 		};
 		
 		public static final StatusState ERROR_STATE = new StatusState(20) {
-			@Override public boolean isActive(ClothConfigScreen screen) {
+			@Override public boolean isActive(SimpleConfigScreen screen) {
 				return screen.hasErrors();
 			}
 			
 			@Override public void onClick(
-			  ClothConfigScreen screen, double mouseX, double mouseY, int button
+			  SimpleConfigScreen screen, double mouseX, double mouseY, int button
 			) {
 				screen.focusNextError(!Screen.hasShiftDown());
 			}
 			
-			@Override public ITextComponent getTitle(ClothConfigScreen screen) {
+			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
 				List<ITextComponent> errors = screen.getErrorsMessages();
 				if (errors.isEmpty()) return StringTextComponent.EMPTY;
 				return (errors.size() == 1 ? errors.get(0).deepCopy() : new TranslationTextComponent(
@@ -261,7 +261,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				)).mergeStyle(TextFormatting.RED);
 			}
 			
-			@Override public AbstractDialog getDialog(ClothConfigScreen screen) {
+			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<EntryError> errors = screen.getErrors();
 				final List<ITextComponent> lines = IntStream.range(0, errors.size()).mapToObj(i -> {
 					TranslationTextComponent goToError = new TranslationTextComponent(
@@ -281,7 +281,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 					return new ITextComponent[] {title, err};
 				}).flatMap(Arrays::stream).collect(Collectors.toList());
 				return InfoDialog.create(
-				  screen, new TranslationTextComponent("simpleconfig.ui.errors.all.title"), lines,
+				  new TranslationTextComponent("simpleconfig.ui.errors.all.title"), lines,
 				  d -> {
 					  d.setIcon(SimpleConfigIcons.ERROR);
 					  d.titleColor = 0xFFFF8080;
@@ -303,7 +303,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				  });
 			}
 			
-			@Override public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+			@Override public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc(
 				  menu? "simpleconfig.ui.errors.extra:help" : "simpleconfig.ui.errors:help",
 				  KeyBindings.NEXT_ERROR.func_238171_j_().deepCopy().mergeStyle(TextFormatting.DARK_AQUA),
@@ -311,7 +311,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				);
 			}
 			
-			@Override public StatusStyle getStyle(ClothConfigScreen screen) {
+			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
 				return new StatusStyle(SimpleConfigIcons.ERROR, 0xA0F08080, 0xBD600000);
 			}
 		};
@@ -322,16 +322,16 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			this.priority = priority;
 		}
 		
-		public abstract boolean isActive(ClothConfigScreen screen);
-		public void onClick(ClothConfigScreen screen, double mouseX, double mouseY, int button) {}
-		public abstract ITextComponent getTitle(ClothConfigScreen screen);
-		public @Nullable AbstractDialog getDialog(ClothConfigScreen screen) {
+		public abstract boolean isActive(SimpleConfigScreen screen);
+		public void onClick(SimpleConfigScreen screen, double mouseX, double mouseY, int button) {}
+		public abstract ITextComponent getTitle(SimpleConfigScreen screen);
+		public @Nullable AbstractDialog getDialog(SimpleConfigScreen screen) {
 			return null;
 		}
-		public List<ITextComponent> getTooltip(ClothConfigScreen screen, boolean menu) {
+		public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
 			return Collections.emptyList();
 		}
-		public abstract StatusStyle getStyle(ClothConfigScreen screen);
+		public abstract StatusStyle getStyle(SimpleConfigScreen screen);
 		
 		@Override public int compareTo(@NotNull StatusDisplayBar.StatusState o) {
 			return Integer.compare(priority, o.priority);

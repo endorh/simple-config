@@ -1,27 +1,27 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry>
-  implements IKeyEntry<String, Integer> {
+  implements IKeyEntry<Integer> {
 	protected final boolean alpha;
 	@Internal public ColorEntry(
 	  ISimpleConfigEntryHolder parent, String name, Color value, boolean alpha
@@ -100,9 +100,19 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 		return r.toString();
 	}
 	
+	protected String getFormatDescriptor() {
+		return alpha? "#AARRGGBB" : "#RRGGBB";
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		tooltips.add("Color: " + getFormatDescriptor());
+		return tooltips;
+	}
+	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forConfig(value), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forConfig(defValue), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -116,9 +126,4 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 		return Optional.of(decorate(valBuilder).build());
 	}
 	
-	@Override public Optional<String> deserializeStringKey(
-	  @NotNull String key
-	) {
-		return Optional.of(key);
-	}
 }

@@ -1,12 +1,13 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.AbstractConfigEntry;
+import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.tags.ITag;
@@ -34,7 +35,8 @@ import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofBlock;
 
-public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockEntry> {
+public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockEntry>
+  implements IKeyEntry<Block> {
 	protected @NotNull Predicate<Block> filter;
 	
 	@Internal public BlockEntry(
@@ -93,7 +95,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockE
 		}
 		
 		@Override protected BlockEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().type != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null)
@@ -127,7 +129,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockE
 			final Block item = Registry.BLOCK.keySet().contains(registryName) ?
 			                   Registry.BLOCK.getOrDefault(registryName) : null;
 			// Prevent unnecessary config resets adding an exception for the default value
-			return filter.test(item) || item == this.value ? item : null;
+			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {
 			return null;
 		}
@@ -138,11 +140,17 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockE
 		  .collect(Collectors.toList());
 	}
 	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		tooltips.add("Block: namespace:path");
+		return tooltips;
+	}
+	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		assert value.getRegistryName() != null;
+		assert defValue.getRegistryName() != null;
 		return Optional.of(decorate(builder).define(
-		  name, value.getRegistryName().toString(), createConfigValidator()));
+		  name, defValue.getRegistryName().toString(), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Block>> buildGUIEntry(

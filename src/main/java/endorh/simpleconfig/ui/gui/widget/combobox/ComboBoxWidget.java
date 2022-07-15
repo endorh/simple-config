@@ -487,7 +487,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void setValue(T value) {
-		setText(typeWrapper.getName(value));
+		if (value != null) {
+			setText(typeWrapper.getName(value));
+		} else setText("");
 		this.value = value;
 	}
 	

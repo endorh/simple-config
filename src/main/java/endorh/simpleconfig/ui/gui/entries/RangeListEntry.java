@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.core.AbstractRange;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.IEntryHolder;
@@ -11,7 +12,6 @@ import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.ToggleImageButton;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.core.AbstractRange;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Math.max;
-
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 
 public class RangeListEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>,

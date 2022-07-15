@@ -1,17 +1,15 @@
 package endorh.simpleconfig.core;
 
+import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import endorh.simpleconfig.core.entry.AbstractListEntry;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.JsonToNBT;
+import endorh.simpleconfig.yaml.NonConfigMap;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,26 +17,24 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static endorh.simpleconfig.core.NBTUtil.fromNBT;
-import static endorh.simpleconfig.core.NBTUtil.toNBT;
 
 public class EntryPairListEntry<K, V, KC, C, KG, G,
   E extends AbstractConfigEntry<V, C, G, E>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
   KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
   extends AbstractListEntry<
-    Pair<K, V>, Pair<String, C>, Pair<KG, G>, EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
+    Pair<K, V>, Pair<KC, C>, Pair<KG, G>, EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
 	protected final KB keyEntryBuilder;
 	protected final KE keyEntry;
 	protected final B entryBuilder;
@@ -50,7 +46,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	
 	@Internal public EntryPairListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
-	  List<Pair<K, V>> value, @Nonnull B entryBuilder, KB keyEntryBuilder
+	  List<Pair<K, V>> value, @NotNull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
 		holder = new FakeEntryHolder(parent.getRoot());
@@ -64,27 +60,19 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
 			  "nested in a map entry");
-		if (entry.value == null)
+		if (entry.defValue == null)
 			throw new IllegalArgumentException(
 			  "Unsupported value type for map config entry. The values " +
 			  "cannot be null");
-		try {
-			toNBT(entry.forConfig(entry.value));
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException(
-			  "Unsupported value type for map config entry: "
-			  + entry.typeClass.getName() + "\n  Map config entry values" +
-			  "must be serializable as NBT", e);
-		}
 	}
 	
 	public static class Builder<K, V, KC, C, KG, G,
 	  E extends AbstractConfigEntry<V, C, G, E>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KC, KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
 	  extends AbstractListEntry.Builder<
-	  Pair<K, V>, Pair<String, C>, Pair<KG, G>,
+	  Pair<K, V>, Pair<KC, C>, Pair<KG, G>,
 	  EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB>,
 	  Builder<K, V, KC, C, KG, G, E, B, KE, KB>> {
 		protected final KB keyEntryBuilder;
@@ -124,47 +112,62 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
-	public String forActualConfig(@Nullable List<Pair<String, C>> value) {
+	@Override public List<Map<Object, Object>> forActualConfig(@Nullable List<Pair<KC, C>> value) {
 		if (value == null) return null;
-		final Map<String, C> m = new HashMap<>();
-		int i = 0;
-		for (Pair<String, C> p : value) m.put(i++ + ":" + p.getKey(), p.getValue());
-		return toNBT(m).toString();
+		return value.stream()
+		  .map(p -> Util.make(
+		    NonConfigMap.ofHashMap(1),
+			 m -> m.put(keyEntry.forActualConfig(p.getKey()), entry.forActualConfig(p.getValue())))
+		  ).collect(Collectors.toList());
 	}
 	
-	protected @Nullable List<Pair<String, C>> fromActualConfig(@Nullable Object value) {
-		if (!(value instanceof String)) return null;
-		final String str = (String) value;
-		try {
-			CompoundNBT m = new JsonToNBT(new StringReader(str)).readStruct();
-			final List<Pair<String, C>> list = new ArrayList<>();
-			m.keySet().stream().map(k -> {
-				final Matcher s = NBTUtil.SPLIT.matcher(k);
-				return s.matches() ? Triple.of(Integer.parseInt(s.group(1)), s.group(2), m.get(k))
-				                   : Triple.of(Integer.MAX_VALUE, k, m.get(k));
-			}).sorted(Comparator.comparingInt(Triple::getLeft)).forEachOrdered(t -> {
-				//noinspection unchecked
-				list.add(Pair.of(t.getMiddle(), (C) fromNBT(t.getRight(), getExpectedType().next.get(0))));
-			});
-			return list;
-		} catch (CommandSyntaxException | IllegalArgumentException | ClassCastException e) {
-			return null;
+	@Override @Nullable public List<Pair<KC, C>> fromActualConfig(@Nullable Object value) {
+		if (value instanceof List) {
+			//noinspection unchecked
+			List<Object> seq = (List<Object>) value;
+			List<Pair<KC, C>> pairs = new ArrayList<>();
+			for (Object o : seq) {
+				if (o instanceof Map) {
+					Map<?, ?> map = (Map<?, ?>) o;
+					map.entrySet().stream().findFirst().ifPresent(e -> {
+						KC key = keyEntry.fromActualConfig(e.getKey());
+						C val = entry.fromActualConfig(e.getValue());
+						if (key == null && val == null) return;
+						if (key == null) key = keyEntry.forConfig(keyEntry.defValue);
+						if (val == null) val = entry.forConfig(entry.defValue);
+						pairs.add(Pair.of(key, val));
+					});
+				} else if (o instanceof Config) {
+					Config config = (Config) o;
+					config.entrySet().stream().findFirst().ifPresent(e -> {
+						KC key = keyEntry.fromActualConfig(e.getKey());
+						C val = entry.fromActualConfig(e.getValue());
+						if (key == null && val == null) return;
+						if (key == null) key = keyEntry.forConfig(keyEntry.defValue);
+						if (val == null) val = entry.forConfig(entry.defValue);
+						pairs.add(Pair.of(key, val));
+					});
+				}
+			}
+			return pairs;
 		}
+		return null;
 	}
 	
-	@Override public List<Pair<String, C>> forConfig(List<Pair<K, V>> value) {
+	@Override public List<Pair<KC, C>> forConfig(List<Pair<K, V>> value) {
 		return value.stream().map(p -> Pair.of(
-		  keyEntry.serializeStringKey(keyEntry.forConfig(p.getKey())), entry.forConfig(p.getValue())
+		  keyEntry.forConfig(p.getKey()), entry.forConfig(p.getValue())
 		)).collect(Collectors.toList());
 	}
 	
 	@Nullable @Override @Contract("null->null")
-	public List<Pair<K, V>> fromConfig(@Nullable List<Pair<String, C>> value) {
+	public List<Pair<K, V>> fromConfig(@Nullable List<Pair<KC, C>> value) {
 		if (value == null) return null;
 		final List<Pair<K, V>> l = new ArrayList<>();
-		for (Pair<String, C> p : value)
-			keyEntry.deserializeStringKey(p.getKey()).ifPresent(
-			  k -> l.add(Pair.of(keyEntry.fromConfigOrDefault(k), entry.fromConfigOrDefault(p.getValue()))));
+		for (Pair<KC, C> p : value)
+			  l.add(Pair.of(
+				 keyEntry.fromConfigOrDefault(p.getKey()),
+				 entry.fromConfigOrDefault(p.getValue())));
 		return l;
 	}
 	
@@ -184,11 +187,11 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
-		spec.define(parentPath + name, forActualConfig(forConfig(value)), createConfigValidator());
+		spec.define(parentPath + name, forActualConfig(forConfig(defValue)), createConfigValidator());
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
@@ -200,8 +203,8 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		final E e = entryBuilder.build(holder, holder.nextName()).withSaver((g, h) -> {})
 		  .withDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
-		ke.actualValue = ke.value;
-		e.actualValue = e.value;
+		ke.actualValue = ke.defValue;
+		e.actualValue = e.defValue;
 		KGE kg = ke.buildChildGUIEntry(builder);
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
 		  .orElseThrow(() -> new IllegalStateException(
@@ -219,6 +222,21 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		return errors;
 	}
 	
+	protected @Nullable String getListTypeComment() {
+		String keyComment = keyEntry.getConfigCommentTooltip();
+		String valueComment = entry.getConfigCommentTooltip();
+		return (keyComment.isEmpty()? "?" : keyComment) + " >> " +
+		       (valueComment.isEmpty()? "?" : valueComment);
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		tooltips.remove(tooltips.size() - 1);
+		String typeComment = getListTypeComment();
+		if (typeComment != null) tooltips.add("Sorted Map: " + typeComment);
+		return tooltips;
+	}
+	
 	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<AbstractConfigListEntry<List<Pair<KG, G>>>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final EntryPairListBuilder<KG, G, ? extends AbstractConfigListEntry<KG>, AbstractConfigListEntry<G>>
@@ -228,9 +246,5 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		  .setCellErrorSupplier(this::getElementError)
 		  .setExpanded(expand);
 		return Optional.of(decorate(entryBuilder).build());
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, entry.getExpectedType());
 	}
 }

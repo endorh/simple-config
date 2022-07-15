@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
+import endorh.simpleconfig.core.AbstractRange;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
@@ -7,7 +8,6 @@ import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.ConfigEntryBuilderImpl;
 import endorh.simpleconfig.ui.impl.builders.*;
 import endorh.simpleconfig.ui.math.Color;
-import endorh.simpleconfig.core.AbstractRange;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;

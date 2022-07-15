@@ -6,7 +6,6 @@ import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -15,7 +14,7 @@ import java.util.Optional;
  * that produce {@link IChildListEntry}
  * gui entries and thus can be used as keys in map entries
  */
-public interface IKeyEntry<KC, KG> {
+public interface IKeyEntry<KG> {
 	@OnlyIn(Dist.CLIENT) default <KGE extends AbstractConfigListEntry<KG> & IChildListEntry> KGE buildChildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
@@ -41,10 +40,5 @@ public interface IKeyEntry<KC, KG> {
 		} else throw new IllegalStateException(
 		  "The IKeyEntry interface should only be implemented by " +
 		  "endorh.simpleconfig.core.AbstractConfigEntry objects");
-	}
-	
-	Optional<KC> deserializeStringKey(@NotNull String key);
-	default String serializeStringKey(@NotNull KC key) {
-		return String.valueOf(key);
 	}
 }

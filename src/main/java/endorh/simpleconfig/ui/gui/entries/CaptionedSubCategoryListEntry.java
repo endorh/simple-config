@@ -4,10 +4,10 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.gui.ClothConfigScreen.ListWidget;
-import endorh.simpleconfig.ui.gui.ClothConfigScreen.ListWidget.EntryDragAction.ExpandedDragAction;
 import endorh.simpleconfig.ui.gui.INavigableTarget;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
+import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.ExpandedDragAction;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import endorh.simpleconfig.ui.math.Rectangle;
@@ -27,8 +27,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
-
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 
 @OnlyIn(value = Dist.CLIENT)
 public class CaptionedSubCategoryListEntry<

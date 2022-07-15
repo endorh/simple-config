@@ -25,8 +25,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
-
 @OnlyIn(value = Dist.CLIENT)
 public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
   extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListListEntry<T, Inner>>

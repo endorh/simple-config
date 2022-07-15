@@ -1,28 +1,25 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 @Deprecated
 public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, ShortEntry>
-  implements IKeyEntry<Number, Short> {
+  implements IKeyEntry<Short> {
 	@Internal public ShortEntry(
 	  ISimpleConfigEntryHolder parent, String name, short value
 	) {
 		super(parent, name, value);
-		commentMin = Short.MIN_VALUE;
-		commentMax = Short.MAX_VALUE;
 	}
 	
 	public static class Builder extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, Builder> {
@@ -83,11 +80,4 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 		}
 	}
 	
-	@Override public Optional<Number> deserializeStringKey(@NotNull String key) {
-		try {
-			return Optional.of(Short.parseShort(key));
-		} catch (NumberFormatException e) {
-			return Optional.empty();
-		}
-	}
 }

@@ -21,8 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ControlsHelpDialog extends ConfirmDialog {
-	protected ControlsHelpDialog(IOverlayCapableScreen screen, ITextComponent title) {
-		super(screen, title);
+	protected ControlsHelpDialog(ITextComponent title) {
+		super(title);
 	}
 	
 	public static Builder of(String prefix) {
@@ -151,8 +151,8 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			return this;
 		}
 		
-		public ControlsHelpDialog build(IOverlayCapableScreen screen) {
-			final ControlsHelpDialog d = new ControlsHelpDialog(screen, title);
+		public ControlsHelpDialog build() {
+			final ControlsHelpDialog d = new ControlsHelpDialog(title);
 			d.setBody(lines);
 			d.setConfirmText(confirmText);
 			d.withCheckBoxes(action, checkBoxes);
@@ -161,7 +161,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			if (controlsScreenSupplier != null) {
 				d.addButton(0, MultiFunctionIconButton.of(
 				  SimpleConfigIcons.KEYBOARD, -1, -1, ButtonAction.of(() -> {
-					  Minecraft.getInstance().displayGuiScreen(controlsScreenSupplier.apply((Screen) screen));
+					  Minecraft.getInstance().displayGuiScreen(controlsScreenSupplier.apply(d.getScreen()));
 					  d.cancel();
 				  }).title(() -> new TranslationTextComponent("simpleconfig.ui.controls.edit_controls"))
 					 .tint(0x80815C2E)

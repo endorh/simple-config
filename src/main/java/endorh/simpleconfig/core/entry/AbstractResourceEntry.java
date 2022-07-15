@@ -1,17 +1,16 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
+import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.function.Supplier;
 
 public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<Self>>
   extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation, Self>
-  implements IKeyEntry<String, ResourceLocation> {
+  implements IKeyEntry<ResourceLocation> {
 	protected SimpleComboBoxModel<ResourceLocation> suggestionProvider;
 	
 	public AbstractResourceEntry(
@@ -79,12 +78,20 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 		}
 	}
 	
-	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
-		return Optional.of(key);
+	protected @Nullable String getTypeComment() {
+		return null;
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String typeComment = getTypeComment();
+		typeComment = typeComment != null? typeComment + ": " : "";
+		tooltips.add(typeComment + "namespace:path");
+		return tooltips;
 	}
 	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forConfig(value), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forConfig(defValue), createConfigValidator()));
 	}
 	
 	protected ComboBoxFieldBuilder<ResourceLocation> decorate(

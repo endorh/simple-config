@@ -2,12 +2,12 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import com.electronwill.nightconfig.core.io.IndentStyle;
-import com.electronwill.nightconfig.toml.TomlFormat;
-import com.electronwill.nightconfig.toml.TomlWriter;
+import com.electronwill.nightconfig.core.io.ParsingException;
+import com.electronwill.nightconfig.core.io.WritingException;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
+import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -16,7 +16,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
-import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.ModConfigEvent;
 import net.minecraftforge.fml.config.ModConfig.Reloading;
@@ -32,15 +31,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.naming.NoPermissionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -49,8 +47,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -58,9 +56,18 @@ import java.util.stream.Collectors;
  * Handle synchronization of {@link SimpleConfig} data with server config
  */
 @Internal public class SimpleConfigSync {
+	private static final Pattern HYPHEN = Pattern.compile("-");
+	public static Style ALLOWED_UPDATE_STYLE = Style.EMPTY
+	  .applyFormatting(TextFormatting.GRAY).setItalic(true);
+	public static Style DENIED_UPDATE_STYLE = Style.EMPTY
+	  .applyFormatting(TextFormatting.GOLD).setItalic(true);
+	public static Style ERROR_UPDATE_STYLE = Style.EMPTY
+	  .applyFormatting(TextFormatting.DARK_RED).setItalic(true);
+	public static Style REQUIRES_RESTART_STYLE = Style.EMPTY
+	  .applyFormatting(TextFormatting.DARK_PURPLE).setItalic(true);
+	public static Style ALLOWED_SNAPSHOT_UPDATE_STYLE = ALLOWED_UPDATE_STYLE;
+	public static Style DENIED_SNAPSHOT_UPDATE_STYLE = DENIED_UPDATE_STYLE;
 	
-	private static final Field ConfigTracker$fileMap;
-	private static final Field ConfigTracker$configSets;
 	private static final Method ModConfig$fireEvent;
 	private static final Constructor<Reloading> Reloading$$init;
 	private static final Method ServerLifecycleHooks$getServerConfigPath;
@@ -73,21 +80,13 @@ import java.util.stream.Collectors;
 		// Get all required private members
 		final String errorFmt =
 		  "Could not access %s by reflection\n" +
-		  "SimpleConfig won't be able to sync server config modifications ingame";
+		  "SimpleConfig won't be able to sync server config modifications in-game";
 		boolean success = false;
 		String member = null;
-		Field fileMap = null;
-		Field configSets = null;
 		Method fireEvent = null;
 		Constructor<Reloading> reloading = null;
 		Method serverConfig = null;
 		try {
-			member = "ConfigTracker$fileMap field";
-			fileMap = ConfigTracker.class.getDeclaredField("fileMap");
-			fileMap.setAccessible(true);
-			member = "ConfigTracker$configSets field";
-			configSets = ConfigTracker.class.getDeclaredField("configSets");
-			configSets.setAccessible(true);
 			member = "ModConfig$fireEvent method";
 			fireEvent = ModConfig.class.getDeclaredMethod("fireEvent", ModConfigEvent.class);
 			fireEvent.setAccessible(true);
@@ -97,11 +96,9 @@ import java.util.stream.Collectors;
 			serverConfig = ServerLifecycleHooks.class.getDeclaredMethod("getServerConfigPath", MinecraftServer.class);
 			serverConfig.setAccessible(true);
 			success = true;
-		} catch (NoSuchFieldException | NoSuchMethodException e) {
+		} catch (NoSuchMethodException e) {
 			LOGGER.error(String.format(errorFmt, member));
 		} finally {
-			ConfigTracker$fileMap = fileMap;
-			ConfigTracker$configSets = configSets;
 			ModConfig$fireEvent = fireEvent;
 			Reloading$$init = reloading;
 			ServerLifecycleHooks$getServerConfigPath = serverConfig;
@@ -124,27 +121,7 @@ import java.util.stream.Collectors;
 		}
 	}
 	
-	private static ConcurrentHashMap<String, ModConfig> getFileMap() {
-		if (!reflectionSucceeded)
-			throw new ConfigUpdateReflectionError();
-		try {
-			//noinspection unchecked
-			return (ConcurrentHashMap<String, ModConfig>) ConfigTracker$fileMap.get(ConfigTracker.INSTANCE);
-		} catch (IllegalAccessException | ClassCastException e) {
-			throw new ConfigUpdateReflectionError(e);
-		}
-	}
-	private static EnumMap<Type, Set<ModConfig>> getConfigSets() {
-		if (!reflectionSucceeded)
-			throw new ConfigUpdateReflectionError();
-		try {
-			//noinspection unchecked
-			return (EnumMap<Type, Set<ModConfig>>) ConfigTracker$configSets.get(ConfigTracker.INSTANCE);
-		} catch (IllegalAccessException | ClassCastException e) {
-			throw new ConfigUpdateReflectionError(e);
-		}
-	}
-	private static void tryFireEvent(final ModConfig config, final ModConfigEvent event) {
+	@Internal protected static void tryFireEvent(final ModConfig config, final ModConfigEvent event) {
 		if (!reflectionSucceeded)
 			throw new ConfigUpdateReflectionError();
 		try {
@@ -153,7 +130,7 @@ import java.util.stream.Collectors;
 			throw new ConfigUpdateReflectionError(e);
 		}
 	}
-	private static Reloading newReloading(final ModConfig config) {
+	@Internal protected static Reloading newReloading(final ModConfig config) {
 		if (!reflectionSucceeded)
 			throw new ConfigUpdateReflectionError();
 		try {
@@ -162,19 +139,24 @@ import java.util.stream.Collectors;
 			throw new ConfigUpdateReflectionError(e);
 		}
 	}
-	private static void tryUpdateConfig(final String fileName, final byte[] fileData) {
-		final ModConfig modConfig = getFileMap().get(fileName);
-		if (modConfig == null)
-			return;
+	private static void tryUpdateConfig(
+	  final SimpleConfig config, final byte[] fileData
+	) {
+		SimpleConfigModConfig modConfig = config.getModConfig();
 		
-		// The entry sets should match between clients and server
-		final CommentedConfig sentConfig = TomlFormat.instance().createParser()
-		  .parse(new ByteArrayInputStream(fileData));
-		
-		modConfig.getConfigData().putAll(sentConfig);
-		modConfig.getSpec().afterReload();
-		
-		tryFireEvent(modConfig, newReloading(modConfig));
+		SimpleConfigCommentedYamlFormat format = modConfig.getConfigFormat();
+		try {
+			// The entry sets should match between clients and server
+			CommentedConfig sentConfig = format.createParser(false)
+			  .parse(new ByteArrayInputStream(fileData));
+			
+			modConfig.getConfigData().putAll(sentConfig);
+			modConfig.getSpec().afterReload();
+			
+			tryFireEvent(modConfig, newReloading(modConfig));
+		} catch (ParsingException e) {
+			LOGGER.error("Failed to parse synced server config for mod " + config.getModId(), e);
+		}
 	}
 	private static Path serverConfigDir = null;
 	private static Path tryGetConfigDir() {
@@ -238,42 +220,19 @@ import java.util.stream.Collectors;
 	}
 	
 	// Packets
-	private static Pair<String, byte[]> tryGetConfigData(String modId) {
-		Optional<ModConfig> opt = getConfigSets().get(Type.SERVER)
-		  .stream().filter(mc -> modId.equals(mc.getModId())).findFirst();
-		if (!opt.isPresent())
-			throw new IllegalArgumentException(
-			  "Could not find mod config for simple config of mod \"" + SimpleConfig
-				 .getModNameOrId(modId) + "\"");
-		final ModConfig modConfig = opt.get();
-		final String fileName = modConfig.getFileName();
+	protected static byte[] serializeSnapshot(SimpleConfig config) {
 		try {
-			final CommentedConfig configData = modConfig.getConfigData();
-			if (configData instanceof CommentedFileConfig) {
-				final byte[] fileData =
-				  Files.readAllBytes(((CommentedFileConfig) configData).getNioPath());
-				return Pair.of(fileName, fileData);
+			CommentedConfig snapshot = config.takeSnapshot(false);
+			if (snapshot instanceof CommentedFileConfig) {
+				return Files.readAllBytes(((CommentedFileConfig) snapshot).getNioPath());
 			} else {
-				final TomlWriter writer = TomlFormat.instance().createWriter();
 				ByteArrayOutputStream arrayWriter = new ByteArrayOutputStream();
-				writer.write(
-				  configData.unmodifiable(), arrayWriter);
-				final byte[] fileData = arrayWriter.toByteArray();
-				return Pair.of(fileName, fileData);
+				SimpleConfigCommentedYamlFormat format = config.getModConfig().getConfigFormat();
+				format.createWriter(false).write(snapshot, arrayWriter);
+				return arrayWriter.toByteArray();
 			}
-		} catch (IOException e) {
-			throw new RuntimeException("Error reading server config file");
-		}
-	}
-	
-	protected static Optional<Path> getConfigFilePath(SimpleConfig config) {
-		try {
-			return getConfigSets().get(config.type).stream().filter(
-			  mc -> config.modId.equals(mc.getModId())
-			        && mc.getConfigData() instanceof CommentedFileConfig
-			).findFirst().map(ModConfig::getFullPath);
-		} catch (ConfigUpdateReflectionError e) {
-			return Optional.empty();
+		} catch (IOException error) {
+			throw new RuntimeException("IO error reading config file", error);
 		}
 	}
 	
@@ -342,23 +301,20 @@ import java.util.stream.Collectors;
 	
 	protected static class CSimpleConfigSyncPacket extends CAbstractPacket {
 		protected String modId;
-		protected String fileName;
 		protected byte[] fileData;
 		protected boolean requireRestart;
 		
 		public CSimpleConfigSyncPacket() {}
 		public CSimpleConfigSyncPacket(SimpleConfig config) {
-			modId = config.modId;
-			final Pair<String, byte[]> pair = tryGetConfigData(modId);
-			fileName = pair.getLeft();
-			fileData = pair.getRight();
+			modId = config.getModId();
+			fileData = serializeSnapshot(config);
 			requireRestart = config.anyDirtyRequiresRestart();
 		}
 		
 		@Override public void onServer(Context ctx) {
 			final ServerPlayerEntity sender = ctx.getSender();
 			// Ensure the config has been registered as a SimpleConfig
-			SimpleConfig.getInstance(modId, Type.SERVER);
+			SimpleConfig config = SimpleConfig.getInstance(modId, Type.SERVER);
 			final String modName = SimpleConfig.getModNameOrId(modId);
 			if (sender == null)
 				throw new IllegalStateException(
@@ -369,47 +325,45 @@ import java.util.stream.Collectors;
 				            "the server config for mod \"" + modName + "\" without privileges");
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.tried_to_update_by",
-				  senderName, modName).mergeStyle(TextFormatting.RED));
+				  senderName, modName).mergeStyle(DENIED_UPDATE_STYLE));
 				// Send back a re-sync packet
-				new SSimpleConfigSyncPacket(modId, fileName, fileData).sendTo(sender);
+				new SSimpleConfigSyncPacket(modId, fileData).sendTo(sender);
 				return;
 			}
 			
 			try {
-				
-				tryUpdateConfig(fileName, fileData);
+				tryUpdateConfig(config, fileData);
 				// config.bake(); // This should happen as a consequence of the reloading event
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
 				broadcastToOperators(new TranslationTextComponent(
-				  "simpleconfig.config.msg.error_updating_by_operator",
-				  modName, senderName, e.getMessage()).mergeStyle(TextFormatting.DARK_RED));
+				  "simpleconfig.config.msg.error_updating_by",
+				  modName, senderName, e.getMessage()).mergeStyle(ERROR_UPDATE_STYLE));
 			}
 			
-			LOGGER.warn("Server config for mod \"" + modName + "\" " +
-			            "has been updated by operator \"" + senderName + "\"");
+			LOGGER.info(
+			  "Server config for mod \"" + modName + "\" " +
+			  "has been updated by authorized player \"" + senderName + "\"");
 			IFormattableTextComponent msg = new TranslationTextComponent(
 			  "simpleconfig.config.msg.updated_by",
-			  modName, senderName).mergeStyle(TextFormatting.GOLD);
+			  modName, senderName).mergeStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
 				msg = msg.appendString("\n").append(new TranslationTextComponent(
 				  "simpleconfig.config.msg.server_changes_require_restart"
-				).mergeStyle(TextFormatting.GOLD));
+				).mergeStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
-			new SSimpleConfigSyncPacket(modId, fileName, fileData).sendExcept(sender);
+			new SSimpleConfigSyncPacket(modId, fileData).sendExcept(sender);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
-			buf.writeString(fileName);
 			buf.writeByteArray(fileData);
 			buf.writeBoolean(requireRestart);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
-			fileName = buf.readString(32767);
 			fileData = buf.readByteArray();
 			requireRestart = buf.readBoolean();
 		}
@@ -417,32 +371,27 @@ import java.util.stream.Collectors;
 	
 	protected static class SSimpleConfigSyncPacket extends SAbstractPacket {
 		protected String modId;
-		protected String fileName;
 		protected byte[] fileData;
 		
 		public SSimpleConfigSyncPacket() {}
 		public SSimpleConfigSyncPacket(SimpleConfig config) {
-			modId = config.modId;
-			final Pair<String, byte[]> pair = tryGetConfigData(modId);
-			fileName = pair.getLeft();
-			fileData = pair.getRight();
+			modId = config.getModId();
+			fileData = serializeSnapshot(config);
 		}
 		
 		public SSimpleConfigSyncPacket(
-		  String modId, String fileName, byte[] fileData
+		  String modId, byte[] fileData
 		) {
 			this.modId = modId;
-			this.fileName = fileName;
 			this.fileData = fileData;
 		}
 		
 		@Override public void onClient(Context ctx) {
 			if (!Minecraft.getInstance().isSingleplayer()) {
-				// Ensure the config has been registered as a SimpleConfig
-				SimpleConfig.getInstance(modId, Type.SERVER);
+				SimpleConfig config = SimpleConfig.getInstance(modId, Type.SERVER);
 				final String modName = SimpleConfig.getModNameOrId(modId);
 				try {
-					tryUpdateConfig(fileName, fileData);
+					tryUpdateConfig(config, fileData);
 					// config.bake(); // This should happen as a consequence of the reloading event
 				} catch (ConfigUpdateReflectionError e) {
 					e.printStackTrace();
@@ -455,13 +404,11 @@ import java.util.stream.Collectors;
 		
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
-			buf.writeString(fileName);
 			buf.writeByteArray(fileData);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
-			fileName = buf.readString(32767);
 			fileData = buf.readByteArray();
 		}
 	}
@@ -470,7 +417,7 @@ import java.util.stream.Collectors;
 		public static Map<Pair<String, String>, CompletableFuture<Void>> FUTURES = new HashMap<>();
 		protected String modId;
 		protected String snapshotName;
-		protected @Nullable byte[] fileData; // Null means delete
+		protected byte @Nullable [] fileData; // Null means delete
 		
 		public CSimpleConfigSaveSnapshotPacket() {}
 		public CSimpleConfigSaveSnapshotPacket(
@@ -479,10 +426,14 @@ import java.util.stream.Collectors;
 			this.modId = modId;
 			this.snapshotName = snapshotName;
 			if (data != null) {
-				final TomlWriter writer = new TomlWriter();
-				writer.setIndent(IndentStyle.SPACES_2);
+				SimpleConfig config = SimpleConfig.getInstance(modId, Type.SERVER);
+				SimpleConfigCommentedYamlFormat format = config.getModConfig().getConfigFormat();
 				final ByteArrayOutputStream os = new ByteArrayOutputStream();
-				writer.write(data.unmodifiable(), os);
+				try {
+					format.createWriter(false).write(data, os);
+				} catch (WritingException e) {
+					throw new SimpleConfigSyncException("Error writing config snapshot", e);
+				}
 				fileData = os.toByteArray();
 			} else fileData = null;
 		}
@@ -490,55 +441,62 @@ import java.util.stream.Collectors;
 		@Override public void onServer(Context ctx) {
 			final ServerPlayerEntity sender = ctx.getSender();
 			if (sender == null) {
-				LOGGER.warn("Received server config preset from non-player source for mod \"" + modId + "\"");
+				LOGGER.error("Received server config preset from non-player source for mod \"" + modId + "\"");
 				return;
 			}
+			String[] split = HYPHEN.split(snapshotName, 2);
+			String name = split.length == 2? split[1] : snapshotName;
+			String type = split[0].equals("client")? "client" : "server";
+			String action = fileData == null? "delete" : "save";
+			// Ensure the config has been registered as a SimpleConfig
+			SimpleConfig.getInstance(modId, Type.SERVER);
+			final String modName = SimpleConfig.getModNameOrId(modId);
+			final String senderName = sender.getScoreboardName();
 			try {
-				// Ensure the config has been registered as a SimpleConfig
-				SimpleConfig.getInstance(modId, Type.SERVER);
-				final String modName = SimpleConfig.getModNameOrId(modId);
-				final String senderName = sender.getScoreboardName();
-				if (ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW) {
-					LOGGER.warn("Player \"" + senderName + "\" tried to " +
-					            (fileData == null? "delete" : "save") + " a preset for the server " +
-					            "config for mod \"" + modName + "\" without privileges");
+				if (ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW)
 					throw new NoPermissionException("No permission for server config for mod " + modName);
-				}
 				
 				if (fileData != null) {
-					try {
-						final Path dir = tryGetConfigDir();
-						final File dest = dir.resolve(modId + "-preset-" + snapshotName + ".toml").toFile();
-						if (dest.isDirectory())
-							throw new IllegalStateException("File already exists and is a directory");
-						FileUtils.writeByteArrayToFile(dest, fileData);
-					} catch (RuntimeException | IOException e) {
-						LOGGER.error("Error saving server config preset for mod \"" + modName + "\"");
-						throw e;
-					}
+					final Path dir = tryGetConfigDir();
+					final File dest = dir.resolve(modId + "-preset-" + snapshotName + ".yaml").toFile();
+					if (dest.isDirectory())
+						throw new IllegalStateException("File already exists and is a directory");
+					FileUtils.writeByteArrayToFile(dest, fileData);
 				} else {
-					try {
-						final Path dir = tryGetConfigDir();
-						final File dest = dir.resolve(modId + "-preset-" + snapshotName + ".toml").toFile();
-						BasicFileAttributes readAttributes =
-						  Files.readAttributes(dest.toPath(), BasicFileAttributes.class);
-						if (readAttributes.isDirectory())
-							throw new IllegalStateException("File is a directory");
-						if (!dest.exists() || !readAttributes.isRegularFile())
-							throw new IllegalArgumentException("File does not exist");
-						if (!dest.delete()) throw new IllegalStateException("Unable to delete file");
-					} catch (RuntimeException e) {
-						LOGGER.error("Error deleting server config preset for mod \"" + modName + "\"");
-						throw e;
-					}
+					final Path dir = tryGetConfigDir();
+					final File dest = dir.resolve(modId + "-preset-" + snapshotName + ".yaml").toFile();
+					BasicFileAttributes attr = Files.readAttributes(dest.toPath(), BasicFileAttributes.class);
+					if (attr.isDirectory())
+						throw new IllegalStateException("File is a directory");
+					if (!dest.exists() || !attr.isRegularFile())
+						throw new IllegalArgumentException("File does not exist");
+					if (!dest.delete()) throw new IllegalStateException("Unable to delete file");
 				}
 				
-				LOGGER.warn(
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.snapshot." + type + "." + action + "d_by",
+				  name, modName, senderName).mergeStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
+				LOGGER.info(
 				  "Server config preset \"" + snapshotName + "\" for mod \"" + modName + "\" " +
-				  "has been " + (fileData == null? "deleted" : "saved") + " by player \"" + senderName + "\"");
-				
+				  "has been " + action + "d by player \"" + senderName + "\"");
 				new SSimpleConfigSavedSnapshotPacket(modId, snapshotName, null).sendTo(sender);
-			} catch (RuntimeException | IOException | NoPermissionException e) {
+			} catch (RuntimeException | IOException e) {
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.snapshot.error_updating_by",
+				  name, modName, senderName, e.getMessage()
+				).mergeStyle(ERROR_UPDATE_STYLE));
+				LOGGER.error("Error " + (fileData != null? "saving" : "deleting") + " server config " +
+				             "preset for mod \"" + modName + "\"");
+				new SSimpleConfigSavedSnapshotPacket(
+				  modId, snapshotName, e.getClass().getSimpleName() + ": " + e.getMessage()).sendTo(sender);
+			} catch (NoPermissionException e) {
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.snapshot." + type + ".tried_to_" + action,
+				  senderName, name, modName
+				).mergeStyle(DENIED_SNAPSHOT_UPDATE_STYLE));
+				LOGGER.warn("Player \"" + senderName + "\" tried to " +
+				            action + " a preset for the server " +
+				            "config for mod \"" + modName + "\" without privileges");
 				new SSimpleConfigSavedSnapshotPacket(
 				  modId, snapshotName, e.getClass().getSimpleName() + ": " + e.getMessage()).sendTo(sender);
 			}
@@ -612,18 +570,16 @@ import java.util.stream.Collectors;
 				return;
 			final File dir = tryGetConfigDir().toFile();
 			if (!dir.exists() || !dir.isDirectory()) return;
-			final Pattern pat = Pattern.compile("^" + Pattern.quote(modId) + "-preset.*\\.toml$");
+			final Pattern pat = Pattern.compile(
+			  "^(?<file>" + Pattern.quote(modId) + "-preset-(?<preset>.*)\\.yaml)$");
 			final File[] files = dir.listFiles((d, name) -> pat.matcher(name).matches());
 			if (files == null) return;
 			final List<String> names = Arrays.stream(files)
-			  .map(
-			    f -> {
-				    final String name = f.getName();
-				    return name.substring(
-					   modId.length() + 8, // "-preset-".length()
-					   name.length() - 5); // ".toml".length()
-			    }
-			  ).collect(Collectors.toList());
+			  .map(f -> {
+				  Matcher m = pat.matcher(f.getName());
+				  if (!m.matches()) return null;
+				  return m.group("preset");
+			  }).filter(Objects::nonNull).collect(Collectors.toList());
 			new SSimpleConfigSnapshotListPacket(modId, names).sendTo(sender);
 		}
 		
@@ -686,17 +642,16 @@ import java.util.stream.Collectors;
 			final ServerPlayerEntity sender = ctx.getSender();
 			if (sender == null || ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW)
 				return;
-			final File file = tryGetConfigDir().resolve(modId + "-preset-" + snapshotName + ".toml").toFile();
-			if (!file.exists() || !file.isFile())
-				new SSimpleConfigSnapshotPacket(modId, snapshotName, null, "File does not exist").sendTo(sender);
+			Path dir = tryGetConfigDir();
+			File file = dir.resolve(modId + "-preset-" + snapshotName + ".yaml").toFile();
+			if (!file.isFile())
+				new SSimpleConfigSnapshotPacket(
+				  modId, snapshotName, null, "File does not exist"
+				).sendTo(sender);
 			try {
-				final byte[] fileData = FileUtils.readFileToByteArray(file);
-				try {
-					Thread.sleep(4000L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				new SSimpleConfigSnapshotPacket(modId, snapshotName, fileData, null).sendTo(sender);
+				new SSimpleConfigSnapshotPacket(
+				  modId, snapshotName, FileUtils.readFileToByteArray(file), null
+				).sendTo(sender);
 			} catch (IOException e) {
 				new SSimpleConfigSnapshotPacket(modId, snapshotName, null, e.getMessage()).sendTo(sender);
 			}
@@ -716,12 +671,12 @@ import java.util.stream.Collectors;
 	protected static class SSimpleConfigSnapshotPacket extends SAbstractPacket {
 		protected String modId;
 		protected String snapshotName;
-		protected @Nullable byte[] fileData;
+		protected byte @Nullable[] fileData;
 		protected @Nullable String errorMsg;
 		
 		public SSimpleConfigSnapshotPacket() {}
 		public SSimpleConfigSnapshotPacket(
-		  String modId, String snapshotName, @Nullable byte[] fileData, @Nullable String errorMsg
+		  String modId, String snapshotName, byte @Nullable[] fileData, @Nullable String errorMsg
 		) {
 			this.modId = modId;
 			this.snapshotName = snapshotName;
@@ -734,13 +689,19 @@ import java.util.stream.Collectors;
 			  CSimpleConfigRequestSnapshotPacket.FUTURES.remove(Pair.of(modId, snapshotName));
 			if (future != null) {
 				if (fileData != null) {
-					final CommentedConfig config = TomlFormat.instance().createParser().parse(
-					  new ByteArrayInputStream(fileData));
-					future.complete(config);
-				} else {
-					future.completeExceptionally(
-					  errorMsg != null? new RemoteException(errorMsg) : new RemoteException());
+					SimpleConfig config = SimpleConfig.getInstance(modId, Type.SERVER);
+					SimpleConfigCommentedYamlFormat format = config.getModConfig().getConfigFormat();
+					try {
+						CommentedConfig snapshot = format.createParser(false)
+						  .parse(new ByteArrayInputStream(fileData));
+						future.complete(snapshot);
+						return;
+					} catch (ParsingException parseException) {
+						errorMsg = "Error parsing server snapshot:\n" + parseException.getMessage();
+					}
 				}
+				future.completeExceptionally(
+				  errorMsg != null? new RemoteException(errorMsg) : new RemoteException());
 			}
 		}
 		
@@ -794,7 +755,21 @@ import java.util.stream.Collectors;
 	) {
 		final CompletableFuture<Void> future = new CompletableFuture<>();
 		CSimpleConfigSaveSnapshotPacket.FUTURES.put(Pair.of(modId, snapshotName), future);
-		new CSimpleConfigSaveSnapshotPacket(modId, snapshotName, config).send();
+		try {
+			new CSimpleConfigSaveSnapshotPacket(modId, snapshotName, config).send();
+		} catch (SimpleConfigSyncException e) {
+			future.completeExceptionally(e);
+		}
 		return future;
+	}
+	
+	public static class SimpleConfigSyncException extends RuntimeException {
+		public SimpleConfigSyncException(String message) {
+			super(message);
+		}
+		
+		public SimpleConfigSyncException(String message, Throwable cause) {
+			super(message, cause);
+		}
 	}
 }

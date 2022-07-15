@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.api;
 
+import endorh.simpleconfig.highlight.HighlighterManager;
+import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
 import endorh.simpleconfig.ui.impl.format.*;
 import endorh.simpleconfig.ui.impl.format.CharacterBasedTextFormatter.CharacterMapTextFormatter;
 import endorh.simpleconfig.ui.impl.format.CharacterBasedTextFormatter.ICharacterFormatter;
-import endorh.simpleconfig.highlight.HighlighterManager;
-import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;

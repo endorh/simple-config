@@ -6,7 +6,6 @@ import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.core.SimpleConfig.ConfigSnapshotHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -67,12 +66,13 @@ public class SimpleConfigGUIManager {
 		final ModLoadingContext context = ModLoadingContext.get();
 		String modId = context.getActiveContainer().getModId();
 		if (!modConfigs.containsKey(modId)) {
-			modConfigs.computeIfAbsent(modId, s -> synchronizedMap(new HashMap<>())).put(config.type, config);
+			modConfigs.computeIfAbsent(modId, s -> synchronizedMap(new HashMap<>())).put(
+			  config.getType(), config);
 			context.registerExtensionPoint(
 			  ExtensionPoint.CONFIGGUIFACTORY,
 			  () -> (mc, screen) -> getConfigGUI(modId, screen));
 		} else {
-			modConfigs.get(modId).put(config.type, config);
+			modConfigs.get(modId).put(config.getType(), config);
 		}
 	}
 	
@@ -89,16 +89,16 @@ public class SimpleConfigGUIManager {
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
 		final List<SimpleConfig> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.type != Type.SERVER || hasPermission)
+		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
 		  .sorted(Comparator.comparing(c -> {
-			switch (c.type) {
+			switch (c.getType()) {
 				case CLIENT: return 1;
 				case COMMON: return 2;
 				case SERVER: return 4;
 				default: return 3;
 			}
 		})).collect(Collectors.toList());
-		final ConfigSnapshotHandler handler = new ConfigSnapshotHandler(configs);
+		final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
 		final ConfigBuilder builder = ConfigBuilder.create(modId)
 		  .setParentScreen(parent)
 		  .setSavingRunnable(() -> orderedConfigs.forEach(c -> {

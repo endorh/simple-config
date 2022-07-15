@@ -19,8 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
-
 @OnlyIn(Dist.CLIENT)
 public class CaptionedListListEntry<
     V, E extends AbstractListListEntry<V, ?, E>,

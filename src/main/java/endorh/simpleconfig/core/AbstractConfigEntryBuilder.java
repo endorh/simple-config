@@ -6,8 +6,8 @@ import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -275,7 +275,7 @@ public abstract class AbstractConfigEntryBuilder<
 		e.editableSupplier = editableSupplier;
 		e.nonPersistent = nonPersistent;
 		if (nonPersistent)
-			e.actualValue = e.value;
+			e.actualValue = e.defValue;
 		e.ignored = ignored;
 		// if (!e.isValidValue(value))
 		// 	throw new InvalidDefaultConfigValueException(e.getGlobalPath(), value);

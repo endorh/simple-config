@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.Config.Entry;
+import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.EntryFlag;
@@ -9,10 +10,8 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import endorh.simpleconfig.core.entry.AbstractListEntry;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.JsonToNBT;
+import endorh.simpleconfig.yaml.NonConfigMap;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -21,14 +20,13 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import static endorh.simpleconfig.core.NBTUtil.fromNBT;
-import static endorh.simpleconfig.core.NBTUtil.toNBT;
-
 public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>,
-  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>>
+  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>>
   extends AbstractConfigEntry<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
   CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>> {
 	
@@ -46,7 +44,7 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	
 	public static class Builder<V, C, G, E extends AbstractListEntry<V, C, G, E>,
 	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CC, CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	  extends AbstractConfigEntryBuilder<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
 	  CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>, Builder<
@@ -76,29 +74,31 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		}
 	}
 	
-	public String forActualConfig(@Nullable Pair<CC, List<C>> value) {
-		if (value == null) return "";
-		final CompoundNBT nbt = new CompoundNBT();
-		nbt.put("k", toNBT(value.getKey()));
-		nbt.put("v", toNBT(value.getValue()));
-		return nbt.toString();
+	public Map<Object, Object> forActualConfig(@Nullable Pair<CC, List<C>> value) {
+		if (value == null) return null;
+		return Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
+		  captionEntry.forActualConfig(value.getKey()),
+		  listEntry.forActualConfig(value.getValue())));
 	}
 	
 	public @Nullable Pair<CC, List<C>> fromActualConfig(@Nullable Object value) {
-		if (!(value instanceof String))
-			return null;
-		final String str = ((String) value);
-		try {
-			final CompoundNBT nbt = new JsonToNBT(new StringReader(str)).readStruct();
-			if (!nbt.contains("k") && !nbt.contains("v")) return null;
-			//noinspection unchecked
-			final CC key = (CC) fromNBT(nbt.get("k"), getExpectedType().next.get(0));
-			//noinspection unchecked
-			final List<C> val = (List<C>) fromNBT(nbt.get("v"), getExpectedType().next.get(1));
-			return Pair.of(key, val);
-		} catch (CommandSyntaxException | IllegalArgumentException | ClassCastException e) {
-			return null;
+		if (value instanceof Map) {
+			Map<?, ?> m = (Map<?, ?>) value;
+			if (m.size() != 1) return null;
+			Map.Entry<?, ?> entry = m.entrySet().stream().findFirst()
+			  .orElseThrow(ConcurrentModificationException::new);
+			CC key = captionEntry.fromActualConfig(entry.getKey());
+			List<C> list = listEntry.fromActualConfig(entry.getValue());
+			return key != null && list != null? Pair.of(key, list) : null;
+		} else if (value instanceof Config) {
+			Optional<? extends Entry> opt = ((Config) value).entrySet().stream().findFirst();
+			if (!opt.isPresent()) return null;
+			Entry entry = opt.get();
+			CC key = captionEntry.fromActualConfig(entry.getKey());
+			List<C> list = listEntry.fromActualConfig(entry.getValue());
+			return key != null && list != null? Pair.of(key, list) : null;
 		}
+		return null;
 	}
 	
 	@Override public List<ITextComponent> getErrors(Pair<CG, List<G>> value) {
@@ -132,8 +132,16 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		               listEntry.fromGuiOrDefault(value.getValue()));
 	}
 	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String captionTooltip = captionEntry.getConfigCommentTooltip();
+		if (!captionTooltip.isEmpty()) tooltips.add("Caption: " + captionTooltip);
+		tooltips.addAll(listEntry.getConfigCommentTooltips());
+		return tooltips;
+	}
+	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <LGE extends AbstractListListEntry<G, ?, LGE>,
@@ -163,9 +171,5 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	
 	@OnlyIn(Dist.CLIENT) @Override protected <F extends FieldBuilder<Pair<CG, List<G>>, ?, F>> F decorate(F builder) {
 		return super.decorate(builder);
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, captionEntry.getExpectedType(), listEntry.getExpectedType());
 	}
 }

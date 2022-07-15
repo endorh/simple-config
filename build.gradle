@@ -172,8 +172,15 @@ dependencies {
     // ANTLR
     antlr "org.antlr:antlr4:$antlr_version" // use ANTLR version 4
 
+    // Snake yaml
+    implementation 'org.yaml:snakeyaml:1.30'
+
     // Minecraft
     minecraft "net.minecraftforge:forge:${forge_version}"
+}
+
+test {
+    useJUnitPlatform()
 }
 
 // Tasks --------------------------------------------------------------------------

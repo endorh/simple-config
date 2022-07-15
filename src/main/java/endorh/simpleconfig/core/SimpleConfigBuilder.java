@@ -5,19 +5,21 @@ import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -85,27 +87,61 @@ public class SimpleConfigBuilder
 	 * and it will be set automatically as the baker (but you
 	 * may not define it and also call this method)
 	 */
-	public SimpleConfigBuilder setBaker(Consumer<SimpleConfig> baker) {
+	public SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker) {
 		this.baker = baker;
 		return this;
 	}
 	
 	/**
 	 * Set the default background for all categories
-	 * @see SimpleConfigBuilder#setBackground(ResourceLocation)
-	 * @see SimpleConfigBuilder#setGUIDecorator(BiConsumer)
+	 * @see #withBackground(ResourceLocation)
+	 * @see #withGUIDecorator(BiConsumer)
 	 */
-	public SimpleConfigBuilder setBackground(String resourceName) {
-		return setBackground(new ResourceLocation(resourceName));
+	public SimpleConfigBuilder withBackground(String resourceName) {
+		return withBackground(new ResourceLocation(resourceName));
 	}
 	
 	/**
 	 * Set the default background for all categories
-	 * @see SimpleConfigBuilder#setBackground(String)
-	 * @see SimpleConfigBuilder#setGUIDecorator(BiConsumer)
+	 * @see #withBackground(String)
+	 * @see #withIcon(Icon)
+	 * @see #withColor(int)
+	 * @see #withGUIDecorator(BiConsumer)
 	 */
-	public SimpleConfigBuilder setBackground(ResourceLocation background) {
+	public SimpleConfigBuilder withBackground(ResourceLocation background) {
 		this.background = background;
+		return this;
+	}
+	
+	/**
+	 * Set the icon for the default category.<br>
+	 * Doesn't affect other categories.<br>
+	 * The icon is displayed in the tab button for the category, when more than
+	 * one category is present.
+	 * @param icon Icon to display. Use {@link Icon#EMPTY} to display no icon (default).
+	 * @see #withColor(int)
+	 * @see #withBackground(ResourceLocation)
+	 * @see #withGUIDecorator(BiConsumer)
+	 */
+	public SimpleConfigBuilder withIcon(Icon icon) {
+		defaultCategory.withIcon(icon);
+		return this;
+	}
+	
+	/**
+	 * Set the color for the default category.<br>
+	 * Doesn't affect other categories.<br>
+	 * The color affects the tint applied to the tab button for the category,
+	 * visible when more than one category is present.
+	 * @param tint Color tint to use, in ARGB format. It's recommended
+	 *             a transparency of 0x80, so the button background is
+	 *             visible behind the color. A value of 0 means no tint.
+	 * @see #withColor(int)
+	 * @see #withBackground(ResourceLocation)
+	 * @see #withGUIDecorator(BiConsumer)
+	 */
+	public SimpleConfigBuilder withColor(int tint) {
+		defaultCategory.withColor(tint);
 		return this;
 	}
 	
@@ -113,7 +149,7 @@ public class SimpleConfigBuilder
 	 * Use the solid background too when ingame<br>
 	 * By default, config GUIs are transparent when ingame
 	 */
-	public SimpleConfigBuilder solidIngameBackground() {
+	public SimpleConfigBuilder withSolidInGameBackground() {
 		this.transparent = false;
 		return this;
 	}
@@ -121,10 +157,10 @@ public class SimpleConfigBuilder
 	/**
 	 * Configure a decorator to modify the Cloth Config API's {@link ConfigBuilder}
 	 * just when a config GUI is being built<br>
-	 * @see SimpleConfigBuilder#setBackground(ResourceLocation)
+	 * @see SimpleConfigBuilder#withBackground(ResourceLocation)
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public SimpleConfigBuilder setGUIDecorator(BiConsumer<SimpleConfig, ConfigBuilder> decorator) {
+	public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigBuilder> decorator) {
 		this.decorator = decorator;
 		return this;
 	}
@@ -216,6 +252,8 @@ public class SimpleConfigBuilder
 		protected SimpleConfigBuilder parent;
 		protected final String name;
 		protected String title;
+		protected Icon icon = Icon.EMPTY;
+		protected int tint = 0;
 		protected Class<?> configClass;
 		
 		protected @Nullable Consumer<SimpleConfigCategory> baker = null;
@@ -251,36 +289,71 @@ public class SimpleConfigBuilder
 		 * and it will be set automatically as the baker (but you
 		 * may not define it and also call this method)
 		 */
-		public CategoryBuilder setBaker(Consumer<SimpleConfigCategory> baker) {
+		public CategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker) {
 			this.baker = baker;
 			return this;
 		}
 		
 		/**
 		 * Set the background texture to be used
-		 * @see CategoryBuilder#setBackground(ResourceLocation)
-		 * @see CategoryBuilder#setGUIDecorator(BiConsumer)
+		 * @see #withBackground(ResourceLocation)
+		 * @see #withIcon(Icon)
+		 * @see #withColor(int)
+		 * @see #withGUIDecorator(BiConsumer)
 		 */
-		public CategoryBuilder setBackground(String resourceName) {
-			return setBackground(new ResourceLocation(resourceName));
+		public CategoryBuilder withBackground(String resourceName) {
+			return withBackground(new ResourceLocation(resourceName));
 		}
 		
 		/**
 		 * Set the background texture to be used
-		 * @see CategoryBuilder#setBackground(String)
-		 * @see CategoryBuilder#setGUIDecorator(BiConsumer)
+		 * @see #withBackground(String)
+		 * @see #withIcon(Icon)
+		 * @see #withColor(int)
+		 * @see #withGUIDecorator(BiConsumer)
 		 */
-		public CategoryBuilder setBackground(ResourceLocation background) {
+		public CategoryBuilder withBackground(ResourceLocation background) {
 			this.background = background;
 			return this;
 		}
 		
 		/**
+		 * Set the icon of this category.<br>
+		 * Icons are displayed in the tab buttons when more than one category is present.<br>
+		 * Use {@link Icon#EMPTY} to disable the icon (default).
+		 * @see #withColor(int)
+		 * @see #withBackground(ResourceLocation)
+		 * @see #withGUIDecorator(BiConsumer)
+		 */
+		public CategoryBuilder withIcon(Icon icon) {
+			this.icon = icon;
+			return this;
+		}
+		
+		/**
+		 * Set the color of this category.<br>
+		 * Affects the tint applied to the tab button for this category,
+		 * which will be visible when multiple categories are present.<br>
+		 * @param tint Color tint to use, in ARGB format. It's recommended
+		 *             a transparency of 0x80, so the button background is
+		 *             visible behind the color. A value of 0 means no tint.
+		 * @see #withIcon(Icon)
+		 * @see #withBackground(ResourceLocation)
+		 * @see #withGUIDecorator(BiConsumer)
+		 */
+		public CategoryBuilder withColor(int tint) {
+			this.tint = tint;
+			return this;
+		}
+		
+		/**
 		 * Set a decorator that will run when creating the category GUI<br>
-		 * @see CategoryBuilder#setBackground(ResourceLocation)
+		 * @see #withBackground(ResourceLocation)
+		 * @see #withIcon(Icon)
+		 * @see #withColor(int)
 		 */
 		@OnlyIn(Dist.CLIENT)
-		public CategoryBuilder setGUIDecorator(BiConsumer<SimpleConfigCategory, ConfigCategory> decorator) {
+		public CategoryBuilder withGUIDecorator(BiConsumer<SimpleConfigCategory, ConfigCategory> decorator) {
 			this.decorator = decorator;
 			return this;
 		}
@@ -354,7 +427,7 @@ public class SimpleConfigBuilder
 			).collect(Collectors.toList());
 			cat.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
-			  unmodifiableList(order));
+			  unmodifiableList(order), icon, tint);
 			specBuilder.pop();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 				cat.decorator = decorator;
@@ -433,13 +506,13 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		public GroupBuilder setBaker(Consumer<SimpleConfigGroup> baker) {
+		public GroupBuilder withBaker(Consumer<SimpleConfigGroup> baker) {
 			this.baker = baker;
 			return this;
 		}
 		
 		public <
-		  V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>,
+		  V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>,
 		  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
 		> GroupBuilder caption(String name, B entry) {
 			if (heldEntryBuilder != null)
@@ -590,6 +663,8 @@ public class SimpleConfigBuilder
 		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
 		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
+		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 		entries.forEach((name, value) -> {
 			final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
 			entriesByName.put(name, entry);
@@ -598,16 +673,14 @@ public class SimpleConfigBuilder
 			entry.secondaryBackingFields = getSecondaryBackingFields(name);
 			entry.buildConfig(specBuilder);
 		});
-		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
-		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
-		categories.values().stream().sorted(
-		  Comparator.comparing(c -> categoryOrder.getOrDefault(c, 0))
-		).forEachOrdered(c -> categoryMap.put(c.name, c.build(config, specBuilder)));
 		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, specBuilder);
 		for (GroupBuilder group : groups.values()) {
 			final SimpleConfigGroup g = group.build(defaultCategory, specBuilder);
 			groupMap.put(group.name, g);
 		}
+		categories.values().stream().sorted(
+		  Comparator.comparing(c -> categoryOrder.getOrDefault(c, 0))
+		).forEachOrdered(c -> categoryMap.put(c.name, c.build(config, specBuilder)));
 		final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
 		  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 		).map(
@@ -615,8 +688,12 @@ public class SimpleConfigBuilder
 		).collect(Collectors.toList());
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
-		  unmodifiableMap(groupMap), unmodifiableList(order), specBuilder.build());
-		ModLoadingContext.get().registerConfig(type, config.spec);
+		  unmodifiableMap(groupMap), unmodifiableList(order), specBuilder.build(),
+		  defaultCategory.icon, defaultCategory.color);
+		ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
+		SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
+		config.build(modConfig);
+		modContainer.addConfig(modConfig);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			config.decorator = decorator;
 			config.background = background;

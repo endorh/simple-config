@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.loading.FMLEnvironment;

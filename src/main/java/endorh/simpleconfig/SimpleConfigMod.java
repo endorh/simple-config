@@ -3,9 +3,9 @@ package endorh.simpleconfig;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigGroup;
+import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
 import endorh.simpleconfig.core.annotation.Bind;
 import endorh.simpleconfig.core.annotation.NotEntry;
-import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.core.entry.StringEntry;
 import endorh.simpleconfig.demo.DemoConfigCategory;
 import endorh.simpleconfig.demo.DemoServerCategory;
@@ -15,6 +15,7 @@ import endorh.simpleconfig.grammar.regex.RegexLexer;
 import endorh.simpleconfig.grammar.regex.RegexParser;
 import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -78,29 +79,29 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static SimpleConfig SERVER_CONFIG;
 	
 	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
-	
-	static {
-		// Trigger class loading
-		Builders.bool(false);
-	}
+	public static final LanguageReloadManager LANGUAGE_RELOAD_MANAGER = LanguageReloadManager.INSTANCE;
 	
 	public SimpleConfigMod() {
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			// Create and register the client config for the mod
 			CLIENT_CONFIG = SimpleConfig.builder(MOD_ID, Type.CLIENT, ClientConfig.class)
-			  .add("add_pause_menu_button", bool(true))
-			  .add("menu_button_position", enum_(SPLIT_OPTIONS_BUTTON))
+			  .withIcon(SimpleConfigIcons.CLIENT_ICON)
+			  .withColor(0x8090FF80)
+			  .withBackground("textures/block/bookshelf.png")
+			  .add("add_pause_menu_button", yesNo(true))
+			  .add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
+			    .editable(() -> CLIENT_CONFIG.getGUIBoolean("add_pause_menu_button")))
 			  .n(group("confirm")
-			       .add("save", bool(true))
-			       .add("discard", bool(true))
-			       .add("overwrite_external", bool(true))
-			       .add("overwrite_remote", bool(true))
-			       .add("reset", bool(false))
-			       .add("group_reset", bool(true))
-			       .add("restore", bool(false))
-			       .add("group_restore", bool(true)))
-			  .n(group("advanced")
-			       .add("show_ui_tips", bool(true))
+			       .add("save", yesNo(true))
+			       .add("discard", yesNo(true))
+			       .add("overwrite_external", yesNo(true))
+			       .add("overwrite_remote", yesNo(true))
+			       .add("reset", yesNo(false))
+			       .add("group_reset", yesNo(true))
+			       .add("restore", yesNo(false))
+			       .add("group_restore", yesNo(true))
+			  ).n(group("advanced")
+			       .add("show_ui_tips", yesNo(true))
 			       .add("tooltip_max_width", percent(60F))
 			       .add("prefer_combo_box", number(8))
 			       .add("max_options_in_config_comment", number(16).min(5))
@@ -121,11 +122,9 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 						number(20).min(0).max(1000), list(string(""))))
 			       .add("regex_search_history", caption(
 						number(20).max(1000), list(pattern(""))))
-			       .add("translation_debug_mode", bool(false).temp()))
+			       .add("translation_debug_mode", enable(false).temp())
 			  // Hook here the demo category
-			  .n(DemoConfigCategory.getDemoCategory())
-			  // Change the background texture
-			  .setBackground("textures/block/bookshelf.png")
+			  ).n(DemoConfigCategory.getDemoCategory())
 			  .buildAndRegister();
 		});
 		// Entry builders are immutable, so they can be cached, reused and modified
@@ -165,6 +164,9 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			return names;
 		});
 		SERVER_CONFIG = SimpleConfig.builder(MOD_ID, Type.SERVER, ServerConfig.class)
+		  .withIcon(SimpleConfigIcons.SERVER_ICON)
+		  .withColor(0x808090FF)
+		  .withBackground("minecraft:blackstone_bricks")
 		  .text("desc", makeLink(
 			 "simpleconfig.config.server.desc.permission_level",
 			 "simpleconfig.config.server.desc.permission_level:help",
@@ -187,7 +189,6 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		  .text("end")
 		  // Register the demo server config category as well
 		  .n(DemoServerCategory.getDemoServerCategory())
-		  .setBackground("minecraft:blackstone_bricks")
 		  .buildAndRegister();
 	}
 	
@@ -199,6 +200,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		  "regex", RegexLexer::new, RegexParser::new, RegexParser::root));
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
 		  "snbt", SNBTLexer::new, SNBTParser::new, SNBTParser::root));
+		manager.addReloadListener(LANGUAGE_RELOAD_MANAGER);
 	}
 	
 	/**
@@ -221,7 +223,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			@Bind public static boolean show_ui_tips;
 			@Bind public static float tooltip_max_width;
 			@Bind public static int prefer_combo_box;
-			@Bind public static int max_options_in_config_comment;
+			@Bind public static int max_options_in_config_comment = 4;
 			@Bind public static Map<Integer, Color> color_picker_saved_colors;
 			public static int search_history_size;
 			@NotEntry public static List<String> search_history;

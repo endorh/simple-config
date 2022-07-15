@@ -9,12 +9,13 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
@@ -27,26 +28,27 @@ public class ProgressDialog extends ConfirmDialog {
 	protected CompletableFuture<?> future;
 	protected @Nullable List<ITextComponent> error = null;
 	protected @Nullable Icon iconSave = null;
+	protected Supplier<@Nullable AbstractDialog> successDialog = () -> null;
 	
 	public static ProgressDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, CompletableFuture<?> future
+	  ITextComponent title, CompletableFuture<?> future
 	) {
-		return create(screen, title, future, null);
+		return create(title, future, null);
 	}
 	
 	public static ProgressDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, CompletableFuture<?> future,
+	  ITextComponent title, CompletableFuture<?> future,
 	  @Nullable Consumer<ProgressDialog> builder
 	) {
-		ProgressDialog dialog = new ProgressDialog(screen, title, future);
+		ProgressDialog dialog = new ProgressDialog(title, future);
 		if (builder != null) builder.accept(dialog);
 		return dialog;
 	}
 	
 	protected ProgressDialog(
-	  IOverlayCapableScreen screen, ITextComponent title, CompletableFuture<?> future
+	  ITextComponent title, CompletableFuture<?> future
 	) {
-		super(screen, title);
+		super(title);
 		this.future = future;
 		setCancelButtonTint(0x80BD2424);
 		removeButton(confirmButton);
@@ -67,6 +69,11 @@ public class ProgressDialog extends ConfirmDialog {
 		if (future != null) {
 			future.cancel(true);
 			future = null;
+		}
+		if (success) {
+			AbstractDialog next = successDialog.get();
+			if (next != null)
+				getScreen().addDialog(next);
 		}
 	}
 	
@@ -110,14 +117,14 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override protected void layout() {
-		w = (int) MathHelper.clamp(screen.width * 0.7, 120, 800);
+		w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
 		final int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
-			w = min(screen.width - 32, titleWidth + 16);
+			w = min(getScreen().width - 32, titleWidth + 16);
 		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
 		h = (int) MathHelper.clamp(64 + lines.stream().reduce(
 			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
-				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96, screen.height * 0.9);
+				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96, getScreen().height * 0.9);
 		super.layout();
 		int bw = min(150, (w - 12) / 2);
 		cancelButton.setWidth(bw);
@@ -187,6 +194,24 @@ public class ProgressDialog extends ConfirmDialog {
 	 */
 	public void setCloseOnExceptions(boolean closeOnExceptions) {
 		this.closeOnExceptions = closeOnExceptions;
+	}
+	
+	/**
+	 * Set a dialog to be displayed on success.<br>
+	 * On error, the progress dialog itself will display the error, unless
+	 * isCloseOnExceptions is set to true.
+	 */
+	public void setSuccessDialog(@Nullable AbstractDialog dialog) {
+		setSuccessDialog(() -> dialog);
+	}
+	
+	/**
+	 * Set a dialog to be displayed on success.<br>
+	 * On error, the progress dialog itself will display the error, unless
+	 * isCloseOnExceptions is set to true.
+	 */
+	public void setSuccessDialog(Supplier<@Nullable AbstractDialog> dialogSupplier) {
+		this.successDialog = dialogSupplier;
 	}
 	
 	@Nullable public List<ITextComponent> getError() {

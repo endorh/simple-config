@@ -1,28 +1,28 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 public abstract class AbstractSerializableEntry
   <V, Self extends AbstractSerializableEntry<V, Self>>
   extends AbstractConfigEntry<V, String, String, Self>
-  implements IKeyEntry<String, String> {
+  implements IKeyEntry<String> {
 	
 	public AbstractSerializableEntry(
 	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
@@ -81,7 +81,18 @@ public abstract class AbstractSerializableEntry
 	
 	@Override
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(builder.define(name, forConfig(value), createConfigValidator()));
+		return Optional.of(builder.define(name, forConfig(defValue), createConfigValidator()));
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String typeComment = getTypeComment();
+		if (typeComment != null) tooltips.add(typeComment);
+		return tooltips;
+	}
+	
+	protected @Nullable String getTypeComment() {
+		return typeClass.getSimpleName();
 	}
 	
 	protected ITextFormatter getTextFormatter() {
@@ -99,7 +110,4 @@ public abstract class AbstractSerializableEntry
 		return Optional.of(decorate(valBuilder).build());
 	}
 	
-	@Override public Optional<String> deserializeStringKey(@NotNull String key) {
-		return Optional.of(key);
-	}
 }

@@ -1,12 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
 import com.electronwill.nightconfig.core.ConfigSpec;
-import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IErrorEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
+import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -15,9 +14,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -205,12 +205,29 @@ public abstract class AbstractListEntry
 		  .collect(Collectors.toList());
 	}
 	
+	protected @Nullable String getListTypeComment() {
+		return null;
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String typeComment = getListTypeComment();
+		if (typeComment != null) tooltips.add("List: " + typeComment);
+		return tooltips;
+	}
+	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).defineList(name, forConfig(value), this::validateElement));
+		return Optional.of(
+		  decorate(builder).defineListAllowEmpty(
+		    Collections.singletonList(name),
+		    () -> forConfig(defValue), this::validateElement
+		  ));
+		// return Optional.of(decorate(builder).defineList(name, forConfig(value), this::validateElement));
+		// defineListAllowEmpty
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
-		spec.defineList(parentPath + name, forConfig(value), this::validateElement);
+		spec.defineList(parentPath + name, forConfig(defValue), this::validateElement);
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <F extends ListFieldBuilder<Gui, ?, F>> F decorate(F builder) {
@@ -220,9 +237,5 @@ public abstract class AbstractListEntry
 		  .setCaptionControlsEnabled(false)
 		  .setInsertInFront(false);
 		return builder;
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass, new ExpectedType(innerType));
 	}
 }

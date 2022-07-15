@@ -3,8 +3,8 @@ package endorh.simpleconfig.core;
 import com.google.gson.internal.Primitives;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;

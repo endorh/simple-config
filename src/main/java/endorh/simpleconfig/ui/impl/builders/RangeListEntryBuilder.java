@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.impl.builders;
 
+import endorh.simpleconfig.core.AbstractRange;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.entries.RangeListEntry;
-import endorh.simpleconfig.core.AbstractRange;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

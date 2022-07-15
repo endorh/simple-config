@@ -20,8 +20,6 @@ import java.util.List;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
-
 public class TripleListEntry<
   L, M, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
   ME extends AbstractConfigEntry<M> & IChildListEntry,

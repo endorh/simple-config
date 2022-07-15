@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.block.Block;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.ResourceLocation;
@@ -13,8 +13,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -31,6 +31,10 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 	  @Nullable ResourceLocation value
 	) {
 		super(parent, name, value != null ? value : new ResourceLocation(""));
+	}
+	
+	@Override protected @Nullable String getTypeComment() {
+		return "Block";
 	}
 	
 	public static class Builder extends AbstractResourceEntry.Builder<BlockNameEntry, Builder> {
@@ -57,7 +61,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		
 		@Override
 		protected BlockNameEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().type != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {

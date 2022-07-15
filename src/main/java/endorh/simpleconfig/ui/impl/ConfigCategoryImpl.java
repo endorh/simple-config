@@ -5,6 +5,7 @@ import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -28,7 +29,8 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
 	protected boolean isServer;
-	protected int color;
+	protected Icon icon = Icon.EMPTY;
+	protected int color = 0;
 	
 	ConfigCategoryImpl(ConfigBuilder builder, String name, boolean isServer) {
 		this.builder = builder;
@@ -91,6 +93,13 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	}
 	@Override public int getColor() {
 		return color;
+	}
+	
+	@Override public void setIcon(Icon icon) {
+		this.icon = icon;
+	}
+	@Override public Icon getIcon() {
+		return icon;
 	}
 	
 	@Override public int getSortingOrder() {

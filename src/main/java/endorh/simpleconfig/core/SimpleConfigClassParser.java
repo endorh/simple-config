@@ -12,8 +12,8 @@ import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
@@ -259,6 +259,7 @@ public class SimpleConfigClassParser {
 					if (field.isAnnotationPresent(annotationClass)) {
 						final Map<Class<?>, List<FieldEntryParser<?, ?>>> parsers = PARSERS.get(annotationClass);
 						final Class<?> fieldClass = field.getType();
+						boolean match = false;
 						for (Class<?> clazz : parsers.keySet()) {
 							if (clazz.isInstance(value) || clazz.isAssignableFrom(fieldClass)) {
 								Annotation annotation = field.getAnnotation(annotationClass);
@@ -271,24 +272,26 @@ public class SimpleConfigClassParser {
 											throw new SimpleConfigClassParseException(
 											  builder, "Cannot create entry with name " + name + ". The name is already used.");
 										entryBuilder = decorateEntry(entryBuilder, configClass, field);
-										builder.add(getOrder(field), name, entryBuilder);
 										BackingFieldBuilder<?, ?> fieldBuilder = entryBuilder.backingFieldBuilder;
 										if (fieldBuilder == null) throw new SimpleConfigClassParseException(builder,
 										  "Config entry generated from field does not support backing fields");
-										try {
-											BackingField<?, ?> backingField = fieldBuilder.build(field);
-											builder.setBackingField(name, backingField);
-										} catch (SimpleConfigClassParseException e) {
-											throw new SimpleConfigClassParseException(builder,
-											  "Backing field for config entry generated from field \"" +
-											  getFieldName(field) + "\" doesn't match its expected type.");
+										if (!fieldBuilder.matchesType(field)) {
+											match = true;
+											continue;
 										}
+										BackingField<?, ?> backingField = fieldBuilder.build(field);
+										builder.add(getOrder(field), name, entryBuilder);
+										builder.setBackingField(name, backingField);
 										continue parseFields;
 									}
 								}
 							}
 						}
-						throw new SimpleConfigClassParseException(builder,
+						if (match) {
+							throw new SimpleConfigClassParseException(builder,
+							  "Backing field for config entry generated from field \"" +
+							  getFieldName(field) + "\" doesn't match its expected type.");
+						} else throw new SimpleConfigClassParseException(builder,
 						  "Unsupported type for Config field " + getFieldName(field) + " with " +
 						  "annotation " + annotationClass.getName() + ": " + fieldTypeName);
 					}
@@ -350,7 +353,7 @@ public class SimpleConfigClassParser {
 					if (!Modifier.isStatic(baker.getModifiers()))
 						throw new SimpleConfigClassParseException(
 						  builder, "Found non-static bake method in config class " + className);
-					b.setBaker(c -> invoke(baker, null, errorMsg, c));
+					b.withBaker(c -> invoke(baker, null, errorMsg, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config class " + className + ", but the config " +
@@ -368,7 +371,7 @@ public class SimpleConfigClassParser {
 					  "Found non-static bake method in config category class " + className);
 				final String errorMsg = "Reflective error invoking config category baker method %s";
 				if (b.baker == null) {
-					b.setBaker(c -> invoke(baker, null, errorMsg, c));
+					b.withBaker(c -> invoke(baker, null, errorMsg, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config category class " + className + ", but the category " +
@@ -386,7 +389,7 @@ public class SimpleConfigClassParser {
 					  "Found non-static bake method in config group class " + className);
 				final String errorMsg = "Reflective error invoking config category baker method %s";
 				if (b.baker == null) {
-					b.setBaker(c -> invoke(baker, null, errorMsg, c));
+					b.withBaker(c -> invoke(baker, null, errorMsg, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config group class " + className + ", but the group " +

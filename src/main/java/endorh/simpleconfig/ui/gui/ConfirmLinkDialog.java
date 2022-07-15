@@ -16,27 +16,27 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	protected String link;
 	
 	public static ConfirmLinkDialog create(
-	  String link, IOverlayCapableScreen screen, boolean securityWarning
+	  String link, boolean securityWarning
 	) {
-		return create(link, screen, securityWarning, null);
+		return create(link, securityWarning, null);
 	}
 	
 	public static ConfirmLinkDialog create(
-	  String link, IOverlayCapableScreen screen, boolean securityWarning,
+	  String link, boolean securityWarning,
 	  @Nullable Consumer<ConfirmLinkDialog> builder
 	) {
-		ConfirmLinkDialog dialog = new ConfirmLinkDialog(link, screen, securityWarning);
+		ConfirmLinkDialog dialog = new ConfirmLinkDialog(link, securityWarning);
 		if (builder != null) builder.accept(dialog);
 		return dialog;
 	}
 	
 	public ConfirmLinkDialog(
-	  String link, IOverlayCapableScreen screen, boolean securityWarning
+	  String link, boolean securityWarning
 	) {
 		this(link, new TranslationTextComponent("chat.link.confirmTrusted"),
 		     Lists.newArrayList(), DialogTexts.GUI_CANCEL,
 		     new TranslationTextComponent("chat.copy"),
-		     new TranslationTextComponent("chat.link.open"), screen, securityWarning);
+		     new TranslationTextComponent("chat.link.open"), securityWarning);
 	}
 	
 	protected IFormattableTextComponent formatLink(String link) {
@@ -48,9 +48,9 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	public ConfirmLinkDialog(
 	  String link, ITextComponent title, List<ITextComponent> body,
 	  ITextComponent cancelText, ITextComponent copyText, ITextComponent confirmText,
-	  IOverlayCapableScreen screen, boolean securityWarning
+	  boolean securityWarning
 	) {
-		super(screen, title);
+		super(title);
 		setCancelText(cancelText);
 		setConfirmText(confirmText);
 		withAction(this::action);

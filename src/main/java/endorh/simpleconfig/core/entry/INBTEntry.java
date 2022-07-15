@@ -2,8 +2,8 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;

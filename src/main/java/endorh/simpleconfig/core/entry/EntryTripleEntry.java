@@ -1,38 +1,29 @@
 package endorh.simpleconfig.core.entry;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
-import endorh.simpleconfig.core.*;
-import endorh.simpleconfig.core.NBTUtil.ExpectedType;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Triple;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
 import java.util.List;
 import java.util.Optional;
 
-import static endorh.simpleconfig.core.NBTUtil.fromNBT;
-import static endorh.simpleconfig.core.NBTUtil.toNBT;
-
 public class EntryTripleEntry<
   L, M, R, LC, MC, RC, LG, MG, RG,
-  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
-  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MC, MG>,
-  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>
+  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
+  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>
 > extends AbstractConfigEntry<
   Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>,
   EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE>
-> implements IKeyEntry<Triple<LC, MC, RC>, Triple<LG, MG, RG>> {
+> implements IKeyEntry<Triple<LG, MG, RG>> {
 	protected final LE leftEntry;
 	protected final ME middleEntry;
 	protected final RE rightEntry;
@@ -54,9 +45,9 @@ public class EntryTripleEntry<
 	
 	public static class Builder<
 	  L, M, R, LC, MC, RC, LG, MG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LC, LG>,
-	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MC, MG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RC, RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
@@ -148,30 +139,35 @@ public class EntryTripleEntry<
 		}
 	}
 	
-	@Override public String forActualConfig(@Nullable Triple<LC, MC, RC> value) {
-		if (value == null) return "";
-		final CompoundNBT nbt = new CompoundNBT();
-		nbt.put("l", toNBT(value.getLeft()));
-		nbt.put("m", toNBT(value.getMiddle()));
-		nbt.put("r", toNBT(value.getRight()));
-		return nbt.toString();
+	@Override public Triple<Object, Object, Object> forActualConfig(@Nullable Triple<LC, MC, RC> value) {
+		if (value == null) return null;
+		return Triple.of(
+		  leftEntry.forActualConfig(value.getLeft()),
+		  middleEntry.forActualConfig(value.getMiddle()),
+		  rightEntry.forActualConfig(value.getRight()));
 	}
 	
-	@Nullable @Override protected Triple<LC, MC, RC> fromActualConfig(@Nullable Object value) {
-		if (!(value instanceof String)) return null;
-		final String str = (String) value;
-		try {
-			final CompoundNBT nbt = new JsonToNBT(new StringReader(str)).readStruct();
-			//noinspection unchecked
-			final LC left = (LC) fromNBT(nbt.get("l"), getExpectedType().next.get(0));
-			//noinspection unchecked
-			final MC middle = (MC) fromNBT(nbt.get("l"), getExpectedType().next.get(1));
-			//noinspection unchecked
-			final RC right = (RC) fromNBT(nbt.get("r"), getExpectedType().next.get(2));
-			return Triple.of(left, middle, right);
-		} catch (CommandSyntaxException | IllegalArgumentException | ClassCastException e) {
-			return null;
-		}
+	@Nullable @Override public Triple<LC, MC, RC> fromActualConfig(@Nullable Object value) {
+		LC left;
+		MC middle;
+		RC right;
+		if (value instanceof List<?>) {
+			List<?> list = (List<?>) value;
+			if (list.size() != 3) return null;
+			left = leftEntry.fromActualConfig(list.get(0));
+			middle = middleEntry.fromActualConfig(list.get(1));
+			right = rightEntry.fromActualConfig(list.get(2));
+		} else if (value instanceof Triple) {
+			final Triple<?, ?, ?> pair = (Triple<?, ?, ?>) value;
+			left = leftEntry.fromActualConfig(pair.getLeft());
+			middle = middleEntry.fromActualConfig(pair.getMiddle());
+			right = rightEntry.fromActualConfig(pair.getRight());
+		} else return null;
+		if (left == null && middle == null && right == null) return null;
+		if (left == null) left = leftEntry.forConfig(leftEntry.defValue);
+		if (middle == null) middle = middleEntry.forConfig(middleEntry.defValue);
+		if (right == null) right = rightEntry.forConfig(rightEntry.defValue);
+		return Triple.of(left, middle, right);
 	}
 	
 	@Override public List<ITextComponent> getErrors(Triple<LG, MG, RG> value) {
@@ -208,16 +204,19 @@ public class EntryTripleEntry<
 		               rightEntry.fromGuiOrDefault(value.getRight()));
 	}
 	
-	@Override public Optional<Triple<LC, MC, RC>> deserializeStringKey(@NotNull String key) {
-		return Optional.ofNullable(fromActualConfig(key));
-	}
-	
-	@Override public String serializeStringKey(@NotNull Triple<LC, MC, RC> key) {
-		return forActualConfig(key);
-	}
-	
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(value)), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String leftComment = leftEntry.getConfigCommentTooltip();
+		String middleComment = middleEntry.getConfigCommentTooltip();
+		String rightComment = rightEntry.getConfigCommentTooltip();
+		tooltips.add("Triple: " + (leftComment.isEmpty()? "?" : leftComment) + ", " +
+		             (middleComment.isEmpty()? "?" : middleComment) + ", " +
+		             (rightComment.isEmpty()? "?" : rightComment));
+		return tooltips;
 	}
 	
 	@Override public Optional<AbstractConfigListEntry<Triple<LG, MG, RG>>> buildGUIEntry(
@@ -232,12 +231,5 @@ public class EntryTripleEntry<
 		  .withIcons(leftIcon, rightIcon)
 		  .withWeights(leftWeight, rightWeight);
 		return Optional.of(decorate(entryBuilder).build());
-	}
-	
-	@Override public ExpectedType getExpectedType() {
-		return new ExpectedType(typeClass,
-		                        leftEntry.getExpectedType(),
-		                        middleEntry.getExpectedType(),
-		                        rightEntry.getExpectedType());
 	}
 }

@@ -1,11 +1,12 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.StringListBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,10 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 	public StringListEntry(
 	  ISimpleConfigEntryHolder parent, String name, List<String> value) {
 		super(parent, name, value);
+	}
+	
+	@Override protected @Nullable String getListTypeComment() {
+		return "Text";
 	}
 	
 	public static class Builder extends AbstractListEntry.Builder<String, String, String, StringListEntry, Builder> {

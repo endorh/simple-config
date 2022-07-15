@@ -74,7 +74,7 @@ public interface ModifierKeyCode {
 		}
 	}
 	
-	default String toConfig() {
+	default String serializedName() {
 		StringBuilder mod = new StringBuilder();
 		if (getModifier().hasControl())
 			mod.append("ctrl+");
@@ -82,7 +82,20 @@ public interface ModifierKeyCode {
 			mod.append("alt+");
 		if (getModifier().hasShift())
 			mod.append("shift+");
-		return mod.append(getKeyCode().getTranslationKey()).toString();
+		return mod.append(getPrettySerializedKeyName()).toString();
+	}
+	
+	default String getSerializedKeyName() {
+		return getKeyCode().getTranslationKey();
+	}
+	
+	default String getPrettySerializedKeyName() {
+		String keyName = getSerializedKeyName();
+		if (keyName.startsWith("key.keyboard."))
+			keyName = keyName.substring("key.keyboard.".length());
+		else if (keyName.startsWith("key.mouse."))
+			keyName = keyName.substring("key.".length());
+		return keyName;
 	}
 	
 	InputMappings.Input getKeyCode();

@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.impl;
 
+import endorh.simpleconfig.core.AbstractRange;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.*;
-import endorh.simpleconfig.core.AbstractRange;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;

@@ -1,12 +1,6 @@
 package endorh.simpleconfig.core;
 
-import com.google.common.collect.Lists;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
-import endorh.simpleconfig.ui.impl.builders.SelectorBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -17,14 +11,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
-  extends AbstractConfigEntry<V, C, V, SelectorEntry<V, C, G, E>> implements IKeyEntry<C, G> {
+@Deprecated public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>>
+  extends AbstractConfigEntry<V, C, V, SelectorEntry<V, C, G, E>> implements IKeyEntry<G> {
 	
 	protected E entry;
 	protected Function<V, ITextComponent> nameProvider;
@@ -40,7 +32,7 @@ public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & 
 		this.entry = entry;
 	}
 	
-	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<C, G>>
+	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>>
 	  extends AbstractConfigEntryBuilder<V, C, V, SelectorEntry<V, C, G, E>, Builder<V, C, G, E>> {
 		
 		protected final AbstractConfigEntryBuilder<V, C, ?, E, ?> builder;
@@ -121,10 +113,10 @@ public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & 
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(
 	  ForgeConfigSpec.Builder builder
 	) {
-		return Optional.of(decorate(builder).define(name, forConfig(value), createConfigValidator()));
+		return Optional.of(decorate(builder).define(name, forConfig(defValue), createConfigValidator()));
 	}
 	
-	@Override protected ForgeConfigSpec.Builder decorate(
+	/*@Override protected ForgeConfigSpec.Builder decorate(
 	  ForgeConfigSpec.Builder builder
 	) {
 		builder = super.decorate(builder);
@@ -133,7 +125,7 @@ public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & 
 		  choices.length > max? ", ... (omitted " + (choices.length - max) + " more)" : "";
 		Function<V, String> serializer = c -> entry.serializeStringKey(forConfig(c));
 		builder.comment(
-		  " Allowed values: " + Arrays.stream(ArrayUtils.subarray(choices, 0, max))
+		  " Options: " + Arrays.stream(ArrayUtils.subarray(choices, 0, max))
 		    .map(c -> "\"" + serializer.apply(c) + "\"").collect(Collectors.joining(", "))
 		  + omittedSuffix);
 		return builder;
@@ -157,7 +149,7 @@ public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & 
 			  .setNameProvider(nameProvider);
 			return Optional.of(decorate(valBuilder).build());
 		}
-	}
+	}*/
 	
 	public static class TypeWrapper<V> implements ITypeWrapper<V> {
 		protected List<V> choices;
@@ -189,11 +181,4 @@ public class SelectorEntry<V, C, G, E extends AbstractConfigEntry<V, C, G, E> & 
 		}
 	}
 	
-	@Override public Optional<C> deserializeStringKey(@NotNull String key) {
-		return entry.deserializeStringKey(key);
-	}
-	
-	@Override public String serializeStringKey(@NotNull C key) {
-		return entry.serializeStringKey(key);
-	}
 }

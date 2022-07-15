@@ -1,23 +1,25 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
-import endorh.simpleconfig.ui.api.ConfigCategory;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
-import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
+import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
+
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
 
 public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implements IGUIEntry {
 	public final SimpleConfigCategory category;
@@ -66,7 +68,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
-		if (heldEntry != null && !(heldEntry instanceof IKeyEntry<?, ?>))
+		if (heldEntry != null && !(heldEntry instanceof IKeyEntry<?>))
 			throw new IllegalArgumentException(
 			  "Held entry for group " + getPath() + " doesn't implement IKeyEntry");
 		this.entries = entries;
@@ -85,6 +87,21 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@Override protected String getName() {
 		return name;
+	}
+	
+	@Override protected String getConfigComment() {
+		StringBuilder builder = new StringBuilder();
+		if (title != null && I18n.hasKey(title)) {
+			String name = stripFormattingCodes(
+			  I18n.format(title).trim());
+			builder.append(name).append('\n');
+			if (tooltip != null && I18n.hasKey(tooltip)) {
+				String tooltip = "  " + stripFormattingCodes(
+				  I18n.format(this.tooltip).trim().replace("\n", "\n  "));
+				builder.append(tooltip).append('\n');
+			}
+		}
+		return builder.toString();
 	}
 	
 	/**
@@ -218,7 +235,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	}
 	
 	private <
-	  T, CE extends AbstractConfigEntry<?, ?, T, ?> & IKeyEntry<?, T>
+	  T, CE extends AbstractConfigEntry<?, ?, T, ?> & IKeyEntry<T>
 	> CaptionedSubCategoryBuilder<T, ?> createAndDecorateGUI(
 	  ConfigEntryBuilder entryBuilder, AbstractConfigEntry<?, ?, ?, ?> heldEntry
 	) {

@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.api;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
-import net.minecraft.client.gui.AbstractGui;
 
 import static java.lang.Math.min;
 import static net.minecraft.client.gui.AbstractGui.fill;

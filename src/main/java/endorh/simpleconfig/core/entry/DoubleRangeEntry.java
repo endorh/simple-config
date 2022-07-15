@@ -1,11 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;

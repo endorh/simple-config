@@ -50,21 +50,21 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	public static ConfirmDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title
+	  ITextComponent title
 	) {
-		return create(screen, title, d -> {});
+		return create(title, d -> {});
 	}
 	
 	public static ConfirmDialog create(
-	  IOverlayCapableScreen screen, ITextComponent title, Consumer<ConfirmDialog> builder
+	  ITextComponent title, Consumer<ConfirmDialog> builder
 	) {
-		ConfirmDialog dialog = new ConfirmDialog(screen, title);
+		ConfirmDialog dialog = new ConfirmDialog(title);
 		builder.accept(dialog);
 		return dialog;
 	}
 	
-	protected ConfirmDialog(IOverlayCapableScreen screen, ITextComponent title) {
-		super(screen, title);
+	protected ConfirmDialog(ITextComponent title) {
+		super(title);
 		cancelButton = TintedButton.of(120, 20, DialogTexts.GUI_CANCEL, p -> cancel());
 		confirmButton = TintedButton.of(120, 20, DialogTexts.GUI_PROCEED, p -> confirm());
 		addButton(cancelButton);
@@ -107,12 +107,12 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void layout() {
-		w = (int) MathHelper.clamp(screen.width * 0.7, 120, 800);
+		w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
 		final int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
-			w = min(screen.width - 32, titleWidth + 16);
+			w = min(getScreen().width - 32, titleWidth + 16);
 		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
-		h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, screen.height * 0.9);
+		h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, getScreen().height * 0.9);
 		super.layout();
 	}
 	
