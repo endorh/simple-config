@@ -6,13 +6,11 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, IntegerListEntry> {
 	@Internal
@@ -69,13 +67,6 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 	@Override
 	protected Integer elemFromConfig(Number value) {
 		return value != null? value.intValue() : null;
-	}
-	
-	@Override
-	protected List<Integer> get(ConfigValue<?> spec) {
-		//noinspection unchecked
-		return ((List<Number>) (List<?>) super.get(spec))
-		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override

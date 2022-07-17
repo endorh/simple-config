@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import net.minecraft.client.gui.FocusableGui;
@@ -29,7 +30,7 @@ public class SelectionToolbar extends FocusableGui {
 		this.x = x;
 		this.y = y;
 		resetButton = new MultiFunctionImageButton(
-		  x, y, 20, 20, SimpleConfigIcons.RESET_GROUP, ButtonAction.of(
+		  x, y, 20, 20, Buttons.RESET_GROUP, ButtonAction.of(
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
 		    .filter(AbstractConfigEntry::isResettable)
 		    .forEach(AbstractConfigEntry::resetValue))
@@ -38,7 +39,7 @@ public class SelectionToolbar extends FocusableGui {
 		    .anyMatch(AbstractConfigEntry::isResettable)));
 		addButton(resetButton);
 		restoreButton = new MultiFunctionImageButton(
-		  x, y, 20, 20, SimpleConfigIcons.RESTORE_GROUP, ButtonAction.of(
+		  x, y, 20, 20, Buttons.RESTORE_GROUP, ButtonAction.of(
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
 		    .filter(AbstractConfigEntry::isRestorable)
 		    .forEach(AbstractConfigEntry::restoreValue))
@@ -47,7 +48,7 @@ public class SelectionToolbar extends FocusableGui {
 		    .anyMatch(AbstractConfigEntry::isRestorable)));
 		addButton(restoreButton);
 		acceptButton = new MultiFunctionImageButton(
-		  x, y, 20, 20, SimpleConfigIcons.MERGE_ACCEPT_GROUP, ButtonAction.of(
+		  x, y, 20, 20, Buttons.MERGE_ACCEPT_GROUP, ButtonAction.of(
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries()
 			   .forEach(AbstractConfigEntry::isSelected))
 		).tooltip(new TranslationTextComponent("simpleconfig.ui.merge.accept.selected"))

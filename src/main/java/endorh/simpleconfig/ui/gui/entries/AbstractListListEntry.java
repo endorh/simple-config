@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +27,9 @@ import java.util.stream.Collectors;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, SELF>, SELF extends AbstractListListEntry<T, C, SELF>>
   extends BaseListEntry<T, C, SELF> {
-	protected Function<T, Optional<ITextComponent>> cellErrorSupplier = t -> Optional.empty();
+	protected BiFunction<Integer, T, Optional<ITextComponent>> cellErrorSupplier = (i, t) -> Optional.empty();
+	protected Function<List<T>, @Nullable List<Optional<ITextComponent>>> multiCellErrorSupplier = l -> null;
+	protected @Nullable List<Optional<ITextComponent>> multiCellErrors = null;
 	
 	@Internal public AbstractListListEntry(
 	  ITextComponent fieldName, List<T> value, Function<SELF, C> createNewCell
@@ -37,15 +40,31 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		setDisplayedValue(value);
 	}
 	
-	public Function<T, Optional<ITextComponent>> getCellErrorSupplier() {
+	public BiFunction<Integer, T, Optional<ITextComponent>> getCellErrorSupplier() {
 		return this.cellErrorSupplier;
 	}
 	
-	public void setCellErrorSupplier(Function<T, Optional<ITextComponent>> cellErrorSupplier) {
+	public void setCellErrorSupplier(BiFunction<Integer, T, Optional<ITextComponent>> cellErrorSupplier) {
 		this.cellErrorSupplier = cellErrorSupplier;
 		final List<T> value = getValue();
 		setValue(value);
 		setDisplayedValue(value);
+	}
+	
+	public Function<List<T>, List<Optional<ITextComponent>>> getMultiCellErrorSupplier() {
+		return multiCellErrorSupplier;
+	}
+	
+	public void setMultiCellErrorSupplier(Function<List<T>, @Nullable List<Optional<ITextComponent>>> multiCellErrorSupplier) {
+		this.multiCellErrorSupplier = multiCellErrorSupplier;
+		final List<T> value = getValue();
+		setValue(value);
+		setDisplayedValue(value);
+	}
+	
+	@Override public void tick() {
+		super.tick();
+		multiCellErrors = multiCellErrorSupplier.apply(getValue());
 	}
 	
 	@Override protected C createCellWithValue(T value) {
@@ -63,11 +82,12 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		protected String matchedText = null;
 		protected Rectangle rowArea = new Rectangle();
 		private INavigableTarget lastSelectedSubTarget;
+		private int index = -1;
 		
 		public AbstractListCell(ListEntry listEntry) {
 			this.listEntry = listEntry;
 			this.setErrorSupplier(() -> Optional.ofNullable(listEntry.cellErrorSupplier)
-			  .flatMap(cellErrorFn -> cellErrorFn.apply(this.getValue())));
+			  .flatMap(cellErrorFn -> cellErrorFn.apply(index, this.getValue())));
 		}
 		
 		protected ListEntry getListEntry() {
@@ -98,6 +118,28 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 			return rowArea;
 		}
 		
+		protected int getIndex() {
+			return index;
+		}
+		
+		@Override public final void onAdd() {
+			super.onAdd();
+			//noinspection SuspiciousMethodCalls
+			index = listEntry.cells.indexOf(this);
+			onAdd(index);
+		}
+		
+		public void onAdd(int index) {}
+		
+		@Override public final void onMove() {
+			super.onMove();
+			//noinspection SuspiciousMethodCalls
+			index = listEntry.cells.indexOf(this);
+			onMove(index);
+		}
+		
+		public void onMove(int index) {}
+		
 		@Override public Rectangle getNavigableArea() {
 			return rowArea;
 		}
@@ -108,6 +150,14 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		
 		@Override public void setLastSelectedNavigableSubTarget(@Nullable INavigableTarget target) {
 			lastSelectedSubTarget = target;
+		}
+		
+		@Override public List<EntryError> getErrors() {
+			List<EntryError> errors = super.getErrors();
+			List<Optional<ITextComponent>> multi = listEntry.multiCellErrors;
+			if (multi != null && index >= 0 && index < multi.size())
+				multi.get(index).ifPresent(e -> errors.add(EntryError.of(e, this)));
+			return errors;
 		}
 		
 		@Override public void renderCell(

@@ -10,7 +10,7 @@ import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.Icon;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -52,7 +52,7 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	public ResetButton(AbstractConfigEntry<?> entry) {
 		super(
-		  0, 0, 20, 20, SimpleConfigIcons.RESET, ButtonAction.of(b -> {}),
+		  0, 0, 20, 20, Buttons.RESET, ButtonAction.of(b -> {}),
 		  NarratorChatListener.EMPTY);
 		this.entry = entry;
 		defaultActivePredicate = this::shouldBeActive;
@@ -101,8 +101,8 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	protected Icon getIcon() {
 		return isRestore()?
-		       isGroup()? SimpleConfigIcons.RESTORE_GROUP : SimpleConfigIcons.RESTORE :
-		       isGroup()? SimpleConfigIcons.RESET_GROUP : SimpleConfigIcons.RESET;
+		       isGroup()? Buttons.RESTORE_GROUP : Buttons.RESTORE :
+		       isGroup()? Buttons.RESET_GROUP : Buttons.RESET;
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -244,12 +244,12 @@ public class ResetButton extends MultiFunctionImageButton
 		if (dragging) {
 			defaultIcon.renderStretch(mStack, x, y, width, height, 0);
 			if (Minecraft.getInstance().fontRenderer.getBidiFlag()) {
-				SimpleConfigIcons.CONFIRM_DRAG_LEFT.renderStretch(mStack, x + width, y, 40, 20);
+				Buttons.CONFIRM_DRAG_RIGHT.renderStretch(mStack, x + width, y, 40, 20);
 				defaultIcon.renderStretch(mStack, x + width + 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
 					fill(mStack, x + width, y, x + 2 * width + 40, y + height, 0x64FF4242);
 			} else {
-				SimpleConfigIcons.CONFIRM_DRAG_RIGHT.renderStretch(mStack, x - 40, y, 40, 20);
+				Buttons.CONFIRM_DRAG_LEFT.renderStretch(mStack, x - 40, y, 40, 20);
 				defaultIcon.renderStretch(mStack, x - width - 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
 					fill(mStack, x - 40, y, x + width, y + height, 0x64FF4242);

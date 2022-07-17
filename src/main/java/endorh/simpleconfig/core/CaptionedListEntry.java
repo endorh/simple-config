@@ -15,8 +15,6 @@ import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,10 +99,10 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		return null;
 	}
 	
-	@Override public List<ITextComponent> getErrors(Pair<CG, List<G>> value) {
-		List<ITextComponent> errors = super.getErrors(value);
-		errors.addAll(captionEntry.getErrors(value.getKey()));
-		errors.addAll(listEntry.getErrors(value.getValue()));
+	@Override public List<ITextComponent> getErrorsFromGUI(Pair<CG, List<G>> value) {
+		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+		errors.addAll(captionEntry.getErrorsFromGUI(value.getKey()));
+		errors.addAll(listEntry.getErrorsFromGUI(value.getValue()));
 		return errors;
 	}
 	
@@ -117,8 +115,9 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	
 	@Nullable @Override public Pair<CV, List<V>> fromConfig(@Nullable Pair<CC, List<C>> value) {
 		if (value == null) return null;
-		return Pair.of(captionEntry.fromConfigOrDefault(value.getKey()),
-		               listEntry.fromConfigOrDefault(value.getValue()));
+		CV caption = captionEntry.fromConfig(value.getKey());
+		List<V> list = listEntry.fromConfig(value.getValue());
+		return caption != null && list != null? Pair.of(caption, list) : null;
 	}
 	
 	@Override public Pair<CG, List<G>> forGui(Pair<CV, List<V>> value) {
@@ -128,8 +127,9 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	
 	@Nullable @Override public Pair<CV, List<V>> fromGui(@Nullable Pair<CG, List<G>> value) {
 		if (value == null) return null;
-		return Pair.of(captionEntry.fromGuiOrDefault(value.getKey()),
-		               listEntry.fromGuiOrDefault(value.getValue()));
+		CV caption = captionEntry.fromGui(value.getKey());
+		List<V> list = listEntry.fromGui(value.getValue());
+		return caption != null && list != null? Pair.of(caption, list) : null;
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {
@@ -138,10 +138,6 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		if (!captionTooltip.isEmpty()) tooltips.add("Caption: " + captionTooltip);
 		tooltips.addAll(listEntry.getConfigCommentTooltips());
 		return tooltips;
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <LGE extends AbstractListListEntry<G, ?, LGE>,

@@ -1,11 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,10 +15,8 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public interface ITypeWrapper<T> {
-	Icon ICON_ERROR = new Icon(new ResourceLocation(
-	  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"), 96, 84, 20, 20, 256, 256);
-	Icon ICON_UNKNOWN = new Icon(new ResourceLocation(
-	  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"), 96, 64, 20, 20, 256, 256);
+	Icon ICON_ERROR = SimpleConfigIcons.ComboBox.ERROR;
+	Icon ICON_UNKNOWN = SimpleConfigIcons.ComboBox.UNKNOWN;
 	
 	/**
 	 * Whether this type has an icon to display in combo boxes<br>

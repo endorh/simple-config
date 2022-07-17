@@ -16,7 +16,7 @@ public class Icon {
 	 * The empty icon. Draws nothing.
 	 */
 	public static final Icon EMPTY = new Icon(
-	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/empty"),
+	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/empty"),
 	  0, 0, 0, 0, 0, 0
 	) { // @formatter:off
 		@Override public void renderCentered(MatrixStack m, int x, int y, int w, int h, int level) {}
@@ -212,6 +212,8 @@ public class Icon {
 	
 	public static class IconBuilder {
 		private ResourceLocation location;
+		private int ou = 0;
+		private int ov = 0;
 		private int tw = 256;
 		private int th = 256;
 		private int lX = Integer.MAX_VALUE;
@@ -221,45 +223,68 @@ public class Icon {
 		private boolean twoLevel = false;
 		
 		public static IconBuilder ofTexture(
-		  ResourceLocation location, int textureWidth, int textureHeight
+		  ResourceLocation location, int width, int height
 		) {
-			return new IconBuilder(location).withTexture(location, textureWidth, textureHeight);
+			return new IconBuilder(location).texture(location, width, height);
 		}
 		
 		private IconBuilder(ResourceLocation location) {
 			this.location = location;
 		}
 		
-		public IconBuilder withTexture(ResourceLocation location, int textureWidth, int textureHeight) {
+		/**
+		 * Change the texture of the icons.
+		 */
+		public IconBuilder texture(ResourceLocation location, int width, int height) {
 			this.location = location;
-			this.tw = textureWidth;
-			this.th = textureHeight;
+			this.tw = width;
+			this.th = height;
 			return this;
 		}
 		
-		public IconBuilder withSize(int w, int h) {
+		/**
+		 * Change the size of the icons.
+		 */
+		public IconBuilder size(int w, int h) {
 			this.w = w;
 			this.h = h;
 			return this;
 		}
 		
-		public IconBuilder withLevelOffset(Integer lX, Integer lY) {
+		/**
+		 * Change the offset used for icon levels.<br>
+		 * If both offsets are set to null, the offset defaults to a vertical offset
+		 * equal to the height.
+		 */
+		public IconBuilder level(Integer lX, Integer lY) {
 			this.lX = lX != null? lX : Integer.MAX_VALUE;
 			this.lY = lY != null? lY : Integer.MAX_VALUE;
 			return this;
 		}
 		
+		/**
+		 * Mark icons as only having two levels, for button rendering.
+		 */
 		public IconBuilder twoLevel(boolean twoLevel) {
 			this.twoLevel = twoLevel;
 			return this;
 		}
 		
-		public Icon create(int u, int v) {
-			return new Icon(location, u, v, w, h, lX, lY, tw, th, twoLevel, 0);
+		/**
+		 * Change the offset applied to all created icons
+		 */
+		public IconBuilder offset(int ox, int oy) {
+			this.ou = ox;
+			this.ov = oy;
+			return this;
 		}
 		
-		public Icon create(int u, int v, int w, int h) {
-			return new Icon(location, u, v, w, h, lX, lY, tw, th, twoLevel, 0);
+		/**
+		 * Create an icon at the given coordinates.<br>
+		 * The coordinates are relative to the current {@link #offset}
+		 */
+		public Icon at(int u, int v) {
+			return new Icon(location, ou + u, ov + v, w, h, lX, lY, tw, th, twoLevel, 0);
 		}
 	}
 }

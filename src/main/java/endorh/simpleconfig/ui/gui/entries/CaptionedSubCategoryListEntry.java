@@ -66,7 +66,7 @@ public class CaptionedSubCategoryListEntry<
 			expandedChildren = Lists.newArrayList(label, resetButton);
 			expandedChildren.addAll(entries);
 		}
-		acceptButton.setDefaultIcon(SimpleConfigIcons.MERGE_ACCEPT_GROUP);
+		acceptButton.setDefaultIcon(SimpleConfigIcons.Buttons.MERGE_ACCEPT_GROUP);
 	}
 	
 	@Override public boolean isExpanded() {
@@ -149,7 +149,7 @@ public class CaptionedSubCategoryListEntry<
 		label.setFocused(isFocused() && getListener() == label);
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-		SimpleConfigIcons.Entries.GROUP_PLUS.renderCentered(
+		SimpleConfigIcons.Entries.EXPAND.renderCentered(
 		  mStack, x - 15, y + 5, 9, 9,
 		  (label.area.contains(mouseX, mouseY) ? 2 : 0) + (isExpanded() ? 1 : 0));
 		final boolean animating = expandAnimator.isInProgress();

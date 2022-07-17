@@ -90,7 +90,7 @@ public class DemoConfigCategory {
 		return category("demo", DemoConfigCategory.class)
 		  // Categories may have an icon and a color, which are used in its tab button
 		  //   when more than one category is available.
-		  .withIcon(SimpleConfigIcons.INFO)
+		  .withIcon(SimpleConfigIcons.Status.INFO)
 		  .withColor(0x80607080)
 		  // Categories can also have an associated background
 		  //   The whole config may also define a default background
@@ -247,7 +247,7 @@ public class DemoConfigCategory {
 		            //   make your config too complex to use
 		            // Each list builder can specify the default for its level
 		            .add("slider_list_list", list(
-						  list(number(0F, 0, 1).slider(), asList(0F)),
+						  list(number(0F, 0, 10).slider(), asList(0F)),
 						  asList(asList(0F, 1F), asList(2F, 3F))))
 		            // Additionally, list types can hold another entry of
 		            //   non-expandable types by using caption()

@@ -51,6 +51,9 @@ import org.jetbrains.annotations.Nullable;
 	@Override public <G> G getGUI(String path) {
 		throw new UnsupportedOperationException();
 	}
+	@Override public <V> V getFromGUI(String path) {
+		throw new UnsupportedOperationException();
+	}
 	@Override public <G> void doSetGUI(String path, G value) {
 		throw new UnsupportedOperationException();
 	}

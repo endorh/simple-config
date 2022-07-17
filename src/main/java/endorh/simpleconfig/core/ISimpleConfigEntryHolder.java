@@ -43,14 +43,14 @@ public interface ISimpleConfigEntryHolder {
 	 * @param <T> Expected type of the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type does not match the expected
-	 * @see ISimpleConfigEntryHolder#getBoolean(String)
-	 * @see ISimpleConfigEntryHolder#getChar(String)
-	 * @see ISimpleConfigEntryHolder#getByte(String)
-	 * @see ISimpleConfigEntryHolder#getShort(String)
-	 * @see ISimpleConfigEntryHolder#getInt(String)
-	 * @see ISimpleConfigEntryHolder#getLong(String)
-	 * @see ISimpleConfigEntryHolder#getFloat(String)
-	 * @see ISimpleConfigEntryHolder#getDouble(String)
+	 * @see #getBoolean(String)
+	 * @see #getChar(String)
+	 * @see #getByte(String)
+	 * @see #getShort(String)
+	 * @see #getInt(String)
+	 * @see #getLong(String)
+	 * @see #getFloat(String)
+	 * @see #getDouble(String)
 	 */
 	<T> T get(String path);
 	
@@ -71,8 +71,34 @@ public interface ISimpleConfigEntryHolder {
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value does not match
 	 *         the expected
+	 * @see #getGUIBoolean(String)
+	 * @see #getGUIByte(String)
+	 * @see #getGUIShort(String)
+	 * @see #getGUIInt(String)
+	 * @see #getGUILong(String)
+	 * @see #getGUIFloat(String)
+	 * @see #getGUIDouble(String)
+	 * @see #getGUIChar(String)
 	 */
 	<G> G getGUI(String path);
+	
+	/**
+	 * Get the current candidate value in the config GUI, translated to the actual
+	 * type of this entry (if they're different).<br>
+	 * To retrieve a numeric primitive value use instead the variant methods.
+	 * @param path Name or dot-separated path to the value
+	 * @throws NoSuchConfigEntryError if the value is not found
+	 * @throws InvalidConfigValueTypeException if the value does not match the expected
+	 * @see #getBooleanFromGUI(String)
+	 * @see #getByteFromGUI(String)
+	 * @see #getShortFromGUI(String)
+	 * @see #getIntFromGUI(String)
+	 * @see #getLongFromGUI(String)
+	 * @see #getFloatFromGUI(String)
+	 * @see #getDoubleFromGUI(String)
+	 * @see #getCharFromGUI(String)
+	 */
+	<V> V getFromGUI(String path);
 	
 	/**
 	 * Internal generic setter<br>
@@ -154,7 +180,7 @@ public interface ISimpleConfigEntryHolder {
 	/**
 	 * Mark this entry holder as dirty<br>
 	 * When the config screen is saved, only config files containing dirty entries are updated
-	 * @see ISimpleConfigEntryHolder#isDirty
+	 * @see #isDirty
 	 */
 	default ISimpleConfigEntryHolder markDirty() {
 		markDirty(true);
@@ -165,13 +191,13 @@ public interface ISimpleConfigEntryHolder {
 	 * Mark this entry holder as dirty or clean<br>
 	 * The dirty state is propagated to all ancestors<br>
 	 * The clean state is propagated to all descendants<br>
-	 * @see ISimpleConfigEntryHolder#isDirty
+	 * @see #isDirty
 	 */
 	void markDirty(boolean dirty);
 	
 	/**
 	 * Returns {@code true} if marked as dirty.
-	 * @see ISimpleConfigEntryHolder#markDirty
+	 * @see #markDirty
 	 */
 	boolean isDirty();
 	
@@ -180,7 +206,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not boolean
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default boolean getBoolean(String path) {
 		return this.<Boolean>get(path);
@@ -192,7 +218,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default char getChar(String path) {
 		return this.<Character>get(path);
@@ -203,7 +229,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default byte getByte(String path) {
 		return this.<Number>get(path).byteValue();
@@ -214,7 +240,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default short getShort(String path) {
 		return this.<Number>get(path).shortValue();
@@ -225,7 +251,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default int getInt(String path) {
 		return this.<Number>get(path).intValue();
@@ -236,7 +262,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not long
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default long getLong(String path) {
 		return this.<Number>get(path).longValue();
@@ -247,7 +273,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not float
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default float getFloat(String path) {
 		return this.<Number>get(path).floatValue();
@@ -258,7 +284,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not double
-	 * @see ISimpleConfigEntryHolder#get(String)
+	 * @see #get(String)
 	 */
 	default double getDouble(String path) {
 		return this.<Number>get(path).doubleValue();
@@ -271,7 +297,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not boolean
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default boolean getGUIBoolean(String path) {
 		return this.<Boolean>getGUI(path);
@@ -284,7 +310,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default char getGUIChar(String path) {
 		return this.<Character>getGUI(path);
@@ -296,7 +322,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default byte getGUIByte(String path) {
 		return this.<Number>getGUI(path).byteValue();
@@ -308,7 +334,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default short getGUIShort(String path) {
 		return this.<Number>get(path).shortValue();
@@ -320,7 +346,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not int
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default int getGUIInt(String path) {
 		return this.<Number>getGUI(path).intValue();
@@ -332,7 +358,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not long
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default long getGUILong(String path) {
 		return this.<Number>getGUI(path).longValue();
@@ -344,7 +370,7 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not float
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default float getGUIFloat(String path) {
 		return this.<Number>getGUI(path).floatValue();
@@ -356,10 +382,104 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type is not double
-	 * @see ISimpleConfigEntryHolder#getGUI(String)
+	 * @see #getGUI(String)
 	 */
 	default double getGUIDouble(String path) {
 		return this.<Number>getGUI(path).doubleValue();
+	}
+	
+	/**
+	 * Get a candidate boolean config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	 * @param path Name or dot-separated path to the value
+	 * @throws NoSuchConfigEntryError if the value is not found
+	 * @throws InvalidConfigValueTypeException if the value type is not boolean
+	 * @see #getFromGUI(String)
+	 */
+	default boolean getBooleanFromGUI(String path) {
+		return this.<Boolean>getFromGUI(path);
+	}
+	
+	/**
+	 * Get a candidate byte config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not byte
+	  @see #getFromGUI(String)
+	 */
+	default byte getByteFromGUI(String path) {
+		return this.<Number>getFromGUI(path).byteValue();
+	}
+
+	/**
+	 * Get a candidate short config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not short
+	  @see #getFromGUI(String)
+	 */
+	default short getShortFromGUI(String path) {
+		return this.<Number>getFromGUI(path).shortValue();
+	}
+
+	/**
+	 * Get a candidate int config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not int
+	  @see #getFromGUI(String)
+	 */
+	default int getIntFromGUI(String path) {
+		return this.<Number>getFromGUI(path).intValue();
+	}
+	
+	/**
+	 * Get a candidate long config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not long
+	  @see #getFromGUI(String)
+	 */
+	default long getLongFromGUI(String path) {
+		return this.<Number>getFromGUI(path).longValue();
+	}
+	/**
+	 * Get a candidate float config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not float
+	  @see #getFromGUI(String)
+	 */
+	default float getFloatFromGUI(String path) {
+		return this.<Number>getFromGUI(path).floatValue();
+	}
+
+	/**
+	 * Get a candidate double config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not double
+	  @see #getFromGUI(String)
+	 */
+	default double getDoubleFromGUI(String path) {
+		return this.<Number>getFromGUI(path).doubleValue();
+	}
+	/**
+	 * Get a candidate char config value from the GUI, translated to the
+	 * actual type of the entry (if they're different).<br>
+	  @param path Name or dot-separated path to the value
+	  @throws NoSuchConfigEntryError if the value is not found
+	  @throws InvalidConfigValueTypeException if the value type is not char
+	  @see #getFromGUI(String)
+	 */
+	default char getCharFromGUI(String path) {
+		return this.<Character>getFromGUI(path);
 	}
 	
 	/**

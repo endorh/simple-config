@@ -162,8 +162,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	}
 	
 	public boolean isSelectable() {
-		return getScreen().canSelectEntries()
-		       && !isSubEntry();
+		return getScreen().canSelectEntries() && !isSubEntry();
 	}
 	
 	public boolean isSelected() {

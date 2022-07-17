@@ -100,54 +100,38 @@ public class EntryListEntry
 	
 	@Override @Nullable public List<C> fromActualConfig(@Nullable Object value) {
 		if (!(value instanceof List<?>)) return null;
-		boolean fail = false;
 		List<C> list = new ArrayList<>();
 		for (Object elem : (List<?>) value) {
 			C c = entry.fromActualConfig(elem);
-			if (c != null) {
-				list.add(c);
-			} else fail = true;
+			if (c == null) return null;
+			list.add(c);
 		}
-		return list.isEmpty() && fail? null : list;
+		return list;
 	}
 	
-	@Override
-	protected C elemForConfig(V value) {
+	@Override protected C elemForConfig(V value) {
 		return entry.forConfig(value);
 	}
-	
-	@Override
-	protected V elemFromConfig(C value) {
+	@Override protected @Nullable V elemFromConfig(C value) {
 		return entry.fromConfig(value);
 	}
-	
-	@Override
-	protected G elemForGui(V value) {
+	@Override protected G elemForGui(V value) {
 		return entry.forGui(value);
 	}
-	
-	@Override
-	protected V elemFromGui(G value) {
+	@Override protected @Nullable V elemFromGui(G value) {
 		return entry.fromGui(value);
 	}
 	
-	@Override public List<ITextComponent> getElementErrors(G value) {
-		List<ITextComponent> errors = super.getElementErrors(value);
-		errors.addAll(entry.getErrors(value));
+	@Override public List<ITextComponent> getElementErrors(int index, G value) {
+		List<ITextComponent> errors = super.getElementErrors(index, value);
+		entry.getErrorsFromGUI(value).stream()
+		  .map(e -> addIndex(e, index))
+		  .forEach(errors::add);
 		return errors;
 	}
 	
 	@Override protected @Nullable String getListTypeComment() {
 		return entry.getConfigCommentTooltip();
-	}
-	
-	@Override protected boolean validateElement(Object o) {
-		try {
-			//noinspection unchecked
-			return !entry.getError(elemForGui(elemFromConfig((C) o))).isPresent();
-		} catch (ClassCastException e) {
-			return false;
-		}
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(

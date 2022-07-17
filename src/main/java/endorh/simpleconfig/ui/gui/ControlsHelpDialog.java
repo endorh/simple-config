@@ -157,10 +157,10 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			d.setConfirmText(confirmText);
 			d.withCheckBoxes(action, checkBoxes);
 			d.removeButton(d.cancelButton);
-			d.setIcon(SimpleConfigIcons.KEYBOARD);
+			d.setIcon(SimpleConfigIcons.Buttons.KEYBOARD);
 			if (controlsScreenSupplier != null) {
 				d.addButton(0, MultiFunctionIconButton.of(
-				  SimpleConfigIcons.KEYBOARD, -1, -1, ButtonAction.of(() -> {
+				  SimpleConfigIcons.Buttons.KEYBOARD, -1, -1, ButtonAction.of(() -> {
 					  Minecraft.getInstance().displayGuiScreen(controlsScreenSupplier.apply(d.getScreen()));
 					  d.cancel();
 				  }).title(() -> new TranslationTextComponent("simpleconfig.ui.controls.edit_controls"))

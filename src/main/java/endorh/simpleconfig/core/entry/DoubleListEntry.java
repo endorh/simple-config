@@ -6,13 +6,11 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class DoubleListEntry extends RangedListEntry<Double, Number, Double, DoubleListEntry> {
 	@Internal public DoubleListEntry(
@@ -67,13 +65,6 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 	@Override
 	protected Double elemFromConfig(Number value) {
 		return value != null? value.doubleValue() : null;
-	}
-	
-	@Override
-	protected List<Double> get(ConfigValue<?> spec) {
-		//noinspection unchecked
-		return ((List<Number>) (List<?>) super.get(spec))
-		  .stream().map(this::elemFromConfig).collect(Collectors.toList());
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override

@@ -7,6 +7,8 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Presets;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
@@ -62,7 +64,7 @@ public class PresetPickerWidget extends FocusableGui {
 		this.y = y;
 		this.w = w;
 		this.h = 18;
-		loadButton = new MultiFunctionImageButton(0, 0, 20, 20, SimpleConfigIcons.LOAD, ButtonAction.of(() -> {
+		loadButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.LOAD, ButtonAction.of(() -> {
 			  final Preset value = selector.getValue();
 			  if (value != null) load(value);
 		}).active(() -> getHandler() != null && isKnownPreset(selector.getText(), screen.isSelectedCategoryServer()))
@@ -75,17 +77,17 @@ public class PresetPickerWidget extends FocusableGui {
 					value.server ? "server" : "client",
 					value.remote ? "remote" : "local")));
 		  }), new TranslationTextComponent("simpleconfig.preset.load.label"));
-		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, SimpleConfigIcons.SAVE, ButtonAction.of(
+		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 		  () -> save(selector.getText(), false)
 		).tooltip(() -> getSaveTooltip(false, false))
 		  .active(() -> getHandler() != null && isValidName(selector.getText())), new TranslationTextComponent(
 		  "simpleconfig.preset.save.label")
 		).on(Modifier.SHIFT, ButtonAction.of(() -> save(selector.getText(), true))
-		  .icon(SimpleConfigIcons.SAVE_REMOTE)
+		  .icon(Buttons.SAVE_REMOTE)
 		  .active(() -> getHandler() != null && isValidName(selector.getText()) && getHandler().canSaveRemote())
 		  .tooltip(() -> getSaveTooltip(false, true))
 		).on(Modifier.ALT, ButtonAction.of(() -> delete(selector.getValue()))
-		  .icon(SimpleConfigIcons.DELETE)
+		  .icon(Buttons.DELETE)
 		  .active(() -> getHandler() != null && selector.getValue() != null && (!selector.getValue().remote || getHandler().canSaveRemote()))
 		  .tooltip(() -> {
 			  final Preset preset = selector.getValue();
@@ -521,12 +523,12 @@ public class PresetPickerWidget extends FocusableGui {
 				if (element == null) {
 					return text.isEmpty()? Optional.empty() : Optional.of(
 					  widget.screen.isSelectedCategoryServer()?
-					  SimpleConfigIcons.PRESET_SERVER_SAVE : SimpleConfigIcons.PRESET_CLIENT_SAVE);
+					  Presets.SERVER_SAVE : Presets.CLIENT_SAVE);
 				} else {
 					return Optional.of(
 					  element.server?
-					  element.remote? SimpleConfigIcons.PRESET_SERVER_REMOTE : SimpleConfigIcons.PRESET_SERVER_LOCAL :
-					  element.remote? SimpleConfigIcons.PRESET_CLIENT_REMOTE : SimpleConfigIcons.PRESET_CLIENT_LOCAL);
+					  element.remote? Presets.SERVER_REMOTE : Presets.SERVER_LOCAL :
+					  element.remote? Presets.CLIENT_REMOTE : Presets.CLIENT_LOCAL);
 				}
 			} // @formatter:on
 		}

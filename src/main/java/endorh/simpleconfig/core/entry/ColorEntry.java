@@ -9,8 +9,6 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import javax.annotation.Nullable;
@@ -65,20 +63,17 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	}
 	
 	protected static final Pattern COLOR_PATTERN = Pattern.compile(
-	  "\\s*(?:0x|#)(?i)(?<color>[\\da-f]{3}|[\\da-f]{6})\\s*");
-	protected static final Pattern ALPHA_COLOR_PATTERN = Pattern.compile(
 	  "\\s*(?:0x|#)(?i)(?<color>[\\da-f]{3,4}|[\\da-f]{6}|[\\da-f]{8})\\s*");
 	
-	@Override
-	@Nullable public Color fromConfig(String value) {
-		if (value == null)
-			return null;
-		final Matcher m = (alpha? ALPHA_COLOR_PATTERN : COLOR_PATTERN).matcher(value);
+	@Override public @Nullable Color fromConfig(String value) {
+		if (value == null) return null;
+		final Matcher m = COLOR_PATTERN.matcher(value);
 		if (m.matches()) {
 			String c = m.group("color");
-			if (c.length() < 6)
-				c = doubleChars(c);
-			return new Color((int) Long.parseLong(c.toLowerCase(), 0x10), alpha);
+			if (c.length() < 6) c = doubleChars(c);
+			int argb = (int) Long.parseLong(c.toLowerCase(), 0x10);
+			if (!alpha) argb = argb & 0xFFFFFF;
+			return new Color(argb, alpha);
 		}
 		return null;
 	}
@@ -110,14 +105,8 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 		return tooltips;
 	}
 	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forConfig(defValue), createConfigValidator()));
-	}
-	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		ColorFieldBuilder valBuilder = builder

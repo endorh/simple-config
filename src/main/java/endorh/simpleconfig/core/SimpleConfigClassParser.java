@@ -58,14 +58,10 @@ public class SimpleConfigClassParser {
 	  B builder, Field field
 	) {
 		final Class<?> cl = field.getDeclaringClass();
-		final Method validate = tryGetMethod(cl, field.getName(), "validate", getTypeParameter(field, 0));
+		final Method validate = tryGetMethod(cl, field.getName(), "elemError", getTypeParameter(field, 0));
 		if (validate != null) {
 			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
-			if (checkType(validate, Boolean.class)) {
-				//noinspection deprecation
-				builder.setValidator(e -> invoke(
-				  validate, null, errorMsg, e));
-			} else if (checkType(validate, Optional.class, ITextComponent.class)) {
+			if (checkType(validate, Optional.class, ITextComponent.class)) {
 				builder.elemError(e -> invoke(
 				  validate, null, errorMsg, e));
 			} else throw new SimpleConfigClassParseException(cl,

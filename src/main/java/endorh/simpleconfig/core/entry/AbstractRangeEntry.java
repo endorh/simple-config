@@ -8,8 +8,6 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -105,10 +103,10 @@ public abstract class AbstractRangeEntry<
 		}
 	}
 	
-	@Override public Optional<ITextComponent> getError(R value) {
+	@Override public Optional<ITextComponent> getErrorFromGUI(R value) {
 		if (value.getMin().compareTo(value.getMax()) > 0) return Optional.of(
 		  new TranslationTextComponent("simpleconfig.config.error.min_greater_than_max"));
-		return super.getError(value);
+		return super.getErrorFromGUI(value);
 	}
 	
 	protected String serializeElement(V element) {
@@ -121,11 +119,6 @@ public abstract class AbstractRangeEntry<
 		return (value.isExclusiveMin()? "(" : "[")
 		       + serializeElement(value.getMin()) + ", " + serializeElement(value.getMax())
 		       + (value.isExclusiveMax()? ")" : "]");
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(
-		  name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	protected String getRangeComment() {
@@ -252,8 +245,8 @@ public abstract class AbstractRangeEntry<
 			}
 		}
 		
-		@Override public Optional<ITextComponent> getError(R value) {
-			Optional<ITextComponent> opt = super.getError(value);
+		@Override public Optional<ITextComponent> getErrorFromGUI(R value) {
+			Optional<ITextComponent> opt = super.getErrorFromGUI(value);
 			if (opt.isPresent()) return opt;
 			double size = value.getSize();
 			if (size < minSize) return Optional.of(new TranslationTextComponent(

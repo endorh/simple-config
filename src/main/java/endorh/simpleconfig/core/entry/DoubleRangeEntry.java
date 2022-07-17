@@ -68,10 +68,10 @@ public class DoubleRangeEntry
 		  .build();
 	}
 	
-	@Override public Optional<ITextComponent> getError(DoubleRange value) {
+	@Override public Optional<ITextComponent> getErrorFromGUI(DoubleRange value) {
 		if (value.getMin() == null || value.getMax() == null)
 			return Optional.of(new TranslationTextComponent(
 			  "text.cloth-config.error.not_valid_number_double"));
-		return super.getError(value);
+		return super.getErrorFromGUI(value);
 	}
 }

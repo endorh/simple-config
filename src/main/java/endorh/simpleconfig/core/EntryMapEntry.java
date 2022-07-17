@@ -11,13 +11,9 @@ import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,10 +24,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Special config entry containing a map of values of which the values
@@ -58,6 +57,9 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
 	protected final FakeEntryHolder holder;
+	protected BiFunction<K, V, Optional<ITextComponent>> elemErrorSupplier = (k, v) -> Optional.empty();
+	protected int minSize = 0;
+	protected int maxSize = Integer.MAX_VALUE;
 	protected boolean expand;
 	protected boolean linked;
 	
@@ -96,6 +98,9 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		protected B entryBuilder;
 		protected boolean expand;
 		protected boolean linked;
+		protected BiFunction<K, V, Optional<ITextComponent>> elemErrorSupplier = (k, v) -> Optional.empty();
+		protected int minSize = 0;
+		protected int maxSize = Integer.MAX_VALUE;
 		
 		public Builder(Map<K, V> value, KB keyEntryBuilder, B entryBuilder) {
 			super(new LinkedHashMap<>(value), Map.class);
@@ -103,23 +108,80 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			this.keyEntryBuilder = keyEntryBuilder.copy();
 		}
 		
+		/**
+		 * Display this entry expanded in the GUI by default.
+		 * @see #expand(boolean)
+		 */
 		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand() {
 			return expand(true);
 		}
 		
+		/**
+		 * Display this entry expanded in the GUI by default.
+		 * @param expand Whether to expand this entry by default.
+		 * @see #expand()
+		 */
 		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand(boolean expand) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
 			copy.expand = expand;
 			return copy;
 		}
 		
+		/**
+		 * Use a linked map to preserve the order of the entries.<br>
+		 * In the config file it will be represented as a YAML ordered map.<br>
+		 * <i>Note that if you manually set the value of this entry to a non-linked map
+		 * the order will be lost.</i>
+		 * @see #linked(boolean)
+		 */
 		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked() {
 			return linked(true);
 		}
 		
+		/**
+		 * Use a linked map to preserve the order of the entries.<br>
+		 * In the config file it will be represented as a YAML ordered map.<br>
+		 * <i>Note that if you manually set the value of this entry to a non-linked map
+		 * the order will be lost.</i>
+		 * @param linked Whether to use a linked map.
+		 * @see #linked()
+		 */
 		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked(boolean linked) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
 			copy.linked = linked;
+			return copy;
+		}
+		
+		/**
+		 * Set an error supplier for each entry instead of the whole map.<br>
+		 * The map will be deemed invalid if a single entry is invalid.
+		 * @param supplier The supplier for the error.
+		 */
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> entryError(
+		  BiFunction<K, V, Optional<ITextComponent>> supplier
+		) {
+			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+			copy.elemErrorSupplier = supplier;
+			return copy;
+		}
+		
+		/**
+		 * Set the minimum (inclusive) size of the map.
+		 * @param minSize The inclusive minimum size of the map.
+		 */
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> minSize(int minSize) {
+			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+			copy.minSize = minSize;
+			return copy;
+		}
+		
+		/**
+		 * Set the maximum (inclusive) size of the map.
+		 * @param maxSize The inclusive maximum size of the map.
+		 */
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> maxSize(int maxSize) {
+			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+			copy.maxSize = maxSize;
 			return copy;
 		}
 		
@@ -130,6 +192,9 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			  parent, name, new LinkedHashMap<>(value), entryBuilder, keyEntryBuilder);
 			e.expand = expand;
 			e.linked = linked;
+			e.elemErrorSupplier = elemErrorSupplier;
+			e.minSize = minSize;
+			e.maxSize = maxSize;
 			return e;
 		}
 		
@@ -138,6 +203,9 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			  new Builder<>(new LinkedHashMap<>(value), keyEntryBuilder, entryBuilder);
 			copy.expand = expand;
 			copy.linked = linked;
+			copy.elemErrorSupplier = elemErrorSupplier;
+			copy.minSize = minSize;
+			copy.maxSize = maxSize;
 			return copy;
 		}
 	}
@@ -158,45 +226,43 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			Map<KC, C> map = new LinkedHashMap<>();
 			for (Object o : seq) {
 				if (o instanceof Map) {
-					((Map<?, ?>) o).entrySet().stream().findFirst().ifPresent(e -> {
-						KC key = keyEntry.fromActualConfig(e.getKey());
-						C val = entry.fromActualConfig(e.getValue());
-						if (key == null) return;
-						if (val == null) val = entry.forConfig(entry.defValue);
-						map.put(key, val);
-					});
-				}
-				if (o instanceof Config) {
+					Map<?, ?> mm = (Map<?, ?>) o;
+					if (mm.entrySet().size() != 1) return null;
+					Map.Entry<?, ?> e = mm.entrySet().stream().findFirst()
+					  .orElseThrow(IllegalStateException::new);
+					KC key = keyEntry.fromActualConfig(e.getKey());
+					C val = entry.fromActualConfig(e.getValue());
+					if (key == null || val == null) return null;
+					map.put(key, val);
+				} else if (o instanceof Config) {
 					Config config = (Config) o;
-					config.entrySet().stream().findFirst().ifPresent(e -> {
-						KC key = keyEntry.fromActualConfig(e.getKey());
-						C val = entry.fromActualConfig(e.getValue());
-						if (key == null) return;
-						if (val == null) val = entry.forConfig(entry.defValue);
-						map.put(key, val);
-					});
+					if (config.entrySet().size() != 1) return null;
+					Config.Entry e = config.entrySet().stream().findFirst()
+					  .orElseThrow(IllegalStateException::new);
+					KC key = keyEntry.fromActualConfig(e.getKey());
+					C val = entry.fromActualConfig(e.getValue());
+					if (key == null || val == null) return null;
+					map.put(key, val);
 				}
 			}
 			return map;
 		} else if (value instanceof Config) {
 			Map<KC, C> map = new LinkedHashMap<>();
-			((CommentedConfig) value).entrySet().forEach(e -> {
+			for (CommentedConfig.Entry e: ((CommentedConfig) value).entrySet()) {
 				KC key = keyEntry.fromActualConfig(e.getKey());
 				C val = entry.fromActualConfig(e.getValue());
-				if (key == null) return;
-				if (val == null) val = entry.forConfig(entry.defValue);
+				if (key == null || val == null) return null;
 				map.put(key, val);
-			});
+			}
 			return map;
 		} else if (value instanceof Map) {
 			Map<KC, C> map = new LinkedHashMap<>();
-			((Map<?, ?>) value).forEach((k, v) -> {
-				KC key = keyEntry.fromActualConfig(k);
-				C val = entry.fromActualConfig(v);
-				if (key == null) return;
-				if (val == null) val = entry.forConfig(entry.defValue);
+			for (Entry<?, ?> e: ((Map<?, ?>) value).entrySet()) {
+				KC key = keyEntry.fromActualConfig(e.getKey());
+				C val = entry.fromActualConfig(e.getValue());
+				if (key == null || val == null) return null;
 				map.put(key, val);
-			});
+			}
 			return map;
 		}
 		return null;
@@ -212,9 +278,12 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	@Nullable @Override @Contract("null->null")
 	public Map<K, V> fromConfig(@Nullable Map<KC, C> value) {
 		if (value == null) return null;
-		// Invalid keys are ignored
+		List<Pair<K, V>> pairs = value.entrySet().stream().map(e -> Pair.of(
+		  keyEntry.fromConfig(e.getKey()), entry.fromConfig(e.getValue()))
+		).collect(Collectors.toList());
+		if (pairs.stream().anyMatch(p -> p.getLeft() == null || p.getRight() == null)) return null;
 		final Map<K, V> m = new LinkedHashMap<>();
-		value.forEach((k, v) -> m.put(keyEntry.fromConfigOrDefault(k), entry.fromConfigOrDefault(v)));
+		pairs.forEach(p -> m.put(p.getKey(), p.getValue()));
 		return m;
 	}
 	
@@ -226,30 +295,14 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	}
 	
 	@Nullable @Override public Map<K, V> fromGui(@Nullable List<Pair<KG, G>> value) {
-		if (value == null)
-			return null;
+		if (value == null) return null;
+		List<Pair<K, V>> pairs = value.stream()
+		  .map(e -> Pair.of(keyEntry.fromGui(e.getKey()), entry.fromGui(e.getValue())))
+		  .collect(Collectors.toList());
+		if (pairs.stream().anyMatch(e -> e.getKey() == null || e.getValue() == null)) return null;
 		// For duplicate keys, only the last is kept
-		return value.stream().collect(Collectors.toMap(
-		  p -> keyEntry.fromGuiOrDefault(p.getKey()), p -> entry.fromGuiOrDefault(p.getValue()),
-		  (a, b) -> b, LinkedHashMap::new));
-	}
-	
-	@Override
-	protected Predicate<Object> createConfigValidator() {
-		return o -> {
-			try {
-				final Map<KC, C> pre = fromActualConfig(o);
-				final Map<K, V> m = fromConfig(pre);
-				if (m == null) return false;
-				// Tolerate skipping invalid keys, but log a warning
-				if (pre.size() != m.size()) LOGGER.warn(
-				  "Map config entry " + getGlobalPath() +
-				  " has invalid entries, which have been ignored.");
-				return isValidValue(m);
-			} catch (ClassCastException e) {
-				return false;
-			}
-		};
+		return pairs.stream().collect(
+		  Collectors.toMap(Pair::getKey, Pair::getValue, (a, b) -> b, LinkedHashMap::new));
 	}
 	
 	protected @Nullable String getMapTypeComment() {
@@ -264,11 +317,6 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		String typeComment = getMapTypeComment();
 		if (typeComment != null) tooltips.add((linked? "Sorted Map: " : "Map: ") + typeComment);
 		return tooltips;
-	}
-	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
@@ -299,16 +347,31 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		return Pair.of(kg, g);
 	}
 	
-	@Override public List<ITextComponent> getErrors(List<Pair<KG, G>> value) {
+	@Override public Optional<ITextComponent> getErrorFromGUI(List<Pair<KG, G>> value) {
+		if (value.size() < minSize) {
+			return Optional.of(new TranslationTextComponent(
+			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_small"),
+			  coloredNumber(minSize)));
+		} else if (value.size() > maxSize) return Optional.of(new TranslationTextComponent(
+		  "simpleconfig.config.error.list.too_large",
+		  coloredNumber(maxSize)));
+		return super.getErrorFromGUI(value);
+	}
+	
+	protected static IFormattableTextComponent coloredNumber(int minSize) {
+		return new StringTextComponent(String.valueOf(minSize))
+		  .mergeStyle(TextFormatting.DARK_AQUA);
+	}
+	
+	@Override public List<ITextComponent> getErrorsFromGUI(List<Pair<KG, G>> value) {
 		return Stream.concat(
-		  Stream.of(getError(value)).filter(Optional::isPresent).map(Optional::get),
+		  Stream.of(getErrorFromGUI(value), getDuplicateError(value))
+		    .filter(Optional::isPresent).map(Optional::get),
 		  value.stream().flatMap(p -> getElementErrors(p).stream())
 		  ).collect(Collectors.toList());
 	}
 	
-	@Override public Optional<ITextComponent> getError(List<Pair<KG, G>> value) {
-		Optional<ITextComponent> opt = super.getError(value);
-		if (opt.isPresent()) return opt;
+	protected Optional<ITextComponent> getDuplicateError(List<Pair<KG, G>> value) {
 		Set<KG> set = new HashSet<>();
 		for (Pair<KG, G> pair : value) {
 			final KG key = pair.getKey();
@@ -319,24 +382,40 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		return Optional.empty();
 	}
 	
-	public Optional<ITextComponent> getCellError(Pair<KG, G> p) {
+	public Optional<ITextComponent> getCellError(int index, Pair<KG, G> p) {
 		// Already handled by the GUI
 		// Optional<ITextComponent> e = keyEntry.getError(p.getKey());
 		// if (e.isPresent()) return e;
 		// e = entry.getError(p.getValue());
 		// if (e.isPresent()) return e;
-		final K k = keyEntry.fromGui(p.getKey());
-		if (hasGUI()
-		    && getGUI().stream()
-		         .filter(entry -> Objects.equals(keyEntry.fromGui(entry.getKey()), k))
-		         .count() > 1
-		) return Optional.of(new TranslationTextComponent("simpleconfig.config.error.duplicate_key", k));
-		return Optional.empty();
+		K key = keyEntry.fromGui(p.getKey());
+		V value = entry.fromGui(p.getValue());
+		if (key == null || value == null) return Optional.of(new TranslationTextComponent(
+		  "simpleconfig.config.error.missing_value"));
+		return elemErrorSupplier.apply(key, value);
+	}
+	
+	public List<Optional<ITextComponent>> getMultiCellError(List<Pair<KG, G>> gui) {
+		Map<K, List<Integer>> groups = IntStream.range(0, gui.size())
+		  .mapToObj(i -> Pair.of(keyEntry.fromGui(gui.get(i).getKey()), i))
+		  .collect(Collectors.<Pair<K, Integer>, K, List<Integer>>toMap(
+		    Pair::getKey, p -> singletonList(p.getValue()), (a, b) -> {
+				 ArrayList<Integer> indices = new ArrayList<>(a);
+				 indices.addAll(b);
+				 return indices;
+			 }));
+		List<Optional<ITextComponent>> errors = gui.stream()
+		  .map(p -> Optional.<ITextComponent>empty()).collect(Collectors.toList());
+		groups.values().stream().filter(l -> l.size() > 1).forEach(
+		  g -> g.forEach(i -> errors.set(i, Optional.of(new TranslationTextComponent(
+			 "simpleconfig.config.error.duplicate_key", gui.get(i).getKey())
+		  ))));
+		return errors;
 	}
 	
 	public List<ITextComponent> getElementErrors(Pair<KG, G> p) {
-		List<ITextComponent> errors = keyEntry.getErrors(p.getKey());
-		errors.addAll(entry.getErrors(p.getValue()));
+		List<ITextComponent> errors = keyEntry.getErrorsFromGUI(p.getKey());
+		errors.addAll(entry.getErrorsFromGUI(p.getValue()));
 		return errors;
 	}
 	
@@ -356,6 +435,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  .startEntryPairList(getDisplayName(), guiValue, en -> buildCell(builder))
 		  .setIgnoreOrder(!linked)
 		  .setCellErrorSupplier(this::getCellError)
+		  .setMultiCellErrorSupplier(this::getMultiCellError)
 		  .setExpanded(expand);
 		return Optional.of(decorate(entryBuilder).build());
 	}

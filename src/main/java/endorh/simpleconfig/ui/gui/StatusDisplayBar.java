@@ -46,7 +46,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		super(0, 0, screen.width, 14, StringTextComponent.EMPTY);
 		this.screen = screen;
 		dialogButton = new MultiFunctionImageButton(
-		  0, 0, 15, 15, SimpleConfigIcons.ELLIPSIS, ButtonAction.of(
+		  0, 0, 15, 15, SimpleConfigIcons.Status.H_DOTS, ButtonAction.of(
 		  this::createDialog
 		).active(this::hasDialog).tooltip(this::getDialogTooltip));
 		states.add(StatusState.ERROR_STATE);
@@ -54,11 +54,14 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		states.add(StatusState.EXTERNAL_CHANGES);
 	}
 	
+	public void tick() {
+		activeState = states.descendingSet().stream()
+		  .filter(s -> s.isActive(screen)).findFirst().orElse(null);
+	}
+	
 	@Override public void renderButton(
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
 	) {
-		activeState = states.descendingSet().stream()
-		  .filter(s -> s.isActive(screen)).findFirst().orElse(null);
 		width = screen.width;
 		height = 19;
 		x = 0;
@@ -154,7 +157,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 			
 			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
-				return new StatusStyle(SimpleConfigIcons.INFO, 0xF08080F0, 0xA00C5281);
+				return new StatusStyle(SimpleConfigIcons.Status.INFO, 0xF08080F0, 0xA00C5281);
 			}
 		};
 		
@@ -204,7 +207,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				return InfoDialog.create(
 				  new TranslationTextComponent("simpleconfig.ui.changes.all.title"), lines,
 				  d -> {
-					  d.setIcon(SimpleConfigIcons.MERGE_CONFLICT);
+					  d.setIcon(SimpleConfigIcons.Entries.MERGE_CONFLICT);
 					  d.setLinkActionHandler(s -> {
 						  if (s.startsWith("goto/")) {
 							  try {
@@ -238,7 +241,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 			
 			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
-				return new StatusStyle(SimpleConfigIcons.MERGE_CONFLICT, 0xA0F080F0, 0xBD600060);
+				return new StatusStyle(SimpleConfigIcons.Entries.MERGE_CONFLICT, 0xA0F080F0, 0xBD600060);
 			}
 		};
 		
@@ -283,7 +286,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				return InfoDialog.create(
 				  new TranslationTextComponent("simpleconfig.ui.errors.all.title"), lines,
 				  d -> {
-					  d.setIcon(SimpleConfigIcons.ERROR);
+					  d.setIcon(SimpleConfigIcons.Status.ERROR);
 					  d.titleColor = 0xFFFF8080;
 					  d.borderColor = 0xFFFF8080;
 					  d.subBorderColor = 0xFF800000;
@@ -312,7 +315,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 			
 			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
-				return new StatusStyle(SimpleConfigIcons.ERROR, 0xA0F08080, 0xBD600000);
+				return new StatusStyle(SimpleConfigIcons.Status.ERROR, 0xA0F08080, 0xBD600000);
 			}
 		};
 		

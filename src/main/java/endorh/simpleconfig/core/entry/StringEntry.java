@@ -11,12 +11,9 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -183,21 +180,24 @@ public class StringEntry
 		return value;
 	}
 	
-	@Override public Optional<ITextComponent> getError(String value) {
-		final Optional<ITextComponent> opt = super.getError(value);
+	@Override public Optional<ITextComponent> getErrorFromGUI(String value) {
+		final Optional<ITextComponent> opt = super.getErrorFromGUI(value);
 		if (opt.isPresent()) return opt;
 		if (value.length() < minLength)
 			return Optional.of(
 			  minLength == 1
 			  ? new TranslationTextComponent("simpleconfig.config.error.string.empty")
-			  : new TranslationTextComponent("simpleconfig.config.error.string.min_length", minLength));
+			  : new TranslationTextComponent(
+				 "simpleconfig.config.error.string.min_length", coloredNumber(minLength)));
 		if (value.length() > maxLength)
-			return Optional.of(new TranslationTextComponent("simpleconfig.config.error.string.max_length", maxLength));
+			return Optional.of(new TranslationTextComponent(
+			  "simpleconfig.config.error.string.max_length", coloredNumber(maxLength)));
 		return Optional.empty();
 	}
 	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, defValue, createConfigValidator()));
+	protected static IFormattableTextComponent coloredNumber(int number) {
+		return new StringTextComponent(String.valueOf(number))
+		  .mergeStyle(TextFormatting.DARK_AQUA);
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {

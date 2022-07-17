@@ -16,8 +16,6 @@ import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -144,13 +142,6 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockE
 		List<String> tooltips = super.getConfigCommentTooltips();
 		tooltips.add("Block: namespace:path");
 		return tooltips;
-	}
-	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		assert defValue.getRegistryName() != null;
-		return Optional.of(decorate(builder).define(
-		  name, defValue.getRegistryName().toString(), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Block>> buildGUIEntry(

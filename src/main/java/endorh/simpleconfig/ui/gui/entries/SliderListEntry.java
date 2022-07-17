@@ -149,7 +149,6 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 					setTextFieldShown(true, true);
 					return true;
 				}
-				if (Screen.hasAltDown()) return true; // Prevent navigation key from triggering slider
 				break;
 			case 263: // Left
 				if (isTextFieldShown()) {
@@ -232,7 +231,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		}
 		if (super.onMouseClicked(mouseX, mouseY, button))
 			return true;
-		if (getCanUseTextField() && entryArea.grow(32, 0, 0, 0).contains(mouseX, mouseY)) {
+		if (button == 0 && !Screen.hasAltDown() && getCanUseTextField()
+		    && entryArea.grow(32, 0, 0, 0).contains(mouseX, mouseY)) {
 			setTextFieldShown(!isTextFieldShown(), true);
 			Minecraft.getInstance().getSoundHandler().play(
 			  SimpleSound.master(getCanUseTextField()? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
@@ -258,6 +258,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	
 	@Override public boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
 		final IGuiEventListener listener = getListener();
+		if (Screen.hasAltDown()) return true; // Prevent navigation key from triggering slider
 		if ((listener == sliderWidget || listener == textFieldEntry)
 		    && getCanUseTextField() && keyCode == 257) { // Enter
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider

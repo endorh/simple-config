@@ -53,9 +53,9 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		setName(name.getString().replace(".", "")); // Default name
 		selectionCheckbox = new CheckboxButton(
 		  false, 0, 0, 18, 18,
-		  SimpleConfigIcons.CHECKBOX_FLAT, null, this::setSelected);
+		  SimpleConfigIcons.Widgets.CHECKBOX_FLAT, null, this::setSelected);
 		acceptButton = new MultiFunctionImageButton(
-		  0, 0, 20, 20, SimpleConfigIcons.MERGE_ACCEPT, ButtonAction.of(
+		  0, 0, 20, 20, SimpleConfigIcons.Buttons.MERGE_ACCEPT, ButtonAction.of(
 		  this::acceptExternalValue
 		).active(() -> hasExternalDiff() && !hasAcceptedExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
@@ -63,7 +63,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 				"simpleconfig.ui.merge.accept." + (getScreen().isSelectedCategoryServer() ? "remote" : "external"))
 			   .mergeStyle(TextFormatting.LIGHT_PURPLE))));
 		mergeButton = new MultiFunctionImageButton(
-		  0, 0, 20, 20, SimpleConfigIcons.MERGE_CONFLICT, ButtonAction.of(
+		  0, 0, 20, 20, SimpleConfigIcons.Entries.MERGE_CONFLICT, ButtonAction.of(
 			 () -> setPreviewingExternal(true)
 		  ).active(() -> !isPreviewingExternal() && hasExternalDiff() && !hasAcceptedExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
@@ -76,7 +76,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 			}
 		}.on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(() -> {})
 		  .active(() -> !isPreviewingExternal() && hasAcceptedExternalDiff())
-		  .icon(SimpleConfigIcons.MERGE_ACCEPTED)
+		  .icon(SimpleConfigIcons.Entries.MERGE_ACCEPTED)
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
 			   "simpleconfig.ui.accepted_" + (getScreen().isSelectedCategoryServer() ? "remote" : "external") + "_changes")
@@ -84,7 +84,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		).on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(
 		  () -> setPreviewingExternal(false)
 		).active(this::isPreviewingExternal)
-		  .icon(SimpleConfigIcons.CLOSE_X)
+		  .icon(SimpleConfigIcons.Entries.CLOSE_X)
 		  .tooltip(Collections::emptyList));
 		previewListeners.add(acceptButton);
 	}

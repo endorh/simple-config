@@ -320,7 +320,10 @@ public class EntryPairListListEntry<
 		}
 		
 		@Override public List<INavigableTarget> getNavigableChildren(boolean onlyVisible) {
-			return valueEntry.getNavigableChildren(onlyVisible);
+			if (!onlyVisible) return Stream.concat(
+			  Stream.of(keyEntry, valueEntry), valueEntry.getNavigableChildren().stream()
+			).collect(Collectors.toList());
+			return valueEntry.getNavigableChildren(true);
 		}
 		
 		// Modified tab order

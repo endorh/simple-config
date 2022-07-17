@@ -24,7 +24,10 @@ import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.*;
+import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.SharedConstants;
+import net.minecraft.util.SoundEvents;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.*;
@@ -1178,12 +1181,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected void renderArrow(MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, int backgroundX) {
 		final boolean hovered = mouseX >= backgroundX && mouseX < x + w && mouseY >= y && mouseY < y + h;
 		int arrowBackground = hovered ? 0x80646464 : 0x80242424;
-		Minecraft.getInstance().getTextureManager().bindTexture(new ResourceLocation(
-		  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png"));
 		if (backgroundX == mouseX || hovered)
 			fill(mStack, backgroundX, y, x + w, y + h, arrowBackground);
 		RenderSystem.color4f(1F, 1F, 1F, canShowDropDown()? 1F : 0.7F);
-		SimpleConfigIcons.DROP_DOWN_ARROW.renderCentered(mStack, x, y + (h - 10) / 2, 10, 10, isDropDownShown()? 1 : 0);
+		SimpleConfigIcons.ComboBox.DROP_DOWN_ARROW.renderCentered(
+		  mStack, x, y + (h - 10) / 2, 10, 10, isDropDownShown()? 1 : 0);
 		RenderSystem.color4f(1F, 1F, 1F, 1F);
 	}
 	

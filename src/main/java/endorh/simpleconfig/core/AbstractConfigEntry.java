@@ -24,8 +24,12 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.comments.CommentLine;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.util.*;
 import java.util.function.*;
@@ -121,7 +125,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	protected void setTooltip(@Nullable String translation) {
-		this.tooltip = translation;
+		tooltip = translation;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -151,7 +155,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	@Internal public Self withDisplayName(ITextComponent name) {
-		this.displayName = name;
+		displayName = name;
 		return self();
 	}
 	
@@ -225,7 +229,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	public V fromGuiOrDefault(Gui value) {
 		final V v = fromGui(value);
-		return v != null ? v : this.defValue;
+		return v != null ? v : defValue;
 	}
 	
 	/**
@@ -248,8 +252,12 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Transform value from Config type
 	 */
 	public V fromConfigOrDefault(Config value) {
-		final V v = fromConfig(value);
-		return v != null ? v : this.defValue;
+		try {
+			final V v = fromConfig(value);
+			return v != null ? v : defValue;
+		} catch (ClassCastException ignored) {
+			return defValue;
+		}
 	}
 	
 	protected void put(CommentedConfig config, Config value) {
@@ -341,13 +349,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return Lists.newArrayList();
 	}
 	
-	public List<ITextComponent> getErrors(Gui value) {
-		return Stream.of(getError(value))
+	public List<ITextComponent> getErrorsFromGUI(Gui value) {
+		return Stream.of(getErrorFromGUI(value))
 		  .filter(Optional::isPresent).map(Optional::get)
 		  .collect(Collectors.toList());
 	}
 	
-	public Optional<ITextComponent> getError(Gui value) {
+	public Optional<ITextComponent> getErrorFromGUI(Gui value) {
 		Optional<ITextComponent> o;
 		if (guiErrorSupplier != null) {
 			o = guiErrorSupplier.apply(value);
@@ -361,6 +369,24 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			}
 		}
 		return Optional.empty();
+	}
+	
+	public Optional<ITextComponent> getError(@NotNull V value) {
+		return getErrorFromGUI(forGui(value));
+	}
+	
+	public Optional<ITextComponent> getErrorFromCommand(String command) {
+		try {
+			V value = fromCommand(command);
+			if (value == null) return Optional.of(new TranslationTextComponent(
+			  "simpleconfig.config.error.invalid_value_generic", command));
+			return getErrorsFromGUI(forGui(value)).stream().findFirst();
+		} catch (InvalidConfigValueTypeException e) {
+			return Optional.empty();
+		} catch (InvalidConfigValueException e) {
+			return Optional.of(new TranslationTextComponent(
+			  "simpleconfig.command.error.invalid_yaml", e.getLocalizedMessage()));
+		}
 	}
 	
 	protected @Nullable NodeComments getNodeComments(@Nullable NodeComments previous) {
@@ -426,7 +452,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		  .nonPersistent(nonPersistent)
 		  .setDefaultValue(() -> forGui(defValue))
 		  .setTooltipSupplier(this::getTooltip)
-		  .setErrorSupplier(this::getError)
+		  .setErrorSupplier(this::getErrorFromGUI)
 		  .setSaveConsumer(createSaveConsumer())
 		  .setEditableSupplier(editableSupplier)
 		  .setName(name)
@@ -435,7 +461,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	public boolean isValidValue(V value) {
-		return getErrors(forGui(value)).isEmpty();
+		if (value == null) return false;
+		return getErrorsFromGUI(forGui(value)).isEmpty();
 	}
 	
 	protected Predicate<Object> createConfigValidator() {
@@ -454,7 +481,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Build the associated config entry for this entry, if any
 	 */
 	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.empty();
+		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	/**
@@ -501,7 +528,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	  CaptionedSubCategoryBuilder<?, ?> group, ConfigEntryBuilder entryBuilder
 	) {
 		buildGUIEntry(entryBuilder).ifPresent(e -> {
-			this.guiEntry = e;
+			guiEntry = e;
 			group.add(e);
 		});
 	}
@@ -515,13 +542,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	  ConfigCategory category, ConfigEntryBuilder entryBuilder
 	) {
 		buildGUIEntry(entryBuilder).ifPresent(e -> {
-			this.guiEntry = e;
+			guiEntry = e;
 			category.addEntry(e);
 		});
 	}
 	
 	protected void setConfigValue(@Nullable ConfigValue<?> value) {
-		this.configValue = value;
+		configValue = value;
 	}
 	
 	protected V get() {
@@ -540,6 +567,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		} else {
 			set(configValue, value);
 		}
+		if (FMLEnvironment.dist == Dist.CLIENT)
+			if (guiEntry != null) guiEntry.setExternalValue(forGui(value));
 	}
 	
 	protected boolean trySet(V value) {
@@ -630,6 +659,36 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	protected void trySetFromConfig(Config value) {
 		trySet(fromConfigOrDefault(value));
+	}
+	
+	@Internal public @Nullable String forCommand(V value) {
+		SimpleConfig config = parent.getRoot();
+		Yaml yaml = config.getModConfig().getConfigFormat().getYaml();
+		try {
+			return yaml.dumpAs(forActualConfig(forConfig(value)), null, FlowStyle.FLOW).trim();
+		} catch (YAMLException e) {
+			return null;
+		}
+	}
+	
+	@Internal public V fromCommand(String value) {
+		SimpleConfig config = parent.getRoot();
+		Yaml yaml = config.getModConfig().getConfigFormat().getYaml();
+		try {
+			return fromConfig(fromActualConfig(yaml.load(value)));
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getGlobalPath(), e);
+		} catch (YAMLException e) {
+			throw new InvalidConfigValueException(getGlobalPath(), e);
+		}
+	}
+	
+	@Internal public String getForCommand() {
+		return forCommand(get());
+	}
+	
+	@Internal public void setFromCommand(String value) {
+		set(fromCommand(value));
 	}
 	
 	protected void setBackingField(V value) throws IllegalAccessException {

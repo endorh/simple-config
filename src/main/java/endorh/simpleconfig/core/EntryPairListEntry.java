@@ -14,11 +14,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -129,24 +126,22 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 			for (Object o : seq) {
 				if (o instanceof Map) {
 					Map<?, ?> map = (Map<?, ?>) o;
-					map.entrySet().stream().findFirst().ifPresent(e -> {
-						KC key = keyEntry.fromActualConfig(e.getKey());
-						C val = entry.fromActualConfig(e.getValue());
-						if (key == null && val == null) return;
-						if (key == null) key = keyEntry.forConfig(keyEntry.defValue);
-						if (val == null) val = entry.forConfig(entry.defValue);
-						pairs.add(Pair.of(key, val));
-					});
+					if (map.entrySet().size() != 1) return null;
+					Map.Entry<?, ?> e = map.entrySet().stream().findFirst()
+					  .orElseThrow(IllegalStateException::new);
+					KC key = keyEntry.fromActualConfig(e.getKey());
+					C val = entry.fromActualConfig(e.getValue());
+					if (key == null || val == null) return null;
+					pairs.add(Pair.of(key, val));
 				} else if (o instanceof Config) {
 					Config config = (Config) o;
-					config.entrySet().stream().findFirst().ifPresent(e -> {
-						KC key = keyEntry.fromActualConfig(e.getKey());
-						C val = entry.fromActualConfig(e.getValue());
-						if (key == null && val == null) return;
-						if (key == null) key = keyEntry.forConfig(keyEntry.defValue);
-						if (val == null) val = entry.forConfig(entry.defValue);
-						pairs.add(Pair.of(key, val));
-					});
+					if (config.entrySet().size() != 1) return null;
+					Config.Entry e = config.entrySet().stream().findFirst()
+					  .orElseThrow(IllegalStateException::new);
+					KC key = keyEntry.fromActualConfig(e.getKey());
+					C val = entry.fromActualConfig(e.getValue());
+					if (key == null || val == null) return null;
+					pairs.add(Pair.of(key, val));
 				}
 			}
 			return pairs;
@@ -154,40 +149,22 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		return null;
 	}
 	
-	@Override public List<Pair<KC, C>> forConfig(List<Pair<K, V>> value) {
-		return value.stream().map(p -> Pair.of(
-		  keyEntry.forConfig(p.getKey()), entry.forConfig(p.getValue())
-		)).collect(Collectors.toList());
+	@Override protected Pair<KG, G> elemForGui(Pair<K, V> value) {
+		return Pair.of(keyEntry.forGui(value.getKey()), entry.forGui(value.getValue()));
+	}
+	@Override protected Pair<K, V> elemFromGui(Pair<KG, G> value) {
+		K key = keyEntry.fromGui(value.getKey());
+		V val = entry.fromGui(value.getValue());
+		return key != null && val != null ? Pair.of(key, val) : null;
 	}
 	
-	@Nullable @Override @Contract("null->null")
-	public List<Pair<K, V>> fromConfig(@Nullable List<Pair<KC, C>> value) {
-		if (value == null) return null;
-		final List<Pair<K, V>> l = new ArrayList<>();
-		for (Pair<KC, C> p : value)
-			  l.add(Pair.of(
-				 keyEntry.fromConfigOrDefault(p.getKey()),
-				 entry.fromConfigOrDefault(p.getValue())));
-		return l;
+	@Override protected Pair<KC, C> elemForConfig(Pair<K, V> value) {
+		return Pair.of(keyEntry.forConfig(value.getKey()), entry.forConfig(value.getValue()));
 	}
-	
-	@Override
-	public List<Pair<KG, G>> forGui(List<Pair<K, V>> value) {
-		return value.stream().map(
-		  p -> Pair.of(keyEntry.forGui(p.getKey()), entry.forGui(p.getValue()))
-		).collect(Collectors.toList());
-	}
-	
-	@Nullable @Override public List<Pair<K, V>> fromGui(@Nullable List<Pair<KG, G>> value) {
-		if (value == null) return null;
-		return value.stream().map(
-		  p -> Pair.of(keyEntry.fromGuiOrDefault(p.getKey()), entry.fromGuiOrDefault(p.getValue()))
-		).collect(Collectors.toList());
-	}
-	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
+	@Override protected Pair<K, V> elemFromConfig(Pair<KC, C> value) {
+		K key = keyEntry.fromConfig(value.getKey());
+		V val = entry.fromConfig(value.getValue());
+		return key != null && val != null? Pair.of(key, val) : null;
 	}
 	
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {
@@ -215,10 +192,14 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		return Pair.of(kg, g);
 	}
 	
-	@Override public List<ITextComponent> getElementErrors(Pair<KG, G> value) {
-		List<ITextComponent> errors = super.getElementErrors(value);
-		errors.addAll(keyEntry.getErrors(value.getKey()));
-		errors.addAll(entry.getErrors(value.getValue()));
+	@Override public List<ITextComponent> getElementErrors(int index, Pair<KG, G> value) {
+		List<ITextComponent> errors = super.getElementErrors(index, value);
+		keyEntry.getErrorsFromGUI(value.getKey()).stream()
+		  .map(e -> addIndex(e, index))
+		  .forEach(errors::add);
+		entry.getErrorsFromGUI(value.getValue()).stream()
+		  .map(e -> addIndex(e, index))
+		  .forEach(errors::add);
 		return errors;
 	}
 	
@@ -242,7 +223,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		final EntryPairListBuilder<KG, G, ? extends AbstractConfigListEntry<KG>, AbstractConfigListEntry<G>>
 		  entryBuilder = builder
 		  .startEntryPairList(getDisplayName(), forGui(get()), en -> buildCell(builder))
-		  .setIgnoreOrder(true)
+		  .setIgnoreOrder(false)
 		  .setCellErrorSupplier(this::getElementError)
 		  .setExpanded(expand);
 		return Optional.of(decorate(entryBuilder).build());

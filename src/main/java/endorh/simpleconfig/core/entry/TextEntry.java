@@ -16,6 +16,8 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -122,6 +124,9 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	
 	@Override protected List<ITextComponent> addExtraTooltip(Void value) {
 		return Lists.newArrayList();
+	}
+	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
+		return Optional.empty();
 	}
 	
 	@OnlyIn(Dist.CLIENT)

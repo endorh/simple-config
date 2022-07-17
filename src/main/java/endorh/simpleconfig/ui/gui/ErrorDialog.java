@@ -44,7 +44,7 @@ public class ErrorDialog extends ProgressDialog {
 		setError(error);
 		removeButton(cancelButton);
 		setConfirmText(new TranslationTextComponent("gui.ok"));
-		setIcon(SimpleConfigIcons.ERROR);
+		setIcon(SimpleConfigIcons.Status.ERROR);
 	}
 	
 	public ErrorDialog(
@@ -54,6 +54,6 @@ public class ErrorDialog extends ProgressDialog {
 		setError(error);
 		removeButton(cancelButton);
 		setConfirmText(new TranslationTextComponent("gui.ok"));
-		setIcon(SimpleConfigIcons.ERROR);
+		setIcon(SimpleConfigIcons.Status.ERROR);
 	}
 }

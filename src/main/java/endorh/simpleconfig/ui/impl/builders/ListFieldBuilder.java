@@ -7,16 +7,19 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V, ?, Entry>,
   Self extends ListFieldBuilder<V, Entry, Self>> extends FieldBuilder<List<V>, Entry, Self> {
 	
-	@NotNull protected Function<V, Optional<ITextComponent>> cellErrorSupplier = v -> Optional.empty();
+	@NotNull protected BiFunction<Integer, V, Optional<ITextComponent>> cellErrorSupplier = (i, v) -> Optional.empty();
+	@NotNull protected Function<List<V>, @Nullable List<Optional<ITextComponent>>> multiCellErrorSupplier = l -> null;
 	protected ITextComponent[] addTooltip = new ITextComponent[] {
 	  new TranslationTextComponent("simpleconfig.help.list.insert"),
 	  new TranslationTextComponent("simpleconfig.help.list.insert:key")
@@ -37,8 +40,13 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 		super(builder, name, value);
 	}
 	
-	public Self setCellErrorSupplier(@NotNull Function<V, Optional<ITextComponent>> cellError) {
+	public Self setCellErrorSupplier(@NotNull BiFunction<Integer, V, Optional<ITextComponent>> cellError) {
 		cellErrorSupplier = cellError;
+		return self();
+	}
+	
+	public Self setMultiCellErrorSupplier(@NotNull Function<List<V>, @Nullable List<Optional<ITextComponent>>> multiCellError) {
+		multiCellErrorSupplier = multiCellError;
 		return self();
 	}
 	
@@ -72,27 +80,16 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 		return self();
 	}
 	
-	// public <E extends AbstractConfigListEntry<?> & IChildListEntry> Self setHeldEntry(E entry) {
-	// 	heldEntry = entry;
-	// 	return self();
-	// }
-	//
-	// protected <E extends AbstractConfigListEntry<?> & IChildListEntry> E getHeldEntry() {
-	// 	//noinspection unchecked
-	// 	return (E) heldEntry;
-	// }
-	
 	@Override public @NotNull Entry build() {
 		final Entry entry = super.build();
 		entry.setCellErrorSupplier(cellErrorSupplier);
+		entry.setMultiCellErrorSupplier(multiCellErrorSupplier);
 		entry.setExpanded(expanded);
 		entry.setAddTooltip(addTooltip);
 		entry.setRemoveTooltip(removeTooltip);
 		entry.setDeleteButtonEnabled(deleteButtonEnabled);
 		entry.setInsertInFront(insertInFront);
 		entry.setCaptionControlsEnabled(captionControlsEnabled);
-		// if (heldEntry != null)
-		// 	entry.setHeldEntry(getHeldEntry());
 		return entry;
 	}
 }

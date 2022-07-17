@@ -6,8 +6,6 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.builders.PairListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -120,10 +118,10 @@ public class EntryPairEntry<
 		return Pair.of(left, right);
 	}
 	
-	@Override public List<ITextComponent> getErrors(Pair<LG, RG> value) {
-		List<ITextComponent> errors = super.getErrors(value);
-		errors.addAll(leftEntry.getErrors(value.getLeft()));
-		errors.addAll(rightEntry.getErrors(value.getRight()));
+	@Override public List<ITextComponent> getErrorsFromGUI(Pair<LG, RG> value) {
+		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+		errors.addAll(leftEntry.getErrorsFromGUI(value.getLeft()));
+		errors.addAll(rightEntry.getErrorsFromGUI(value.getRight()));
 		return errors;
 	}
 	
@@ -134,8 +132,9 @@ public class EntryPairEntry<
 	
 	@Override public @Nullable Pair<L, R> fromConfig(@Nullable Pair<LC, RC> value) {
 		if (value == null) return null;
-		return Pair.of(leftEntry.fromConfigOrDefault(value.getLeft()),
-		               rightEntry.fromConfigOrDefault(value.getRight()));
+		L left = leftEntry.fromConfig(value.getLeft());
+		R right = rightEntry.fromConfig(value.getRight());
+		return left != null && right != null? Pair.of(left, right) : null;
 	}
 	
 	@Override public Pair<LG, RG> forGui(Pair<L, R> value) {
@@ -145,12 +144,9 @@ public class EntryPairEntry<
 	
 	@Override public @Nullable Pair<L, R> fromGui(@Nullable Pair<LG, RG> value) {
 		if (value == null) return null;
-		return Pair.of(leftEntry.fromGuiOrDefault(value.getLeft()),
-		               rightEntry.fromGuiOrDefault(value.getRight()));
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
+		L left = leftEntry.fromGui(value.getLeft());
+		R right = rightEntry.fromGui(value.getRight());
+		return left != null && right != null? Pair.of(left, right) : null;
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {

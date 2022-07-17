@@ -24,7 +24,7 @@ public class SimpleConfigYamlRepresenter extends Representer {
 	}
 	
 	private void init() {
-		representers.remove(null); // Remove Java Beans
+		// representers.remove(null); // Remove Java Beans
 		multiRepresenters.put(Pair.class, new RepresentPair());
 		multiRepresenters.put(Triple.class, new RepresentTriple());
 	}

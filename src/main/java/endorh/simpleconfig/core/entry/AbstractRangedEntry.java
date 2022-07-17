@@ -3,10 +3,7 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraft.util.text.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -175,9 +172,24 @@ public abstract class AbstractRangedEntry
 		return min + " ~ " + max;
 	}
 	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, defValue, createConfigValidator()));
+	@Override public Optional<ITextComponent> getErrorFromGUI(Gui value) {
+		Optional<ITextComponent> error = super.getErrorFromGUI(value);
+		if (error.isPresent()) return error;
+		V v = fromGui(value);
+		if (v == null) return Optional.of(new TranslationTextComponent(
+		  "simpleconfig.config.error.missing_value"));
+		if (min != null && min.compareTo(v) > 0)
+			return Optional.of(new TranslationTextComponent(
+			  "simpleconfig.config.error.too_small", coloredBound(min)));
+		if (max != null && max.compareTo(v) < 0)
+			return Optional.of(new TranslationTextComponent(
+		  "simpleconfig.config.error.too_large", coloredBound(max)));
+		return Optional.empty();
+	}
+	
+	protected static IFormattableTextComponent coloredBound(Object bound) {
+		return new StringTextComponent(String.valueOf(bound))
+		  .mergeStyle(TextFormatting.DARK_AQUA);
 	}
 	
 	@Override

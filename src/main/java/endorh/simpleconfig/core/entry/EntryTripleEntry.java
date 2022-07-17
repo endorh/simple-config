@@ -6,8 +6,6 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -170,11 +168,11 @@ public class EntryTripleEntry<
 		return Triple.of(left, middle, right);
 	}
 	
-	@Override public List<ITextComponent> getErrors(Triple<LG, MG, RG> value) {
-		List<ITextComponent> errors = super.getErrors(value);
-		errors.addAll(leftEntry.getErrors(value.getLeft()));
-		errors.addAll(middleEntry.getErrors(value.getMiddle()));
-		errors.addAll(rightEntry.getErrors(value.getRight()));
+	@Override public List<ITextComponent> getErrorsFromGUI(Triple<LG, MG, RG> value) {
+		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+		errors.addAll(leftEntry.getErrorsFromGUI(value.getLeft()));
+		errors.addAll(middleEntry.getErrorsFromGUI(value.getMiddle()));
+		errors.addAll(rightEntry.getErrorsFromGUI(value.getRight()));
 		return errors;
 	}
 	
@@ -186,9 +184,10 @@ public class EntryTripleEntry<
 	
 	@Override public @Nullable Triple<L, M, R> fromConfig(@Nullable Triple<LC, MC, RC> value) {
 		if (value == null) return null;
-		return Triple.of(leftEntry.fromConfigOrDefault(value.getLeft()),
-							middleEntry.fromConfigOrDefault(value.getMiddle()),
-		               rightEntry.fromConfigOrDefault(value.getRight()));
+		L left = leftEntry.fromConfig(value.getLeft());
+		M middle = middleEntry.fromConfig(value.getMiddle());
+		R right = rightEntry.fromConfig(value.getRight());
+		return left != null && middle != null && right != null? Triple.of(left, middle, right) : null;
 	}
 	
 	@Override public Triple<LG, MG, RG> forGui(Triple<L, M, R> value) {
@@ -199,13 +198,10 @@ public class EntryTripleEntry<
 	
 	@Override public @Nullable Triple<L, M, R> fromGui(@Nullable Triple<LG, MG, RG> value) {
 		if (value == null) return null;
-		return Triple.of(leftEntry.fromGuiOrDefault(value.getLeft()),
-							middleEntry.fromGuiOrDefault(value.getMiddle()),
-		               rightEntry.fromGuiOrDefault(value.getRight()));
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
+		L left = leftEntry.fromGui(value.getLeft());
+		M middle = middleEntry.fromGui(value.getMiddle());
+		R right = rightEntry.fromGui(value.getRight());
+		return left != null && middle != null && right != null? Triple.of(left, middle, right) : null;
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {

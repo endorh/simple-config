@@ -107,7 +107,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		unexpandedWidgets = Lists.newArrayList(label, resetButton);
 		expandedEmptyWidgets = Util.make(new ArrayList<>(widgets), l -> l.add(placeholder));
 		this.cellFactory = cellFactory;
-		acceptButton.setDefaultIcon(SimpleConfigIcons.MERGE_ACCEPT_GROUP);
+		acceptButton.setDefaultIcon(SimpleConfigIcons.Buttons.MERGE_ACCEPT_GROUP);
 	}
 	
 	@Override public boolean isExpanded() {
@@ -313,6 +313,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		widgets.remove(cell);
 		if (prev != -1 && !cells.isEmpty())
 			setListener(cells.get(index == 0? 0 : index - 1));
+		if (index < cells.size())
+		cells.subList(index, cells.size()).forEach(BaseListCell::onMove);
 	}
 	
 	public void setTransparently(int index, T element) {
@@ -457,7 +459,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		  ? null : (BaseListCell<T>) getListener();
 		boolean insideCreateNew = isInsideCreateNew(mouseX, mouseY);
 		boolean insideDelete = isInsideDelete(mouseX, mouseY);
-		SimpleConfigIcons.Entries.GROUP_ARROW.renderCentered(
+		SimpleConfigIcons.Lists.EXPAND.renderCentered(
 		  mStack, x - 15, y + 5, 9, 9,
 		  (label.isMouseOver(mouseX, mouseY) && !insideCreateNew && !insideDelete
 		   ? 2 : 0) + (expanded ? 1 : 0));
@@ -657,6 +659,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		cells.add(to, cell);
 		widgets.add(widgetTarget, cell);
 		cell.onAdd();
+		cells.subList(min(from, to), max(from, to) + 1).forEach(BaseListCell::onMove);
 	}
 	
 	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {
@@ -738,7 +741,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	// This only catches keys when the caption is selected
 	// The rest are caught by AbstractListCell
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (isEditable() && Screen.hasAltDown() && getSelectedIndex() == -1) {
+		if (!isSubEntry() && isEditable() && Screen.hasAltDown() && getSelectedIndex() == -1) {
 			if (keyCode == 257 || keyCode == 260) { // Enter || Insert
 				addTransparently(0);
 				cells.get(0).navigate();

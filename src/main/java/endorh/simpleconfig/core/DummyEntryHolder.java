@@ -40,6 +40,9 @@ public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
 	@Override public <G> G getGUI(String path) {
 		throw new UnsupportedOperationException();
 	}
+	@Override public <T> T getFromGUI(String path) {
+		throw new UnsupportedOperationException();
+	}
 	@Override public <T> void doSet(String path, T value) {
 		throw new UnsupportedOperationException();
 	}

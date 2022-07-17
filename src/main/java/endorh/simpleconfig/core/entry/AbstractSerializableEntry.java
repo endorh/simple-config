@@ -12,8 +12,6 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -72,16 +70,11 @@ public abstract class AbstractSerializableEntry
 	}
 	
 	@Override
-	public Optional<ITextComponent> getError(String value) {
-		final Optional<ITextComponent> opt = super.getError(value);
+	public Optional<ITextComponent> getErrorFromGUI(String value) {
+		final Optional<ITextComponent> opt = super.getErrorFromGUI(value);
 		if (!opt.isPresent() && fromGui(value) == null && value != null) {
 			return getErrorMessage(value);
 		} else return opt;
-	}
-	
-	@Override
-	protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(builder.define(name, forConfig(defValue), createConfigValidator()));
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {

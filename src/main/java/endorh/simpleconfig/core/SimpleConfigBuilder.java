@@ -1,11 +1,13 @@
 package endorh.simpleconfig.core;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.gui.Icon;
+import net.minecraft.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -48,6 +50,7 @@ public class SimpleConfigBuilder
   extends AbstractSimpleConfigEntryHolderBuilder<SimpleConfigBuilder> {
 	protected final String modId;
 	protected final ModConfig.Type type;
+	protected @Nullable LiteralArgumentBuilder<CommandSource> commandRoot = null;
 	
 	protected final String title;
 	
@@ -162,6 +165,15 @@ public class SimpleConfigBuilder
 	@OnlyIn(Dist.CLIENT)
 	public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigBuilder> decorator) {
 		this.decorator = decorator;
+		return this;
+	}
+	
+	/**
+	 * Register the config command at the given command root<br>
+	 * The config command will still be accessible at {@code /config ⟨sub⟩ ⟨modid⟩}<br>
+	 */
+	public SimpleConfigBuilder withCommandRoot(LiteralArgumentBuilder<CommandSource> root) {
+		commandRoot = root;
 		return this;
 	}
 	
@@ -622,7 +634,7 @@ public class SimpleConfigBuilder
 	 * Build the actual config and register it within the Forge system<br><br>
 	 * <b>If your mod uses a different language than Java</b> you will need to
 	 * also pass in your mod event bus as an argument to
-	 * {@link SimpleConfigBuilder#buildAndRegister(IEventBus)}
+	 * {@link #buildAndRegister(IEventBus)}
 	 * @return The built config, which is also received by the baker
 	 */
 	public SimpleConfig buildAndRegister() {
@@ -689,7 +701,7 @@ public class SimpleConfigBuilder
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
 		  unmodifiableMap(groupMap), unmodifiableList(order), specBuilder.build(),
-		  defaultCategory.icon, defaultCategory.color);
+		  defaultCategory.icon, defaultCategory.color, commandRoot);
 		ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
 		SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
 		config.build(modConfig);

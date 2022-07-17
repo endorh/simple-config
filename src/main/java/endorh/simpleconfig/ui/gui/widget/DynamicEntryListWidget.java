@@ -307,16 +307,16 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		RenderSystem.disableTexture();
 		Matrix4f m = mStack.getLast().getMatrix();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(m, (float)  left, (float) (top + 4), 0F).tex(0F, 1F).color(0, 0, 0,   0).endVertex();
-		buffer.pos(m, (float) right, (float) (top + 4), 0F).tex(1F, 1F).color(0, 0, 0,   0).endVertex();
-		buffer.pos(m, (float) right, (float)  top     , 0F).tex(1F, 0F).color(0, 0, 0, 255).endVertex();
-		buffer.pos(m, (float)  left, (float)  top     , 0F).tex(0F, 0F).color(0, 0, 0, 255).endVertex();
+		buffer.pos(m, (float)     0, (float) (top + 4), 0F).tex(0F, 1F).color(0, 0, 0,   0).endVertex();
+		buffer.pos(m, (float) width, (float) (top + 4), 0F).tex(1F, 1F).color(0, 0, 0,   0).endVertex();
+		buffer.pos(m, (float) width, (float)  top     , 0F).tex(1F, 0F).color(0, 0, 0, 255).endVertex();
+		buffer.pos(m, (float)     0, (float)  top     , 0F).tex(0F, 0F).color(0, 0, 0, 255).endVertex();
 		tessellator.draw();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(m, (float)  left, (float)  bottom,      0F).tex(0F, 1F).color(0, 0, 0, 255).endVertex();
-		buffer.pos(m, (float) right, (float)  bottom,      0F).tex(1F, 1F).color(0, 0, 0, 255).endVertex();
-		buffer.pos(m, (float) right, (float) (bottom - 4), 0F).tex(1F, 0F).color(0, 0, 0,   0).endVertex();
-		buffer.pos(m, (float)  left, (float) (bottom - 4), 0F).tex(0F, 0F).color(0, 0, 0,   0).endVertex();
+		buffer.pos(m, (float)     0, (float)  bottom,      0F).tex(0F, 1F).color(0, 0, 0, 255).endVertex();
+		buffer.pos(m, (float) width, (float)  bottom,      0F).tex(1F, 1F).color(0, 0, 0, 255).endVertex();
+		buffer.pos(m, (float) width, (float) (bottom - 4), 0F).tex(1F, 0F).color(0, 0, 0,   0).endVertex();
+		buffer.pos(m, (float)     0, (float) (bottom - 4), 0F).tex(0F, 0F).color(0, 0, 0,   0).endVertex();
 		tessellator.draw();
 		int maxScroll = getMaxScroll();
 		renderScrollBar(mStack, tessellator, buffer, maxScroll, scrollBarPosition, scrollBarEnd);
@@ -511,6 +511,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		INavigableTarget target = getSelectedTarget();
 		INavigableTarget subTarget = getSelectedSubTarget();
 		if (subTarget != null && subTarget.handleNavigationKey(keyCode, scanCode, modifiers))
+			return true;
+		if (target != null && target.handleNavigationKey(keyCode, scanCode, modifiers))
 			return true;
 		switch (keyCode) {
 			case 264: // Down

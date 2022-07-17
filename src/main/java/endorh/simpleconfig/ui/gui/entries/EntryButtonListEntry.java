@@ -48,8 +48,9 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		entry.setName("entry");
 		this.buttonLabelSupplier = buttonLabelSupplier;
 		button = new MultiFunctionImageButton(
-		  0, 0, 20, 20, SimpleConfigIcons.ACCEPT, ButtonAction.of(() -> action.accept(getValue()))
-		  .active(() -> shouldRenderEditable() && !getErrorMessage().isPresent()));
+		  0, 0, 20, 20, SimpleConfigIcons.Buttons.ACCEPT,
+		  ButtonAction.of(() -> action.accept(getValue()))
+		    .active(() -> shouldRenderEditable() && !getErrorMessage().isPresent()));
 		listeners = Lists.newArrayList(entry, button, resetButton);
 		childListeners = Lists.newArrayList(entry, button);
 		heldEntries = Lists.newArrayList(entry);

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
 public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
@@ -40,6 +41,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	}
 	
 	@Override public boolean areEqual(List<T> value, List<T> other) {
+		if (value == null || other == null) return value == other;
 		if (value.isEmpty() && other.isEmpty()) return true;
 		if (value.size() != other.size()) return false;
 		Inner dummy = !cells.isEmpty() ? cells.get(0).nestedEntry
@@ -87,7 +89,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	public static class NestedListCell<T, Inner extends AbstractConfigListEntry<T>>
 	  extends AbstractListListEntry.AbstractListCell<
 	    T, NestedListListEntry.NestedListCell<T, Inner>, NestedListListEntry<T, Inner>
-	  > /*implements IExpandable*/ {
+	  > {
 		protected final Inner nestedEntry;
 		protected final boolean isExpandable;
 		
@@ -128,23 +130,6 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		@Override public Rectangle getSelectionArea() {
 			return nestedEntry.getSelectionArea();
 		}
-		
-		// @Override public boolean isExpanded() {
-		// 	return isExpandable && ((IExpandable) nestedEntry).isExpanded();
-		// }
-		//
-		// @Override public void setExpanded(boolean expanded, boolean recursive) {
-		// 	if (isExpandable)
-		// 		((IExpandable) nestedEntry).setExpanded(expanded, recursive);
-		// }
-		//
-		// @Override public int getFocusedScroll() {
-		// 	return isExpandable ? ((IExpandable) nestedEntry).getFocusedScroll() : 0;
-		// }
-		//
-		// @Override public int getFocusedHeight() {
-		// 	return isExpandable ? ((IExpandable) nestedEntry).getFocusedHeight() : getCellHeight();
-		// }
 		
 		@Override public boolean drawsLine(int mouseX, int mouseY) {
 			if (!isExpandable) return false;
@@ -229,7 +214,11 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		}
 		
 		@Override public List<INavigableTarget> getNavigableChildren(boolean onlyVisible) {
-			return nestedEntry.getNavigableChildren(onlyVisible);
+			if (!onlyVisible) {
+				return Stream.concat(Stream.of(nestedEntry), nestedEntry.getNavigableChildren().stream())
+				  .collect(Collectors.toList());
+			}
+			return nestedEntry.getNavigableChildren(true);
 		}
 		
 		@Override public void navigate() {

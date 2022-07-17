@@ -10,6 +10,8 @@ import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget.ISearchHandler;
@@ -70,12 +72,12 @@ public class SimpleConfigScreen
 			scrollAmount = clamp(scrollAmount, 0.0);
 		}
 	};
-	public Map<ConfigCategory, ListWidget<AbstractConfigEntry<?>>> listWidgets = new HashMap<>();
-	public ListWidget<AbstractConfigEntry<?>> listWidget;
 	public final String modId;
+	protected Map<ConfigCategory, ListWidget<AbstractConfigEntry<?>>> listWidgets;
+	protected ListWidget<AbstractConfigEntry<?>> listWidget;
 	protected ITextComponent displayTitle;
 	protected TintedButton quitButton;
-	protected TintedButton saveButton;
+	protected SaveButton saveButton;
 	protected MultiFunctionIconButton clientButton;
 	protected MultiFunctionIconButton serverButton;
 	protected PresetPickerWidget presetPickerWidget;
@@ -103,6 +105,10 @@ public class SimpleConfigScreen
 	protected ConfigCategory lastClientCategory = null;
 	protected ConfigCategory lastServerCategory = null;
 	
+	// Tick caches
+	private List<EntryError> errors = new ArrayList<>();
+	private boolean isEdited = false;
+	
 	@Internal public SimpleConfigScreen(
 	  Screen parent, String modId, ITextComponent title, Collection<ConfigCategory> categories,
 	  Collection<ConfigCategory> serverCategories, ResourceLocation backgroundLocation
@@ -119,9 +125,13 @@ public class SimpleConfigScreen
 		statusDisplayBar = new StatusDisplayBar(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
 		presetPickerWidget = new PresetPickerWidget(this, 0, 0, 70);
+		selectedCategory = sortedCategories.stream().findFirst().orElseThrow(
+		  () -> new IllegalArgumentException("No categories for config GUI"));
 		if (isSelectedCategoryServer())
 			lastServerCategory = selectedCategory;
 		else lastClientCategory = selectedCategory;
+		minecraft = Minecraft.getInstance();
+		listWidgets = new HashMap<>();
 	}
 	
 	protected static String getModNameOrId(String modId) {
@@ -163,34 +173,34 @@ public class SimpleConfigScreen
 		addListener(searchBar);
 		
 		undoButton = new MultiFunctionImageButton(
-		  48, 2, 20, 20, SimpleConfigIcons.UNDO, ButtonAction.of(() -> {
+		  48, 2, 20, 20, Buttons.UNDO, ButtonAction.of(() -> {
 			undo();
 			setListener(listWidget);
 		}).active(() -> history.canUndo()));
 		addButton(undoButton);
 		redoButton = new MultiFunctionImageButton(
-		  68, 2, 20, 20, SimpleConfigIcons.REDO, ButtonAction.of(() -> {
+		  68, 2, 20, 20, Buttons.REDO, ButtonAction.of(() -> {
 			redo();
 			setListener(listWidget);
 		}).active(() -> history.canRedo()));
 		addButton(redoButton);
 		
 		editFileButton = new MultiFunctionImageButton(
-		  24, 2, 20, 20, SimpleConfigIcons.EDIT_FILE, ButtonAction.of(
+		  24, 2, 20, 20, Buttons.EDIT_FILE, ButtonAction.of(
 			 () -> selectedCategory.getContainingFile().ifPresent(
 				f -> addDialog(EditConfigFileDialog.create(this, f.toAbsolutePath())))
 		  ).active(() -> selectedCategory.getContainingFile().isPresent())
 		  .tooltip(new TranslationTextComponent("simpleconfig.file.open")));
 		addButton(editFileButton);
 		
-		clientButton = new MultiFunctionIconButton(90, 2, 20, 70, SimpleConfigIcons.CLIENT_ICON, ButtonAction
+		clientButton = new MultiFunctionIconButton(90, 2, 20, 70, SimpleConfigIcons.CLIENT, ButtonAction
 		  .of(this::showClientCategories)
 		  .title(() -> new TranslationTextComponent("simpleconfig.config.category.client"))
 		  .tooltip(() -> hasClient() && isSelectedCategoryServer()? Lists.newArrayList(new TranslationTextComponent(
 			 "simpleconfig.ui.switch.client")) : Collections.emptyList())
 		  .active(this::hasClient));
 		addButton(clientButton);
-		serverButton = new MultiFunctionIconButton(90, 2, 20, 70, SimpleConfigIcons.SERVER_ICON, ButtonAction
+		serverButton = new MultiFunctionIconButton(90, 2, 20, 70, SimpleConfigIcons.SERVER, ButtonAction
 		  .of(this::showServerCategories)
 		  .title(() -> new TranslationTextComponent("simpleconfig.config.category.server"))
 		  .tooltip(() -> hasServer() && !isSelectedCategoryServer()? Lists.newArrayList(new TranslationTextComponent(
@@ -227,7 +237,7 @@ public class SimpleConfigScreen
 			tabsLeftBounds = new Rectangle(0, 24, 18, 24);
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
 			buttonLeftTab = new MultiFunctionImageButton(
-			  4, 27, 12, 18, SimpleConfigIcons.LEFT_TAB,
+			  4, 27, 12, 18, Buttons.LEFT_TAB,
 			  ButtonAction.of(() -> tabsScroller.offset(-48, true))
 				 .active(() -> tabsScroller.scrollAmount > 0.0));
 			children.add(buttonLeftTab);
@@ -244,7 +254,7 @@ public class SimpleConfigScreen
 			tabsMaximumScrolled = ww;
 			children.addAll(tabButtons);
 			buttonRightTab = new MultiFunctionImageButton(
-			  width - 16, 27, 12, 18, SimpleConfigIcons.RIGHT_TAB,
+			  width - 16, 27, 12, 18, Buttons.RIGHT_TAB,
 			  ButtonAction.of(() -> tabsScroller.offset(48, true))
 				 .active(
 					() -> tabsScroller.scrollAmount < tabsMaximumScrolled - (double) width + 40.0));
@@ -252,14 +262,7 @@ public class SimpleConfigScreen
 		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
 		
 		// Content
-		listWidget = listWidgets.computeIfAbsent(
-		  selectedCategory, c -> {
-			  final ListWidget<AbstractConfigEntry<?>> w = new ListWidget<>(
-				 this, minecraft, width, height, isShowingTabs() ? 50 : 24,
-				 height - 28, getBackgroundLocation());
-			  w.getEntries().addAll(c.getHeldEntries());
-			  return w;
-		  });
+		listWidget = getListWidget(selectedCategory);
 		listWidget.resize(width, height, isShowingTabs()? 50 : 24, height - 28);
 		if (width >= 800) {
 			listWidget.setLeftPos((width - 800) / 2);
@@ -272,12 +275,12 @@ public class SimpleConfigScreen
 		
 		// Left controls
 		selectAllButton = new MultiFunctionImageButton(
-		  2, height - 22, 20, 20, SimpleConfigIcons.SELECT_ALL,
+		  2, height - 22, 20, 20, SimpleConfigIcons.Buttons.SELECT_ALL,
 		  ButtonAction.of(this::selectAllEntries)
 			 .tooltip(new TranslationTextComponent("simpleconfig.ui.select_all")));
 		addButton(selectAllButton);
 		invertSelectionButton = new MultiFunctionImageButton(
-		  24, height - 22, 20, 20, SimpleConfigIcons.INVERT_SELECTION,
+		  24, height - 22, 20, 20, SimpleConfigIcons.Buttons.INVERT_SELECTION,
 		  ButtonAction.of(this::invertEntrySelection)
 			 .tooltip(new TranslationTextComponent("simpleconfig.ui.invert_selection")));
 		addButton(invertSelectionButton);
@@ -291,17 +294,7 @@ public class SimpleConfigScreen
 		  widget -> quit());
 		// quitButton.setTintColor(0x80BD4242);
 		addButton(quitButton);
-		saveButton = new TintedButton(
-		  width / 2 + 3, height - 24, buttonWidths, 20,
-		  NarratorChatListener.EMPTY, button -> saveAll(true)) {
-			public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
-				final boolean hasErrors = hasErrors();
-				active = isEdited() && !hasErrors;
-				setMessage(new TranslationTextComponent(
-				  hasErrors ? "text.cloth-config.error_cannot_save" : "text.cloth-config.save_and_done"));
-				super.render(matrices, mouseX, mouseY, delta);
-			}
-		};
+		saveButton = new SaveButton(this, width / 2 + 3, height - 24, buttonWidths, 20);
 		saveButton.setTintColor(0x8042BD42);
 		addButton(saveButton);
 		saveButton.active = isEdited();
@@ -309,13 +302,13 @@ public class SimpleConfigScreen
 		// Right buttons
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
 			settingsButton = new MultiFunctionImageButton(
-			  width - 44, height - 22, 20, 20, SimpleConfigIcons.GEAR,
+			  width - 44, height - 22, 20, 20, SimpleConfigIcons.Buttons.GEAR,
 			  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
 				 .tooltip(new TranslationTextComponent("simpleconfig.ui.simple_config_settings")));
 			addButton(settingsButton);
 		}
 		keyboardButton = new MultiFunctionImageButton(
-		  width - 22, height - 22, 20, 20, SimpleConfigIcons.KEYBOARD,
+		  width - 22, height - 22, 20, 20, SimpleConfigIcons.Buttons.KEYBOARD,
 		  ButtonAction.of(() -> addDialog(getControlsDialog()))
 		    .tooltip(new TranslationTextComponent("simpleconfig.ui.controls")));
 		addButton(keyboardButton);
@@ -328,14 +321,28 @@ public class SimpleConfigScreen
 		if (afterInitConsumer != null) afterInitConsumer.accept(this);
 	}
 	
+	public ListWidget<AbstractConfigEntry<?>> getListWidget(ConfigCategory category) {
+		return listWidgets.computeIfAbsent(category, c -> {
+			final ListWidget<AbstractConfigEntry<?>> w = new ListWidget<>(
+			  this, minecraft, width, height, isShowingTabs()? 50 : 24,
+			  height - 28, c.getBackground() != null? c.getBackground() : backgroundLocation);
+			w.getEntries().addAll(c.getHeldEntries());
+			return w;
+		});
+	}
+	
 	public List<EntryError> getErrors() {
+		return errors;
+	}
+	
+	public void updateErrors() {
 		List<EntryError> errors = Lists.newArrayList();
 		// Add errors in order
 		for (ConfigCategory cat : isSelectedCategoryServer()? sortedServerCategories : sortedClientCategories)
 			errors.addAll(cat.getErrors());
 		for (ConfigCategory cat : isSelectedCategoryServer()? sortedClientCategories : sortedServerCategories)
 			errors.addAll(cat.getErrors());
-		return errors;
+		this.errors = errors;
 	}
 	
 	public void showServerCategories() {
@@ -384,6 +391,13 @@ public class SimpleConfigScreen
 			}
 		}
 	}
+	@Override public boolean isEdited() {
+		return isEdited;
+	}
+	
+	protected void updateIsEdited() {
+		isEdited = super.isEdited();
+	}
 	
 	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
 		if (tabsBounds.contains(mouseX, mouseY) &&
@@ -405,7 +419,7 @@ public class SimpleConfigScreen
 	
 	public void invertEntrySelection() {
 		selectedCategory.getAllMainEntries().stream()
-		  .filter(e -> !(e instanceof IEntryHolder) && e.isSelectable())
+		  .filter(e -> !(e instanceof CaptionedSubCategoryListEntry) && e.isSelectable())
 		  .forEach(e -> e.setSelected(!e.isSelected()));
 	}
 	
@@ -540,6 +554,10 @@ public class SimpleConfigScreen
 	@Override public void tick() {
 		super.tick();
 		listWidget.tick();
+		updateErrors();
+		updateIsEdited();
+		statusDisplayBar.tick();
+		saveButton.tick();
 	}
 	
 	@Override
@@ -622,7 +640,7 @@ public class SimpleConfigScreen
 		Function<Integer, Integer> step = forwards ? j -> (j + 1) % s : j -> (j - 1 + s) % s;
 		for (int i = step.apply(selectedIndex); i != selectedIndex; i = step.apply(i)) {
 			ConfigCategory cat = sortedCategories.get(i);
-			Optional<INavigableTarget> opt = listWidgets.get(cat)
+			Optional<INavigableTarget> opt = getListWidget(cat)
 			  .getNavigableTargets(false).stream()
 			  .filter(predicate).findFirst();
 			if (opt.isPresent()) return opt.get();
@@ -1033,7 +1051,7 @@ public class SimpleConfigScreen
 		) {
 			super(handler, x, y, w, h, screen);
 			tooltipButton = new ToggleImageButton(
-			  searchTooltips, 0, 0, 18, 18, SimpleConfigIcons.SEARCH_TOOLTIPS,
+			  searchTooltips, 0, 0, 18, 18, SimpleConfigIcons.SearchBar.SEARCH_TOOLTIPS,
 			  b -> updateModifiers());
 			addOptionButton(0, tooltipButton);
 		}
@@ -1121,6 +1139,28 @@ public class SimpleConfigScreen
 		
 		protected static void open(Path path) {
 			Util.getOSType().openFile(path.toFile());
+		}
+	}
+	
+	protected static class SaveButton extends TintedButton {
+		private final SimpleConfigScreen screen;
+		
+		public SaveButton(SimpleConfigScreen screen, int x, int y, int width, int height) {
+			super(x, y, width, height, NarratorChatListener.EMPTY,
+			      button -> screen.saveAll(true));
+			this.screen = screen;
+		}
+		
+		public void tick() {
+			final boolean hasErrors = screen.hasErrors();
+			active = !hasErrors && screen.isEdited();
+			setMessage(new TranslationTextComponent(
+			  hasErrors
+			  ? "text.cloth-config.error_cannot_save" : "text.cloth-config.save_and_done"));
+		}
+		
+		public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
+			super.render(matrices, mouseX, mouseY, delta);
 		}
 	}
 }

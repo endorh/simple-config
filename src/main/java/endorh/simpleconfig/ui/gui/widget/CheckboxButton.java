@@ -27,7 +27,7 @@ public class CheckboxButton extends ToggleImageButton {
 	  boolean value, int x, int y, int w, @Nullable ITextComponent label,
 	  @Nullable Consumer<Boolean> onChange
 	) {
-		this(value, x, y, w, 18, SimpleConfigIcons.CHECKBOX, label, onChange);
+		this(value, x, y, w, 18, SimpleConfigIcons.Widgets.CHECKBOX, label, onChange);
 	}
 	
 	public CheckboxButton(

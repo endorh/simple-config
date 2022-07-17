@@ -4,12 +4,14 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingException;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.datafixers.util.Pair;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.SimpleConfigSync.CSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.SimpleConfigSync.SSimpleConfigSyncPacket;
+import endorh.simpleconfig.core.commands.SimpleConfigCommand;
 import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
@@ -21,6 +23,7 @@ import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
@@ -70,6 +73,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	private final ModConfig.Type type;
 	private final String modId;
 	private SimpleConfigModConfig modConfig;
+	private SimpleConfigCommand command;
 	
 	protected final String defaultTitle;
 	protected final String tooltip;
@@ -237,7 +241,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	  Map<String, SimpleConfigCategory> categories,
 	  Map<String, SimpleConfigGroup> groups,
 	  List<IGUIEntry> order, ForgeConfigSpec spec,
-	  Icon icon, int color
+	  Icon icon, int color, @Nullable LiteralArgumentBuilder<CommandSource> commandRoot
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
@@ -252,6 +256,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.children = unmodifiableMap(children);
 		defaultCategoryIcon = icon;
 		defaultCategoryColor = color;
+		this.command = new SimpleConfigCommand(this, commandRoot);
 	}
 	
 	@Internal protected void build(SimpleConfigModConfig modConfig) {
@@ -607,6 +612,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	public String getModId() {
 		return modId;
+	}
+	
+	public String getModName() {
+		return getModNameOrId(modId);
 	}
 	
 	public SimpleConfigModConfig getModConfig() {

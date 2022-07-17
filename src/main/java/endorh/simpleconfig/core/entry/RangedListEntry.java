@@ -2,8 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +47,7 @@ public abstract class RangedListEntry<
 		public Self min(@NotNull V min) {
 			Self copy = copy();
 			copy.min = min;
-			copy = copy.elemError(clamp(validator));
+			copy = copy.elemError(clamp(elemErrorSupplier));
 			return copy;
 		}
 		
@@ -58,7 +57,7 @@ public abstract class RangedListEntry<
 		public Self max(@NotNull V max) {
 			Self copy = copy();
 			copy.max = max;
-			copy = copy.elemError(clamp(validator));
+			copy = copy.elemError(clamp(elemErrorSupplier));
 			return copy;
 		}
 		
@@ -69,13 +68,13 @@ public abstract class RangedListEntry<
 			Self copy = copy();
 			copy.min = min;
 			copy.max = max;
-			copy = copy.elemError(clamp(validator));
+			copy = copy.elemError(clamp(elemErrorSupplier));
 			return copy;
 		}
 		
 		@Override
-		public Self elemError(Function<V, Optional<ITextComponent>> validator) {
-			return super.elemError(clamp(validator));
+		public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
+			return super.elemError(clamp(errorSupplier));
 		}
 		
 		protected Function<V, Optional<ITextComponent>> clamp(
@@ -85,12 +84,19 @@ public abstract class RangedListEntry<
 			return t -> {
 				if (t.compareTo(min) < 0)
 					return Optional
-					  .of(new TranslationTextComponent("text.cloth-config.error.too_small", min));
+					  .of(new TranslationTextComponent(
+						 "simpleconfig.config.error.too_small", coloredBound(min)));
 				if (t.compareTo(max) > 0)
 					return Optional
-					  .of(new TranslationTextComponent("text.cloth-config.error.too_large", max));
+					  .of(new TranslationTextComponent(
+						 "simpleconfig.config.error.too_large", coloredBound(max)));
 				return validator != null ? validator.apply(t) : Optional.empty();
 			};
+		}
+		
+		protected static IFormattableTextComponent coloredBound(Object bound) {
+			return new StringTextComponent(String.valueOf(bound))
+			  .mergeStyle(TextFormatting.DARK_AQUA);
 		}
 		
 		protected void checkBounds() {}

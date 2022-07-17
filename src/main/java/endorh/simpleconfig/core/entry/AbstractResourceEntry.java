@@ -9,12 +9,9 @@ import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<Self>>
@@ -88,10 +85,6 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 		typeComment = typeComment != null? typeComment + ": " : "";
 		tooltips.add(typeComment + "namespace:path");
 		return tooltips;
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forConfig(defValue), createConfigValidator()));
 	}
 	
 	protected ComboBoxFieldBuilder<ResourceLocation> decorate(

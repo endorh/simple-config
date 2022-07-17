@@ -6,6 +6,9 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.core.entry.GUIOnlyEntry;
+import endorh.simpleconfig.core.entry.TextEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.yaml.NodeComments;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter;
@@ -14,14 +17,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.comments.CommentLine;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.blankLine;
@@ -228,6 +229,22 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	}
 	
 	/**
+	 * Get a child entry holder, if it exists<br>
+	 * @param path Name or dot-separated path to the child
+	 *             If null or empty, {@code this} will be returned
+	 * @return A child entry holder, or null if it doesn't exist
+	 */
+	public @Nullable AbstractSimpleConfigEntryHolder getChildOrNull(String path) {
+		if (path == null || path.isEmpty()) return this;
+		final String[] split = DOT.split(path, 2);
+		if (split.length < 2) {
+			return children.get(path);
+		} else if (children.containsKey(split[0]))
+			return children.get(split[0]).getChild(split[1]);
+		return null;
+	}
+	
+	/**
 	 * Get a child entry holder<br>
 	 * @param path Name or dot-separated path to the child
 	 *             If null or empty, {@code this} will be returned
@@ -235,17 +252,26 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @return A child {@link AbstractSimpleConfigEntryHolder},
 	 *         or {@code this} if path is null or empty.
 	 */
-	public AbstractSimpleConfigEntryHolder getChild(String path) {
-		if (path == null || path.isEmpty())
-			return this;
-		final String[] split = DOT.split(path, 2);
-		if (split.length < 2) {
-			if (children.containsKey(path))
-				return children.get(path);
-			throw new NoSuchConfigGroupError(getPath() + "." + path);
-		} else if (children.containsKey(split[0]))
-			return children.get(split[0]).getChild(split[1]);
-		throw new NoSuchConfigGroupError(getPath() + "." + path);
+	public @NotNull AbstractSimpleConfigEntryHolder getChild(String path) {
+		AbstractSimpleConfigEntryHolder child = getChildOrNull(path);
+		if (child == null) throw new NoSuchConfigGroupError(getPath() + "." + path);
+		return child;
+	}
+	
+	/**
+	 * Get a config entry by name or dot-separated path<br>
+	 * Doesn't check for the types to be correct<br>
+	 * @param path Name or dot-separated path to the entry
+	 * @return The entry, or null if not found
+	 * @see #get(String)
+	 * @see #set(String, Object)
+	 * @see #getEntry(String)
+	 */
+	@Internal public <T, C, Gui> @Nullable AbstractConfigEntry<T, C, Gui, ?> getEntryOrNull(String path) {
+		AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(path);
+		if (entry == null) entry = getSubEntry(path);
+		//noinspection unchecked
+		return (AbstractConfigEntry<T, C, Gui, ?>) entry;
 	}
 	
 	/**
@@ -254,18 +280,14 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @param <T> Expected type of the entry
 	 * @param <Gui> Expected GUI type of the entry
 	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @see AbstractSimpleConfigEntryHolder#get(String)
-	 * @see AbstractSimpleConfigEntryHolder#set(String, Object)
+	 * @see #get(String)
+	 * @see #set(String, Object)
+	 * @see #getEntryOrNull(String)
 	 */
-	protected <T, Gui> AbstractConfigEntry<T, ?, Gui, ?> getEntry(String path) {
-		AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(path);
-		if (entry == null) {
-			entry = getSubEntry(path);
-			if (entry == null) // Unnecessary, since getSubEntry already throws
-				throw new NoSuchConfigEntryError(getPath() + "." + path);
-		}
-		//noinspection unchecked
-		return (AbstractConfigEntry<T, ?, Gui, ?>) entry;
+	@Internal public <T, C, Gui> @NotNull AbstractConfigEntry<T, C, Gui, ?> getEntry(String path) {
+		AbstractConfigEntry<T, C, Gui, ?> entry = getEntryOrNull(path);
+		if (entry == null) throw new NoSuchConfigEntryError(getPath() + "." + path);
+		return entry;
 	}
 	
 	/**
@@ -279,11 +301,42 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
 		final String[] split = DOT.split(path, 2);
-		if (split.length < 2)
-			throw new NoSuchConfigEntryError(getPath() + "." + path);
-		if (children.containsKey(split[0]))
-			return children.get(split[0]).getEntry(split[1]);
-		throw new NoSuchConfigEntryError(getPath() + "." + path);
+		if (split.length < 2 || !children.containsKey(split[0])) return null;
+		return children.get(split[0]).getEntry(split[1]);
+	}
+	
+	/**
+	 * Check if a certain path exists.<br>
+	 * @param path Name or dot-separated path to the entry
+	 * @return {@code true} if the entry exists, {@code false} otherwise
+	 */
+	@Internal public boolean hasEntry(String path) {
+		AbstractConfigEntry<?, ?, ?, ?> entry = getEntryOrNull(path);
+		return entry != null && !(entry instanceof TextEntry);
+	}
+	
+	@Internal public boolean hasChild(String path) {
+		return getChildOrNull(path) != null;
+	}
+	
+	/**
+	 * Build a collection with all the paths below this<br>
+	 */
+	@Internal public Collection<String> getPaths(boolean includeGroups) {
+		List<String> list = new ArrayList<>();
+		gatherPaths(list, "", includeGroups);
+		return list;
+	}
+	
+	protected void gatherPaths(List<String> paths, String prefix, boolean includeGroups) {
+		entries.forEach((k, e) -> {
+			if (!(e instanceof TextEntry) && !(e instanceof GUIOnlyEntry))
+				paths.add(prefix + k);
+		});
+		children.forEach((key, child) -> {
+			if (includeGroups) paths.add(prefix + key);
+			child.gatherPaths(paths, prefix + key + '.', includeGroups);
+		});
 	}
 	
 	protected abstract void commitFields();
@@ -306,18 +359,18 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @param <T> Expected type of the value
 	 * @throws NoSuchConfigEntryError if the value is not found
 	 * @throws InvalidConfigValueTypeException if the value type does not match the expected
-	 * @see AbstractSimpleConfigEntryHolder#getBoolean(String)
-	 * @see AbstractSimpleConfigEntryHolder#getChar(String)
-	 * @see AbstractSimpleConfigEntryHolder#getByte(String)
-	 * @see AbstractSimpleConfigEntryHolder#getShort(String)
-	 * @see AbstractSimpleConfigEntryHolder#getInt(String)
-	 * @see AbstractSimpleConfigEntryHolder#getLong(String)
-	 * @see AbstractSimpleConfigEntryHolder#getFloat(String)
-	 * @see AbstractSimpleConfigEntryHolder#getDouble(String)
+	 * @see #getBoolean(String)
+	 * @see #getChar(String)
+	 * @see #getByte(String)
+	 * @see #getShort(String)
+	 * @see #getInt(String)
+	 * @see #getLong(String)
+	 * @see #getFloat(String)
+	 * @see #getDouble(String)
 	 */
 	@Override public <T> T get(String path) {
 		try {
-			return this.<T, Object>getEntry(path).get();
+			return this.<T, Object, Object>getEntry(path).get();
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
@@ -360,7 +413,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	@Internal @Deprecated @Override public <G> void doSetGUI(String path, G value) {
 		try {
-			this.<Object, G>getEntry(path).setGUI(value);
+			this.<Object, Object, G>getEntry(path).setGUI(value);
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
@@ -442,49 +495,75 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	@Override public <G> G getGUI(String path) {
 		try {
-			return this.<Object, G>getEntry(path).getGUI();
+			return this.<Object, Object, G>getEntry(path).getGUI();
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
 	}
 	
-	public <V> V getFromGUI(String path) {
+	@Override public <V> V getFromGUI(String path) {
 		try {
-			return this.<V, Object>getEntry(path).getFromGUI();
+			return this.<V, Object, Object>getEntry(path).getFromGUI();
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
 	}
 	
-	public boolean getBooleanFromGUI(String path) {
-		return this.<Boolean>getFromGUI(path);
+	/**
+	 * Reset all entries to their default values.
+	 */
+	public void reset() {
+		for (AbstractConfigEntry<?, ?, ?, ?> entry : this.entries.values()) {
+			//noinspection unchecked
+			AbstractConfigEntry<Object, ?, ?, ?> e = (AbstractConfigEntry<Object, ?, ?, ?>) entry;
+			e.set(e.defValue);
+		}
+		for (AbstractSimpleConfigEntryHolder child: children.values())
+			child.reset();
 	}
 	
-	public byte getByteFromGUI(String path) {
-		return this.<Number>getFromGUI(path).byteValue();
+	/**
+	 * Reset an entry or group of entries to its default value.
+	 * @param path Name or dot-separated path to the entry or group of entries
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 */
+	public void reset(String path) {
+		AbstractSimpleConfigEntryHolder child = getChildOrNull(path);
+		if (child != null) {
+			child.reset();
+		} else {
+			AbstractConfigEntry<Object, Object, Object, ?> entry = getEntry(path);
+			entry.set(entry.defValue);
+		}
 	}
 	
-	public short getShortFromGUI(String path) {
-		return this.<Number>getFromGUI(path).shortValue();
+	/**
+	 * Reset an entry within the GUI, if it has one.
+	 * @param path Name or dot-separated path to the value
+	 * @return {@code true} if the entry has a GUI and was reset, {@code false} otherwise
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 */
+	@OnlyIn(Dist.CLIENT) public boolean resetInGUI(String path) {
+		AbstractConfigEntry<Object, Object, Object, ?> entry = getEntry(path);
+		if (entry.hasGUI()) {
+			AbstractConfigListEntry<Object> guiEntry = entry.guiEntry;
+			if (guiEntry != null) guiEntry.resetValue();
+			return true;
+		} else return false;
 	}
 	
-	public int getIntFromGUI(String path) {
-		return this.<Number>getFromGUI(path).intValue();
-	}
-	
-	public long getLongFromGUI(String path) {
-		return this.<Number>getFromGUI(path).longValue();
-	}
-	
-	public float getFloatFromGUI(String path) {
-		return this.<Number>getFromGUI(path).floatValue();
-	}
-	
-	public double getDoubleFromGUI(String path) {
-		return this.<Number>getFromGUI(path).doubleValue();
-	}
-	
-	public char getCharFromGUI(String path) {
-		return this.<Character>getFromGUI(path);
+	/**
+	 * Restore an entry within the GUI, if it has one.
+	 * @param path Name or dot-separated path to the value
+	 * @return {@code true} if the entry has a GUI and was restored, {@code false} otherwise
+	 * @throws NoSuchConfigEntryError if the entry is not found
+	 */
+	@OnlyIn(Dist.CLIENT) public boolean restoreInGUI(String path) {
+		AbstractConfigEntry<Object, Object, Object, ?> entry = getEntry(path);
+		if (entry.hasGUI()) {
+			AbstractConfigListEntry<Object> guiEntry = entry.guiEntry;
+			if (guiEntry != null) guiEntry.restoreValue();
+			return true;
+		} else return false;
 	}
 }

@@ -7,18 +7,18 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SelectorEntry.TypeWrapper;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -77,10 +77,6 @@ public class EnumEntry<E extends Enum<E>>
 	
 	public interface ITranslatedEnum {
 		ITextComponent getDisplayName();
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	public String presentName(E value) {
@@ -184,7 +180,7 @@ public class EnumEntry<E extends Enum<E>>
 		if (useComboBox != null? useComboBox : advanced.prefer_combo_box < enumClass.getEnumConstants().length) {
 			final List<E> choices = Lists.newArrayList(enumClass.getEnumConstants());
 			final ComboBoxFieldBuilder<E> valBuilder =
-			  builder.startComboBox(getDisplayName(), new TypeWrapper<>(
+			  builder.startComboBox(getDisplayName(), new ChoicesTypeWrapper<>(
 				   choices, e -> e.name().toLowerCase(), this::enumName), get()
 				 ).setSuggestionMode(false)
 				 .setSuggestions(choices);
@@ -198,4 +194,33 @@ public class EnumEntry<E extends Enum<E>>
 		}
 	}
 	
+	public static class ChoicesTypeWrapper<V> implements ITypeWrapper<V> {
+		protected List<V> choices;
+		protected Function<V, String> nameProvider;
+		protected Function<V, ITextComponent> formattedNameProvider;
+		
+		public ChoicesTypeWrapper(
+		  List<V> choices, Function<V, String> nameProvider,
+		  Function<V, ITextComponent> formattedNameProvider
+		) {
+			this.choices = choices;
+			this.nameProvider = nameProvider;
+			this.formattedNameProvider = formattedNameProvider;
+		}
+		
+		@Override public Pair<Optional<V>, Optional<ITextComponent>> parseElement(@NotNull String text) {
+			final Optional<V> opt = choices.stream().filter(c -> text.equals(nameProvider.apply(c))).findFirst();
+			Optional<ITextComponent> error = opt.isPresent()? Optional.empty() : Optional.of(new TranslationTextComponent(
+			  "simpleconfig.config.error.unknown_value"));
+			return Pair.of(opt, error);
+		}
+		
+		@Override public ITextComponent getDisplayName(@NotNull V element) {
+			return formattedNameProvider.apply(element);
+		}
+		
+		@Override public String getName(@NotNull V element) {
+			return nameProvider.apply(element);
+		}
+	}
 }

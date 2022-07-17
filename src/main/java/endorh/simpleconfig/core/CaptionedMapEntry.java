@@ -12,8 +12,6 @@ import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,10 +110,10 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		return null;
 	}
 	
-	@Override public List<ITextComponent> getErrors(Pair<CG, List<Pair<KG, G>>> value) {
-		List<ITextComponent> errors = super.getErrors(value);
-		errors.addAll(captionEntry.getErrors(value.getKey()));
-		errors.addAll(mapEntry.getErrors(value.getValue()));
+	@Override public List<ITextComponent> getErrorsFromGUI(Pair<CG, List<Pair<KG, G>>> value) {
+		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+		errors.addAll(captionEntry.getErrorsFromGUI(value.getKey()));
+		errors.addAll(mapEntry.getErrorsFromGUI(value.getValue()));
 		return errors;
 	}
 	
@@ -128,8 +126,9 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 	  @Nullable Pair<CC, Map<KC, C>> value
 	) {
 		if (value == null) return null;
-		return Pair.of(captionEntry.fromConfigOrDefault(value.getKey()),
-		               mapEntry.fromConfigOrDefault(value.getValue()));
+		CV caption = captionEntry.fromConfig(value.getKey());
+		Map<K, V> map = mapEntry.fromConfig(value.getValue());
+		return caption != null && map != null? Pair.of(caption, map) : null;
 	}
 	
 	@Override public Pair<CG, List<Pair<KG, G>>> forGui(Pair<CV, Map<K, V>> value) {
@@ -138,8 +137,9 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 	
 	@Override public @Nullable Pair<CV, Map<K, V>> fromGui(@Nullable Pair<CG, List<Pair<KG, G>>> value) {
 		if (value == null) return null;
-		return Pair.of(captionEntry.fromGuiOrDefault(value.getKey()),
-		               mapEntry.fromGuiOrDefault(value.getValue()));
+		CV caption = captionEntry.fromGui(value.getKey());
+		Map<K, V> map = mapEntry.fromGui(value.getValue());
+		return caption != null && map != null? Pair.of(caption, map) : null;
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {
@@ -148,10 +148,6 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		if (!captionTooltip.isEmpty()) tooltips.add("Caption: " + captionTooltip);
 		tooltips.addAll(mapEntry.getConfigCommentTooltips());
 		return tooltips;
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
-		return Optional.of(decorate(builder).define(name, forActualConfig(forConfig(defValue)), createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<Pair<KG, G>>>>> buildGUIEntry(

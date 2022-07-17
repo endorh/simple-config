@@ -181,7 +181,7 @@ public class SimpleConfigGUIManager {
 			
 			Button modOptions = new ImageButton(
 			  x, y, w, h, 0, 0, 20,
-			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/menu.png"),
+			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/menu.png"),
 			  32, 64, p -> showModListGUI()
 			);
 			event.addWidget(modOptions);

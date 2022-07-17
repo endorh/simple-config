@@ -8,7 +8,8 @@ import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.IOverlayCapableScreen;
 import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.SearchBar;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
@@ -22,7 +23,6 @@ import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -40,8 +40,6 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
-	protected static final ResourceLocation CONFIG_TEX = new ResourceLocation(
-	  SimpleConfigMod.MOD_ID, "textures/gui/cloth_config.png");
 	protected static ITextComponent[] CASE_SENSITIVE_TOOLTIP = new ITextComponent[] {
 	  new TranslationTextComponent("simpleconfig.ui.search.case_sensitive"),
 	  new TranslationTextComponent("modifier.cloth-config.alt", "C").mergeStyle(TextFormatting.GRAY)};
@@ -112,20 +110,20 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		comboBox.setSuggestions(advanced.search_history);
 		regexComboBox.setSuggestions(advanced.regex_search_history);
 		up = new MultiFunctionImageButton(
-		  x + w - 68, y, 18, 18, SimpleConfigIcons.UP, ButtonAction.of(
+		  x + w - 68, y, 18, 18, Buttons.UP, ButtonAction.of(
 			 b -> next(b == 1)
-		)).on(Modifier.SHIFT, ButtonAction.of(b -> next(b != 1)).icon(SimpleConfigIcons.DOWN));
+		)).on(Modifier.SHIFT, ButtonAction.of(b -> next(b != 1)).icon(Buttons.DOWN));
 		down = new MultiFunctionImageButton(
-		  x + w - 44, y, 18, 18, SimpleConfigIcons.DOWN, ButtonAction.of(
+		  x + w - 44, y, 18, 18, Buttons.DOWN, ButtonAction.of(
 			 b -> next(b != 1)
-		)).on(Modifier.SHIFT, ButtonAction.of(b -> next(b == 1)).icon(SimpleConfigIcons.UP));
+		)).on(Modifier.SHIFT, ButtonAction.of(b -> next(b == 1)).icon(Buttons.UP));
 		close = new MultiFunctionImageButton(
-		  x + w - 20, y, 20, 20, SimpleConfigIcons.CLOSE_SEARCH, ButtonAction.of(this::close));
+		  x + w - 20, y, 20, 20, Buttons.SEARCH_CLOSE, ButtonAction.of(this::close));
 		open = new MultiFunctionImageButton(
-		  x + 2, y, 20, 20, SimpleConfigIcons.SEARCH, ButtonAction.of(this::open));
-		caseButton = ToggleImageButton.of(false, 18, SimpleConfigIcons.SEARCH_CASE_SENSITIVE, b -> updateModifiers());
-		regexButton = ToggleImageButton.of(false,  18, SimpleConfigIcons.SEARCH_REGEX, b -> updateModifiers());
-		filterButton = ToggleImageButton.of(false, 18, SimpleConfigIcons.SEARCH_FILTER, b -> updateModifiers());
+		  x + 2, y, 20, 20, Buttons.SEARCH, ButtonAction.of(this::open));
+		caseButton = ToggleImageButton.of(false, 18, SearchBar.SEARCH_CASE_SENSITIVE, b -> updateModifiers());
+		regexButton = ToggleImageButton.of(false,  18, SearchBar.SEARCH_REGEX, b -> updateModifiers());
+		filterButton = ToggleImageButton.of(false, 18, SearchBar.SEARCH_FILTER, b -> updateModifiers());
 		optionButtons = Lists.newArrayList(caseButton, regexButton, filterButton);
 		expandedListeners = Lists.newArrayList(caseButton, regexButton, filterButton, comboBox, up, down, close);
 		regexListeners = Lists.newArrayList(caseButton, regexButton, filterButton, regexComboBox, up, down, close);

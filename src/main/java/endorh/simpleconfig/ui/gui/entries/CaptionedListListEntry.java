@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class CaptionedListListEntry<
@@ -75,7 +77,8 @@ public class CaptionedListListEntry<
 	@Override protected void doExpandParents(AbstractConfigEntry<?> entry) {
 		boolean expanded = isExpanded();
 		super.doExpandParents(entry);
-		if (entry == captionEntry) setExpanded(expanded);
+		if (entry == captionEntry || captionEntry.getNavigableSubTargets().contains(entry))
+			setExpanded(expanded);
 	}
 	
 	@Override public Pair<C, List<V>> getDisplayedValue() {
@@ -221,6 +224,11 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override public List<INavigableTarget> getNavigableSubTargets() {
-		return Lists.newArrayList(this, captionEntry);
+		List<INavigableTarget> captionSubTargets = captionEntry.getNavigableSubTargets();
+		return captionSubTargets.isEmpty()
+		       ? Lists.newArrayList(this, captionEntry)
+		       : Stream.concat(
+					Stream.of(this), captionEntry.getNavigableSubTargets().stream()
+		       ).collect(Collectors.toList());
 	}
 }

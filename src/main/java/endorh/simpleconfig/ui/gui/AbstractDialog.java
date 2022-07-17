@@ -44,7 +44,7 @@ public abstract class AbstractDialog
 	public AbstractDialog(ITextComponent title) {
 		this.title = title;
 		this.copyTextButton = new MultiFunctionImageButton(
-		  0, 0, 18, 18, SimpleConfigIcons.COPY, ButtonAction.of(this::copyText)
+		  0, 0, 18, 18, SimpleConfigIcons.Buttons.COPY, ButtonAction.of(this::copyText)
 		  .tooltip(new TranslationTextComponent("simpleconfig.ui.copy_dialog")));
 		listeners.add(copyTextButton);
 	}

@@ -55,7 +55,7 @@ public class DemoServerCategory {
 		
 		// We use this class as the backing class
 		return category("demo", demo.class)
-		  .withIcon(SimpleConfigIcons.INFO)
+		  .withIcon(SimpleConfigIcons.Status.INFO)
 		  .withColor(0x80607080);
 	}
 	
@@ -207,20 +207,19 @@ public class DemoServerCategory {
 				// List entries may define an element validator instead/in addition to
 				//   an error supplier. This is also possible in the builder
 				// The method may accept the primitive type as well, instead of Long
-				private static boolean long_list$validate(long element) {
+				private static Optional<ITextComponent> long_list$elemError(long element) {
 					// Again here we only accept even values
 					// Notice that, separately, in the annotation we've also
 					//   restricted the values to be >= 0
 					// Setting the ranges in the annotation helps provide a
 					//   more precise error message to the user
-					return element % 2 == 0;
+					return element % 2 == 0? Optional.empty() : Optional.of(
+					  ttc(prefix("error.not_even")));
 				}
 				
 				@Entry @Min(0) @Max(1)
 				public static List<Double> double_list = asList(0.1, 0.2, 0.3, 0.4);
-				// The validator method can also return an Optional<ITextComponent>
-				//   to supply better error messages
-				private static Optional<ITextComponent> double_list$validate(double element) {
+				private static Optional<ITextComponent> double_list$elemError(double element) {
 					// Here we limit the number of decimals to 1 for no reason
 					//   If we *really* needed them to have just one decimal
 					//   the correct approach would be using the baker

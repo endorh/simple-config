@@ -85,7 +85,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			// Create and register the client config for the mod
 			CLIENT_CONFIG = SimpleConfig.builder(MOD_ID, Type.CLIENT, ClientConfig.class)
-			  .withIcon(SimpleConfigIcons.CLIENT_ICON)
+			  .withIcon(SimpleConfigIcons.CLIENT)
 			  .withColor(0x8090FF80)
 			  .withBackground("textures/block/bookshelf.png")
 			  .add("add_pause_menu_button", yesNo(true))
@@ -164,7 +164,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			return names;
 		});
 		SERVER_CONFIG = SimpleConfig.builder(MOD_ID, Type.SERVER, ServerConfig.class)
-		  .withIcon(SimpleConfigIcons.SERVER_ICON)
+		  .withIcon(SimpleConfigIcons.SERVER)
 		  .withColor(0x808090FF)
 		  .withBackground("minecraft:blackstone_bricks")
 		  .text("desc", makeLink(

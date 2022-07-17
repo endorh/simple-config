@@ -13,8 +13,6 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -170,12 +168,6 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		List<String> tooltips = super.getConfigCommentTooltips();
 		tooltips.add(getTypeComment() + ": " + getFormatComment());
 		return tooltips;
-	}
-	
-	@Override protected Optional<ConfigValue<?>> buildConfigEntry(
-	  ForgeConfigSpec.Builder builder
-	) {
-		return Optional.of(decorate(builder).define(name, defValue, createConfigValidator()));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override

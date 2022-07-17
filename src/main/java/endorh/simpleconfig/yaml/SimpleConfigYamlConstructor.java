@@ -52,12 +52,10 @@ public class SimpleConfigYamlConstructor extends Constructor {
 	
 	public class ConstructPair extends AbstractConstruct {
 		@Override public Object construct(Node node) {
-			if (!(node instanceof SequenceNode)) {
-				throw new ConstructorException(
-				  "while constructing a pair",
-				  node.getStartMark(), "expected a sequence, but found " + node.getNodeId(),
-				  node.getStartMark());
-			}
+			if (!(node instanceof SequenceNode)) throw new ConstructorException(
+			  "while constructing a pair",
+			  node.getStartMark(), "expected a sequence, but found " + node.getNodeId(),
+			  node.getStartMark());
 			SequenceNode snode = (SequenceNode) node;
 			List<Node> values = snode.getValue();
 			if (values.size() != 2) {
@@ -72,12 +70,10 @@ public class SimpleConfigYamlConstructor extends Constructor {
 	
 	public class ConstructTriple extends AbstractConstruct {
 		@Override public Object construct(Node node) {
-			if (!(node instanceof SequenceNode)) {
-				throw new ConstructorException(
-				  "while constructing a triple",
-				  node.getStartMark(), "expected a sequence, but found " + node.getNodeId(),
-				  node.getStartMark());
-			}
+			if (!(node instanceof SequenceNode)) throw new ConstructorException(
+			  "while constructing a triple",
+			  node.getStartMark(), "expected a sequence, but found " + node.getNodeId(),
+			  node.getStartMark());
 			SequenceNode snode = (SequenceNode) node;
 			List<Node> values = snode.getValue();
 			if (values.size() != 3) {
