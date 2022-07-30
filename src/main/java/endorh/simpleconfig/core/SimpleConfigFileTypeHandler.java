@@ -9,8 +9,6 @@ import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.ReportedException;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.loading.FMLConfig;
-import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -22,12 +20,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
 
+import static endorh.simpleconfig.core.SimpleConfigPaths.DEFAULT_SERVER_CONFIG_DIR;
+
 public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Marker CONFIG = MarkerManager.getMarker("CONFIG");
 	public static SimpleConfigFileTypeHandler YAML = new SimpleConfigFileTypeHandler();
-	private static final Path defaultConfigPath =
-	  FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
 	
 	public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
 		return (oonfig) -> {
@@ -74,7 +72,7 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 	private boolean setupConfigFile(
 	  final ModConfig modConfig, final Path file, final ConfigFormat<?> conf
 	) throws IOException {
-		Path p = defaultConfigPath.resolve(modConfig.getFileName());
+		Path p = DEFAULT_SERVER_CONFIG_DIR.resolve(modConfig.getFileName());
 		if (Files.exists(p)) {
 			LOGGER.info(CONFIG, "Loading default config file from path {}", p);
 			Files.copy(p, file);

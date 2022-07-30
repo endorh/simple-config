@@ -4,17 +4,23 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionButton;
+import endorh.simpleconfig.ui.hotkey.HotKeyAction;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +31,8 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	protected final ImmutableList<T> values;
 	protected int displayedIndex;
 	protected final Button buttonWidget;
+	protected final IntegerListEntry intEntry;
+	protected final RedirectGuiEventListener widgetReference;
 	protected final Function<T, ITextComponent> nameProvider;
 	protected final List<IGuiEventListener> widgets;
 	protected final List<IGuiEventListener> childWidgets;
@@ -50,8 +58,12 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			}
 			return false;
 		});
-		widgets = Lists.newArrayList(buttonWidget, resetButton);
-		childWidgets = Lists.newArrayList(buttonWidget);
+		intEntry = new IntegerListEntry(StringTextComponent.EMPTY, 0);
+		intEntry.setSubEntry(true);
+		intEntry.setParentEntry(this);
+		widgetReference = new RedirectGuiEventListener(buttonWidget);
+		widgets = Lists.newArrayList(widgetReference, sideButtonReference);
+		childWidgets = Lists.newArrayList(widgetReference);
 		this.nameProvider = nameProvider == null ? t -> new TranslationTextComponent(
 		  t instanceof Translatable ? ((Translatable) t).getKey() : t.toString()) : nameProvider;
 	}
@@ -66,9 +78,46 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			this.displayedIndex = index;
 	}
 	
+	@Override public void setHotKeyActionType(
+	  HotKeyActionType<T, ?> type, @Nullable HotKeyAction<T> prev
+	) {
+		super.setHotKeyActionType(type, prev);
+		if (type == HotKeyActionTypes.ENUM_ADD) {
+			widgetReference.setTarget(intEntry);
+			intEntry.setValue(1);
+		} else {
+			widgetReference.setTarget(buttonWidget);
+		}
+	}
+	
+	@Override public Object getHotKeyActionValue() {
+		if (getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD) {
+			return intEntry.getValue();
+		} else return super.getHotKeyActionValue();
+	}
+	
+	@Override public void setHotKeyActionValue(Object value) {
+		if (getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD) {
+			intEntry.setValue((Integer) value);
+		} else super.setHotKeyActionValue(value);
+	}
+	
+	@Override public void tick() {
+		super.tick();
+		if (isEditingHotKeyAction()) intEntry.tick();
+	}
+	
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
+		if (isEditingHotKeyAction()) {
+			HotKeyActionType<T, ?> type = getHotKeyActionType();
+			if (type == HotKeyActionTypes.ENUM_ADD) {
+				intEntry.shouldRenderEditable();
+				intEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
+				return;
+			}
+		}
 		buttonWidget.active = shouldRenderEditable();
 		buttonWidget.x = x;
 		buttonWidget.y = y;
@@ -88,6 +137,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		super.updateFocused(isFocused);
 		if (!isFocused)
 			WidgetUtils.forceUnFocus(buttonWidget);
+		intEntry.updateFocused(isFocused && isEditingHotKeyAction() && getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD);
 	}
 	
 	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {

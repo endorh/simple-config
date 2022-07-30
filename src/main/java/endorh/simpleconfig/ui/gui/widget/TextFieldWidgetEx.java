@@ -18,6 +18,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,7 +26,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,10 +58,17 @@ public class TextFieldWidgetEx extends Widget {
 	private int borderColor = 0xFFFFFF;
 	private int textColor = 0xFFE0E0E0;
 	private int textColorUneditable = 0xFF707070;
-	protected String hint;
+	private @Nullable Function<String, Optional<ITextComponent>> hintProvider;
 	protected Consumer<String> responder;
 	protected Predicate<String> filter = Objects::nonNull;
 	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
+	
+	public static TextFieldWidgetEx of(String text) {
+		TextFieldWidgetEx tf = new TextFieldWidgetEx(
+		  Minecraft.getInstance().fontRenderer, 0, 0, 0, 0, StringTextComponent.EMPTY);
+		tf.setText(text);
+		return tf;
+	}
 	
 	public TextFieldWidgetEx(
 	  FontRenderer font, int x, int y, int w, int h, ITextComponent title
@@ -80,6 +90,12 @@ public class TextFieldWidgetEx extends Widget {
 	
 	public void setFormatter(ITextFormatter formatter) {
 		this.formatter = formatter;
+	}
+	
+	@Override public void setWidth(int width) {
+		boolean change = width != this.width;
+		super.setWidth(width);
+		if (change) scrollToFitCaret();
 	}
 	
 	public void tick() {}
@@ -270,6 +286,7 @@ public class TextFieldWidgetEx extends Widget {
 	
 	public void setCaretPosition(int pos) {
 		caretPos = MathHelper.clamp(pos, 0, text.length());
+		scrollToFitCaret();
 	}
 	
 	public void moveCaretToStart() {
@@ -485,8 +502,9 @@ public class TextFieldWidgetEx extends Widget {
 				font.func_243246_a(mStack, displayedText, textX, textY, color);
 			
 			// Render hint
+			ITextComponent hint = hintProvider != null? hintProvider.apply(text).orElse(null) : null;
 			if (relCaret == shown.length() && hint != null)
-				font.drawStringWithShadow(mStack, hint, caretX - 1, textY, 0xFF808080);
+				font.func_243246_a(mStack, hint, caretX, textY, 0xFF808080);
 			
 			// Render caret
 			if (showCaret) {
@@ -496,6 +514,7 @@ public class TextFieldWidgetEx extends Widget {
 			// Render selection
 			if (relAnchor != relCaret && isFocused()) {
 				if (relAnchor > fitLength) relAnchor = fitLength;
+				if (relAnchor < 0) relAnchor = 0;
 				int aX = textX + font.getStringPropertyWidth(subText(displayedText, 0, relAnchor)) - 1;
 				renderSelection(mStack, caretX, textY - 3, aX, textY + 2 + 9);
 			}
@@ -615,30 +634,38 @@ public class TextFieldWidgetEx extends Widget {
 		return isBordered() ? width - 8 : width;
 	}
 	
-	public void setAnchorPos(int pos) {
-		int len = text.length();
-		anchorPos = MathHelper.clamp(pos, 0, len);
+	public int getMaxHScroll() {
+		String text = this.text;
+		String reversed = new StringBuilder(text).reverse().toString();
+		return text.length() - font.func_238412_a_(reversed, getInnerWidth()).length();
+	}
+	
+	public void scrollToFit(int pos) {
+		int maxHScroll = getMaxHScroll();
 		if (font != null) {
-			if (hScroll > len) {
-				hScroll = len;
-			}
+			if (hScroll > maxHScroll) hScroll = maxHScroll;
 			
 			int w = getInnerWidth();
 			String shown = font.func_238412_a_(text.substring(hScroll), w);
 			int lastShown = shown.length() + hScroll;
-			if (anchorPos == hScroll) {
-				hScroll -= font.func_238413_a_(text, w, true).length();
+			
+			if (pos > lastShown) {
+				hScroll += pos - lastShown + 1;
+			} else if (pos <= hScroll) {
+				hScroll = pos - 1;
 			}
 			
-			if (anchorPos > lastShown) {
-				hScroll += anchorPos - lastShown;
-			} else if (anchorPos <= hScroll) {
-				hScroll -= hScroll - anchorPos;
-			}
-			
-			hScroll = MathHelper.clamp(hScroll, 0, len);
+			hScroll = MathHelper.clamp(hScroll, 0, maxHScroll);
 		}
-		
+	}
+	
+	public void scrollToFitCaret() {
+		scrollToFit(caretPos);
+	}
+	
+	public void setAnchorPos(int pos) {
+		int len = text.length();
+		anchorPos = MathHelper.clamp(pos, 0, len);
 	}
 	
 	public boolean isCanLoseFocus() {
@@ -657,8 +684,28 @@ public class TextFieldWidgetEx extends Widget {
 		this.visible = visible;
 	}
 	
-	public void setHint(@Nullable String hint) {
-		this.hint = hint;
+	public void setPlainHint(@Nullable String hint) {
+		setHint(hint != null? new StringTextComponent(hint) : null);
+	}
+	
+	public void setPlainHint(@Nullable Function<String, Optional<String>> hintProvider) {
+		setHint(hintProvider != null? s -> hintProvider.apply(s).map(StringTextComponent::new) : null);
+	}
+	
+	public void setHint(@Nullable ITextComponent hint) {
+		setHint(hint != null? s -> Optional.of(hint) : null);
+	}
+	
+	public void setHint(@Nullable Function<String, Optional<ITextComponent>> hintProvider) {
+		this.hintProvider = hintProvider;
+	}
+	
+	public void setEmptyHint(String hint) {
+		setEmptyHint(new StringTextComponent(hint));
+	}
+	
+	public void setEmptyHint(ITextComponent hint) {
+		setHint(s -> s.isEmpty()? Optional.of(hint) : Optional.empty());
 	}
 	
 	public int getTextXForPos(int pos) {

@@ -1,9 +1,10 @@
 package endorh.simpleconfig.ui.impl;
 
-import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.ResourceLocation;
@@ -19,10 +20,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 @OnlyIn(value = Dist.CLIENT)
-@Internal public class ConfigBuilderImpl implements ConfigBuilder {
+@Internal public class ConfigScreenBuilderImpl implements ConfigScreenBuilder {
 	protected Runnable savingRunnable;
 	protected String modId;
 	protected Screen parent;
+	protected ConfigHotKey editedConfigHotkey = null;
+	protected Consumer<Boolean> hotKeySaver = null;
 	protected ITextComponent title = new TranslationTextComponent("text.cloth-config.config");
 	protected boolean editable = true;
 	protected boolean transparentBackground = false;
@@ -32,43 +35,43 @@ import java.util.function.Consumer;
 	protected final Map<String, ConfigCategory> clientCategories = new LinkedHashMap<>();
 	protected ConfigCategory fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
-	protected @Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler;
+	protected @Nullable ConfigScreenBuilder.IConfigSnapshotHandler snapshotHandler;
+	private ConfigCategory selectedCategory;
+	private IConfigScreenGUIState previousGUIState;
 	
-	@Internal public ConfigBuilderImpl(String modId) {
+	@Internal public ConfigScreenBuilderImpl(String modId) {
 		this.modId = modId;
 	}
 	
 	@Override public boolean isAlwaysShowTabs() {
 		return alwaysShowTabs;
 	}
-	
-	@Override public ConfigBuilder setAlwaysShowTabs(boolean alwaysShowTabs) {
+	@Override public ConfigScreenBuilder setAlwaysShowTabs(boolean alwaysShowTabs) {
 		this.alwaysShowTabs = alwaysShowTabs;
 		return this;
 	}
 	
-	@Override public ConfigBuilder setTransparentBackground(boolean transparent) {
+	@Override public ConfigScreenBuilder setTransparentBackground(boolean transparent) {
 		transparentBackground = transparent;
 		return this;
 	}
-	
 	@Override public boolean hasTransparentBackground() {
 		return transparentBackground;
 	}
 	
-	@Override public ConfigBuilder setSnapshotHandler(
+	@Override public ConfigScreenBuilder setSnapshotHandler(
 	  IConfigSnapshotHandler handler
 	) {
 		snapshotHandler = handler;
 		return this;
 	}
 	
-	@Override public ConfigBuilder setAfterInitConsumer(Consumer<Screen> afterInitConsumer) {
+	@Override public ConfigScreenBuilder setAfterInitConsumer(Consumer<Screen> afterInitConsumer) {
 		this.afterInitConsumer = afterInitConsumer;
 		return this;
 	}
 	
-	@Override public ConfigBuilder setFallbackCategory(ConfigCategory fallbackCategory) {
+	@Override public ConfigScreenBuilder setFallbackCategory(ConfigCategory fallbackCategory) {
 		this.fallbackCategory = fallbackCategory;
 		return this;
 	}
@@ -76,8 +79,7 @@ import java.util.function.Consumer;
 	@Override public Screen getParentScreen() {
 		return parent;
 	}
-	
-	@Override public ConfigBuilder setParentScreen(Screen parent) {
+	@Override public ConfigScreenBuilder setParentScreen(Screen parent) {
 		this.parent = parent;
 		return this;
 	}
@@ -85,17 +87,49 @@ import java.util.function.Consumer;
 	@Override public ITextComponent getTitle() {
 		return title;
 	}
-	
-	@Override public ConfigBuilder setTitle(ITextComponent title) {
+	@Override public ConfigScreenBuilder setTitle(ITextComponent title) {
 		this.title = title;
+		return this;
+	}
+	
+	@Override public ConfigHotKey getEditedConfigHotKey() {
+		return editedConfigHotkey;
+	}
+	
+	@Override public Consumer<Boolean> getHotKeySaver() {
+		return hotKeySaver;
+	}
+	
+	@Override public ConfigScreenBuilder setEditedConfigHotKey(
+	  ConfigHotKey hotkey, Consumer<Boolean> hotKeySaver
+	) {
+		this.editedConfigHotkey = hotkey;
+		this.hotKeySaver = hotKeySaver;
+		return this;
+	}
+	
+	@Override public ConfigCategory getSelectedCategory() {
+		return selectedCategory;
+	}
+	
+	@Override public ConfigScreenBuilder setSelectedCategory(ConfigCategory category) {
+		selectedCategory = category;
+		return this;
+	}
+	
+	@Override public IConfigScreenGUIState getPreviousGUIState() {
+		return previousGUIState;
+	}
+	
+	@Override public ConfigScreenBuilder setPreviousGUIState(IConfigScreenGUIState state) {
+		previousGUIState = state;
 		return this;
 	}
 	
 	@Override public boolean isEditable() {
 		return editable;
 	}
-	
-	@Override public ConfigBuilder setEditable(boolean editable) {
+	@Override public ConfigScreenBuilder setEditable(boolean editable) {
 		this.editable = editable;
 		return this;
 	}
@@ -108,7 +142,7 @@ import java.util.function.Consumer;
 		return cat;
 	}
 	
-	@Override public ConfigBuilder removeCategory(String name, boolean isServer) {
+	@Override public ConfigScreenBuilder removeCategory(String name, boolean isServer) {
 		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
 		if (!categories.containsKey(name))
 			throw new IllegalArgumentException("Category " + name + " does not exist");
@@ -118,7 +152,7 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigBuilder removeCategoryIfExists(String name, boolean isServer) {
+	@Override public ConfigScreenBuilder removeCategoryIfExists(String name, boolean isServer) {
 		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
 		if (categories.containsKey(name))
 			removeCategory(name, isServer);
@@ -134,12 +168,12 @@ import java.util.function.Consumer;
 		return defaultBackground;
 	}
 	
-	@Override public ConfigBuilder setDefaultBackgroundTexture(ResourceLocation texture) {
+	@Override public ConfigScreenBuilder setDefaultBackgroundTexture(ResourceLocation texture) {
 		defaultBackground = texture;
 		return this;
 	}
 	
-	@Override public ConfigBuilder setSavingRunnable(Runnable runnable) {
+	@Override public ConfigScreenBuilder setSavingRunnable(Runnable runnable) {
 		savingRunnable = runnable;
 		return this;
 	}
@@ -154,13 +188,15 @@ import java.util.function.Consumer;
 		AbstractConfigScreen screen = new SimpleConfigScreen(
 		  parent, modId, title, clientCategories.values(),
 		  serverCategories.values(), defaultBackground);
+		screen.setEditedConfigHotKey(editedConfigHotkey, hotKeySaver);
 		screen.setSavingRunnable(savingRunnable);
 		screen.setEditable(editable);
-		screen.setFallbackCategory(fallbackCategory);
+		screen.setSelectedCategory(selectedCategory != null? selectedCategory : fallbackCategory);
 		screen.setTransparentBackground(transparentBackground);
 		screen.setAlwaysShowTabs(alwaysShowTabs);
 		screen.setAfterInitConsumer(afterInitConsumer);
 		screen.setSnapshotHandler(snapshotHandler);
+		screen.loadConfigScreenGUIState(previousGUIState);
 		return screen;
 	}
 	

@@ -45,7 +45,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setMaxLength(99999);
 		comboBox.setSuggestions(this.suggestions);
 		comboBox.setValue(value);
-		listeners = Lists.newArrayList(comboBox, resetButton);
+		listeners = Lists.newArrayList(comboBox, sideButtonReference);
 		childListeners = Lists.newArrayList(comboBox);
 	}
 	

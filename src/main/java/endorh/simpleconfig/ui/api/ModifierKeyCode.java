@@ -110,6 +110,8 @@ public interface ModifierKeyCode {
 	
 	ModifierKeyCode setModifier(Modifier var1);
 	
+	ModifierKeyCode addModifier(Modifier mod);
+	
 	default ModifierKeyCode copy() {
 		return ModifierKeyCode.copyOf(this);
 	}

@@ -8,11 +8,14 @@ import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse;
-import endorh.simpleconfig.ui.gui.entries.KeyCodeEntry;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.impl.EditHistory;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -25,7 +28,6 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.client.util.InputMappings.Input;
-import net.minecraft.client.util.InputMappings.Type;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
@@ -58,6 +60,7 @@ public abstract class AbstractConfigScreen extends Screen
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected final ResourceLocation backgroundLocation;
 	protected final Screen parent;
+	protected final String modId;
 	protected final List<Tooltip> tooltips = Lists.newArrayList();
 	protected boolean confirmUnsaved = confirm.discard;
 	protected boolean confirmSave = confirm.save;
@@ -65,14 +68,12 @@ public abstract class AbstractConfigScreen extends Screen
 	protected boolean transparentBackground = false;
 	@Nullable protected ConfigCategory defaultFallbackCategory = null;
 	protected boolean editable = true;
-	protected KeyCodeEntry focusedBinding;
-	protected ModifierKeyCode startedKeyCode = null;
+	protected @Nullable IModalInputProcessor modalInputProcessor = null;
 	@Nullable protected Runnable savingRunnable = null;
 	@Nullable protected Consumer<Screen> afterInitConsumer = null;
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	protected Map<String, ConfigCategory> serverCategoryMap;
 	protected Map<String, ConfigCategory> categoryMap;
-	protected boolean insideTransparentAction = false;
 	protected ExternalChangesDialog externalChangesDialog;
 	
 	protected ConfigCategory selectedCategory;
@@ -83,16 +84,19 @@ public abstract class AbstractConfigScreen extends Screen
 	protected SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
 	
 	protected EditHistory history;
+	protected @Nullable ConfigHotKey editedConfigHotKey;
+	protected Consumer<Boolean> hotKeySaver = null;
 	
-	private final List<AbstractDialog> dialogs = Lists.newArrayList();
-	protected @Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler;
+	private final SortedDialogCollection dialogs = new SortedDialogCollection();
+	protected @Nullable ConfigScreenBuilder.IConfigSnapshotHandler snapshotHandler;
 	
 	protected AbstractConfigScreen(
-	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
+	  Screen parent, String modId, ITextComponent title, ResourceLocation backgroundLocation,
 	  Collection<ConfigCategory> clientCategories, Collection<ConfigCategory> serverCategories
 	) {
 		super(title);
 		this.parent = parent;
+		this.modId = modId;
 		this.backgroundLocation = backgroundLocation;
 		this.categoryMap = clientCategories.stream()
 		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
@@ -106,6 +110,10 @@ public abstract class AbstractConfigScreen extends Screen
 		sortedCategories.addAll(sortedServerCategories);
 		history = new EditHistory();
 		history.setOwner(this);
+	}
+	
+	public String getModId() {
+		return modId;
 	}
 	
 	public static void fillGradient(
@@ -251,15 +259,9 @@ public abstract class AbstractConfigScreen extends Screen
 		this.transparentBackground = transparentBackground;
 	}
 	
-	public ConfigCategory getFallbackCategory() {
-		return defaultFallbackCategory != null
-		       ? defaultFallbackCategory
-		       : (categoryMap.isEmpty()? serverCategoryMap : categoryMap).values().iterator().next();
-	}
-	
-	@Internal public void setFallbackCategory(@Nullable ConfigCategory defaultFallbackCategory) {
-		this.defaultFallbackCategory = defaultFallbackCategory;
-		selectedCategory = defaultFallbackCategory;
+	public void loadConfigScreenGUIState(IConfigScreenGUIState state) {}
+	public IConfigScreenGUIState saveConfigScreenGUIState() {
+		return null;
 	}
 	
 	@Override public void saveAll(boolean openOtherScreens) {
@@ -352,6 +354,23 @@ public abstract class AbstractConfigScreen extends Screen
 		Optional.ofNullable(savingRunnable).ifPresent(Runnable::run);
 	}
 	
+	protected void saveHotkey() {
+		if (isOnlyEditingConfigHotKey()) {
+			if (hotKeySaver != null) hotKeySaver.accept(true);
+		} else {
+			ConfigHotKeyGroup hotkeys = ConfigHotKeyManager.INSTANCE.getHotKeys();
+			hotkeys.addEntry(editedConfigHotKey);
+			ConfigHotKeyManager.INSTANCE.updateHotKeys(hotkeys);
+			setEditedConfigHotKey(null, null);
+		}
+	}
+	
+	protected void discardHotkey() {
+		if (isOnlyEditingConfigHotKey()) {
+			if (hotKeySaver != null) hotKeySaver.accept(false);
+		} else setEditedConfigHotKey(null, null);
+	}
+	
 	public boolean hasConflictingExternalChanges() {
 		return sortedClientCategories.stream().flatMap(c -> c.getAllMainEntries().stream())
 		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
@@ -370,29 +389,39 @@ public abstract class AbstractConfigScreen extends Screen
 		this.editable = editable;
 	}
 	
-	public KeyCodeEntry getFocusedBinding() {
-		return focusedBinding;
+	public @Nullable ConfigHotKey getEditedConfigHotKey() {
+		return editedConfigHotKey;
 	}
 	
-	@Internal public void setFocusedBinding(KeyCodeEntry focusedBinding) {
-		this.focusedBinding = focusedBinding;
-		if (focusedBinding != null) {
-			startedKeyCode = this.focusedBinding.getValue();
-			startedKeyCode.setKeyCodeAndModifier(InputMappings.INPUT_INVALID, Modifier.none());
-		} else {
-			startedKeyCode = null;
-		}
+	public void setEditedConfigHotKey(@Nullable ConfigHotKey hotkey, Consumer<Boolean> hotKeySaver) {
+		if (editedConfigHotKey == null && hotkey == null
+		    && this.hotKeySaver == null && hotKeySaver == null
+		) return;
+		this.editedConfigHotKey = hotkey;
+		this.hotKeySaver = hotKeySaver;
+		// Refresh layout
+		init(Minecraft.getInstance(), width, height);
+	}
+	
+	public boolean isEditingConfigHotKey() {
+		return editedConfigHotKey != null;
+	}
+	public boolean isOnlyEditingConfigHotKey() {
+		return hotKeySaver != null;
+	}
+	
+	@Override public @Nullable IModalInputProcessor getModalInputProcessor() {
+		return modalInputProcessor;
+	}
+	@Override public void setModalInputProcessor(@Nullable IModalInputProcessor processor) {
+		modalInputProcessor = processor;
 	}
 	
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (focusedBinding != null && startedKeyCode != null &&
-		    !startedKeyCode.isUnknown() && focusedBinding.isAllowMouse()) {
-			focusedBinding.setDisplayedValue(startedKeyCode);
-			setFocusedBinding(null);
-			return true;
-		}
-		if (handleOverlaysMouseReleased(mouseX, mouseY, button))
-			return true;
+		handleEndDrag(mouseX, mouseY, button);
+		if (handleModalMouseReleased(mouseX, mouseY, button)) return true;
+		if (handleOverlaysMouseReleased(mouseX, mouseY, button)) return true;
+		if (handleDialogsMouseReleased(mouseX, mouseY, button)) return true;
 		return IExtendedDragAwareNestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
 	}
 	
@@ -411,136 +440,36 @@ public abstract class AbstractConfigScreen extends Screen
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 	
-	public boolean keyReleased(int int_1, int int_2, int int_3) {
-		if (getDragged() != null)
-			return true;
-		if (focusedBinding != null && startedKeyCode != null &&
-		    focusedBinding.isAllowKey()) {
-			focusedBinding.setDisplayedValue(startedKeyCode);
-			setFocusedBinding(null);
-			return true;
-		}
-		return super.keyReleased(int_1, int_2, int_3);
+	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+		if (handleModalKeyReleased(keyCode, scanCode, modifiers)) return true;
+		if (handleDialogsKeyReleased(keyCode, scanCode, modifiers)) return true;
+		if (getDragged() != null) return true;
+		return super.keyReleased(keyCode, scanCode, modifiers);
 	}
 	
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (handleModalMouseClicked(mouseX, mouseY, button)) return true;
 		SearchBarWidget searchBar = getSearchBar();
 		if (searchBar.isMouseOver(mouseX, mouseY)) setListener(searchBar);
-		if (getDragged() != null
-		    || handleDialogsMouseClicked(mouseX, mouseY, button)
-		    || handleOverlaysMouseClicked(mouseX, mouseY, button))
+		if (handleDialogsMouseClicked(mouseX, mouseY, button)
+		    || handleOverlaysMouseClicked(mouseX, mouseY, button)
+		    || getDragged() != null)
 			return true;
-		if (focusedBinding != null && startedKeyCode != null &&
-		    focusedBinding.isAllowMouse()) {
-			if (startedKeyCode.isUnknown()) {
-				startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
-			} else if (focusedBinding.isAllowModifiers() &&
-			           startedKeyCode.getType() == Type.KEYSYM) {
-				int code = startedKeyCode.getKeyCode().getKeyCode();
-				if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
-				                     : code == 341 || code == 345
-				) {
-					Modifier modifier = startedKeyCode.getModifier();
-					startedKeyCode.setModifier(
-					  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
-					return true;
-				}
-				if (code == 344 || code == 340) {
-					Modifier modifier = startedKeyCode.getModifier();
-					startedKeyCode.setModifier(
-					  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
-					return true;
-				}
-				if (code == 342 || code == 346) {
-					Modifier modifier = startedKeyCode.getModifier();
-					startedKeyCode.setModifier(
-					  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-					startedKeyCode.setKeyCode(Type.MOUSE.getOrMakeInput(button));
-					return true;
-				}
-			}
-			return true;
-		}
-		if (focusedBinding != null) {
-			return true;
-		}
 		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
 	}
 	
 	protected void recomputeFocus() {}
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {
+		if (handleModalCharTyped(codePoint, modifiers)) return true;
 		if (handleDialogsCharTyped(codePoint, modifiers)) return true;
 		return super.charTyped(codePoint, modifiers);
 	}
 	
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (handleModalKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (handleDialogsKeyPressed(keyCode, scanCode, modifiers)) return true;
-		if (getDragged() != null)
-			return true; // Suppress
-		if (focusedBinding != null && (focusedBinding.isAllowKey() || keyCode == 256)) {
-			if (keyCode != 256) {
-				if (startedKeyCode.isUnknown()) {
-					startedKeyCode.setKeyCode(InputMappings.getInputByCode(keyCode, scanCode));
-				} else if (focusedBinding.isAllowModifiers()) {
-					if (startedKeyCode.getType() == Type.KEYSYM) {
-						int code = startedKeyCode.getKeyCode().getKeyCode();
-						if (Minecraft.IS_RUNNING_ON_MAC ? code == 343 || code == 347
-						                                : code == 341 || code == 345) {
-							Modifier modifier = startedKeyCode.getModifier();
-							startedKeyCode.setModifier(
-							  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
-							  keyCode, scanCode));
-							return true;
-						}
-						if (code == 344 || code == 340) {
-							Modifier modifier = startedKeyCode.getModifier();
-							startedKeyCode.setModifier(
-							  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
-							  keyCode, scanCode));
-							return true;
-						}
-						if (code == 342 || code == 346) {
-							Modifier modifier = startedKeyCode.getModifier();
-							startedKeyCode.setModifier(
-							  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-							startedKeyCode.setKeyCode(InputMappings.getInputByCode(
-							  keyCode, scanCode));
-							return true;
-						}
-					}
-					if (Minecraft.IS_RUNNING_ON_MAC ? keyCode == 343 || keyCode == 347
-					                                : keyCode == 341 || keyCode == 345) {
-						Modifier modifier = startedKeyCode.getModifier();
-						startedKeyCode.setModifier(
-						  Modifier.of(modifier.hasAlt(), true, modifier.hasShift()));
-						return true;
-					}
-					if (keyCode == 344 || keyCode == 340) {
-						Modifier modifier = startedKeyCode.getModifier();
-						startedKeyCode.setModifier(
-						  Modifier.of(modifier.hasAlt(), modifier.hasControl(), true));
-						return true;
-					}
-					if (keyCode == 342 || keyCode == 346) {
-						Modifier modifier = startedKeyCode.getModifier();
-						startedKeyCode.setModifier(
-						  Modifier.of(true, modifier.hasControl(), modifier.hasShift()));
-						return true;
-					}
-				}
-			} else {
-				focusedBinding.setDisplayedValue(ModifierKeyCode.unknown());
-				setFocusedBinding(null);
-			}
-			return true;
-		}
-		if (focusedBinding != null)
-			return true;
+		if (getDragged() != null) return true; // Suppress
 		if (keyCode == 256) { // Escape key
 			if (handleOverlaysEscapeKey())
 				return true;
@@ -617,6 +546,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public void tick() {
 		super.tick();
+		tickDialogs();
 		boolean edited = isEdited();
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
 		  edited ? new TranslationTextComponent("text.cloth-config.cancel_discard")
@@ -635,7 +565,7 @@ public abstract class AbstractConfigScreen extends Screen
 		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
 		super.render(mStack, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
-		renderOverlays(mStack, hasDialog ? -1 : mouseX, hasDialog ? -1 : mouseY, delta);
+		renderOverlays(mStack, mouseX, mouseY, delta);
 		if (hasDialog) tooltips.clear();
 		renderDialogs(mStack, mouseX, mouseY, delta);
 		renderTooltips(mStack, mouseX, mouseY, delta);
@@ -738,12 +668,6 @@ public abstract class AbstractConfigScreen extends Screen
 		this.dragged = dragged;
 	}
 	
-	@Override public void claimRectangle(
-	  Rectangle area, IOverlayRenderer overlayRenderer, int priority
-	) {
-		sortedOverlays.add(area, overlayRenderer, priority);
-	}
-	
 	@Override public SortedOverlayCollection getSortedOverlays() {
 		return sortedOverlays;
 	}
@@ -773,15 +697,15 @@ public abstract class AbstractConfigScreen extends Screen
 		history.apply(true);
 	}
 	
-	@Override public List<AbstractDialog> getDialogs() {
+	@Override public SortedDialogCollection getDialogs() {
 		return dialogs;
 	}
 	
-	public @Nullable ConfigBuilder.IConfigSnapshotHandler getSnapshotHandler() {
+	public @Nullable ConfigScreenBuilder.IConfigSnapshotHandler getSnapshotHandler() {
 		return snapshotHandler;
 	}
 	
-	public void setSnapshotHandler(@Nullable ConfigBuilder.IConfigSnapshotHandler snapshotHandler) {
+	public void setSnapshotHandler(@Nullable ConfigScreenBuilder.IConfigSnapshotHandler snapshotHandler) {
 		this.snapshotHandler = snapshotHandler;
 		if (snapshotHandler != null) snapshotHandler.setExternalChangeHandler(this);
 	}

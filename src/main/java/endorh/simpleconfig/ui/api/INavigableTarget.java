@@ -1,7 +1,6 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.INestedGuiEventHandler;
 import org.jetbrains.annotations.Nullable;

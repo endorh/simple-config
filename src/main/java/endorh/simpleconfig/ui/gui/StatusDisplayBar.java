@@ -4,10 +4,11 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
+import endorh.simpleconfig.ui.api.EntryError;
+import endorh.simpleconfig.ui.api.INavigableTarget;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.StatusDisplayBar.StatusState.StatusStyle;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
@@ -68,7 +69,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		y = screen.listWidget.bottom - height;
 		rect.setBounds(x, y, width, height);
 		if (activeState != null && !claimed) {
-			screen.claimRectangle(rect, this);
+			screen.addOverlay(rect, this);
 			claimed = true;
 			onShow();
 		}
@@ -136,7 +137,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			List<ITextComponent> tooltip = activeState.getTooltip(screen, false);
 			if (!tooltip.isEmpty()) {
 				screen.addTooltip(Tooltip.of(
-				  new Point(mouseX, mouseY), tooltip.toArray(new ITextComponent[0])));
+				  Point.of(mouseX, mouseY), tooltip.toArray(new ITextComponent[0])));
 			}
 		}
 		return true;

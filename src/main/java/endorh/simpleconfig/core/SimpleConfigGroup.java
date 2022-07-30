@@ -225,7 +225,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order) {
 				if (entry instanceof AbstractConfigEntry) {
-					((AbstractConfigEntry<?, ?, ?, ?>) entry).buildGUI(group, entryBuilder);
+					((AbstractConfigEntry<?, ?, ?, ?>) entry).buildGUI(group, entryBuilder, false);
 				} else if (entry instanceof SimpleConfigGroup) {
 					group.add(((SimpleConfigGroup) entry).buildGUI(entryBuilder));
 				}

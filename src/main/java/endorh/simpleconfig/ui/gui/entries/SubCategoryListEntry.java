@@ -5,6 +5,7 @@ import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntry;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
@@ -19,6 +20,10 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 	  ITextComponent title, List<AbstractConfigListEntry<?>> entries
 	) {
 		super(title, entries, null);
+	}
+	
+	@Override public List<HotKeyActionType<Void, ?>> getHotKeyActionTypes() {
+		return Collections.emptyList();
 	}
 	
 	@Internal public static abstract class VoidEntry extends AbstractConfigEntry<Void> implements IChildListEntry {

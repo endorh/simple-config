@@ -2,11 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.api.IEntryHolder;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
+import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry.EntryPairCell;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
@@ -202,7 +198,7 @@ public class EntryPairListListEntry<
 		@Override public List<EntryError> getErrors() {
 			List<EntryError> errors = super.getErrors();
 			errors.addAll(
-			  Stream.concat(keyEntry.getErrors().stream(), valueEntry.getErrors().stream())
+			  Stream.concat(keyEntry.getEntryErrors().stream(), valueEntry.getEntryErrors().stream())
 			    .filter(e -> !errors.contains(e))
 			    .collect(Collectors.toList()));
 			return errors;

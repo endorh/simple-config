@@ -5,7 +5,6 @@ import com.electronwill.nightconfig.core.ConfigSpec;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.datafixers.util.Pair;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
@@ -13,9 +12,9 @@ import endorh.simpleconfig.core.SimpleConfigSync.CSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.SimpleConfigSync.SSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.commands.SimpleConfigCommand;
 import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.yaml.NodeComments;
@@ -37,9 +36,9 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.Type;
-import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.comments.CommentLine;
@@ -53,6 +52,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.blankLine;
@@ -66,7 +66,7 @@ import static java.util.Collections.unmodifiableMap;
  * or {@link SimpleConfig#builder(String, Type, Class)}
  */
 public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
-	private static final Map<Pair<String, ModConfig.Type>, SimpleConfig> INSTANCES =
+	private static final Map<Pair<String, Type>, SimpleConfig> INSTANCES =
 	  synchronizedMap(new HashMap<>());
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	
@@ -98,7 +98,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected final @Nullable Consumer<SimpleConfig> baker;
 	protected final @Nullable Object configClass;
 	@OnlyIn(Dist.CLIENT)
-	protected @Nullable BiConsumer<SimpleConfig, ConfigBuilder> decorator;
+	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT)
@@ -106,9 +106,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
 	private Map<String, NodeComments> comments = new HashMap<>();
 	
-	@SuppressWarnings("UnusedReturnValue")
-	protected static SimpleConfig getInstance(
-	  String modId, @SuppressWarnings("SameParameterValue") ModConfig.Type type
+	@Internal public static SimpleConfig getConfig(
+	  String modId, ModConfig.Type type
 	) {
 		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
 		if (!INSTANCES.containsKey(key)) {
@@ -116,6 +115,18 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			  "Attempted to get unregistered config for mod id \"" + modId + "\" of type " + type);
 		}
 		return INSTANCES.get(key);
+	}
+	
+	@Internal public static boolean hasConfig(String modId, ModConfig.Type type) {
+		return INSTANCES.containsKey(Pair.of(modId, type));
+	}
+	
+	@Internal public static Set<String> getConfigModIds() {
+		return INSTANCES.keySet().stream().map(Pair::getLeft).collect(Collectors.toSet());
+	}
+	
+	@Internal public static Collection<SimpleConfig> getAllConfigs() {
+		return INSTANCES.values();
 	}
 	
 	/**
@@ -340,7 +351,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		snapshotHandler = null;
 	}
 	
-	protected void setGUI(AbstractConfigScreen gui, SimpleConfigSnapshotHandler handler) {
+	protected void setGUI(AbstractConfigScreen gui, @Nullable SimpleConfigSnapshotHandler handler) {
 		this.gui = gui;
 		snapshotHandler = handler;
 	}
@@ -511,13 +522,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected void buildGUI(ConfigBuilder configBuilder) {
+	protected void buildGUI(ConfigScreenBuilder configBuilder) {
 		if (background != null)
 			configBuilder.setDefaultBackgroundTexture(background);
 		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory(getType().name().toLowerCase(), getType() == Type.SERVER);
+			final ConfigCategory category = configBuilder.getOrCreateCategory(getType().extension(), getType() == Type.SERVER);
 			category.setTitle(getTitle());
 			getFilePath().ifPresent(category::setContainingFile);
 			category.setDescription(
@@ -531,18 +542,17 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder);
 		}
-		for (SimpleConfigCategory cat : categories.values()) {
+		for (SimpleConfigCategory cat : categories.values())
 			cat.buildGUI(configBuilder, entryBuilder);
-		}
 		if (decorator != null)
 			decorator.accept(this, configBuilder);
 	}
 	
 	// null config implies deletion
 	protected CompletableFuture<Void> saveLocalPreset(String name, @Nullable CommentedConfig config) {
-		final String prefix = getType().name().toLowerCase() + "-";
-		final String fileName = getModId() + "-preset-" + prefix + name + ".yaml";
-		final File dest = FMLPaths.CONFIGDIR.get().resolve(fileName).toFile();
+		final String typePrefix = "-" + getType().extension() + "-";
+		final String fileName = getModId() + typePrefix + name + ".yaml";
+		final File dest = LOCAL_PRESETS_DIR.resolve(fileName).toFile();
 		if (dest.isDirectory())
 			return failedFuture(new FileNotFoundException(dest.getPath()));
 		if (config != null) {
@@ -561,7 +571,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 				return failedFuture(e);
 			}
 		} else {
-			if (!dest.exists() || !dest.isFile())
+			if (!dest.isFile())
 				return failedFuture(new FileNotFoundException(dest.getPath()));
 			if (!dest.delete())
 				return failedFuture(new IOException("Could not delete file " + dest.getPath()));
@@ -570,22 +580,14 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected CompletableFuture<Void> saveRemotePreset(String name, CommentedConfig config) {
-		final String prefix = getType().name().toLowerCase() + "-";
-		return SimpleConfigSync.saveSnapshot(getModId(), prefix + name, config);
+		return SimpleConfigSync.saveRemoteSnapshot(getModId(), type == Type.SERVER, name, config);
 	}
 	
 	protected CompletableFuture<CommentedConfig> getLocalPreset(String name) {
 		final CompletableFuture<CommentedConfig> future = new CompletableFuture<>();
-		final String prefix = getType().name().toLowerCase() + "-";
-		final Optional<Path> opt = getFilePath();
-		if (!opt.isPresent()) {
-			future.completeExceptionally(
-			  new FileNotFoundException("Config file for mod " + getModId()));
-			return future;
-		}
-		final File file = opt.get().getParent()
-		  .resolve(getModId() + "-preset-" + prefix + name + ".yaml").toFile();
-		if (!file.exists() || !file.isFile()) {
+		final String prefix = "-" + getType().extension() + "-";
+		final File file = LOCAL_PRESETS_DIR.resolve(getModId() + prefix + name + ".yaml").toFile();
+		if (!file.isFile()) {
 			future.completeExceptionally(new FileNotFoundException(file.getPath()));
 			return future;
 		}
@@ -602,8 +604,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected CompletableFuture<CommentedConfig> getRemotePreset(String name) {
-		final String prefix = getType().name().toLowerCase() + "-";
-		return SimpleConfigSync.requestSnapshot(getModId(), prefix + name);
+		return SimpleConfigSync.requestRemoteSnapshot(getModId(), type == Type.SERVER, name);
 	}
 	
 	public Type getType() {
@@ -676,7 +677,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	protected interface IGUIEntry extends IGUIEntryBuilder {
 		@Internal void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder
-		);
+		  ConfigCategory category, ConfigEntryBuilder entryBuilder);
 	}
 }

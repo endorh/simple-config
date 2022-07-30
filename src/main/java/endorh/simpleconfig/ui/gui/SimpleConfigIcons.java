@@ -11,8 +11,8 @@ public class SimpleConfigIcons {
 	private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
 	
 	public static final Icon // Size 16×16
-	  CLIENT = b.size(16, 16).at(240, 76),
-	  SERVER = b.at(240, 92);
+	  CLIENT = b.size(16, 16).at(240, 104),
+	  SERVER = b.at(240, 120);
 	
 	public static class Buttons {
 		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 136);
@@ -35,14 +35,6 @@ public class SimpleConfigIcons {
 		  REDO = b.at(60, 60),
 		  ACCEPT = b.at(80, 60);
 		
-		public static final Icon // Size 20×20
-		  DISABLED = b.size(20, 20).at(100, 60),
-		  ASSIGN = b.at(120, 60),
-		  MULTIPLY = b.at(140, 60),
-		  DIVIDE = b.at(160, 60),
-		  ADD = b.at(180, 60),
-		  SUBTRACT = b.at(200, 60);
-		
 		public static final Icon // Size 18×18
 		  DOWN = b.size(18, 18).at(220, 66),
 		  UP = b.at(238, 66);
@@ -61,6 +53,23 @@ public class SimpleConfigIcons {
 		public static final Icon // 12×18
 		  LEFT_TAB = b.offset(220, 0).size(12, 18).level(12, 0).at(0, 18),
 		  RIGHT_TAB = b.level(-12, 0).at(24, 0);
+	}
+	
+	public static class Actions {
+		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
+		  .offset(240, 104).reverseOffset(true, false);
+		
+		public static final Icon // Size 16×16
+		  NONE = b.size(16, 16).at(0, 0),
+		  ASSIGN = b.at(0, 16),
+		  MULTIPLY = b.at(16, 0),
+		  DIVIDE = b.at(16, 16),
+		  ADD = b.at(32, 0),
+		  SUBTRACT = b.at(32, 16),
+		  ADD_CYCLE = b.at(48, 0),
+		  SUBTRACT_CYCLE = b.at(48, 16),
+		  CYCLE = b.at(64, 0),
+		  CYCLE_REVERSE = b.at(64, 16);
 	}
 	
 	public static class SearchBar {
@@ -89,10 +98,18 @@ public class SimpleConfigIcons {
 		public static final Icon // Size 18×18
 		  CHECKBOX_FLAT = b.size(18, 18).at(0, 0),
 		  CHECKBOX = b.at(18, 0);
+		public static final Icon // Size 16×16
+		  TREE_ARROW = b.offset(180, 36).size(16, 16).at(0, 0);
+		public static final Icon // Size 8×16
+		  TREE_DRAG_HANDLE = b.size(8, 16).at(16, 0);
+		public static final Icon // Size 20×20
+		  TREE_ADD = b.offset(60, 112).size(20, 20).at(0, 0),
+		  TREE_ADD_GROUP = b.at(20, 0),
+		  TREE_REMOVE = b.at(40, 0);
 	}
 	
 	public static class Presets {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(198, 76);
+		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(214, 76);
 		
 		public static final Icon // Size 14×14
 		  CLIENT_LOCAL = b.size(14, 14).at(0, 0),
@@ -129,13 +146,13 @@ public class SimpleConfigIcons {
 		  SLIDER_EDIT = b.at(18, 0);
 		
 		public static final Icon // Size 14×14
-		  HELP = b.offset(170, 76).size(14, 14).at(0, 0),
-		  ERROR = b.at(14, 0),
-		  REQUIRES_RESTART = b.at(0, 14),
-		  NOT_PERSISTENT = b.at(14, 14);
+		  ERROR = b.offset(214, 76).reverseOffset(true, false).size(14, 14).at(0, 0),
+		  HELP = b.at(14, 0),
+		  NOT_PERSISTENT = b.at(0, 14),
+		  REQUIRES_RESTART = b.at(14, 14);
 		
 		public static final Icon // Size 18×18
-		  LESS_EQUAL = b.offset(162, 36).size(18, 18).at(0, 0);
+		  LESS_EQUAL = b.offset(162, 36).reverseOffset(false, false).size(18, 18).at(0, 0);
 		
 		@SuppressWarnings("ConstantConditions")
 		public static final Icon // Size 20×20
@@ -174,7 +191,10 @@ public class SimpleConfigIcons {
 		  POINTER = b.size(11, 11).at(80, 14);
 	}
 	
-	public static final AnimatedIcon SPINNING_CUBE = new AnimatedIcon(
+	public static final AnimatedIcon SPINNING_CUBE = AnimatedIcon.ofStripe(
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/cube.png"),
-	  0, 0, 20, 20, 160, 20, 1, 8, 40);
+	  20, 20, 8, 40);
+	public static final AnimatedIcon HOTKEY_RECORDING = AnimatedIcon.ofStripe(
+	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/hotkey_recording.png"),
+	  18, 18, 16, 50);
 }

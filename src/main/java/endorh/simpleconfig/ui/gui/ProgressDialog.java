@@ -117,19 +117,23 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override protected void layout() {
-		w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
+		int w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
 		final int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
 			w = min(getScreen().width - 32, titleWidth + 16);
-		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
-		h = (int) MathHelper.clamp(64 + lines.stream().reduce(
+		lines = getBody().stream().map(l -> font.trimStringToWidth(l, getWidth() - 16)).collect(Collectors.toList());
+		int h = (int) MathHelper.clamp(
+		  64 + lines.stream().reduce(
 			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
-				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96, getScreen().height * 0.9);
+				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96,
+		  getScreen().height * 0.9);
+		setWidth(w);
+		setHeight(h);
 		super.layout();
 		int bw = min(150, (w - 12) / 2);
 		cancelButton.setWidth(bw);
-		cancelButton.x = x + w / 2 - 2 - bw;
-		cancelButton.y = y + h - 24;
+		cancelButton.x = getX() + getWidth() / 2 - 2 - bw;
+		cancelButton.y = getY() + getHeight() - 24;
 	}
 	
 	@Override public void renderInner(

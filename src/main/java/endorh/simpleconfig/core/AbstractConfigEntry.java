@@ -525,10 +525,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigEntryBuilder)}
 	 */
 	@OnlyIn(Dist.CLIENT) public void buildGUI(
-	  CaptionedSubCategoryBuilder<?, ?> group, ConfigEntryBuilder entryBuilder
+	  CaptionedSubCategoryBuilder<?, ?> group, ConfigEntryBuilder entryBuilder, boolean forHotKey
 	) {
 		buildGUIEntry(entryBuilder).ifPresent(e -> {
-			guiEntry = e;
+			if (!forHotKey) guiEntry = e;
 			group.add(e);
 		});
 	}
@@ -547,17 +547,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		});
 	}
 	
-	protected void setConfigValue(@Nullable ConfigValue<?> value) {
+	@Internal public void setConfigValue(@Nullable ConfigValue<?> value) {
 		configValue = value;
 	}
 	
-	protected V get() {
+	@Internal public V get() {
 		if (nonPersistent) return actualValue;
 		if (configValue == null) throw new NoSuchConfigEntryError(getGlobalPath());
 		return get(configValue);
 	}
 	
-	protected void set(V value) {
+	@Internal public void set(V value) {
 		if (!isValidValue(value))
 			throw new InvalidConfigValueException(getGlobalPath(), value);
 		if (nonPersistent) {
@@ -571,7 +571,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			if (guiEntry != null) guiEntry.setExternalValue(forGui(value));
 	}
 	
-	protected boolean trySet(V value) {
+	@Internal public boolean trySet(V value) {
 		if (isValidValue(value)) {
 			if (nonPersistent) {
 				actualValue = value;

@@ -1,8 +1,10 @@
 package endorh.simpleconfig.ui.api;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -16,6 +18,17 @@ public class Modifier {
 	
 	public static Modifier none() {
 		return Modifier.of((short) 0);
+	}
+	
+	public static @Nullable Modifier ofKeyCode(int code) {
+		if (Minecraft.IS_RUNNING_ON_MAC? code == 343 || code == 347 : code == 341 || code == 345) {
+			return of(false, true, false);
+		} else if (code == 344 || code == 340) {
+			return of(false, false, true);
+		} else if (code == 342 || code == 346) {
+			return of(true, false, false);
+		}
+		return null;
 	}
 	
 	public static Modifier of(boolean alt, boolean control, boolean shift) {
@@ -71,6 +84,10 @@ public class Modifier {
 	
 	public boolean isEmpty() {
 		return this.value == 0;
+	}
+	
+	public Modifier merge(Modifier mod) {
+		return new Modifier((short) (value | mod.value));
 	}
 	
 	public boolean equals(Object other) {

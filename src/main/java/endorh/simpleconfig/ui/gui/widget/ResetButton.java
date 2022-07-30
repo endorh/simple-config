@@ -5,10 +5,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.IEntryHolder;
+import endorh.simpleconfig.ui.api.IExtendedDragAwareGuiEventListener;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.IExtendedDragAwareGuiEventListener;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.math.Rectangle;
@@ -23,23 +23,25 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Optional;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.round;
+import static java.util.Arrays.asList;
 
 public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
-	protected static ITextComponent[] resetTooltip = new ITextComponent[]{
+	protected static List<ITextComponent> resetTooltip = asList(
 	  new TranslationTextComponent("simpleconfig.ui.reset"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt")};
-	protected static ITextComponent[] resetTooltipGroup = new ITextComponent[]{
+	  new TranslationTextComponent("simpleconfig.ui.restore.alt"));
+	protected static List<ITextComponent> resetTooltipGroup = asList(
 	  new TranslationTextComponent("simpleconfig.ui.reset.group"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt")};
-	protected static ITextComponent[] restoreTooltip = new ITextComponent[]{
-	  new TranslationTextComponent("simpleconfig.ui.restore")};
-	protected static ITextComponent[] restoreTooltipGroup = new ITextComponent[]{
-	  new TranslationTextComponent("simpleconfig.ui.restore.group")};
+	  new TranslationTextComponent("simpleconfig.ui.restore.alt"));
+	protected static List<ITextComponent> restoreTooltip = asList(
+	  new TranslationTextComponent("simpleconfig.ui.restore"));
+	protected static List<ITextComponent> restoreTooltipGroup = asList(
+	  new TranslationTextComponent("simpleconfig.ui.restore.group"));
 	
 	protected AbstractConfigEntry<?> entry;
 	protected boolean shift = false;
@@ -135,7 +137,7 @@ public class ResetButton extends MultiFunctionImageButton
 		playDownSound(Minecraft.getInstance().getSoundHandler());
 		confirming = true;
 		dragging = false;
-		getScreen().claimRectangle(overlay, this, 20);
+		getScreen().addOverlay(overlay, this, 20);
 		return true;
 	}
 	
@@ -197,7 +199,7 @@ public class ResetButton extends MultiFunctionImageButton
 				confirming = false;
 				dragOffset = 0;
 				dragAnchor = mouseX - x;
-				getScreen().claimRectangle(overlay, this, 20);
+				getScreen().addOverlay(overlay, this, 20);
 			}
 			return true;
 		}
@@ -278,12 +280,12 @@ public class ResetButton extends MultiFunctionImageButton
 		super.setFocused(focused);
 	}
 	
-	public ITextComponent[] getTooltip() {
+	@Override public List<ITextComponent> getTooltip() {
 		if (isGroup()) return isRestore()? restoreTooltipGroup : resetTooltipGroup;
 		return isRestore()? restoreTooltip : resetTooltip;
 	}
 	
-	public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	public Optional<List<ITextComponent>> getTooltip(int mouseX, int mouseY) {
 		return isMouseOver(mouseX, mouseY)? Optional.of(getTooltip()) : Optional.empty();
 	}
 }

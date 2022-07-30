@@ -30,7 +30,8 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	
 	public AbstractButtonDialog(ITextComponent title) {
 		super(title);
-		scroller = new DialogScrollingContainerWidget(x, y, (int) (w * 0.9), (int) (h * 0.5), this);
+		scroller = new DialogScrollingContainerWidget(getX(), getY(), (int) (getWidth() * 0.9), (int) (
+		  getHeight() * 0.5), this);
 		listeners.add(scroller);
 	}
 	
@@ -61,25 +62,27 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	
 	@Override protected void layout() {
 		super.layout();
-		scroller.area.width = w - 8;
-		scroller.area.height = h - 60;
-		scroller.area.x = x + 4;
-		scroller.area.y = y + 28;
+		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+		scroller.area.setBounds(x + 4, y + 28, w - 8, h - 60);
+		scroller.setHideScrollBar(areaAnimator.isInProgress());
 		final int count = buttons.size();
-		final int bw = min(150, (w - 4 - count * 4) / count);
-		final int by = y + h - 24;
-		int bx = max(x + 4, x + w / 2 - ((bw + 4) * count - 4) / 2);
-		for (Widget button : buttons) {
-			button.x = bx;
-			button.y = by;
-			button.setWidth(bw);
-			bx += bw + 4;
+		if (count > 0) {
+			final int bw = min(150, (w - 4 - count * 4) / count);
+			final int by = y + h - 24;
+			int bx = max(x + 4, x + w / 2 - ((bw + 4) * count - 4) / 2);
+			for (Widget button: buttons) {
+				button.x = bx;
+				button.y = by;
+				button.setWidth(bw);
+				bx += bw + 4;
+			}
 		}
 	}
 	
 	@Override public void renderBody(
 	  MatrixStack mStack, int mouseX, int mouseY, float delta
 	) {
+		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
 		fill(mStack, x + 1, y + h - 27, x + w - 1, y + h - 1, backgroundOverlayColor);
 		fill(mStack, x + 1, y + h - 28, x + w - 1, y + h - 27, subBorderColor);
 		scroller.render(mStack, mouseX, mouseY, delta);

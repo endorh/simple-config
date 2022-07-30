@@ -3,8 +3,7 @@ package endorh.simpleconfig.ui.api;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
@@ -15,6 +14,7 @@ import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.ImageButton;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -65,7 +65,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		mergeButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Entries.MERGE_CONFLICT, ButtonAction.of(
 			 () -> setPreviewingExternal(true)
-		  ).active(() -> !isPreviewingExternal() && hasExternalDiff() && !hasAcceptedExternalDiff())
+		  ).active(() -> !isPreviewingExternal() && hasConflictingExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
 			   "simpleconfig.ui.view_" + (getScreen().isSelectedCategoryServer() ? "remote" : "external") + "_changes")
@@ -101,11 +101,13 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		super.setPreviewingExternal(previewing);
 		if (isPreviewingExternal()) {
 			updateFocused(false);
-			getScreen().claimRectangle(previewOverlayRectangle, this, 10);
+			getScreen().addOverlay(previewOverlayRectangle, this, 10);
 		}
 	}
 	
 	public final int getPreferredTextColor() {
+		if (isEditingHotKeyAction())
+			return getHotKeyActionType() == null? 0xFF808080 : hasError()? 0xFFFF5555 : 0xFFFFFFFF;
 		return shouldRenderEditable() ? hasError() ? 0xFFFF5555 : 0xFFFFFFFF : 0xFFA0A0A0;
 	}
 	
@@ -206,13 +208,23 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		}
 		
 		int resetButtonOffset;
-		if (resetButton != null) {
+		boolean ctrlDown = Screen.hasControlDown();
+		if ((isEditingHotKeyAction() || ctrlDown) && !getHotKeyActionTypes().isEmpty()) {
+			sideButtonReference.setTarget(hotKeyActionButton);
+			resetButtonOffset = hotKeyActionButton.getWidth() + 2;
+			fieldWidth -= resetButtonOffset;
+			hotKeyActionButton.y = y;
+			hotKeyActionButton.x = font.getBidiFlag()? x : x + entryWidth - hotKeyActionButton.getWidth();
+			fieldX += font.getBidiFlag()? hotKeyActionButton.getWidth() : 0;
+			hotKeyActionButton.render(mStack, mouseX, mouseY, delta);
+		} else if (resetButton != null && !ctrlDown) {
+			sideButtonReference.setTarget(this.resetButton);
 			resetButtonOffset = resetButton.getWidth() + 2;
 			fieldWidth -= resetButtonOffset;
 			resetButton.y = y;
 			resetButton.x = font.getBidiFlag()? x : x + entryWidth - resetButton.getWidth();
 			fieldX += font.getBidiFlag()? resetButton.getWidth() : 0;
-			if (!isPreviewingExternal())
+			if (isDisplayingValue())
 				resetButton.render(mStack, mouseX, mouseY, delta);
 		}
 		Optional<ImageButton> opt = getMarginButton();
@@ -300,7 +312,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 			previewOverlayCaptionRectangle.setBounds(cX, cY, cW, cH);
 			
 			final DynamicEntryListWidget<?> entryList = getEntryList();
-			ScissorsHandler.INSTANCE.scissor(entryList.getArea()); {
+			ScissorsHandler.INSTANCE.pushScissor(entryList.getArea()); {
 				// Shadow
 				if (cH > 0) {
 					fill(mStack, l - 2, t - 2, cX, t, externalPreviewShadowColor);
@@ -342,7 +354,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 				acceptButton.y = resetButton.y;
 				acceptButton.render(mStack, mouseX, mouseY, delta);
 				mergeButton.render(mStack, mouseX, mouseY, delta);
-			} ScissorsHandler.INSTANCE.removeLastScissor();
+			} ScissorsHandler.INSTANCE.popScissor();
 			return true;
 		}
 		return false;

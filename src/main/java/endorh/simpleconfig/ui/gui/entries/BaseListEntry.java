@@ -3,15 +3,13 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
-import endorh.simpleconfig.ui.api.IExpandable;
-import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
+import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.ExpandedDragAction;
-import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
+import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.impl.EditHistory.EditRecord;
 import endorh.simpleconfig.ui.impl.EditHistory.EditRecord.ListEditRecord;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
@@ -36,7 +34,6 @@ import org.jetbrains.annotations.Range;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.Math.*;
 
@@ -63,6 +60,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	protected int draggingOffset = -1;
 	protected int cellControlsY = -1;
 	protected ListCaptionWidget label;
+	protected RedirectGuiEventListener labelReference;
+	protected RedirectGuiEventListener sideButtonReferenceReference;
 	protected EmptyPlaceholderWidget placeholder;
 	@NotNull protected Function<Self, C> cellFactory;
 	@Nullable protected ITextComponent[] addTooltip = new ITextComponent[] {
@@ -102,9 +101,11 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		setValue(Lists.newArrayList());
 		cells = Lists.newArrayList();
 		label = new ListCaptionWidget(this);
-		widgets = Lists.newArrayList(label, resetButton);
+		labelReference = new RedirectGuiEventListener(label);
+		sideButtonReferenceReference = new RedirectGuiEventListener(sideButtonReference);
+		widgets = Lists.newArrayList(labelReference, sideButtonReferenceReference);
 		placeholder = new EmptyPlaceholderWidget(this);
-		unexpandedWidgets = Lists.newArrayList(label, resetButton);
+		unexpandedWidgets = Lists.newArrayList(labelReference, sideButtonReferenceReference);
 		expandedEmptyWidgets = Util.make(new ArrayList<>(widgets), l -> l.add(placeholder));
 		this.cellFactory = cellFactory;
 		acceptButton.setDefaultIcon(SimpleConfigIcons.Buttons.MERGE_ACCEPT_GROUP);
@@ -137,14 +138,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	public void setHeadless(boolean headless) {
 		super.setHeadless(headless);
 		if (headless) {
-			Stream.of(widgets, expandedEmptyWidgets, unexpandedWidgets).forEach(l -> {
-				l.remove(label);
-				l.remove(resetButton);
-			});
-		} else Stream.of(widgets, expandedEmptyWidgets, unexpandedWidgets).forEach(l -> {
-			l.add(0, resetButton);
-			l.add(0, label);
-		});
+			labelReference.setTarget(null);
+			sideButtonReferenceReference.setTarget(null);
+		} else {
+			labelReference.setTarget(label);
+			sideButtonReferenceReference.setTarget(sideButtonReference);
+		};
 	}
 	
 	@Override public void setValue(List<T> value) {
@@ -155,7 +154,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	@Override public void setValueTransparently(List<T> value) {
 		getScreen().getHistory().preserveState(EditRecord.of(this));
 		setValue(value);
-		if (!isPreviewingExternal())
+		if (isDisplayingValue())
 			setDisplayedValue(value);
 	}
 	
@@ -249,8 +248,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return expanded ? cells.isEmpty() ? expandedEmptyWidgets : widgets : unexpandedWidgets;
 	}
 	
-	@Override public List<EntryError> getErrors() {
-		List<EntryError> errors = super.getErrors();
+	@Override public List<EntryError> getEntryErrors() {
+		List<EntryError> errors = super.getEntryErrors();
 		cells.stream().flatMap(c -> c.getErrors().stream()).forEach(errors::add);
 		return errors;
 	}
@@ -471,7 +470,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		caret = cursor = cellControlsY = hoverCursor = -1;
 		final boolean animating = expandAnimator.isInProgress();
 		if (expanded || animating) {
-			if (animating) ScissorsHandler.INSTANCE.scissor(
+			if (animating) ScissorsHandler.INSTANCE.pushScissor(
 			  new Rectangle(entryArea.x, entryArea.y, entryArea.width, getItemHeight()));
 			if (cells.isEmpty())
 				placeholder.render(mStack, mouseX, mouseY, delta);
@@ -567,7 +566,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				}
 			}
 			if (animating)
-				ScissorsHandler.INSTANCE.removeLastScissor();
+				ScissorsHandler.INSTANCE.popScissor();
 		}
 		if (!isHeadless()) label.render(mStack, mouseX, mouseY, delta);
 	}
@@ -702,7 +701,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			dragMouseX = (int) mouseX;
 			dragMouseY = (int) mouseY;
 			dragCursor = hoverCursor;
-			getScreen().claimRectangle(dragOverlayRectangle, this, -1);
+			getScreen().addOverlay(dragOverlayRectangle, this, -1);
 			playFeedbackTap(1F);
 			return true;
 		}

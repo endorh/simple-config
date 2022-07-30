@@ -10,8 +10,15 @@ public class AnimatedIcon extends Icon {
 	protected int lastFrame = 0;
 	protected long lastFrameTime = 0L;
 	
+	public static AnimatedIcon ofStripe(
+	  ResourceLocation texture, int w, int h, int frames, long delay
+	) {
+		return new AnimatedIcon(
+		  texture, 0, 0, w, h, w * frames, h, 1, frames, delay);
+	}
+	
 	public AnimatedIcon(
-	  ResourceLocation location, int u, int v, int w, int h,   int tw, int th,
+	  ResourceLocation location, int u, int v, int w, int h, int tw, int th,
 	  int rows, int cols, long delay
 	) {
 		this(location, u, v, w, h, Integer.MAX_VALUE, Integer.MAX_VALUE, tw, th, false, 0, rows, cols, delay);
@@ -32,6 +39,10 @@ public class AnimatedIcon extends Icon {
 		return new AnimatedIcon(
 		  location, u, v, w, h, levelOffsetX, levelOffsetY, tw, th,
 		  twoLevel, tint, rows, cols, delay);
+	}
+	
+	public AnimatedIcon copy() {
+		return withTint(tint);
 	}
 	
 	@Override public int translateLevel(int level) {
@@ -66,8 +77,9 @@ public class AnimatedIcon extends Icon {
 		if (lastFrameTime == 0L) {
 			lastFrameTime = time;
 		} else if (time - lastFrameTime > delay) {
-			lastFrame += (time - lastFrameTime) / delay;
-			lastFrameTime = time;
+			long skip = time - lastFrameTime;
+			lastFrame += skip / delay;
+			lastFrameTime = time - (skip % delay);
 		}
 	}
 	

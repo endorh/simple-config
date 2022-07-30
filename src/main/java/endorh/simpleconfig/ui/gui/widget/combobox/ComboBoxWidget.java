@@ -5,13 +5,13 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
-import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
+import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.KeyboardListener;
@@ -50,8 +50,8 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.subText;
 import static java.lang.Math.*;
 
 public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
-	@Internal protected IOverlayCapableScreen screen = null;
-	protected Supplier<IOverlayCapableScreen> screenSupplier;
+	@Internal protected IOverlayCapableContainer screen = null;
+	protected Supplier<IOverlayCapableContainer> screenSupplier;
 	protected final @NotNull ITypeWrapper<T> typeWrapper;
 	protected int focusedBorderColor = 0xFFFFFFFF;
 	protected int borderColor = 0xFFA0A0A0;
@@ -112,17 +112,17 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected int suggestionCursor = -1;
 	
 	public ComboBoxWidget(
-	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableScreen> screen,
+	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  int x, int y, int width, int height
 	) { this(typeWrapper, screen, x, y, width, height, NarratorChatListener.EMPTY); }
 	
 	public ComboBoxWidget(
-	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableScreen> screen,
+	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  int x, int y, int width, int height, @NotNull ITextComponent title
 	) { this(typeWrapper, screen, Minecraft.getInstance().fontRenderer, x, y, width, height, title); }
 	
 	public ComboBoxWidget(
-	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableScreen> screen,
+	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  @NotNull FontRenderer font, int x, int y, int width, int height, @NotNull ITextComponent title
 	) {
 		super(x, y, width, height, title);
@@ -135,8 +135,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		  Lists.newArrayList());
 	}
 	
-	protected @NotNull IOverlayCapableScreen getScreen() {
-		IOverlayCapableScreen screen = this.screen;
+	protected @NotNull IOverlayCapableContainer getScreen() {
+		IOverlayCapableContainer screen = this.screen;
 		if (screen == null) {
 			if (screenSupplier != null) {
 				screen = screenSupplier.get();
@@ -396,7 +396,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		expandAnimator.setEaseOutTarget(expanded);
 		suggestionCursor = -1;
 		if (expanded) {
-			getScreen().claimRectangle(reportedDropDownRectangle, this, 100);
+			getScreen().addOverlay(reportedDropDownRectangle, this, 100);
 		} else {
 			setDropDownScroll(0);
 			draggingDropDownScrollBar = false;

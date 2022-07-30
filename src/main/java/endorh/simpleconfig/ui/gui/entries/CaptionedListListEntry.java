@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry.ListCaptionWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
@@ -47,7 +46,7 @@ public class CaptionedListListEntry<
 		label = new ListCaptionWidget(listEntry);
 		heldEntries = Lists.newArrayList(captionEntry, listEntry);
 		seekableChildren = Lists.newArrayList(captionEntry, listEntry);
-		children = Lists.newArrayList(label, captionEntry, resetButton, listEntry);
+		children = Lists.newArrayList(label, captionEntry, sideButtonReference, listEntry);
 	}
 	
 	public E getListEntry() {
@@ -90,10 +89,10 @@ public class CaptionedListListEntry<
 		listEntry.setDisplayedValue(value.getValue());
 	}
 	
-	@Override public List<EntryError> getErrors() {
-		List<EntryError> errors = super.getErrors();
-		errors.addAll(captionEntry.getErrors());
-		errors.addAll(listEntry.getErrors());
+	@Override public List<EntryError> getEntryErrors() {
+		List<EntryError> errors = super.getEntryErrors();
+		errors.addAll(captionEntry.getEntryErrors());
+		errors.addAll(listEntry.getEntryErrors());
 		return errors;
 	}
 	

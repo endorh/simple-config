@@ -77,7 +77,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		colorPickerVisible = visible;
 		if (visible) {
 			if (this.isChildSubEntry()) colorPicker.setInitial(toColor(getDisplayedValue()));
-			getScreen().claimRectangle(reportedColorPickerRectangle, this, -1);
+			getScreen().addOverlay(reportedColorPickerRectangle, this, -1);
 		}
 	}
 	

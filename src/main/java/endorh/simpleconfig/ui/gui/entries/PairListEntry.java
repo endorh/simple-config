@@ -2,10 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
-import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.api.IEntryHolder;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
+import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -45,7 +42,7 @@ public class PairListEntry<
 		rightEntry.setName("right");
 		setValue(value);
 		setDisplayedValue(value);
-		listeners = Lists.newArrayList(leftEntry, rightEntry, resetButton);
+		listeners = Lists.newArrayList(leftEntry, rightEntry, sideButtonReference);
 		heldEntries = Lists.newArrayList(leftEntry, rightEntry);
 		seekableChildren = Lists.newArrayList(leftEntry, rightEntry);
 	}
@@ -77,8 +74,8 @@ public class PairListEntry<
 		return false;
 	}
 	
-	@Override public List<EntryError> getErrors() {
-		List<EntryError> errors = super.getErrors();
+	@Override public List<EntryError> getEntryErrors() {
+		List<EntryError> errors = super.getEntryErrors();
 		errors.addAll(IEntryHolder.super.getErrors());
 		return errors;
 	}

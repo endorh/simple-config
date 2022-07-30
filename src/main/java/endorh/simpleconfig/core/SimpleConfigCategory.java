@@ -5,9 +5,9 @@ import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
@@ -121,7 +121,9 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected void buildGUI(ConfigBuilder builder, ConfigEntryBuilder entryBuilder) {
+	protected void buildGUI(
+	  ConfigScreenBuilder builder, ConfigEntryBuilder entryBuilder
+	) {
 		ConfigCategory category = builder.getOrCreateCategory(name, root.getType() == Type.SERVER);
 		category.setTitle(getTitle());
 		category.setDescription(

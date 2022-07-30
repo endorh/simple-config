@@ -15,7 +15,7 @@ public class PointHelper {
 		double my =
 		  client.mouseHelper.getMouseY() * (double) client.getMainWindow().getScaledHeight() /
 		  (double) client.getMainWindow().getHeight();
-		return new Point(mx, my);
+		return Point.of(mx, my);
 	}
 	
 	public static int getMouseX() {

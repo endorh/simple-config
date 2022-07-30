@@ -65,7 +65,7 @@ public class SimpleConfigCommentedYamlParser implements ConfigParser<CommentedCo
 			} else destination.valueMap().putAll(wrappedMap);
 			
 			// Load comments
-			if (isParseComments()) {
+			if (config != null && isParseComments()) {
 				r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(bytes)));
 				Map<String, NodeComments> comments = parseYamlComments(yaml.compose(r));
 				config.loadComments(comments);

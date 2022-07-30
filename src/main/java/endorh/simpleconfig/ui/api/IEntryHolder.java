@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry.EntryError;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;

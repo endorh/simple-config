@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
 public class LongListEntry
@@ -19,6 +21,8 @@ public class LongListEntry
 	@Internal public LongListEntry(ITextComponent fieldName, Long value) {
 		super(fieldName, value, false);
 		setTextFormatter(ITextFormatter.numeric(true));
+		Stream.of(HotKeyActionTypes.LONG_ADD, HotKeyActionTypes.LONG_ADD_CYCLE)
+		  .forEach(hotKeyActionTypes::add);
 	}
 	
 	@Override public void setMinimum(Long minimum) {

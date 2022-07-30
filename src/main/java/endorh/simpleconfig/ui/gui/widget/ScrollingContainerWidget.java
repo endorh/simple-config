@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
-import endorh.simpleconfig.ui.gui.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.Widget;
@@ -63,11 +63,11 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		updateScroll();
 		position();
-		ScissorsHandler.INSTANCE.scissor(area);
+		ScissorsHandler.INSTANCE.pushScissor(area);
 		renderInner(
 		  mStack, area.x, (int) round(area.y - scrollAmount),
 		  area.width - 8, area.height, mouseX, mouseY, delta);
-		ScissorsHandler.INSTANCE.removeLastScissor();
+		ScissorsHandler.INSTANCE.popScissor();
 		renderScrollBar();
 	}
 	

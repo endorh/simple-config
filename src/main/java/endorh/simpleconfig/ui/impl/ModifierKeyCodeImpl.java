@@ -39,6 +39,11 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 		return this;
 	}
 	
+	@Override public ModifierKeyCode addModifier(Modifier mod) {
+		modifier = modifier.merge(mod);
+		return this;
+	}
+	
 	@Override public String toString() {
 		return getLocalizedName().getString();
 	}

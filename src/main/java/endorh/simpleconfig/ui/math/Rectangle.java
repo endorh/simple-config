@@ -101,7 +101,7 @@ public class Rectangle {
 	}
 	
 	public Point getLocation() {
-		return new Point(this.x, this.y);
+		return Point.of(this.x, this.y);
 	}
 	
 	public void setLocation(Point p) {

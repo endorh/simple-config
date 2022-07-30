@@ -6,8 +6,8 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
-import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
+import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -51,7 +51,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		setOriginal(original);
 		setValue(original);
 		setDisplayedValue(original);
-		widgets = Lists.newArrayList(textFieldWidget, resetButton);
+		widgets = Lists.newArrayList(textFieldWidget, sideButtonReference);
 		childWidgets = Lists.newArrayList(textFieldWidget);
 	}
 	
@@ -98,7 +98,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			  mStack, x - 15, y + 5, 9, 9,
 			  (isExpanded()? 1 : 0) + ((
 			    isMouseOverLabel(mouseX, mouseY) && !textFieldWidget.isMouseOver(mouseX, mouseY)
-			    && !resetButton.isMouseOver(mouseX, mouseY))? 2 : 0));
+			    && !sideButtonReference.isMouseOver(mouseX, mouseY))? 2 : 0));
 		}
 	}
 	
@@ -134,7 +134,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	
 	@Override public void setPreviewingExternal(boolean previewing) {
 		super.setPreviewingExternal(previewing);
-		if (isPreviewingExternal()) setExpanded(false);
+		// if (isPreviewingExternal()) setExpanded(false); // FIXME
 	}
 	
 	protected boolean isMouseOverLabel(double mouseX, double mouseY) {

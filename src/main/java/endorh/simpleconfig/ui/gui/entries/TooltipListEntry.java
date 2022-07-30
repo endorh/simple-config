@@ -11,11 +11,9 @@ import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.TooltipSearchBarWidget;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
 import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.widget.button.ImageButton;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.*;
@@ -87,12 +85,8 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		if (getEntryList().isMouseOver(mouseX, mouseY)
 		    && shouldProvideTooltip(mouseX, mouseY, x, y, entryWidth, entryHeight)
 		    && (tooltip = this.getTooltip(mouseX, mouseY)).isPresent() && tooltip.get().length > 0) {
-			addTooltip(Tooltip.of(new Point(mouseX, mouseY), postProcessTooltip(tooltip.get())));
+			addTooltip(Tooltip.of(Point.of(mouseX, mouseY), postProcessTooltip(tooltip.get())));
 		}
-	}
-	
-	@Override protected Optional<ImageButton> getMarginButton() {
-		return super.getMarginButton();
 	}
 	
 	protected boolean shouldProvideTooltip(
@@ -123,9 +117,6 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	}
 	
 	public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
-		final ResetButton resetButton = getResetButton();
-		if (resetButton != null && resetButton.isMouseOver(mouseX, mouseY))
-			return resetButton.getTooltip(mouseX, mouseY);
 		if (flagsRectangle.contains(mouseX, mouseY)) {
 			int index = (mouseX - flagsRectangle.x) / 14;
 			final NavigableSet<EntryFlag> entryFlags = getEntryFlags();

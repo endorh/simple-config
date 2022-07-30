@@ -10,10 +10,10 @@ import java.util.List;
 
 public abstract class AbstractTabbedConfigScreen extends AbstractConfigScreen {
 	protected AbstractTabbedConfigScreen(
-	  Screen parent, ITextComponent title, ResourceLocation backgroundLocation,
+	  Screen parent, String modId, ITextComponent title, ResourceLocation backgroundLocation,
 	  Collection<ConfigCategory> categories, Collection<ConfigCategory> serverCategories
 	) {
-		super(parent, title, backgroundLocation, categories, serverCategories);
+		super(parent, modId, title, backgroundLocation, categories, serverCategories);
 	}
 	
 	protected List<ConfigCategory> getTabbedCategories() {

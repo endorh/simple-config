@@ -212,14 +212,20 @@ public class Icon {
 	
 	public static class IconBuilder {
 		private ResourceLocation location;
-		private int ou = 0;
-		private int ov = 0;
 		private int tw = 256;
 		private int th = 256;
+		
+		private boolean revU = false;
+		private boolean revV = false;
+		private int ou = 0;
+		private int ov = 0;
+		
 		private int lX = Integer.MAX_VALUE;
 		private int lY = Integer.MAX_VALUE;
+		
 		private int w = 24;
 		private int h = 24;
+		
 		private boolean twoLevel = false;
 		
 		public static IconBuilder ofTexture(
@@ -280,11 +286,23 @@ public class Icon {
 		}
 		
 		/**
+		 * Consider texture coordinates as reversed from the offset.<br>
+		 * Convenient for icons arranged from right to left (at the right edge of the texture).
+		 */
+		public IconBuilder reverseOffset(boolean reverseX, boolean reverseY) {
+			this.revU = reverseX;
+			this.revV = reverseY;
+			return this;
+		}
+		
+		/**
 		 * Create an icon at the given coordinates.<br>
 		 * The coordinates are relative to the current {@link #offset}
 		 */
 		public Icon at(int u, int v) {
-			return new Icon(location, ou + u, ov + v, w, h, lX, lY, tw, th, twoLevel, 0);
+			return new Icon(
+			  location, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h,
+			  lX, lY, tw, th, twoLevel, 0);
 		}
 	}
 }

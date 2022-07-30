@@ -1,23 +1,51 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.api;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.Screen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Stream;
 
-public interface IOverlayCapableScreen extends IMultiTooltipScreen {
+/**
+ * Feature interface for UI components (or Screens) that support the rendering and
+ * event handling of overlays (see {@link IOverlayRenderer}).
+ * <br><br>
+ * Overlays are rendered after the main content of the component, and receive mouse events
+ * before other components.
+ * <br><br>
+ * In addition to implementing the {@link #getSortedOverlays()} method as a final property,
+ * implementations must insert hook calls in the respective methods to <ul>
+ *    <li>{@link #renderOverlays(MatrixStack, int, int, float)}</li>
+ *    <li>{@link #handleOverlaysMouseClicked(double, double, int)}</li>
+ *    <li>{@link #handleOverlaysMouseReleased(double, double, int)}</li>
+ *    <li>{@link #handleOverlaysMouseDragged(double, double, int, double, double)}</li>
+ *    <li>{@link #handleOverlaysMouseScrolled(double, double, double)}</li>
+ *    <li>{@link #handleOverlaysEscapeKey()}</li>
+ *    <li>{@link #handleOverlaysDragEnd(double, double, int)} (if also extends from
+ *    {@link IExtendedDragAwareNestedGuiEventHandler})</li>
+ * </ul>.
+ * Additionally, implementations may also call {@link #shouldOverlaysSuppressHover(int, int)} in
+ * their {@code render} method, to check if they should pass (-1, -1) as the mouse coordinates
+ * for all regularly rendered components, to prevent incorrect rendering of hover state of
+ * components under overlays.
+ */
+public interface IOverlayCapableContainer {
+	/**
+	 * UI component able to render an overlay when added to an {@link IOverlayCapableContainer}.
+	 * @see IOverlayCapableContainer#addOverlay(Rectangle, IOverlayRenderer)
+	 */
 	interface IOverlayRenderer {
 		/**
 		 * Render the overlay<br>
-		 * @return {@code true} if the overlay should be rendered in the next frame.
+		 * @return {@code true} if the overlay should still be rendered in the next frame,
+		 *         {@code false} if the overlay should be removed.
 		 */
 		boolean renderOverlay(
-		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
-		);
+		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta);
 		
 		/**
 		 * Called when a click event happens within an overlay
@@ -83,12 +111,17 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		}
 	}
 	
+	/**
+	 * Get the sorted list of overlays of this container.
+	 */
 	SortedOverlayCollection getSortedOverlays();
 	
-	void claimRectangle(Rectangle area, IOverlayRenderer overlayRenderer, int priority);
+	default void addOverlay(Rectangle area, IOverlayRenderer overlayRenderer, int priority) {
+		getSortedOverlays().add(area, overlayRenderer, priority);
+	}
 	
-	default void claimRectangle(Rectangle area, IOverlayRenderer overlayRenderer) {
-		claimRectangle(area, overlayRenderer, 0);
+	default void addOverlay(Rectangle area, IOverlayRenderer overlayRenderer) {
+		addOverlay(area, overlayRenderer, 0);
 	}
 	
 	default boolean handleOverlaysEscapeKey() {
@@ -182,17 +215,28 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		final List<OverlayTicket> removed = new LinkedList<>();
 		mStack.push(); {
 			mStack.translate(0D, 0D, 100D);
+			Screen screen = Minecraft.getInstance().currentScreen;
+			IMultiTooltipScreen tScreen =
+			  screen instanceof IMultiTooltipScreen? ((IMultiTooltipScreen) screen) : null;
 			for (OverlayTicket ticket : sortedOverlays) {
-				removeTooltips(ticket.area);
-				ScissorsHandler.INSTANCE.scissor(ticket.area);
+				if (tScreen != null) tScreen.removeTooltips(ticket.area);
+				ScissorsHandler.INSTANCE.pushScissor(ticket.area);
 				if (!ticket.renderer.renderOverlay(mStack, ticket.area, mouseX, mouseY, delta))
 					removed.add(ticket);
-				ScissorsHandler.INSTANCE.removeLastScissor();
+				ScissorsHandler.INSTANCE.popScissor();
 			}
 		} mStack.pop();
 		sortedOverlays.removeAll(removed);
 	}
 	
+	default boolean shouldOverlaysSuppressHover(int mouseX, int mouseY) {
+		return getSortedOverlays().stream().anyMatch(t -> t.area.contains(mouseX, mouseY));
+	}
+	
+	/**
+	 * Registration information for an overlay, used to determine the rendering order
+	 * and mouse hit testing.
+	 */
 	class OverlayTicket implements Comparable<OverlayTicket> {
 		public final int priority;
 		protected final int tieBreaker;
@@ -209,7 +253,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		}
 		
 		@Override public int compareTo(
-		  @NotNull IOverlayCapableScreen.OverlayTicket o
+		  @NotNull IOverlayCapableContainer.OverlayTicket o
 		) {
 			int c = Integer.compare(priority, o.priority);
 			if (c == 0)
@@ -229,10 +273,10 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		}
 	}
 	
-	default boolean shouldOverlaysSuppressHover(int mouseX, int mouseY) {
-		return getSortedOverlays().stream().anyMatch(t -> t.area.contains(mouseX, mouseY));
-	}
-	
+	/**
+	 * Sorted list containing all overlays in the order they should be rendered in.<br>
+	 * Also supports a descending iterator, for the mouse event handling order.
+	 */
 	class SortedOverlayCollection implements Iterable<OverlayTicket> {
 		int count = 0;
 		protected TreeSet<OverlayTicket> tree = new TreeSet<>();
@@ -241,11 +285,9 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		public boolean add(Rectangle area, IOverlayRenderer renderer, int priority) {
 			return tree.add(new OverlayTicket(priority, count++, area, renderer));
 		}
-		
 		public boolean add(OverlayTicket ticket) {
 			return tree.add(new OverlayTicket(ticket.priority, count++, ticket.area, ticket.renderer));
 		}
-		
 		public boolean addAll(Collection<? extends OverlayTicket> collection) {
 			return tree.addAll(collection);
 		}
@@ -253,11 +295,9 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		public boolean remove(OverlayTicket ticket) {
 			return tree.remove(ticket);
 		}
-		
 		public boolean removeAll(Collection<? extends OverlayTicket> collection) {
 			return tree.removeAll(collection);
 		}
-		
 		public void clear() {
 			tree.clear();
 			count = 0;
@@ -266,19 +306,15 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		public int size() {
 			return tree.size();
 		}
-		
 		public boolean isEmpty() {
 			return tree.isEmpty();
 		}
-		
 		@NotNull @Override public Iterator<OverlayTicket> iterator() {
 			return tree.iterator();
 		}
-		
 		public Iterable<OverlayTicket> descending() {
 			return () -> tree.descendingIterator();
 		}
-		
 		public Stream<OverlayTicket> stream() {
 			return tree.stream();
 		}
@@ -286,10 +322,7 @@ public interface IOverlayCapableScreen extends IMultiTooltipScreen {
 		public @Nullable IOverlayRenderer getDragTarget() {
 			return dragTarget;
 		}
-		
-		public void setDragTarget(
-		  @Nullable IOverlayRenderer dragTarget
-		) {
+		public void setDragTarget(@Nullable IOverlayRenderer dragTarget) {
 			this.dragTarget = dragTarget;
 		}
 	}

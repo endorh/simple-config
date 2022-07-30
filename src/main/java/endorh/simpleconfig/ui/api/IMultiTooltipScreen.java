@@ -1,6 +1,5 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.api;
 
-import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.math.Rectangle;
 
 import java.util.List;

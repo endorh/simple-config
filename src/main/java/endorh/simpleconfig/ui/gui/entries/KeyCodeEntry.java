@@ -4,13 +4,12 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
+import endorh.simpleconfig.ui.gui.widget.HotKeyButton;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -20,60 +19,57 @@ import java.util.List;
 
 @OnlyIn(value = Dist.CLIENT)
 public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements IChildListEntry {
-	protected ModifierKeyCode displayedValue;
-	protected final Button buttonWidget;
+	protected final HotKeyButton hotKeyButton;
 	protected final List<IGuiEventListener> widgets;
 	protected final List<IGuiEventListener> childWidgets;
-	protected boolean allowMouse = true;
-	protected boolean allowKey = true;
-	protected boolean allowModifiers = true;
 	
 	@Internal public KeyCodeEntry(ITextComponent fieldName, ModifierKeyCode value) {
 		super(fieldName);
 		setOriginal(value.copy());
 		setValue(value.copy());
-		displayedValue = value.copy();
-		buttonWidget = new Button(0, 0, 150, 20, NarratorChatListener.EMPTY,
-		                               widget -> getScreen().setFocusedBinding(this));
-		widgets = Lists.newArrayList(buttonWidget, resetButton);
-		childWidgets = Lists.newArrayList(buttonWidget);
+		hotKeyButton = HotKeyButton.ofKey(this::getScreen, value);
+		widgets = Lists.newArrayList(hotKeyButton, sideButtonReference);
+		childWidgets = Lists.newArrayList(hotKeyButton);
+		hotKeyActionTypes.remove(HotKeyActionTypes.ASSIGN.cast());
 	}
 	
 	@Override public void resetValue() {
 		super.resetValue();
-		getScreen().setFocusedBinding(null);
+		AbstractConfigScreen screen = getScreen();
+		if (screen.getModalInputProcessor() == hotKeyButton)
+			screen.cancelModalInput();
 	}
 	
 	public boolean isAllowModifiers() {
-		return allowModifiers;
+		return hotKeyButton.isAllowModifiers();
 	}
 	
 	public void setAllowModifiers(boolean allowModifiers) {
-		this.allowModifiers = allowModifiers;
+		hotKeyButton.setAllowModifiers(allowModifiers);
 	}
 	
 	public boolean isAllowKey() {
-		return allowKey;
+		return hotKeyButton.isAllowKey();
 	}
 	
 	public void setAllowKey(boolean allowKey) {
-		this.allowKey = allowKey;
+		hotKeyButton.setAllowKey(allowKey);
 	}
 	
 	public boolean isAllowMouse() {
-		return allowMouse;
+		return hotKeyButton.isAllowMouse();
 	}
 	
 	public void setAllowMouse(boolean allowMouse) {
-		this.allowMouse = allowMouse;
+		hotKeyButton.setAllowMouse(allowMouse);
 	}
 	
 	@Override public ModifierKeyCode getDisplayedValue() {
-		return displayedValue;
+		return hotKeyButton.getKey();
 	}
 	
 	@Override public void setDisplayedValue(ModifierKeyCode value) {
-		displayedValue = value;
+		hotKeyButton.setKey(value);
 	}
 	
 	@Override public ModifierKeyCode getDefaultValue() {
@@ -88,25 +84,18 @@ public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements I
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		buttonWidget.active = shouldRenderEditable();
-		buttonWidget.setMessage(getLocalizedName());
-		if (getScreen().getFocusedBinding() == this) {
-			buttonWidget.setMessage(
-			  new StringTextComponent("> ").mergeStyle(TextFormatting.WHITE).append(
-				 buttonWidget.getMessage().copyRaw().mergeStyle(TextFormatting.YELLOW)).append(
-				 new StringTextComponent(" <").mergeStyle(TextFormatting.WHITE)));
-		}
-		buttonWidget.x = x;
-		buttonWidget.y = y;
-		buttonWidget.setWidth(w);
-		buttonWidget.setHeight(h);
-		buttonWidget.render(mStack, mouseX, mouseY, delta);
+		hotKeyButton.active = shouldRenderEditable();
+		hotKeyButton.x = x;
+		hotKeyButton.y = y;
+		hotKeyButton.setExactWidth(w);
+		hotKeyButton.setHeight(h);
+		hotKeyButton.render(mStack, mouseX, mouseY, delta);
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (!isFocused)
-			WidgetUtils.forceUnFocus(buttonWidget);
+			WidgetUtils.forceUnFocus(hotKeyButton);
 	}
 	
 	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {

@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
-import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Presets;

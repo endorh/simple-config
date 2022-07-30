@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.widget.button.Button;
@@ -44,8 +45,9 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 			  }
 			  displayedValue = !displayedValue;
 		  });
-		widgets = Lists.newArrayList(buttonWidget, resetButton);
+		widgets = Lists.newArrayList(buttonWidget, sideButtonReference);
 		childWidgets = Lists.newArrayList(buttonWidget);
+		hotKeyActionTypes.add(HotKeyActionTypes.BOOLEAN_TOGGLE);
 	}
 	
 	public void setYesNoSupplier(
@@ -67,6 +69,12 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	
 	@Override public void setDisplayedValue(Boolean value) {
 		displayedValue = value;
+	}
+	
+	@Override public boolean shouldRenderEditable() {
+		if (isEditingHotKeyAction())
+			return hotKeyActionType == HotKeyActionTypes.ASSIGN.<Boolean>cast();
+		return super.shouldRenderEditable();
 	}
 	
 	@Override public void renderChildEntry(

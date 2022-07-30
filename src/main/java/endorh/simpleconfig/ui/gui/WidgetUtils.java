@@ -1,7 +1,10 @@
 package endorh.simpleconfig.ui.gui;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.Widget;
+
+import java.util.Collection;
 
 public class WidgetUtils {
 	public static void forceUnFocus(Iterable<IGuiEventListener> listeners) {
@@ -12,7 +15,7 @@ public class WidgetUtils {
 		for (IGuiEventListener listener : listeners) forceUnFocus(listener);
 	}
 	
-	// IGuiEventListener could use a setFocused() or unFocus() method
+	// IGuiEventListener could use a public setFocused() or unFocus() method
 	public static void forceUnFocus(IGuiEventListener listener) {
 		if (listener instanceof Widget && !((Widget) listener).isFocused()) return;
 		for (int i = 0; i < 1000; i++) // Hanging here would be awkward
@@ -33,5 +36,37 @@ public class WidgetUtils {
 	public static void forceTransferFocus(IGuiEventListener from, IGuiEventListener to) {
 		forceUnFocus(from);
 		forceFocus(to);
+	}
+	
+	public static void pos(Widget widget, int x, int y) {
+		widget.x = x;
+		widget.y = y;
+	}
+	
+	public static void pos(Widget widget, int x, int y, int w) {
+		widget.x = x;
+		widget.y = y;
+		widget.setWidth(w);
+	}
+	
+	public static void pos(Widget widget, int x, int y, int w, int h) {
+		widget.x = x;
+		widget.y = y;
+		widget.setWidth(w);
+		widget.setHeight(h);
+	}
+	
+	public static void renderAll(
+	  MatrixStack mStack, int mouseX, int mouseY, float partialTicks,
+	  Collection<Widget> widgets
+	) {
+		for (Widget widget : widgets) widget.render(mStack, mouseX, mouseY, partialTicks);
+	}
+	
+	public static void renderAll(
+	  MatrixStack mStack, int mouseX, int mouseY, float partialTicks,
+	  Widget... widgets
+	) {
+		for (Widget widget : widgets) widget.render(mStack, mouseX, mouseY, partialTicks);
 	}
 }

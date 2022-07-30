@@ -150,6 +150,13 @@ public abstract class AbstractRangedEntry
 		return tooltips;
 	}
 	
+	public V getMin() {
+		return min;
+	}
+	public V getMax() {
+		return max;
+	}
+	
 	protected @Nullable String getTypeComment() {
 		return typeClass.getSimpleName();
 	}

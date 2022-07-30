@@ -8,6 +8,10 @@ import net.minecraft.util.text.ITextProperties;
 import java.util.List;
 
 public interface Tooltip {
+	static Tooltip of(Point location, List<ITextComponent> text) {
+		return QueuedTooltip.create(location, text);
+	}
+	
 	static Tooltip of(Point location, ITextComponent... text) {
 		return QueuedTooltip.create(location, text);
 	}

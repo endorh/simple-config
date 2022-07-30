@@ -3,7 +3,7 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
-import endorh.simpleconfig.ui.api.ConfigBuilder.IConfigSnapshotHandler;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -12,7 +12,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.naming.NoPermissionException;
 import java.io.File;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -20,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static java.util.Collections.emptyList;
 
 class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
@@ -107,11 +107,9 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 	@Override public List<String> getLocalSnapshotNames() {
 		final SimpleConfig c = configMap.get(Type.CLIENT);
 		if (c == null) return emptyList();
-		final Optional<Path> opt = c.getFilePath();
-		if (!opt.isPresent()) return emptyList();
-		final File dir = opt.get().getParent().toFile();
+		final File dir = LOCAL_PRESETS_DIR.toFile();
 		Pattern pattern = Pattern.compile(
-		  "^(?<file>" + c.getModId() + "-preset-(?<preset>.+))\\.yaml$");
+		  "^(?<file>" + c.getModId() + "-(?<preset>.+))\\.yaml$");
 		final File[] files =
 		  dir.listFiles((d, name) -> pattern.matcher(name).matches());
 		return files == null? emptyList() :

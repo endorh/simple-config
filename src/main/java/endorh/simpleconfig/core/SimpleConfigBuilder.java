@@ -4,8 +4,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
@@ -63,7 +63,7 @@ public class SimpleConfigBuilder
 	protected final @Nullable Class<?> configClass;
 	protected @Nullable Consumer<SimpleConfig> baker = null;
 	protected @Nullable Consumer<SimpleConfig> saver = null;
-	protected @Nullable BiConsumer<SimpleConfig, ConfigBuilder> decorator = null;
+	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator = null;
 	protected @Nullable ResourceLocation background = null;
 	protected boolean transparent = true;
 	
@@ -158,12 +158,12 @@ public class SimpleConfigBuilder
 	}
 	
 	/**
-	 * Configure a decorator to modify the Cloth Config API's {@link ConfigBuilder}
+	 * Configure a decorator to modify the Cloth Config API's {@link ConfigScreenBuilder}
 	 * just when a config GUI is being built<br>
 	 * @see SimpleConfigBuilder#withBackground(ResourceLocation)
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigBuilder> decorator) {
+	public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator) {
 		this.decorator = decorator;
 		return this;
 	}

@@ -5,9 +5,9 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.ui.api.IDialogCapableScreen;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen;
-import endorh.simpleconfig.ui.gui.IOverlayCapableScreen.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.SearchBar;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
@@ -55,7 +55,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	public int w;
 	public int h;
 	
-	protected IOverlayCapableScreen screen;
+	protected IDialogCapableScreen screen;
 	protected ISearchHandler handler;
 	
 	protected ComboBoxWidget<String> comboBox;
@@ -85,13 +85,13 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	protected Rectangle overlay = new Rectangle();
 	
 	public SearchBarWidget(
-	  ISearchHandler handler, int x, int y, int w, IOverlayCapableScreen screen
+	  ISearchHandler handler, int x, int y, int w, IDialogCapableScreen screen
 	) {
 		this(handler, x, y, w, 24, screen);
 	}
 	
 	public SearchBarWidget(
-	  ISearchHandler handler, int x, int y, int w, int h, IOverlayCapableScreen screen
+	  ISearchHandler handler, int x, int y, int w, int h, IDialogCapableScreen screen
 	) {
 		this.handler = handler;
 		this.x = x;
@@ -268,7 +268,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			comboBox.changeFocus(true);
 		comboBox.selectAll();
 		handler.selectMatch(currentMatch);
-		screen.claimRectangle(overlay, this, 50);
+		screen.addOverlay(overlay, this, 50);
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
@@ -310,7 +310,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		final Optional<ITextComponent[]> tt = getTooltip(mouseX, mouseY);
 		//noinspection OptionalIsPresent
 		if (tt.isPresent())
-			screen.addTooltip(Tooltip.of(new Point(mouseX, mouseY + 16), tt.get()));
+			screen.addTooltip(Tooltip.of(Point.of(mouseX, mouseY + 16), tt.get()));
 		return true;
 	}
 	

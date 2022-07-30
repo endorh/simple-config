@@ -1,23 +1,24 @@
 package endorh.simpleconfig.ui.math;
 
-public class Point
-  implements Cloneable {
+import net.minecraft.util.math.MathHelper;
+
+public class Point implements Cloneable {
 	public int x;
 	public int y;
 	
-	public Point() {
-		this(0, 0);
+	public static Point of(int x, int y) {
+		return new Point(x, y);
 	}
 	
-	public Point(Point p) {
-		this(p.x, p.y);
+	public static Point of(double x, double y) {
+		return new Point((int) x, (int) y);
 	}
 	
-	public Point(double x, double y) {
-		this((int) x, (int) y);
+	public static Point origin() {
+		return new Point(0, 0);
 	}
 	
-	public Point(int x, int y) {
+	private Point(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -31,7 +32,7 @@ public class Point
 	}
 	
 	public Point getLocation() {
-		return new Point(this.x, this.y);
+		return Point.of(this.x, this.y);
 	}
 	
 	@SuppressWarnings("MethodDoesntCallSuperMethod") public Point clone() {
@@ -70,6 +71,20 @@ public class Point
 	
 	public String toString() {
 		return this.getClass().getName() + "[x=" + this.x + ",y=" + this.y + "]";
+	}
+	
+	public float distance(float x, float y) {
+		float dx = x - getX(), dy = y - getY();
+		return MathHelper.sqrt(dx * dx + dy * dy);
+	}
+	
+	public double distance(double x, double y) {
+		double dx = x - getX(), dy = y - getY();
+		return MathHelper.sqrt(dx * dx + dy * dy);
+	}
+	
+	public float distance(Point point) {
+		return distance(point.getX(), point.getY());
 	}
 }
 

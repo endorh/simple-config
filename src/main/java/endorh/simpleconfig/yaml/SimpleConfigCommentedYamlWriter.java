@@ -38,7 +38,7 @@ public class SimpleConfigCommentedYamlWriter implements ConfigWriter {
 		try {
 			Map<String, Object> unwrappedMap = unwrap(config);
 			Node node = yaml.represent(unwrappedMap);
-			if (isGenerateComments())
+			if (this.config != null && isGenerateComments())
 				attachYamlComments(node, this.config.getComments());
 			yaml.serialize(node, writer);
 		} catch (RuntimeException e) {

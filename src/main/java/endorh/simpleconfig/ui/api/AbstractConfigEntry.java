@@ -4,13 +4,19 @@ import com.google.common.collect.Lists;
 import com.ibm.icu.impl.Pair;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry;
 import endorh.simpleconfig.ui.gui.widget.DynamicElementListWidget;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
+import endorh.simpleconfig.ui.gui.widget.HotKeyActionButton;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
+import endorh.simpleconfig.ui.hotkey.HotKeyAction;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
+import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType;
+import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -23,6 +29,7 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -59,10 +66,11 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	private boolean ignoreEdits = false;
 	private boolean editable = true;
 	private boolean previewingExternal = false;
+	private boolean editingHotKeyAction = false;
 	private boolean requiresRestart;
 	private Supplier<Boolean> editableSupplier;
 	
-	private String category = null;
+	private ConfigCategory category = null;
 	private String name = "";
 	private ITextComponent title;
 	
@@ -82,28 +90,36 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	protected int focusedMatchColor = 0x80ffBD42;
 	protected int selectionColor = 0x408090F0;
 	
+	protected RedirectGuiEventListener sideButtonReference;
 	protected ResetButton resetButton;
+	protected HotKeyActionButton<T> hotKeyActionButton;
 	
 	private @Nullable INavigableTarget navigableParent = null;
 	
+	protected List<HotKeyActionType<T, ?>> hotKeyActionTypes;
+	protected HotKeyActionType<T, ?> hotKeyActionType;
+	
 	public AbstractConfigEntry(ITextComponent title) {
 		this.title = title;
-		this.resetButton = new ResetButton(this);
+		resetButton = new ResetButton(this);
+		hotKeyActionButton = new HotKeyActionButton<>(this);
+		sideButtonReference = new RedirectGuiEventListener(resetButton);
+		hotKeyActionTypes = Lists.newArrayList(HotKeyActionTypes.ASSIGN.cast());
 	}
 	
 	public String getPath() {
 		if (parentEntry != null) return parentEntry.providePath(this);
-		return getCategory() + "." + getName();
+		return getCategory().getName() + "." + getName();
 	}
 	
 	public String providePath(AbstractConfigEntry<?> child) {
 		return getPath() + "." + child.getName();
 	}
 	
-	public String getCategory() {
+	public ConfigCategory getCategory() {
 		if (category != null) return category;
 		if (parentEntry != null) return parentEntry.getCategory();
-		return "";
+		return null;
 	}
 	
 	public String getName() {
@@ -113,7 +129,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		this.name = name;
 	}
 	public void setCategory(ConfigCategory category) {
-		this.category = category.getName();
+		this.category = category;
 	}
 	
 	/**
@@ -240,12 +256,13 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 				  .appendString(title.substring(i + matchedText.length()));
 			}
 		}
-		if (hasError)
-			text = text.mergeStyle(TextFormatting.RED);
-		if (isEdited)
-			text = text.mergeStyle(TextFormatting.ITALIC);
-		if (!hasError && !isEdited)
-			text = text.mergeStyle(TextFormatting.GRAY);
+		if (hasError) text.mergeStyle(TextFormatting.RED);
+		if (isEditingHotKeyAction()) {
+			if (getHotKeyActionType() == null) text.mergeStyle(TextFormatting.GRAY);
+		} else {
+			if (isEdited) text.mergeStyle(TextFormatting.ITALIC);
+			if (!hasError && !isEdited) text.mergeStyle(TextFormatting.GRAY);
+		}
 		return text;
 	}
 	
@@ -258,7 +275,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	public void setValueTransparently(T value) {
 		runTransparentAction(() -> {
 			setValue(value);
-			if (!isPreviewingExternal())
+			if (isDisplayingValue())
 				setDisplayedValue(value);
 		});
 	}
@@ -301,7 +318,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		try {
 			//noinspection unchecked
 			setValue((T) storedValue);
-			if (!isPreviewingExternal()) //noinspection unchecked
+			if (isDisplayingValue()) //noinspection unchecked
 				setDisplayedValue((T) storedValue);
 			applyHistoryHighlight();
 		} catch (RuntimeException e) {
@@ -328,6 +345,20 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 			setDisplayedValue(value);
 			previewingExternal = false;
 		}
+	}
+	
+	public boolean isEditingHotKeyAction() {
+		return getScreen().isEditingConfigHotKey();
+	}
+	
+	public void setEditingHotKeyAction(boolean editing) {
+		if (editing == editingHotKeyAction) return;
+		if (!editing) setDisplayedValue(getValue());
+		editingHotKeyAction = editing;
+	}
+	
+	public boolean isDisplayingValue() {
+		return !isPreviewingExternal() && !isEditingHotKeyAction();
 	}
 	
 	/**
@@ -367,6 +398,8 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	public void updateValue() {
 		if (isPreviewingExternal()) {
 			setDisplayedValue(getExternalValue());
+		} else if (isEditingHotKeyAction()) {
+			// Pass
 		} else if (isEditable()) {
 			setValue(getDisplayedValue());
 		}
@@ -392,15 +425,25 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		return Optional.empty();
 	}
 	
+	public List<EntryError> getErrors() {
+		if (isEditingHotKeyAction()) {
+			return hotKeyActionType == null
+			       ? new ArrayList<>()
+			       : getHotKeyActionErrors(hotKeyActionType);
+		}
+		return getEntryErrors();
+	}
+	
 	/**
 	 * Subclasses should instead override {@link AbstractConfigEntry#getErrorMessage()}
 	 * for entry specific errors. This method wraps that with the error supplier.
 	 */
-	public List<EntryError> getErrors() {
+	public List<EntryError> getEntryErrors() {
 		List<EntryError> errors = new ArrayList<>();
 		if (this.errorSupplier != null)
 			errorSupplier.get().ifPresent(e -> errors.add(EntryError.of(e, this)));
-		getErrorMessage().ifPresent(e -> errors.add(EntryError.of(e, this)));
+		if (errors.isEmpty())
+			getErrorMessage().ifPresent(e -> errors.add(EntryError.of(e, this)));
 		return errors;
 	}
 	
@@ -480,13 +523,19 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	}
 	
 	public boolean isEditable() {
-		return getScreen().isEditable() && editable
+		if (isEditingHotKeyAction())
+			return isSubEntry()
+			       ? parentEntry != null && parentEntry.isEditable()
+			       : getHotKeyActionType() != null;
+		return getScreen().isEditable()
+		       && editable
 		       && (parentEntry == null || parentEntry.isEditable())
 		       && !isPreviewingExternal();
 	}
 	
 	public boolean shouldRenderEditable() {
-		return isEditable() || isPreviewingExternal()
+		return isEditable()
+		       || isPreviewingExternal()
 		       || (parentEntry != null && parentEntry.shouldRenderEditable());
 	}
 	
@@ -570,6 +619,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		}
 		if (this instanceof IEntryHolder)
 			((IEntryHolder) this).getHeldEntries().forEach(AbstractConfigEntry::tick);
+		if (isEditingHotKeyAction()) hotKeyActionButton.tick();
 	}
 	
 	@Override public void render(
@@ -785,37 +835,67 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		fill(mStack, x, maxY - bw, maxX, maxY, color);
 	}
 	
-	public static class EntryError {
-		protected ITextComponent error;
-		protected INavigableTarget source;
-		protected AbstractConfigEntry<?> entry;
-		
-		protected EntryError(
-		  ITextComponent error, INavigableTarget source
-		) {
-			this.error = error;
-			this.source = source;
-			this.entry = source.findParentEntry();
+	public List<HotKeyActionType<T, ?>> getHotKeyActionTypes() {
+		return hotKeyActionTypes;
+	}
+	
+	public HotKeyActionType<T, ?> getHotKeyActionType() {
+		return hotKeyActionType;
+	}
+	
+	public void setHotKeyActionType(HotKeyActionType<T, ?> type, @Nullable HotKeyAction<T> prev) {
+		hotKeyActionType = type;
+		if (prev instanceof SimpleHotKeyActionType.SimpleHotKeyAction) {
+			setHotKeyActionValue(((SimpleHotKeyAction<?, ?>) prev).getStorage());
 		}
-		
-		public static EntryError of(ITextComponent error, INavigableTarget source) {
-			return new EntryError(error, source);
+	}
+	
+	protected @Nullable endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> getConfigEntry() {
+		AbstractConfigScreen screen = getScreen();
+		String modId = screen.getModId();
+		ConfigCategory category = getCategory();
+		if (category == null) return null;
+		Type type = category.isServer()? Type.SERVER : Type.CLIENT;
+		if (SimpleConfig.hasConfig(modId, type)) {
+			SimpleConfig config = SimpleConfig.getConfig(modId, type);
+			String path = getPath();
+			if (path.startsWith("client.")) path = path.substring(7);
+			else if (path.startsWith("server.")) path = path.substring(7);
+			if (config.hasEntry(path)) return config.getEntry(path);
 		}
-		
-		public static EntryError wrap(ITextComponent error, EntryError cause) {
-			return new EntryError(error, cause.source);
+		return null;
+	}
+	
+	public @Nullable HotKeyAction<T> createHotKeyAction() {
+		HotKeyActionType<T, ?> type = getHotKeyActionType();
+		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> entry = getConfigEntry();
+		return type != null && entry != null? type.deserialize(entry, getHotKeyActionValue()) : null;
+	}
+	
+	public Object getHotKeyActionValue() {
+		return getDisplayedValue();
+	}
+	
+	public void setHotKeyActionValue(Object value) {
+		T prev = getDisplayedValue();
+		if (value != null) {
+			try {
+				//noinspection unchecked
+				setDisplayedValue((T) value);
+			} catch (ClassCastException e) {
+				setDisplayedValue(prev);
+			}
 		}
-		
-		public ITextComponent getError() {
-			return error;
-		}
-		
-		public INavigableTarget getSource() {
-			return source;
-		}
-		
-		public AbstractConfigEntry<?> getEntry() {
-			return entry;
-		}
+	}
+	
+	public List<EntryError> getHotKeyActionErrors(HotKeyActionType<T, ?> type) {
+		List<EntryError> errors = new ArrayList<>();
+		if (type instanceof HotKeyActionTypes.AssignHotKeyActionType)
+			errors.addAll(getEntryErrors());
+		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> entry = getConfigEntry();
+		if (entry != null) type.getActionError(entry, getHotKeyActionValue())
+		  .map(m -> EntryError.of(m, this))
+		  .ifPresent(errors::add);
+		return errors;
 	}
 }

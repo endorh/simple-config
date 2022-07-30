@@ -4,8 +4,11 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
-import endorh.simpleconfig.ui.api.ConfigBuilder;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
+import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
+import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -39,9 +42,20 @@ import static java.util.Collections.synchronizedMap;
 public class SimpleConfigGUIManager {
 	// Mod loading is asynchronous
 	protected static final Map<String, Map<Type, SimpleConfig>> modConfigs = synchronizedMap(new HashMap<>());
+	private static final Map<String, AbstractConfigScreen> activeScreens = new HashMap<>();
 	
 	protected static boolean addButton = false;
 	protected static boolean autoAddedButton = false;
+	protected static Comparator<SimpleConfig> typeOrder = Comparator.comparingInt(c -> {
+		switch (c.getType()) {
+			case CLIENT: return 1;
+			case COMMON: return 2;
+			case SERVER: return 4;
+			default: return 3;
+		}
+	});
+	protected static ResourceLocation defaultBackground = new ResourceLocation(
+	  "textures/block/oak_planks.png");
 	
 	/**
 	 * Modify the behaviour that adds a side button to the pause menu
@@ -71,9 +85,52 @@ public class SimpleConfigGUIManager {
 			context.registerExtensionPoint(
 			  ExtensionPoint.CONFIGGUIFACTORY,
 			  () -> (mc, screen) -> getConfigGUI(modId, screen));
-		} else {
-			modConfigs.get(modId).put(config.getType(), config);
+		} else modConfigs.get(modId).put(config.getType(), config);
+	}
+	
+	public static Screen getConfigGUIForHotKey(
+	  String modId, IDialogCapableScreen parent, HotKeyListDialog hotKeyDialog, ConfigHotKey hotkey
+	) {
+		AbstractConfigScreen screen = activeScreens.get(modId);
+		Screen parentScreen = (Screen) parent;
+		if (screen != null) {
+			screen.setEditedConfigHotKey(hotkey, r -> {
+				screen.setEditedConfigHotKey(null, null);
+				Minecraft.getInstance().displayGuiScreen(parentScreen);
+				if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
+			});
+			return screen;
 		}
+		Map<Type, SimpleConfig> configs = modConfigs.get(modId);
+		if (configs == null || configs.isEmpty())
+			throw new IllegalArgumentException(
+			  "No Simple Config GUI registered for mod id: \"" + modId + "\"");
+		final Minecraft mc = Minecraft.getInstance();
+		boolean hasPermission =
+		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
+		final List<SimpleConfig> orderedConfigs = configs.values().stream()
+		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
+		  .sorted(typeOrder)
+		  .collect(Collectors.toList());
+		// final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
+		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
+		  .setParentScreen(parentScreen)
+		  .setSavingRunnable(() -> {})
+		  .setTitle(new TranslationTextComponent(
+			 "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
+		  .setDefaultBackgroundTexture(defaultBackground)
+		  // .setSnapshotHandler(handler)
+		  .setEditedConfigHotKey(hotkey, r -> {
+			  for (SimpleConfig c: orderedConfigs) c.removeGUI();
+			  activeScreens.remove(modId);
+			  Minecraft.getInstance().displayGuiScreen(parentScreen);
+			  if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
+		  });
+		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder);
+		final AbstractConfigScreen gui = builder.build();
+		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, null);
+		activeScreens.put(modId, gui);
+		return gui;
 	}
 	
 	/**
@@ -84,36 +141,31 @@ public class SimpleConfigGUIManager {
 		Map<Type, SimpleConfig> configs = modConfigs.get(modId);
 		if (configs == null || configs.isEmpty())
 			throw new IllegalArgumentException(
-			  "There's not any config GUI registered for mod id: \"" + modId + "\"");
+			  "No Simple Config GUI registered for mod id: \"" + modId + "\"");
 		final Minecraft mc = Minecraft.getInstance();
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
 		final List<SimpleConfig> orderedConfigs = configs.values().stream()
 		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
-		  .sorted(Comparator.comparing(c -> {
-			switch (c.getType()) {
-				case CLIENT: return 1;
-				case COMMON: return 2;
-				case SERVER: return 4;
-				default: return 3;
-			}
-		})).collect(Collectors.toList());
+		  .sorted(typeOrder)
+		  .collect(Collectors.toList());
 		final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
-		final ConfigBuilder builder = ConfigBuilder.create(modId)
+		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parent)
-		  .setSavingRunnable(() -> orderedConfigs.forEach(c -> {
-			  if (c.isDirty()) c.save();
-			  c.removeGUI();
-		  })).setTitle(new TranslationTextComponent(
+		  .setSavingRunnable(() -> {
+			  for (SimpleConfig c: orderedConfigs) {
+				  if (c.isDirty()) c.save();
+				  c.removeGUI();
+			  }
+			  activeScreens.remove(modId);
+		  }).setTitle(new TranslationTextComponent(
 		    "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
-		  .setDefaultBackgroundTexture(new ResourceLocation(
-		  "textures/block/oak_planks.png"))
+		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setSnapshotHandler(handler);
-		for (SimpleConfig config : orderedConfigs)
-			config.buildGUI(builder);
+		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder);
 		final AbstractConfigScreen gui = builder.build();
-		for (SimpleConfig config : orderedConfigs)
-			config.setGUI(gui, handler);
+		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, handler);
+		activeScreens.put(modId, gui);
 		return gui;
 	}
 	
@@ -130,6 +182,13 @@ public class SimpleConfigGUIManager {
 	@SuppressWarnings("unused")
 	public static void showConfigGUI(String modId) {
 		Minecraft.getInstance().displayGuiScreen(getConfigGUI(modId));
+	}
+	
+	public static void showConfigGUIForHotKey(
+	  String modId, IDialogCapableScreen parent, HotKeyListDialog hotKeyDialog, ConfigHotKey hotKey
+	) {
+		Minecraft.getInstance().displayGuiScreen(
+		  getConfigGUIForHotKey(modId, parent, hotKeyDialog, hotKey));
 	}
 	
 	/**

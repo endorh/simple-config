@@ -3,10 +3,7 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.core.AbstractRange;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
-import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.api.IEntryHolder;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
+import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
@@ -57,7 +54,7 @@ public class RangeListEntry<
 		setValue(value);
 		setDisplayedValue(value);
 		listeners = Lists.newArrayList(
-		  minEntry, minExclusivenessButton, maxExclusivenessButton, maxEntry, resetButton);
+		  minEntry, minExclusivenessButton, maxExclusivenessButton, maxEntry, sideButtonReference);
 		heldEntries = Lists.newArrayList(minEntry, maxEntry);
 		seekableChildren = Lists.newArrayList(minEntry, maxEntry);
 	}
@@ -90,8 +87,8 @@ public class RangeListEntry<
 		return false;
 	}
 	
-	@Override public List<EntryError> getErrors() {
-		List<EntryError> errors = super.getErrors();
+	@Override public List<EntryError> getEntryErrors() {
+		List<EntryError> errors = super.getEntryErrors();
 		errors.addAll(IEntryHolder.super.getErrors());
 		return errors;
 	}

@@ -37,13 +37,13 @@ public final class ScissorsHandlerImpl
 	}
 	
 	@Override
-	public void scissor(Rectangle rectangle) {
-		this.scissorsAreas.add(rectangle);
+	public void pushScissor(Rectangle clipArea) {
+		this.scissorsAreas.add(clipArea);
 		this.applyScissors();
 	}
 	
 	@Override
-	public void removeLastScissor() {
+	public void popScissor() {
 		if (!this.scissorsAreas.isEmpty())
 			this.scissorsAreas.remove(this.scissorsAreas.size() - 1);
 		this.applyScissors();

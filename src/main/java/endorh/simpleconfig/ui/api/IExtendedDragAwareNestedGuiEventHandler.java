@@ -1,4 +1,4 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.api;
 
 
 import net.minecraft.client.gui.IGuiEventListener;
@@ -72,10 +72,14 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	}
 	
 	@Override default boolean mouseReleased(double mouseX, double mouseY, int button) {
+		handleEndDrag(mouseX, mouseY, button);
+		return INestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
+	}
+	
+	default void handleEndDrag(double mouseX, double mouseY, int button) {
 		if (getDragged() != null) {
 			if (button == getDragged().getLeft())
 				endDrag(mouseX, mouseY, button);
 		}
-		return INestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
 	}
 }

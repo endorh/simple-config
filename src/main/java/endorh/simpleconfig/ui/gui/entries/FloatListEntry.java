@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
 public class FloatListEntry extends TextFieldListEntry<Float> implements IRangedEntry<Float> {
@@ -20,6 +22,10 @@ public class FloatListEntry extends TextFieldListEntry<Float> implements IRanged
 	) {
 		super(fieldName, value, false);
 		setTextFormatter(ITextFormatter.numeric(false));
+		Stream.of(
+		  HotKeyActionTypes.FLOAT_ADD, HotKeyActionTypes.FLOAT_ADD_CYCLE,
+		  HotKeyActionTypes.FLOAT_MULTIPLY, HotKeyActionTypes.FLOAT_DIVIDE
+		).forEach(hotKeyActionTypes::add);
 	}
 	
 	@Override public void setMinimum(Float minimum) {

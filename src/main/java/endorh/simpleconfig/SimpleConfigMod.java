@@ -16,6 +16,7 @@ import endorh.simpleconfig.grammar.regex.RegexParser;
 import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKeyInputHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -35,6 +36,7 @@ import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.settings.KeyModifier;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -328,6 +330,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 				NEXT_ERROR = reg("next_error", 290);               // F1
 				SAVE = reg("save", CONTROL, 83);                   // Ctrl + S
 				RESET_RESTORE = reg("reset_restore", CONTROL, 82); // Ctrl + R
+				
+				MinecraftForge.EVENT_BUS.register(ConfigHotKeyInputHandler.INSTANCE);
 			});
 		}
 		

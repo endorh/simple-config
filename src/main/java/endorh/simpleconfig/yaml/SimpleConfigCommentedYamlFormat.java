@@ -42,9 +42,19 @@ public class SimpleConfigCommentedYamlFormat implements ConfigFormat<CommentedCo
 	  DEFAULT_DUMPER_OPTIONS.get(),
 	  DEFAULT_LOADER_OPTIONS.get()
 	));
+	public static final ThreadLocal<SimpleConfigCommentedYamlFormat> WITHOUT_COMMENTS = ThreadLocal.withInitial(
+	  () -> new SimpleConfigCommentedYamlFormat(DEFAULT_YAML.get(), null));
 	
 	public static SimpleConfigCommentedYamlFormat forConfig(SimpleConfig config) {
 		return new SimpleConfigCommentedYamlFormat(DEFAULT_YAML.get(), config);
+	}
+	
+	public static SimpleConfigCommentedYamlFormat withoutComments() {
+		return WITHOUT_COMMENTS.get();
+	}
+	
+	public static Yaml getDefaultYaml() {
+		return DEFAULT_YAML.get();
 	}
 	
 	public static void registerExtension() {
@@ -87,18 +97,15 @@ public class SimpleConfigCommentedYamlFormat implements ConfigFormat<CommentedCo
 		return parser;
 	}
 	
-	@Override
-	public CommentedConfig createConfig(Supplier<Map<String, Object>> mapCreator) {
+	@Override public CommentedConfig createConfig(Supplier<Map<String, Object>> mapCreator) {
 		return CommentedConfig.of(mapCreator, this);
 	}
 	
-	@Override
-	public boolean supportsComments() {
+	@Override public boolean supportsComments() {
 		return false;
 	}
 	
-	@Override
-	public boolean supportsType(Class<?> type) {
+	@Override public boolean supportsType(Class<?> type) {
 		return type == null
 		       || type.isEnum()
 		       || type == Boolean.class

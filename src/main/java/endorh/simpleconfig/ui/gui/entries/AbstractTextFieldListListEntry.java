@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
+import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;

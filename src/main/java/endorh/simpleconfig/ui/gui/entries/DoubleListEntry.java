@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -8,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
 public class DoubleListEntry extends TextFieldListEntry<Double> implements IRangedEntry<Double> {
@@ -17,6 +19,10 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 	@Internal public DoubleListEntry(ITextComponent fieldName, Double value) {
 		super(fieldName, value, false);
 		setTextFormatter(ITextFormatter.numeric(false));
+		Stream.of(
+		  HotKeyActionTypes.DOUBLE_ADD, HotKeyActionTypes.DOUBLE_ADD_CYCLE,
+		  HotKeyActionTypes.DOUBLE_MULTIPLY, HotKeyActionTypes.DOUBLE_DIVIDE
+		).forEach(hotKeyActionTypes::add);
 	}
 	
 	@Override public void setMinimum(Double minimum) {

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import net.minecraft.client.gui.DialogTexts;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
@@ -11,13 +12,14 @@ import net.minecraft.util.text.Style;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static java.lang.Math.min;
-import static java.lang.Math.round;
+import static java.lang.Math.*;
 
 public class ConfirmDialog extends AbstractButtonDialog {
 	protected List<ITextComponent> body = Collections.emptyList();
@@ -107,12 +109,22 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void layout() {
-		w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
-		final int titleWidth = font.getStringPropertyWidth(title);
+		int w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
+		int titleWidth = font.getStringPropertyWidth(title);
 		if (titleWidth + 16 > w)
 			w = min(getScreen().width - 32, titleWidth + 16);
-		lines = getBody().stream().map(l -> font.trimStringToWidth(l, w - 16)).collect(Collectors.toList());
-		h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, getScreen().height * 0.9);
+		final int ww = w;
+		lines = getBody().stream().map(l -> font.trimStringToWidth(l, ww - 16)).collect(Collectors.toList());
+		int bodyWidth = IntStream.concat(
+		  lines.stream().flatMap(Collection::stream).mapToInt(l -> font.func_243245_a(l)),
+		  Arrays.stream(checkBoxes).mapToInt(Widget::getWidth)
+		).max().orElse(w) + 16;
+		bodyWidth = max(bodyWidth, buttons.size() * 60);
+		if (bodyWidth > 120 && bodyWidth > titleWidth + 16)
+			w = bodyWidth;
+		int h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, getScreen().height * 0.9);
+		setWidth(w);
+		setHeight(h);
 		super.layout();
 	}
 	

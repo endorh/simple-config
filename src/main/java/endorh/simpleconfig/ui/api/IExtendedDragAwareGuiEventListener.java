@@ -1,4 +1,4 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.api;
 
 import net.minecraft.client.gui.IGuiEventListener;
 

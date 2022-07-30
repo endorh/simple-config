@@ -3,8 +3,8 @@ package endorh.simpleconfig.ui.impl;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ConfigCategoryImpl implements ConfigCategory {
-	protected final ConfigBuilder builder;
+	protected final ConfigScreenBuilder builder;
 	protected final List<AbstractConfigEntry<?>> entries;
 	protected final String name;
 	protected ITextComponent title;
@@ -32,7 +32,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
 	
-	ConfigCategoryImpl(ConfigBuilder builder, String name, boolean isServer) {
+	ConfigCategoryImpl(ConfigScreenBuilder builder, String name, boolean isServer) {
 		this.builder = builder;
 		this.entries = Lists.newArrayList();
 		this.name = name;

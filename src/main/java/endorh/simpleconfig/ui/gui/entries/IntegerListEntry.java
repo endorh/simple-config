@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -9,16 +10,18 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
-public class IntegerListEntry
-  extends TextFieldListEntry<Integer> implements IRangedEntry<Integer> {
+public class IntegerListEntry extends TextFieldListEntry<Integer> implements IRangedEntry<Integer> {
 	private int minimum = Integer.MIN_VALUE;
 	private int maximum = Integer.MAX_VALUE;
 	
 	@Internal public IntegerListEntry(ITextComponent fieldName, Integer value) {
 		super(fieldName, value, false);
 		setTextFormatter(ITextFormatter.numeric(true));
+		Stream.of(HotKeyActionTypes.INT_ADD, HotKeyActionTypes.INT_ADD_CYCLE)
+		  .forEach(hotKeyActionTypes::add);
 	}
 	
 	@Override public void setMinimum(Integer minimum) {

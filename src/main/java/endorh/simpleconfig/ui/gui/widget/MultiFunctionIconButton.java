@@ -2,9 +2,9 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
@@ -164,9 +164,9 @@ public class MultiFunctionIconButton extends TintedButton {
 			RenderSystem.color4f(1F, 1F, 1F, 1F);
 			if (width > iconWidth) {
 				if (contentWidth > width) {
-					ScissorsHandler.INSTANCE.scissor(new Rectangle(x, y, width, height));
+					ScissorsHandler.INSTANCE.pushScissor(new Rectangle(x, y, width, height));
 					drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
-					ScissorsHandler.INSTANCE.removeLastScissor();
+					ScissorsHandler.INSTANCE.popScissor();
 				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
 			}
 		} mStack.pop();
@@ -177,16 +177,23 @@ public class MultiFunctionIconButton extends TintedButton {
 	
 	private static final ITextComponent[] EMPTY_TEXT_COMPONENT_ARRAY = new ITextComponent[0];
 	@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
-		final ButtonAction action = activeAction;
-		final List<ITextComponent> ls = (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
+		final List<ITextComponent> ls = getTooltip();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().currentScreen;
+			boolean hovered = isMouseOver(mouseX, mouseY);
+			int tooltipX = hovered? mouseX : x + width / 2;
+			int tooltipY = hovered? mouseY : y < 64? y + height : y;
 			if (screen instanceof IMultiTooltipScreen) {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
-				  new Point(mouseX, mouseY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
+				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
 			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, mouseX, mouseY, Minecraft.getInstance().fontRenderer);
+				screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().fontRenderer);
 		}
+	}
+	
+	public List<ITextComponent> getTooltip() {
+		ButtonAction action = activeAction;
+		return (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 	}
 	
 	public boolean press(boolean ctrl, boolean alt, boolean shift) {
@@ -247,6 +254,14 @@ public class MultiFunctionIconButton extends TintedButton {
 	public void setExactWidth(int width) {
 		setMinWidth(width);
 		setMaxWidth(width);
+	}
+	
+	public Icon getDefaultIcon() {
+		return defaultIcon;
+	}
+	
+	public void setDefaultIcon(Icon defaultIcon) {
+		this.defaultIcon = defaultIcon;
 	}
 	
 	@Override public void setTintColor(int color) {

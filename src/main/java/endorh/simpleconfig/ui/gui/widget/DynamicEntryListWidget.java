@@ -5,9 +5,9 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.ui.api.IExpandable;
+import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.gui.IExtendedDragAwareNestedGuiEventHandler;
-import endorh.simpleconfig.ui.gui.INavigableTarget;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget.ListEntry;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import endorh.simpleconfig.ui.math.Rectangle;
@@ -293,9 +293,9 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		
 		if (renderSelection) renderHeader(mStack, rowLeft, startY, tessellator);
 		
-		ScissorsHandler.INSTANCE.scissor(new Rectangle(0, top, width, bottom - top)); {
+		ScissorsHandler.INSTANCE.pushScissor(new Rectangle(0, top, width, bottom - top)); {
 			renderList(mStack, rowLeft, startY, mouseX, mouseY, delta);
-		} ScissorsHandler.INSTANCE.removeLastScissor();
+		} ScissorsHandler.INSTANCE.popScissor();
 		
 		RenderSystem.disableDepthTest();
 		renderBarBackground(mStack, 0, top, 255, 255);

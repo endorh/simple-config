@@ -10,6 +10,7 @@ import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.text.ITextComponent;
@@ -18,6 +19,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -51,7 +53,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		  0, 0, 20, 20, SimpleConfigIcons.Buttons.ACCEPT,
 		  ButtonAction.of(() -> action.accept(getValue()))
 		    .active(() -> shouldRenderEditable() && !getErrorMessage().isPresent()));
-		listeners = Lists.newArrayList(entry, button, resetButton);
+		listeners = Lists.newArrayList(entry, button, sideButtonReference);
 		childListeners = Lists.newArrayList(entry, button);
 		heldEntries = Lists.newArrayList(entry);
 	}
@@ -132,6 +134,10 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	@Override public void navigate() {
 		super.navigate();
 		setListener(entry);
+	}
+	
+	@Override public List<HotKeyActionType<V, ?>> getHotKeyActionTypes() {
+		return Collections.emptyList();
 	}
 	
 	@Override public String seekableValueText() {

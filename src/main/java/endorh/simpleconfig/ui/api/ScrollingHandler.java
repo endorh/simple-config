@@ -10,6 +10,9 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 // The name ScrollingContainer is not appropriate, since this does not "contain" anything
 public abstract class ScrollingHandler {
 	public double scrollAmount;
@@ -17,6 +20,7 @@ public abstract class ScrollingHandler {
 	public long start;
 	public long duration;
 	public boolean draggingScrollBar = false;
+	public boolean hideScrollBar = false;
 	
 	public abstract Rectangle getBounds();
 	
@@ -33,38 +37,61 @@ public abstract class ScrollingHandler {
 	}
 	
 	public boolean hasScrollBar() {
-		return getMaxScrollHeight() > getBounds().height;
+		return !isHideScrollBar() && getMaxScrollHeight() > getBounds().height;
+	}
+	
+	public boolean isHideScrollBar() {
+		return hideScrollBar;
+	}
+	
+	public void setHideScrollBar(boolean hide) {
+		this.hideScrollBar = hide;
 	}
 	
 	public abstract int getMaxScrollHeight();
 	
-	public final int getMaxScroll() {
-		return Math.max(0, getMaxScrollHeight() - getBounds().height);
+	public int getMaxScroll() {
+		return max(0, getMaxScrollHeight() - getBounds().height);
 	}
 	
-	public final double clamp(double v) {
+	public double clamp(double v) {
 		return clamp(v, 200.0);
 	}
 	
-	public final double clamp(double v, double clampExtension) {
+	public double clamp(double v, double clampExtension) {
 		return MathHelper.clamp(v, -clampExtension, (double) getMaxScroll() + clampExtension);
 	}
 	
-	public final void offset(double value, boolean animated) {
+	public void offset(double value, boolean animated) {
 		scrollTo(scrollTarget + value, animated);
 	}
 	
-	public final void scrollTo(double value, boolean animated) {
+	public void scrollTo(double value, boolean animated) {
 		scrollTo(value, animated, 200L);
 	}
 	
-	public final void scrollTo(double value, boolean animated, long duration) {
+	public void scrollTo(double value, boolean animated, long duration) {
 		scrollTarget = clamp(value);
 		if (animated) {
 			start = System.currentTimeMillis();
 			this.duration = duration;
 		} else {
 			scrollAmount = scrollTarget;
+		}
+	}
+	
+	public void scrollToShow(double start, double end) {
+		scrollToShow(start, end, true);
+	}
+	
+	public void scrollToShow(double start, double end, boolean animated) {
+		int height = getBounds().getHeight();
+		double margin = min(height * 0.15, 48);
+		double current = scrollAmount;
+		if (current > start - margin) {
+			scrollTo(start - margin, animated);
+		} else if (current < end + margin - height) {
+			scrollTo(min(start - margin, end + margin - height), animated);
 		}
 	}
 	
@@ -99,7 +126,7 @@ public abstract class ScrollingHandler {
 			target[0] = ScrollingHandler.clampExtension(target[0], maxScroll, 32.0);
 		}
 		return ScrollingHandler.ease(
-		  scroll, target[0], Math.min(
+		  scroll, target[0], min(
 			 ((double) System.currentTimeMillis() - start) / duration, 1.0),
 		  easingMethod);
 	}
@@ -124,16 +151,18 @@ public abstract class ScrollingHandler {
 		if (hasScrollBar()) {
 			Rectangle bounds = getBounds();
 			int maxScroll = getMaxScroll();
-			int height = bounds.height * bounds.height / getMaxScrollHeight();
+			int maxScrollHeight = getMaxScrollHeight();
+			if (maxScrollHeight <= 0) maxScrollHeight = 1;
+			int height = bounds.height * bounds.height / maxScrollHeight;
 			height = MathHelper.clamp(height, 32, bounds.height);
-			height = (int) ((double) height - Math.min(
+			height = (int) ((double) height - min(
            scrollAmount < 0.0 ? (int) -scrollAmount
                               : scrollAmount > (double) maxScroll ?
                                 (int) scrollAmount - maxScroll : 0,
 			  (double) height * 0.95));
-			height = Math.max(10, height);
-			int minY = Math.min(
-			  Math.max((int) scrollAmount * (bounds.height - height) / maxScroll + bounds.y,
+			height = max(10, height);
+			int minY = min(
+			  max((int) scrollAmount * (bounds.height - height) / maxScroll + bounds.y,
 			           bounds.y), bounds.getMaxY() - height);
 			int scrollbarPositionMinX = getScrollBarX();
 			int scrollbarPositionMaxX = scrollbarPositionMinX + 6;
@@ -193,10 +222,10 @@ public abstract class ScrollingHandler {
 			Rectangle bounds = getBounds();
 			int actualHeight = bounds.height;
 			if (mouseY >= (double) bounds.y && mouseY <= (double) bounds.getMaxY()) {
-				double maxScroll = Math.max(1, getMaxScroll());
+				double maxScroll = max(1, getMaxScroll());
 				double int_3 =
 				  MathHelper.clamp((double) (actualHeight * actualHeight) / (double) height, 32.0, actualHeight - 8);
-				double double_6 = Math.max(1.0, maxScroll / ((double) actualHeight - int_3));
+				double double_6 = max(1.0, maxScroll / ((double) actualHeight - int_3));
 				float to =
 				  MathHelper.clamp((float) (scrollAmount + dy * double_6), 0.0f, (float) getMaxScroll());
 				if (snapToRows) {

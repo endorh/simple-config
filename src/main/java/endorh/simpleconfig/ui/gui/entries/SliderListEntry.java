@@ -52,8 +52,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		setValue(value);
 		sliderValue = value;
 		this.textGetter = textGetter;
-		widgets = Lists.newArrayList(resetButton);
-		textWidgets = Lists.newArrayList(resetButton);
+		widgets = Lists.newArrayList(sideButtonReference);
+		textWidgets = Lists.newArrayList(sideButtonReference);
 		childWidgets = Lists.newArrayList();
 		textChildWidgets = Lists.newArrayList();
 	}
@@ -174,7 +174,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			  (isTextFieldShown()? 1 : 0) + (
 				 entryArea.contains(mouseX, mouseY)
 			    && !sliderWidget.isMouseOver(mouseX, mouseY)
-			    && !resetButton.isMouseOver(mouseX, mouseY)? 2 : 0));
+			    && !sideButtonReference.isMouseOver(mouseX, mouseY)? 2 : 0));
 		}
 	}
 	
@@ -206,7 +206,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			show = false;
 		showText = show;
 		if (focus)
-			WidgetUtils.forceUnFocus(resetButton);
+			WidgetUtils.forceUnFocus(sideButtonReference);
 		if (show) {
 			textFieldEntry.setDisplayedValue(getDisplayedValue());
 			if (focus) {

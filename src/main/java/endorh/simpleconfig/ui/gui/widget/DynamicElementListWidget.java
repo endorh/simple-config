@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import endorh.simpleconfig.ui.gui.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.gui.widget.DynamicElementListWidget.ElementEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;

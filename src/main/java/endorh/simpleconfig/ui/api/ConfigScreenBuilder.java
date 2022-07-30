@@ -2,8 +2,9 @@ package endorh.simpleconfig.ui.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.impl.ConfigBuilderImpl;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.impl.ConfigEntryBuilderImpl;
+import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -13,76 +14,74 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @OnlyIn(value = Dist.CLIENT)
-public interface ConfigBuilder {
-	static ConfigBuilder create() {
+public interface ConfigScreenBuilder {
+	static ConfigScreenBuilder create() {
 		return create("");
 	}
-	
-	static ConfigBuilder create(String modId) {
-		return new ConfigBuilderImpl(modId);
+	static ConfigScreenBuilder create(String modId) {
+		return new ConfigScreenBuilderImpl(modId);
 	}
 	
-	ConfigBuilder setFallbackCategory(ConfigCategory fallbackCategory);
+	ConfigScreenBuilder setFallbackCategory(ConfigCategory fallbackCategory);
 	
 	Screen getParentScreen();
-	
-	ConfigBuilder setParentScreen(Screen parent);
+	ConfigScreenBuilder setParentScreen(Screen parent);
 	
 	ITextComponent getTitle();
+	ConfigScreenBuilder setTitle(ITextComponent title);
 	
-	ConfigBuilder setTitle(ITextComponent title);
+	ConfigHotKey getEditedConfigHotKey();
+	Consumer<Boolean> getHotKeySaver();
+	ConfigScreenBuilder setEditedConfigHotKey(ConfigHotKey hotkey, Consumer<Boolean> hotKeySaver);
+	
+	ConfigCategory getSelectedCategory();
+	ConfigScreenBuilder setSelectedCategory(ConfigCategory category);
+	default ConfigScreenBuilder setSelectedCategory(String name, boolean isServer) {
+		return setSelectedCategory(getOrCreateCategory(name, isServer));
+	}
+	
+	IConfigScreenGUIState getPreviousGUIState();
+	ConfigScreenBuilder setPreviousGUIState(IConfigScreenGUIState state);
 	
 	boolean isEditable();
-	
-	ConfigBuilder setEditable(boolean editable);
+	ConfigScreenBuilder setEditable(boolean editable);
 	
 	ConfigCategory getOrCreateCategory(String name, boolean isServer);
-	
-	ConfigBuilder removeCategory(String name, boolean isServer);
-	
-	ConfigBuilder removeCategoryIfExists(String name, boolean isServer);
-	
+	ConfigScreenBuilder removeCategory(String name, boolean isServer);
+	ConfigScreenBuilder removeCategoryIfExists(String name, boolean isServer);
 	boolean hasCategory(String name, boolean isServer);
 	
 	ResourceLocation getDefaultBackgroundTexture();
-	
-	ConfigBuilder setDefaultBackgroundTexture(ResourceLocation texture);
+	ConfigScreenBuilder setDefaultBackgroundTexture(ResourceLocation texture);
 	
 	Runnable getSavingRunnable();
-	
-	ConfigBuilder setSavingRunnable(Runnable runnable);
+	ConfigScreenBuilder setSavingRunnable(Runnable runnable);
 	
 	Consumer<Screen> getAfterInitConsumer();
+	ConfigScreenBuilder setAfterInitConsumer(Consumer<Screen> afterInitConsumer);
 	
-	ConfigBuilder setAfterInitConsumer(Consumer<Screen> afterInitConsumer);
-	
-	default ConfigBuilder alwaysShowTabs() {
+	default ConfigScreenBuilder alwaysShowTabs() {
 		return this.setAlwaysShowTabs(true);
 	}
 	
-	// @Deprecated void setGlobalized(boolean globalized);
-	//
-	// @Deprecated void setGlobalizedExpanded(boolean globalizedExpanded);
-	
 	boolean isAlwaysShowTabs();
+	ConfigScreenBuilder setAlwaysShowTabs(boolean alwaysShowTabs);
 	
-	ConfigBuilder setAlwaysShowTabs(boolean alwaysShowTabs);
-	
-	ConfigBuilder setTransparentBackground(boolean transparentBackground);
-	
-	default ConfigBuilder transparentBackground() {
+	ConfigScreenBuilder setTransparentBackground(boolean transparentBackground);
+	default ConfigScreenBuilder transparentBackground() {
 		return this.setTransparentBackground(true);
 	}
-	
-	default ConfigBuilder solidBackground() {
+	default ConfigScreenBuilder solidBackground() {
 		return this.setTransparentBackground(false);
 	}
+	boolean hasTransparentBackground();
 	
 	default ConfigEntryBuilder entryBuilder() {
 		return ConfigEntryBuilderImpl.create();
@@ -90,9 +89,7 @@ public interface ConfigBuilder {
 	
 	AbstractConfigScreen build();
 	
-	boolean hasTransparentBackground();
-	
-	ConfigBuilder setSnapshotHandler(IConfigSnapshotHandler handler);
+	ConfigScreenBuilder setSnapshotHandler(IConfigSnapshotHandler handler);
 	
 	interface IConfigSnapshotHandler {
 		default CommentedConfig preserve(Type type) {
@@ -115,5 +112,14 @@ public interface ConfigBuilder {
 			void handleExternalChange(Type type);
 		}
 	}
+	
+	interface IConfigScreenGUIState {
+		boolean isServerSelected();
+		String getClientCategory();
+		String getServerCategory();
+		Map<String, Boolean> getClientExpandedStates();
+		Map<String, Boolean> getServerExpandedStates();
+		Map<String, String> getClientSelectedEntries();
+		Map<String, String> getServerSelectedEntries();
+	}
 }
-
