@@ -124,7 +124,9 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected void buildGUI(
 	  ConfigScreenBuilder builder, ConfigEntryBuilder entryBuilder
 	) {
-		ConfigCategory category = builder.getOrCreateCategory(name, root.getType() == Type.SERVER);
+		boolean isServer = root.getType() == Type.SERVER;
+		ConfigCategory category = builder.getOrCreateCategory(name, isServer);
+		category.setEditable(getRoot().canEdit());
 		category.setTitle(getTitle());
 		category.setDescription(
 		  () -> I18n.hasKey(tooltip)

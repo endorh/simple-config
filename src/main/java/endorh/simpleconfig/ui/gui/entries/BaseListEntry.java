@@ -435,7 +435,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	@Override public void tick() {
 		super.tick();
 		label.setFocused(
-		  !isHeadless() && isFocused() && getListener() == label && dragCursor == -1
+		  !isHeadless() && isFocused() && getListener() == labelReference && dragCursor == -1
 		  && (getListParent() == null || getListParent().dragCursor == -1));
 	}
 	
@@ -672,7 +672,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			}
 			if (isInsideRemove(mouseX, mouseY)) {
 				if (getSelectedIndex() == cursor)
-					setListener(cells.isEmpty()? isHeadless()? null : label
+					setListener(cells.isEmpty()? isHeadless()? null : labelReference
 					                          : cells.get(max(0, cursor - 1)));
 				removeTransparently(cursor);
 				cursor = -1;

@@ -1,0 +1,11 @@
+enabled: true
+entries: !!pairs
+- alt+shift+t:
+    name: test-default-hotkey
+    enabled: false
+    actions:
+      simpleconfig:
+        client:
+          demo.entries.basic.double_value: !action.double.div [0.2]
+          demo.entries.basic.float_value: !action.float.cycle [0.7]
+          demo.entries.basic.long_value: !action.assign [1]

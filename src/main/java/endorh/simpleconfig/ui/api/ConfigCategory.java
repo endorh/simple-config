@@ -19,7 +19,7 @@ public interface ConfigCategory extends IEntryHolder {
 	
 	void setTitle(ITextComponent name);
 	
-	@Internal List<AbstractConfigEntry<?>> getHeldEntries();
+	@Override @Internal List<AbstractConfigEntry<?>> getHeldEntries();
 	
 	String getName();
 	
@@ -30,6 +30,9 @@ public interface ConfigCategory extends IEntryHolder {
 	@Nullable ResourceLocation getBackground();
 	
 	boolean isServer();
+	
+	boolean isEditable();
+	void setEditable(boolean editable);
 	
 	void setColor(int color);
 	int getColor();

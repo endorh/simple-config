@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.impl.ConfigEntryBuilderImpl;
 import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl;
@@ -98,14 +99,17 @@ public interface ConfigScreenBuilder {
 		CommentedConfig preserve(Type type, @Nullable Set<String> selectedPaths);
 		void restore(CommentedConfig config, Type type, @Nullable Set<String> selectedPaths);
 		boolean canSaveRemote();
+		CompletableFuture<CommentedConfig> getPresetSnapshot(Preset preset);
 		CommentedConfig getLocal(String name, Type type);
 		CompletableFuture<CommentedConfig> getRemote(String name, Type type);
+		CommentedConfig getResource(String name, Type type);
 		Optional<Throwable> saveLocal(String name, Type type, CommentedConfig config);
 		CompletableFuture<Void> saveRemote(String name, Type type, CommentedConfig config);
 		Optional<Throwable> deleteLocal(String name, Type type);
 		CompletableFuture<Void> deleteRemote(String name, Type type);
-		List<String> getLocalSnapshotNames();
-		CompletableFuture<List<String>> getRemoteSnapshotNames();
+		List<Preset> getLocalPresets();
+		CompletableFuture<List<Preset>> getRemotePresets();
+		List<Preset> getResourcePresets();
 		void setExternalChangeHandler(IExternalChangeHandler handler);
 		
 		interface IExternalChangeHandler {

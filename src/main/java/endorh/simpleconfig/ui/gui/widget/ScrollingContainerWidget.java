@@ -4,6 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
+import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.Widget;
@@ -19,7 +20,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.round;
 
 public abstract class ScrollingContainerWidget extends ScrollingHandler
-  implements IExtendedDragAwareNestedGuiEventHandler {
+  implements IExtendedDragAwareNestedGuiEventHandler, IRectanglePositionableRenderable {
 	public final Rectangle area;
 	
 	protected final List<IGuiEventListener> listeners = new ArrayList<>();
@@ -42,6 +43,10 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 		return area;
 	}
 	
+	@Override public Rectangle getArea() {
+		return getBounds();
+	}
+	
 	public void updateScroll() {
 		final double prev = scrollAmount;
 		final int maxScroll = getMaxScroll();
@@ -60,7 +65,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	
 	public void position() {}
 	
-	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		updateScroll();
 		position();
 		ScissorsHandler.INSTANCE.pushScissor(area);

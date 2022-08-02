@@ -30,6 +30,27 @@ import static java.lang.Math.max;
 	}
 	
 	/**
+	 * Build a translated paragraph.<br>
+	 * Accepts a list of translation keys, with optional objects following each of them,
+	 * used as arguments.<br>
+	 * To use strings as arguments, wrap them in {@link StringTextComponent}s.<br>
+	 * @param key First key, must be a translation key.
+	 */
+	public static List<ITextComponent> paragraph(String key, Object... lines) {
+		List<ITextComponent> result = new ArrayList<>();
+		List<Object> args = new ArrayList<>();
+		for (Object line: lines) {
+			if (line instanceof String) {
+				result.addAll(splitTtc(key, args.toArray()));
+				key = (String) line;
+				args.clear();
+			} else args.add(line);
+		}
+		result.addAll(splitTtc(key, args.toArray()));
+		return result;
+	}
+	
+	/**
     * Extract formatted subText from {@link ITextComponent}.<br>
     * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
     *

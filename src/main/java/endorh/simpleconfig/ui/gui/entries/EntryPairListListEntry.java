@@ -327,7 +327,7 @@ public class EntryPairListListEntry<
 			IGuiEventListener listener = getListener();
 			boolean hasListener = listener != null;
 			BaseListEntry<?, ?, ?> subList = isExpandable? (BaseListEntry<?, ?, ?>) valueEntry : null;
-			if (forward && isExpandable && listener == valueEntry && subList.getListener() == subList.label) {
+			if (forward && isExpandable && listener == valueEntry && subList.getListener() == subList.labelReference) {
 				subList.changeFocus(false);
 				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
 				setListener(keyEntry);
@@ -356,11 +356,11 @@ public class EntryPairListListEntry<
 				
 				if (!hasListener && forward) {
 					setListener(valueEntry);
-					valueEntry.setListener(subList.label);
+					valueEntry.setListener(subList.labelReference);
 					return true;
 				}
 				
-				if (listener == valueEntry && valueEntry.getListener() == subList.label && !forward) {
+				if (listener == valueEntry && valueEntry.getListener() == subList.labelReference && !forward) {
 					valueEntry.changeFocus(false);
 					setListener(null);
 					return false;

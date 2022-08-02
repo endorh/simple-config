@@ -59,7 +59,7 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 	
 	private static final Pattern KEY_PATTERN = Pattern.compile("^key\\.keyboard\\.(?<key>\\w)$");
 	
-	public ITextComponent getLayoutAgnosticLocalizedName(Style modifiers, Style key) {
+	@Override public ITextComponent getLayoutAgnosticLocalizedName(Style modifiers, Style key) {
 		final String name = keyCode.getTranslationKey();
 		final Matcher m = KEY_PATTERN.matcher(name);
 		ITextComponent base;
@@ -88,19 +88,15 @@ public class ModifierKeyCodeImpl implements ModifierKeyCode {
 		return base;
 	}
 	
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (!(o instanceof ModifierKeyCode)) {
-			return false;
-		}
+	@Override public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof ModifierKeyCode)) return false;
 		ModifierKeyCode that = (ModifierKeyCode) o;
 		return keyCode.equals(that.getKeyCode()) &&
              modifier.equals(that.getModifier());
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		int result = keyCode != null ? keyCode.hashCode() : 0;
 		result = 31 * result + (modifier != null ? modifier.hashCode() : 0);
 		return result;

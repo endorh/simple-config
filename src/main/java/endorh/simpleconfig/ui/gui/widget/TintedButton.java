@@ -11,13 +11,25 @@ public class TintedButton extends Button {
 	protected int tintColor = 0x00000000;
 	
 	public static TintedButton of(
-	  int width, int height,  ITextComponent title, IPressable pressedAction
+	  ITextComponent title, IPressable pressedAction
 	) {
-		return of(width, height, 0, title, pressedAction);
+		return of(80, 20, title, pressedAction);
 	}
 	
 	public static TintedButton of(
-	  int width, int height, int tint, ITextComponent title, IPressable pressedAction
+	  ITextComponent title, int tint, IPressable pressedAction
+	) {
+		return of(80, 20, title, tint, pressedAction);
+	}
+	
+	public static TintedButton of(
+	  int width, int height,  ITextComponent title, IPressable pressedAction
+	) {
+		return of(width, height, title, 0, pressedAction);
+	}
+	
+	public static TintedButton of(
+	  int width, int height, ITextComponent title, int tint, IPressable pressedAction
 	) {
 		TintedButton button = new TintedButton(0, 0, width, height, title, pressedAction);
 		button.setTintColor(tint);

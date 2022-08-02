@@ -117,23 +117,7 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override protected void layout() {
-		int w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
-		final int titleWidth = font.getStringPropertyWidth(title);
-		if (titleWidth + 16 > w)
-			w = min(getScreen().width - 32, titleWidth + 16);
-		lines = getBody().stream().map(l -> font.trimStringToWidth(l, getWidth() - 16)).collect(Collectors.toList());
-		int h = (int) MathHelper.clamp(
-		  64 + lines.stream().reduce(
-			 0, (s, l) -> s + paragraphMarginDown + l.stream().reduce(
-				0, (ss, ll) -> ss + lineHeight, Integer::sum), Integer::sum), 96,
-		  getScreen().height * 0.9);
-		setWidth(w);
-		setHeight(h);
 		super.layout();
-		int bw = min(150, (w - 12) / 2);
-		cancelButton.setWidth(bw);
-		cancelButton.x = getX() + getWidth() / 2 - 2 - bw;
-		cancelButton.y = getY() + getHeight() - 24;
 	}
 	
 	@Override public void renderInner(
@@ -159,12 +143,12 @@ public class ProgressDialog extends ConfirmDialog {
 		if (error != null) actualBody.addAll(error);
 	}
 	
-	public List<ITextComponent> getBody() {
+	@Override public List<ITextComponent> getBody() {
 		return actualBody;
 	}
 	
-	@Override public void setBody(List<ITextComponent> body) {
-		this.body = body;
+	@Override public void setBody(List<? extends ITextComponent> body) {
+		this.body = new ArrayList<>(body);
 		updateActualBody();
 	}
 	

@@ -382,7 +382,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean isEditable() {
-		return editable;
+		return editable && getSelectedCategory().isEditable();
 	}
 	
 	@Internal public void setEditable(boolean editable) {

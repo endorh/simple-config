@@ -5,11 +5,14 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingException;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
+import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
+import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.RemoteSavedHotKeyGroup;
+import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.SavedHotKeyGroup;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
@@ -31,6 +34,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.naming.NoPermissionException;
@@ -52,10 +56,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
+
 /**
  * Handle synchronization of {@link SimpleConfig} data with server config
  */
-@Internal public class SimpleConfigSync {
+@Internal public class SimpleConfigNetworkHandler {
 	public static Style ALLOWED_UPDATE_STYLE = Style.EMPTY
 	  .applyFormatting(TextFormatting.GRAY).setItalic(true);
 	public static Style DENIED_UPDATE_STYLE = Style.EMPTY
@@ -164,17 +170,33 @@ import java.util.stream.Collectors;
 	);
 	private static int ID_COUNT = 0;
 	
+	public static SimpleChannel getChannel() {
+		return CHANNEL;
+	}
+	
+	public static boolean isConnectedToSimpleConfigServer() {
+		ClientPlayNetHandler connection = Minecraft.getInstance().getConnection();
+		if (connection == null) return false;
+		return getChannel().isRemotePresent(connection.getNetworkManager());
+	}
+	
 	protected static void registerPackets() {
 		if (ID_COUNT != 0) throw new IllegalStateException("Packets registered twice!");
 		registerServer(SSimpleConfigSyncPacket::new);
-		registerServer(SSimpleConfigSavedSnapshotPacket::new);
-		registerServer(SSimpleConfigSnapshotListPacket::new);
-		registerServer(SSimpleConfigSnapshotPacket::new);
+		registerServer(SSimpleConfigSavedPresetPacket::new);
+		registerServer(SSimpleConfigPresetListPacket::new);
+		registerServer(SSimpleConfigPresetPacket::new);
+		registerServer(SSimpleConfigSavedHotKeyGroupsPacket::new);
+		registerServer(SSavedHotKeyGroupPacket::new);
+		registerServer(SSaveRemoteHotKeyGroupPacket::new);
 		
 		registerClient(CSimpleConfigSyncPacket::new);
-		registerClient(CSimpleConfigSaveSnapshotPacket::new);
-		registerClient(CSimpleConfigRequestSnapshotListPacket::new);
-		registerClient(CSimpleConfigRequestSnapshotPacket::new);
+		registerClient(CSimpleConfigSavePresetPacket::new);
+		registerClient(CSimpleConfigRequestPresetListPacket::new);
+		registerClient(CSimpleConfigRequestPresetPacket::new);
+		registerClient(CSimpleConfigRequestSavedHotKeyGroupsPacket::new);
+		registerClient(CRequestSavedHotKeyGroupPacket::new);
+		registerClient(CSaveRemoteHotKeyGroupPacket::new);
 	}
 	
 	private static <Packet extends CAbstractPacket> void registerClient(Supplier<Packet> factory) {
@@ -302,7 +324,7 @@ import java.util.stream.Collectors;
 				throw new IllegalStateException(
 				  "Received server config update from non-player source for mod \"" + modName + "\"");
 			final String senderName = sender.getScoreboardName();
-			if (ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW) {
+			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" tried to modify " +
 				            "the server config for mod \"" + modName + "\" without privileges");
 				broadcastToOperators(new TranslationTextComponent(
@@ -395,20 +417,20 @@ import java.util.stream.Collectors;
 		}
 	}
 	
-	protected static class CSimpleConfigSaveSnapshotPacket extends CAbstractPacket {
+	protected static class CSimpleConfigSavePresetPacket extends CAbstractPacket {
 		public static Map<Triple<String, Boolean, String>, CompletableFuture<Void>> FUTURES = new HashMap<>();
 		protected String modId;
 		protected boolean server;
-		protected String snapshotName;
+		protected String presetName;
 		protected byte @Nullable [] fileData; // Null means delete
 		
-		public CSimpleConfigSaveSnapshotPacket() {}
-		public CSimpleConfigSaveSnapshotPacket(
-		  String modId, boolean server, String snapshotName, @Nullable CommentedConfig data
+		public CSimpleConfigSavePresetPacket() {}
+		public CSimpleConfigSavePresetPacket(
+		  String modId, boolean server, String presetName, @Nullable CommentedConfig data
 		) {
 			this.modId = modId;
 			this.server = server;
-			this.snapshotName = snapshotName;
+			this.presetName = presetName;
 			if (data != null) {
 				SimpleConfig config = SimpleConfig.getConfig(modId, Type.SERVER);
 				SimpleConfigCommentedYamlFormat format = config.getModConfig().getConfigFormat();
@@ -429,7 +451,7 @@ import java.util.stream.Collectors;
 				return;
 			}
 			String type = server? "server" : "client";
-			String presetName = type + "-" + snapshotName;
+			String presetName = type + "-" + this.presetName;
 			String fileName = modId + "-" + presetName + ".yaml";
 			String action = fileData == null? "delete" : "save"; // For messages
 			// Ensure the config has been registered as a SimpleConfig
@@ -437,7 +459,7 @@ import java.util.stream.Collectors;
 			final String modName = SimpleConfig.getModNameOrId(modId);
 			final String senderName = sender.getScoreboardName();
 			try {
-				if (ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW)
+				if (!permissions.permissionFor(sender, modId).getRight().canSave())
 					throw new NoPermissionException("No permission for server presets for mod " + modName);
 				
 				final Path dir = SimpleConfigPaths.getRemotePresetsDir();
@@ -457,31 +479,31 @@ import java.util.stream.Collectors;
 				
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.snapshot." + type + "." + action + "d_by",
-				  snapshotName, modName, senderName).mergeStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
+				  this.presetName, modName, senderName).mergeStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
 				LOGGER.info(
 				  "Server config preset \"" + presetName + "\" for mod \"" + modName + "\" " +
 				  "has been " + action + "d by player \"" + senderName + "\"");
-				new SSimpleConfigSavedSnapshotPacket(modId, server, snapshotName, null).sendTo(sender);
+				new SSimpleConfigSavedPresetPacket(modId, server, this.presetName, null).sendTo(sender);
 			} catch (RuntimeException | IOException e) {
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.snapshot.error_updating_by",
-				  snapshotName, modName, senderName, e.getMessage()
+				  this.presetName, modName, senderName, e.getMessage()
 				).mergeStyle(ERROR_UPDATE_STYLE));
 				LOGGER.error("Error " + (fileData != null? "saving" : "deleting") + " server config " +
 				             "preset for mod \"" + modName + "\"");
-				new SSimpleConfigSavedSnapshotPacket(
-				  modId, server, snapshotName, e.getClass().getSimpleName() + ": " + e.getMessage()
+				new SSimpleConfigSavedPresetPacket(
+				  modId, server, this.presetName, e.getClass().getSimpleName() + ": " + e.getMessage()
 				).sendTo(sender);
 			} catch (NoPermissionException e) {
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.snapshot." + type + ".tried_to_" + action,
-				  senderName, snapshotName, modName
+				  senderName, this.presetName, modName
 				).mergeStyle(DENIED_SNAPSHOT_UPDATE_STYLE));
 				LOGGER.warn("Player \"" + senderName + "\" tried to " +
 				            action + " a preset for the server " +
 				            "config for mod \"" + modName + "\" without privileges");
-				new SSimpleConfigSavedSnapshotPacket(
-				  modId, server, snapshotName, e.getClass().getSimpleName() + ": " + e.getMessage()
+				new SSimpleConfigSavedPresetPacket(
+				  modId, server, this.presetName, e.getClass().getSimpleName() + ": " + e.getMessage()
 				).sendTo(sender);
 			}
 		}
@@ -489,7 +511,7 @@ import java.util.stream.Collectors;
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
 			buf.writeBoolean(server);
-			buf.writeString(snapshotName);
+			buf.writeString(presetName);
 			buf.writeBoolean(fileData != null);
 			if (fileData != null)
 				buf.writeByteArray(fileData);
@@ -498,31 +520,30 @@ import java.util.stream.Collectors;
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
 			server = buf.readBoolean();
-			snapshotName = buf.readString(32767);
+			presetName = buf.readString(32767);
 			fileData = buf.readBoolean() ? buf.readByteArray() : null;
 		}
 	}
 	
-	protected static class SSimpleConfigSavedSnapshotPacket extends SAbstractPacket {
+	protected static class SSimpleConfigSavedPresetPacket extends SAbstractPacket {
 		protected String modId;
 		protected boolean server;
-		protected String snapshotName;
+		protected String presetName;
 		protected @Nullable String errorMsg;
 		
-		
-		public SSimpleConfigSavedSnapshotPacket() {}
-		public SSimpleConfigSavedSnapshotPacket(
-		  String modId, boolean server, String snapshotName, @Nullable String errorMsg
+		public SSimpleConfigSavedPresetPacket() {}
+		public SSimpleConfigSavedPresetPacket(
+		  String modId, boolean server, String presetName, @Nullable String errorMsg
 		) {
 			this.modId = modId;
 			this.server = server;
-			this.snapshotName = snapshotName;
+			this.presetName = presetName;
 			this.errorMsg = errorMsg;
 		}
 		
 		@Override public void onClient(Context ctx) {
-			final CompletableFuture<Void> future = CSimpleConfigSaveSnapshotPacket.FUTURES.remove(
-			  Triple.of(modId, server, snapshotName));
+			final CompletableFuture<Void> future = CSimpleConfigSavePresetPacket.FUTURES.remove(
+			  Triple.of(modId, server, presetName));
 			if (future == null) return;
 			if (errorMsg != null) {
 				future.completeExceptionally(new RemoteException(errorMsg));
@@ -532,7 +553,7 @@ import java.util.stream.Collectors;
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
 			buf.writeBoolean(server);
-			buf.writeString(snapshotName);
+			buf.writeString(presetName);
 			buf.writeBoolean(errorMsg != null);
 			if (errorMsg != null) buf.writeString(errorMsg);
 		}
@@ -540,37 +561,36 @@ import java.util.stream.Collectors;
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
 			server = buf.readBoolean();
-			snapshotName = buf.readString(32767);
+			presetName = buf.readString(32767);
 			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
 		}
 	}
 	
-	protected static class CSimpleConfigRequestSnapshotListPacket extends CAbstractPacket {
-		private static final Map<String, CompletableFuture<List<String>>> FUTURES = new HashMap<>();
+	protected static class CSimpleConfigRequestPresetListPacket extends CAbstractPacket {
+		private static final Map<String, CompletableFuture<List<Preset>>> FUTURES = new HashMap<>();
 		protected String modId;
 		
-		public CSimpleConfigRequestSnapshotListPacket() {}
-		public CSimpleConfigRequestSnapshotListPacket(String modId) {
+		public CSimpleConfigRequestPresetListPacket() {}
+		public CSimpleConfigRequestPresetListPacket(String modId) {
 			this.modId = modId;
 		}
 		
 		@Override public void onServer(Context ctx) {
 			final ServerPlayerEntity sender = ctx.getSender();
-			if (sender == null || ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW)
-				return;
+			if (sender == null) return;
 			final File dir = SimpleConfigPaths.getRemotePresetsDir().toFile();
 			if (!dir.isDirectory()) return;
 			final Pattern pat = Pattern.compile(
-			  "^(?<file>" + Pattern.quote(modId) + "-(?<preset>.*)\\.yaml)$");
+			  "^(?<file>" + Pattern.quote(modId) + "-(?<type>\\w++)-(?<name>.*)\\.yaml)$");
 			final File[] files = dir.listFiles((d, name) -> pat.matcher(name).matches());
 			if (files == null) return;
-			final List<String> names = Arrays.stream(files)
+			final List<Preset> names = Arrays.stream(files)
 			  .map(f -> {
 				  Matcher m = pat.matcher(f.getName());
 				  if (!m.matches()) return null;
-				  return m.group("preset");
+				  return Preset.remote(m.group("name"), "server".equals(m.group("type")));
 			  }).filter(Objects::nonNull).collect(Collectors.toList());
-			new SSimpleConfigSnapshotListPacket(modId, names).sendTo(sender);
+			new SSimpleConfigPresetListPacket(modId, names).sendTo(sender);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
@@ -582,111 +602,110 @@ import java.util.stream.Collectors;
 		}
 	}
 	
-	protected static class SSimpleConfigSnapshotListPacket extends SAbstractPacket {
+	protected static class SSimpleConfigPresetListPacket extends SAbstractPacket {
 		protected String modId;
-		protected List<String> names;
+		protected List<Preset> presets;
 		
-		public SSimpleConfigSnapshotListPacket() {}
-		
-		public SSimpleConfigSnapshotListPacket(
-		  String modId, List<String> names
+		public SSimpleConfigPresetListPacket() {}
+		public SSimpleConfigPresetListPacket(
+		  String modId, List<Preset> presets
 		) {
 			this.modId = modId;
-			this.names = names;
+			this.presets = presets;
 		}
 		
 		@Override public void onClient(Context ctx) {
-			final CompletableFuture<List<String>> future =
-			  CSimpleConfigRequestSnapshotListPacket.FUTURES.remove(modId);
-			if (future != null) future.complete(names);
+			final CompletableFuture<List<Preset>> future = CSimpleConfigRequestPresetListPacket.FUTURES.remove(modId);
+			if (future != null) future.complete(presets);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
-			buf.writeVarInt(names.size());
-			for (String name : names)
-				buf.writeString(name);
+			buf.writeVarInt(presets.size());
+			for (Preset preset : presets) {
+				buf.writeString(preset.getName());
+				buf.writeBoolean(preset.isServer());
+			}
 		}
 		
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
-			names = new ArrayList<>();
+			presets = new ArrayList<>();
 			for (int i = buf.readVarInt(); i > 0; i--)
-				names.add(buf.readString(32767));
+				presets.add(Preset.remote(buf.readString(32767), buf.readBoolean()));
 		}
 	}
 	
-	protected static class CSimpleConfigRequestSnapshotPacket extends CAbstractPacket {
+	protected static class CSimpleConfigRequestPresetPacket extends CAbstractPacket {
 		protected static final Map<Triple<String, Boolean, String>, CompletableFuture<CommentedConfig>> FUTURES = new HashMap<>();
 		protected String modId;
 		protected boolean server;
-		protected String snapshotName;
+		protected String presetName;
 		
-		public CSimpleConfigRequestSnapshotPacket() {}
+		public CSimpleConfigRequestPresetPacket() {}
 		
-		public CSimpleConfigRequestSnapshotPacket(String modId, boolean server, String snapshotName) {
+		public CSimpleConfigRequestPresetPacket(String modId, boolean server, String presetName) {
 			this.modId = modId;
 			this.server = server;
-			this.snapshotName = snapshotName;
+			this.presetName = presetName;
 		}
 		
 		@Override public void onServer(Context ctx) {
 			final ServerPlayerEntity sender = ctx.getSender();
-			if (sender == null || ServerConfig.permissions.permissionFor(sender, modId) != ConfigPermission.ALLOW)
-				return;
+			if (sender == null) return;
 			Path dir = SimpleConfigPaths.getRemotePresetsDir();
 			String type = server? "server" : "client";
-			String fileName = modId + "-" + type + "-" + snapshotName + ".yaml";
+			String fileName = modId + "-" + type + "-" + presetName + ".yaml";
 			File file = dir.resolve(fileName).toFile();
 			if (!file.isFile())
-				new SSimpleConfigSnapshotPacket(
-				  modId, server, snapshotName, null, "File does not exist"
+				new SSimpleConfigPresetPacket(
+				  modId, server, presetName, null, "File does not exist"
 				).sendTo(sender);
 			try {
-				new SSimpleConfigSnapshotPacket(
-				  modId, server, snapshotName, FileUtils.readFileToByteArray(file), null
+				new SSimpleConfigPresetPacket(
+				  modId, server, presetName, FileUtils.readFileToByteArray(file), null
 				).sendTo(sender);
 			} catch (IOException e) {
-				new SSimpleConfigSnapshotPacket(modId, server, snapshotName, null, e.getMessage()).sendTo(sender);
+				new SSimpleConfigPresetPacket(modId, server, presetName, null, e.getMessage()).sendTo(sender);
 			}
 		}
 		
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
 			buf.writeBoolean(server);
-			buf.writeString(snapshotName);
+			buf.writeString(presetName);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
 			server = buf.readBoolean();
-			snapshotName = buf.readString(32767);
+			presetName = buf.readString(32767);
 		}
 	}
 	
-	protected static class SSimpleConfigSnapshotPacket extends SAbstractPacket {
+	protected static class SSimpleConfigPresetPacket extends SAbstractPacket {
 		protected String modId;
 		protected boolean server;
-		protected String snapshotName;
+		protected String presetName;
 		protected byte @Nullable[] fileData;
 		protected @Nullable String errorMsg;
 		
-		public SSimpleConfigSnapshotPacket() {}
-		public SSimpleConfigSnapshotPacket(
-		  String modId, boolean server, String snapshotName, byte @Nullable[] fileData,
+		public SSimpleConfigPresetPacket() {}
+		public SSimpleConfigPresetPacket(
+		  String modId, boolean server, String presetName, byte @Nullable[] fileData,
 		  @Nullable String errorMsg
 		) {
 			this.modId = modId;
 			this.server = server;
-			this.snapshotName = snapshotName;
+			this.presetName = presetName;
 			this.fileData = fileData;
 			this.errorMsg = errorMsg;
 		}
 		
 		@Override public void onClient(Context ctx) {
 			final CompletableFuture<CommentedConfig> future =
-			  CSimpleConfigRequestSnapshotPacket.FUTURES.remove(
-				 Triple.of(modId, server, snapshotName));
+			  CSimpleConfigRequestPresetPacket.FUTURES.remove(
+				 Triple.of(modId, server, presetName));
 			if (future != null) {
 				if (fileData != null) {
 					SimpleConfig config = SimpleConfig.getConfig(modId, Type.SERVER);
@@ -708,7 +727,7 @@ import java.util.stream.Collectors;
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
 			buf.writeBoolean(server);
-			buf.writeString(snapshotName);
+			buf.writeString(presetName);
 			buf.writeBoolean(fileData != null);
 			if (fileData != null) buf.writeByteArray(fileData);
 			buf.writeBoolean(errorMsg != null);
@@ -718,48 +737,296 @@ import java.util.stream.Collectors;
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
 			server = buf.readBoolean();
-			snapshotName = buf.readString(32767);
+			presetName = buf.readString(32767);
 			fileData = buf.readBoolean()? buf.readByteArray() : null;
 			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
 		}
 	}
 	
-	@Internal protected static CompletableFuture<List<String>> requestSnapshotList(String modId) {
-		if (Minecraft.getInstance().getConnection() == null)
+	@Internal protected static CompletableFuture<List<Preset>> requestPresetList(String modId) {
+		if (!isConnectedToSimpleConfigServer())
 			return CompletableFuture.completedFuture(Collections.emptyList());
-		final CompletableFuture<List<String>> future = new CompletableFuture<>();
-		final CompletableFuture<List<String>> prev = CSimpleConfigRequestSnapshotListPacket.FUTURES.get(modId);
+		final CompletableFuture<List<Preset>> future = new CompletableFuture<>();
+		final CompletableFuture<List<Preset>> prev = CSimpleConfigRequestPresetListPacket.FUTURES.get(modId);
 		if (prev != null) prev.cancel(false);
-		CSimpleConfigRequestSnapshotListPacket.FUTURES.put(modId, future);
-		new CSimpleConfigRequestSnapshotListPacket(modId).send();
+		CSimpleConfigRequestPresetListPacket.FUTURES.put(modId, future);
+		new CSimpleConfigRequestPresetListPacket(modId).send();
 		return future;
 	}
 	
-	@Internal protected static CompletableFuture<CommentedConfig> requestRemoteSnapshot(
+	@Internal protected static CompletableFuture<CommentedConfig> requestRemotePreset(
 	  String modId, boolean server, String snapshotName
 	) {
-		if (Minecraft.getInstance().getConnection() == null)
-			throw new IllegalStateException("Cannot request server snapshot when disconnected");
+		if (!isConnectedToSimpleConfigServer())
+			return failedFuture(new IllegalStateException("Not connected to SimpleConfig server"));
 		final CompletableFuture<CommentedConfig> future = new CompletableFuture<>();
 		final Triple<String, Boolean, String> key = Triple.of(modId, server, snapshotName);
-		final CompletableFuture<CommentedConfig> prev = CSimpleConfigRequestSnapshotPacket.FUTURES.get(key);
+		final CompletableFuture<CommentedConfig> prev = CSimpleConfigRequestPresetPacket.FUTURES.get(key);
 		if (prev != null) prev.cancel(false);
-		CSimpleConfigRequestSnapshotPacket.FUTURES.put(key, future);
-		new CSimpleConfigRequestSnapshotPacket(modId, server, snapshotName).send();
+		CSimpleConfigRequestPresetPacket.FUTURES.put(key, future);
+		new CSimpleConfigRequestPresetPacket(modId, server, snapshotName).send();
 		return future;
 	}
 	
 	// null config implies deletion
-	@Internal protected static CompletableFuture<Void> saveRemoteSnapshot(
+	@Internal protected static CompletableFuture<Void> saveRemotePreset(
 	  String modId, boolean server, String snapshotName, CommentedConfig config
 	) {
+		if (!isConnectedToSimpleConfigServer())
+			return failedFuture(new IllegalStateException("Not connected to SimpleConfig server"));
 		final CompletableFuture<Void> future = new CompletableFuture<>();
-		CSimpleConfigSaveSnapshotPacket.FUTURES.put(Triple.of(modId, server, snapshotName), future);
+		CSimpleConfigSavePresetPacket.FUTURES.put(Triple.of(modId, server, snapshotName), future);
 		try {
-			new CSimpleConfigSaveSnapshotPacket(modId, server, snapshotName, config).send();
+			new CSimpleConfigSavePresetPacket(modId, server, snapshotName, config).send();
 		} catch (SimpleConfigSyncException e) {
 			future.completeExceptionally(e);
 		}
+		return future;
+	}
+	
+	protected static class CSimpleConfigRequestSavedHotKeyGroupsPacket extends CAbstractPacket {
+		protected static CompletableFuture<List<RemoteSavedHotKeyGroup>> future = null;
+		public CSimpleConfigRequestSavedHotKeyGroupsPacket() {}
+		public CSimpleConfigRequestSavedHotKeyGroupsPacket(CompletableFuture<List<RemoteSavedHotKeyGroup>> future) {
+			CSimpleConfigRequestSavedHotKeyGroupsPacket.future = future;
+		}
+		
+		@Override public void onServer(Context ctx) {
+			final ServerPlayerEntity sender = ctx.getSender();
+			if (sender == null) return;
+			final File dir = SimpleConfigPaths.getRemoteHotKeyGroupsDir().toFile();
+			if (!dir.isDirectory()) return;
+			final Pattern pat = Pattern.compile("^(?<name>.*)\\.yaml$");
+			final File[] files = dir.listFiles((d, name) -> pat.matcher(name).matches());
+			if (files == null) return;
+			final List<RemoteSavedHotKeyGroup> groups = Arrays.stream(files).map(f -> {
+				Matcher m = pat.matcher(f.getName());
+				if (!m.matches()) return null;
+				return SavedHotKeyGroup.remote(m.group("name"));
+			}).filter(Objects::nonNull).collect(Collectors.toList());
+			new SSimpleConfigSavedHotKeyGroupsPacket(groups).sendTo(sender);
+		}
+		
+		@Override public void write(PacketBuffer buf) {}
+		@Override public void read(PacketBuffer buf) {}
+	}
+	
+	protected static class SSimpleConfigSavedHotKeyGroupsPacket extends SAbstractPacket {
+		private List<RemoteSavedHotKeyGroup> groups;
+		public SSimpleConfigSavedHotKeyGroupsPacket() {}
+		public SSimpleConfigSavedHotKeyGroupsPacket(List<RemoteSavedHotKeyGroup> groups) {
+			this.groups = groups;
+		}
+		
+		@Override public void onClient(Context ctx) {
+			CompletableFuture<List<RemoteSavedHotKeyGroup>> future =
+			  CSimpleConfigRequestSavedHotKeyGroupsPacket.future;
+			if (future != null && !future.isDone()) future.complete(groups);
+			future = null;
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeVarInt(groups.size());
+			for (RemoteSavedHotKeyGroup group : groups)
+				buf.writeString(group.getName());
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			List<RemoteSavedHotKeyGroup> groups = new ArrayList<>();
+			for (int i = buf.readVarInt(); i > 0; i--)
+				groups.add(SavedHotKeyGroup.remote(buf.readString(32767)));
+			this.groups = groups;
+		}
+	}
+	
+	protected static class CRequestSavedHotKeyGroupPacket extends CAbstractPacket {
+		private static final Map<String, CompletableFuture<byte[]>> FUTURES = new HashMap<>();
+		private String name;
+		public CRequestSavedHotKeyGroupPacket() {}
+		public CRequestSavedHotKeyGroupPacket(String name, CompletableFuture<byte[]> future) {
+			this.name = name;
+			FUTURES.put(name, future);
+		}
+		
+		@Override public void onServer(Context ctx) {
+			ServerPlayerEntity sender = ctx.getSender();
+			if (sender == null) return;
+			final String fileName = name + ".yaml";
+			final File file = SimpleConfigPaths.getRemoteHotKeyGroupsDir().resolve(fileName).toFile();
+			if (!file.isFile())
+				new SSavedHotKeyGroupPacket(name, "Cannot find hotkey group " + name).sendTo(sender);
+			try {
+				byte[] bytes = FileUtils.readFileToByteArray(file);
+				new SSavedHotKeyGroupPacket(name, bytes).sendTo(sender);
+			} catch (IOException e) {
+				new SSavedHotKeyGroupPacket(name, e.getLocalizedMessage()).sendTo(sender);
+			}
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeString(name);
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			name = buf.readString(32767);
+		}
+	}
+	
+	protected static class SSavedHotKeyGroupPacket extends SAbstractPacket {
+		private String name;
+		private byte @Nullable[] data;
+		private @Nullable String errorMsg;
+		
+		public SSavedHotKeyGroupPacket() {}
+		private SSavedHotKeyGroupPacket(String name, byte @Nullable[] data, @Nullable String errorMsg) {
+			this.name = name;
+			this.data = data;
+			this.errorMsg = errorMsg;
+		}
+		public SSavedHotKeyGroupPacket(String name, byte @NotNull[] data) {
+			this(name, data, null);
+		}
+		public SSavedHotKeyGroupPacket(String name, @NotNull String errorMsg) {
+			this(name, null, errorMsg);
+		}
+		
+		@Override public void onClient(Context ctx) {
+			CompletableFuture<byte[]> future = CRequestSavedHotKeyGroupPacket.FUTURES.get(name);
+			if (future != null && !future.isDone()) {
+				if (data == null) {
+					future.completeExceptionally(new RemoteException(errorMsg != null? errorMsg : ""));
+				} else future.complete(data);
+			}
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeString(name);
+			buf.writeBoolean(data != null);
+			if (data != null) buf.writeByteArray(data);
+			buf.writeBoolean(errorMsg != null);
+			if (errorMsg != null) buf.writeString(errorMsg);
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			name = buf.readString(32767);
+			data = buf.readBoolean()? buf.readByteArray() : null;
+			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+		}
+	}
+	
+	protected static class CSaveRemoteHotKeyGroupPacket extends CAbstractPacket {
+		private static final Map<String, CompletableFuture<Boolean>> FUTURES = new HashMap<>();
+		private String name;
+		private byte @Nullable[] data;
+		
+		public CSaveRemoteHotKeyGroupPacket() {}
+		public CSaveRemoteHotKeyGroupPacket(String name, byte @Nullable[] data, CompletableFuture<Boolean> future) {
+			this.name = name;
+			this.data = data;
+			FUTURES.put(name, future);
+		}
+		
+		@Override public void onServer(Context ctx) {
+			ServerPlayerEntity sender = ctx.getSender();
+			if (sender == null) return;
+			if (!permissions.canEditServerHotKeys(sender)) {
+				LOGGER.warn(
+				  "Attempt to " + (data != null? "write" : "delete") + " server saved hotkey group " +
+				  "\"" + name + "\" by player " + sender.getScoreboardName() + " denied");
+				new SSaveRemoteHotKeyGroupPacket(name, "No permission to write server hotkeys").sendTo(sender);
+			}
+			LOGGER.info(
+			  (data != null? "Writing" : "Deleting") + " server saved hotkey group " +
+			  "\"" + name + "\" by player " + sender.getScoreboardName());
+			final String fileName = name + ".yaml";
+			final File file = SimpleConfigPaths.getRemoteHotKeyGroupsDir().resolve(fileName).toFile();
+			if (data == null) {
+				if (!file.delete()) {
+					LOGGER.warn("Failed to delete server saved hotkey group \"" + name + "\"");
+					new SSaveRemoteHotKeyGroupPacket(name, "Cannot delete file " + fileName).sendTo(sender);
+				}
+				LOGGER.info("Successfully deleted server saved hotkey group \"" + name + "\"");
+				new SSaveRemoteHotKeyGroupPacket(name).sendTo(sender);
+			} else {
+				try {
+					FileUtils.writeByteArrayToFile(file, data);
+					LOGGER.info("Successfully saved server saved hotkey group \"" + name + "\"");
+					new SSaveRemoteHotKeyGroupPacket(name).sendTo(sender);
+				} catch (IOException e) {
+					LOGGER.warn("Error saving server saved hotkey group \"" + name + "\"", e);
+					new SSaveRemoteHotKeyGroupPacket(name, e.getLocalizedMessage()).sendTo(sender);
+				}
+			}
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeString(name);
+			buf.writeBoolean(data != null);
+			if (data != null) buf.writeByteArray(data);
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			name = buf.readString(32767);
+			data = buf.readBoolean()? buf.readByteArray() : null;
+		}
+	}
+	
+	protected static class SSaveRemoteHotKeyGroupPacket extends SAbstractPacket {
+		private String name;
+		private @Nullable String errorMsg;
+		
+		public SSaveRemoteHotKeyGroupPacket() {}
+		public SSaveRemoteHotKeyGroupPacket(String name, @Nullable String errorMsg) {
+			this.name = name;
+			this.errorMsg = errorMsg;
+		}
+		public SSaveRemoteHotKeyGroupPacket(String name) {
+			this(name, null);
+		}
+		
+		@Override public void onClient(Context ctx) {
+			CompletableFuture<Boolean> future = CSaveRemoteHotKeyGroupPacket.FUTURES.get(name);
+			if (future != null && !future.isDone()) {
+				if (errorMsg != null) {
+					future.completeExceptionally(new RemoteException(errorMsg));
+				} else future.complete(true);
+			}
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeString(name);
+			buf.writeBoolean(errorMsg != null);
+			if (errorMsg != null) buf.writeString(errorMsg);
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			name = buf.readString(32767);
+			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+		}
+	}
+	
+	@Internal public static CompletableFuture<List<RemoteSavedHotKeyGroup>> getRemoteSavedHotKeyGroups() {
+		if (!isConnectedToSimpleConfigServer())
+			return CompletableFuture.completedFuture(Collections.emptyList());
+		CompletableFuture<List<RemoteSavedHotKeyGroup>> future = new CompletableFuture<>();
+		new CSimpleConfigRequestSavedHotKeyGroupsPacket(future).send();
+		return future;
+	}
+	
+	@Internal public static CompletableFuture<byte[]> getRemoteSavedHotKeyGroup(String name) {
+		if (!isConnectedToSimpleConfigServer())
+			return failedFuture(new IllegalStateException("Not connected to SimpleConfig server"));
+		CompletableFuture<byte[]> future = new CompletableFuture<>();
+		new CRequestSavedHotKeyGroupPacket(name, future).send();
+		return future;
+	}
+	
+	// null data implies delete
+	@Internal public static CompletableFuture<Boolean> saveRemoteHotKeyGroup(String name, byte @Nullable[] data) {
+		if (!isConnectedToSimpleConfigServer())
+			return failedFuture(new IllegalStateException("Not connected to SimpleConfig server"));
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
+		new CSaveRemoteHotKeyGroupPacket(name, data, future).send();
 		return future;
 	}
 	
@@ -767,7 +1034,6 @@ import java.util.stream.Collectors;
 		public SimpleConfigSyncException(String message) {
 			super(message);
 		}
-		
 		public SimpleConfigSyncException(String message, Throwable cause) {
 			super(message, cause);
 		}

@@ -50,7 +50,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		super(overlayContainer, new ConfigHotKeyTreeViewGroupEntry(screenSupplier::get, group));
 		dialogScreenSupplier = screenSupplier;
 		this.hotKeyEditor = hotKeyEditor;
-		setCaption(new ConfigHotKeyTreeViewCaption(overlayContainer, this));
+		setCaption(new ConfigHotKeyTreeViewCaption(screenSupplier, overlayContainer, this));
 		setPlaceHolder(new TranslationTextComponent("simpleconfig.ui.no_hotkeys"));
 	}
 	
@@ -80,11 +80,14 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 	public static class ConfigHotKeyTreeViewCaption
 	  extends ArrangeableTreeViewCaption<ConfigHotKeyTreeViewEntry> {
 		private final SavedHotKeyGroupPickerWidget savedHotKeyGroupPickerWidget;
+		private final Supplier<IDialogCapableScreen> screen;
 		
 		protected ConfigHotKeyTreeViewCaption(
-		  IOverlayCapableContainer overlayContainer, ConfigHotKeyTreeView tree
+		  Supplier<IDialogCapableScreen> screen, IOverlayCapableContainer overlayContainer,
+		  ConfigHotKeyTreeView tree
 		) {
 			super(tree);
+			this.screen = screen;
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_ADD, 20, 20, ButtonAction.of(
 					tree::addHotKey
@@ -104,8 +107,16 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				 .tint(0x64FF8080)
 				 .active(() -> !tree.getSelection().isEmpty())
 			));
-			savedHotKeyGroupPickerWidget = new SavedHotKeyGroupPickerWidget(overlayContainer, tree);
+			savedHotKeyGroupPickerWidget =
+			  new SavedHotKeyGroupPickerWidget(screen, overlayContainer, tree);
 			addRightControl(savedHotKeyGroupPickerWidget);
+		}
+		
+		public IDialogCapableScreen getScreen() {
+			IDialogCapableScreen screen = this.screen.get();
+			if (screen == null) throw new IllegalStateException(
+			  "Cannot get screen so early.");
+			return screen;
 		}
 		
 		@Override protected int getHeight() {
@@ -114,7 +125,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		
 		@Override public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 			int width = getTree().getWidth();
-			savedHotKeyGroupPickerWidget.setWidth(clamp((int) (width * 0.45), 90, 200));
+			savedHotKeyGroupPickerWidget.setWidth(clamp((int) (width * 0.45), 90, 300));
 			super.render(mStack, mouseX, mouseY, delta);
 		}
 	}
@@ -150,8 +161,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			private final Map<String, ConfigHotKeyTreeViewModEntry> entries = new HashMap<>();
 			private final Comparator<String> modOrder = (l, r) -> {
 				ConfigHotKeyTreeView tree = getTree();
+				String contextModId = tree.getContextModId();
 				return new CompareToBuilder()
-				  .append(l.equals(tree.contextModId), r.equals(tree.contextModId))
+				  .append(l.equals(contextModId), r.equals(contextModId))
 				  .append(entries.get(l).getCount(), entries.get(r).getCount())
 				  .append(l, r)
 				  .build();
@@ -160,6 +172,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			public ConfigHotKeyTreeViewHotKeyEntry(
 			  Supplier<IModalInputCapableScreen> screenSupplier, ConfigHotKey hotKey
 			) {
+				hotKey = hotKey.copy();
 				this.hotKey = hotKey;
 				textField = TextFieldWidgetEx.of(hotKey.getName());
 				textField.setMaxLength(256);
@@ -173,11 +186,11 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 					entries.put(id, new ConfigHotKeyTreeViewModEntry(hotKey, id));
 			}
 			
-			public ConfigHotKey getHotKey() {
+			public ConfigHotKey buildHotKey() {
 				hotKey.setKeyCode(hotKeyButton.getKey());
 				hotKey.setName(textField.getText());
 				hotKey.setEnabled(enabledCheckbox.getValue());
-				return hotKey;
+				return this.hotKey;
 			}
 			
 			@Override
@@ -374,7 +387,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 					if (e instanceof ConfigHotKeyTreeViewGroupEntry) {
 						return ((ConfigHotKeyTreeViewGroupEntry) e).buildGroup();
 					} else if (e instanceof ConfigHotKeyTreeViewHotKeyEntry) {
-						return ((ConfigHotKeyTreeViewHotKeyEntry) e).getHotKey();
+						return ((ConfigHotKeyTreeViewHotKeyEntry) e).buildHotKey();
 					} else return null;
 				}).filter(Objects::nonNull).forEach(group.getEntries()::add);
 				group.setName(textField.getText());

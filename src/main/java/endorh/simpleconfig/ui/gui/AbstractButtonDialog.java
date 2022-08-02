@@ -3,6 +3,7 @@ package endorh.simpleconfig.ui.gui;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.gui.widget.ScrollingContainerWidget;
+import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
@@ -147,6 +148,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 		
 		@Override public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 			super.render(mStack, mouseX, mouseY, delta);
+			Rectangle area = getArea();
 			final Style style = dialog.getInnerTextAt(
 			  area.x, (int) round(area.y - scrollAmount),
 			  area.width - 8, area.height, mouseX, mouseY);
@@ -170,6 +172,8 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 		}
 		
 		@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
+			Rectangle area = getArea();
+			if (!area.contains(mouseX, mouseY)) return false;
 			final Style style = dialog.getInnerTextAt(
 			  area.x, (int) round(area.y - scrollAmount),
 			  area.width - 8, area.height, mouseX, mouseY);

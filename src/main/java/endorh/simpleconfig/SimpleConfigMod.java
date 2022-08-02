@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
+import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler;
 import endorh.simpleconfig.core.annotation.Bind;
 import endorh.simpleconfig.core.annotation.NotEntry;
 import endorh.simpleconfig.core.entry.StringEntry;
@@ -17,7 +18,9 @@ import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyInputHandler;
+import endorh.simpleconfig.ui.hotkey.ResourceConfigHotKeyGroupHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.entity.player.PlayerEntity;
@@ -34,6 +37,7 @@ import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.common.MinecraftForge;
@@ -47,6 +51,8 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -81,6 +87,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static SimpleConfig SERVER_CONFIG;
 	
 	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
+	public static final SimpleConfigResourcePresetHandler RESOURCE_PRESET_HANDLER = SimpleConfigResourcePresetHandler.INSTANCE;
+	public static final ResourceConfigHotKeyGroupHandler RESOURCE_HOT_KEY_GROUP_HANDLER = ResourceConfigHotKeyGroupHandler.INSTANCE;
 	public static final LanguageReloadManager LANGUAGE_RELOAD_MANAGER = LanguageReloadManager.INSTANCE;
 	
 	public SimpleConfigMod() {
@@ -102,6 +110,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			       .add("group_reset", yesNo(true))
 			       .add("restore", yesNo(false))
 			       .add("group_restore", yesNo(true))
+			       .add("save_hotkeys", yesNo(true))
+			       .add("discard_hotkeys", yesNo(true))
 			  ).n(group("advanced")
 			       .add("show_ui_tips", yesNo(true))
 			       .add("tooltip_max_width", percent(60F))
@@ -154,10 +164,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		StringEntry.Builder modName = string("").suggest(modNameSupplier);
 		StringEntry.Builder roleName = string("").suggest(() -> {
 			  List<String> roles = roleNameSupplier.get();
-			  roles.add(0, "op");
+			  roles.add(0, "[all]");
+			  roles.add(1, "[op]");
 			  return roles;
-		  }).error(s -> roleNameSupplier.get().contains(s) || s.equals("op")? Optional.empty() : Optional.of(
-			 new TranslationTextComponent("simpleconfig.error.unknown_role")));
+		  }).error(s -> roleNameSupplier.get().contains(s) || s.equals("[op]") || s.equals("[all]")
+		                ? Optional.empty() : Optional.of(new TranslationTextComponent(
+								"simpleconfig.error.unknown_role")));
 		StringEntry.Builder modGroupOrName = string("").suggest(() -> {
 			List<Pair<String, ?>> modGroups = SERVER_CONFIG.getGUI("permissions.mod_groups");
 			List<String> names = modGroups.stream().map(Pair::getKey).collect(Collectors.toList());
@@ -177,18 +189,24 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		  .n(group("permissions", true)
 		       .add("roles", map(
 					string("").notEmpty()
-					  .error(s -> s.equals("op")? Optional.of(new TranslationTextComponent(
-						 "simpleconfig.config.error.role.reserved", "op")) : Optional.empty()),
+					  .error(s -> s.equals("[op]") || s.equals("[all]")? Optional.of(new TranslationTextComponent(
+						 "simpleconfig.config.error.role.reserved", s)) : Optional.empty()),
 					list(playerName)))
 		       .add("mod_groups", map(
 					string("").notEmpty()
 					  .error(s -> s.equals("[all]")? Optional.of(new TranslationTextComponent(
-						 "simpleconfig.config.error.mod_group.reserved", "[all]")) : Optional.empty()),
-					caption(enum_(ListType.WHITELIST), list(modName))))
+						 "simpleconfig.config.error.mod_group.reserved", s)) : Optional.empty()),
+					caption(option(ListType.WHITELIST), list(modName))))
 		       .add("rules", pairList(
-					roleName, caption(enum_(ConfigPermission.ALLOW), list(modGroupOrName)),
-					Lists.newArrayList(Pair.of("op", Pair.of(ConfigPermission.ALLOW, Lists.newArrayList("[all]")))))))
-		  .text("end")
+					roleName, caption(
+					  pair(option(ConfigPermission.EDIT_SERVER_CONFIG), option(PresetPermission.SAVE_PRESETS))
+					    .withSplitPosition(0.4),
+					  list(modGroupOrName)
+		         ), Lists.newArrayList(Pair.of("[op]", Pair.of(
+			        Pair.of(ConfigPermission.EDIT_SERVER_CONFIG, PresetPermission.SAVE_PRESETS), Lists.newArrayList("[all]"))))))
+		       .add("hotkey_rules", pairList(
+					roleName, yesNo(true), Lists.newArrayList(Pair.of("[op]", true))))
+		  ).text("end")
 		  // Register the demo server config category as well
 		  .n(DemoServerCategory.getDemoServerCategory())
 		  .buildAndRegister();
@@ -198,6 +216,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static void registerReloadListener(ParticleFactoryRegisterEvent event) {
 		IReloadableResourceManager manager = (IReloadableResourceManager) Minecraft.getInstance().getResourceManager();
 		manager.addReloadListener(JSON_HIGHLIGHTER_MANAGER);
+		manager.addReloadListener(RESOURCE_PRESET_HANDLER);
+		manager.addReloadListener(RESOURCE_HOT_KEY_GROUP_HANDLER);
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
 		  "regex", RegexLexer::new, RegexParser::new, RegexParser::root));
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
@@ -210,6 +230,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	 */
 	public static class ClientConfig {
 		@Bind public static boolean add_pause_menu_button;
+		public static boolean force_inject_gui;
 		@Bind public static MenuButtonPosition menu_button_position;
 		@Bind public static class confirm {
 			@Bind public static boolean save;
@@ -220,6 +241,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			@Bind public static boolean restore;
 			@Bind public static boolean group_reset;
 			@Bind public static boolean group_restore;
+			@Bind public static boolean save_hotkeys;
+			@Bind public static boolean discard_hotkeys;
 		}
 		@Bind public static class advanced {
 			@Bind public static boolean show_ui_tips;
@@ -250,7 +273,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static class ServerConfig {
 		@Bind public static class permissions {
 			// Each role contains a list of players
-			//   There's a reserved role, "op", which contains all server operators
+			//   The roles "[op]" and "[all]" are reserved
 			@Bind public static Map<String, List<String>> roles;
 			// Each mod group contains a list of mods, either included or excluded
 			//   There's a reserved group, "[all]", which contains all mods
@@ -260,27 +283,55 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			// The permissions are applied in order. Each player is ruled
 			//   by the last rule that affects them for each mod.
 			// By default, op players have ALLOW permission for the [all] mod group
-			@Bind public static List<Pair<String, Pair<ConfigPermission, List<String>>>> rules;
+			@Bind public static List<Pair<String, Pair<Pair<ConfigPermission, PresetPermission>, List<String>>>> rules;
+			@Bind public static List<Pair<String, Boolean>> hotkey_rules;
 			
-			public static ConfigPermission permissionFor(PlayerEntity player, String mod) {
+			@OnlyIn(Dist.CLIENT) public static Pair<ConfigPermission, PresetPermission> permissionFor(String mod) {
+				ClientPlayerEntity player = Minecraft.getInstance().player;
+				return player == null? Pair.of(ConfigPermission.DENY, PresetPermission.LOAD_PRESETS) : permissionFor(player, mod);
+			}
+			
+			public static Pair<ConfigPermission, PresetPermission> permissionFor(PlayerEntity player, String mod) {
 				final Set<String> roles = permissions.roles.entrySet().stream().filter(
 				  e -> e.getValue().contains(player.getScoreboardName())
 				).map(Entry::getKey).collect(Collectors.toSet());
 				if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
-					return ConfigPermission.ALLOW;
-				if (player.hasPermissionLevel(2)) roles.add("op");
+					return Pair.of(ConfigPermission.EDIT_SERVER_CONFIG, PresetPermission.SAVE_PRESETS);
+				if (player.hasPermissionLevel(2)) roles.add("[op]");
+				roles.add("[all]");
 				final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
 				  e -> e.getValue().getKey() == ListType.BLACKLIST ^ e.getValue().getValue().contains(mod)
 				).map(Entry::getKey).collect(Collectors.toSet());
 				modGroups.add("[all]");
 				modGroups.add(mod);
-				ConfigPermission permission = ConfigPermission.DENY;
-				for (Pair<String, Pair<ConfigPermission, List<String>>> rule : rules) {
-					if (roles.contains(rule.getKey())
-					    && rule.getValue().getValue().stream().anyMatch(modGroups::contains))
-						permission = rule.getValue().getKey();
+				ConfigPermission config = ConfigPermission.DENY;
+				PresetPermission preset = PresetPermission.LOAD_PRESETS;
+				for (Pair<String, Pair<Pair<ConfigPermission, PresetPermission>, List<String>>> rule: rules) {
+					if (roles.contains(rule.getKey()) && rule.getValue().getValue().stream().anyMatch(modGroups::contains)) {
+						Pair<ConfigPermission, PresetPermission> pair = rule.getValue().getKey();
+						if (pair.getKey() != ConfigPermission.INHERIT) config = pair.getKey();
+						if (pair.getValue() != PresetPermission.INHERIT) preset = pair.getValue();
+					}
 				}
-				return permission;
+				return Pair.of(config, preset);
+			}
+			
+			@OnlyIn(Dist.CLIENT) public static boolean canEditServerHotKeys() {
+				ClientPlayerEntity player = Minecraft.getInstance().player;
+				return player != null && canEditServerHotKeys(player);
+			}
+			
+			public static boolean canEditServerHotKeys(PlayerEntity player) {
+				final Set<String> roles = permissions.roles.entrySet().stream().filter(
+				  e -> e.getValue().contains(player.getScoreboardName())
+				).map(Entry::getKey).collect(Collectors.toSet());
+				if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
+					return true;
+				if (player.hasPermissionLevel(2)) roles.add("[op]");
+				roles.add("[all]");
+				for (Pair<String, Boolean> rule: Lists.reverse(hotkey_rules))
+					if (roles.contains(rule.getKey())) return rule.getValue();
+				return false;
 			}
 		}
 	}
@@ -290,7 +341,46 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	}
 	
 	public enum ConfigPermission {
-		ALLOW, DENY // VIEW // SAVE_PRESET
+		INHERIT(false, false),
+		DENY(false, false),
+		VIEW_SERVER_CONFIG(true, false),
+		EDIT_SERVER_CONFIG(true, true);
+		
+		private final boolean canView;
+		private final boolean canEdit;
+		
+		ConfigPermission(boolean canView, boolean canEdit) {
+			this.canView = canView;
+			this.canEdit = canEdit;
+		}
+		
+		public boolean canView() {
+			return canView;
+		}
+		public boolean canEdit() {
+			return canEdit;
+		}
+	}
+	
+	public enum PresetPermission {
+		INHERIT(false, false),
+		LOAD_PRESETS(true, false),
+		SAVE_PRESETS(true, true);
+		
+		private final boolean canLoad;
+		private final boolean canSave;
+		
+		PresetPermission(boolean canLoad, boolean canSave) {
+			this.canLoad = canLoad;
+			this.canSave = canSave;
+		}
+		
+		public boolean canLoad() {
+			return canLoad;
+		}
+		public boolean canSave() {
+			return canSave;
+		}
 	}
 	
 	public enum MenuButtonPosition {

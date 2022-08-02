@@ -11,6 +11,7 @@ import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Presets;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
+import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.Location;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
@@ -50,6 +51,8 @@ public class PresetPickerWidget extends FocusableGui {
 	protected Map<String, Preset> knownLocalServerPresets = Maps.newHashMap();
 	protected Map<String, Preset> knownRemoteClientPresets = Maps.newHashMap();
 	protected Map<String, Preset> knownRemoteServerPresets = Maps.newHashMap();
+	protected Map<String, Preset> knownResourceClientPresets = Maps.newHashMap();
+	protected Map<String, Preset> knownResourceServerPresets = Maps.newHashMap();
 	
 	protected Style selectedCountStyle = Style.EMPTY.applyFormatting(TextFormatting.DARK_AQUA);
 	protected Style nameStyle = Style.EMPTY.applyFormatting(TextFormatting.LIGHT_PURPLE);
@@ -67,44 +70,48 @@ public class PresetPickerWidget extends FocusableGui {
 		loadButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.LOAD, ButtonAction.of(() -> {
 			  final Preset value = selector.getValue();
 			  if (value != null) load(value);
-		}).active(() -> getHandler() != null && isKnownPreset(selector.getText(), screen.isSelectedCategoryServer()))
-		  .tooltip(() -> {
+		}).active(() -> getHandler() != null
+		                && isKnownPreset(selector.getText(), screen.isSelectedCategoryServer())
+		                && screen.isEditable()
+		  ).tooltip(() -> {
 			  final Preset value = selector.getValue();
 			  if (value == null) return Lists.newArrayList();
 			  return Lists.newArrayList(
 			    new TranslationTextComponent(String.format(
-					"simpleconfig.preset.load.%s.%s",
-					value.server ? "server" : "client",
-					value.remote ? "remote" : "local")));
+			      "simpleconfig.preset.load.%s.%s",
+			      value.isServer()? "server" : "client",
+			      value.isResource()? "resource" : value.isRemote()? "remote" : "local")));
 		  }), new TranslationTextComponent("simpleconfig.preset.load.label"));
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 		  () -> save(selector.getText(), false)
 		).tooltip(() -> getSaveTooltip(false, false))
-		  .active(() -> getHandler() != null && isValidName(selector.getText())), new TranslationTextComponent(
-		  "simpleconfig.preset.save.label")
+		  .active(() -> getHandler() != null
+		                && isValidName(selector.getText())
+		                && screen.isEditable()
+		  ), new TranslationTextComponent("simpleconfig.preset.save.label")
 		).on(Modifier.SHIFT, ButtonAction.of(() -> save(selector.getText(), true))
 		  .icon(Buttons.SAVE_REMOTE)
-		  .active(() -> getHandler() != null && isValidName(selector.getText()) && getHandler().canSaveRemote())
-		  .tooltip(() -> getSaveTooltip(false, true))
+		  .active(() -> getHandler() != null
+		                && isValidName(selector.getText())
+		                && getHandler().canSaveRemote()
+		                && screen.isEditable()
+		  ).tooltip(() -> getSaveTooltip(false, true))
 		).on(Modifier.ALT, ButtonAction.of(() -> delete(selector.getValue()))
 		  .icon(Buttons.DELETE)
-		  .active(() -> getHandler() != null && selector.getValue() != null && (!selector.getValue().remote || getHandler().canSaveRemote()))
-		  .tooltip(() -> {
+		  .active(() -> getHandler() != null
+		                && selector.getValue() != null
+		                && (!selector.getValue().isRemote() || getHandler().canSaveRemote())
+		                && screen.isEditable()
+		  ).tooltip(() -> {
 			  final Preset preset = selector.getValue();
-			  return getSaveTooltip(true, preset != null && preset.remote);
+			  return getSaveTooltip(true, preset != null && preset.isRemote());
 		  }));
 		selector = new ComboBoxWidget<>(
 		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
 		  new TranslationTextComponent("simpleconfig.preset.picker.label"));
 		selector.setHint(new TranslationTextComponent("simpleconfig.preset.picker.hint"));
 		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
-		  () -> {
-			  final boolean server = screen.isSelectedCategoryServer();
-			  return Stream.concat(
-			    getKnownPresets(server, false).values().stream(),
-			    getKnownPresets(server, true).values().stream()
-			  ).collect(Collectors.toList());
-		  });
+		  () -> getKnownPresets(screen.isSelectedCategoryServer()));
 		provider.setPlaceholder(new TranslationTextComponent("simpleconfig.ui.no_presets_found"));
 		selector.setSuggestionProvider(provider);
 		listeners = Lists.newArrayList(selector, loadButton, saveButton);
@@ -130,11 +137,11 @@ public class PresetPickerWidget extends FocusableGui {
 	}
 	
 	public List<Preset> getKnownPresets() {
-		return Stream.concat(Stream.concat(
-		  knownLocalClientPresets.values().stream(), knownRemoteClientPresets.values().stream()
-		), Stream.concat(
-		  knownLocalServerPresets.values().stream(), knownRemoteServerPresets.values().stream()
-		)).collect(Collectors.toList());
+		return Stream.of(
+		  knownLocalClientPresets.values(), knownRemoteClientPresets.values(),
+		  knownLocalServerPresets.values(), knownRemoteServerPresets.values(),
+		  knownResourceClientPresets.values(), knownResourceServerPresets.values()
+		).flatMap(Collection::stream).collect(Collectors.toList());
 	}
 	
 	protected void position() {
@@ -160,12 +167,29 @@ public class PresetPickerWidget extends FocusableGui {
 	protected void update() {
 		knownLocalClientPresets.clear();
 		knownLocalServerPresets.clear();
-		getHandler().getLocalSnapshotNames().stream()
-		  .map(n -> HYPHEN.split(n, 2)).filter(a -> a.length == 2).map(
-			 a -> "client".equals(a[0]) ? new Preset(a[1], false, false) :
-			      "server".equals(a[0]) ? new Preset(a[1], true, false) : null
-		  ).filter(Objects::nonNull).forEach(
-			 p -> (p.server ? knownLocalServerPresets : knownLocalClientPresets).put(p.name, p));
+		for (Preset preset: getHandler().getLocalPresets()) (
+		  preset.isServer()? knownLocalServerPresets : knownLocalClientPresets
+		).put(preset.getName(), preset);
+		knownResourceClientPresets.clear();
+		knownRemoteServerPresets.clear();
+		for (Preset preset: getHandler().getResourcePresets()) (
+		  preset.isServer()? knownResourceServerPresets : knownResourceClientPresets
+		).put(preset.getName(), preset);
+		refreshSelector();
+		if (lastFuture == null) {
+			lastFuture = getHandler().getRemotePresets().thenAccept(presets -> {
+				knownRemoteClientPresets.clear();
+				knownRemoteServerPresets.clear();
+				for (Preset p: presets) (
+				  p.isServer()? knownRemoteServerPresets : knownRemoteClientPresets
+				).put(p.getName(), p);
+				lastFuture = null;
+				refreshSelector();
+			});
+		}
+	}
+	
+	protected void refreshSelector() {
 		final Preset value = selector.getValue();
 		String text = selector.getText();
 		if (value != null && !isKnownPreset(value))
@@ -173,23 +197,6 @@ public class PresetPickerWidget extends FocusableGui {
 		if (value == null && isKnownPreset(text)) {
 			selector.setText("");
 			selector.setText(text);
-		}
-		if (lastFuture == null) {
-			lastFuture = getHandler().getRemoteSnapshotNames().thenAccept(l -> {
-				knownRemoteClientPresets.clear();
-				knownRemoteServerPresets.clear();
-				l.stream()
-				  .map(n -> HYPHEN.split(n, 2)).filter(a -> a.length == 2).map(
-					 a -> "client".equals(a[0]) ? new Preset(a[1], false, true) :
-					      "server".equals(a[0]) ? new Preset(a[1], true, true) : null
-				  ).filter(Objects::nonNull).forEach(
-					 p -> (p.server ? knownRemoteServerPresets : knownRemoteClientPresets).put(p.name, p)
-				  );
-				lastFuture = null;
-				final Preset vv = selector.getValue();
-				if (vv != null && !isKnownPreset(vv))
-					selector.setText(selector.getText());
-			});
 		}
 	}
 	
@@ -200,20 +207,31 @@ public class PresetPickerWidget extends FocusableGui {
 			update();
 		}
 		position();
-		selector.active = getHandler() != null;
+		selector.active = getHandler() != null && screen.isEditable();
 		selector.render(mStack, mouseX, mouseY, delta);
 		loadButton.render(mStack, mouseX, mouseY, delta);
 		saveButton.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	public Map<String, Preset> getKnownPresets(boolean server, boolean remote) {
-		return remote?
-		       server? knownRemoteServerPresets : knownRemoteClientPresets :
-		       server? knownLocalServerPresets : knownLocalClientPresets;
+	public List<Preset> getKnownPresets(boolean server) {
+		return Stream.of(
+		  server? knownLocalServerPresets : knownLocalClientPresets,
+		  server? knownRemoteServerPresets : knownRemoteClientPresets,
+		  server? knownResourceServerPresets : knownResourceClientPresets
+		).flatMap(m -> m.values().stream()).collect(Collectors.toList());
+	}
+	
+	public Map<String, Preset> getKnownPresets(boolean server, Location location) {
+		switch (location) {
+			case LOCAL: return server? knownLocalServerPresets : knownLocalClientPresets;
+			case REMOTE: return server? knownRemoteServerPresets : knownRemoteClientPresets;
+			case RESOURCE: return server? knownResourceServerPresets : knownResourceClientPresets;
+			default: return Collections.emptyMap();
+		}
 	}
 	
 	public boolean isKnownPreset(Preset preset) {
-		return getKnownPresets(preset.server, preset.remote).containsValue(preset);
+		return getKnownPresets(preset.isServer(), preset.getLocation()).containsValue(preset);
 	}
 	
 	public void load(Preset preset) {
@@ -223,21 +241,25 @@ public class PresetPickerWidget extends FocusableGui {
 		  .map(AbstractConfigEntry::getPath)
 		  .collect(Collectors.toSet());
 		final Set<String> selection = s.isEmpty()? null : s;
-		if (preset.remote) {
-			final CompletableFuture<Void> future = handler.getRemote(preset.name, type)
+		if (preset.isRemote()) {
+			final CompletableFuture<Void> future = handler.getRemote(preset.getName(), type)
 			  .thenAccept(config -> doLoad(config, preset, type, selection));
 			screen.addDialog(ProgressDialog.create(
 			  new TranslationTextComponent("simpleconfig.preset.dialog.loading.title"),
 			  future, d -> d.setBody(splitTtc(
-				 "simpleconfig.preset.dialog.loading.remote.body", presetName(preset.name)))));
-		} else doLoad(handler.getLocal(preset.name, type), preset, type, selection);
+				 "simpleconfig.preset.dialog.loading.remote.body", presetName(preset.getName())))));
+		} else {
+			// Local and resource presets always return completed futures
+			handler.getPresetSnapshot(preset).thenAccept(
+			  snapshot -> doLoad(snapshot, preset, type, selection));
+		}
 	}
 	
 	protected void doLoad(
 	  CommentedConfig snapshot, Preset preset, Type type, @Nullable Set<String> selection
 	) {
 		final IConfigSnapshotHandler handler = getHandler();
-		String ll = preset.remote? "remote." : "local.";
+		String ll = preset.isResource()? "resource." : preset.isRemote()? "remote." : "local.";
 		String tt = type == Type.SERVER? "server" : "client";
 		int matches = getMatches(snapshot, selection);
 		int total = getTotalSize(snapshot);
@@ -247,7 +269,7 @@ public class PresetPickerWidget extends FocusableGui {
 		  "simpleconfig.preset.dialog.load.success.title"
 		), Util.make(new ArrayList<>(), b -> {
 			b.addAll(splitTtc(
-			  "simpleconfig.preset.dialog.load.success." + ll + tt, presetName(preset.name)));
+			  "simpleconfig.preset.dialog.load.success." + ll + tt, presetName(preset.getName())));
 			if (selection != null && matches > 0) {
 				b.addAll(splitTtc(
 				  "simpleconfig.preset.dialog.load.success.selected",
@@ -291,12 +313,13 @@ public class PresetPickerWidget extends FocusableGui {
 		int selected = s.size();
 		Set<String> selection = selected > 0? s : null;
 		final CommentedConfig preserved = handler.preserve(type, selection);
-		final Map<String, Preset> presetMap = getKnownPresets(server, remote);
-		final Map<String, Preset> otherMap = getKnownPresets(server, !remote);
+		final Map<String, Preset> presetMap = getKnownPresets(server, remote? Location.REMOTE : Location.LOCAL);
+		final Map<String, Preset> otherMap = getKnownPresets(server, remote? Location.LOCAL : Location.REMOTE);
+		final Map<String, Preset> resourceMap = getKnownPresets(server, Location.RESOURCE);
 		String ll = remote? "remote." : "local.";
 		String tt = server? "server" : "client";
 		if (!overwrite && !userSkipOverwriteDialog && presetMap.containsKey(name)
-		    && presetMap.get(name).server == server) {
+		    && presetMap.get(name).isServer() == server) {
 			screen.addDialog(ConfirmDialog.create(
 			  new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.title"), d -> {
 				  d.withCheckBoxes((b, cs) -> {
@@ -311,22 +334,27 @@ public class PresetPickerWidget extends FocusableGui {
 				  d.setConfirmText(new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.confirm"));
 				  d.setConfirmButtonTint(0xAAAA00AA);
 			  }));
-		} else if (!overwrite && otherMap.containsKey(name) && !presetMap.containsKey(name)) {
+		} else if (!overwrite && (otherMap.containsKey(name) || resourceMap.containsKey(name)) && !presetMap.containsKey(name)) {
+			boolean resource = !otherMap.containsKey(name);
+			String r = resource? "resource." : "";
 			screen.addDialog(ConfirmDialog.create(
 			  new TranslationTextComponent("simpleconfig.preset.dialog.mistaken.title"), d -> {
 				  d.withAction(b -> {
 					  if (b) save(name, remote, true);
 				  });
-				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + ll + "body", presetName(name)));
+				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + r + ll + "body", presetName(name)));
 				  d.setConfirmText(new TranslationTextComponent(
 				    "simpleconfig.preset.dialog.mistaken.option." + ll + "create"));
 				  d.setConfirmButtonTint(remote ? 0xAA429090 : 0xAA429042);
-				  d.addButton(1, TintedButton.of(
-				    0, 20, remote ? 0xAA429042 : 0xAA429090, new TranslationTextComponent(
-					   "simpleconfig.preset.dialog.mistaken.option." + ll + "overwrite"), p -> {
-						 save(name, !remote, true);
-						 d.cancel(false);
-					 }));
+				  if (!resource) {
+					  d.addButton(1, TintedButton.of(
+						 new TranslationTextComponent(
+							"simpleconfig.preset.dialog.mistaken.option." + ll + "overwrite"),
+						 remote? 0xAA429042 : 0xAA429090, p -> {
+							 save(name, !remote, true);
+							 d.cancel(false);
+						 }));
+				  }
 			  }));
 		} else if (remote) {
 			final CompletableFuture<Void> future = handler.saveRemote(name, type, preserved);
@@ -376,8 +404,8 @@ public class PresetPickerWidget extends FocusableGui {
 	public void delete(Preset preset, boolean skipConfirm) {
 		final Type type = screen.currentConfigType();
 		final IConfigSnapshotHandler handler = getHandler();
-		String ll = preset.remote? "remote." : "local.";
-		String tt = preset.server? "server" : "client";
+		String ll = preset.isRemote()? "remote." : "local.";
+		String tt = preset.isServer()? "server" : "client";
 		if (!userSkipConfirmDeleteDialog && !skipConfirm) {
 			screen.addDialog(ConfirmDialog.create(
 			  new TranslationTextComponent("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
@@ -389,23 +417,24 @@ public class PresetPickerWidget extends FocusableGui {
 				  }, CheckboxButton.of(false, new TranslationTextComponent(
 				    "simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
-					 "simpleconfig.preset.dialog.delete.confirm." + ll + tt, presetName(preset.name)));
+					 "simpleconfig.preset.dialog.delete.confirm." + ll + tt, presetName(preset.getName())));
 				  d.setConfirmText(new TranslationTextComponent(
 					 "simpleconfig.preset.dialog.delete.confirm.delete"));
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
-		} else if (preset.remote) {
-			final CompletableFuture<Void> future = handler.deleteRemote(preset.name, type);
+		} else if (preset.isRemote()) {
+			final CompletableFuture<Void> future = handler.deleteRemote(preset.getName(), type);
 			screen.addDialog(ProgressDialog.create(
 			  new TranslationTextComponent("simpleconfig.preset.dialog.deleting.title"),
 			  future, d -> {
-				  d.setBody(splitTtc("simpleconfig.preset.dialog.deleting.remote.body", presetName(preset.name)));
+				  d.setBody(splitTtc("simpleconfig.preset.dialog.deleting.remote.body", presetName(
+				    preset.getName())));
 				  d.setCancellableByUser(false);
 				  d.setSuccessDialog(getDeleteSuccessDialog(preset));
 			  }));
 			future.thenAccept(v -> update());
 		} else {
-			handler.deleteLocal(preset.name, type);
+			handler.deleteLocal(preset.getName(), type);
 			screen.addDialog(getDeleteSuccessDialog(preset));
 			update();
 		}
@@ -414,11 +443,12 @@ public class PresetPickerWidget extends FocusableGui {
 	protected AbstractDialog getDeleteSuccessDialog(
 	  Preset preset
 	) {
-		final String ll = preset.remote? "remote." : "local.";
-		final String tt = preset.server? "server" : "client";
+		final String ll = preset.isRemote()? "remote." : "local.";
+		final String tt = preset.isServer()? "server" : "client";
 		return InfoDialog.create(
 		  new TranslationTextComponent("simpleconfig.preset.dialog.delete.success.title"),
-		  splitTtc("simpleconfig.preset.dialog.delete.success." + ll + tt, presetName(preset.name)));
+		  splitTtc("simpleconfig.preset.dialog.delete.success." + ll + tt, presetName(
+		    preset.getName())));
 	}
 	
 	protected IFormattableTextComponent selectedCount(int count) {
@@ -430,15 +460,19 @@ public class PresetPickerWidget extends FocusableGui {
 	}
 	
 	public boolean isKnownPreset(String name) {
-		return getKnownPresets(true, true).containsKey(name)
-		  || getKnownPresets(true, false).containsKey(name)
-		  || getKnownPresets(false, true).containsKey(name)
-		  || getKnownPresets(false, false).containsKey(name);
+		return Stream.of(
+		  knownLocalClientPresets.keySet(), knownLocalServerPresets.keySet(),
+		  knownRemoteClientPresets.keySet(), knownRemoteServerPresets.keySet(),
+		  knownResourceClientPresets.keySet(), knownResourceServerPresets.keySet()
+		).anyMatch(s -> s.contains(name));
 	}
 	
 	public boolean isKnownPreset(String name, boolean server) {
-		return getKnownPresets(server, false).containsKey(name)
-		       || getKnownPresets(server, true).containsKey(name);
+		return Stream.of(
+		  server? knownLocalServerPresets : knownLocalClientPresets,
+		  server? knownRemoteServerPresets : knownRemoteClientPresets,
+		  server? knownResourceServerPresets : knownResourceClientPresets
+		).anyMatch(m -> m.containsKey(name));
 	}
 	
 	private static final Pattern NAME_PATTERN = Pattern.compile(
@@ -454,30 +488,74 @@ public class PresetPickerWidget extends FocusableGui {
 	}
 	
 	public static class Preset {
-		public final String name;
-		public final boolean server;
-		public final boolean remote;
+		private final String name;
+		private final boolean server;
+		private final Location location;
 		
-		public Preset(String name, boolean server, boolean remote) {
+		private Preset(String name, boolean server, Location location) {
 			this.name = name;
 			this.server = server;
-			this.remote = remote;
+			this.location = location;
+		}
+		
+		public static Preset local(String name, boolean server) {
+			return new Preset(name, server, Location.LOCAL);
+		}
+		
+		public static Preset remote(String name, boolean server) {
+			return new Preset(name, server, Location.REMOTE);
+		}
+		
+		public static Preset resource(String name, boolean server) {
+			return new Preset(name, server, Location.RESOURCE);
+		}
+		
+		public String getName() {
+			return name;
+		}
+		
+		public boolean isClient() {
+			return !server;
+		}
+		
+		public boolean isServer() {
+			return server;
+		}
+		
+		public Location getLocation() {
+			return location;
+		}
+		
+		public boolean isLocal() {
+			return location == Location.LOCAL;
+		}
+		
+		public boolean isRemote() {
+			return location == Location.REMOTE;
+		}
+		
+		public boolean isResource() {
+			return location == Location.RESOURCE;
 		}
 		
 		@Override public String toString() {
-			return name;
+			return getName();
 		}
 		
 		@Override public boolean equals(Object o) {
 			if (this == o) return true;
 			if (o == null || getClass() != o.getClass()) return false;
 			Preset preset = (Preset) o;
-			return server == preset.server && remote == preset.remote && name.equals(preset.name);
+			return isServer() == preset.isServer()
+			       && getLocation() == preset.getLocation()
+			       && getName().equals(preset.getName());
 		}
 		
 		@Override public int hashCode() {
-			return Objects.hash(name, server, remote);
+			return Objects.hash(getName(), isServer(), getLocation());
 		}
+		
+		public enum Location { LOCAL, REMOTE, RESOURCE }
 		
 		public static class TypeWrapper implements ITypeWrapper<Preset> {
 			public final PresetPickerWidget widget;
@@ -490,24 +568,21 @@ public class PresetPickerWidget extends FocusableGui {
 			  @NotNull String text
 			) {
 				final boolean server = widget.screen.isSelectedCategoryServer();
-				final Map<String, Preset> localPresets = widget.getKnownPresets(server, false);
-				if (localPresets.containsKey(text)) {
-					return Pair.of(Optional.of(localPresets.get(text)), Optional.empty());
-				} else {
-					final Map<String, Preset> remotePresets = widget.getKnownPresets(server, true);
-					if (remotePresets.containsKey(text)) {
-						return Pair.of(Optional.of(remotePresets.get(text)), Optional.empty());
-					} else return Pair.of(Optional.empty(), Optional.of(new TranslationTextComponent(
-					  "simpleconfig.config.error.unknown_preset")));
+				for (Location location: Location.values()) {
+					Map<String, Preset> presets = widget.getKnownPresets(server, location);
+					if (presets.containsKey(text))
+						return Pair.of(Optional.of(presets.get(text)), Optional.empty());
 				}
+				return Pair.of(Optional.empty(), Optional.of(new TranslationTextComponent(
+				  "simpleconfig.config.error.unknown_preset")));
 			}
 			
 			@Override public String getName(@NotNull Preset element) {
-				return element.name;
+				return element.getName();
 			}
 			@Override public ITextComponent getDisplayName(@NotNull Preset element) {
-				return new StringTextComponent(element.name).mergeStyle(
-				  element.remote ? TextFormatting.AQUA : TextFormatting.GREEN);
+				return new StringTextComponent(element.getName()).mergeStyle(
+				  element.isRemote()? TextFormatting.AQUA : TextFormatting.GREEN);
 			}
 			
 			@Override public boolean hasIcon() {
@@ -522,13 +597,15 @@ public class PresetPickerWidget extends FocusableGui {
 			) { // @formatter:off
 				if (element == null) {
 					return text.isEmpty()? Optional.empty() : Optional.of(
-					  widget.screen.isSelectedCategoryServer()?
-					  Presets.SERVER_SAVE : Presets.CLIENT_SAVE);
+					  widget.screen.isSelectedCategoryServer()
+					  ? Presets.SERVER_SAVE : Presets.CLIENT_SAVE);
 				} else {
-					return Optional.of(
-					  element.server?
-					  element.remote? Presets.SERVER_REMOTE : Presets.SERVER_LOCAL :
-					  element.remote? Presets.CLIENT_REMOTE : Presets.CLIENT_LOCAL);
+					switch (element.getLocation()) {
+						case LOCAL: return Optional.of(element.isServer()? Presets.SERVER_LOCAL : Presets.CLIENT_LOCAL);
+						case REMOTE: return Optional.of(element.isServer()? Presets.SERVER_REMOTE : Presets.CLIENT_REMOTE);
+						case RESOURCE: return Optional.of(element.isServer()? Presets.SERVER_RESOURCE : Presets.CLIENT_RESOURCE);
+						default: return Optional.empty();
+					}
 				}
 			} // @formatter:on
 		}

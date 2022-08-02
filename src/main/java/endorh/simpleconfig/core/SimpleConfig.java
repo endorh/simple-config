@@ -5,11 +5,12 @@ import com.electronwill.nightconfig.core.ConfigSpec;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
-import endorh.simpleconfig.core.SimpleConfigSync.CSimpleConfigSyncPacket;
-import endorh.simpleconfig.core.SimpleConfigSync.SSimpleConfigSyncPacket;
+import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPacket;
+import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.commands.SimpleConfigCommand;
 import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigCategory;
@@ -23,6 +24,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.command.CommandSource;
+import net.minecraft.resources.IResource;
+import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
@@ -69,17 +72,23 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	private static final Map<Pair<String, Type>, SimpleConfig> INSTANCES =
 	  synchronizedMap(new HashMap<>());
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
-	
-	private final ModConfig.Type type;
-	private final String modId;
-	private SimpleConfigModConfig modConfig;
-	private SimpleConfigCommand command;
-	
+	private static int TEXT_ENTRY_ID_GEN = 0;
+
+	static {
+		SimpleConfigNetworkHandler.registerPackets();
+		// Trigger class loading
+		Builders.bool(true);
+	}
+
 	protected final String defaultTitle;
 	protected final String tooltip;
+	protected final @Nullable Consumer<SimpleConfig> saver;
+	protected final @Nullable Consumer<SimpleConfig> baker;
+	protected final @Nullable Object configClass;
+	private final ModConfig.Type type;
+	private final String modId;
 	protected Icon defaultCategoryIcon;
 	protected int defaultCategoryColor;
-	
 	/**
 	 * Should not be modified
 	 */
@@ -93,10 +102,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 */
 	protected List<IGUIEntry> order;
 	protected ForgeConfigSpec spec;
-	
-	protected final @Nullable Consumer<SimpleConfig> saver;
-	protected final @Nullable Consumer<SimpleConfig> baker;
-	protected final @Nullable Object configClass;
 	@OnlyIn(Dist.CLIENT)
 	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
 	protected @Nullable ResourceLocation background;
@@ -104,7 +109,32 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	@OnlyIn(Dist.CLIENT)
 	protected @Nullable AbstractConfigScreen gui;
 	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
+	private SimpleConfigModConfig modConfig;
+	private SimpleConfigCommand command;
 	private Map<String, NodeComments> comments = new HashMap<>();
+	
+	@Internal protected SimpleConfig(
+	  String modId, ModConfig.Type type, String defaultTitle,
+	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
+	  @Nullable Object configClass
+	) {
+		this.modId = modId;
+		this.type = type;
+		this.defaultTitle = defaultTitle;
+		this.baker = baker;
+		this.saver = saver;
+		this.configClass = configClass;
+		tooltip = defaultTitle + ":help";
+		root = this;
+		
+		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
+		synchronized (INSTANCES) {
+			if (!INSTANCES.containsKey(key))
+				INSTANCES.put(key, this);
+			else throw new IllegalStateException(
+			  "Cannot create more than one config per type per mod");
+		}
+	}
 	
 	@Internal public static SimpleConfig getConfig(
 	  String modId, ModConfig.Type type
@@ -129,25 +159,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return INSTANCES.values();
 	}
 	
-	/**
-	 * Retrieve the actual path of this file, if found
-	 */
-	public Optional<Path> getFilePath() {
-		SimpleConfigModConfig modConfig = getModConfig();
-		return modConfig.getConfigData() instanceof CommentedFileConfig? Optional.of(
-		  modConfig.getFullPath()) : Optional.empty();
-	}
-	
-	private static int TEXT_ENTRY_ID_GEN = 0;
-	
 	protected static String nextTextID() {
 		return "_text$" + TEXT_ENTRY_ID_GEN++;
-	}
-	
-	static {
-		SimpleConfigSync.registerPackets();
-		// Trigger class loading
-		Builders.bool(true);
 	}
 	
 	/**
@@ -221,27 +234,32 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return new CategoryBuilder(name, configClass);
 	}
 	
-	@Internal protected SimpleConfig(
-	  String modId, ModConfig.Type type, String defaultTitle,
-	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
-	  @Nullable Object configClass
-	) {
-		this.modId = modId;
-		this.type = type;
-		this.defaultTitle = defaultTitle;
-		this.baker = baker;
-		this.saver = saver;
-		this.configClass = configClass;
-		tooltip = defaultTitle + ":help";
-		root = this;
-		
-		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
-		synchronized (INSTANCES) {
-			if (!INSTANCES.containsKey(key))
-				INSTANCES.put(key, this);
-			else throw new IllegalStateException(
-			  "Cannot create more than one config per type per mod");
+	/**
+	 * Get the display name of the mod, or just its mod id if not found
+	 */
+	protected static String getModNameOrId(String modId) {
+		final Optional<ModInfo> first = ModList.get().getMods().stream()
+		  .filter(m -> modId.equals(m.getModId())).findFirst();
+		if (first.isPresent())
+			return first.get().getDisplayName();
+		return modId;
+	}
+	
+	@Internal public static void updateAllFileTranslations() {
+		for (SimpleConfig config : INSTANCES.values()) {
+			if (config.modConfig.getConfigData() != null) {
+				config.spec.save();
+			}
 		}
+	}
+	
+	/**
+	 * Retrieve the actual path of this file, if found
+	 */
+	public Optional<Path> getFilePath() {
+		SimpleConfigModConfig modConfig = getModConfig();
+		return modConfig.getConfigData() instanceof CommentedFileConfig? Optional.of(
+		  modConfig.getFullPath()) : Optional.empty();
 	}
 	
 	/**
@@ -287,17 +305,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal public String getFileName() {
 		return String.format("%s-%s.yaml", getModId(), getType().extension());
-	}
-	
-	/**
-	 * Get the display name of the mod, or just its mod id if not found
-	 */
-	protected static String getModNameOrId(String modId) {
-		final Optional<ModInfo> first = ModList.get().getMods().stream()
-		  .filter(m -> modId.equals(m.getModId())).findFirst();
-		if (first.isPresent())
-			return first.get().getDisplayName();
-		return modId;
 	}
 	
 	/**
@@ -365,6 +372,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * depending on the type of the config.
 	 */
 	public void save() {
+		if (!canEdit()) return;
 		bake();
 		if (saver != null)
 			saver.accept(this);
@@ -392,7 +400,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected void syncToServer() {
-		new CSimpleConfigSyncPacket(this).send();
+		if (SimpleConfigNetworkHandler.isConnectedToSimpleConfigServer())
+			new CSimpleConfigSyncPacket(this).send();
 	}
 	
 	protected CommentedConfig takeSnapshot(boolean fromGUI) {
@@ -483,14 +492,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		  "simpleconfig.config.category." + getType().name().toLowerCase());
 	}
 	
-	@Internal public static void updateAllFileTranslations() {
-		for (SimpleConfig config : INSTANCES.values()) {
-			if (config.modConfig.getConfigData() != null) {
-				config.spec.save();
-			}
-		}
-	}
-	
 	protected String getHeaderComment() {
 		String type = this.getType().extension();
 		type = Character.toUpperCase(type.charAt(0)) + type.substring(1);
@@ -521,14 +522,20 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return spec;
 	}
 	
+	protected boolean canEdit() {
+		return getType() != Type.SERVER || permissions.permissionFor(modId).getLeft().canEdit();
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(ConfigScreenBuilder configBuilder) {
 		if (background != null)
 			configBuilder.setDefaultBackgroundTexture(background);
 		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
+		boolean isServer = getType() == Type.SERVER;
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory(getType().extension(), getType() == Type.SERVER);
+			final ConfigCategory category = configBuilder.getOrCreateCategory(getType().extension(), isServer);
+			category.setEditable(canEdit());
 			category.setTitle(getTitle());
 			getFilePath().ifPresent(category::setContainingFile);
 			category.setDescription(
@@ -580,7 +587,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected CompletableFuture<Void> saveRemotePreset(String name, CommentedConfig config) {
-		return SimpleConfigSync.saveRemoteSnapshot(getModId(), type == Type.SERVER, name, config);
+		return SimpleConfigNetworkHandler.saveRemotePreset(getModId(), type == Type.SERVER, name, config);
 	}
 	
 	protected CompletableFuture<CommentedConfig> getLocalPreset(String name) {
@@ -603,8 +610,19 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
+	protected List<String> getDefaultPresets() {
+		try {
+			IResourceManager manager = Minecraft.getInstance().getResourceManager();
+			List<IResource> resources = manager
+			  .getAllResources(new ResourceLocation("simpleconfig", "config-presets"));
+			List<String> paths = resources.stream().map(r -> r.getLocation().getPath()).collect(Collectors.toList());
+			return paths;
+		} catch (IOException ignored) {}
+		return null;
+	}
+	
 	protected CompletableFuture<CommentedConfig> getRemotePreset(String name) {
-		return SimpleConfigSync.requestRemoteSnapshot(getModId(), type == Type.SERVER, name);
+		return SimpleConfigNetworkHandler.requestRemotePreset(getModId(), type == Type.SERVER, name);
 	}
 	
 	public Type getType() {
@@ -621,6 +639,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	public SimpleConfigModConfig getModConfig() {
 		return modConfig;
+	}
+	
+	protected interface IGUIEntryBuilder {}
+	
+	protected interface IGUIEntry extends IGUIEntryBuilder {
+		@Internal void buildGUI(
+		  ConfigCategory category, ConfigEntryBuilder entryBuilder);
 	}
 	
 	public static class NoSuchConfigEntryError extends RuntimeException {
@@ -671,12 +696,5 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		public ConfigReflectiveOperationException(String message, Exception cause) {
 			super(message, cause);
 		}
-	}
-	
-	protected interface IGUIEntryBuilder {}
-	
-	protected interface IGUIEntry extends IGUIEntryBuilder {
-		@Internal void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder);
 	}
 }

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.gui.AbstractDialog;
 import net.minecraft.client.gui.INestedGuiEventHandler;
 import net.minecraft.client.gui.screen.Screen;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -45,13 +46,20 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 	
 	default void renderDialogs(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		SortedDialogCollection dialogs = getDialogs();
-		List<AbstractDialog> current = dialogs.getDialogs();
 		dialogs.update();
-		mStack.push(); {
-			mStack.translate(0D, 0D, 200D);
-			for (AbstractDialog dialog : current)
-				if (!dialog.render(mStack, mouseX, mouseY, delta)) dialogs.remove(dialog);
-		} mStack.pop();
+		List<AbstractDialog> current = dialogs.getDialogs();
+		int size = current.size();
+		int count = 1;
+		for (AbstractDialog dialog : current) {
+			mStack.push(); {
+				mStack.translate(0D, 0D, count * 100D);
+				int mX = count == size? mouseX : -1;
+				int mY = count == size? mouseY : -1;
+				if (!dialog.render(mStack, mX, mY, delta))
+					dialogs.remove(dialog);
+				count++;
+			} mStack.pop();
+		}
 		dialogs.update();
 		current = dialogs.getDialogs();
 		if (!current.isEmpty() && this instanceof INestedGuiEventHandler)
@@ -59,77 +67,93 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 	}
 	
 	default void tickDialogs() {
-		for (AbstractDialog dialog : getDialogs().getDialogs()) dialog.tick();
+		List<AbstractDialog> current = getDialogs().getDialogs();
+		int i = 0;
+		for (AbstractDialog dialog : current) dialog.tick(++i == current.size());
 	}
 	
 	default boolean handleDialogsMouseClicked(double mouseX, double mouseY, int button) {
-		SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.mouseClicked(mouseX, mouseY, button)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.mouseClicked(mouseX, mouseY, button);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsMouseScrolled(double mouseX, double mouseY, double delta) {
-		SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.mouseScrolled(mouseX, mouseY, delta)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.mouseScrolled(mouseX, mouseY, delta);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsMouseDragged(
 	  double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
-		SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsMouseReleased(
 	  double mouseX, double mouseY, int button
 	) {
-		SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.mouseReleased(mouseX, mouseY, button)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.mouseReleased(mouseX, mouseY, button);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsKeyPressed(int keyCode, int scanCode, int modifiers) {
 		if (keyCode == 256) return handleDialogsEscapeKey(); // Esc
 		if (keyCode == 258) return handleDialogsChangeFocus(!Screen.hasShiftDown());
-		final SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.keyPressed(keyCode, scanCode, modifiers)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.keyPressed(keyCode, scanCode, modifiers);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsCharTyped(char codePoint, int modifiers) {
-		final SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.charTyped(codePoint, modifiers)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.charTyped(codePoint, modifiers);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsKeyReleased(int keyCode, int scanCode, int modifiers) {
-		final SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.keyReleased(keyCode, scanCode, modifiers)) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.keyReleased(keyCode, scanCode, modifiers);
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsEscapeKey() {
-		final SortedDialogCollection dialogs = getDialogs();
-		for (AbstractDialog dialog : dialogs.getDescendingDialogs())
-			if (dialog.escapeKeyPressed()) return true;
-		return !dialogs.isEmpty();
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			last.escapeKeyPressed();
+			return true;
+		}
+		return false;
 	}
 	
 	default boolean handleDialogsChangeFocus(boolean forward) {
-		final SortedDialogCollection dialogs = getDialogs();
-		List<AbstractDialog> current = dialogs.getDescendingDialogs();
-		if (!current.isEmpty()) {
-			AbstractDialog first = current.get(0);
-			if (!first.changeFocus(forward)) first.changeFocus(forward);
+		AbstractDialog last = getDialogs().getLast();
+		if (last != null) {
+			if (!last.changeFocus(forward)) last.changeFocus(forward);
 			return true;
 		}
 		return false;
@@ -147,6 +171,10 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		
 		public List<AbstractDialog> getDescendingDialogs() {
 			return reversed;
+		}
+		
+		public @Nullable AbstractDialog getLast() {
+			return reversed.isEmpty()? null : reversed.get(0);
 		}
 		
 		public List<AbstractDialog> getAdded() {

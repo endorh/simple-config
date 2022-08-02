@@ -98,15 +98,15 @@ public class EntryTripleEntry<
 		}
 		
 		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withWeights(
-		  @Range(from = 0, to = 1) float leftWeight, @Range(from = 0, to = 1) float rightWeight
+		  @Range(from = 0, to = 1) double leftWeight, @Range(from = 0, to = 1) double rightWeight
 		) {
 			if (leftWeight < 0 || rightWeight < 0) throw new IllegalArgumentException(
 			  "Weights can be negative. Specifically: " + leftWeight + ", " + rightWeight);
 			if (leftWeight + rightWeight > 1) throw new IllegalArgumentException(
 			  "Weights must add to less than 1. Specifically: " + leftWeight + ", " + rightWeight);
 			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> copy = copy();
-			copy.leftWeight = leftWeight;
-			copy.rightWeight = rightWeight;
+			copy.leftWeight = (float) leftWeight;
+			copy.rightWeight = (float) rightWeight;
 			return copy;
 		}
 		

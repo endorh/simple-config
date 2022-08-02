@@ -11,10 +11,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -67,8 +64,8 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	
 	protected ConfirmDialog(ITextComponent title) {
 		super(title);
-		cancelButton = TintedButton.of(120, 20, DialogTexts.GUI_CANCEL, p -> cancel());
-		confirmButton = TintedButton.of(120, 20, DialogTexts.GUI_PROCEED, p -> confirm());
+		cancelButton = TintedButton.of(DialogTexts.GUI_CANCEL, p -> cancel());
+		confirmButton = TintedButton.of(DialogTexts.GUI_PROCEED, p -> confirm());
 		addButton(cancelButton);
 		addButton(confirmButton);
 		setListener(cancelButton);
@@ -109,19 +106,18 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void layout() {
-		int w = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
+		int cW = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
+		int w = (int) MathHelper.clamp(getScreen().width * 0.4, 120, 800);
 		int titleWidth = font.getStringPropertyWidth(title);
-		if (titleWidth + 16 > w)
-			w = min(getScreen().width - 32, titleWidth + 16);
-		final int ww = w;
-		lines = getBody().stream().map(l -> font.trimStringToWidth(l, ww - 16)).collect(Collectors.toList());
+		w = max(w, titleWidth + 16);
+		lines = getBody().stream().map(l -> font.trimStringToWidth(l, cW - 16)).collect(Collectors.toList());
 		int bodyWidth = IntStream.concat(
 		  lines.stream().flatMap(Collection::stream).mapToInt(l -> font.func_243245_a(l)),
 		  Arrays.stream(checkBoxes).mapToInt(Widget::getWidth)
 		).max().orElse(w) + 16;
-		bodyWidth = max(bodyWidth, buttons.size() * 60);
-		if (bodyWidth > 120 && bodyWidth > titleWidth + 16)
-			w = bodyWidth;
+		bodyWidth = max(bodyWidth, buttons.size() * 80);
+		w = max(w, bodyWidth);
+		w = min(w, getScreen().width - 32);
 		int h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, getScreen().height * 0.9);
 		setWidth(w);
 		setHeight(h);
@@ -181,8 +177,8 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	public List<ITextComponent> getBody() {
 		return body;
 	}
-	public void setBody(List<ITextComponent> body) {
-		this.body = body;
+	public void setBody(List<? extends ITextComponent> body) {
+		this.body = new ArrayList<>(body);
 	}
 	
 	public void setCancelText(ITextComponent text) {

@@ -8,15 +8,14 @@ import net.minecraft.util.text.TextFormatting;
 public class SimpleConfigIcons {
 	private static final ResourceLocation TEXTURE = new ResourceLocation(
 	  SimpleConfigMod.MOD_ID, "textures/gui/simple_config/config_menu.png");
-	private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
+	private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
 	
 	public static final Icon // Size 16×16
 	  CLIENT = b.size(16, 16).at(240, 104),
 	  SERVER = b.at(240, 120);
 	
 	public static class Buttons {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 136);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 136);
 		public static final Icon // Size 20×20
 		  RESET = b.size(20, 20).at(0, 0),
 		  RESET_GROUP = b.at(20, 0),
@@ -34,31 +33,27 @@ public class SimpleConfigIcons {
 		  UNDO = b.at(40, 60),
 		  REDO = b.at(60, 60),
 		  ACCEPT = b.at(80, 60);
-		
 		public static final Icon // Size 18×18
 		  DOWN = b.size(18, 18).at(220, 66),
 		  UP = b.at(238, 66);
-		
 		public static final Icon // Size 18×18
 		  GEAR = b.twoLevel(true).offset(0, 76).size(18, 18).at(0, 0),
 		  KEYBOARD = b.at(18, 0),
 		  COPY = b.at(36, 0),
 		  SELECT_ALL = b.at(54, 0),
 		  INVERT_SELECTION = b.at(72, 0);
-		
 		public static final Icon // Size 40×20
 		  CONFIRM_DRAG_LEFT = b.twoLevel(false).offset(0, 36).size(40, 20).at(0, 0),
 		  CONFIRM_DRAG_RIGHT = b.at(0, 20);
-		
 		public static final Icon // 12×18
 		  LEFT_TAB = b.offset(220, 0).size(12, 18).level(12, 0).at(0, 18),
 		  RIGHT_TAB = b.level(-12, 0).at(24, 0);
+		static { b = null; }
 	}
 	
 	public static class Actions {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
 		  .offset(240, 104).reverseOffset(true, false);
-		
 		public static final Icon // Size 16×16
 		  NONE = b.size(16, 16).at(0, 0),
 		  ASSIGN = b.at(0, 16),
@@ -70,20 +65,21 @@ public class SimpleConfigIcons {
 		  SUBTRACT_CYCLE = b.at(48, 16),
 		  CYCLE = b.at(64, 0),
 		  CYCLE_REVERSE = b.at(64, 16);
+		static { b = null; }
 	}
 	
 	public static class SearchBar {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(112, 0);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(112, 0);
 		public static final Icon // Size 18×18
 		  SEARCH_TOOLTIPS = b.twoLevel(true).size(18, 18).at(0, 0),
 		  SEARCH_REGEX = b.at(18, 0),
 		  SEARCH_CASE_SENSITIVE = b.at(36, 0),
 		  SEARCH_FILTER = b.at(54, 0);
+		static { b = null; }
 	}
 	
 	public static class Status {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(66, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(66, 0);
 		public static final Icon // Size 15×15
 		  ERROR = b.level(0, 0).size(15, 15).at(0, 0),
 		  WARNING = b.at(15, 0),
@@ -91,10 +87,11 @@ public class SimpleConfigIcons {
 		  CHECKMARK = b.at(15, 15),
 		  H_DOTS = b.at(30, 0),
 		  V_DOTS = b.at(30, 15);
+		static { b = null; }
 	}
 	
 	public static class Widgets {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(184, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(184, 0);
 		public static final Icon // Size 18×18
 		  CHECKBOX_FLAT = b.size(18, 18).at(0, 0),
 		  CHECKBOX = b.at(18, 0);
@@ -106,54 +103,61 @@ public class SimpleConfigIcons {
 		  TREE_ADD = b.offset(60, 112).size(20, 20).at(0, 0),
 		  TREE_ADD_GROUP = b.at(20, 0),
 		  TREE_REMOVE = b.at(40, 0);
+		static { b = null; }
 	}
 	
 	public static class Presets {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(214, 76);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(200, 76);
 		public static final Icon // Size 14×14
 		  CLIENT_LOCAL = b.size(14, 14).at(0, 0),
 		  CLIENT_REMOTE = b.at(14, 0),
 		  CLIENT_SAVE = b.at(28, 0),
+		  CLIENT_RESOURCE = b.at(42, 0),
 		  SERVER_LOCAL = b.at(0, 14),
 		  SERVER_REMOTE = b.at(14, 14),
-		  SERVER_SAVE = b.at(28, 14);
+		  SERVER_SAVE = b.at(28, 14),
+		  SERVER_RESOURCE = b.at(42, 14);
+		static { b = null; }
+	}
+	
+	public static class Hotkeys {
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(144, 76);
+		public static final Icon // Size 14×14
+		  LOCAL_HOTKEY = b.size(14, 14).at(0, 0),
+		  REMOTE_HOTKEY = b.at(0, 14),
+		  SAVE_HOTKEY = b.at(14, 0),
+		  RESOURCE_HOTKEY = b.at(14, 14);
+		static { b = null; }
 	}
 	
 	public static class Lists {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
 		public static final Icon // Size 9×9
 		  ADD = b.size(9, 9).at(0, 0),
 		  REMOVE = b.at(9, 0),
 		  EXPAND = b.at(30, 0);
-		
 		public static final Icon // Size 12×9
 		  INSERT_ARROW = b.size(12, 9).at(18, 0),
 		  DELETE_ARROW = b.at(18, 18);
-		
 		public static final Icon // Size 7×4
 		  UP_ARROW = b.level(9, 0).size(7, 4).at(1, 27),
 		  DOWN_ARROW = b.at(1, 32);
+		static { b = null; }
 	}
 	
 	public static class Entries {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(39, 0);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(39, 0);
 		public static final Icon // Size 9×9
 		  EXPAND = b.size(9, 9).at(0, 0),
 		  TEXT_EXPAND = b.at(9, 0),
 		  SLIDER_EDIT = b.at(18, 0);
-		
 		public static final Icon // Size 14×14
-		  ERROR = b.offset(214, 76).reverseOffset(true, false).size(14, 14).at(0, 0),
+		  ERROR = b.offset(200, 76).reverseOffset(true, false).size(14, 14).at(0, 0),
 		  HELP = b.at(14, 0),
 		  NOT_PERSISTENT = b.at(0, 14),
 		  REQUIRES_RESTART = b.at(14, 14);
-		
 		public static final Icon // Size 18×18
 		  LESS_EQUAL = b.offset(162, 36).reverseOffset(false, false).size(18, 18).at(0, 0);
-		
 		@SuppressWarnings("ConstantConditions")
 		public static final Icon // Size 20×20
 		  HELP_SEARCH = b.offset(0, 112).level(0, 0).size(20, 20).at(0, 0),
@@ -163,32 +167,30 @@ public class SimpleConfigIcons {
 		  MERGE_ACCEPTED = MERGE.withTint(0xFF80F090),
 		  MERGE_CONFLICT = MERGE.withTint(0xFFF0BD80),
 		  CLOSE_X = b.at(40, 0);
+		static { b = null; }
 	}
 	
 	public static class ComboBox {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(132, 36);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(132, 36);
 		public static final Icon // Size 20×20
 		  UNKNOWN = b.size(20, 20).at(0, 0),
 		  ERROR = b.at(0, 20);
-		
 		public static final Icon // Size
 		  DROP_DOWN_ARROW = b.size(10, 10).at(20, 0);
+		static { b = null; }
 	}
 	
 	public static class ColorPicker {
-		private static final IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(40, 36);
-		
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(40, 36);
 		public static final Icon // Size 40×40
 		  CHESS_BOARD = b.size(40, 40).at(0, 0),
 		  DIAGONAL_TEXTURE = b.at(40, 0);
-		
 		public static final Icon // Size 5×7
 		  ARROW_RIGHT = b.size(5, 7).at(80, 0),
 		  ARROW_LEFT = b.at(85, 0);
-		
 		public static final Icon // Size 11×11
 		  POINTER = b.size(11, 11).at(80, 14);
+		static { b = null; }
 	}
 	
 	public static final AnimatedIcon SPINNING_CUBE = AnimatedIcon.ofStripe(
@@ -197,4 +199,5 @@ public class SimpleConfigIcons {
 	public static final AnimatedIcon HOTKEY_RECORDING = AnimatedIcon.ofStripe(
 	  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/hotkey_recording.png"),
 	  18, 18, 16, 50);
+	static { b = null; }
 }

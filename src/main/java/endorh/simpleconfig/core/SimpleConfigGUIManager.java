@@ -2,7 +2,6 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
-import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
@@ -107,7 +106,7 @@ public class SimpleConfigGUIManager {
 			  "No Simple Config GUI registered for mod id: \"" + modId + "\"");
 		final Minecraft mc = Minecraft.getInstance();
 		boolean hasPermission =
-		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
+		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
 		final List<SimpleConfig> orderedConfigs = configs.values().stream()
 		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
 		  .sorted(typeOrder)
@@ -144,7 +143,7 @@ public class SimpleConfigGUIManager {
 			  "No Simple Config GUI registered for mod id: \"" + modId + "\"");
 		final Minecraft mc = Minecraft.getInstance();
 		boolean hasPermission =
-		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId) == ConfigPermission.ALLOW;
+		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
 		final List<SimpleConfig> orderedConfigs = configs.values().stream()
 		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
 		  .sorted(typeOrder)

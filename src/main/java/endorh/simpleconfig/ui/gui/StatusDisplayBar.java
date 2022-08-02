@@ -223,15 +223,15 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 						  }
 					  });
 					  d.addButton(TintedButton.of(
-					    100, 20, 0x8081542F, new TranslationTextComponent(
-						   "simpleconfig.ui.action.accept_all_changes"), b -> {
+					    new TranslationTextComponent(
+						   "simpleconfig.ui.action.accept_all_changes"), 0x8081542F, b -> {
 						    d.cancel(true);
 						    screen.handleExternalChangeResponse(ExternalChangeResponse.ACCEPT_ALL);
 					    }
 					  ));
 					  d.addButton(Util.make(TintedButton.of(
-					    100, 20, 0x80683498, new TranslationTextComponent(
-						   "simpleconfig.ui.action.accept_non_conflicting_changes"), b -> {
+					    new TranslationTextComponent(
+						   "simpleconfig.ui.action.accept_non_conflicting_changes"), 0x80683498, b -> {
 						    d.cancel(true);
 						    screen.handleExternalChangeResponse(
 							   ExternalChangeResponse.ACCEPT_NON_CONFLICTING);

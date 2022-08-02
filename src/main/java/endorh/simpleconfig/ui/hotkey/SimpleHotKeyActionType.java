@@ -154,7 +154,13 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 			SimpleHotKeyAction<?, ?> that = (SimpleHotKeyAction<?, ?>) o;
 			return Objects.equals(entry, that.entry) &&
 			       Objects.equals(action, that.action) &&
-			       Objects.equals(storage, that.storage);
+			       equalsStorage(storage, that.storage);
+		}
+		
+		protected boolean equalsStorage(Object a, Object b) {
+			if (a instanceof Number && b instanceof Number)
+				return Float.compare(((Number) a).floatValue(), ((Number) b).floatValue()) == 0;
+			return Objects.equals(a, b);
 		}
 		
 		@Override public int hashCode() {

@@ -64,12 +64,12 @@ public class EntryPairEntry<
 		}
 		
 		public Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> withSplitPosition(
-		  @Range(from = 0, to = 1) float splitPosition
+		  @Range(from = 0, to = 1) double splitPosition
 		) {
 			if (splitPosition < 0 || splitPosition > 1) throw new IllegalArgumentException(
 			  "Split position must be between 0~1. Specifically: " + splitPosition);
 			final Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> copy = copy();
-			copy.splitPos = splitPosition;
+			copy.splitPos = (float) splitPosition;
 			return copy;
 		}
 		

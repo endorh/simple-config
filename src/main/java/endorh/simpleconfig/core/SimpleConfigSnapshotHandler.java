@@ -2,8 +2,8 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
+import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -53,8 +53,24 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 	@Override public boolean canSaveRemote() {
 		final Minecraft mc = Minecraft.getInstance();
 		if (mc.getConnection() == null || mc.player == null) return false;
-		return SimpleConfigMod.ServerConfig.permissions.permissionFor(mc.player, modId) ==
-		       ConfigPermission.ALLOW;
+		return SimpleConfigMod.ServerConfig.permissions.permissionFor(mc.player, modId).getRight().canSave();
+	}
+	
+	@Override public CompletableFuture<CommentedConfig> getPresetSnapshot(Preset preset) {
+		final SimpleConfig c = configMap.get(preset.isServer()? Type.SERVER : Type.CLIENT);
+		if (c == null) return failedFuture(new IllegalArgumentException("Missing config type"));
+		switch (preset.getLocation()) {
+			case LOCAL:
+				CompletableFuture<CommentedConfig> future = c.getLocalPreset(preset.getName());
+				if (!future.isDone()) future.completeExceptionally(new IllegalStateException(
+				  "Local presets must resolve immediately"));
+				return future;
+			case REMOTE: return c.getRemotePreset(preset.getName());
+			case RESOURCE: return CompletableFuture.completedFuture(
+			  SimpleConfigResourcePresetHandler.INSTANCE.getResourcePreset(modId, preset));
+			default: return failedFuture(new IllegalArgumentException(
+			  "Unknown preset location: " + preset.getLocation()));
+		}
 	}
 	
 	@Override public CommentedConfig getLocal(String name, Type type) {
@@ -71,6 +87,11 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 		final SimpleConfig c = configMap.get(type);
 		return c != null? c.getRemotePreset(name) :
 		       failedFuture(new IllegalArgumentException("Missing config type"));
+	}
+	
+	@Override public CommentedConfig getResource(String name, Type type) {
+		Preset p = Preset.remote(name, type == Type.SERVER);
+		return SimpleConfigResourcePresetHandler.INSTANCE.getResourcePreset(modId, p);
 	}
 	
 	@Override public Optional<Throwable> saveLocal(
@@ -104,28 +125,30 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 		return saveRemote(name, type, null);
 	}
 	
-	@Override public List<String> getLocalSnapshotNames() {
+	@Override public List<Preset> getLocalPresets() {
 		final SimpleConfig c = configMap.get(Type.CLIENT);
 		if (c == null) return emptyList();
 		final File dir = LOCAL_PRESETS_DIR.toFile();
 		Pattern pattern = Pattern.compile(
-		  "^(?<file>" + c.getModId() + "-(?<preset>.+))\\.yaml$");
+		  "^(?<file>" + c.getModId() + "-(?<type>\\w++)-(?<name>.+))\\.yaml$");
 		final File[] files =
 		  dir.listFiles((d, name) -> pattern.matcher(name).matches());
-		return files == null? emptyList() :
-		       Arrays.stream(files).map(
-		         f -> {
-			         Matcher m = pattern.matcher(f.getName());
-						if (!m.matches()) return null;
-						return m.group("preset");
-		         }
-		       ).filter(Objects::nonNull).collect(Collectors.toList());
+		return files == null? emptyList() : Arrays.stream(files).map(f -> {
+			Matcher m = pattern.matcher(f.getName());
+			if (!m.matches()) return null;
+			return Preset.local(
+			  m.group("name"), "server".equals(m.group("type")));
+		}).filter(Objects::nonNull).collect(Collectors.toList());
 	}
 	
-	@Override public CompletableFuture<List<String>> getRemoteSnapshotNames() {
+	@Override public CompletableFuture<List<Preset>> getRemotePresets() {
 		final SimpleConfig c = configMap.get(Type.SERVER);
 		if (c == null) return CompletableFuture.completedFuture(emptyList());
-		return SimpleConfigSync.requestSnapshotList(c.getModId());
+		return SimpleConfigNetworkHandler.requestPresetList(c.getModId());
+	}
+	
+	@Override public List<Preset> getResourcePresets() {
+		return SimpleConfigResourcePresetHandler.INSTANCE.getResourcePresets(modId);
 	}
 	
 	@Override public void setExternalChangeHandler(IExternalChangeHandler handler) {

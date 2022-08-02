@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
@@ -11,6 +12,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.RectangleAnimator;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -77,7 +79,7 @@ public abstract class AbstractDialog
 		return (T) screen;
 	}
 	
-	public void tick() {}
+	public void tick(boolean top) {}
 	
 	public void copyText() {
 		Minecraft.getInstance().keyboardListener.setClipboardString(getText());
@@ -159,6 +161,8 @@ public abstract class AbstractDialog
 		if (handleOverlaysMouseClicked(mouseX, mouseY, button)) return true;
 		if (!isMouseInside(mouseX, mouseY) && !isPersistent()) {
 			cancel();
+			Minecraft.getInstance().getSoundHandler()
+			  .play(SimpleSound.master(SimpleConfigMod.UI_TAP, 0.8F));
 			return true;
 		}
 		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);

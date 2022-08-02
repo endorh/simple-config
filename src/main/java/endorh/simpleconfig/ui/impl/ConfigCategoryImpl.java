@@ -29,6 +29,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
 	protected boolean isServer;
+	protected boolean isEditable = true;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
 	
@@ -86,6 +87,14 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	
 	@Override public boolean isServer() {
 		return isServer;
+	}
+	
+	@Override public boolean isEditable() {
+		return isEditable;
+	}
+	
+	@Override public void setEditable(boolean editable) {
+		isEditable = editable;
 	}
 	
 	@Override public void setColor(int color) {
