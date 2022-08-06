@@ -51,7 +51,7 @@ public class EntryListEntry
 		if (translation != null)
 			setTranslation(translation);
 		if (tooltip != null)
-			setTooltip(tooltip);
+			setTooltipKey(tooltip);
 	}
 	
 	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
@@ -83,13 +83,13 @@ public class EntryListEntry
 	}
 	
 	@Override
-	protected void setTooltip(String translation) {
-		super.setTooltip(translation);
+	protected void setTooltipKey(String translation) {
+		super.setTooltipKey(translation);
 		if (tooltip != null)
 			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX))
-				entry.setTooltip(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
-				                 + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
-			else entry.setTooltip(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
+				entry.setTooltipKey(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
+				                    + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
+			else entry.setTooltipKey(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
 		self();
 	}
 	

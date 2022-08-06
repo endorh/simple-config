@@ -12,6 +12,8 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.ArrangeableTreeView;
 import endorh.simpleconfig.ui.gui.widget.treeview.ArrangeableTreeViewCaption;
 import endorh.simpleconfig.ui.gui.widget.treeview.ArrangeableTreeViewEntry;
+import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction.WidgetDragBroadcastableAction;
+import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableWidget;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
@@ -42,6 +44,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 	private final Supplier<IDialogCapableScreen> dialogScreenSupplier;
 	private @Nullable String contextModId = null;
 	private final BiConsumer<String, ConfigHotKey> hotKeyEditor;
+	public static final WidgetDragBroadcastableAction<CheckboxButton> ENABLE_ACTION = (b, s) -> b.setToggle(s.getValue());
 	
 	public ConfigHotKeyTreeView(
 	  Supplier<IDialogCapableScreen> screenSupplier, IOverlayCapableContainer overlayContainer,
@@ -136,6 +139,14 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			return (ConfigHotKeyTreeView) super.getTree();
 		}
 		
+		@Override public int getOwnHeight() {
+			return 22;
+		}
+		
+		@Override public int getVerticalPadding() {
+			return 1;
+		}
+		
 		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 			if (super.handleNavigationKey(keyCode, scanCode, modifiers)) return true;
 			if (Screen.hasAltDown()) {
@@ -157,13 +168,13 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			private final ConfigHotKey hotKey;
 			private final TextFieldWidgetEx textField;
 			private final HotKeyButton hotKeyButton;
-			private final CheckboxButton enabledCheckbox;
+			private final DragBroadcastableWidget<CheckboxButton> enabledCheckbox;
 			private final Map<String, ConfigHotKeyTreeViewModEntry> entries = new HashMap<>();
 			private final Comparator<String> modOrder = (l, r) -> {
 				ConfigHotKeyTreeView tree = getTree();
 				String contextModId = tree.getContextModId();
 				return new CompareToBuilder()
-				  .append(l.equals(contextModId), r.equals(contextModId))
+				  .append(!l.equals(contextModId), !r.equals(contextModId))
 				  .append(entries.get(l).getCount(), entries.get(r).getCount())
 				  .append(l, r)
 				  .build();
@@ -180,7 +191,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField.setEmptyHint(new TranslationTextComponent(
 				  "simpleconfig.ui.hotkey.unnamed.hint"));
 				hotKeyButton = HotKeyButton.ofKeyAndMouse(screenSupplier, hotKey.getHotKey());
-				enabledCheckbox = CheckboxButton.of(hotKey.isEnabled(), StringTextComponent.EMPTY);
+				enabledCheckbox = draggable(
+				  ENABLE_ACTION, CheckboxButton.of(hotKey.isEnabled(), StringTextComponent.EMPTY));
 				Stream.of(hotKeyButton, textField, enabledCheckbox).forEach(listeners::add);
 				for (String id: SimpleConfig.getConfigModIds())
 					entries.put(id, new ConfigHotKeyTreeViewModEntry(hotKey, id));
@@ -189,7 +201,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			public ConfigHotKey buildHotKey() {
 				hotKey.setKeyCode(hotKeyButton.getKey());
 				hotKey.setName(textField.getText());
-				hotKey.setEnabled(enabledCheckbox.getValue());
+				hotKey.setEnabled(enabledCheckbox.getWidget().getValue());
 				return this.hotKey;
 			}
 			
@@ -212,15 +224,21 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				  .map(entries::get).forEach(subEntries::add);
 			}
 			
+			@Override public void render(
+			  MatrixStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
+			) {
+				if (getParent().getFocusedSubEntry() != this) setExpanded(false);
+				super.render(mStack, x, y, width, mouseX, mouseY, delta);
+			}
+			
 			@Override public void renderContent(
 			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
-				if (getParent().getFocusedSubEntry() != this) setExpanded(false);
 				pos(hotKeyButton, x, y);
 				int hotKeyButtonWidth = min(150, (w - 46) / 2);
 				hotKeyButton.setExactWidth(hotKeyButtonWidth);
-				pos(textField, x + hotKeyButtonWidth + 2, y + 6, w - 46 - hotKeyButtonWidth, h - 4);
-				pos(enabledCheckbox, x + w - 22, y + 1);
+				pos(textField, x + hotKeyButtonWidth + 4, y + 6, w - 48 - hotKeyButtonWidth, h - 4);
+				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
 				renderAll(mStack, mouseX, mouseY, delta,
 				          hotKeyButton, textField, enabledCheckbox);
@@ -253,7 +271,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				return modId;
 			}
 			
-			@Override public boolean canBeAddedToSelection(Set<ConfigHotKeyTreeViewEntry> selection) {
+			@Override public boolean isSelectable() {
 				return false;
 			}
 			
@@ -261,14 +279,10 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				return false;
 			}
 			
-			@Override public int getOwnHeight() {
-				return 22;
-			}
-			
 			@Override public void renderContent(
 			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
-				pos(editButton, x + 2, y, 18, h);
+				pos(editButton, x + 2, y + 1, 18, 18);
 				editButton.render(mStack, mouseX, mouseY, delta);
 				
 				int count = getCount();
@@ -278,8 +292,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				int textY = y + h / 2 - font.FONT_HEIGHT / 2;
 				drawString(
 				  mStack, font, getDisplayText(),
-				  textX, textY,
-				  count == 0? 0xE0A0A0A0 : 0xE0E0E0E0);
+				  textX, textY, count == 0? 0xE0A0A0A0 : 0xE0E0E0E0);
 				ConfigHotKeyTreeView tree = getTree();
 				if (textX <= mouseX && mouseX < tree.getArea().getMaxX()
 				    && textY <= mouseY && mouseY < textY + font.FONT_HEIGHT) {
@@ -358,7 +371,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		public static class ConfigHotKeyTreeViewGroupEntry extends ConfigHotKeyTreeViewEntry {
 			private final TextFieldWidgetEx textField;
 			private final HotKeyButton hotKeyButton;
-			private final CheckboxButton enabledCheckbox;
+			private final DragBroadcastableWidget<CheckboxButton> enabledCheckbox;
 			
 			public ConfigHotKeyTreeViewGroupEntry(
 			  Supplier<IModalInputCapableScreen> screenSupplier, ConfigHotKeyGroup group
@@ -376,7 +389,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField.setEmptyHint(new TranslationTextComponent(
 				  "simpleconfig.ui.hotkey.unnamed.hint"));
 				hotKeyButton = HotKeyButton.ofKeyAndMouse(screenSupplier, group.getHotKey());
-				enabledCheckbox = CheckboxButton.of(group.isEnabled(), StringTextComponent.EMPTY);
+				enabledCheckbox = draggable(
+				  ENABLE_ACTION, CheckboxButton.of(group.isEnabled(), StringTextComponent.EMPTY));
 				Stream.of(textField, hotKeyButton, enabledCheckbox).forEach(listeners::add);
 				setExpanded(true, false);
 			}
@@ -392,12 +406,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				}).filter(Objects::nonNull).forEach(group.getEntries()::add);
 				group.setName(textField.getText());
 				group.setKeyCode(hotKeyButton.getKey());
-				group.setEnabled(enabledCheckbox.getValue());
+				group.setEnabled(enabledCheckbox.getWidget().getValue());
 				return group;
-			}
-			
-			@Override public int getOwnHeight() {
-				return 24;
 			}
 			
 			@Override
@@ -418,9 +428,14 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				pos(textField, x + 4, y + 6, w - 30 - hotKeyButtonWidth, h);
 				pos(hotKeyButton, x + w - 24 - hotKeyButtonWidth, y, hotKeyButtonWidth);
 				hotKeyButton.setExactWidth(hotKeyButtonWidth);
-				pos(enabledCheckbox, x + w - 22, y + 1);
+				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
-				renderAll(mStack, mouseX, mouseY, delta, textField, hotKeyButton, enabledCheckbox);
+				renderAll(mStack, mouseX, mouseY, delta,
+				          textField, hotKeyButton, enabledCheckbox);
+			}
+			
+			@Override public boolean isForceRenderAsGroup() {
+				return true;
 			}
 		}
 	}

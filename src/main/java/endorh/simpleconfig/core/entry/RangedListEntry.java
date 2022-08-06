@@ -5,6 +5,7 @@ import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,7 +45,7 @@ public abstract class RangedListEntry<
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Self min(@NotNull V min) {
+		@Contract(pure=true) public Self min(@NotNull V min) {
 			Self copy = copy();
 			copy.min = min;
 			copy = copy.elemError(clamp(elemErrorSupplier));
@@ -54,7 +55,7 @@ public abstract class RangedListEntry<
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Self max(@NotNull V max) {
+		@Contract(pure=true) public Self max(@NotNull V max) {
 			Self copy = copy();
 			copy.max = max;
 			copy = copy.elemError(clamp(elemErrorSupplier));
@@ -64,7 +65,7 @@ public abstract class RangedListEntry<
 		/**
 		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
 		 */
-		public Self range(V min, V max) {
+		@Contract(pure=true) public Self range(V min, V max) {
 			Self copy = copy();
 			copy.min = min;
 			copy.max = max;
@@ -72,8 +73,8 @@ public abstract class RangedListEntry<
 			return copy;
 		}
 		
-		@Override
-		public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
+		@Contract(pure=true)
+		@Override public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
 			return super.elemError(clamp(errorSupplier));
 		}
 		

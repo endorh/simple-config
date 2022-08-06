@@ -161,7 +161,7 @@ public interface ModifierKeyCode {
 		return this.setModifier(Modifier.none());
 	}
 	
-	String toString();
+	@Override String toString();
 	
 	default ITextComponent getLayoutAgnosticLocalizedName() {
 		return getLayoutAgnosticLocalizedName(Style.EMPTY, Style.EMPTY);

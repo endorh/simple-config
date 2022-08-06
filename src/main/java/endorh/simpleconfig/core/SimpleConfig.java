@@ -11,7 +11,6 @@ import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigSyncPacket;
-import endorh.simpleconfig.core.commands.SimpleConfigCommand;
 import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
@@ -36,9 +35,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.Type;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -102,16 +103,16 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 */
 	protected List<IGUIEntry> order;
 	protected ForgeConfigSpec spec;
-	@OnlyIn(Dist.CLIENT)
-	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
+	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
-	@OnlyIn(Dist.CLIENT)
-	protected @Nullable AbstractConfigScreen gui;
+	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
 	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
-	private SimpleConfigModConfig modConfig;
-	private SimpleConfigCommand command;
+	private ModConfig modConfig;
+	private ModContainer modContainer;
+	private @Nullable LiteralArgumentBuilder<CommandSource> commandRoot;
 	private Map<String, NodeComments> comments = new HashMap<>();
+	private SimpleConfigCommentedYamlFormat configFormat = SimpleConfigCommentedYamlFormat.forConfig(this);
 	
 	@Internal protected SimpleConfig(
 	  String modId, ModConfig.Type type, String defaultTitle,
@@ -237,7 +238,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	/**
 	 * Get the display name of the mod, or just its mod id if not found
 	 */
-	protected static String getModNameOrId(String modId) {
+	@Internal public static String getModNameOrId(String modId) {
 		final Optional<ModInfo> first = ModList.get().getMods().stream()
 		  .filter(m -> modId.equals(m.getModId())).findFirst();
 		if (first.isPresent())
@@ -247,17 +248,21 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal public static void updateAllFileTranslations() {
 		for (SimpleConfig config : INSTANCES.values()) {
-			if (config.modConfig.getConfigData() != null) {
+			if (config.modConfig != null && config.modConfig.getConfigData() != null) {
 				config.spec.save();
 			}
 		}
+	}
+	
+	public boolean isWrapper() {
+		return !(modConfig instanceof SimpleConfigModConfig);
 	}
 	
 	/**
 	 * Retrieve the actual path of this file, if found
 	 */
 	public Optional<Path> getFilePath() {
-		SimpleConfigModConfig modConfig = getModConfig();
+		ModConfig modConfig = getModConfig();
 		return modConfig.getConfigData() instanceof CommentedFileConfig? Optional.of(
 		  modConfig.getFullPath()) : Optional.empty();
 	}
@@ -285,10 +290,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		this.children = unmodifiableMap(children);
 		defaultCategoryIcon = icon;
 		defaultCategoryColor = color;
-		this.command = new SimpleConfigCommand(this, commandRoot);
+		this.commandRoot = commandRoot;
 	}
 	
-	@Internal protected void build(SimpleConfigModConfig modConfig) {
+	@Internal protected void build(ModContainer container, ModConfig modConfig) {
+		this.modContainer = container;
 		this.modConfig = modConfig;
 	}
 	
@@ -305,6 +311,23 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal public String getFileName() {
 		return String.format("%s-%s.yaml", getModId(), getType().extension());
+	}
+	
+	@Override public @Nullable AbstractSimpleConfigEntryHolder getChildOrNull(String path) {
+		String[] split = DOT.split(path, 2);
+		if (split[0].isEmpty()) return super.getChildOrNull(split[1]);
+		return super.getChildOrNull(path);
+	}
+	
+	@Override protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
+		String[] split = DOT.split(path, 2);
+		if (split[0].isEmpty()) {
+			AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(split[1]);
+			if (entry != null) //noinspection unchecked
+				return (AbstractConfigEntry<T, ?, ?, ?>) entry;
+			return super.getSubEntry(split[1]);
+		}
+		return super.getSubEntry(path);
 	}
 	
 	/**
@@ -352,13 +375,15 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			baker.accept(this);
 	}
 	
-	@Override protected void removeGUI() {
+	@OnlyIn(Dist.CLIENT) @Override protected void removeGUI() {
 		super.removeGUI();
 		gui = null;
 		snapshotHandler = null;
 	}
 	
-	protected void setGUI(AbstractConfigScreen gui, @Nullable SimpleConfigSnapshotHandler handler) {
+	@OnlyIn(Dist.CLIENT) protected void setGUI(
+	  AbstractConfigScreen gui, @Nullable SimpleConfigSnapshotHandler handler
+	) {
 		this.gui = gui;
 		snapshotHandler = handler;
 	}
@@ -409,7 +434,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected CommentedConfig takeSnapshot(boolean fromGUI, @Nullable Set<String> selectedPaths) {
-		final CommentedConfig config = CommentedConfig.of(LinkedHashMap::new, getModConfig().getConfigFormat());
+		if (selectedPaths != null) selectedPaths = selectedPaths.stream()
+		  .map(p -> p.startsWith(".")? p.substring(1) : p)
+		  .collect(Collectors.toSet());
+		final CommentedConfig config = CommentedConfig.of(LinkedHashMap::new, SimpleConfigCommentedYamlFormat.forConfig(this));
 		saveSnapshot(config, fromGUI, selectedPaths);
 		return config;
 	}
@@ -418,6 +446,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	  CommentedConfig config, boolean intoGUI, @Nullable Set<String> selectedPaths
 	) {
 		if (intoGUI) {
+			if (FMLEnvironment.dist != Dist.CLIENT) throw new IllegalStateException(
+			  "Cannot load snapshot into GUI on server");
 			AbstractConfigScreen screen = getGUI();
 			if (screen != null) {
 				screen.runAtomicTransparentAction(
@@ -443,10 +473,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	@SubscribeEvent
 	protected void onModConfigEvent(final ModConfig.ModConfigEvent event) {
 		final ModConfig c = event.getConfig();
-		final ModConfig.Type type = c.getType();
-		final Pair<String, ModConfig.Type> key = Pair.of(c.getModId(), type);
-		if (INSTANCES.containsKey(key)) {
-			final SimpleConfig config = INSTANCES.get(key);
+		if (c instanceof SimpleConfigModConfig) {
+			SimpleConfig config = ((SimpleConfigModConfig) c).getSimpleConfig();
 			config.bake();
 			if (type == ModConfig.Type.SERVER)
 				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> config::syncToClients);
@@ -502,7 +530,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		updateComments(comments);
 		String headerComment = getHeaderComment().trim();
 		List<CommentLine> headerLines = Arrays.stream(LINE_BREAK.split(headerComment))
-		  .map(l -> commentLine(" " + l))
+		  .map(l -> commentLine("# " + l))
 		  .collect(Collectors.toList());
 		headerLines.add(blankLine());
 		comments.put("", Util.make(new NodeComments(), c -> c.setBlockComments(headerLines)));
@@ -532,9 +560,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			configBuilder.setDefaultBackgroundTexture(background);
 		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
-		boolean isServer = getType() == Type.SERVER;
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory(getType().extension(), isServer);
+			final ConfigCategory category = configBuilder.getOrCreateCategory("", type);
 			category.setEditable(canEdit());
 			category.setTitle(getTitle());
 			getFilePath().ifPresent(category::setContainingFile);
@@ -563,7 +590,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		if (dest.isDirectory())
 			return failedFuture(new FileNotFoundException(dest.getPath()));
 		if (config != null) {
-			SimpleConfigCommentedYamlFormat format = getModConfig().getConfigFormat();
+			SimpleConfigCommentedYamlFormat format = getConfigFormat();
 			final ByteArrayOutputStream os = new ByteArrayOutputStream();
 			try {
 				format.createWriter(false).write(config, os);
@@ -587,7 +614,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected CompletableFuture<Void> saveRemotePreset(String name, CommentedConfig config) {
-		return SimpleConfigNetworkHandler.saveRemotePreset(getModId(), type == Type.SERVER, name, config);
+		return SimpleConfigNetworkHandler.saveRemotePreset(getModId(), type, name, config);
 	}
 	
 	protected CompletableFuture<CommentedConfig> getLocalPreset(String name) {
@@ -599,7 +626,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			return future;
 		}
 		try {
-			SimpleConfigCommentedYamlFormat format = getModConfig().getConfigFormat();
+			SimpleConfigCommentedYamlFormat format = getConfigFormat();
 			final CommentedConfig config = format.createParser(false)
 			  .parse(new ByteArrayInputStream(FileUtils.readFileToByteArray(file)));
 			future.complete(config);
@@ -622,7 +649,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected CompletableFuture<CommentedConfig> getRemotePreset(String name) {
-		return SimpleConfigNetworkHandler.requestRemotePreset(getModId(), type == Type.SERVER, name);
+		return SimpleConfigNetworkHandler.requestRemotePreset(getModId(), type, name);
 	}
 	
 	public Type getType() {
@@ -637,8 +664,20 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return getModNameOrId(modId);
 	}
 	
-	public SimpleConfigModConfig getModConfig() {
+	@Internal public SimpleConfigCommentedYamlFormat getConfigFormat() {
+		return configFormat;
+	}
+	
+	@Internal public ModConfig getModConfig() {
 		return modConfig;
+	}
+	
+	@Internal public ModContainer getModContainer() {
+		return modContainer;
+	}
+	
+	@Internal public LiteralArgumentBuilder<CommandSource> getCommandRoot() {
+		return commandRoot;
 	}
 	
 	protected interface IGUIEntryBuilder {}

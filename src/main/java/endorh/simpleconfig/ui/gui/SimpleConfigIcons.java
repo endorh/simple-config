@@ -2,17 +2,27 @@ package endorh.simpleconfig.ui.gui;
 
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.ui.gui.Icon.IconBuilder;
+import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.Location;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.fml.config.ModConfig;
 
-public class SimpleConfigIcons {
+@SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
 	private static final ResourceLocation TEXTURE = new ResourceLocation(
 	  SimpleConfigMod.MOD_ID, "textures/gui/simple_config/config_menu.png");
 	private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
 	
-	public static final Icon // Size 16×16
-	  CLIENT = b.size(16, 16).at(240, 104),
-	  SERVER = b.at(240, 120);
+	public static class Types {
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
+		  .reverseOffset(true, false).offset(256, 198);
+		public static final Icon // Size 16×16
+		  CLIENT = b.size(16, 16).at(0, 0),
+		  SERVER = b.at(16, 0),
+		  COMMON = b.at(32, 0),
+		  COMMON_CLIENT = b.at(48, 0),
+		  COMMON_SERVER = b.at(64, 0);
+		static { b = null; }
+	}
 	
 	public static class Buttons {
 		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 136);
@@ -34,8 +44,8 @@ public class SimpleConfigIcons {
 		  REDO = b.at(60, 60),
 		  ACCEPT = b.at(80, 60);
 		public static final Icon // Size 18×18
-		  DOWN = b.size(18, 18).at(220, 66),
-		  UP = b.at(238, 66);
+		  DOWN = b.size(18, 18).at(220, 0),
+		  UP = b.at(238, 0);
 		public static final Icon // Size 18×18
 		  GEAR = b.twoLevel(true).offset(0, 76).size(18, 18).at(0, 0),
 		  KEYBOARD = b.at(18, 0),
@@ -53,7 +63,7 @@ public class SimpleConfigIcons {
 	
 	public static class Actions {
 		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
-		  .offset(240, 104).reverseOffset(true, false);
+		  .offset(256, 104).reverseOffset(true, false);
 		public static final Icon // Size 16×16
 		  NONE = b.size(16, 16).at(0, 0),
 		  ASSIGN = b.at(0, 16),
@@ -71,7 +81,7 @@ public class SimpleConfigIcons {
 	public static class SearchBar {
 		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(112, 0);
 		public static final Icon // Size 18×18
-		  SEARCH_TOOLTIPS = b.twoLevel(true).size(18, 18).at(0, 0),
+		  SEARCH_TOOLTIPS = b.size(18, 18).at(0, 0),
 		  SEARCH_REGEX = b.at(18, 0),
 		  SEARCH_CASE_SENSITIVE = b.at(36, 0),
 		  SEARCH_FILTER = b.at(54, 0);
@@ -107,21 +117,56 @@ public class SimpleConfigIcons {
 	}
 	
 	public static class Presets {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(200, 76);
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(200, 214);
 		public static final Icon // Size 14×14
 		  CLIENT_LOCAL = b.size(14, 14).at(0, 0),
 		  CLIENT_REMOTE = b.at(14, 0),
 		  CLIENT_SAVE = b.at(28, 0),
 		  CLIENT_RESOURCE = b.at(42, 0),
-		  SERVER_LOCAL = b.at(0, 14),
-		  SERVER_REMOTE = b.at(14, 14),
-		  SERVER_SAVE = b.at(28, 14),
-		  SERVER_RESOURCE = b.at(42, 14);
+		  COMMON_LOCAL = b.at(0, 14),
+		  COMMON_REMOTE = b.at(14, 14),
+		  COMMON_SAVE = b.at(28, 14),
+		  COMMON_RESOURCE = b.at(42, 14),
+		  SERVER_LOCAL = b.at(0, 28),
+		  SERVER_REMOTE = b.at(14, 28),
+		  SERVER_SAVE = b.at(28, 28),
+		  SERVER_RESOURCE = b.at(42, 28);
+		public static Icon saveIconFor(ModConfig.Type type) {
+			switch (type) {
+				case CLIENT: return CLIENT_SAVE;
+				case COMMON: return COMMON_SAVE;
+				case SERVER: return SERVER_SAVE;
+				default: return null;
+			}
+		}
+		public static Icon iconFor(ModConfig.Type type, Location location) {
+			switch (type) {
+				case CLIENT: switch (location) {
+					case LOCAL: return CLIENT_LOCAL;
+					case REMOTE: return CLIENT_REMOTE;
+					case RESOURCE: return CLIENT_RESOURCE;
+					default: return null;
+				}
+				case COMMON: switch (location) {
+					case LOCAL: return COMMON_LOCAL;
+					case REMOTE: return COMMON_REMOTE;
+					case RESOURCE: return COMMON_RESOURCE;
+					default: return null;
+				}
+				case SERVER: switch (location) {
+					case LOCAL: return SERVER_LOCAL;
+					case REMOTE: return SERVER_REMOTE;
+					case RESOURCE: return SERVER_RESOURCE;
+					default: return null;
+				}
+				default: return null;
+			}
+		}
 		static { b = null; }
 	}
 	
 	public static class Hotkeys {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(144, 76);
+		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(200, 76);
 		public static final Icon // Size 14×14
 		  LOCAL_HOTKEY = b.size(14, 14).at(0, 0),
 		  REMOTE_HOTKEY = b.at(0, 14),
@@ -152,7 +197,7 @@ public class SimpleConfigIcons {
 		  TEXT_EXPAND = b.at(9, 0),
 		  SLIDER_EDIT = b.at(18, 0);
 		public static final Icon // Size 14×14
-		  ERROR = b.offset(200, 76).reverseOffset(true, false).size(14, 14).at(0, 0),
+		  ERROR = b.offset(256, 76).reverseOffset(true, false).size(14, 14).at(0, 0),
 		  HELP = b.at(14, 0),
 		  NOT_PERSISTENT = b.at(0, 14),
 		  REQUIRES_RESTART = b.at(14, 14);

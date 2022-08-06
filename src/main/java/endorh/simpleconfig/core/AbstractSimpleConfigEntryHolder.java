@@ -50,6 +50,10 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	protected abstract String getPath();
 	
+	protected String getPathPart() {
+		return getPath() + ".";
+	}
+	
 	protected String getGlobalPath() {
 		return getRoot().getName() + "." + getPath();
 	}
@@ -240,7 +244,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		if (split.length < 2) {
 			return children.get(path);
 		} else if (children.containsKey(split[0]))
-			return children.get(split[0]).getChild(split[1]);
+			return children.get(split[0]).getChildOrNull(split[1]);
 		return null;
 	}
 	
@@ -301,8 +305,10 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
 		final String[] split = DOT.split(path, 2);
-		if (split.length < 2 || !children.containsKey(split[0])) return null;
-		return children.get(split[0]).getEntry(split[1]);
+		if (split.length < 2) return null;
+		AbstractSimpleConfigEntryHolder child = getChildOrNull(split[0]);
+		if (child == null) return null;
+		return child.getEntryOrNull(split[1]);
 	}
 	
 	/**
@@ -344,11 +350,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	protected void commitFields(String path) {
 		if (path == null || path.isEmpty())
 			commitFields();
-		final String[] split = DOT.split(path, 2);
-		if (children.containsKey(split[0])) {
-			if (split.length < 2) children.get(split[0]).commitFields();
-			else children.get(split[0]).commitFields(split[1]);
-		} else throw new NoSuchConfigGroupError(getPath() + "." + path);
+		getChild(path).commitFields();
 	}
 	
 	/**

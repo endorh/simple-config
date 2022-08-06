@@ -8,13 +8,16 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -22,6 +25,7 @@ import java.util.function.Consumer;
 @OnlyIn(value = Dist.CLIENT)
 @Internal public class ConfigScreenBuilderImpl implements ConfigScreenBuilder {
 	protected Runnable savingRunnable;
+	protected Runnable closingRunnable;
 	protected String modId;
 	protected Screen parent;
 	protected ConfigHotKey editedConfigHotkey = null;
@@ -32,10 +36,17 @@ import java.util.function.Consumer;
 	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
 	protected final Map<String, ConfigCategory> serverCategories = new LinkedHashMap<>();
+	protected final Map<String, ConfigCategory> commonCategories = new LinkedHashMap<>();
 	protected final Map<String, ConfigCategory> clientCategories = new LinkedHashMap<>();
+	protected final EnumMap<Type, Map<String, ConfigCategory>> categories = Util.make(new EnumMap<>(Type.class), m -> {
+		m.put(Type.CLIENT, clientCategories);
+		m.put(Type.COMMON, commonCategories);
+		m.put(Type.SERVER, serverCategories);
+	});
 	protected ConfigCategory fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
-	protected @Nullable ConfigScreenBuilder.IConfigSnapshotHandler snapshotHandler;
+	protected @Nullable IConfigSnapshotHandler snapshotHandler;
+	protected @Nullable IRemoteCommonConfigProvider remoteConfigProvider;
 	private ConfigCategory selectedCategory;
 	private IConfigScreenGUIState previousGUIState;
 	
@@ -63,6 +74,11 @@ import java.util.function.Consumer;
 	  IConfigSnapshotHandler handler
 	) {
 		snapshotHandler = handler;
+		return this;
+	}
+	
+	@Override public ConfigScreenBuilder setRemoteCommonConfigProvider(IRemoteCommonConfigProvider provider) {
+		remoteConfigProvider = provider;
 		return this;
 	}
 	
@@ -134,16 +150,16 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigCategory getOrCreateCategory(String name, boolean isServer) {
-		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+	@Override public ConfigCategory getOrCreateCategory(String name, Type type) {
+		Map<String, ConfigCategory> categories = this.categories.get(type);
 		ConfigCategory cat = categories.computeIfAbsent(
-		  name, key -> new ConfigCategoryImpl(this, name, isServer));
+		  name, key -> new ConfigCategoryImpl(this, name, type));
 		if (fallbackCategory == null) fallbackCategory = cat;
 		return cat;
 	}
 	
-	@Override public ConfigScreenBuilder removeCategory(String name, boolean isServer) {
-		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+	@Override public ConfigScreenBuilder removeCategory(String name, Type type) {
+		Map<String, ConfigCategory> categories = this.categories.get(type);
 		if (!categories.containsKey(name))
 			throw new IllegalArgumentException("Category " + name + " does not exist");
 		if (categories.get(name) == fallbackCategory)
@@ -152,15 +168,15 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigScreenBuilder removeCategoryIfExists(String name, boolean isServer) {
-		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+	@Override public ConfigScreenBuilder removeCategoryIfExists(String name, Type type) {
+		Map<String, ConfigCategory> categories = this.categories.get(type);
 		if (categories.containsKey(name))
-			removeCategory(name, isServer);
+			removeCategory(name, type);
 		return this;
 	}
 	
-	@Override public boolean hasCategory(String name, boolean isServer) {
-		Map<String, ConfigCategory> categories = isServer? serverCategories : clientCategories;
+	@Override public boolean hasCategory(String name, Type type) {
+		Map<String, ConfigCategory> categories = this.categories.get(type);
 		return categories.containsKey(name);
 	}
 	
@@ -173,8 +189,20 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
+	@Override public Runnable getSavingRunnable() {
+		return savingRunnable;
+	}
 	@Override public ConfigScreenBuilder setSavingRunnable(Runnable runnable) {
 		savingRunnable = runnable;
+		return this;
+	}
+	
+	@Override public Runnable getClosingRunnable() {
+		return closingRunnable;
+	}
+	
+	@Override public ConfigScreenBuilder setClosingRunnable(Runnable runnable) {
+		closingRunnable = runnable;
 		return this;
 	}
 	
@@ -183,24 +211,23 @@ import java.util.function.Consumer;
 	}
 	
 	@Override public AbstractConfigScreen build() {
-		if (serverCategories.isEmpty() && clientCategories.isEmpty() || fallbackCategory == null)
+		if (serverCategories.isEmpty() && clientCategories.isEmpty() && commonCategories.isEmpty() || fallbackCategory == null)
 			throw new IllegalStateException("Config screen without categories or fallback category");
 		AbstractConfigScreen screen = new SimpleConfigScreen(
-		  parent, modId, title, clientCategories.values(),
+		  parent, modId, title,
+		  clientCategories.values(), commonCategories.values(),
 		  serverCategories.values(), defaultBackground);
 		screen.setEditedConfigHotKey(editedConfigHotkey, hotKeySaver);
 		screen.setSavingRunnable(savingRunnable);
+		screen.setClosingRunnable(closingRunnable);
 		screen.setEditable(editable);
 		screen.setSelectedCategory(selectedCategory != null? selectedCategory : fallbackCategory);
 		screen.setTransparentBackground(transparentBackground);
 		screen.setAlwaysShowTabs(alwaysShowTabs);
 		screen.setAfterInitConsumer(afterInitConsumer);
 		screen.setSnapshotHandler(snapshotHandler);
+		screen.setRemoteCommonConfigProvider(remoteConfigProvider);
 		screen.loadConfigScreenGUIState(previousGUIState);
 		return screen;
-	}
-	
-	@Override public Runnable getSavingRunnable() {
-		return savingRunnable;
 	}
 }

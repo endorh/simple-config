@@ -135,7 +135,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		captionControlsEnabled = enabled;
 	}
 	
-	public void setHeadless(boolean headless) {
+	@Override public void setHeadless(boolean headless) {
 		super.setHeadless(headless);
 		if (headless) {
 			labelReference.setTarget(null);
@@ -597,7 +597,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return true;
 	}
 	
-	public boolean preserveState() {
+	@Override public boolean preserveState() {
 		updateValue();
 		final List<T> value = getValue();
 		int i = getSelectedIndex();

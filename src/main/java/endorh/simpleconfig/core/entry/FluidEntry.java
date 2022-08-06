@@ -21,6 +21,7 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -61,7 +62,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid, FluidE
 		 * When true (the default), requires the filled bucket item to have an item group.<br>
 		 * This excludes the empty fluid.
 		 */
-		public Builder setRequireGroup(boolean requireGroup) {
+		@Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
@@ -72,24 +73,24 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid, FluidE
 		 * FlowingFluids whose still fluids are different from themselves.<br>
 		 * This excludes FLOWING_WATER and FLOWING_LAVA.
 		 */
-		public Builder setExcludeFlowing(boolean excludeFlowing) {
+		@Contract(pure=true) public Builder setExcludeFlowing(boolean excludeFlowing) {
 			Builder copy = copy();
 			copy.excludeFlowing = excludeFlowing;
 			return copy;
 		}
 		
-		public Builder from(Predicate<Fluid> filter) {
+		@Contract(pure=true) public Builder from(Predicate<Fluid> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		public Builder from(List<Fluid> choices) {
+		@Contract(pure=true) public Builder from(List<Fluid> choices) {
 			List<Fluid> listCopy = new ArrayList<>(choices);
 			return from(listCopy::contains);
 		}
 		
-		public Builder from(Fluid... choices) {
+		@Contract(pure=true) public Builder from(Fluid... choices) {
 			List<Fluid> listCopy = Arrays.asList(choices);
 			return from(listCopy::contains);
 		}
@@ -99,7 +100,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid, FluidE
 		 * This can only be done on server configs, since tags
 		 * are server-dependant
 		 */
-		public Builder from(ITag<Fluid> tag) {
+		@Contract(pure=true) public Builder from(ITag<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

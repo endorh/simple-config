@@ -11,7 +11,7 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NodeComments;
-import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter;
+import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
+import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
 
 /**
  * An abstract config entry, which may or may not produce an entry in
@@ -68,10 +69,11 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected @Nullable String translation = null;
 	protected @Nullable String tooltip = null;
 	protected boolean requireRestart = false;
+	protected @Nullable Function<Config, Optional<ITextComponent>> configErrorSupplier = null;
 	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
-	protected @Nullable Function<V, Optional<ITextComponent[]>> tooltipSupplier = null;
 	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
-	protected @Nullable Function<Gui, Optional<ITextComponent[]>> guiTooltipSupplier = null;
+	protected @Nullable Function<V, List<ITextComponent>> tooltipSupplier = null;
+	protected @Nullable Function<Gui, List<ITextComponent>> guiTooltipSupplier = null;
 	protected @Nullable BiConsumer<Gui, ISimpleConfigEntryHolder> saver = null;
 	/**
 	 * Returning false makes the entry not editable in the GUI<br>
@@ -89,6 +91,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected @OnlyIn(Dist.CLIENT) @Nullable AbstractConfigListEntry<Gui> guiEntry;
+	protected @OnlyIn(Dist.CLIENT) @Nullable AbstractConfigListEntry<Gui> remoteGuiEntry;
 	protected boolean nonPersistent = false;
 	protected V actualValue = null;
 	protected @Nullable ConfigValue<?> configValue = null;
@@ -106,7 +109,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (parent instanceof SimpleConfig) {
 			return name;
 		} else if (parent instanceof AbstractSimpleConfigEntryHolder) {
-			return ((AbstractSimpleConfigEntryHolder) parent).getPath() + "." + name;
+			return ((AbstractSimpleConfigEntryHolder) parent).getPathPart() + name;
 		} else return name;
 	}
 	
@@ -124,8 +127,16 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		this.translation = translation;
 	}
 	
-	protected void setTooltip(@Nullable String translation) {
+	protected @Nullable String getTranslation() {
+		return translation;
+	}
+	
+	protected void setTooltipKey(@Nullable String translation) {
 		tooltip = translation;
+	}
+	
+	protected @Nullable String getTooltipKey() {
+		return tooltip;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -317,28 +328,29 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		};
 	}
 	
+	private static final ITextComponent[] EMPTY_TEXT_ARRAY = new ITextComponent[0];
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> getTooltip(Gui value) {
 		if (debugTranslations())
 			return supplyDebugTooltip(value);
-		Optional<ITextComponent[]> o;
+		List<ITextComponent> l;
 		if (guiTooltipSupplier != null) {
-			o = guiTooltipSupplier.apply(value);
-			if (o.isPresent()) return o.map(t -> addExtraTooltip(t, value));
+			l = guiTooltipSupplier.apply(value);
+			if (!l.isEmpty()) return Optional.of(addExtraTooltip(l.toArray(EMPTY_TEXT_ARRAY), value));
 		}
 		final V v = fromGui(value);
 		if (tooltipSupplier != null) {
 			if (v != null) {
-				o = tooltipSupplier.apply(v);
-				if (o.isPresent()) return o.map(t -> addExtraTooltip(t, value));
+				l = tooltipSupplier.apply(v);
+				if (!l.isEmpty()) return Optional.of(addExtraTooltip(l.toArray(EMPTY_TEXT_ARRAY), value));
 			}
 		}
 		if (tooltip != null && I18n.hasKey(tooltip)) {
-			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs)).toArray(new ITextComponent[0]))
+			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs)).toArray(EMPTY_TEXT_ARRAY))
 			  .map(t -> addExtraTooltip(t, value));
 		}
 		final List<ITextComponent> extra = addExtraTooltip(value);
-		return extra.isEmpty()? Optional.empty() : Optional.of(extra.toArray(new ITextComponent[0]));
+		return extra.isEmpty()? Optional.empty() : Optional.of(extra.toArray(EMPTY_TEXT_ARRAY));
 	}
 	
 	protected ITextComponent[] addExtraTooltip(ITextComponent[] tooltip, Gui value) {
@@ -361,12 +373,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			o = guiErrorSupplier.apply(value);
 			if (o.isPresent()) return o;
 		}
+		final V v = fromGui(value);
+		if (v == null) return Optional.of(new TranslationTextComponent(
+		  "simpleconfig.config.error.missing_value"));
 		if (errorSupplier != null) {
-			final V v = fromGui(value);
-			if (v != null) {
-				o = errorSupplier.apply(v);
-				if (o.isPresent()) return o;
-			}
+			o = errorSupplier.apply(v);
+			if (o.isPresent()) return o;
+		}
+		Config c = forConfig(v);
+		if (configErrorSupplier != null) {
+			o = configErrorSupplier.apply(c);
+			if (o.isPresent()) return o;
 		}
 		return Optional.empty();
 	}
@@ -396,9 +413,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		if (configComment.endsWith("\n")) configComment = configComment.substring(0, configComment.length() - 1);
 		if (!configComment.isEmpty()) {
 			if (blockComments == null) blockComments = Lists.newArrayList();
-			blockComments.clear();
+			blockComments.removeIf(l -> l.getValue().startsWith("#"));
 			Arrays.stream(LINE_BREAK.split(configComment))
-			  .map(line -> SimpleConfigCommentedYamlWriter.commentLine(" " + line))
+			  .map(line -> commentLine("# " + line))
 			  .forEach(blockComments::add);
 			previous.setBlockComments(blockComments);
 		}
@@ -419,13 +436,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	@Internal public String getConfigComment() {
 		StringBuilder builder = new StringBuilder();
-		if (translation != null && I18n.hasKey(translation)) {
-			String name = stripFormattingCodes(I18n.format(
+		if (translation != null && ServerI18n.hasKey(translation)) {
+			String name = stripFormattingCodes(ServerI18n.format(
 			  translation, formatArgs(null, nameArgs)
 			).trim());
 			builder.append(name).append('\n');
-			if (tooltip != null && I18n.hasKey(tooltip)) {
-				String tooltip = "  " + stripFormattingCodes(I18n.format(
+			if (tooltip != null && ServerI18n.hasKey(tooltip)) {
+				String tooltip = "  " + stripFormattingCodes(ServerI18n.format(
 				  this.tooltip, formatArgs(get(), tooltipArgs)
 				).trim().replace("\n", "\n  "));
 				builder.append(tooltip).append('\n');
@@ -662,8 +679,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	@Internal public @Nullable String forCommand(V value) {
-		SimpleConfig config = parent.getRoot();
-		Yaml yaml = config.getModConfig().getConfigFormat().getYaml();
+		Yaml yaml = SimpleConfigCommentedYamlFormat.getDefaultYaml();
 		try {
 			return yaml.dumpAs(forActualConfig(forConfig(value)), null, FlowStyle.FLOW).trim();
 		} catch (YAMLException e) {
@@ -672,8 +688,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	}
 	
 	@Internal public V fromCommand(String value) {
-		SimpleConfig config = parent.getRoot();
-		Yaml yaml = config.getModConfig().getConfigFormat().getYaml();
+		Yaml yaml = SimpleConfigCommentedYamlFormat.getDefaultYaml();
 		try {
 			return fromConfig(fromActualConfig(yaml.load(value)));
 		} catch (ClassCastException e) {

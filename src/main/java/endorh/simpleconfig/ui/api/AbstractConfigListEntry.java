@@ -60,7 +60,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		).active(() -> hasExternalDiff() && !hasAcceptedExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
-				"simpleconfig.ui.merge.accept." + (getScreen().isSelectedCategoryServer() ? "remote" : "external"))
+				"simpleconfig.ui.merge.accept." + (getScreen().isEditingServer()? "remote" : "external"))
 			   .mergeStyle(TextFormatting.LIGHT_PURPLE))));
 		mergeButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Entries.MERGE_CONFLICT, ButtonAction.of(
@@ -68,7 +68,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		  ).active(() -> !isPreviewingExternal() && hasConflictingExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
-			   "simpleconfig.ui.view_" + (getScreen().isSelectedCategoryServer() ? "remote" : "external") + "_changes")
+			   "simpleconfig.ui.view_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
 			   .mergeStyle(TextFormatting.GOLD)))
 		) {
 			@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
@@ -79,7 +79,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		  .icon(SimpleConfigIcons.Entries.MERGE_ACCEPTED)
 		  .tooltip(() -> Lists.newArrayList(
 			 new TranslationTextComponent(
-			   "simpleconfig.ui.accepted_" + (getScreen().isSelectedCategoryServer() ? "remote" : "external") + "_changes")
+			   "simpleconfig.ui.accepted_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
 			   .mergeStyle(TextFormatting.DARK_GREEN)))
 		).on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(
 		  () -> setPreviewingExternal(false)
@@ -296,9 +296,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		if (area == previewOverlayRectangle) {
 			if (!isPreviewingExternal()) return false;
 			FontRenderer font = Minecraft.getInstance().fontRenderer;
-			final boolean isServer = getScreen().isSelectedCategoryServer();
 			TranslationTextComponent caption = new TranslationTextComponent(
-			  "simpleconfig.ui." + (isServer ? "remote_changes" : "external_changes"));
+			  "simpleconfig.ui." + (getScreen().isEditingServer()? "remote_changes" : "external_changes"));
 			
 			final int captionWidth = font.getStringPropertyWidth(caption);
 			final int l = area.x + 4, t = area.y + 32 + 2 - 4, r = area.getMaxX() - 4, b = area.getMaxY() - 4 + 2;

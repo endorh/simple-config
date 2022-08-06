@@ -19,7 +19,7 @@ public abstract class DynamicElementListWidget<E extends ElementEntry>
 		super(client, width, height, top, bottom, backgroundLocation);
 	}
 	
-	public boolean changeFocus(boolean focus) {
+	@Override public boolean changeFocus(boolean focus) {
 		boolean change = super.changeFocus(focus);
 		if (change) ensureFocusedVisible();
 		return change;
@@ -33,18 +33,18 @@ public abstract class DynamicElementListWidget<E extends ElementEntry>
 		private boolean dragging;
 		private Pair<Integer, IGuiEventListener> dragged = null;
 		
-		public boolean isDragging() {
+		@Override public boolean isDragging() {
 			return this.dragging;
 		}
 		
-		public void setDragging(boolean dragging) {
+		@Override public void setDragging(boolean dragging) {
 			this.dragging = dragging;
 		}
 		
-		public IGuiEventListener getListener() {
+		@Override public IGuiEventListener getListener() {
 			return this.focused;
 		}
-		public void setListener(IGuiEventListener listener) {
+		@Override public void setListener(IGuiEventListener listener) {
 			this.focused = listener;
 		}
 		

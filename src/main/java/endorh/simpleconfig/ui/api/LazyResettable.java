@@ -27,7 +27,7 @@ public final class LazyResettable<T>
 		this.value = null;
 	}
 	
-	public boolean equals(Object o) {
+	@Override public boolean equals(Object o) {
 		if (this == o) {
 			return true;
 		}
@@ -38,7 +38,7 @@ public final class LazyResettable<T>
 		return Objects.equals(this.get(), that.get());
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		T value = this.get();
 		return value != null ? value.hashCode() : 0;
 	}

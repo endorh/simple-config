@@ -56,8 +56,8 @@ public class HotKeyActionButton<T> extends MultiFunctionIconButton {
 			HotKeyActionType<T, ?> type = entry.getHotKeyActionType();
 			List<HotKeyActionType<T, ?>> types = entry.getHotKeyActionTypes();
 			HotKeyActionType<T, ?> next = getNext(type, types, direction > 0);
-			entry.setHotKeyActionType(next, null);
-		} else entry.setHotKeyActionType(null, null);
+			entry.setHotKeyActionType(next);
+		} else entry.setHotKeyActionType(null);
 	}
 	
 	public void tick() {

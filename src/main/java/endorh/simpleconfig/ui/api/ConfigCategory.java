@@ -5,6 +5,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ public interface ConfigCategory extends IEntryHolder {
 	void setBackground(@Nullable ResourceLocation background);
 	@Nullable ResourceLocation getBackground();
 	
-	boolean isServer();
+	Type getType();
 	
 	boolean isEditable();
 	void setEditable(boolean editable);

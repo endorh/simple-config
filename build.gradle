@@ -119,35 +119,40 @@ minecraft {
     // Run configurations
     runs {
         client {
-            //noinspection GroovyAssignabilityCheck
             workingDirectory project.file('run')
 
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
+            property "forge.logging.markers", "REGISTRIES"
+            property "forge.logging.console.level", "debug"
+            property "mixin.env.disableRefMap", "true"
 
             mods {
                 simpleconfig {
-                    //noinspection GroovyAssignabilityCheck
                     source sourceSets.main
                 }
             }
         }
 
         server {
-            //noinspection GroovyAssignabilityCheck
             workingDirectory project.file('run')
 
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
+            property "forge.logging.markers", "REGISTRIES"
+            property "forge.logging.console.level", "debug"
+            property "mixin.env.disableRefMap", "true"
+
+            arg "nogui"
 
             mods {
                 simpleconfig {
-                    //noinspection GroovyAssignabilityCheck
                     source sourceSets.main
                 }
             }
+        }
+
+        client2 {
+            parent(getByName("client"))
+            args "--username", "Dev2"
         }
     }
 }
@@ -162,12 +167,19 @@ repositories {
         url 'https://repo.maven.apache.org/maven2'
         name 'Maven Central'
     }
+    maven {
+        name = "Curse Maven" // Curse Maven
+        url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 dependencies {
     // IDE
     implementation 'org.jetbrains:annotations:23.0.0'
-    implementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    implementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 
     // ANTLR
     antlr "org.antlr:antlr4:$antlr_version" // use ANTLR version 4
@@ -177,6 +189,10 @@ dependencies {
 
     // Minecraft
     minecraft "net.minecraftforge:forge:${forge_version}"
+
+    // Testing dependencies
+    // Catalogue
+    runtimeOnly fg.deobf("curse.maven:catalogue-459701:3529457")
 }
 
 test {

@@ -27,7 +27,7 @@ public interface EasingMethod {
 			return this.function.apply(v);
 		}
 		
-		public String toString() {
+		@Override public String toString() {
 			return this.name();
 		}
 	}

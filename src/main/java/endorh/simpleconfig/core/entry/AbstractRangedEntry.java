@@ -4,6 +4,7 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.*;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -40,7 +41,7 @@ public abstract class AbstractRangedEntry
 		/**
 		 * Set min (inclusive)
 		 */
-		public Self min(V min) {
+		@Contract(pure=true) public Self min(V min) {
 			Self copy = copy();
 			copy.min = min;
 			return copy;
@@ -49,7 +50,7 @@ public abstract class AbstractRangedEntry
 		/**
 		 * Set max (inclusive)
 		 */
-		public Self max(V max) {
+		@Contract(pure=true) public Self max(V max) {
 			Self copy = copy();
 			copy.max = max;
 			return copy;
@@ -58,7 +59,7 @@ public abstract class AbstractRangedEntry
 		/**
 		 * Set range (inclusive)
 		 */
-		public Self range(V min, V max) {
+		@Contract(pure=true) public Self range(V min, V max) {
 			Self copy = copy();
 			copy.min = min;
 			copy.max = max;
@@ -68,14 +69,14 @@ public abstract class AbstractRangedEntry
 		/**
 		 * Display as slider
 		 */
-		public Self slider() {
+		@Contract(pure=true) public Self slider() {
 			return slider(true);
 		}
 		
 		/**
 		 * Display or not as slider
 		 */
-		public Self slider(boolean asSlider) {
+		@Contract(pure=true) public Self slider(boolean asSlider) {
 			if (asSlider) {
 				return slider("simpleconfig.format.slider");
 			} else {
@@ -88,7 +89,7 @@ public abstract class AbstractRangedEntry
 		/**
 		 * Display as slider with given translation key as slider text.
 		 */
-		public Self slider(String sliderTextTranslation) {
+		@Contract(pure=true) public Self slider(String sliderTextTranslation) {
 			return slider(v -> new TranslationTextComponent(
 			  sliderTextTranslation, String.format(sliderFormat, v)));
 		}
@@ -96,7 +97,7 @@ public abstract class AbstractRangedEntry
 		/**
 		 * Display as slider with given text supplier.
 		 */
-		public Self slider(Function<V, ITextComponent> sliderTextSupplier) {
+		@Contract(pure=true) public Self slider(Function<V, ITextComponent> sliderTextSupplier) {
 			Self copy = copy();
 			copy.asSlider = true;
 			copy.sliderTextSupplier = sliderTextSupplier;

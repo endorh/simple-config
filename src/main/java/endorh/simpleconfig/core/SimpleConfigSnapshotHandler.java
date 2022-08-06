@@ -3,6 +3,7 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IRemoteCommonConfigProvider;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static java.util.Collections.emptyList;
 
-class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
+class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteCommonConfigProvider {
 	private final String modId;
 	private final Map<Type, SimpleConfig> configMap;
 	private IExternalChangeHandler externalChangeHandler;
@@ -57,7 +58,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 	}
 	
 	@Override public CompletableFuture<CommentedConfig> getPresetSnapshot(Preset preset) {
-		final SimpleConfig c = configMap.get(preset.isServer()? Type.SERVER : Type.CLIENT);
+		final SimpleConfig c = configMap.get(preset.getType());
 		if (c == null) return failedFuture(new IllegalArgumentException("Missing config type"));
 		switch (preset.getLocation()) {
 			case LOCAL:
@@ -90,7 +91,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 	}
 	
 	@Override public CommentedConfig getResource(String name, Type type) {
-		Preset p = Preset.remote(name, type == Type.SERVER);
+		Preset p = Preset.remote(name, type);
 		return SimpleConfigResourcePresetHandler.INSTANCE.getResourcePreset(modId, p);
 	}
 	
@@ -137,8 +138,14 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 			Matcher m = pattern.matcher(f.getName());
 			if (!m.matches()) return null;
 			return Preset.local(
-			  m.group("name"), "server".equals(m.group("type")));
+			  m.group("name"), typeFromExtension(m.group("type")));
 		}).filter(Objects::nonNull).collect(Collectors.toList());
+	}
+	
+	public static Type typeFromExtension(String type) {
+		return Arrays.stream(Type.values())
+		  .filter(t -> t.extension().equals(type))
+		  .findFirst().orElse(null);
 	}
 	
 	@Override public CompletableFuture<List<Preset>> getRemotePresets() {
@@ -179,5 +186,22 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler {
 			}
 		}
 		return Optional.empty();
+	}
+	
+	@Override public CompletableFuture<CommentedConfig> getRemoteCommonConfig() {
+		SimpleConfig config = configMap.get(Type.COMMON);
+		if (config == null) return failedFuture(new IllegalArgumentException("Missing common config"));
+		return SimpleConfigNetworkHandler.requestServerCommonConfig(modId);
+	}
+	
+	@Override public void loadRemoteCommonConfig(CommentedConfig snapshot) {
+		SimpleConfig config = configMap.get(Type.COMMON);
+		config.loadSnapshot(snapshot, true, null);
+	}
+	
+	@Override public void saveRemoteCommonConfig() {
+		SimpleConfig config = configMap.get(Type.COMMON);
+		CommentedConfig snapshot = config.takeSnapshot(true);
+		SimpleConfigNetworkHandler.saveServerCommonConfig(modId, config, snapshot);
 	}
 }

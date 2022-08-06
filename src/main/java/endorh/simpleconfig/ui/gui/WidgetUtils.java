@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.IRenderable;
 import net.minecraft.client.gui.widget.Widget;
 
 import java.util.Collection;
@@ -65,8 +66,8 @@ public class WidgetUtils {
 	
 	public static void renderAll(
 	  MatrixStack mStack, int mouseX, int mouseY, float partialTicks,
-	  Widget... widgets
+	  IRenderable... widgets
 	) {
-		for (Widget widget : widgets) widget.render(mStack, mouseX, mouseY, partialTicks);
+		for (IRenderable widget : widgets) widget.render(mStack, mouseX, mouseY, partialTicks);
 	}
 }

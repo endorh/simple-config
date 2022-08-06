@@ -169,7 +169,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		return entries;
 	}
 	
-	public final @NotNull List<E> getEventListeners() {
+	@Override public final @NotNull List<E> getEventListeners() {
 		return Collections.unmodifiableList(entries);
 	}
 	
@@ -278,7 +278,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		entries.forEach(ListEntry::tick);
 	}
 	
-	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		drawBackground();
 		int scrollBarPosition = getScrollBarPosition();
 		int scrollBarEnd = scrollBarPosition + 6;
@@ -422,7 +422,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		return width / 2 + 124;
 	}
 	
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		updateScrollingState(mouseX, mouseY, button);
 		if (!isMouseOver(mouseX, mouseY))
 			return false;
@@ -459,13 +459,13 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 			setSelectedTarget(target);
 	}
 	
-	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+	@Override public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (getFocusedItem() != null)
 			getFocusedItem().mouseReleased(mouseX, mouseY, button);
 		return false;
 	}
 	
-	public boolean mouseDragged(
+	@Override public boolean mouseDragged(
 	  double mouseX, double mouseY, int button, double deltaX, double deltaY
 	) {
 		if (IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
@@ -488,7 +488,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		return false;
 	}
 	
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		for (E entry : entries) {
 			if (!entry.mouseScrolled(mouseX, mouseY, delta)) continue;
 			return true;
@@ -497,7 +497,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		return true;
 	}
 	
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (Screen.hasAltDown()) {
 			if (handleNavigationKey(keyCode, scanCode, modifiers))
 				return true;
@@ -564,7 +564,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		  SimpleSound.master(SimpleConfigMod.UI_TAP, volume));
 	}
 	
-	public boolean isMouseOver(double mouseX, double mouseY) {
+	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		return mouseY >= (double) top && mouseY <= (double) bottom &&
 		       mouseX >= (double) left && mouseX <= (double) right;
 	}

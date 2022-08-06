@@ -108,7 +108,7 @@ public class CaptionedSubCategoryListEntry<
 		return super.isShown() || entries.stream().anyMatch(AbstractConfigListEntry::isShown);
 	}
 	
-	public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	
@@ -228,6 +228,12 @@ public class CaptionedSubCategoryListEntry<
 		}
 		for (AbstractConfigListEntry<?> entry : entries)
 			entry.updateFocused(isExpanded() && isFocused && getListener() == entry);
+	}
+	
+	@Override public boolean isEditable() {
+		if (isEditingHotKeyAction())
+			return getScreen().isEditable();
+		return super.isEditable();
 	}
 	
 	@Override public boolean isEdited() {
@@ -431,11 +437,11 @@ public class CaptionedSubCategoryListEntry<
 				drawBorder(mStack, area.x + 4, area.y, area.width, area.height, 1, focusedColor);
 		}
 		
-		public boolean isMouseOver(double mouseX, double mouseY) {
+		@Override public boolean isMouseOver(double mouseX, double mouseY) {
 			return area.contains(mouseX, mouseY);
 		}
 		
-		public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 			if (area.contains(mouseX, mouseY)) {
 				final E parent = getParent();
 				final boolean recurse = Screen.hasShiftDown();

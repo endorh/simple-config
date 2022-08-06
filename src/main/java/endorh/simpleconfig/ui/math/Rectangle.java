@@ -432,7 +432,7 @@ public class Rectangle {
 		return this.width <= 0 || this.height <= 0;
 	}
 	
-	public boolean equals(Object obj) {
+	@Override public boolean equals(Object obj) {
 		if (obj instanceof Rectangle) {
 			Rectangle r = (Rectangle) obj;
 			return this.x == r.x && this.y == r.y && this.width == r.width && this.height == r.height;
@@ -440,13 +440,13 @@ public class Rectangle {
 		return super.equals(obj);
 	}
 	
-	public String toString() {
+	@Override public String toString() {
 		return this.getClass().getName() +
 		       "[x=" + this.x + ",y=" + this.y + ",width=" + this.width +
 		       ",height=" + this.height + "]";
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		int result = 1;
 		result = 31 * result + this.x;
 		result = 31 * result + this.y;

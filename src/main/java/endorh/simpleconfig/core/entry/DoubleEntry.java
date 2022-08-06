@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.impl.builders.DoubleSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -23,7 +24,8 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		commentMax = Double.MAX_VALUE;
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
+	public static class Builder
+	  extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, Builder> {
 		public Builder(Double value) {
 			super(value, Double.class, "%.2f");
 		}
@@ -31,21 +33,21 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		/**
 		 * Set min (inclusive)
 		 */
-		public Builder min(double min) {
+		@Contract(pure=true) public Builder min(double min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set max (inclusive)
 		 */
-		public Builder max(double max) {
+		@Contract(pure=true) public Builder max(double max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set inclusive range
 		 */
-		public Builder range(double min, double max) {
+		@Contract(pure=true) public Builder range(double min, double max) {
 			return super.range(min, max);
 		}
 		
@@ -57,7 +59,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 		 * @param scale The scale by which the config value is <em>multiplied</em>
 		 *              before being stored in the backing field
 		 */
-		public Builder fieldScale(double scale) {
+		@Contract(pure=true) public Builder fieldScale(double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return field(d -> d * scale, d -> d / scale, Double.class);
@@ -90,8 +92,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double, Dou
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Double>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Double>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

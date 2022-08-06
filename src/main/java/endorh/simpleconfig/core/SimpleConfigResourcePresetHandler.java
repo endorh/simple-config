@@ -40,7 +40,7 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 	private final Map<String, Map<Preset, CommentedConfig>> presetRegistry = Maps.newHashMap();
 	
 	public List<Preset> getResourcePresets(String modId) {
-		return new ArrayList<>(presetRegistry.get(modId).keySet());
+		return new ArrayList<>(presetRegistry.getOrDefault(modId, Collections.emptyMap()).keySet());
 	}
 	
 	public CommentedConfig getResourcePreset(String modId, Preset preset) {
@@ -108,13 +108,19 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			for (String name: descriptor.clientPresets) {
 				String fileName = modId + "-client-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, false);
+				Preset preset = Preset.resource(name, ModConfig.Type.CLIENT);
+				map.put(preset, r);
+			}
+			for (String name: descriptor.commonPresets) {
+				String fileName = modId + "-common-" + name + ".yaml";
+				ResourceLocation r = new ResourceLocation(namespace, fileName);
+				Preset preset = Preset.resource(name, ModConfig.Type.COMMON);
 				map.put(preset, r);
 			}
 			for (String name: descriptor.serverPresets) {
 				String fileName = modId + "-server-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, true);
+				Preset preset = Preset.resource(name, ModConfig.Type.SERVER);
 				map.put(preset, r);
 			}
 			if (map.isEmpty()) presetMap.remove(modId);
@@ -127,10 +133,12 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 	
 	public static class PresetsDescriptor {
 		public final Set<String> clientPresets;
+		public final Set<String> commonPresets;
 		public final Set<String> serverPresets;
 		
-		public PresetsDescriptor(Set<String> clientPresets, Set<String> serverPresets) {
+		public PresetsDescriptor(Set<String> clientPresets, Set<String> commonPresets, Set<String> serverPresets) {
 			this.clientPresets = clientPresets;
+			this.commonPresets = commonPresets;
 			this.serverPresets = serverPresets;
 		}
 		
@@ -140,18 +148,22 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			) throws JsonParseException {
 				JsonObject obj = JSONUtils.getJsonObject(json, "mod config presets");
 				Optional<String> first = obj.entrySet().stream().map(Entry::getKey)
-				  .filter(k -> !"client".equals(k) && !"server".equals(k)).findFirst();
+				  .filter(k -> !"client".equals(k) && !"server".equals(k) && !"common".equals(k)).findFirst();
 				if (first.isPresent())
 					throw new JsonSyntaxException("Unknown preset type: " + first.get());
 				JsonArray client = JSONUtils.getJsonArray(obj, "client", new JsonArray());
+				JsonArray common = JSONUtils.getJsonArray(obj, "common", new JsonArray());
 				JsonArray server = JSONUtils.getJsonArray(obj, "server", new JsonArray());
 				Set<String> clientPresets = new HashSet<>();
+				Set<String> commonPresets = new HashSet<>();
 				Set<String> serverPresets = new HashSet<>();
 				if (client != null) for (JsonElement item: client)
 					clientPresets.add(JSONUtils.getString(item, "preset name"));
+				if (common != null) for (JsonElement item: common)
+					commonPresets.add(JSONUtils.getString(item, "preset name"));
 				if (server != null) for (JsonElement item: server)
 					serverPresets.add(JSONUtils.getString(item, "preset name"));
-				return new PresetsDescriptor(clientPresets, serverPresets);
+				return new PresetsDescriptor(clientPresets, commonPresets, serverPresets);
 			}
 			
 			@Override public JsonElement serialize(
@@ -159,8 +171,10 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			) {
 				JsonObject obj = new JsonObject();
 				List<String> clientPresets = new ArrayList<>(src.clientPresets);
+				List<String> commonPresets = new ArrayList<>(src.commonPresets);
 				List<String> serverPresets = new ArrayList<>(src.serverPresets);
 				obj.add("client", ctx.serialize(clientPresets));
+				obj.add("common", ctx.serialize(commonPresets));
 				obj.add("server", ctx.serialize(serverPresets));
 				return obj;
 			}

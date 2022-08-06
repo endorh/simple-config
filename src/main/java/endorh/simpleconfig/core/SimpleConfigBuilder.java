@@ -20,6 +20,9 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -90,7 +93,7 @@ public class SimpleConfigBuilder
 	 * and it will be set automatically as the baker (but you
 	 * may not define it and also call this method)
 	 */
-	public SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker) {
+	@Contract("_ -> this") public SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker) {
 		this.baker = baker;
 		return this;
 	}
@@ -100,7 +103,7 @@ public class SimpleConfigBuilder
 	 * @see #withBackground(ResourceLocation)
 	 * @see #withGUIDecorator(BiConsumer)
 	 */
-	public SimpleConfigBuilder withBackground(String resourceName) {
+	@Contract("_ -> this") public SimpleConfigBuilder withBackground(String resourceName) {
 		return withBackground(new ResourceLocation(resourceName));
 	}
 	
@@ -111,7 +114,7 @@ public class SimpleConfigBuilder
 	 * @see #withColor(int)
 	 * @see #withGUIDecorator(BiConsumer)
 	 */
-	public SimpleConfigBuilder withBackground(ResourceLocation background) {
+	@Contract("_ -> this") public SimpleConfigBuilder withBackground(ResourceLocation background) {
 		this.background = background;
 		return this;
 	}
@@ -126,7 +129,7 @@ public class SimpleConfigBuilder
 	 * @see #withBackground(ResourceLocation)
 	 * @see #withGUIDecorator(BiConsumer)
 	 */
-	public SimpleConfigBuilder withIcon(Icon icon) {
+	@Contract("_ -> this") public SimpleConfigBuilder withIcon(Icon icon) {
 		defaultCategory.withIcon(icon);
 		return this;
 	}
@@ -143,7 +146,7 @@ public class SimpleConfigBuilder
 	 * @see #withBackground(ResourceLocation)
 	 * @see #withGUIDecorator(BiConsumer)
 	 */
-	public SimpleConfigBuilder withColor(int tint) {
+	@Contract("_ -> this") public SimpleConfigBuilder withColor(int tint) {
 		defaultCategory.withColor(tint);
 		return this;
 	}
@@ -152,7 +155,7 @@ public class SimpleConfigBuilder
 	 * Use the solid background too when ingame<br>
 	 * By default, config GUIs are transparent when ingame
 	 */
-	public SimpleConfigBuilder withSolidInGameBackground() {
+	@Contract("-> this") public SimpleConfigBuilder withSolidInGameBackground() {
 		this.transparent = false;
 		return this;
 	}
@@ -163,7 +166,7 @@ public class SimpleConfigBuilder
 	 * @see SimpleConfigBuilder#withBackground(ResourceLocation)
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator) {
+	@Contract("_ -> this") public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator) {
 		this.decorator = decorator;
 		return this;
 	}
@@ -172,19 +175,18 @@ public class SimpleConfigBuilder
 	 * Register the config command at the given command root<br>
 	 * The config command will still be accessible at {@code /config ⟨sub⟩ ⟨modid⟩}<br>
 	 */
-	public SimpleConfigBuilder withCommandRoot(LiteralArgumentBuilder<CommandSource> root) {
+	@Contract("_ -> this") public SimpleConfigBuilder withCommandRoot(LiteralArgumentBuilder<CommandSource> root) {
 		commandRoot = root;
 		return this;
 	}
 	
-	@Override
-	protected void checkName(String name) {
+	@Override protected void checkName(String name) {
 		super.checkName(name);
-		if (categories.containsKey(name) || type.name().toLowerCase().equals(name))
-			throw new IllegalArgumentException("Duplicate config entry name: " + name);
+		if (categories.containsKey(name)) throw new IllegalArgumentException(
+		  "Duplicate config entry name: " + name);
 	}
 	
-	@Override public SimpleConfigBuilder restart() {
+	@Contract("-> this") @Override public SimpleConfigBuilder restart() {
 		super.restart();
 		categories.values().forEach(CategoryBuilder::restart);
 		return this;
@@ -196,9 +198,8 @@ public class SimpleConfigBuilder
 		checkName(name);
 		if (entries.containsKey(name) || groups.containsKey(name) || categories.containsKey(name))
 			throw new IllegalArgumentException("Duplicate name for entry: " + name);
+		if (requireRestart) entry = entry.restart();
 		entries.put(name, entry);
-		if (requireRestart)
-			entry.restart();
 		guiOrder.put(name, order);
 	}
 	
@@ -218,29 +219,29 @@ public class SimpleConfigBuilder
 		return translation(name) + ":help";
 	}
 	
-	@Override protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
-		entry.setTranslation(translation(entry.name));
-		entry.setTooltip(tooltip(entry.name));
+	@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry) {
+		if (entry.getTranslation() == null)
+			entry.setTranslation(translation(entry.name));
+		if (entry.getTooltipKey() == null)
+			entry.setTooltipKey(tooltip(entry.name));
 	}
 	
-	public SimpleConfigBuilder n(CategoryBuilder cat) {
+	@Contract("_ -> this") public SimpleConfigBuilder n(CategoryBuilder cat) {
 		return n(cat, 0);
 	}
 	
-	public SimpleConfigBuilder n(CategoryBuilder cat, int index) {
-		if (categories.containsKey(cat.name) || groups.containsKey(cat.name))
-			throw new IllegalArgumentException("Duplicated config category: \"" + cat.name + "\"");
+	@Contract("_, _ -> this") public SimpleConfigBuilder n(CategoryBuilder cat, int index) {
+		checkName(cat.name);
 		categories.put(cat.name, cat);
 		categoryOrder.put(cat, index);
 		cat.setParent(this);
-		if (requireRestart)
-			cat.restart();
+		if (requireRestart) cat.restart();
 		return this;
 	}
 	
+	@Contract("_, _ -> this")
 	@Override public SimpleConfigBuilder n(GroupBuilder group, int index) {
-		if (groups.containsKey(group.name) || categories.containsKey(group.name) || entries.containsKey(group.name))
-			throw new IllegalArgumentException("Duplicated name for group: \"" + group.name + "\"");
+		checkName(group.name);
 		groups.put(group.name, group);
 		guiOrder.put(group.name, index);
 		group.setParent(defaultCategory);
@@ -248,6 +249,8 @@ public class SimpleConfigBuilder
 			group.restart();
 		return this;
 	}
+	
+	
 	
 	/**
 	 * Builder for a {@link SimpleConfigCategory}<br>
@@ -260,7 +263,6 @@ public class SimpleConfigBuilder
 	 */
 	public static class CategoryBuilder
 	  extends AbstractSimpleConfigEntryHolderBuilder<CategoryBuilder> {
-		
 		protected SimpleConfigBuilder parent;
 		protected final String name;
 		protected String title;
@@ -301,7 +303,7 @@ public class SimpleConfigBuilder
 		 * and it will be set automatically as the baker (but you
 		 * may not define it and also call this method)
 		 */
-		public CategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker) {
+		@Contract("_ -> this") public CategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker) {
 			this.baker = baker;
 			return this;
 		}
@@ -313,7 +315,7 @@ public class SimpleConfigBuilder
 		 * @see #withColor(int)
 		 * @see #withGUIDecorator(BiConsumer)
 		 */
-		public CategoryBuilder withBackground(String resourceName) {
+		@Contract("_ -> this") public CategoryBuilder withBackground(String resourceName) {
 			return withBackground(new ResourceLocation(resourceName));
 		}
 		
@@ -324,7 +326,7 @@ public class SimpleConfigBuilder
 		 * @see #withColor(int)
 		 * @see #withGUIDecorator(BiConsumer)
 		 */
-		public CategoryBuilder withBackground(ResourceLocation background) {
+		@Contract("_ -> this") public CategoryBuilder withBackground(ResourceLocation background) {
 			this.background = background;
 			return this;
 		}
@@ -337,7 +339,7 @@ public class SimpleConfigBuilder
 		 * @see #withBackground(ResourceLocation)
 		 * @see #withGUIDecorator(BiConsumer)
 		 */
-		public CategoryBuilder withIcon(Icon icon) {
+		@Contract("_ -> this") public CategoryBuilder withIcon(Icon icon) {
 			this.icon = icon;
 			return this;
 		}
@@ -353,7 +355,7 @@ public class SimpleConfigBuilder
 		 * @see #withBackground(ResourceLocation)
 		 * @see #withGUIDecorator(BiConsumer)
 		 */
-		public CategoryBuilder withColor(int tint) {
+		@Contract("_ -> this") public CategoryBuilder withColor(int tint) {
 			this.tint = tint;
 			return this;
 		}
@@ -365,7 +367,9 @@ public class SimpleConfigBuilder
 		 * @see #withColor(int)
 		 */
 		@OnlyIn(Dist.CLIENT)
-		public CategoryBuilder withGUIDecorator(BiConsumer<SimpleConfigCategory, ConfigCategory> decorator) {
+		@Contract("_ -> this") public CategoryBuilder withGUIDecorator(
+		  BiConsumer<SimpleConfigCategory, ConfigCategory> decorator
+		) {
 			this.decorator = decorator;
 			return this;
 		}
@@ -376,9 +380,8 @@ public class SimpleConfigBuilder
 			checkName(name);
 			if (entries.containsKey(name) || groups.containsKey(name))
 				throw new IllegalArgumentException("Duplicate name for entry: " + name);
+			if (requireRestart) entry = entry.restart();
 			entries.put(name, entry);
-			if (requireRestart)
-				entry.restart();
 			guiOrder.put(name, order);
 		}
 		
@@ -398,11 +401,14 @@ public class SimpleConfigBuilder
 			return translation(name) + ":help";
 		}
 		
-		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
-			entry.setTranslation(translation(entry.name));
-			entry.setTooltip(tooltip(entry.name));
+		@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry) {
+			if (entry.getTranslation() == null)
+				entry.setTranslation(translation(entry.name));
+			if (entry.getTooltipKey() == null)
+				entry.setTooltipKey(tooltip(entry.name));
 		}
 		
+		@Contract("_, _ -> this")
 		@Override public CategoryBuilder n(GroupBuilder group, int index) {
 			if (groups.containsKey(group.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + group.name + "\"");
@@ -415,21 +421,25 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		protected SimpleConfigCategory build(SimpleConfig parent, ForgeConfigSpec.Builder specBuilder) {
-			specBuilder.push(name);
-			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, baker);
+		protected SimpleConfigCategory build(
+		  SimpleConfig parent, ConfigValueBuilder builder, boolean isRoot
+		) {
+			if (!isRoot) builder.enterSection(name);
+			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, isRoot, baker);
 			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			entries.forEach((name, value) -> {
-				final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(cat, name);
-				entriesByName.put(name, entry);
-				translate(entry);
-				entry.backingField = getBackingField(name);
-				entry.secondaryBackingFields = getSecondaryBackingFields(name);
-				entry.buildConfig(specBuilder);
+				if (builder.canBuildEntry(name)) {
+					final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(cat, name);
+					entriesByName.put(name, entry);
+					buildTranslations(entry);
+					entry.backingField = getBackingField(name);
+					entry.secondaryBackingFields = getSecondaryBackingFields(name);
+					builder.build(entry);
+				}
 			});
 			for (GroupBuilder group : this.groups.values()) {
-				final SimpleConfigGroup g = group.build(cat, specBuilder);
+				final SimpleConfigGroup g = group.build(cat, builder);
 				groups.put(group.name, g);
 			}
 			final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
@@ -440,7 +450,7 @@ public class SimpleConfigBuilder
 			cat.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
 			  unmodifiableList(order), icon, tint);
-			specBuilder.pop();
+			if (!isRoot) builder.exitSection();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 				cat.decorator = decorator;
 				cat.background = background;
@@ -506,6 +516,7 @@ public class SimpleConfigBuilder
 				group.setParent(this);
 		}
 		
+		@Contract("_, _ -> this")
 		@Override public GroupBuilder n(GroupBuilder nested, int index) {
 			if (groups.containsKey(nested.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + nested.name + "\"");
@@ -518,11 +529,12 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		public GroupBuilder withBaker(Consumer<SimpleConfigGroup> baker) {
+		@Contract("_ -> this") public GroupBuilder withBaker(Consumer<SimpleConfigGroup> baker) {
 			this.baker = baker;
 			return this;
 		}
 		
+		@Contract("_, _ -> this")
 		public <
 		  V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>,
 		  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
@@ -542,9 +554,8 @@ public class SimpleConfigBuilder
 			checkName(name);
 			if (entries.containsKey(name))
 				throw new IllegalArgumentException("Duplicate config entry name: " + name);
+			if (requireRestart) entry = entry.restart();
 			entries.put(name, entry);
-			if (requireRestart)
-				entry.restart();
 			guiOrder.put(name, order);
 		}
 		
@@ -564,25 +575,27 @@ public class SimpleConfigBuilder
 			return translation(name) + ":help";
 		}
 		
-		protected void translate(AbstractConfigEntry<?, ?, ?, ?> entry) {
-			entry.setTranslation(translation(entry.name));
-			entry.setTooltip(tooltip(entry.name));
+		@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry) {
+			if (entry.getTranslation() == null)
+				entry.setTranslation(translation(entry.name));
+			if (entry.getTooltipKey() == null)
+				entry.setTooltipKey(tooltip(entry.name));
 		}
 		
-		protected SimpleConfigGroup build(SimpleConfigGroup parent, ForgeConfigSpec.Builder specBuilder) {
-			return build(null, parent, specBuilder);
+		protected SimpleConfigGroup build(SimpleConfigGroup parent, ConfigValueBuilder builder) {
+			return build(null, parent, builder);
 		}
 		
-		protected SimpleConfigGroup build(SimpleConfigCategory parent, ForgeConfigSpec.Builder specBuilder) {
-			return build(parent, null, specBuilder);
+		protected SimpleConfigGroup build(SimpleConfigCategory parent, ConfigValueBuilder builder) {
+			return build(parent, null, builder);
 		}
 		
 		private SimpleConfigGroup build(
 		  @Nullable SimpleConfigCategory parent, @Nullable SimpleConfigGroup groupParent,
-		  ForgeConfigSpec.Builder specBuilder
+		  ConfigValueBuilder builder
 		) {
 			assert parent != null || groupParent != null;
-			specBuilder.push(name);
+			builder.enterSection(name);
 			final SimpleConfigGroup group;
 			if (parent != null)
 				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded, baker);
@@ -591,26 +604,28 @@ public class SimpleConfigBuilder
 			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			final AbstractConfigEntry<?, ?, ?, ?> heldEntry =
 			  heldEntryBuilder != null ? heldEntryBuilder.build(group, heldEntryName) : null;
-			if (heldEntry != null) {
+			if (heldEntry != null && builder.canBuildEntry(heldEntryName)) {
 				entriesByName.put(heldEntryName, heldEntry);
-				translate(heldEntry);
+				buildTranslations(heldEntry);
 				heldEntry.backingField = getBackingField(heldEntryName);
 				heldEntry.secondaryBackingFields = getSecondaryBackingFields(heldEntryName);
-				heldEntry.buildConfig(specBuilder);
+				builder.build(heldEntry);
 			}
-			entries.forEach((name, builder) -> {
-				if (builder == heldEntryBuilder) return;
-				final AbstractConfigEntry<?, ?, ?, ?> entry = builder.build(group, name);
+			entries.forEach((name, b) -> {
+				if (b == heldEntryBuilder || !builder.canBuildEntry(name)) return;
+				final AbstractConfigEntry<?, ?, ?, ?> entry = b.build(group, name);
 				entriesByName.put(name, entry);
-				translate(entry);
+				buildTranslations(entry);
 				entry.backingField = getBackingField(name);
 				entry.secondaryBackingFields = getSecondaryBackingFields(name);
-				entry.buildConfig(specBuilder);
+				builder.build(entry);
 			});
 			for (String name : groups.keySet()) {
-				GroupBuilder builder = groups.get(name);
-				SimpleConfigGroup subGroup = builder.build(group, specBuilder);
-				groupMap.put(name, subGroup);
+				GroupBuilder b = groups.get(name);
+				if (builder.canBuildSection(name)) {
+					SimpleConfigGroup subGroup = b.build(group, builder);
+					groupMap.put(name, subGroup);
+				}
 			}
 			final List<IGUIEntry> builtOrder = guiOrder.keySet().stream().sorted(
 			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
@@ -620,7 +635,7 @@ public class SimpleConfigBuilder
 			group.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groupMap),
 			  unmodifiableList(builtOrder), heldEntry);
-			specBuilder.pop();
+			builder.exitSection();
 			return group;
 		}
 		
@@ -628,6 +643,14 @@ public class SimpleConfigBuilder
 		public String toString() {
 			return "Group[" + path + "]";
 		}
+	}
+	
+	/**
+	 * Applies the final decorations before the config building<br>
+	 * Parses the backing classes
+	 */
+	protected void preBuildHook() {
+		SimpleConfigClassParser.decorateBuilder(this);
 	}
 	
 	/**
@@ -648,51 +671,51 @@ public class SimpleConfigBuilder
 	}
 	
 	/**
-	 * Applies the final decorations before the config building<br>
-	 * Parses the backing classes
-	 */
-	protected void preBuildHook() {
-		SimpleConfigClassParser.decorateBuilder(this);
-	}
-	
-	/**
 	 * Build the actual config and register it within the Forge system<br><br>
 	 * <i>If your mod uses Java as its language</i> you don't need to pass
 	 * the mod event bus
+	 *
 	 * @param modEventBus Your mod's language provider's mod event bus
 	 * @return The built config, which is also received by the baker
 	 */
-	@SuppressWarnings("UnusedReturnValue")
-	public SimpleConfig buildAndRegister(IEventBus modEventBus) {
+	public SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus) {
+		return buildAndRegister(modEventBus, new ForgeConfigSpecConfigValueBuilder());
+	}
+	
+	@Internal protected SimpleConfig buildAndRegister(IEventBus modEventBus, ConfigValueBuilder builder) {
 		preBuildHook();
 		if (type == Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
 			        ? (SimpleConfig::syncToClients)
 			        : (SimpleConfig::syncToServer);
-		} else {
-			saver = SimpleConfig::checkRestart;
-		}
+		} else saver = SimpleConfig::checkRestart;
 		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
-		final ForgeConfigSpec.Builder specBuilder = new ForgeConfigSpec.Builder();
 		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 		entries.forEach((name, value) -> {
-			final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
-			entriesByName.put(name, entry);
-			translate(entry);
-			entry.backingField = getBackingField(name);
-			entry.secondaryBackingFields = getSecondaryBackingFields(name);
-			entry.buildConfig(specBuilder);
+			if (builder.canBuildEntry(name)) {
+				final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
+				entriesByName.put(name, entry);
+				buildTranslations(entry);
+				entry.backingField = getBackingField(name);
+				entry.secondaryBackingFields = getSecondaryBackingFields(name);
+				builder.build(entry);
+			}
 		});
-		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, specBuilder);
+		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, builder, true);
 		for (GroupBuilder group : groups.values()) {
-			final SimpleConfigGroup g = group.build(defaultCategory, specBuilder);
-			groupMap.put(group.name, g);
+			if (builder.canBuildSection(group.name)) {
+				final SimpleConfigGroup g = group.build(defaultCategory, builder);
+				groupMap.put(group.name, g);
+			}
 		}
 		categories.values().stream().sorted(
 		  Comparator.comparing(c -> categoryOrder.getOrDefault(c, 0))
-		).forEachOrdered(c -> categoryMap.put(c.name, c.build(config, specBuilder)));
+		).forEachOrdered(c -> {
+			if (builder.canBuildSection(c.name))
+				categoryMap.put(c.name, c.build(config, builder, false));
+		});
 		final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
 		  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 		).map(
@@ -700,20 +723,58 @@ public class SimpleConfigBuilder
 		).collect(Collectors.toList());
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
-		  unmodifiableMap(groupMap), unmodifiableList(order), specBuilder.build(),
+		  unmodifiableMap(groupMap), unmodifiableList(order), builder.build(),
 		  defaultCategory.icon, defaultCategory.color, commandRoot);
-		ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
-		SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
-		config.build(modConfig);
-		modContainer.addConfig(modConfig);
+		builder.buildModConfig(config);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			config.decorator = decorator;
 			config.background = background;
 			config.transparent = transparent;
 			SimpleConfigGUIManager.registerConfig(config);
 		});
-		modEventBus.register(config);
+		if (modEventBus != null) modEventBus.register(config);
 		return config;
+	}
+	
+	protected static abstract class ConfigValueBuilder {
+		abstract void buildModConfig(SimpleConfig config);
+		boolean canBuildEntry(String name) {
+			return true;
+		}
+		boolean canBuildSection(String name) {
+			return true;
+		}
+		abstract void build(AbstractConfigEntry<?, ?, ?, ?> entry);
+		void enterSection(String name) {}
+		void exitSection() {}
+		abstract ForgeConfigSpec build();
+	}
+	
+	protected static class ForgeConfigSpecConfigValueBuilder extends ConfigValueBuilder {
+		private final ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+		
+		@Override void buildModConfig(SimpleConfig config) {
+			ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
+			SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
+			config.build(modContainer, modConfig);
+			modContainer.addConfig(modConfig);
+		}
+		
+		@Override void build(AbstractConfigEntry<?, ?, ?, ?> entry) {
+			entry.buildConfig(builder);
+		}
+		
+		@Override void enterSection(String name) {
+			builder.push(name);
+		}
+		
+		@Override void exitSection() {
+			builder.pop();
+		}
+		
+		@Override ForgeConfigSpec build() {
+			return builder.build();
+		}
 	}
 	
 	@Override

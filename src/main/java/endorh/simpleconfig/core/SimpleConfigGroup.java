@@ -81,8 +81,8 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	@Override
 	protected String getPath() {
 		return parentGroup != null
-		       ? parentGroup.getPath() + "." + name
-		       : category.getPath() + "." + name;
+		       ? parentGroup.getPathPart() + name
+		       : category.getPathPart() + name;
 	}
 	
 	@Override protected String getName() {
@@ -91,13 +91,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@Override protected String getConfigComment() {
 		StringBuilder builder = new StringBuilder();
-		if (title != null && I18n.hasKey(title)) {
+		if (title != null && ServerI18n.hasKey(title)) {
 			String name = stripFormattingCodes(
-			  I18n.format(title).trim());
+			  ServerI18n.format(title).trim());
 			builder.append(name).append('\n');
-			if (tooltip != null && I18n.hasKey(tooltip)) {
+			if (tooltip != null && ServerI18n.hasKey(tooltip)) {
 				String tooltip = "  " + stripFormattingCodes(
-				  I18n.format(this.tooltip).trim().replace("\n", "\n  "));
+				  ServerI18n.format(this.tooltip).trim().replace("\n", "\n  "));
 				builder.append(tooltip).append('\n');
 			}
 		}
@@ -234,7 +234,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		return group.build();
 	}
 	
-	private <
+	@OnlyIn(Dist.CLIENT) private <
 	  T, CE extends AbstractConfigEntry<?, ?, T, ?> & IKeyEntry<T>
 	> CaptionedSubCategoryBuilder<T, ?> createAndDecorateGUI(
 	  ConfigEntryBuilder entryBuilder, AbstractConfigEntry<?, ?, ?, ?> heldEntry

@@ -39,7 +39,6 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
 	protected final FakeEntryHolder holder;
-	protected boolean expand;
 	
 	@Internal public EntryPairListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
@@ -74,7 +73,6 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	  Builder<K, V, KC, C, KG, G, E, B, KE, KB>> {
 		protected final KB keyEntryBuilder;
 		protected B entryBuilder;
-		protected boolean expand;
 		
 		public Builder(List<Pair<K, V>> value, KB keyEntryBuilder, B entryBuilder) {
 			super(value, Map.class);
@@ -82,30 +80,14 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 			this.keyEntryBuilder = keyEntryBuilder;
 		}
 		
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand() {
-			return expand(true);
-		}
-		
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand(boolean expand) {
-			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
-			copy.expand = expand;
-			return copy;
-		}
-		
 		@Override protected EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			final EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB> e = new EntryPairListEntry<>(
-			  parent, name, value, entryBuilder, keyEntryBuilder);
-			e.expand = expand;
-			return e;
+			return new EntryPairListEntry<>(parent, name, value, entryBuilder, keyEntryBuilder);
 		}
 		
 		@Override protected Builder<K, V, KC, C, KG, G, E, B, KE, KB> createCopy() {
-			final Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy =
-			  new Builder<>(value, keyEntryBuilder.copy(), entryBuilder.copy());
-			copy.expand = expand;
-			return copy;
+			return new Builder<>(value, keyEntryBuilder.copy(), entryBuilder.copy());
 		}
 	}
 	
@@ -203,7 +185,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		return errors;
 	}
 	
-	protected @Nullable String getListTypeComment() {
+	@Override protected @Nullable String getListTypeComment() {
 		String keyComment = keyEntry.getConfigCommentTooltip();
 		String valueComment = entry.getConfigCommentTooltip();
 		return (keyComment.isEmpty()? "?" : keyComment) + " >> " +

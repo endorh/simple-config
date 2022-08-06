@@ -88,7 +88,7 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 	
 	// IRenderable methods
 	
-	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		if (target instanceof IRenderable)
 			((IRenderable) target).render(mStack, mouseX, mouseY, delta);
 	}

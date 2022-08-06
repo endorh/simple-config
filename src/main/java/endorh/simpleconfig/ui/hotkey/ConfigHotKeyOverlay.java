@@ -1,11 +1,14 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.SimpleConfigMod;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -18,7 +21,8 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static net.minecraft.client.gui.AbstractGui.fill;
 
-@EventBusSubscriber
+@OnlyIn(Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
 public class ConfigHotKeyOverlay {
 	private static final List<QueuedHotKeyMessage> messages = new ArrayList<>();
 	private static final int DURATION = 1500;
@@ -84,7 +88,7 @@ public class ConfigHotKeyOverlay {
 		
 		public void render(MatrixStack mStack, int r, int y, int maxWidth) {
 			long time = System.currentTimeMillis() - getTimestamp();
-			if (time > DURATION + FADE_OUT) return;
+			if (time >= DURATION + FADE_OUT) return;
 			float alpha = time > DURATION? 1F - (time - DURATION) / (float) FADE_OUT : 1F;
 			FontRenderer font = Minecraft.getInstance().fontRenderer;
 			List<ITextComponent> messages = getMessage();

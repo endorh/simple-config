@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -22,8 +23,8 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends
-	                            AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, Builder> {
+	public static class Builder
+	  extends AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, Builder> {
 		public Builder(Byte value) {
 			super(value, Byte.class);
 		}
@@ -31,21 +32,21 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 		/**
 		 * Set min (inclusive)
 		 */
-		public Builder min(byte min) {
+		@Contract(pure=true) public Builder min(byte min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set max (inclusive)
 		 */
-		public Builder max(byte max) {
+		@Contract(pure=true) public Builder max(byte max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set range (inclusive)
 		 */
-		public Builder range(byte min, byte max) {
+		@Contract(pure=true) public Builder range(byte min, byte max) {
 			return super.range(min, max);
 		}
 		
@@ -72,8 +73,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

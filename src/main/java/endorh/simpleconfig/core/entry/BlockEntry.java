@@ -20,6 +20,7 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -59,24 +60,24 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockE
 		 * When true (the default), requires the block item to have a group.<br>
 		 * This excludes the AIR and BARRIER blocks, as well as other special blocks.
 		 */
-		public Builder setRequireGroup(boolean requireGroup) {
+		@Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		public Builder from(Predicate<Block> filter) {
+		@Contract(pure=true) public Builder from(Predicate<Block> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		public Builder from(List<Block> choices) {
+		@Contract(pure=true) public Builder from(List<Block> choices) {
 			List<Block> listCopy = new ArrayList<>(choices);
 			return from(listCopy::contains);
 		}
 		
-		public Builder from(Block... choices) {
+		@Contract(pure=true) public Builder from(Block... choices) {
 			List<Block> listCopy = Arrays.asList(choices);
 			return from(listCopy::contains);
 		}
@@ -86,7 +87,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block, BlockE
 		 * This can only be done on server configs, since tags
 		 * are server-dependant
 		 */
-		public Builder from(ITag<Block> tag) {
+		@Contract(pure=true) public Builder from(ITag<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

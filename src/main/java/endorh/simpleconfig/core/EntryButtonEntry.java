@@ -7,6 +7,9 @@ import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -47,20 +50,20 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 			this.action = action;
 		}
 		
-		public Builder<V, Gui, Inner> label(String translation) {
+		@Contract(pure=true) public Builder<V, Gui, Inner> label(String translation) {
 			Builder<V, Gui, Inner> copy = copy();
 			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}
 		
-		public Builder<V, Gui, Inner> label(ITextComponent label) {
+		@Contract(pure=true) public Builder<V, Gui, Inner> label(ITextComponent label) {
 			Builder<V, Gui, Inner> copy = copy();
 			copy.buttonLabelSupplier = () -> label;
 			return copy;
 		}
 		
-		public Builder<V, Gui, Inner> label(Supplier<ITextComponent> label) {
+		@Contract(pure=true) public Builder<V, Gui, Inner> label(Supplier<ITextComponent> label) {
 			Builder<V, Gui, Inner> copy = copy();
 			copy.buttonLabelSupplier = label;
 			return copy;
@@ -90,7 +93,7 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 		return inner.fromGui(value);
 	}
 	
-	@Override public Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final EntryButtonListEntry<Gui, ?> entry = new EntryButtonListEntry<>(

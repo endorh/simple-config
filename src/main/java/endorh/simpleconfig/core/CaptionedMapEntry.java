@@ -83,14 +83,14 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
-	public Map<Object, Object> forActualConfig(@Nullable Pair<CC, Map<KC, C>> value) {
+	@Override public Map<Object, Object> forActualConfig(@Nullable Pair<CC, Map<KC, C>> value) {
 		if (value == null) return null;
 		return Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
 		  captionEntry.forActualConfig(value.getKey()),
 		  mapEntry.forActualConfig(value.getValue())));
 	}
 	
-	public @Nullable Pair<CC, Map<KC, C>> fromActualConfig(@Nullable Object value) {
+	@Override public @Nullable Pair<CC, Map<KC, C>> fromActualConfig(@Nullable Object value) {
 		if (value instanceof Map) {
 			Map<?, ?> m = (Map<?, ?>) value;
 			if (m.size() != 1) return null;

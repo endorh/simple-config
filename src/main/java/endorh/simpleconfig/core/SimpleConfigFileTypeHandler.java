@@ -27,18 +27,18 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 	private static final Marker CONFIG = MarkerManager.getMarker("CONFIG");
 	public static SimpleConfigFileTypeHandler YAML = new SimpleConfigFileTypeHandler();
 	
-	public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
-		return (oonfig) -> {
-			if (!(oonfig instanceof SimpleConfigModConfig)) throw new IllegalArgumentException(
+	@Override public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
+		return (config) -> {
+			if (!(config instanceof SimpleConfigModConfig)) throw new IllegalArgumentException(
 			  "SimpleConfigFileTypeHandler can only handle SimpleConfigModConfig");
-			SimpleConfigModConfig c = (SimpleConfigModConfig) oonfig;
+			SimpleConfigModConfig c = (SimpleConfigModConfig) config;
 			final Path configPath = configBasePath.resolve(c.getFileName());
 			final CommentedFileConfig configData = CommentedFileConfig.builder(
 			  configPath, c.getConfigFormat()
 			  ).sync()
 			  .preserveInsertionOrder()
 			  .autosave()
-			  .onFileNotFound((newfile, configFormat) -> setupConfigFile(oonfig, newfile, configFormat))
+			  .onFileNotFound((newfile, configFormat) -> setupConfigFile(config, newfile, configFormat))
 			  .writingMode(WritingMode.REPLACE)
 			  .build();
 			LOGGER.debug(CONFIG, "Built YAML config for {}", configPath.toString());
@@ -51,7 +51,7 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 			LOGGER.debug(CONFIG, "Loaded YAML config file {}", configPath.toString());
 			try {
 				FileWatcher.defaultInstance().addWatch(configPath, new SimpleConfigWatcher(
-				  oonfig, configData, Thread.currentThread().getContextClassLoader()));
+				  config, configData, Thread.currentThread().getContextClassLoader()));
 				LOGGER.debug(CONFIG, "Watching YAML config file {} for changes", configPath.toString());
 			} catch (IOException e) {
 				throw new RuntimeException("Couldn't watch config file", e);
@@ -60,7 +60,7 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 		};
 	}
 	
-	public void unload(Path configBasePath, ModConfig config) {
+	@Override public void unload(Path configBasePath, ModConfig config) {
 		Path configPath = configBasePath.resolve(config.getFileName());
 		try {
 			FileWatcher.defaultInstance().removeWatch(configBasePath.resolve(config.getFileName()));

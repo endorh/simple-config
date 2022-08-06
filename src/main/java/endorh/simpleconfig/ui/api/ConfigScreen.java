@@ -7,18 +7,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Consumer;
 
 public interface ConfigScreen {
-	void setSavingRunnable(@Nullable Runnable var1);
-	
-	void setAfterInitConsumer(@Nullable Consumer<Screen> var1);
+	void setSavingRunnable(@Nullable Runnable runnable);
+	void setClosingRunnable(@Nullable Runnable runnable);
+	void setAfterInitConsumer(@Nullable Consumer<Screen> consumer);
 	
 	ResourceLocation getBackgroundLocation();
 	
 	boolean isRequiresRestart();
-	
 	boolean isEdited();
 	
 	void saveAll(boolean var1);
-	
 	void addTooltip(Tooltip var1);
 }
 

@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -45,7 +46,8 @@ public class StringEntry
 		  () -> choiceSupplier != null? choiceSupplier.get() : Lists.newArrayList());
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<String, String, String, StringEntry, Builder> {
+	public static class Builder
+	  extends AbstractConfigEntryBuilder<String, String, String, StringEntry, Builder> {
 		protected Supplier<List<String>> choiceSupplier = null;
 		protected boolean restrict = false;
 		protected int maxLength = Integer.MAX_VALUE;
@@ -60,7 +62,7 @@ public class StringEntry
 		 * For suggestions, it's possible to provide instead a suggestion supplier,
 		 * to provide dynamic suggestions instead. This is not possible with restrictions.
 		 */
-		public Builder suggest(String... suggestions) {
+		@Contract(pure=true) public Builder suggest(String... suggestions) {
 			return suggest(Arrays.stream(suggestions).collect(Collectors.toList()));
 		}
 		
@@ -70,7 +72,7 @@ public class StringEntry
 		 * For suggestions, it's possible to provide instead a suggestion supplier,
 		 * to provide dynamic suggestions instead. This is not possible with restrictions.
 		 */
-		public Builder suggest(@NotNull List<String> suggestions) {
+		@Contract(pure=true)public Builder suggest(@NotNull List<String> suggestions) {
 			Builder copy = copy();
 			Objects.requireNonNull(suggestions);
 			copy.choiceSupplier = () -> suggestions;
@@ -83,7 +85,7 @@ public class StringEntry
 		 * To restrict values to the suggestions, use {@link Builder#restrict},
 		 * although this method can only supply a fixed set of choices.
 		 */
-		public Builder suggest(Supplier<List<String>> suggestionSupplier) {
+		@Contract(pure=true) public Builder suggest(Supplier<List<String>> suggestionSupplier) {
 			Builder copy = copy();
 			copy.choiceSupplier = suggestionSupplier;
 			copy.restrict = false;
@@ -100,7 +102,7 @@ public class StringEntry
 		 * suggestions instead when they cannot be determined at
 		 * start-up time
 		 */
-		public Builder restrict(String first, String... choices) {
+		@Contract(pure=true) public Builder restrict(String first, String... choices) {
 			return restrict(Lists.newArrayList(ArrayUtils.insert(0, choices, first)));
 		}
 		
@@ -114,7 +116,7 @@ public class StringEntry
 		 * suggestions instead when they cannot be determined at
 		 * start-up time
 		 */
-		public Builder restrict(@NotNull List<String> choices) {
+		@Contract(pure=true) public Builder restrict(@NotNull List<String> choices) {
 			Builder copy = copy();
 			if (choices.isEmpty())
 				throw new IllegalArgumentException("At least one choice must be specified");
@@ -124,19 +126,19 @@ public class StringEntry
 			return copy;
 		}
 		
-		public Builder maxLength(@Range(from = 0, to = Integer.MAX_VALUE) int maxLength) {
+		@Contract(pure=true) public Builder maxLength(@Range(from = 0, to = Integer.MAX_VALUE) int maxLength) {
 			Builder copy = copy();
 			copy.maxLength = maxLength;
 			return copy;
 		}
 		
-		public Builder minLength(@Range(from = 0, to = Integer.MAX_VALUE) int minLength) {
+		@Contract(pure=true) public Builder minLength(@Range(from = 0, to = Integer.MAX_VALUE) int minLength) {
 			Builder copy = copy();
 			copy.minLength = minLength;
 			return copy;
 		}
 		
-		public Builder notEmpty() {
+		@Contract(pure=true) public Builder notEmpty() {
 			return minLength(1);
 		}
 		

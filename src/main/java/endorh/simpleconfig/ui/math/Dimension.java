@@ -44,7 +44,7 @@ public class Dimension
 		this.height = height;
 	}
 	
-	public boolean equals(Object obj) {
+	@Override public boolean equals(Object obj) {
 		if (obj instanceof Dimension) {
 			Dimension d = (Dimension) obj;
 			return this.width == d.width && this.height == d.height;
@@ -52,18 +52,18 @@ public class Dimension
 		return false;
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		int result = 1;
 		result = 31 * result + this.width;
 		result = 31 * result + this.height;
 		return result;
 	}
 	
-	public String toString() {
+	@Override public String toString() {
 		return this.getClass().getName() + "[width=" + this.width + ",height=" + this.height + "]";
 	}
 	
-	@SuppressWarnings("MethodDoesntCallSuperMethod") public Dimension clone() {
+	@Override @SuppressWarnings("MethodDoesntCallSuperMethod") public Dimension clone() {
 		return this.getSize();
 	}
 }

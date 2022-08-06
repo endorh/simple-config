@@ -11,13 +11,16 @@ import java.util.List;
 public abstract class AbstractTabbedConfigScreen extends AbstractConfigScreen {
 	protected AbstractTabbedConfigScreen(
 	  Screen parent, String modId, ITextComponent title, ResourceLocation backgroundLocation,
-	  Collection<ConfigCategory> categories, Collection<ConfigCategory> serverCategories
+	  Collection<ConfigCategory> clientCategories,
+	  Collection<ConfigCategory> commonCategories,
+	  Collection<ConfigCategory> serverCategories
 	) {
-		super(parent, modId, title, backgroundLocation, categories, serverCategories);
+		super(parent, modId, title, backgroundLocation,
+		      clientCategories, commonCategories, serverCategories);
 	}
 	
 	protected List<ConfigCategory> getTabbedCategories() {
-		return isSelectedCategoryServer()? sortedServerCategories : sortedClientCategories;
+		return getSortedTypeCategories();
 	}
 }
 

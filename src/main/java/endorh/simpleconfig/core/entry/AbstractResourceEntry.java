@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -36,13 +37,13 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			super(value, typeClass);
 		}
 		
-		public Self suggest(Supplier<List<ResourceLocation>> suggestionSupplier) {
+		@Contract(pure=true) public Self suggest(Supplier<List<ResourceLocation>> suggestionSupplier) {
 			Self copy = copy();
 			copy.suggestionSupplier = suggestionSupplier;
 			return copy;
 		}
 		
-		public Self suggest(List<ResourceLocation> suggestions) {
+		@Contract(pure=true) public Self suggest(List<ResourceLocation> suggestions) {
 			Self copy = copy();
 			copy.suggestionSupplier = () -> suggestions;
 			return copy;

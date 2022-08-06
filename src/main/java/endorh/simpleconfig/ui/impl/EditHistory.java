@@ -220,13 +220,12 @@ public class EditHistory {
 		
 		public static EditRecord of(IEntryHolder holder) {
 			return new EditRecord(
-			  holder instanceof AbstractConfigEntry ? ((AbstractConfigEntry<?>) holder).getPath() : null,
+			  holder instanceof AbstractConfigEntry? ((AbstractConfigEntry<?>) holder).getPath() : null,
 			  holder.getAllMainEntries().stream().collect(Collectors.toMap(AbstractConfigEntry::getPath, e -> e, (a, b) -> b)),
 			  null);
 		}
 		
 		public EditRecord apply(IEntryHolder holder) {
-
 			final HashMap<String, Object> map = new HashMap<>();
 			List<ListEditRecord> lr = null;
 			for (Entry<String, Object> e : values.entrySet()) {
@@ -332,7 +331,7 @@ public class EditHistory {
 				this.move = move;
 			}
 			
-			public ListEditRecord apply(IEntryHolder holder) {
+			@Override public ListEditRecord apply(IEntryHolder holder) {
 				return apply(holder, true);
 			}
 			
@@ -471,7 +470,7 @@ public class EditHistory {
 			}
 			
 			public static ListEditRecord move(BaseListEntry<?, ?, ?> list, Map<Integer, Integer> moves) {
-				return new ListEditRecord(list.getPath(), null, null,  null, moves);
+				return new ListEditRecord(list.getPath(), null, null, null, moves);
 			}
 		}
 	}

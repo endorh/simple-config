@@ -13,6 +13,7 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -71,20 +72,20 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			super(value, ModifierKeyCode.class);
 		}
 		
-		public Builder allowModifiers(boolean allowModifiers) {
+		@Contract(pure=true) public Builder allowModifiers(boolean allowModifiers) {
 			final Builder copy = copy();
 			copy.allowModifiers = allowModifiers;
 			return copy;
 		}
 		
-		public Builder allowModifiers() {
+		@Contract(pure=true) public Builder allowModifiers() {
 			return allowModifiers(true);
 		}
-		public Builder noModifiers() {
+		@Contract(pure=true) public Builder noModifiers() {
 			return allowModifiers(false);
 		}
 		
-		public Builder keyboard(boolean allowKeys) {
+		@Contract(pure=true) public Builder keyboard(boolean allowKeys) {
 			final Builder copy = copy();
 			copy.allowKey = allowKeys;
 			return copy;
@@ -96,7 +97,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		 * expect them. If you only check for keyCode and scanCode, you
 		 * won't be able to handle mouse KeyBinds.
 		 */
-		public Builder mouse(boolean allowMouse) {
+		@Contract(pure=true) public Builder mouse(boolean allowMouse) {
 			final Builder copy = copy();
 			copy.allowMouse = allowMouse;
 			return copy;
@@ -108,7 +109,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		 * expect them. If you only check for keyCode and scanCode, you
 		 * won't be able to handle mouse KeyBinds.
 		 */
-		public Builder allowMouse() {
+		@Contract(pure=true) public Builder allowMouse() {
 			return mouse(true);
 		}
 		
@@ -118,7 +119,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		 * expect them. If you only check for keyCode and scanCode, you
 		 * won't be able to handle mouse KeyBinds.
 		 */
-		public Builder mouseOnly() {
+		@Contract(pure=true) public Builder mouseOnly() {
 			return mouse(true).keyboard(false);
 		}
 		

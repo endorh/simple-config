@@ -13,6 +13,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -40,7 +41,7 @@ public class BooleanEntry
 		 * You may also pass a translation key to which '.true' and '.false'
 		 * would be appended if you use {@link Builder#text(String)}
 		 */
-		public Builder text(BooleanDisplayer displayAdapter) {
+		@Contract(pure=true) public Builder text(BooleanDisplayer displayAdapter) {
 			Builder copy = copy();
 			String trueS = displayAdapter.getSerializableName(true).trim().toLowerCase();
 			String falseS = displayAdapter.getSerializableName(false).trim().toLowerCase();
@@ -56,7 +57,7 @@ public class BooleanEntry
 		 * are appended to retrieve the actual text that will be used.
 		 * You may also provide your own logic using {@link Builder#text(BooleanDisplayer)}
 		 */
-		public Builder text(String translation) {
+		@Contract(pure=true) public Builder text(String translation) {
 			Builder copy = copy();
 			final TranslationTextComponent yes =
 			  new TranslationTextComponent(translation + ".true");

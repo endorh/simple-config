@@ -100,7 +100,7 @@ public class TextFieldWidgetEx extends Widget {
 	
 	public void tick() {}
 	
-	protected @NotNull IFormattableTextComponent getNarrationMessage() {
+	@Override protected @NotNull IFormattableTextComponent getNarrationMessage() {
 		ITextComponent itextcomponent = getMessage();
 		return new TranslationTextComponent("gui.narrate.editBox", itextcomponent, text);
 	}
@@ -297,7 +297,7 @@ public class TextFieldWidgetEx extends Widget {
 		moveCaret(text.length());
 	}
 	
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (!canConsumeInput()) {
 			return false;
 		} else {
@@ -364,7 +364,7 @@ public class TextFieldWidgetEx extends Widget {
 		return isVisible() && isFocused() && isEditable();
 	}
 	
-	public boolean charTyped(char codePoint, int modifiers) {
+	@Override public boolean charTyped(char codePoint, int modifiers) {
 		if (!canConsumeInput()) {
 			return false;
 		} else if (SharedConstants.isAllowedCharacter(codePoint)) {
@@ -393,7 +393,7 @@ public class TextFieldWidgetEx extends Widget {
 		}
 	}
 	
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		draggingText = false;
 		if (isVisible()) {
 			boolean hovered = isMouseOver(mouseX, mouseY);
@@ -469,12 +469,12 @@ public class TextFieldWidgetEx extends Widget {
 		return relX < (left + right) * 0.5? floor: floor + 1;
 	}
 	
-	public void renderButton(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderButton(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		if (isVisible()) {
 			boolean bordered = isBordered();
 			if (bordered) {
-				int borderColor = isFocused() ? 0xFF000000 | this.borderColor & 0xFFFFFF
-				                              : 0xA0000000 | this.borderColor & 0xFFFFFF;
+				int borderColor = isHovered()? 0xFF000000 | this.borderColor & 0xFFFFFF
+				                             : 0xA0000000 | this.borderColor & 0xFFFFFF;
 				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, borderColor);
 				fill(mStack, x, y, x + width, y + height, 0xFF000000);
 			}
@@ -609,16 +609,16 @@ public class TextFieldWidgetEx extends Widget {
 		this.borderColor = borderColor;
 	}
 	
-	public boolean changeFocus(boolean focus) {
+	@Override public boolean changeFocus(boolean focus) {
 		lastInteraction = System.currentTimeMillis();
 		return visible && isEditable() && super.changeFocus(focus);
 	}
 	
-	public boolean isMouseOver(double mouseX, double mouseY) {
+	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		return visible && mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
 	}
 	
-	protected void onFocusedChanged(boolean focused) {
+	@Override protected void onFocusedChanged(boolean focused) {
 	
 	}
 	

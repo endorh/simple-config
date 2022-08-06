@@ -174,7 +174,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 			
 			public String getTypeKey(SimpleConfigScreen screen) {
-				return screen.isSelectedCategoryServer() && screen.hasConflictingRemoteChanges()
+				return screen.isEditingServer() && screen.hasConflictingRemoteChanges()
 				       || !screen.hasConflictingExternalChanges() ? "remote" : "external";
 			}
 			

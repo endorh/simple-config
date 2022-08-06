@@ -16,7 +16,6 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,15 +47,17 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected @Nullable ResourceLocation background;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
+	protected boolean isRoot;
 	
 	@Internal protected SimpleConfigCategory(
-	  SimpleConfig parent, String name, String title,
+	  SimpleConfig parent, String name, String title, boolean isRoot,
 	  @Nullable Consumer<SimpleConfigCategory> baker
 	) {
 		this.parent = parent;
 		this.name = name;
 		this.title = title;
 		this.baker = baker;
+		this.isRoot = isRoot;
 		root = parent;
 		this.tooltip = title + ":help";
 	}
@@ -77,7 +78,11 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@Override protected String getPath() {
-		return name;
+		return isRoot? "" : name;
+	}
+	
+	@Override protected String getPathPart() {
+		return isRoot? "" : name + ".";
 	}
 	
 	@Override protected String getName() {
@@ -86,12 +91,12 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@Override protected String getConfigComment() {
 		StringBuilder builder = new StringBuilder();
-		if (title != null && I18n.hasKey(title)) {
-			String name = stripFormattingCodes(I18n.format(title).trim());
+		if (title != null && ServerI18n.hasKey(title)) {
+			String name = stripFormattingCodes(ServerI18n.format(title).trim());
 			builder.append(name).append('\n');
-			if (I18n.hasKey(tooltip)) {
+			if (ServerI18n.hasKey(tooltip)) {
 				String tooltip = "  " + stripFormattingCodes(
-				  I18n.format(this.tooltip).trim().replace("\n", "\n  "));
+				  ServerI18n.format(this.tooltip).trim().replace("\n", "\n  "));
 				builder.append(tooltip).append('\n');
 			}
 		}
@@ -124,8 +129,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected void buildGUI(
 	  ConfigScreenBuilder builder, ConfigEntryBuilder entryBuilder
 	) {
-		boolean isServer = root.getType() == Type.SERVER;
-		ConfigCategory category = builder.getOrCreateCategory(name, isServer);
+		ConfigCategory category = builder.getOrCreateCategory(name, root.getType());
 		category.setEditable(getRoot().canEdit());
 		category.setTitle(getTitle());
 		category.setDescription(

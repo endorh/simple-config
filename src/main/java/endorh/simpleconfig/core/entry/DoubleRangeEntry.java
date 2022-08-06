@@ -9,6 +9,9 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 
 import java.util.Optional;
 
@@ -26,15 +29,15 @@ public class DoubleRangeEntry
 			super(value, DoubleRange.class);
 		}
 		
-		public Builder min(double min) {
+		@Contract(pure=true) public Builder min(double min) {
 			return min((Double) min);
 		}
 		
-		public Builder max(double max) {
+		@Contract(pure=true) public Builder max(double max) {
 			return max((Double) max);
 		}
 		
-		public Builder withBounds(double min, double max) {
+		@Contract(pure=true) public Builder withBounds(double min, double max) {
 			return withBounds((Double) min, (Double) max);
 		}
 		
@@ -56,8 +59,8 @@ public class DoubleRangeEntry
 		}
 	}
 	
-	@Override
-	protected <EE extends AbstractConfigListEntry<Double> & IChildListEntry> EE buildLimitGUIEntry(
+	@OnlyIn(Dist.CLIENT)
+	@Override protected <EE extends AbstractConfigListEntry<Double> & IChildListEntry> EE buildLimitGUIEntry(
 	  ConfigEntryBuilder builder, String name, Double value
 	) {
 		//noinspection unchecked

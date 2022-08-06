@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(modid = SimpleConfigMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value=Dist.CLIENT, modid=SimpleConfigMod.MOD_ID, bus=EventBusSubscriber.Bus.MOD)
 public class ConfigHotKeyManager {
 	private static final Logger LOGGER = LogManager.getLogger();
 	public static final ConfigHotKeyManager INSTANCE = new ConfigHotKeyManager();

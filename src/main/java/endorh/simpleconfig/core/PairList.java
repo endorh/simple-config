@@ -11,6 +11,10 @@ import java.util.function.BiConsumer;
 public class PairList<K, V> extends ForwardingList<Pair<K, V>> {
 	private final List<Pair<K, V>> delegate;
 	
+	public PairList() {
+		this(new ArrayList<>());
+	}
+	
 	public PairList(int capacity) {
 		this(new ArrayList<>(capacity));
 	}

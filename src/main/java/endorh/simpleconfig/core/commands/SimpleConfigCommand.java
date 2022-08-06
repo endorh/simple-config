@@ -5,103 +5,156 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.context.StringRange;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.SimpleConfigMod.ConfigPermission;
+import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.core.SimpleConfigModConfig;
 import net.minecraft.command.CommandSource;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.Type;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
-import static endorh.simpleconfig.core.commands.SimpleConfigKeyArgumentType.entryPath;
-import static endorh.simpleconfig.core.commands.SimpleConfigValueArgumentType.entryValue;
+import static endorh.simpleconfig.core.SimpleConfigWrapper.getConfigs;
 import static java.lang.Math.min;
 import static net.minecraft.command.Commands.argument;
 import static net.minecraft.command.Commands.literal;
 
+// Client commands aren't implemented until 1.18
+@EventBusSubscriber(modid = SimpleConfigMod.MOD_ID)
 public class SimpleConfigCommand {
-	private static final Map<SimpleConfig, SimpleConfigCommand> COMMANDS = new HashMap<>();
-	private final SimpleConfig config;
-	private final LiteralArgumentBuilder<CommandSource> root;
+	private static final SimpleConfigCommand INSTANCE = new SimpleConfigCommand();
+	private static final DynamicCommandExceptionType UNSUPPORTED_CONFIG = new DynamicCommandExceptionType(
+	  m -> new TranslationTextComponent("simpleconfig.command.error.unsupported_config", m));
+	private static final DynamicCommandExceptionType NO_PERMISSION = new DynamicCommandExceptionType(
+	  m -> new TranslationTextComponent("simpleconfig.command.error.no_permission", m));
 	
 	// Styles
-	private Style keyStyle = Style.EMPTY.setColor(Color.fromInt(0xFFA080C0)).setItalic(true);
+	private Style keyStyle = Style.EMPTY.setColor(Color.fromInt(0xA080C0)).setItalic(true);
 	private Style modNameStyle = Style.EMPTY.applyFormatting(TextFormatting.AQUA).setBold(false);
 	private Style valueStyle = Style.EMPTY.applyFormatting(TextFormatting.DARK_AQUA);
 	private Style undoStyle = Style.EMPTY.applyFormatting(TextFormatting.BLUE);
-	private Style copyStyle = Style.EMPTY.setColor(Color.fromInt(0xFF808080));
-	
-	public SimpleConfigCommand(SimpleConfig config, LiteralArgumentBuilder<CommandSource> root) {
-		this.config = config;
-		this.root = root;
-		MinecraftForge.EVENT_BUS.register(this);
-	}
-	
-	@SubscribeEvent public void onRegisterCommands(RegisterCommandsEvent event) {
-		register(event.getDispatcher());
-	}
+	private Style copyStyle = Style.EMPTY.setColor(Color.fromInt(0x808080));
 	
 	protected String getType() {
-		return config.getType().extension();
+		return Type.SERVER.extension();
+	}
+	
+	@SubscribeEvent public static void onRegisterCommands(RegisterCommandsEvent event) {
+		CommandDispatcher<CommandSource> dispatcher = event.getDispatcher();
+		INSTANCE.register(dispatcher);
+		ModList.get().forEachModContainer((modId, container) -> {
+			EnumMap<Type, ModConfig> configs = getConfigs(container);
+			ModConfig config = configs.get(Type.SERVER);
+			LiteralArgumentBuilder<CommandSource> root =
+			  config instanceof SimpleConfigModConfig
+			  ? ((SimpleConfigModConfig) config).getSimpleConfig().getCommandRoot() : null;
+			if (root != null) INSTANCE.registerRoot(modId, dispatcher, root);
+		});
 	}
 	
 	protected void register(
 	  CommandDispatcher<CommandSource> dispatcher
 	) {
-		// Client commands aren't implemented until 1.18
-		if (config.getType() != Type.SERVER) return;
-		String type = getType();
-		LiteralArgumentBuilder<CommandSource> getBuilder = literal(type).then(
-		  argument("key", entryPath(config, false))
-			 .executes(this::getEntryValue));
-		LiteralArgumentBuilder<CommandSource> setBuilder = literal(type).then(
-		  argument("key", entryPath(config, false)).then(
-			 argument("value", entryValue(config))
-				.executes(this::setEntryValue)));
-		LiteralArgumentBuilder<CommandSource> resetBuilder = literal(type).then(
-		  argument("key", entryPath(config, true))
-			 .executes(this::resetPath));
-		
-		// Register under custom root
-		if (root != null) {
-			// The open command is client only, so it's still unimplemented
-			LiteralArgumentBuilder<CommandSource> command = root
-			  .then(literal("get").then(getBuilder)
-			).then(literal("set").then(setBuilder)
-			).then(literal("reset").then(resetBuilder));
-			dispatcher.register(command);
-		}
 		
 		// Register under global /config command
 		// For the global command, the mod id is passed instead as "parameter" to the action
-		String modId = config.getModId();
 		LiteralArgumentBuilder<CommandSource> command =
 		  literal("config").then(
 			 literal("get").then(
-				literal(modId).then(getBuilder))
+				argument("modId", modId()).then(getGetBuilder(null)))
 		  ).then(
 			 literal("set").then(
-				literal(modId).then(setBuilder))
+			   argument("modId", modId()).then(getSetBuilder(null)))
 		  ).then(
 			 literal("reset").then(
-				literal(modId).then(resetBuilder)));
+			   argument("modId", modId()).then(getResetBuilder(null))));
 		dispatcher.register(command);
+	}
+	
+	@NotNull private static SimpleConfigModIdArgumentType modId() {
+		return SimpleConfigModIdArgumentType.modId(Type.SERVER);
+	}
+	
+	protected void registerRoot(
+	  String modId, CommandDispatcher<CommandSource> dispatcher, LiteralArgumentBuilder<CommandSource> root
+	) {
+		// The open command is client only, so it's still unimplemented
+		LiteralArgumentBuilder<CommandSource> command = root
+		  .then(literal("get").requires(permission(modId, false)).then(getGetBuilder(modId))
+		  ).then(literal("set").requires(permission(modId, true)).then(getSetBuilder(modId))
+		  ).then(literal("reset").requires(permission(modId, true)).then(getResetBuilder(modId)));
+		dispatcher.register(command);
+	}
+	
+	private LiteralArgumentBuilder<CommandSource> getGetBuilder(@Nullable String modId) {
+		return literal(getType()).then(
+		  argument("key", entryPath(modId, false))
+			 .executes(s -> getEntryValue(s, modId)));
+	}
+	
+	private LiteralArgumentBuilder<CommandSource> getSetBuilder(@Nullable String modId) {
+		return literal(getType()).then(
+		  argument("key", entryPath(modId, false)).then(
+			 argument("value", entryValue(modId))
+				.executes(s -> setEntryValue(s, modId))));
+	}
+	
+	private LiteralArgumentBuilder<CommandSource> getResetBuilder(@Nullable String modId) {
+		return literal(getType()).then(
+		  argument("key", entryPath(modId, true))
+			 .executes(s -> resetPath(s, modId)));
+	}
+	
+	private SimpleConfigKeyArgumentType entryPath(@Nullable String modId, boolean includeGroups) {
+		return SimpleConfigKeyArgumentType.entryPath(modId, Type.SERVER, includeGroups);
+	}
+	
+	@NotNull private SimpleConfigValueArgumentType entryValue(@Nullable String modId) {
+		return SimpleConfigValueArgumentType.entryValue(modId, Type.SERVER);
+	}
+	
+	private String getModId(CommandContext<CommandSource> ctx) {
+		return ctx.getArgument("modId", String.class);
+	}
+	
+	private SimpleConfig requireConfig(
+	  CommandContext<CommandSource> ctx, String modId, boolean forWrite
+	) throws CommandSyntaxException {
+		PlayerEntity player = ctx.getSource().asPlayer();
+		if (!SimpleConfig.hasConfig(modId, Type.SERVER)) {
+			throw UNSUPPORTED_CONFIG.create(modId);
+		} else if (
+		  forWrite? !permissions.permissionFor(player, modId).getLeft().canEdit()
+		          : !permissions.permissionFor(player, modId).getLeft().canView()
+		) throw NO_PERMISSION.create(modId);
+		return SimpleConfig.getConfig(modId, Type.SERVER);
 	}
 	
 	// Commands -------------------------------------------------------
@@ -113,44 +166,57 @@ public class SimpleConfigCommand {
 		return 0;
 	}
 	
-	protected int getEntryValue(CommandContext<CommandSource> ctx) {
+	protected int getEntryValue(CommandContext<CommandSource> ctx, @Nullable String modId)
+	  throws CommandSyntaxException {
+		if (modId == null) modId = getModId(ctx);
+		SimpleConfig config = requireConfig(ctx, modId, false);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		try {
 			AbstractConfigEntry<Object, Object, Object, ?> entry = config.getEntry(key);
-			BaseCommand base = getBase(ctx, 3);
+			BaseCommand base = getBase(ctx, modId, 3);
 			String serialized = entry.getForCommand();
 			if (serialized == null) src.sendErrorMessage(new TranslationTextComponent(
 			  "simpleconfig.command.error.get.unexpected"));
 			src.sendFeedback(new TranslationTextComponent(
 			  "simpleconfig.command.msg.get",
-			  formatKey(key, 50), formatValue(base, key, serialized, 60)), false);
+			  formatKey(modId, key, 50), formatValue(base, key, serialized, 60)), false);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
 			src.sendErrorMessage(new TranslationTextComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(key, 60)));
+			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, 60)));
 		} catch (RuntimeException e) {
 			src.sendErrorMessage(new TranslationTextComponent(
-			  "simpleconfig.command.error.get.unexpected", formatKey(key, 40)));
+			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, 40)));
 		}
 		return 1;
 	}
 	
-	protected int setEntryValue(CommandContext<? extends CommandSource> ctx) {
+	protected int setEntryValue(
+	  CommandContext<CommandSource> ctx, @Nullable String modId
+	) throws CommandSyntaxException {
+		if (modId == null) modId = getModId(ctx);
+		SimpleConfig config = requireConfig(ctx, modId, true);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		String value = ctx.getArgument("value", String.class);
+		PlayerEntity player = src.asPlayer();
+		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
+			src.sendErrorMessage(new TranslationTextComponent(
+			  "simpleconfig.command.error.no_permission", config.getModName()));
+			return 1;
+		}
 		AbstractConfigEntry<Object, Object, Object, ?> entry;
 		try {
 			entry = config.getEntry(key);
 		} catch (NoSuchConfigEntryError e) {
 			src.sendErrorMessage(new TranslationTextComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(key, 45)));
+			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, 45)));
 			return 1;
 		}
 		try {
 			String prev = entry.getForCommand();
-			BaseCommand base = getBase(ctx, 4);
+			BaseCommand base = getBase(ctx, modId, 4);
 			String undoCommand = base.resolve("set", getType(), key, prev);
 			
 			Optional<ITextComponent> error = entry.getErrorFromCommand(value);
@@ -165,11 +231,15 @@ public class SimpleConfigCommand {
 			
 			int valueWidth = min(40, value.length());
 			int prevWidth = min(60 - valueWidth, prev.length());
+			IFormattableTextComponent undoLink = genUndoLink(undoCommand),
+			  formatvalue = formatValue(base, key, value, valueWidth),
+			  formatPrev = formatValue(base, key, prev, prevWidth);
 			src.sendFeedback(new TranslationTextComponent(
 			  "simpleconfig.command.msg.set",
-			  formatKey(key, 45), genUndoLink(undoCommand),
-			  formatValue(base, key, prev, prevWidth), formatValue(base, key, value, valueWidth)
-			), false);
+			  formatKey(modId, key, 45), undoLink, formatPrev, formatvalue), false);
+			broadcastToOtherOperators(player, new TranslationTextComponent(
+			  "simpleconfig.command.msg.set.remote",
+			  playerName(player), formatKey(modId, key, 40), undoLink, formatPrev, formatvalue));
 			return 0;
 		} catch (InvalidConfigValueTypeException e) {
 			src.sendErrorMessage(new TranslationTextComponent(
@@ -179,48 +249,87 @@ public class SimpleConfigCommand {
 			  "simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
 			src.sendErrorMessage(new TranslationTextComponent(
-			  "simpleconfig.command.error.set.unexpected", formatKey(key, 20)));
+			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, 20)));
 		}
 		return 1;
 	}
 	
-	protected int resetPath(CommandContext<? extends CommandSource> ctx) {
+	protected int resetPath(
+	  CommandContext<CommandSource> ctx, @Nullable String modId
+	) throws CommandSyntaxException {
+		if (modId == null) modId = getModId(ctx);
+		SimpleConfig config = requireConfig(ctx, modId, true);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
+		PlayerEntity player = src.asPlayer();
+		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
+			src.sendErrorMessage(new TranslationTextComponent(
+			  "simpleconfig.command.error.no_permission", config.getModName()));
+			return 1;
+		}
 		try {
 			if (config.hasEntry(key)) {
 				AbstractConfigEntry<Object, Object, Object, ?> entry = config.getEntry(key);
 				String prev = entry.getForCommand();
-				BaseCommand base = getBase(ctx, 3);
+				BaseCommand base = getBase(ctx, modId, 3);
 				String undoCommand = base.resolve("set", getType(), key, prev);
 				config.reset(key);
 				String value = entry.getForCommand();
 				int valueWidth = min(40, value.length());
 				int prevWidth = min(60 - valueWidth, prev.length());
+				IFormattableTextComponent undoLink = genUndoLink(undoCommand);
+				IFormattableTextComponent formatPrev =
+				  formatValue(base, key, prev, prevWidth);
+				IFormattableTextComponent formatValue =
+				  formatValue(base, key, value, valueWidth);
 				src.sendFeedback(new TranslationTextComponent(
 				  "simpleconfig.command.msg.reset",
-				  formatKey(key, 45), genUndoLink(undoCommand),
-				  formatValue(base, key, prev, prevWidth), formatValue(base, key, value, valueWidth)
-				), false);
+				  formatKey(modId, key, 45), undoLink, formatPrev, formatValue), false);
+				broadcastToOtherOperators(player, new TranslationTextComponent(
+				  "simpleconfig.command.msg.reset.remote",
+				  playerName(player), formatKey(modId, key, 40), undoLink, formatPrev, formatValue));
 			} else if (config.hasChild(key)) {
 				AbstractSimpleConfigEntryHolder group = config.getChild(key);
 				group.reset();
+				IFormattableTextComponent count = new StringTextComponent(
+				  String.valueOf(group.getPaths(false).size())
+				).mergeStyle(TextFormatting.DARK_AQUA);
 				src.sendFeedback(new TranslationTextComponent(
-				  "simpleconfig.command.msg.reset_group", formatKey(key, 45),
-				  group.getPaths(false).size()), false);
+				  "simpleconfig.command.msg.reset_group",
+				  formatKey(modId, key, 45), count), false);
+				broadcastToOtherOperators(player, new TranslationTextComponent(
+				  "simpleconfig.command.msg.reset_group.remote",
+				  playerName(player), formatKey(modId, key, 45), count));
 			} else throw new NoSuchConfigEntryError(key);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
 			src.sendErrorMessage(new TranslationTextComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(key, 50)));
+			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, 50)));
 		} catch (RuntimeException e) {
 			src.sendErrorMessage(new TranslationTextComponent(
-			  "simpleconfig.command.error.reset.unexpected", formatKey(key, 20)));
+			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, 20)));
 		}
 		return 1;
 	}
 	
 	// Feedback -------------------------------------------------------
+	
+	public static void broadcastToOtherOperators(PlayerEntity player, ITextComponent message) {
+		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
+		  .filter(p -> p.hasPermissionLevel(2) && p != player)
+		  .forEach(p -> p.sendMessage(message, Util.DUMMY_UUID));
+	}
+	
+	public static IFormattableTextComponent playerName(PlayerEntity player) {
+		return new StringTextComponent(player.getName().getString())
+		  .mergeStyle(TextFormatting.DARK_GREEN).modifyStyle(style -> style
+			 .setClickEvent(new ClickEvent(
+				ClickEvent.Action.SUGGEST_COMMAND, "/tell " + player.getScoreboardName()))
+			 .setHoverEvent(new HoverEvent(
+				HoverEvent.Action.SHOW_TEXT, player.getName().deepCopy()
+			   .appendString("\n").append(new StringTextComponent(
+				  player.getUniqueID().toString()).mergeStyle(TextFormatting.GRAY)))));
+	}
 	
 	protected IFormattableTextComponent wrap(
 	  String text, int width, Style style,
@@ -263,9 +372,10 @@ public class SimpleConfigCommand {
 		return wrapped;
 	}
 	
-	protected IFormattableTextComponent formatKey(String key, int width) {
+	protected IFormattableTextComponent formatKey(String modId, String key, int width)
+	  throws CommandSyntaxException {
 		return wrap(key, width, keyStyle, new StringTextComponent(
-		  config.getModName()
+		  SimpleConfig.getModNameOrId(modId)
 		).mergeStyle(modNameStyle), null, null);
 	}
 	
@@ -302,9 +412,9 @@ public class SimpleConfigCommand {
 		).appendString(")").mergeStyle(TextFormatting.GRAY);
 	}
 	
-	protected BaseCommand getBase(CommandContext<? extends CommandSource> ctx, int args) {
+	protected BaseCommand getBase(CommandContext<CommandSource> ctx, String modId, int args) {
 		String command = ctx.getInput();
-		List<? extends ParsedCommandNode<? extends CommandSource>> nodes = ctx.getNodes();
+		List<? extends ParsedCommandNode<CommandSource>> nodes = ctx.getNodes();
 		if (args >= nodes.size()) throw new IllegalArgumentException(
 		  "Not enough arguments in command, expected " + (args + 1) + " but found " + nodes.size() +
 		  "\n  Command: " + command);
@@ -317,15 +427,26 @@ public class SimpleConfigCommand {
 		// Check if the last node to remove is the modId
 		StringRange modIdRange = nodes.get(nodes.size() - i).getRange();
 		int end = modIdRange.getEnd();
-		String modId = b.substring(modIdRange.getStart(), end);
+		String id = b.substring(modIdRange.getStart(), end);
 		b.delete(nodes.get(nodes.size() - i - 1).getRange().getEnd(), end);
-		boolean hasModId = config.getModId().equals(modId);
+		boolean hasModId = modId.equals(id);
 		
 		// In that case, remove one more
 		if (hasModId) b.delete(
 		  nodes.get(nodes.size() - ++i - 1).getRange().getEnd(),
 		  nodes.get(nodes.size() - i).getRange().getEnd());
 		return new BaseCommand(b.toString(), hasModId? modId : null);
+	}
+	
+	private Predicate<CommandSource> permission(String modId, boolean forWrite) {
+		return s -> {
+			try {
+				ConfigPermission p = permissions.permissionFor(s.asPlayer(), modId).getLeft();
+				return forWrite? p.canEdit() : p.canView();
+			} catch (CommandSyntaxException e) {
+				return false;
+			}
+		};
 	}
 	
 	protected static class BaseCommand {

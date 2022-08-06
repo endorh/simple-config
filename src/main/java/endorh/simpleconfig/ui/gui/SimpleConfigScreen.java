@@ -12,6 +12,7 @@ import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Types;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
@@ -84,7 +85,10 @@ public class SimpleConfigScreen
 	protected ITextComponent displayTitle;
 	protected TintedButton quitButton;
 	protected SaveButton saveButton;
+	protected List<MultiFunctionIconButton> modeButtons = Lists.newArrayList();
 	protected MultiFunctionIconButton clientButton;
+	protected MultiFunctionIconButton commonButton;
+	protected MultiFunctionIconButton remoteCommonButton;
 	protected MultiFunctionIconButton serverButton;
 	protected PresetPickerWidget presetPickerWidget;
 	protected Widget buttonLeftTab;
@@ -112,6 +116,7 @@ public class SimpleConfigScreen
 	protected boolean isSelecting = false;
 	
 	protected ConfigCategory lastClientCategory = null;
+	protected ConfigCategory lastCommonCategory = null;
 	protected ConfigCategory lastServerCategory = null;
 	
 	// Tick caches
@@ -119,10 +124,14 @@ public class SimpleConfigScreen
 	private boolean isEdited = false;
 	
 	@Internal public SimpleConfigScreen(
-	  Screen parent, String modId, ITextComponent title, Collection<ConfigCategory> categories,
-	  Collection<ConfigCategory> serverCategories, ResourceLocation backgroundLocation
+	  Screen parent, String modId, ITextComponent title,
+	  Collection<ConfigCategory> clientCategories,
+	  Collection<ConfigCategory> commonCategories,
+	  Collection<ConfigCategory> serverCategories,
+	  ResourceLocation backgroundLocation
 	) {
-		super(parent, modId, title, backgroundLocation, categories, serverCategories);
+		super(parent, modId, title, backgroundLocation,
+		      clientCategories, commonCategories, serverCategories);
 		this.displayTitle = new StringTextComponent(getModNameOrId(modId));
 		for (ConfigCategory category : sortedCategories) {
 			for (AbstractConfigEntry<?> entry : category.getHeldEntries()) {
@@ -130,6 +139,13 @@ public class SimpleConfigScreen
 				entry.setScreen(this);
 			}
 		}
+		selectedCategory = sortedCategories.stream().findFirst().orElseThrow(
+		  () -> new IllegalArgumentException("No categories for config GUI"));
+		if (getEditedType() == Type.SERVER) {
+			lastServerCategory = selectedCategory;
+		} else if (getEditedType() == Type.COMMON) {
+			lastCommonCategory = selectedCategory;
+		} else lastClientCategory = selectedCategory;
 		statusDisplayBar = new StatusDisplayBar(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
 		presetPickerWidget = new PresetPickerWidget(this, 0, 0, 70);
@@ -139,13 +155,40 @@ public class SimpleConfigScreen
 		editedHotKeyNameTextField.setBordered(false);
 		editedHotKeyNameTextField.setEmptyHint(new TranslationTextComponent(
 		  "simpleconfig.ui.hotkey.unnamed_hotkey.hint"));
-		selectedCategory = sortedCategories.stream().findFirst().orElseThrow(
-		  () -> new IllegalArgumentException("No categories for config GUI"));
-		if (isSelectedCategoryServer())
-			lastServerCategory = selectedCategory;
-		else lastClientCategory = selectedCategory;
 		minecraft = Minecraft.getInstance();
 		listWidgets = new HashMap<>();
+		clientButton =
+		  new MultiFunctionIconButton(0, 2, 20, 70, SimpleConfigIcons.Types.CLIENT, ButtonAction
+			 .of(this::showClientCategories)
+			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.client"))
+			 .tooltip(() -> hasClient() && getEditedType() != Type.CLIENT
+			                ? Lists.newArrayList(new TranslationTextComponent(
+				"simpleconfig.ui.switch.client")) : Collections.emptyList())
+			 .active(this::hasClient));
+		commonButton =
+		  new MultiFunctionIconButton(0, 2, 20, 70, SimpleConfigIcons.Types.COMMON, ButtonAction
+			 .of(this::showCommonCategories)
+			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.common"))
+			 .tooltip(() -> hasCommon() && getEditedType() != Type.COMMON
+			                ? Lists.newArrayList(new TranslationTextComponent(
+				"simpleconfig.ui.switch.common")) : Collections.emptyList())
+			 .active(this::hasCommon));
+		remoteCommonButton =
+		  new MultiFunctionIconButton(0, 2, 20, 70, Types.COMMON_SERVER, ButtonAction
+			 .of(this::showRemoteCommonCategories)
+			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.remote.common"))
+			 .tooltip(() -> hasRemoteCommon() && (getEditedType() != Type.COMMON || !isEditingServer())
+			                ? Lists.newArrayList(new TranslationTextComponent(
+				"simpleconfig.ui.switch.remote.common")) : Collections.emptyList())
+			 .active(this::hasRemoteCommon));
+		serverButton =
+		  new MultiFunctionIconButton(0, 2, 20, 70, SimpleConfigIcons.Types.SERVER, ButtonAction
+			 .of(this::showServerCategories)
+			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.server"))
+			 .tooltip(() -> hasServer() && getEditedType() != Type.SERVER
+			                ? Lists.newArrayList(new TranslationTextComponent(
+				"simpleconfig.ui.switch.server")) : Collections.emptyList())
+			 .active(this::hasServer));
 	}
 	
 	protected static String getModNameOrId(String modId) {
@@ -159,18 +202,16 @@ public class SimpleConfigScreen
 	protected static final Pattern DOT = Pattern.compile("\\.");
 	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
 		final String[] split = DOT.split(path, 3);
-		if (split.length < 2) return null;
-		final Optional<ConfigCategory> opt = categoryMap.values().stream()
-		  .filter(c -> c.getName().equals(split[0])).findFirst();
-		if (!opt.isPresent()) return null;
-		final ConfigCategory cat = opt.get();
-		final Optional<AbstractConfigEntry<?>> first = cat.getHeldEntries().stream()
-		  .filter(e -> e.getName().equals(split[1])).findFirst();
-		if (!first.isPresent()) return null;
-		AbstractConfigEntry<?> entry = first.get();
-		if (split.length < 3) return entry;
-		if (!(entry instanceof IEntryHolder)) return null;
-		return ((IEntryHolder) entry).getEntry(split[2]);
+		if (split.length < 3) return null;
+		Map<String, ConfigCategory> map = categoryMap.get(split[0]);
+		if (map == null) return null;
+		ConfigCategory cat = map.get(split[1]);
+		if (cat == null) return null;
+		return cat.getEntry(split[2]);
+	}
+	
+	@Override public boolean isEditingServer() {
+		return super.isEditingServer() || getEditedType() == Type.COMMON && isEditingRemoteCommon();
 	}
 	
 	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
@@ -190,7 +231,8 @@ public class SimpleConfigScreen
 		if (hotkey != null) {
 			editedHotKeyButton.setKey(hotkey.getHotKey());
 			editedHotKeyNameTextField.setText(hotkey.getName());
-			loadConfigHotKeyActions(hotkey, Type.CLIENT, categoryMap);
+			loadConfigHotKeyActions(hotkey, Type.CLIENT, clientCategoryMap);
+			loadConfigHotKeyActions(hotkey, Type.COMMON, commonCategoryMap);
 			loadConfigHotKeyActions(hotkey, Type.SERVER, serverCategoryMap);
 		}
 		getAllMainEntries().forEach(e -> e.setEditingHotKeyAction(isEditingConfigHotKey()));
@@ -225,7 +267,7 @@ public class SimpleConfigScreen
 		}
 	}
 	
-	protected void init() {
+	@Override protected void init() {
 		super.init();
 		
 		// Toolbar
@@ -259,32 +301,37 @@ public class SimpleConfigScreen
 			addButton(redoButton);
 		} else bx -= 44;
 		
-		clientButton = new MultiFunctionIconButton(bx, 2, 20, 70, SimpleConfigIcons.CLIENT, ButtonAction
-		  .of(this::showClientCategories)
-		  .title(() -> new TranslationTextComponent("simpleconfig.config.category.client"))
-		  .tooltip(() -> hasClient() && isSelectedCategoryServer()? Lists.newArrayList(new TranslationTextComponent(
-			 "simpleconfig.ui.switch.client")) : Collections.emptyList())
-		  .active(this::hasClient));
-		bx += clientButton.getWidth();
-		serverButton = new MultiFunctionIconButton(bx, 2, 20, 70, SimpleConfigIcons.SERVER, ButtonAction
-		  .of(this::showServerCategories)
-		  .title(() -> new TranslationTextComponent("simpleconfig.config.category.server"))
-		  .tooltip(() -> hasServer() && !isSelectedCategoryServer()? Lists.newArrayList(new TranslationTextComponent(
-			 "simpleconfig.ui.switch.server")) : Collections.emptyList())
-		  .active(this::hasServer));
-		bx += serverButton.getWidth() + 4;
+		Type type = getEditedType();
+		clientButton.setTintColor(type == Type.CLIENT? 0x80287734 : 0);
+		boolean isRemoteCommon = isEditingServer();
+		remoteCommonButton.setTintColor(type == Type.COMMON && isRemoteCommon? 0x80A0903A : 0);
+		commonButton.setTintColor(type == Type.COMMON && !isRemoteCommon? 0x80A09034 : 0);
+		serverButton.setTintColor(type == Type.SERVER? 0x800A426A : 0);
 		
-		if (serverButton.x + serverButton.getWidth() > 0.35 * width) {
-			clientButton.setMaxWidth(20);
-			serverButton.setMaxWidth(20);
-			serverButton.x = clientButton.x + 20;
-			bx = serverButton.x + 24;
+		clientButton.setWidthRange(20, 80);
+		commonButton.setWidthRange(20, 80);
+		remoteCommonButton.setExactWidth(20);
+		serverButton.setWidthRange(20, 80);
+		
+		modeButtons = new ArrayList<>();
+		if (hasClient()) modeButtons.add(clientButton);
+		if (hasCommon()) {
+			modeButtons.add(commonButton);
+			// if (mayHaveRemoteCommon()) modeButtons.add(remoteCommonButton);
 		}
-		if (isSelectedCategoryServer()) {
-			serverButton.setTintColor(0x800A426A);
-		} else clientButton.setTintColor(0x80287734);
-		addButton(clientButton);
-		addButton(serverButton);
+		if (hasServer()) modeButtons.add(serverButton);
+		
+		if (bx + modeButtons.stream().mapToInt(MultiFunctionIconButton::getWidth).sum() > 0.35 * width) {
+			clientButton.setExactWidth(20);
+			commonButton.setExactWidth(20);
+			serverButton.setExactWidth(20);
+		}
+		
+		for (MultiFunctionIconButton b: modeButtons) {
+			pos(b, bx, 2);
+			bx += b.getWidth();
+			addButton(b);
+		}
 		
 		selectionToolbar = new SelectionToolbar(this, 76, 2);
 		selectionToolbar.visible = false;
@@ -315,8 +362,7 @@ public class SimpleConfigScreen
 			children.add(buttonLeftTab);
 			tabButtons.clear();
 			int ww = 0;
-			for (ConfigCategory cat : (isSelectedCategoryServer() ? sortedServerCategories
-			                                                      : sortedClientCategories)) {
+			for (ConfigCategory cat : getSortedTypeCategories()) {
 				final int w = font.getStringPropertyWidth(cat.getTitle());
 				ww += w + 2;
 				tabButtons.add(new ClothConfigTabButton(
@@ -388,13 +434,13 @@ public class SimpleConfigScreen
 		// Right buttons
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
 			settingsButton = new MultiFunctionImageButton(
-			  width - 44, height - 22, 20, 20, SimpleConfigIcons.Buttons.GEAR,
+			  width - 41, height - 21, 18, 18, SimpleConfigIcons.Buttons.GEAR,
 			  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
 				 .tooltip(new TranslationTextComponent("simpleconfig.ui.simple_config_settings")));
 			addButton(settingsButton);
 		}
 		keyboardButton = new MultiFunctionImageButton(
-		  width - 22, height - 22, 20, 20, SimpleConfigIcons.Buttons.KEYBOARD,
+		  width - 21, height - 21, 18, 18, SimpleConfigIcons.Buttons.KEYBOARD,
 		  ButtonAction.of(() -> addDialog(getControlsDialog()))
 		    .tooltip(new TranslationTextComponent("simpleconfig.ui.controls")));
 		addButton(keyboardButton);
@@ -417,28 +463,76 @@ public class SimpleConfigScreen
 		});
 	}
 	
-	public List<EntryError> getErrors() {
+	@Override public List<EntryError> getErrors() {
 		return errors;
 	}
 	
 	public void updateErrors() {
 		List<EntryError> errors = Lists.newArrayList();
 		// Add errors in order
-		for (ConfigCategory cat : isSelectedCategoryServer()? sortedServerCategories : sortedClientCategories)
-			errors.addAll(cat.getErrors());
-		for (ConfigCategory cat : isSelectedCategoryServer()? sortedClientCategories : sortedServerCategories)
-			errors.addAll(cat.getErrors());
+		Type type = getEditedType();
+		updateErrors(errors, getSortedTypeCategories());
+		if (type != Type.CLIENT) updateErrors(errors, sortedClientCategories);
+		if (type != Type.COMMON) updateErrors(errors, sortedCommonCategories);
+		if (type != Type.SERVER) updateErrors(errors, sortedServerCategories);
 		this.errors = errors;
 	}
 	
-	public void showServerCategories() {
-		if (hasServer() && !isSelectedCategoryServer()) setSelectedCategory(
-		  lastServerCategory != null ? lastServerCategory : sortedServerCategories.get(0));
+	protected void updateErrors(List<EntryError> errors, List<ConfigCategory> categories) {
+		for (ConfigCategory cat: categories) errors.addAll(cat.getErrors());
 	}
 	
 	public void showClientCategories() {
-		if (hasClient() && isSelectedCategoryServer()) setSelectedCategory(
+		if (hasClient() && getEditedType() != Type.CLIENT) setSelectedCategory(
 		  lastClientCategory != null? lastClientCategory : sortedClientCategories.get(0));
+	}
+	
+	public void showCommonCategories() {
+		if (!hasCommon()) return;
+		if (getEditedType() != Type.COMMON) setSelectedCategory(
+		  lastCommonCategory != null? lastCommonCategory : sortedCommonCategories.get(0));
+		setEditingRemoteCommon(false);
+	}
+	
+	public void showServerCategories() {
+		if (hasServer() && getEditedType() != Type.SERVER) setSelectedCategory(
+		  lastServerCategory != null ? lastServerCategory : sortedServerCategories.get(0));
+	}
+	
+	public void showRemoteCommonCategories() {
+		if (!hasRemoteCommon()) return;
+		if (getEditedType() != Type.COMMON) setSelectedCategory(
+		  lastCommonCategory != null? lastCommonCategory : sortedCommonCategories.get(0));
+		setEditingRemoteCommon(true);
+	}
+	
+	public boolean isEditingRemoteCommon() {
+		return remoteCommon != null && isEditingRemoteCommon;
+	}
+	
+	public void setEditingRemoteCommon(boolean editing) {
+		if (remoteCommon == null || remoteConfigProvider == null) editing = false;
+		boolean change = isEditingRemoteCommon != editing;
+		isEditingRemoteCommon = editing;
+		if (editing && !loadedRemoteCommon) {
+			remoteConfigProvider.loadRemoteCommonConfig(remoteCommon);
+			loadedRemoteCommon = true;
+		}
+		if (change) init(Minecraft.getInstance(), width, height);
+	}
+	
+	@Override public void setRemoteCommonConfigProvider(
+	  @Nullable ConfigScreenBuilder.IRemoteCommonConfigProvider remoteConfigProvider
+	) {
+		super.setRemoteCommonConfigProvider(remoteConfigProvider);
+		remoteCommon = null;
+		loadedRemoteCommon = false;
+		if (remoteConfigProvider != null) {
+			remoteConfigProvider.getRemoteCommonConfig().thenAccept(c -> {
+				remoteCommon = c;
+				loadedRemoteCommon = false;
+			});
+		}
 	}
 	
 	public List<ITextComponent> getErrorsMessages() {
@@ -452,11 +546,13 @@ public class SimpleConfigScreen
 	@Override public void setSelectedCategory(ConfigCategory category) {
 		if (selectedCategory != category) {
 			// Switching sides is prevented while selecting
-			boolean typeChange = isSelectedCategoryServer() != category.isServer();
+			boolean typeChange = getEditedType() != category.getType();
 			if (isSelecting() && typeChange) return;
-			if (isSelectedCategoryServer()) {
-				lastServerCategory = selectedCategory;
-			} else lastClientCategory = selectedCategory;
+			if (getEditedType() == Type.CLIENT) {
+				lastClientCategory = selectedCategory;
+			} else if (getEditedType() == Type.COMMON) {
+				lastCommonCategory = selectedCategory;
+			} else lastServerCategory = selectedCategory;
 			super.setSelectedCategory(category);
 			ListWidget<AbstractConfigEntry<?>> prevListWidget = listWidget;
 			init(Minecraft.getInstance(), width, height);
@@ -483,15 +579,15 @@ public class SimpleConfigScreen
 	
 	protected void updateIsEdited() {
 		if (isEditingConfigHotKey()) {
-			isEdited = categoryMap.values().stream()
-			  .flatMap(c -> c.getAllMainEntries().stream())
-			  .anyMatch(e -> e.getHotKeyActionType() != null);
+			// isEdited = categoryMap.values().stream()
+			//   .flatMap(c -> c.getAllMainEntries().stream())
+			//   .anyMatch(e -> e.getHotKeyActionType() != null);
 		} else {
-			isEdited = super.isEdited();
 		}
+		isEdited = super.isEdited();
 	}
 	
-	public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+	@Override public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
 		if (tabsBounds.contains(mouseX, mouseY) &&
 		    !tabsLeftBounds.contains(mouseX, mouseY) &&
 		    !tabsRightBounds.contains(mouseX, mouseY) && amount != 0.0) {
@@ -501,7 +597,7 @@ public class SimpleConfigScreen
 		return super.mouseScrolled(mouseX, mouseY, amount);
 	}
 	
-	public @Nullable AbstractConfigEntry<?> getFocusedEntry() {
+	@Override public @Nullable AbstractConfigEntry<?> getFocusedEntry() {
 		return listWidget.getSelectedEntry();
 	}
 	
@@ -562,7 +658,11 @@ public class SimpleConfigScreen
 			categories.stream()
 			  .flatMap(c -> c.getAllMainEntries().stream())
 			  .filter(e -> e.getHotKeyActionType() != null)
-			  .forEach(e -> actionMap.put(e.getPath(), e.createHotKeyAction()));
+			  .forEach(e -> {
+				  String path = e.getRelPath();
+				  HotKeyAction<?> action = e.createHotKeyAction();
+				  if (action != null) actionMap.put(path, action);
+			  });
 			if (actionMap.isEmpty()) actions.remove(config);
 		}
 	}
@@ -651,9 +751,9 @@ public class SimpleConfigScreen
 		return false;
 	}
 	
-	public void updateSelection() {
+	@Override public void updateSelection() {
 		selectedEntries.clear();
-		(isSelectedCategoryServer()? sortedServerCategories : sortedClientCategories).stream()
+		getSortedTypeCategories().stream()
 		  .flatMap(c -> c.getAllMainEntries().stream())
 		  .filter(AbstractConfigEntry::isSelected)
 		  .forEach(selectedEntries::add);
@@ -664,14 +764,12 @@ public class SimpleConfigScreen
 					undoButton.visible = redoButton.visible = false;
 				}
 				selectAllButton.visible = invertSelectionButton.visible = true;
-				MultiFunctionIconButton visible = clientButton;
-				MultiFunctionIconButton hidden = serverButton;
-				if (isSelectedCategoryServer()) {
-					visible = serverButton;
-					hidden = clientButton;
-				}
+				Type type = getEditedType();
+				MultiFunctionIconButton visible =
+				  type == Type.COMMON? isEditingServer()? remoteCommonButton : commonButton :
+				  type == Type.SERVER? serverButton : clientButton;
+				modeButtons.stream().filter(b -> b != visible).forEach(b -> b.visible = false);
 				visible.setExactWidth(20);
-				hidden.visible = false;
 				visible.x = editFileButton.x + 24;
 				selectionToolbar.visible = true;
 			} else {
@@ -682,16 +780,20 @@ public class SimpleConfigScreen
 				}
 				selectAllButton.visible = invertSelectionButton.visible = false;
 				clientButton.setWidthRange(20, 70);
+				commonButton.setWidthRange(20, 70);
+				remoteCommonButton.setExactWidth(20);
 				serverButton.setWidthRange(20, 70);
-				clientButton.visible = true;
-				serverButton.visible = true;
-				clientButton.x = bx;
-				if (serverButton.x + serverButton.getWidth() > 0.35 * width) {
-					clientButton.setMaxWidth(20);
-					serverButton.setMaxWidth(20);
+				if (modeButtons.stream().mapToInt(Widget::getWidth).sum() > 0.35 * width) {
+					clientButton.setExactWidth(20);
+					commonButton.setExactWidth(20);
+					remoteCommonButton.setExactWidth(20);
+					serverButton.setExactWidth(20);
 				}
-				serverButton.x = clientButton.x + clientButton.getWidth();
-				bx = serverButton.x + serverButton.getWidth() + 4;
+				for (MultiFunctionIconButton b: modeButtons) {
+					b.x = bx;
+					bx += b.getWidth();
+					b.visible = true;
+				}
 				selectionToolbar.visible = false;
 			}
 			isSelecting = selecting;
@@ -1317,7 +1419,7 @@ public class SimpleConfigScreen
 			  : editingHotKey? "simpleconfig.ui.save_hotkey" : "simpleconfig.ui.save"));
 		}
 		
-		public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
+		@Override public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 			super.render(matrices, mouseX, mouseY, delta);
 		}
 	}

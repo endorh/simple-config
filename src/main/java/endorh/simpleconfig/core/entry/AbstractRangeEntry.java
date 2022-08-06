@@ -8,6 +8,9 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -48,39 +51,39 @@ public abstract class AbstractRangeEntry<
 			super(value, typeClass);
 		}
 		
-		public Self min(V min) {
+		@Contract(pure=true) public Self min(V min) {
 			Self copy = copy();
 			copy.min = min;
 			return copy;
 		}
 		
-		public Self max(V max) {
+		@Contract(pure=true) public Self max(V max) {
 			Self copy = copy();
 			copy.max = max;
 			return copy;
 		}
 		
-		public Self withBounds(V min, V max) {
+		@Contract(pure=true) public Self withBounds(V min, V max) {
 			return min(min).max(max);
 		}
 		
-		public Self canEditMinExclusive(boolean exclusive) {
+		@Contract(pure=true) public Self canEditMinExclusive(boolean exclusive) {
 			Self copy = copy();
 			copy.canEditMinExclusiveness = exclusive;
 			return copy;
 		}
 		
-		public Self canEditMaxExclusive(boolean exclusive) {
+		@Contract(pure=true) public Self canEditMaxExclusive(boolean exclusive) {
 			Self copy = copy();
 			copy.canEditMaxExclusiveness = exclusive;
 			return copy;
 		}
 		
-		public Self canEditExclusiveness(boolean min, boolean max) {
+		@Contract(pure=true) public Self canEditExclusiveness(boolean min, boolean max) {
 			return canEditMinExclusive(min).canEditMaxExclusive(max);
 		}
 		
-		public Self canEditExclusiveness(boolean canEdit) {
+		@Contract(pure=true) public Self canEditExclusiveness(boolean canEdit) {
 			return canEditExclusiveness(canEdit, canEdit);
 		}
 		
@@ -164,6 +167,7 @@ public abstract class AbstractRangeEntry<
 		return this.defValue.create(min != null? min : this.min, max != null? max : this.max, minEx, maxEx);
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<AbstractConfigListEntry<R>> buildGUIEntry(ConfigEntryBuilder builder) {
 		R guiValue = forGui(get());
 		RangeListEntryBuilder<V, R, ? extends AbstractConfigListEntry<V>> entryBuilder = builder.startRange(
@@ -175,7 +179,7 @@ public abstract class AbstractRangeEntry<
 		return Optional.of(decorate(entryBuilder).build());
 	}
 	
-	protected abstract <EE extends AbstractConfigListEntry<V> & IChildListEntry>
+	@OnlyIn(Dist.CLIENT) protected abstract <EE extends AbstractConfigListEntry<V> & IChildListEntry>
 	EE buildLimitGUIEntry(ConfigEntryBuilder builder, String name, V value);
 	
 	public static abstract class AbstractSizedRangeEntry<
@@ -205,7 +209,7 @@ public abstract class AbstractRangeEntry<
 			 * By default, empty ranges are not allowed.<br>
 			 * Equivalent to {@code minSize(empty? Double.NEGATIVE_INFINITY : 0)}.
 			 */
-			public Self allowEmpty(boolean empty) {
+			@Contract(pure=true) public Self allowEmpty(boolean empty) {
 				return minSize(empty? Double.NEGATIVE_INFINITY : 0D);
 			}
 			
@@ -215,7 +219,7 @@ public abstract class AbstractRangeEntry<
 			 * only prevent empty ranges.<br>
 			 * A range with only one value is not considered empty.
 			 */
-			public Self minSize(double size) {
+			@Contract(pure=true) public Self minSize(double size) {
 				Self copy = copy();
 				copy.minSize = size;
 				return copy;
@@ -224,7 +228,7 @@ public abstract class AbstractRangeEntry<
 			/**
 			 * Allow only range values with at most the given size.
 			 */
-			public Self maxSize(double size) {
+			@Contract(pure=true) public Self maxSize(double size) {
 				Self copy = copy();
 				copy.maxSize = size;
 				return copy;

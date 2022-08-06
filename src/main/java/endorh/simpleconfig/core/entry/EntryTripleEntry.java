@@ -6,7 +6,10 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
@@ -72,6 +75,7 @@ public class EntryTripleEntry<
 			this.rightBuilder = rightBuilder;
 		}
 		
+		@Contract(pure=true)
 		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withLeftIcon(
 		  @Nullable Icon leftIcon
 		) {
@@ -80,6 +84,7 @@ public class EntryTripleEntry<
 			return copy;
 		}
 		
+		@Contract(pure=true)
 		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withRightIcon(
 		  @Nullable Icon rightIcon
 		) {
@@ -88,6 +93,7 @@ public class EntryTripleEntry<
 			return copy;
 		}
 		
+		@Contract(pure=true)
 		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withIcons(
 		  @Nullable Icon leftIcon, @Nullable Icon rightIcon
 		) {
@@ -97,6 +103,7 @@ public class EntryTripleEntry<
 			return copy;
 		}
 		
+		@Contract(pure=true)
 		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withWeights(
 		  @Range(from = 0, to = 1) double leftWeight, @Range(from = 0, to = 1) double rightWeight
 		) {
@@ -215,6 +222,7 @@ public class EntryTripleEntry<
 		return tooltips;
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<AbstractConfigListEntry<Triple<LG, MG, RG>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {

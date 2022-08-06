@@ -44,8 +44,8 @@ public interface ConfigScreenBuilder {
 	
 	ConfigCategory getSelectedCategory();
 	ConfigScreenBuilder setSelectedCategory(ConfigCategory category);
-	default ConfigScreenBuilder setSelectedCategory(String name, boolean isServer) {
-		return setSelectedCategory(getOrCreateCategory(name, isServer));
+	default ConfigScreenBuilder setSelectedCategory(String name, Type type) {
+		return setSelectedCategory(getOrCreateCategory(name, type));
 	}
 	
 	IConfigScreenGUIState getPreviousGUIState();
@@ -54,16 +54,19 @@ public interface ConfigScreenBuilder {
 	boolean isEditable();
 	ConfigScreenBuilder setEditable(boolean editable);
 	
-	ConfigCategory getOrCreateCategory(String name, boolean isServer);
-	ConfigScreenBuilder removeCategory(String name, boolean isServer);
-	ConfigScreenBuilder removeCategoryIfExists(String name, boolean isServer);
-	boolean hasCategory(String name, boolean isServer);
+	ConfigCategory getOrCreateCategory(String name, Type type);
+	ConfigScreenBuilder removeCategory(String name, Type type);
+	ConfigScreenBuilder removeCategoryIfExists(String name, Type type);
+	boolean hasCategory(String name, Type type);
 	
 	ResourceLocation getDefaultBackgroundTexture();
 	ConfigScreenBuilder setDefaultBackgroundTexture(ResourceLocation texture);
 	
 	Runnable getSavingRunnable();
 	ConfigScreenBuilder setSavingRunnable(Runnable runnable);
+	
+	Runnable getClosingRunnable();
+	ConfigScreenBuilder setClosingRunnable(Runnable runnable);
 	
 	Consumer<Screen> getAfterInitConsumer();
 	ConfigScreenBuilder setAfterInitConsumer(Consumer<Screen> afterInitConsumer);
@@ -91,6 +94,13 @@ public interface ConfigScreenBuilder {
 	AbstractConfigScreen build();
 	
 	ConfigScreenBuilder setSnapshotHandler(IConfigSnapshotHandler handler);
+	ConfigScreenBuilder setRemoteCommonConfigProvider(IRemoteCommonConfigProvider provider);
+	
+	interface IRemoteCommonConfigProvider {
+		CompletableFuture<CommentedConfig> getRemoteCommonConfig();
+		void loadRemoteCommonConfig(CommentedConfig config);
+		void saveRemoteCommonConfig();
+	}
 	
 	interface IConfigSnapshotHandler {
 		default CommentedConfig preserve(Type type) {
@@ -114,6 +124,7 @@ public interface ConfigScreenBuilder {
 		
 		interface IExternalChangeHandler {
 			void handleExternalChange(Type type);
+			default void handleRemoteConfigExternalChange(CommentedConfig remoteConfig) {}
 		}
 	}
 	

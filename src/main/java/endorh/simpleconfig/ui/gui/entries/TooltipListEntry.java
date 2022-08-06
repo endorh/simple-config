@@ -3,6 +3,7 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.EntryFlag;
@@ -16,7 +17,10 @@ import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.*;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -159,22 +163,19 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 			if (i != -1) {
 				int j = i + matchedTooltipText.length();
 				List<ITextComponent> tt = Lists.newArrayList();
-				final String[] lines = NEW_LINE.split(tooltipText);
 				Style style = Style.EMPTY
 				  .applyFormatting(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
 				  // .applyFormatting(TextFormatting.BOLD)
 				  .applyFormatting(TextFormatting.UNDERLINE);
-				for (String line : lines) {
-					final int l = line.length();
+				for (ITextComponent line: tooltip) {
+					final int l = getUnformattedString(line).length();
 					int a = MathHelper.clamp(i, 0, l);
 					int b = MathHelper.clamp(j, 0, l);
 					IFormattableTextComponent ln;
 					if (a != b) {
-						ln = new StringTextComponent(line.substring(0, a))
-						  .append(new StringTextComponent(line.substring(a, b)).setStyle(style))
-						  .append(new StringTextComponent(line.substring(b)));
-					} else ln = new StringTextComponent(line);
-					tt.add(ln.mergeStyle(TextFormatting.GRAY));
+						ln = SimpleConfigTextUtil.applyStyle(line, style, a, b);
+					} else ln = line.deepCopy();
+					tt.add(ln);
 					i -= l + 1;
 					j -= l + 1;
 				}

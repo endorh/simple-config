@@ -7,6 +7,7 @@ import endorh.simpleconfig.ui.impl.builders.DoubleListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -28,21 +29,21 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder min(double min) {
+		@Contract(pure=true) public Builder min(double min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder max(double max) {
+		@Contract(pure=true) public Builder max(double max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
 		 */
-		public Builder range(double min, double max) {
+		@Contract(pure=true) public Builder range(double min, double max) {
 			return super.range(min, max);
 		}
 		

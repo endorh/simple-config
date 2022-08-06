@@ -4,12 +4,17 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
+import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
+import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
+import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction.WidgetDragBroadcastableAction;
+import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableWidget;
 import endorh.simpleconfig.ui.math.Point;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.Widget;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -48,13 +53,11 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	public void addSubEntry(E entry) {
 		addSubEntry(getSubEntries().size(), entry);
 	}
-	
 	public void addSubEntry(int pos, E entry) {
 		subEntries.add(pos, entry);
 		// noinspection unchecked
 		entry.tick(getTree(), (E) this);
 	}
-	
 	public void removeSubEntry(E entry) {
 		tree.setSelected(entry, false);
 		subEntries.remove(entry);
@@ -62,6 +65,10 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	
 	public int getOwnHeight() {
 		return 24;
+	}
+	
+	public int getVerticalPadding() {
+		return 2;
 	}
 	
 	protected final void tick(ArrangeableTreeView<E> tree, @Nullable E parent) {
@@ -134,10 +141,15 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		return tree.isDraggingEntries() && tree.isSelected(this);
 	}
 	
+	public boolean isSelectable() {
+		return true;
+	}
+	
 	/**
 	 * Called before an entry is selected.<br>
 	 * By default, it only returns true if the selection is empty.<br>
-	 * Override this to enable multi-selection with your own rules.
+	 * Override this to enable multi-selection with your own rules.<br>
+	 * <b>This method is ignored if {@link #isSelectable()} returns {@code false}.</b>
 	 *
 	 * @param selection The current selection
 	 */
@@ -323,13 +335,15 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	) {
 		focus();
 		ArrangeableTreeView<E> tree = getTree();
+		E parent = getParent();
+		if (select && !isSelectable() && !parent.isSelectable()) select = false;
 		// noinspection unchecked
 		E self = (E) this;
 		if (clearSelection) {
 			tree.clearSelection();
 		} else if (remove != null && tree.getSelection().contains(self))
 			tree.setSelected(remove, false);
-		if (select) tree.setSelected(this, true);
+		if (select) tree.setSelected(isSelectable()? this : parent, true);
 	}
 	
 	protected void focus() {
@@ -456,13 +470,14 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		E p = getParent();
 		int yy = y;
 		if (p != null) {
-			if (!subEntries.isEmpty()) {
-				SimpleConfigIcons.Widgets.TREE_ARROW.renderCentered(
-				  mStack, ix, iy, 16, height, isExpanded()? 1 : 0);
-			}
-			SimpleConfigIcons.Widgets.TREE_DRAG_HANDLE.renderCentered(
+			if (!subEntries.isEmpty() || isForceRenderAsGroup()) SimpleConfigIcons.Widgets.TREE_ARROW.renderCentered(
+			  mStack, ix, iy, 16, height, isExpanded()? 1 : 0);
+			if (isSelectable()) SimpleConfigIcons.Widgets.TREE_DRAG_HANDLE.renderCentered(
 			  mStack, ix + 16, iy, 8, height);
-			renderContent(mStack, ix + 24, iy + 2, width - 24, height - 4, mouseX, mouseY, delta);
+			int padding = getVerticalPadding();
+			renderContent(
+			  mStack, ix + 24, iy + padding, width - 24, height - 2 * padding,
+			  mouseX, mouseY, delta);
 			yy += height;
 		}
 		ArrangeableTreeView<E> tree = getTree();
@@ -501,14 +516,22 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	public abstract void renderContent(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
-	);
+	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
+	
+	public boolean isForceRenderAsGroup() {
+		return false;
+	}
+	
+	public boolean isMouseOverSelf(double mouseX, double mouseY) {
+		ArrangeableTreeView<E> tree = getTree();
+		int x = tree.getX();
+		return x <= mouseX && mouseX < x + tree.getWidth() && area.y <= mouseY && mouseY < area.getMaxY();
+	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		ArrangeableTreeView<E> tree = getTree();
 		int x = tree.getX();
-		return x <= mouseX && mouseX < x + tree.getWidth() && area.y <= mouseY &&
-		       mouseY < area.y + getHeight();
+		return x <= mouseX && mouseX < x + tree.getWidth() && area.y <= mouseY && mouseY < area.y + getHeight();
 	}
 	
 	public boolean isMouseOverArrow(double mouseX, double mouseY) {
@@ -519,7 +542,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		ArrangeableTreeView<E> tree = getTree();
 		E p = getParent();
 		clickedPos = Point.of(mouseX, mouseY);
-		if (p != null && area.contains(mouseX, mouseY)) {
+		if (p != null && area.contains(mouseX, mouseY) && isSelectable()) {
 			E focused = p.getFocusedSubEntry();
 			boolean isSelected = tree.isSelected(this);
 			if (Screen.hasShiftDown() && focused != null && focused != this) {
@@ -543,8 +566,9 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			} else awaitingSelectionMouseRelease = true;
 		}
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
-		if (isMouseOverArrow(mouseX, mouseY)) {
+		if (button == 0 && isMouseOverArrow(mouseX, mouseY)) {
 			setExpanded(!isExpanded());
+			tree.startExpandDrag(isExpanded());
 			return true;
 		}
 		setListener(null);
@@ -580,5 +604,17 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		return isExpanded()? Stream.concat(
 		  listeners.stream(), subEntries.stream()
 		).collect(Collectors.toList()) : listeners;
+	}
+	
+	public <W extends IPositionableRenderable> DragBroadcastableControl<W> draggable(
+	  DragBroadcastableAction<W> action, W widget
+	) {
+		return new DragBroadcastableControl<>(this::getTree, action, widget);
+	}
+	
+	public <W extends Widget> DragBroadcastableWidget<W> draggable(
+	  WidgetDragBroadcastableAction<W> action, W widget
+	) {
+		return new DragBroadcastableWidget<>(this::getTree, action, widget);
 	}
 }

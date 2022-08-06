@@ -9,6 +9,9 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 
 import java.util.Optional;
 
@@ -26,15 +29,15 @@ public class LongRangeEntry
 			super(value, LongRange.class);
 		}
 		
-		public Builder min(long min) {
+		@Contract(pure=true) public Builder min(long min) {
 			return min((Long) min);
 		}
 		
-		public Builder max(long max) {
+		@Contract(pure=true) public Builder max(long max) {
 			return max((Long) max);
 		}
 		
-		public Builder withBounds(long min, long max) {
+		@Contract(pure=true) public Builder withBounds(long min, long max) {
 			return withBounds((Long) min, (Long) max);
 		}
 		
@@ -56,7 +59,7 @@ public class LongRangeEntry
 		}
 	}
 	
-	@Override
+	@OnlyIn(Dist.CLIENT) @Override
 	protected <EE extends AbstractConfigListEntry<Long> & IChildListEntry> EE buildLimitGUIEntry(
 	  ConfigEntryBuilder builder, String name, Long value
 	) {

@@ -15,7 +15,7 @@ public class DoubleSliderBuilder extends SliderFieldBuilder<Double, DoubleSlider
 		super(builder, name, value, min, max);
 	}
 	
-	@NotNull public DoubleSliderEntry buildEntry() {
+	@Override @NotNull public DoubleSliderEntry buildEntry() {
 		return new DoubleSliderEntry(fieldNameKey, min, max, value);
 	}
 }

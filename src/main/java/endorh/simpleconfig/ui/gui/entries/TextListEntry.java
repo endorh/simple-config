@@ -2,6 +2,8 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.core.SimpleConfigTextUtil;
+import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
@@ -13,6 +15,7 @@ import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -135,19 +138,19 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	}
 	
 	public ITextComponent getText() {
-		return textSupplier.get();
-		// if (matchedText == null || matchedText.isEmpty())
-		// 	return text;
-		// final String str = text.getString();
-		// final int index = str.indexOf(matchedText);
-		// if (index == -1)
-		// 	return text;
-		// // TODO: Modify style without rewriting
-		// return new StringTextComponent(str.substring(0, index))
-		//   .append(new StringTextComponent(str.substring(index, index + matchedText.length()))
-		//             .mergeStyle(focusedMatch? TextFormatting.GOLD : TextFormatting.YELLOW)
-		//             .mergeStyle(TextFormatting.UNDERLINE))
-		//   .appendString(str.substring(index + matchedText.length()));
+		ITextComponent text = textSupplier.get();
+		if (matchedText == null || matchedText.isEmpty())
+			return text;
+		String str = text.getString();
+		int index = str.indexOf(matchedText);
+		if (index == -1) return text;
+		return SimpleConfigTextUtil.applyStyle(
+		  text.deepCopy(), isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW,
+		  index, index + matchedText.length());
+	}
+	
+	@Override public List<EntryError> getErrors() {
+		return Collections.emptyList();
 	}
 	
 	@Override public boolean isSelectable() {

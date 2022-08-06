@@ -7,6 +7,7 @@ import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,21 +31,21 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder min(int min) {
+		@Contract(pure=true) public Builder min(int min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder max(int max) {
+		@Contract(pure=true) public Builder max(int max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
 		 */
-		public Builder range(int min, int max) {
+		@Contract(pure=true) public Builder range(int min, int max) {
 			return super.range(min, max);
 		}
 		

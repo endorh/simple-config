@@ -146,12 +146,10 @@ public class DemoServerCategory {
 			// Note that static tooltips can be added directly in the translations JSON
 			//   under the same key of the field followed by '.help', and they support
 			//   newlines automatically
-			private static Optional<ITextComponent[]> even_score$tooltip() {
-				// Here we have to split the lines manually...
-				return Optional.of(new ITextComponent[] {
+			private static List<ITextComponent> even_score$tooltip() {
+				return asList(
 				  ttc(prefix("tooltip.score.1")),
-				  ttc(prefix("tooltip.score.2"))
-				});
+				  ttc(prefix("tooltip.score.2")));
 			}
 			
 			// Text fields can be final, since they won't be updated

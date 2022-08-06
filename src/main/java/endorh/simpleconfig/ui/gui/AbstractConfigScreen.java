@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.gui;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -9,7 +10,9 @@ import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IRemoteCommonConfigProvider;
 import endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
@@ -30,13 +33,14 @@ import net.minecraft.client.util.InputMappings;
 import net.minecraft.client.util.InputMappings.Input;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.ClickEvent.Action;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,18 +70,22 @@ public abstract class AbstractConfigScreen extends Screen
 	protected boolean confirmSave = confirm.save;
 	protected boolean alwaysShowTabs = false;
 	protected boolean transparentBackground = false;
-	@Nullable protected ConfigCategory defaultFallbackCategory = null;
+	protected @Nullable ConfigCategory defaultFallbackCategory = null;
 	protected boolean editable = true;
 	protected @Nullable IModalInputProcessor modalInputProcessor = null;
-	@Nullable protected Runnable savingRunnable = null;
-	@Nullable protected Consumer<Screen> afterInitConsumer = null;
+	protected @Nullable Runnable savingRunnable = null;
+	protected @Nullable Runnable closingRunnable;
+	protected @Nullable Consumer<Screen> afterInitConsumer = null;
 	protected Pair<Integer, IGuiEventListener> dragged = null;
+	protected Map<String, Map<String, ConfigCategory>> categoryMap;
+	protected Map<String, ConfigCategory> clientCategoryMap;
+	protected Map<String, ConfigCategory> commonCategoryMap;
 	protected Map<String, ConfigCategory> serverCategoryMap;
-	protected Map<String, ConfigCategory> categoryMap;
 	protected ExternalChangesDialog externalChangesDialog;
 	
 	protected ConfigCategory selectedCategory;
 	protected List<ConfigCategory> sortedClientCategories;
+	protected List<ConfigCategory> sortedCommonCategories;
 	protected List<ConfigCategory> sortedServerCategories;
 	protected List<ConfigCategory> sortedCategories;
 	
@@ -88,26 +96,43 @@ public abstract class AbstractConfigScreen extends Screen
 	protected Consumer<Boolean> hotKeySaver = null;
 	
 	private final SortedDialogCollection dialogs = new SortedDialogCollection();
-	protected @Nullable ConfigScreenBuilder.IConfigSnapshotHandler snapshotHandler;
+	protected @Nullable IConfigSnapshotHandler snapshotHandler;
+	protected @Nullable IRemoteCommonConfigProvider remoteConfigProvider;
+	
+	protected boolean isEditingRemoteCommon = false;
+	protected @Nullable CommentedConfig remoteCommon = null;
+	protected boolean loadedRemoteCommon = false;
 	
 	protected AbstractConfigScreen(
 	  Screen parent, String modId, ITextComponent title, ResourceLocation backgroundLocation,
-	  Collection<ConfigCategory> clientCategories, Collection<ConfigCategory> serverCategories
+	  Collection<ConfigCategory> clientCategories,
+	  Collection<ConfigCategory> commonCategories,
+	  Collection<ConfigCategory> serverCategories
 	) {
 		super(title);
 		this.parent = parent;
 		this.modId = modId;
 		this.backgroundLocation = backgroundLocation;
-		this.categoryMap = clientCategories.stream()
+		clientCategoryMap = clientCategories.stream()
 		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
-		this.sortedClientCategories = clientCategories.stream()
+		sortedClientCategories = clientCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
-		this.serverCategoryMap = serverCategories.stream()
+		serverCategoryMap = serverCategories.stream()
 		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
-		this.sortedServerCategories = serverCategories.stream()
+		sortedServerCategories = serverCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
-		this.sortedCategories = new ArrayList<>(sortedClientCategories);
-		sortedCategories.addAll(sortedServerCategories);
+		commonCategoryMap = commonCategories.stream()
+		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
+		sortedCommonCategories = commonCategories.stream()
+		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
+		categoryMap = Util.make(new HashMap<>(), m -> {
+			m.put("client", clientCategoryMap);
+			m.put("common", commonCategoryMap);
+			m.put("server", serverCategoryMap);
+		});
+		sortedCategories = Stream.of(
+		  sortedClientCategories, sortedCommonCategories, sortedServerCategories
+		).flatMap(Collection::stream).collect(Collectors.toList());
 		history = new EditHistory();
 		history.setOwner(this);
 	}
@@ -144,6 +169,9 @@ public abstract class AbstractConfigScreen extends Screen
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
 		this.savingRunnable = savingRunnable;
 	}
+	@Override public void setClosingRunnable(@Nullable Runnable closingRunnable) {
+		this.closingRunnable = closingRunnable;
+	}
 	
 	@Override public void setAfterInitConsumer(@Nullable Consumer<Screen> afterInitConsumer) {
 		this.afterInitConsumer = afterInitConsumer;
@@ -155,11 +183,13 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public boolean isRequiresRestart() {
-		for (ConfigCategory cat : categoryMap.values()) {
-			for (AbstractConfigEntry<?> entry : cat.getHeldEntries()) {
-				if (entry.hasError() || !entry.isEdited() ||
-				    !entry.isRequiresRestart()) continue;
-				return true;
+		for (Map<String, ConfigCategory> m: categoryMap.values()) {
+			for (ConfigCategory cat : m.values()) {
+				for (AbstractConfigEntry<?> entry : cat.getHeldEntries()) {
+					if (entry.hasError() || !entry.isEdited() ||
+					    !entry.isRequiresRestart()) continue;
+					return true;
+				}
 			}
 		}
 		return false;
@@ -176,17 +206,11 @@ public abstract class AbstractConfigScreen extends Screen
 		return selectedCategory;
 	}
 	
-	public void setSelectedCategory(String name) {
-		if (categoryMap.containsKey(name))
-			setSelectedCategory(categoryMap.get(name));
-		else if (serverCategoryMap.containsKey(name))
-			setSelectedCategory(serverCategoryMap.get(name));
-		else throw new IllegalArgumentException("Unknown category name: " + name);
-	}
-	
 	public void setSelectedCategory(ConfigCategory category) {
-		if (!categoryMap.containsValue(category) && !serverCategoryMap.containsValue(category))
-			throw new IllegalArgumentException("Unknown category");
+		if (!clientCategoryMap.containsValue(category)
+		    && !commonCategoryMap.containsValue(category)
+		    && !serverCategoryMap.containsValue(category)
+		) throw new IllegalArgumentException("Unknown category");
 		selectedCategory = category;
 	}
 	
@@ -200,25 +224,39 @@ public abstract class AbstractConfigScreen extends Screen
 		return false;
 	}
 	
-	public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
 		return null;
 	}
 	
-	public ModConfig.Type currentConfigType() {
-		return isSelectedCategoryServer()? ModConfig.Type.SERVER : ModConfig.Type.CLIENT;
+	public Type getEditedType() {
+		return getSelectedCategory().getType();
 	}
 	
-	public boolean isSelectedCategoryServer() {
-		return serverCategoryMap.containsValue(selectedCategory);
+	public List<ConfigCategory> getSortedTypeCategories() {
+		switch (getEditedType()) {
+			case CLIENT: return sortedClientCategories;
+			case COMMON: return sortedCommonCategories;
+			case SERVER: return sortedServerCategories;
+			default: throw new IllegalStateException();
+		}
+	}
+	
+	public Map<String, ConfigCategory> getTypeCategories() {
+		return categoryMap.get(getEditedType().extension());
+	}
+	
+	public boolean isEditingServer() {
+		return getEditedType() == Type.SERVER;
 	}
 	
 	public boolean isShowingTabs() {
-		return isAlwaysShowTabs() || (isSelectedCategoryServer()? serverCategoryMap : categoryMap).size() > 1;
+		return isAlwaysShowTabs() || getTypeCategories().size() > 1;
 	}
 	
 	/**
 	 * Run an atomic action, which is committed to the history as a single step.
 	 * Atomic actions triggered within the action will also be joined in the same step.
+	 *
 	 * @param action Action to run
 	 */
 	public void runAtomicTransparentAction(Runnable action) {
@@ -228,6 +266,7 @@ public abstract class AbstractConfigScreen extends Screen
 	/**
 	 * Run an atomic action, which is committed to the history as a single step.
 	 * Atomic actions triggered within the action will also be joined in the same step.
+	 *
 	 * @param focus Focus entry of the action, or {@code null}
 	 * @param action Action to run
 	 */
@@ -344,9 +383,10 @@ public abstract class AbstractConfigScreen extends Screen
 				entry.save();
 		save();
 		if (openOtherScreens && minecraft != null) {
-			if (isRequiresRestart())
+			if (closingRunnable != null) closingRunnable.run();
+			if (isRequiresRestart()) {
 				minecraft.displayGuiScreen(new ClothRequiresRestartScreen(parent));
-			else minecraft.displayGuiScreen(parent);
+			} else minecraft.displayGuiScreen(parent);
 		}
 	}
 	
@@ -372,7 +412,9 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean hasConflictingExternalChanges() {
-		return sortedClientCategories.stream().flatMap(c -> c.getAllMainEntries().stream())
+		return Stream.of(sortedClientCategories, sortedCommonCategories)
+		  .flatMap(Collection::stream)
+		  .flatMap(c -> c.getAllMainEntries().stream())
 		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
 	}
 	
@@ -397,7 +439,9 @@ public abstract class AbstractConfigScreen extends Screen
 		if (editedConfigHotKey == null && hotkey == null
 		    && this.hotKeySaver == null && hotKeySaver == null
 		) return;
-		this.editedConfigHotKey = hotkey;
+		if (hotkey == null)
+			getAllMainEntries().forEach(e -> e.setHotKeyActionType(null, null));
+		editedConfigHotKey = hotkey;
 		this.hotKeySaver = hotKeySaver;
 		// Refresh layout
 		init(Minecraft.getInstance(), width, height);
@@ -417,7 +461,7 @@ public abstract class AbstractConfigScreen extends Screen
 		modalInputProcessor = processor;
 	}
 	
-	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+	@Override public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		handleEndDrag(mouseX, mouseY, button);
 		if (handleModalMouseReleased(mouseX, mouseY, button)) return true;
 		if (handleOverlaysMouseReleased(mouseX, mouseY, button)) return true;
@@ -440,14 +484,14 @@ public abstract class AbstractConfigScreen extends Screen
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 	
-	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+	@Override public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
 		if (handleModalKeyReleased(keyCode, scanCode, modifiers)) return true;
 		if (handleDialogsKeyReleased(keyCode, scanCode, modifiers)) return true;
 		if (getDragged() != null) return true;
 		return super.keyReleased(keyCode, scanCode, modifiers);
 	}
 	
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (handleModalMouseClicked(mouseX, mouseY, button)) return true;
 		SearchBarWidget searchBar = getSearchBar();
 		if (searchBar.isMouseOver(mouseX, mouseY)) setListener(searchBar);
@@ -466,7 +510,7 @@ public abstract class AbstractConfigScreen extends Screen
 		return super.charTyped(codePoint, modifiers);
 	}
 	
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (handleModalKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (handleDialogsKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (getDragged() != null) return true; // Suppress
@@ -539,12 +583,13 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else {
+			if (closingRunnable != null) closingRunnable.run();
 			minecraft.displayGuiScreen(parent);
 		}
 		return true;
 	}
 	
-	public void tick() {
+	@Override public void tick() {
 		super.tick();
 		tickDialogs();
 		boolean edited = isEdited();
@@ -561,7 +606,7 @@ public abstract class AbstractConfigScreen extends Screen
 		return null;
 	}
 	
-	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
 		super.render(mStack, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
@@ -623,13 +668,13 @@ public abstract class AbstractConfigScreen extends Screen
 		tessellator.draw();
 	}
 	
-	public void renderComponentHoverEffect(
+	@Override public void renderComponentHoverEffect(
 	  @NotNull MatrixStack matrices, Style style, int x, int y
 	) {
 		super.renderComponentHoverEffect(matrices, style, x, y);
 	}
 	
-	public boolean handleComponentClicked(@Nullable Style style) {
+	@Override public boolean handleComponentClicked(@Nullable Style style) {
 		if (style == null) return false;
 		ClickEvent clickEvent = style.getClickEvent();
 		if (clickEvent != null && clickEvent.getAction() == Action.OPEN_URL) {
@@ -656,6 +701,19 @@ public abstract class AbstractConfigScreen extends Screen
 		return !sortedClientCategories.isEmpty();
 	}
 	
+	public boolean hasCommon() {
+		return !sortedCommonCategories.isEmpty();
+	}
+	
+	public boolean mayHaveRemoteCommon() {
+		return !sortedCommonCategories.isEmpty() && remoteConfigProvider != null;
+	}
+	
+	public boolean hasRemoteCommon() {
+		return !sortedCommonCategories.isEmpty() && remoteConfigProvider != null
+		       && remoteCommon != null;
+	}
+	
 	public boolean hasServer() {
 		return !sortedServerCategories.isEmpty();
 	}
@@ -679,8 +737,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public void setHistory(EditHistory previous) {
-		this.history = new EditHistory(previous);
-		this.history.setOwner(this);
+		history = new EditHistory(previous);
+		history.setOwner(this);
 	}
 	
 	public void commitHistory() {
@@ -701,13 +759,21 @@ public abstract class AbstractConfigScreen extends Screen
 		return dialogs;
 	}
 	
-	public @Nullable ConfigScreenBuilder.IConfigSnapshotHandler getSnapshotHandler() {
+	public @Nullable IConfigSnapshotHandler getSnapshotHandler() {
 		return snapshotHandler;
 	}
 	
-	public void setSnapshotHandler(@Nullable ConfigScreenBuilder.IConfigSnapshotHandler snapshotHandler) {
+	public void setSnapshotHandler(@Nullable IConfigSnapshotHandler snapshotHandler) {
 		this.snapshotHandler = snapshotHandler;
 		if (snapshotHandler != null) snapshotHandler.setExternalChangeHandler(this);
+	}
+	
+	public @Nullable IRemoteCommonConfigProvider getRemoteConfigProvider() {
+		return remoteConfigProvider;
+	}
+	
+	public void setRemoteCommonConfigProvider(@Nullable IRemoteCommonConfigProvider remoteConfigProvider) {
+		this.remoteConfigProvider = remoteConfigProvider;
 	}
 	
 	public @Nullable AbstractConfigEntry<?> getFocusedEntry() {
@@ -720,7 +786,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public void updateSelection() {}
 	
-	@Override public void handleExternalChange(ModConfig.Type type) {
+	@Override public void handleExternalChange(Type type) {
 		// Changes sometimes arrive in batches
 		if (externalChangesDialog != null) externalChangesDialog.cancel(false);
 		externalChangesDialog = ExternalChangesDialog.create(type, response -> {

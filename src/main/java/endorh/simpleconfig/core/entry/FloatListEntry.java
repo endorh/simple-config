@@ -7,6 +7,7 @@ import endorh.simpleconfig.ui.impl.builders.FloatListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -28,21 +29,21 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder min(float min) {
+		@Contract(pure=true) public Builder min(float min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder max(float max) {
+		@Contract(pure=true) public Builder max(float max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
 		 */
-		public Builder range(float min, float max) {
+		@Contract(pure=true) public Builder range(float min, float max) {
 			return super.range(min, max);
 		}
 		

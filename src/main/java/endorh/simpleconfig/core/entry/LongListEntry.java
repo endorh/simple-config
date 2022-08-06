@@ -7,6 +7,7 @@ import endorh.simpleconfig.ui.impl.builders.LongListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -28,21 +29,21 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 		/**
 		 * Set the minimum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder min(long min) {
+		@Contract(pure=true) public Builder min(long min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set the maximum allowed value for the elements of this list entry (inclusive)
 		 */
-		public Builder max(long max) {
+		@Contract(pure=true) public Builder max(long max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
 		 */
-		public Builder range(long min, long max) {
+		@Contract(pure=true) public Builder range(long min, long max) {
 			return super.range(min, max);
 		}
 		

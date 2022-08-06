@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.impl.builders.FloatSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -23,7 +24,8 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		commentMax = Float.MAX_VALUE;
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Float, Number, Float, FloatEntry, Builder> {
+	public static class Builder
+	  extends AbstractRangedEntry.Builder<Float, Number, Float, FloatEntry, Builder> {
 		public Builder(Float value) {
 			super(value, Float.class, "%.2f");
 		}
@@ -31,21 +33,21 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		/**
 		 * Set min (inclusive)
 		 */
-		public Builder min(float min) {
+		@Contract(pure=true) public Builder min(float min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set max (inclusive)
 		 */
-		public Builder max(float max) {
+		@Contract(pure=true) public Builder max(float max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set inclusive range
 		 */
-		public Builder range(float min, float max) {
+		@Contract(pure=true) public Builder range(float min, float max) {
 			return super.range(min, max);
 		}
 		
@@ -57,7 +59,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 		 * @param scale The scale by which the config value is <em>multiplied</em>
 		 *              before being stored in the backing field
 		 */
-		public Builder fieldScale(float scale) {
+		@Contract(pure=true) public Builder fieldScale(float scale) {
 			if (scale == 0F || !Float.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return field(f -> f * scale, f -> f / scale, Float.class);
@@ -90,8 +92,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Float>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Float>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

@@ -46,6 +46,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			  Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
 			  NarratorChatListener.EMPTY
 			) {
+				@Override
 				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
 					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
@@ -108,7 +109,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			}
 		}
 		
-		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return Collections.singletonList(widget);
 		}
 		

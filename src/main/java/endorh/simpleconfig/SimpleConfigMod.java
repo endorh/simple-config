@@ -1,6 +1,7 @@
 package endorh.simpleconfig;
 
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.SimpleConfigMod.ClientConfig.menu;
 import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
@@ -51,8 +52,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -84,6 +84,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	
 	// Storing the config instances is optional
 	public static SimpleConfig CLIENT_CONFIG;
+	public static SimpleConfig COMMON_CONFIG;
 	public static SimpleConfig SERVER_CONFIG;
 	
 	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
@@ -92,16 +93,28 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static final LanguageReloadManager LANGUAGE_RELOAD_MANAGER = LanguageReloadManager.INSTANCE;
 	
 	public SimpleConfigMod() {
+		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
+		  .map(ModInfo::getModId).collect(Collectors.toList());
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			// Create and register the client config for the mod
 			CLIENT_CONFIG = SimpleConfig.builder(MOD_ID, Type.CLIENT, ClientConfig.class)
-			  .withIcon(SimpleConfigIcons.CLIENT)
+			  .withIcon(SimpleConfigIcons.Types.CLIENT)
 			  .withColor(0x8090FF80)
 			  .withBackground("textures/block/bookshelf.png")
-			  .add("add_pause_menu_button", yesNo(true))
-			  .add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
-			    .editable(() -> CLIENT_CONFIG.getGUIBoolean("add_pause_menu_button")))
-			  .n(group("confirm")
+			  .n(group("menu", true)
+			       .add("add_pause_menu_button", yesNo(true))
+			       .add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
+				      .editable(() -> CLIENT_CONFIG.getGUIBoolean("menu.add_pause_menu_button")))
+			       .add("provide_config_menus", yesNo(true).restart())
+			       .add("provide_menu_exceptions", list(
+						string("").suggest(modNameSupplier)
+			       ).restart().editable(() -> CLIENT_CONFIG.getGUIBoolean("menu.provide_config_menus")))
+			       .add("replace_config_menus", yesNo(false).restart()
+				      .editable(() -> CLIENT_CONFIG.getGUIBoolean("menu.provide_config_menus")))
+			       .add("replace_menu_exceptions", list(
+						string("").suggest(modNameSupplier)
+			       ).restart())
+			  ).n(group("confirm")
 			       .add("save", yesNo(true))
 			       .add("discard", yesNo(true))
 			       .add("overwrite_external", yesNo(true))
@@ -116,7 +129,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			       .add("show_ui_tips", yesNo(true))
 			       .add("tooltip_max_width", percent(60F))
 			       .add("prefer_combo_box", number(8))
-			       .add("max_options_in_config_comment", number(16).min(5))
+			       .add("max_options_in_config_comment", number(16).min(5).restart())
 			       .add("color_picker_saved_colors", map(
 			         number(0), color(Color.BLACK).alpha(),
 			         Util.make(new HashMap<>(), m -> {
@@ -130,10 +143,8 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			         	m.put(6, new Color(0xFF55FF)); // Light Purple
 			         	m.put(7, new Color(0xAAAAAA)); // Gray
 			         })))
-			       .add("search_history", caption(
-						number(20).min(0).max(1000), list(string(""))))
-			       .add("regex_search_history", caption(
-						number(20).max(1000), list(pattern(""))))
+			       .add("search_history", caption(number(20).min(0).max(1000), list(string(""))))
+			       .add("regex_search_history", caption(number(20).max(1000), list(pattern(""))))
 			       .add("translation_debug_mode", enable(false).temp())
 			  // Hook here the demo category
 			  ).n(DemoConfigCategory.getDemoCategory())
@@ -146,9 +157,9 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			final List<String> names = Lists.newArrayList();
 			if (server != null) {
 				final PlayerList pl = server.getPlayerList();
-				final List<String> ops = Arrays.asList(pl.getOppedPlayerNames());
-				final List<String> whl = Arrays.asList(pl.getWhitelistedPlayerNames());
-				final List<String> nms = Arrays.asList(pl.getOnlinePlayerNames());
+				final List<String> ops = Lists.newArrayList(pl.getOppedPlayerNames());
+				final List<String> whl = Lists.newArrayList(pl.getWhitelistedPlayerNames());
+				final List<String> nms = Lists.newArrayList(pl.getOnlinePlayerNames());
 				whl.removeAll(ops);
 				nms.removeAll(ops);
 				nms.removeAll(whl);
@@ -158,7 +169,6 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			}
 			return names;
 		});
-		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream().map(ModInfo::getModId).collect(Collectors.toList());
 		final Supplier<List<String>> roleNameSupplier = () ->
 		  new ArrayList<>(SERVER_CONFIG.<Map<String, List<String>>>getFromGUI("permissions.roles").keySet());
 		StringEntry.Builder modName = string("").suggest(modNameSupplier);
@@ -177,10 +187,22 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			names.add(0, "[all]");
 			return names;
 		});
+		COMMON_CONFIG = SimpleConfig.builder(MOD_ID, Type.COMMON, CommonConfig.class)
+		  .withIcon(SimpleConfigIcons.Types.COMMON)
+		  .withColor(0x80FFA090)
+		  .withBackground("textures/block/warped_planks.png")
+		  .text("desc")
+		  .n(group("commands")
+		       .add("provide_commands", yesNo(true).restart())
+		       .add("provide_commands_exceptions", list(
+			      string("").suggest(modNameSupplier))
+			      .editable(() -> COMMON_CONFIG.getGUIBoolean("commands.provide_commands"))
+			      .restart())
+		  ).buildAndRegister();
 		SERVER_CONFIG = SimpleConfig.builder(MOD_ID, Type.SERVER, ServerConfig.class)
-		  .withIcon(SimpleConfigIcons.SERVER)
+		  .withIcon(SimpleConfigIcons.Types.SERVER)
 		  .withColor(0x808090FF)
-		  .withBackground("minecraft:blackstone_bricks")
+		  .withBackground("textures/block/blackstone_bricks.png")
 		  .text("desc", makeLink(
 			 "simpleconfig.config.server.desc.permission_level",
 			 "simpleconfig.config.server.desc.permission_level:help",
@@ -229,9 +251,22 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	 * Client config backing class
 	 */
 	public static class ClientConfig {
-		@Bind public static boolean add_pause_menu_button;
-		public static boolean force_inject_gui;
-		@Bind public static MenuButtonPosition menu_button_position;
+		@Bind public static class menu {
+			@Bind public static boolean add_pause_menu_button;
+			@Bind public static MenuButtonPosition menu_button_position;
+			@Bind public static boolean provide_config_menus;
+			@Bind public static List<String> provide_menu_exceptions;
+			@Bind public static boolean replace_config_menus;
+			@Bind public static List<String> replace_menu_exceptions;
+			
+			public static boolean shouldWrapConfig(String modId) {
+				return provide_config_menus != provide_menu_exceptions.contains(modId);
+			}
+			
+			public static boolean shouldReplaceMenu(String modId) {
+				return shouldWrapConfig(modId) && replace_config_menus != replace_menu_exceptions.contains(modId);
+			}
+		}
 		@Bind public static class confirm {
 			@Bind public static boolean save;
 			@Bind public static boolean discard;
@@ -263,6 +298,17 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 				final Pair<Integer, List<Pattern>> rsh = g.get("regex_search_history");
 				regex_search_history = rsh.getValue();
 				regex_search_history_size = rsh.getKey();
+			}
+		}
+	}
+	
+	public static class CommonConfig {
+		@Bind public static class commands {
+			@Bind public static boolean provide_commands;
+			@Bind public static List<String> provide_commands_exceptions;
+			
+			public static boolean shouldProvideCommandFor(String modId) {
+				return provide_commands != provide_commands_exceptions.contains(modId);
 			}
 		}
 	}
@@ -334,6 +380,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 				return false;
 			}
 		}
+	}
+	
+	public static boolean shouldWrapConfig(String modId) {
+		return FMLEnvironment.dist == Dist.DEDICATED_SERVER
+		       ? CommonConfig.commands.shouldProvideCommandFor(modId)
+		       : menu.shouldWrapConfig(modId);
 	}
 	
 	public enum ListType {

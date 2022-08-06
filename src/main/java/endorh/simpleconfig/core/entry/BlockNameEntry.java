@@ -13,6 +13,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -53,7 +54,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		 * This can only be done on server configs, since tags
 		 * are server-dependant
 		 */
-		public Builder suggest(ITag<Block> tag) {
+		@Contract(pure=true) public Builder suggest(ITag<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -81,8 +82,8 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		}
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<ResourceLocation>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT)
+	@Override public Optional<AbstractConfigListEntry<ResourceLocation>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =

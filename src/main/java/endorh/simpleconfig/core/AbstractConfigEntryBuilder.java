@@ -6,6 +6,7 @@ import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -31,14 +32,17 @@ public abstract class AbstractConfigEntryBuilder<
   V, Config, Gui,
   Entry extends AbstractConfigEntry<V, Config, Gui, Entry>,
   Self extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self>
-> implements IGUIEntryBuilder, ITooltipEntry<V, Gui, Self>, IErrorEntry<V, Gui, Self> {
+> implements IGUIEntryBuilder, ITooltipEntryBuilder<V, Gui, Self>,
+             IErrorEntryBuilder<V, Config, Gui, Self> {
 	protected V value;
 	
+	protected @Nullable Function<Config, Optional<ITextComponent>> configErrorSupplier = null;
 	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
 	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
-	protected @Nullable Function<V, Optional<ITextComponent[]>> tooltipSupplier = null;
-	protected @Nullable Function<Gui, Optional<ITextComponent[]>> guiTooltipSupplier = null;
+	protected @Nullable Function<V, List<ITextComponent>> tooltipSupplier = null;
+	protected @Nullable Function<Gui, List<ITextComponent>> guiTooltipSupplier = null;
 	protected @Nullable Supplier<Boolean> editableSupplier = null;
+	protected @Nullable String translation = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected boolean requireRestart = false;
@@ -56,31 +60,38 @@ public abstract class AbstractConfigEntryBuilder<
 		).withCommitter(Function.identity()) : null;
 	}
 	
-	protected abstract Entry buildEntry(ISimpleConfigEntryHolder parent, String name);
+	@Contract(pure=true) protected abstract Entry buildEntry(ISimpleConfigEntryHolder parent, String name);
 	
-	@Override
-	public Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier) {
+	@Contract(pure=true)
+	@Override public Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier) {
 		final Self copy = copy();
 		copy.guiErrorSupplier = guiErrorSupplier;
 		return copy;
 	}
 	
-	@Override
-	public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
+	@Contract(pure=true)
+	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
 		final Self copy = copy();
 		copy.errorSupplier = errorSupplier;
 		return copy;
 	}
 	
-	@Override
-	public Self guiTooltip(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier) {
+	@Contract(pure=true)
+	@Override public Self configError(Function<Config, Optional<ITextComponent>> configErrorSupplier) {
+		final Self copy = copy();
+		copy.configErrorSupplier = configErrorSupplier;
+		return copy;
+	}
+	
+	@Contract(pure=true)
+	@Override public Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier) {
 		final Self copy = copy();
 		copy.guiTooltipSupplier = tooltipSupplier;
 		return copy;
 	}
 	
-	@Override
-	public Self tooltip(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
+	@Contract(pure=true)
+	@Override public Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier) {
 		final Self copy = copy();
 		copy.tooltipSupplier = tooltipSupplier;
 		return copy;
@@ -92,7 +103,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * will be invoked before being passed as arguments, with the entry value
 	 * as argument
 	 */
-	public Self tooltipArgs(Object... args) {
+	@Contract(pure=true) public Self tooltipArgs(Object... args) {
 		final Self copy = copy();
 		for (Object o : args) { // Check function types to fail fast
 			if (o instanceof Function) {
@@ -110,13 +121,13 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy;
 	}
 	
-	@SafeVarargs
-	public final Self tooltipArgs(Function<Gui, Object>... args) {
+	@Contract(pure=true)
+	@SafeVarargs public final Self tooltipArgs(Function<Gui, Object>... args) {
 		return tooltipArgs((Object[]) args);
 	}
 	
-	@SafeVarargs
-	public final Self tooltipArgs(Supplier<Object>... args) {
+	@Contract(pure=true)
+	@SafeVarargs public final Self tooltipArgs(Supplier<Object>... args) {
 		return tooltipArgs((Object[]) args);
 	}
 	
@@ -125,6 +136,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * As a special case, {@code Supplier}s passed
 	 * will be invoked before being passed as arguments
 	 */
+	@Contract(pure=true)
 	public Self nameArgs(Object... args) {
 		Self copy = copy();
 		for (Object arg : args) {
@@ -143,6 +155,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * @param mapper Transformation to apply for this field
 	 * @param type   Type of the field
 	 */
+	@Contract(pure=true)
 	public <F> Self addField(String suffix, Function<V, F> mapper, Class<F> type) {
 		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, type)));
 	}
@@ -153,6 +166,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * @param mapper Transformation to apply for this field
 	 * @param type   Type of the field
 	 */
+	@Contract(pure=true)
 	public <F> Self add_field(String suffix, Function<V, F> mapper, Class<F> type) {
 		return addField("_" + suffix, mapper, type);
 	}
@@ -163,6 +177,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * @param reader Optional reading function to use when committing this field.
 	 * @param type   The type of the field, used for checking
 	 */
+	@Contract(pure=true)
 	public <F> Self field(Function<V, F> mapper, Function<F, V> reader, Class<F> type) {
 		Self copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type).withCommitter(reader);
@@ -176,13 +191,14 @@ public abstract class AbstractConfigEntryBuilder<
 	 * @param mapper The transformation to apply to the main backing field
 	 * @param type   The type of the field, used for checking
 	 */
+	@Contract(pure=true)
 	public <F> Self field(Function<V, F> mapper, Class<F> type) {
 		Self copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type);
 		return copy;
 	}
 	
-	protected <F> Self addField(BackingFieldBinding<V, F> binding) {
+	@Contract(pure=true) protected <F> Self addField(BackingFieldBinding<V, F> binding) {
 		Self copy = copy();
 		copy.backingFieldBindings.add(binding);
 		return copy;
@@ -191,20 +207,20 @@ public abstract class AbstractConfigEntryBuilder<
 	/**
 	 * Flag this entry as requiring a restart to be effective
 	 */
-	public Self restart() {
+	@Contract(pure=true) public Self restart() {
 		return restart(true);
 	}
 	
 	/**
 	 * Flag this entry as requiring a restart to be effective
 	 */
-	public Self restart(boolean requireRestart) {
+	@Contract(pure=true) public Self restart(boolean requireRestart) {
 		Self copy = copy();
 		copy.requireRestart = requireRestart;
 		return copy;
 	}
 	
-	public Self editable(Supplier<Boolean> editable) {
+	@Contract(pure=true) public Self editable(Supplier<Boolean> editable) {
 		Self copy = copy();
 		copy.editableSupplier = editable;
 		return copy;
@@ -215,7 +231,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Non-persistent entries only appear in the GUI, not in the config file,
 	 * and they're reset on restart
 	 */
-	public Self temp() {
+	@Contract(pure=true) public Self temp() {
 		return temp(true);
 	}
 	
@@ -224,7 +240,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Non-persistent entries only appear in the GUI, not in the config file,
 	 * and they're reset on restart
 	 */
-	public Self temp(boolean nonPersistent) {
+	@Contract(pure=true) public Self temp(boolean nonPersistent) {
 		Self copy = copy();
 		copy.nonPersistent = nonPersistent;
 		if (!nonPersistent)
@@ -238,7 +254,7 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Useful for entries used to provide interaction in the config GUI,
 	 * without actually storing any value
 	 */
-	public Self ignored() {
+	@Contract(pure=true) public Self ignored() {
 		return ignored(true);
 	}
 	
@@ -248,11 +264,17 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Useful for entries used to provide interaction in the config GUI,
 	 * without actually storing any value
 	 */
-	public Self ignored(boolean ignored) {
+	@Contract(pure=true) public Self ignored(boolean ignored) {
 		Self copy = copy();
 		copy.ignored = ignored;
-		if (ignored)
-			copy.nonPersistent = true;
+		if (ignored) copy.nonPersistent = true;
+		return copy;
+	}
+	
+	@Contract(pure=true)
+	@Internal protected Self translation(@Nullable String translation) {
+		Self copy = copy();
+		copy.translation = translation;
 		return copy;
 	}
 	
@@ -262,13 +284,15 @@ public abstract class AbstractConfigEntryBuilder<
 	 * in most cases<br>
 	 * Overrides should call super
 	 */
-	protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+	@Contract(pure=true) protected Entry build(ISimpleConfigEntryHolder parent, String name) {
 		final Entry e = buildEntry(parent, name);
 		e.requireRestart = requireRestart;
+		e.configErrorSupplier = configErrorSupplier;
 		e.errorSupplier = errorSupplier;
 		e.guiErrorSupplier = guiErrorSupplier;
 		e.tooltipSupplier = tooltipSupplier;
 		e.guiTooltipSupplier = guiTooltipSupplier;
+		e.translation = translation;
 		e.nameArgs = nameArgs;
 		e.tooltipArgs = tooltipArgs;
 		e.typeClass = typeClass;
@@ -291,18 +315,20 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Do not call directly, instead use {@link AbstractConfigEntryBuilder#copy()}<br>
 	 * Subclasses should implement this method copying all of their fields.
 	 */
-	protected abstract Self createCopy();
+	@Contract("-> new") protected abstract Self createCopy();
 	
 	/**
 	 * Creates a copy of this builder
 	 */
-	protected Self copy() {
+	@Contract("-> new") protected Self copy() {
 		final Self copy = createCopy();
 		copy.value = value;
+		copy.configErrorSupplier = configErrorSupplier;
 		copy.errorSupplier = errorSupplier;
 		copy.guiErrorSupplier = guiErrorSupplier;
 		copy.tooltipSupplier = tooltipSupplier;
 		copy.guiTooltipSupplier = guiTooltipSupplier;
+		copy.translation = translation;
 		copy.nameArgs = new ArrayList<>(nameArgs);
 		copy.tooltipArgs = new ArrayList<>(tooltipArgs);
 		copy.requireRestart = requireRestart;

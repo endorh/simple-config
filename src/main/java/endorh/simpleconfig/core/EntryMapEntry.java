@@ -112,7 +112,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * Display this entry expanded in the GUI by default.
 		 * @see #expand(boolean)
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand() {
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand() {
 			return expand(true);
 		}
 		
@@ -121,7 +121,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * @param expand Whether to expand this entry by default.
 		 * @see #expand()
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand(boolean expand) {
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand(boolean expand) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
 			copy.expand = expand;
 			return copy;
@@ -134,7 +134,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * the order will be lost.</i>
 		 * @see #linked(boolean)
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked() {
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked() {
 			return linked(true);
 		}
 		
@@ -146,7 +146,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * @param linked Whether to use a linked map.
 		 * @see #linked()
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked(boolean linked) {
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked(boolean linked) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
 			copy.linked = linked;
 			return copy;
@@ -157,7 +157,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * The map will be deemed invalid if a single entry is invalid.
 		 * @param supplier The supplier for the error.
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> entryError(
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> entryError(
 		  BiFunction<K, V, Optional<ITextComponent>> supplier
 		) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
@@ -169,7 +169,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * Set the minimum (inclusive) size of the map.
 		 * @param minSize The inclusive minimum size of the map.
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> minSize(int minSize) {
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> minSize(int minSize) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
 			copy.minSize = minSize;
 			return copy;
@@ -179,7 +179,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		 * Set the maximum (inclusive) size of the map.
 		 * @param maxSize The inclusive maximum size of the map.
 		 */
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB> maxSize(int maxSize) {
+		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> maxSize(int maxSize) {
 			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
 			copy.maxSize = maxSize;
 			return copy;

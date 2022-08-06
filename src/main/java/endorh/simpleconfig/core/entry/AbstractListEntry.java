@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IErrorEntry;
+import endorh.simpleconfig.core.IErrorEntryBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
@@ -11,6 +11,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -51,11 +52,11 @@ public abstract class AbstractListEntry
 			this.innerType = innerType;
 		}
 		
-		public Self expand() {
+		@Contract(pure=true) public Self expand() {
 			return expand(true);
 		}
 		
-		public Self expand(boolean expand) {
+		@Contract(pure=true) public Self expand(boolean expand) {
 			Self copy = copy();
 			copy.expand = expand;
 			return copy;
@@ -65,7 +66,7 @@ public abstract class AbstractListEntry
 		 * Set the minimum (inclusive) allowed list size.
 		 * @param minSize Inclusive minimum size
 		 */
-		public Self minSize(int minSize) {
+		@Contract(pure=true) public Self minSize(int minSize) {
 			Self copy = copy();
 			copy.minSize = minSize;
 			return copy;
@@ -75,7 +76,7 @@ public abstract class AbstractListEntry
 		 * Set the maximum (inclusive) allowed list size.
 		 * @param maxSize Inclusive maximum size
 		 */
-		public Self maxSize(int maxSize) {
+		@Contract(pure=true) public Self maxSize(int maxSize) {
 			Self copy = copy();
 			copy.maxSize = maxSize;
 			return copy;
@@ -83,20 +84,19 @@ public abstract class AbstractListEntry
 		
 		/**
 		 * Set an error message supplier for the elements of this list entry<br>
-		 * You may also use {@link IErrorEntry#error(Function)} to check
+		 * You may also use {@link IErrorEntryBuilder#error(Function)} to check
 		 * instead the whole list<br>
 		 * If a single element is deemed invalid, the whole list is considered invalid.
 		 * @param errorSupplier Error message supplier. Empty return values indicate
 		 *                      correct values
 		 */
-		public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
+		@Contract(pure=true) public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
 			Self copy = copy();
 			copy.elemErrorSupplier = errorSupplier;
 			return copy;
 		}
 		
-		@Override
-		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected Entry build(ISimpleConfigEntryHolder parent, String name) {
 			final Entry e = super.build(parent, name);
 			e.elemErrorSupplier = elemErrorSupplier;
 			e.expand = expand;

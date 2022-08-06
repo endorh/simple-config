@@ -2,11 +2,12 @@ package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
+import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
+import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.FocusableGui;
@@ -30,7 +31,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
  *            as it's done in {@link ConfigHotKeyTreeView}.
  */
 public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends FocusableGui
-  implements IExtendedDragAwareNestedGuiEventHandler, IOverlayRenderer, IRectanglePositionableRenderable {
+  implements IOverlayRenderer, IRectanglePositionableRenderable, IDragBroadcastableControlContainer {
 	private final IOverlayCapableContainer overlayContainer;
 	private final E root;
 	private @Nullable ArrangeableTreeViewCaption<E> caption = null;
@@ -64,6 +65,9 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	// In some positions of the tree, there may be multiple possibilities, which are disambiguated
 	//   by the horizontal position of the dragged entries
 	private E draggedOverParent = (null);
+	private DragBroadcastableAction<?> dragBroadcastableAction = null;
+	private DragBroadcastableControl<?> dragBroadcastableSource = null;
+	private @Nullable Boolean draggedExpandState = null;
 	
 	public ArrangeableTreeView(IOverlayCapableContainer overlayContainer, E root) {
 		this.overlayContainer = overlayContainer;
@@ -125,13 +129,13 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	public int getPreferredHeight() {
 		ArrangeableTreeViewCaption<E> caption = getCaption();
-		return getTotalInnerHeight() + (caption != null? caption.getHeight() : 0);
+		return getTotalInnerHeight() + (caption != null? caption.getHeight() + getCaptionSeparation() : 0) + getPadding() * 2;
 	}
 	
 	// Selection, focus and dragging
 	
 	@SuppressWarnings("unchecked") public void setSelected(ArrangeableTreeViewEntry<E> entry, boolean selected) {
-		if (selected) {
+		if (entry.isSelectable() && selected) {
 			if (entry.canBeAddedToSelection(selection) && entry != getRoot())
 				selection.add((E) entry);
 		} else selection.remove((E) entry);
@@ -236,7 +240,42 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		if (last != null) last.focusAndSelect(true, true, null);
 	}
 	
+	public @Nullable E getEntryAtPos(double mouseX, double mouseY) {
+		return getEntryAtPos(mouseX, mouseY, true);
+	}
+	
+	public @Nullable E getEntryAtPos(double mouseX, double mouseY, boolean ignoreIndent) {
+		E root = getRoot();
+		E entry = root;
+		descent:while (entry == root || !entry.isMouseOverSelf(mouseX, mouseY)) {
+			if (!entry.isMouseOver(mouseX, mouseY)) return null;
+			List<E> subEntries = entry.getSubEntries();
+			for (E sub: subEntries) if (sub.isMouseOver(mouseX, mouseY)) {
+				entry = sub;
+				continue descent;
+			}
+			return null;
+		}
+		return ignoreIndent || entry.getArea().x <= mouseX? entry : null;
+	}
+	
+	@Override public boolean mouseDragged(
+	  double mouseX, double mouseY, int button, double dragX, double dragY
+	) {
+		if (isExpandDragging()) {
+			E entry = getEntryAtPos(mouseX, mouseY);
+			boolean state = getExpandDragState();
+			if (entry != null && entry.isExpanded() != state && !entry.getSubEntries().isEmpty()) {
+				entry.setExpanded(state);
+				if (!state) entry.focusAndSelect(true, true, null);
+			}
+			return true;
+		}
+		return IDragBroadcastableControlContainer.super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+	
 	@Override public void endDrag(double mouseX, double mouseY, int button) {
+		if (isExpandDragging()) endExpandDrag();
 		if (isDraggingEntries()) {
 			if (draggedOver != null && draggedOverParent != null) {
 				E entry = draggedOver;
@@ -259,7 +298,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 			}
 			cancelDragging();
 		}
-		IExtendedDragAwareNestedGuiEventHandler.super.endDrag(mouseX, mouseY, button);
+		IDragBroadcastableControlContainer.super.endDrag(mouseX, mouseY, button);
 	}
 	
 	// Rendering
@@ -283,7 +322,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	
 	public int getCaptionSeparation() {
-		return transparent? 1 : 0;
+		return 1;
 	}
 	
 	public void renderLayout(MatrixStack mStack, int mouseX, int mouseY, float delta) {
@@ -334,9 +373,12 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 			int yy = y;
 			int i = 0;
 			for (E cell : getDraggedEntries()) {
+				boolean expanded = cell.isExpanded();
+				cell.setExpanded(false, false);
 				cell.cancelAnimations();
 				cell.render(mStack, x, yy, w, mouseX, mouseY, delta);
 				yy += cell.getTotalHeight(false, true);
+				cell.setExpanded(expanded, false);
 			}
 		}
 	}
@@ -360,7 +402,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (isDraggingEntries()) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
+		return IDragBroadcastableControlContainer.super.mouseClicked(mouseX, mouseY, button);
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -374,7 +416,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	
 	@Override public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
+		return IDragBroadcastableControlContainer.super.mouseReleased(mouseX, mouseY, button);
 	}
 	
 	// Internal properties
@@ -437,5 +479,36 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	public void setFillColor(int fillColor) {
 		this.fillColor = fillColor;
+	}
+	
+	@Override public <W extends IPositionableRenderable> void setDragBroadcastableAction(
+	  DragBroadcastableAction<W> action, DragBroadcastableControl<W> source
+	) {
+		dragBroadcastableAction = action;
+		dragBroadcastableSource = source;
+	}
+	
+	@Override public DragBroadcastableAction<?> getDragBroadcastableAction() {
+		return dragBroadcastableAction;
+	}
+	
+	@Override public DragBroadcastableControl<?> getDragBroadcastableSource() {
+		return dragBroadcastableSource;
+	}
+	
+	public void startExpandDrag(boolean expand) {
+		draggedExpandState = expand;
+	}
+	
+	public void endExpandDrag() {
+		draggedExpandState = null;
+	}
+	
+	public boolean isExpandDragging() {
+		return draggedExpandState != null;
+	}
+	
+	public boolean getExpandDragState() {
+		return draggedExpandState != null? draggedExpandState : false;
 	}
 }

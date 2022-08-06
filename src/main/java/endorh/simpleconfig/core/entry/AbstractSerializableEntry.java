@@ -93,8 +93,7 @@ public abstract class AbstractSerializableEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder

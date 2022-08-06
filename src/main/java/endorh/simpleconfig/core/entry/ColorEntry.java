@@ -10,6 +10,7 @@ import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -35,11 +36,11 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 			super(value, Color.class);
 		}
 		
-		public Builder alpha() {
+		@Contract(pure=true) public Builder alpha() {
 			return alpha(true);
 		}
 		
-		public Builder alpha(boolean hasAlpha) {
+		@Contract(pure=true) public Builder alpha(boolean hasAlpha) {
 			Builder copy = copy();
 			copy.alpha = hasAlpha;
 			return copy;

@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static endorh.simpleconfig.core.ReflectionUtil.*;
@@ -29,7 +30,7 @@ public class SimpleConfigClassParser {
 	  PARSERS = synchronizedMap(new HashMap<>());
 	
 	// Used to construct exception messages
-	protected static final Map<Class<?>, AbstractSimpleConfigEntryHolderBuilder<?>> builders = new HashMap<>();
+	protected static final Map<Class<?>, AbstractSimpleConfigEntryHolderBuilder<?>> builders = new ConcurrentHashMap<>();
 	
 	@FunctionalInterface
 	public interface FieldEntryParser<T extends Annotation, V> {
@@ -44,11 +45,10 @@ public class SimpleConfigClassParser {
 	@Internal public static <T extends Annotation, V> void registerFieldParser(
 	  Class<T> annotationClass, Class<V> fieldClass, FieldEntryParser<T, V> parser
 	) {
-		synchronized (PARSERS) {
-			PARSERS.computeIfAbsent(annotationClass, a -> synchronizedMap(new HashMap<>()))
-			  .computeIfAbsent(fieldClass, c -> new ArrayList<>()).add(parser);
-		}
+		PARSERS.computeIfAbsent(annotationClass, a -> synchronizedMap(new HashMap<>()))
+		  .computeIfAbsent(fieldClass, c -> new ArrayList<>()).add(parser);
 	}
+	
 	
 	/**
 	 * Adds a validator from a sibling method to a {@link AbstractListEntry}
@@ -62,8 +62,8 @@ public class SimpleConfigClassParser {
 		if (validate != null) {
 			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
 			if (checkType(validate, Optional.class, ITextComponent.class)) {
-				builder.elemError(e -> invoke(
-				  validate, null, errorMsg, e));
+				builder = builder.elemError(e -> invoke(
+				  validate, null, errorMsg, Optional.class, e));
 			} else throw new SimpleConfigClassParseException(cl,
 			  "Unsupported return type in config list element validator method " + getMethodName(validate) +
 			  "\n  Return type must be either \"boolean\" or \"Optional<ITextComponent>\"");
@@ -81,7 +81,7 @@ public class SimpleConfigClassParser {
 				  "Invalid return type in config field error supplier method " + getMethodName(m)
 				  + ": " + getMethodTypeName(m) + "\n  Error suppliers must return Optional<ITextComponent>");
 			final String errorMsg = "Reflection error invoking config element error supplier method %s";
-			builder = builder.error(v -> invoke(m, null, errorMsg, v));
+			builder = builder.error(v -> invoke(m, null, errorMsg, Optional.class, v));
 		}
 		builder = addTooltip(builder, cl, field);
 		if (field.isAnnotationPresent(RequireRestart.class))
@@ -101,15 +101,15 @@ public class SimpleConfigClassParser {
 			a = false;
 		}
 		if (m != null) {
-			if (!checkType(m, Optional.class, ITextComponent[].class))
+			if (!checkType(m, List.class, ITextComponent.class))
 				throw new SimpleConfigClassParseException(cl,
 				  "Invalid return type in config field error supplier method " + getMethodName(m)
-				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return Optional<ITextComponent[]>");
+				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return List<ITextComponent>");
 			final String errorMsg = "Reflection error invoking config element tooltip supplier method %s";
 			final Method mm = m;
 			builder = builder.tooltip(
-			  a ? v -> invoke(mm, null, errorMsg, v)
-			    : v -> invoke(mm, null, errorMsg));
+			  a ? v -> invoke(mm, null, errorMsg, List.class, v)
+			    : v -> invoke(mm, null, errorMsg, List.class));
 		}
 		return builder;
 	}
@@ -135,14 +135,18 @@ public class SimpleConfigClassParser {
 	/**
 	 * Try to invoke method<br>
 	 * Convenient for lambdas
+	 *
 	 * @param errorMsg Error message added to the exception on error<br>
-	 *                 Will be formatted with the method name
+	 *   Will be formatted with the method name
+	 * @param clazz
 	 * @throws SimpleConfigClassParseException on error
 	 */
-	public static <T> T invoke(Method method, Object self, String errorMsg, Object... args) {
+	public static <T> T invoke(
+	  Method method, Object self, String errorMsg, Class<?> clazz, Object... args
+	) {
 		try {
 			//noinspection unchecked
-			return (T) method.invoke(self, args);
+			return (T) clazz.cast(method.invoke(self, args));
 		} catch (InvocationTargetException | IllegalAccessException | ClassCastException e) {
 			throw new ConfigReflectiveOperationException(
 			  String.format(errorMsg, getMethodName(method)) +
@@ -349,7 +353,7 @@ public class SimpleConfigClassParser {
 					if (!Modifier.isStatic(baker.getModifiers()))
 						throw new SimpleConfigClassParseException(
 						  builder, "Found non-static bake method in config class " + className);
-					b.withBaker(c -> invoke(baker, null, errorMsg, c));
+					b.withBaker(c -> invoke(baker, null, errorMsg, Object.class, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config class " + className + ", but the config " +
@@ -367,7 +371,7 @@ public class SimpleConfigClassParser {
 					  "Found non-static bake method in config category class " + className);
 				final String errorMsg = "Reflective error invoking config category baker method %s";
 				if (b.baker == null) {
-					b.withBaker(c -> invoke(baker, null, errorMsg, c));
+					b.withBaker(c -> invoke(baker, null, errorMsg, Object.class, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config category class " + className + ", but the category " +
@@ -385,7 +389,7 @@ public class SimpleConfigClassParser {
 					  "Found non-static bake method in config group class " + className);
 				final String errorMsg = "Reflective error invoking config category baker method %s";
 				if (b.baker == null) {
-					b.withBaker(c -> invoke(baker, null, errorMsg, c));
+					b.withBaker(c -> invoke(baker, null, errorMsg, Object.class, c));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config group class " + className + ", but the group " +

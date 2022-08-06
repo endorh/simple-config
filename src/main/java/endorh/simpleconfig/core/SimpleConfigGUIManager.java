@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
+import endorh.simpleconfig.SimpleConfigMod.ClientConfig.menu;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
@@ -22,12 +22,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ExtensionPoint;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.ModConfig.Type;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.synchronizedMap;
@@ -74,17 +75,36 @@ public class SimpleConfigGUIManager {
 	 * Register a config in the GUI system
 	 */
 	protected static void registerConfig(SimpleConfig config) {
+		String modId = config.getModId();
+		ModContainer container = config.getModContainer();
+		Optional<BiFunction<Minecraft, Screen, Screen>> ext = container.getCustomExtension(ExtensionPoint.CONFIGGUIFACTORY);
+		if (config.isWrapper() && (
+		  !menu.shouldWrapConfig(modId)
+		  || ext.isPresent()
+		     && !(ext.get() instanceof ConfigGUIFactory)
+		     && !menu.shouldReplaceMenu(modId)
+		)) return;
 		if (!autoAddedButton)
 			autoAddedButton = addButton = true;
-		final ModLoadingContext context = ModLoadingContext.get();
-		String modId = context.getActiveContainer().getModId();
 		if (!modConfigs.containsKey(modId)) {
 			modConfigs.computeIfAbsent(modId, s -> synchronizedMap(new HashMap<>())).put(
 			  config.getType(), config);
-			context.registerExtensionPoint(
-			  ExtensionPoint.CONFIGGUIFACTORY,
-			  () -> (mc, screen) -> getConfigGUI(modId, screen));
+			container.registerExtensionPoint(
+			  ExtensionPoint.CONFIGGUIFACTORY, () -> new ConfigGUIFactory(modId));
 		} else modConfigs.get(modId).put(config.getType(), config);
+	}
+	
+	private static class ConfigGUIFactory implements BiFunction<Minecraft, Screen, Screen> {
+		private final String modId;
+		private ConfigGUIFactory(String modId) {
+			this.modId = modId;
+		}
+		@Override public Screen apply(Minecraft minecraft, Screen screen) {
+			return getConfigGUI(modId, screen);
+		}
+		public String getModId() {
+			return modId;
+		}
 	}
 	
 	public static Screen getConfigGUIForHotKey(
@@ -124,7 +144,7 @@ public class SimpleConfigGUIManager {
 			  activeScreens.remove(modId);
 			  Minecraft.getInstance().displayGuiScreen(parentScreen);
 			  if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
-		  });
+		  }); //.setClosingRunnable(() -> activeScreens.remove(modId));
 		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder);
 		final AbstractConfigScreen gui = builder.build();
 		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, null);
@@ -156,11 +176,12 @@ public class SimpleConfigGUIManager {
 				  if (c.isDirty()) c.save();
 				  c.removeGUI();
 			  }
-			  activeScreens.remove(modId);
-		  }).setTitle(new TranslationTextComponent(
+		  }).setClosingRunnable(() -> activeScreens.remove(modId))
+		  .setTitle(new TranslationTextComponent(
 		    "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
-		  .setSnapshotHandler(handler);
+		  .setSnapshotHandler(handler)
+		  .setRemoteCommonConfigProvider(handler);
 		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder);
 		final AbstractConfigScreen gui = builder.build();
 		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, handler);
@@ -205,13 +226,13 @@ public class SimpleConfigGUIManager {
 	 */
 	@SubscribeEvent
 	public static void onGuiInit(InitGuiEvent.Post event) {
-		if (!addButton || !ClientConfig.add_pause_menu_button)
+		if (!addButton || !menu.add_pause_menu_button)
 			return;
 		final Screen gui = event.getGui();
 		if (gui instanceof IngameMenuScreen) {
 			// Coordinates taken from IngameMenuScreen#addButtons
 			int w = 20, h = 20, x, y;
-			switch (ClientConfig.menu_button_position) {
+			switch (menu.menu_button_position) {
 				case TOP_LEFT_CORNER:
 					x = 8; y = 8; break;
 				case TOP_RIGHT_CORNER:

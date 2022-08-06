@@ -73,7 +73,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	
 	@Override public boolean shouldRenderEditable() {
 		if (isEditingHotKeyAction())
-			return hotKeyActionType == HotKeyActionTypes.ASSIGN.<Boolean>cast();
+			return getHotKeyActionType() == HotKeyActionTypes.ASSIGN.<Boolean>cast();
 		return super.shouldRenderEditable();
 	}
 	

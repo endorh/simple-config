@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core;
 
 import net.minecraft.util.text.ITextComponent;
+import org.jetbrains.annotations.Contract;
 
-import java.util.Optional;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -13,11 +14,11 @@ import java.util.function.Supplier;
  * @param <Gui> The GUI type of the entry
  * @param <Self> The actual entry subtype to be returned by builder-like methods
  */
-public interface ITooltipEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>> {
+public interface ITooltipEntryBuilder<V, Gui, Self extends ITooltipEntryBuilder<V, Gui, Self>> {
 	
 	/**
 	 * Set a tooltip supplier for this entry<br>
-	 * Unlike {@link ITooltipEntry#tooltip(Function)}, this method
+	 * Unlike {@link ITooltipEntryBuilder#tooltip(Function)}, this method
 	 * takes the value used in the GUI directly, which might
 	 * be of a different type than the entry itself<br><br>
 	 * <b>Remember that all entries get automatically mapped optional tooltip
@@ -25,11 +26,11 @@ public interface ITooltipEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>>
 	 * the automatic keys instead for simple tooltips.
 	 * @param tooltipSupplier Maps GUI values to optional tooltip lines
 	 */
-	Self guiTooltip(Function<Gui, Optional<ITextComponent[]>> tooltipSupplier);
+	@Contract(pure=true) Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier);
 	
 	/**
 	 * Set a tooltip supplier for this entry<br>
-	 * Unlike {@link ITooltipEntry#guiTooltip(Function)}, this method takes the
+	 * Unlike {@link ITooltipEntryBuilder#guiTooltip(Function)}, this method takes the
 	 * value used in the config entry, once parsed from the GUI, since these
 	 * types may be different<br><br>
 	 * <b>Remember that all entries get automatically mapped optional tooltip
@@ -37,7 +38,7 @@ public interface ITooltipEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>>
 	 * the automatic keys instead for simple tooltips.
 	 * @param tooltipSupplier Maps values to optional tooltip lines
 	 */
-	Self tooltip(Function<V, Optional<ITextComponent[]>> tooltipSupplier);
+	@Contract(pure=true) Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier);
 	
 	/**
 	 * Set an optional tooltip supplier for this entry<br><br>
@@ -46,7 +47,7 @@ public interface ITooltipEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>>
 	 * the automatic keys instead for simple tooltips.
 	 * @param tooltipSupplier Return optional tooltip lines
 	 */
-	default Self tooltip(Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
+	@Contract(pure=true) default Self tooltip(Supplier<List<ITextComponent>> tooltipSupplier) {
 		return tooltip(v -> tooltipSupplier.get());
 	}
 	
@@ -55,9 +56,9 @@ public interface ITooltipEntry<V, Gui, Self extends ITooltipEntry<V, Gui, Self>>
 	 * <b>Remember that all entries get automatically mapped optional tooltip
 	 * translation keys</b>, by adding '.help' to their translation key. Use
 	 * the automatic keys instead for simple tooltips.
-	 * @param tooltipSupplier Return optional tooltip lines
+	 * @param tooltip Return optional tooltip lines
 	 */
-	default Self tooltip(ITextComponent[] tooltipSupplier) {
-		return tooltip(v -> Optional.of(tooltipSupplier));
+	@Contract(pure=true) default Self tooltip(List<ITextComponent> tooltip) {
+		return tooltip(v -> tooltip);
 	}
 }

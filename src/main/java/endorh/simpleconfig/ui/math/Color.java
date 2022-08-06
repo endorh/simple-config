@@ -106,7 +106,7 @@ public final class Color {
 		  Math.max((int) ((double) this.getBlue() * (1.0 / factor)), 0), this.getAlpha());
 	}
 	
-	public boolean equals(Object other) {
+	@Override public boolean equals(Object other) {
 		if (this == other) {
 			return true;
 		}
@@ -116,11 +116,11 @@ public final class Color {
 		return this.color == ((Color) other).color;
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		return this.color;
 	}
 	
-	public String toString() {
+	@Override public String toString() {
 		return "Color{r=" + this.getRed() + "g=" + this.getGreen() + "b=" + this.getBlue() + '}';
 	}
 	

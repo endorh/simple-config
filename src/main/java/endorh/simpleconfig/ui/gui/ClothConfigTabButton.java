@@ -49,7 +49,7 @@ public class ClothConfigTabButton extends MultiFunctionIconButton {
 		this.screen = screen;
 	}
 	
-	public boolean isMouseOver(double mouseX, double mouseY) {
+	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		return super.isMouseOver(mouseX, mouseY) && mouseX >= 20.0 && mouseX <= screen.width - 20;
 	}
 }

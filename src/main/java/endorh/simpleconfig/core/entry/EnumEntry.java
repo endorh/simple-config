@@ -18,6 +18,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,9 +55,14 @@ public class EnumEntry<E extends Enum<E>>
 			enumClass = value.getDeclaringClass();
 		}
 		
-		public Builder<E> useComboBox() { return useComboBox(true); }
+		public Builder(Class<E> enumClass) {
+			super(enumClass.getEnumConstants()[0], enumClass);
+			this.enumClass = enumClass;
+		}
 		
-		public Builder<E> useComboBox(Boolean useComboBox) {
+		@Contract(pure=true) public Builder<E> useComboBox() { return useComboBox(true); }
+		
+		@Contract(pure=true) public Builder<E> useComboBox(Boolean useComboBox) {
 			Builder<E> copy = copy();
 			copy.useComboBox = useComboBox;
 			return copy;
@@ -173,8 +179,7 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<E>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<E>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (useComboBox != null? useComboBox : advanced.prefer_combo_box < enumClass.getEnumConstants().length) {

@@ -72,14 +72,14 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		}
 	}
 	
-	public Map<Object, Object> forActualConfig(@Nullable Pair<CC, List<C>> value) {
+	@Override public Map<Object, Object> forActualConfig(@Nullable Pair<CC, List<C>> value) {
 		if (value == null) return null;
 		return Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
 		  captionEntry.forActualConfig(value.getKey()),
 		  listEntry.forActualConfig(value.getValue())));
 	}
 	
-	public @Nullable Pair<CC, List<C>> fromActualConfig(@Nullable Object value) {
+	@Override public @Nullable Pair<CC, List<C>> fromActualConfig(@Nullable Object value) {
 		if (value instanceof Map) {
 			Map<?, ?> m = (Map<?, ?>) value;
 			if (m.size() != 1) return null;

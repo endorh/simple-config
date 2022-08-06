@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.impl.builders.LongSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -23,8 +24,8 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 		commentMax = Long.MAX_VALUE;
 	}
 	
-	public static class Builder extends
-	                            AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, Builder> {
+	public static class Builder
+	  extends AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, Builder> {
 		
 		public Builder(Long value) {
 			super(value, Long.class);
@@ -33,21 +34,21 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 		/**
 		 * Set min (inclusive)
 		 */
-		public Builder min(long min) {
+		@Contract(pure=true) public Builder min(long min) {
 			return super.min(min);
 		}
 		
 		/**
 		 * Set max (inclusive)
 		 */
-		public Builder max(long max) {
+		@Contract(pure=true) public Builder max(long max) {
 			return super.max(max);
 		}
 		
 		/**
 		 * Set range (inclusive)
 		 */
-		public Builder range(long min, long max) {
+		@Contract(pure=true) public Builder range(long min, long max) {
 			return super.range(min, max);
 		}
 		
@@ -74,8 +75,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Long>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Long>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

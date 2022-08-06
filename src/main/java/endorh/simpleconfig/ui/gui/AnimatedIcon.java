@@ -49,11 +49,11 @@ public class AnimatedIcon extends Icon {
 		return 0;
 	}
 	
-	public int getU() {
+	@Override public int getU() {
 		return u + (lastFrame % cols) * w;
 	}
 	
-	public int getV() {
+	@Override public int getV() {
 		return v + (lastFrame / rows) * h;
 	}
 	

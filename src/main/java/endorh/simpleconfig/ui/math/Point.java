@@ -35,7 +35,7 @@ public class Point implements Cloneable {
 		return Point.of(this.x, this.y);
 	}
 	
-	@SuppressWarnings("MethodDoesntCallSuperMethod") public Point clone() {
+	@Override @SuppressWarnings("MethodDoesntCallSuperMethod") public Point clone() {
 		return this.getLocation();
 	}
 	
@@ -54,7 +54,7 @@ public class Point implements Cloneable {
 		this.y += dy;
 	}
 	
-	public boolean equals(Object obj) {
+	@Override public boolean equals(Object obj) {
 		if (obj instanceof Point) {
 			Point pt = (Point) obj;
 			return this.x == pt.x && this.y == pt.y;
@@ -62,14 +62,14 @@ public class Point implements Cloneable {
 		return super.equals(obj);
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		int result = 1;
 		result = 31 * result + this.x;
 		result = 31 * result + this.y;
 		return result;
 	}
 	
-	public String toString() {
+	@Override public String toString() {
 		return this.getClass().getName() + "[x=" + this.x + ",y=" + this.y + "]";
 	}
 	

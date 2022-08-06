@@ -90,7 +90,7 @@ public class Modifier {
 		return new Modifier((short) (value | mod.value));
 	}
 	
-	public boolean equals(Object other) {
+	@Override public boolean equals(Object other) {
 		if (other == null) {
 			return false;
 		}
@@ -100,7 +100,7 @@ public class Modifier {
 		return this.value == ((Modifier) other).value;
 	}
 	
-	public int hashCode() {
+	@Override public int hashCode() {
 		return Objects.hash(this.value);
 	}
 }

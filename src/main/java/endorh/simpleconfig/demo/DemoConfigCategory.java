@@ -560,8 +560,8 @@ public class DemoConfigCategory {
 		       // However, you'll need to manually separate your tooltip
 		       //   into separate lines, so think if it's really necessary
 		       .add("dynamic_tooltip", string("Steve")
-			      .tooltip(s -> Optional.of(new ITextComponent[] {
-				     ttc(prefix("text.hello"), stc(s).mergeStyle(TextFormatting.DARK_AQUA))})))
+			      .tooltip(s -> asList(
+				     ttc(prefix("text.hello"), stc(s).mergeStyle(TextFormatting.DARK_AQUA)))))
 		       // However, most of the time it's enough to just set the
 		       //   format arguments that will be passed to the tooltip,
 		       //   which can also be functions receiving the value of

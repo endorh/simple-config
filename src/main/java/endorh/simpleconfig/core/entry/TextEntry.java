@@ -20,6 +20,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -51,13 +52,13 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 			translationSupplier = supplier;
 		}
 		
-		public Builder text(Supplier<ITextComponent> supplier) {
+		@Contract(pure=true) public Builder text(Supplier<ITextComponent> supplier) {
 			Builder copy = copy();
 			copy.translationSupplier = supplier;
 			return copy;
 		}
 		
-		public Builder text(ITextComponent text) {
+		@Contract(pure=true) public Builder text(ITextComponent text) {
 			return text(() -> text);
 		}
 		
@@ -65,7 +66,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		/**
 		 * @deprecated Use {@link Builder#args(Object...)} instead
 		 */
-		@Override @Deprecated public Builder nameArgs(Object... args) {
+		@Contract(pure=true) @Override @Deprecated public Builder nameArgs(Object... args) {
 			return super.nameArgs(args);
 		}
 		
@@ -74,7 +75,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 		 * As a special case, {@code Supplier}s passed
 		 * will be invoked before being passed as arguments
 		 */
-		public Builder args(Object... args) {
+		@Contract(pure=true) public Builder args(Object... args) {
 			return nameArgs(args);
 		}
 		
@@ -92,6 +93,10 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 			copy.translationSupplier = translationSupplier;
 			return copy;
 		}
+	}
+	
+	@Override public Optional<ITextComponent> getErrorFromGUI(Void value) {
+		return Optional.empty();
 	}
 	
 	@Override protected Consumer<Void> createSaveConsumer() {

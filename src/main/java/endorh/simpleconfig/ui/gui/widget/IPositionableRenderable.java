@@ -13,8 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * Use {@link #wrap(Widget)} to wrap a {@link Widget} in this interface.
  */
 public interface IPositionableRenderable extends IGuiEventListener, IRenderable {
-	static WidgetPositionableWrapper wrap(Widget widget) {
-		return new WidgetPositionableWrapper(widget);
+	static <W extends Widget> WidgetPositionableWrapper<W> wrap(W widget) {
+		return new WidgetPositionableWrapper<>(widget);
 	}
 	
 	int getX();
@@ -38,20 +38,17 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		setX(x);
 		setY(y);
 	}
-	
 	default void setPosition(int x, int y, int w) {
 		setX(x);
 		setY(y);
 		setWidth(w);
 	}
-	
 	default void setPosition(int x, int y, int w, int h) {
 		setX(x);
 		setY(y);
 		setWidth(w);
 		setHeight(h);
 	}
-	
 	default void setDimensions(int w, int h) {
 		setWidth(w);
 		setHeight(h);
@@ -60,46 +57,46 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 	interface IRectanglePositionableRenderable extends IPositionableRenderable {
 		Rectangle getArea();
 		
-		default int getX() {
+		@Override default int getX() {
 			return getArea().x;
 		}
-		default void setX(int x) {
+		@Override default void setX(int x) {
 			getArea().x = x;
 		}
 		
-		default int getY() {
+		@Override default int getY() {
 			return getArea().y;
 		}
-		default void setY(int y) {
+		@Override default void setY(int y) {
 			getArea().y = y;
 		}
 		
-		default int getWidth() {
+		@Override default int getWidth() {
 			return getArea().width;
 		}
-		default void setWidth(int w) {
+		@Override default void setWidth(int w) {
 			getArea().width = w;
 		}
 		
-		default int getHeight() {
+		@Override default int getHeight() {
 			return getArea().height;
 		}
-		default void setHeight(int h) {
+		@Override default void setHeight(int h) {
 			getArea().height = h;
 		}
 	}
 	
-	class WidgetPositionableWrapper implements IPositionableRenderable, IGuiEventListener {
-		private Widget widget;
-		public WidgetPositionableWrapper(Widget widget) {
+	class WidgetPositionableWrapper<W extends Widget>
+	  implements IPositionableRenderable, IGuiEventListener {
+		private W widget;
+		public WidgetPositionableWrapper(W widget) {
 			this.widget = widget;
 		}
 		
-		public Widget getWidget() {
+		public W getWidget() {
 			return widget;
 		}
-		
-		public void setWidget(Widget widget) {
+		public void setWidget(W widget) {
 			this.widget = widget;
 		}
 		
@@ -154,7 +151,6 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 			return widget.mouseScrolled(mouseX, mouseY, delta);
 		}
-		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 			return widget.keyPressed(keyCode, scanCode, modifiers);
 		}
@@ -164,11 +160,9 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		@Override public boolean charTyped(char codePoint, int modifiers) {
 			return widget.charTyped(codePoint, modifiers);
 		}
-		
 		@Override public boolean changeFocus(boolean focus) {
 			return widget.changeFocus(focus);
 		}
-		
 		@Override public boolean isMouseOver(double mouseX, double mouseY) {
 			return widget.isMouseOver(mouseX, mouseY);
 		}
@@ -176,9 +170,98 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		@Override public boolean isFocused() {
 			return widget.isFocused();
 		}
-		
 		@Override public void setFocused(boolean focused) {
 			WidgetUtils.forceSetFocus(widget, focused);
+		}
+	}
+	
+	interface IDelegatedPositionableRenderable extends IPositionableRenderable {
+		@NotNull IPositionableRenderable getDelegate();
+		
+		@Override default int getX() {
+			return getDelegate().getX();
+		}
+		@Override default void setX(int x) {
+			getDelegate().setX(x);
+		}
+		
+		@Override default int getY() {
+			return getDelegate().getY();
+		}
+		@Override default void setY(int y) {
+			getDelegate().setY(y);
+		}
+		
+		@Override default int getWidth() {
+			return getDelegate().getWidth();
+		}
+		@Override default void setWidth(int w) {
+			getDelegate().setWidth(w);
+		}
+		
+		@Override default int getHeight() {
+			return getDelegate().getHeight();
+		}
+		@Override default void setHeight(int h) {
+			getDelegate().setHeight(h);
+		}
+		
+		@Override default boolean isFocused() {
+			return getDelegate().isFocused();
+		}
+		@Override default void setFocused(boolean focused) {
+			getDelegate().setFocused(focused);
+		}
+		
+		@Override default void setPosition(int x, int y) {
+			getDelegate().setPosition(x, y);
+		}
+		@Override default void setPosition(int x, int y, int w) {
+			getDelegate().setPosition(x, y, w);
+		}
+		@Override default void setPosition(int x, int y, int w, int h) {
+			getDelegate().setPosition(x, y, w, h);
+		}
+		@Override default void setDimensions(int w, int h) {
+			getDelegate().setDimensions(w, h);
+		}
+		
+		@Override default void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks) {
+			getDelegate().render(mStack, mouseX, mouseY, partialTicks);
+		}
+		
+		@Override default boolean mouseClicked(double mouseX, double mouseY, int button) {
+			return getDelegate().mouseClicked(mouseX, mouseY, button);
+		}
+		@Override default boolean mouseReleased(double mouseX, double mouseY, int button) {
+			return getDelegate().mouseReleased(mouseX, mouseY, button);
+		}
+		@Override default boolean mouseDragged(
+		  double mouseX, double mouseY, int button, double deltaX, double deltaY
+		) {
+			return getDelegate().mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+		}
+		@Override default boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+			return getDelegate().mouseScrolled(mouseX, mouseY, delta);
+		}
+		@Override default void mouseMoved(double xPos, double mouseY) {
+			getDelegate().mouseMoved(xPos, mouseY);
+		}
+		@Override default boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+			return getDelegate().keyPressed(keyCode, scanCode, modifiers);
+		}
+		@Override default boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+			return getDelegate().keyReleased(keyCode, scanCode, modifiers);
+		}
+		@Override default boolean charTyped(char codePoint, int modifiers) {
+			return getDelegate().charTyped(codePoint, modifiers);
+		}
+		
+		@Override default boolean changeFocus(boolean focus) {
+			return getDelegate().changeFocus(focus);
+		}
+		@Override default boolean isMouseOver(double mouseX, double mouseY) {
+			return getDelegate().isMouseOver(mouseX, mouseY);
 		}
 	}
 }

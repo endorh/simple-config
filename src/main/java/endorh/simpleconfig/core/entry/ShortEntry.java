@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -22,21 +23,22 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, Builder> {
+	public static class Builder
+	  extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, Builder> {
 		public Builder(Short value) {
 			super(value, Short.class);
 		}
 		
 		/** Set min (inclusive) */
-		public Builder min(short min) {
+		@Contract(pure=true) public Builder min(short min) {
 			return super.min(min);
 		}
 		/** Set max (inclusive) */
-		public Builder max(short max) {
+		@Contract(pure=true) public Builder max(short max) {
 			return super.max(max);
 		}
 		/** Set range (inclusive) */
-		public Builder range(short min, short max) {
+		@Contract(pure=true) public Builder range(short min, short max) {
 			return super.range(min, max);
 		}
 		
@@ -63,8 +65,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override
-	public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	@Override public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {

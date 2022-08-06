@@ -11,6 +11,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -28,17 +29,17 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected @Nullable ResourceLocation background;
 	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
-	protected boolean isServer;
+	protected Type type;
 	protected boolean isEditable = true;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
 	
-	ConfigCategoryImpl(ConfigScreenBuilder builder, String name, boolean isServer) {
+	ConfigCategoryImpl(ConfigScreenBuilder builder, String name, Type type) {
 		this.builder = builder;
 		this.entries = Lists.newArrayList();
 		this.name = name;
 		this.title = new StringTextComponent(name);
-		this.isServer = isServer;
+		this.type = type;
 	}
 	
 	@Override public ITextComponent getTitle() {
@@ -67,7 +68,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		return this;
 	}
 	@Override public void removeCategory() {
-		this.builder.removeCategory(this.name, isServer);
+		this.builder.removeCategory(this.name, type);
 	}
 	
 	@Override public Optional<Path> getContainingFile() {
@@ -85,8 +86,8 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		this.background = background;
 	}
 	
-	@Override public boolean isServer() {
-		return isServer;
+	@Override public Type getType() {
+		return type;
 	}
 	
 	@Override public boolean isEditable() {

@@ -58,7 +58,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	}
 	
 	@Override public String providePath(AbstractConfigEntry<?> child) {
-		final String prefix = getPath() + ".";
+		final String prefix = getRelPath() + ".";
 		int i = 0;
 		for (NestedListCell<T, Inner> cell : cells) {
 			if (cell.nestedEntry == child) return prefix + i;
@@ -102,7 +102,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			nestedEntry.setNavigableParent(this);
 		}
 		
-		public T getValue() {
+		@Override public T getValue() {
 			return nestedEntry.getDisplayedValue();
 		}
 		
@@ -115,11 +115,11 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			return errors;
 		}
 		
-		public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			return Optional.empty();
 		}
 		
-		public int getCellHeight() {
+		@Override public int getCellHeight() {
 			return nestedEntry.getItemHeight();
 		}
 		
@@ -134,7 +134,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			return false;
 		}
 		
-		public void renderCell(
+		@Override public void renderCell(
 		  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
 		  int mouseX, int mouseY, boolean isSelected, float delta
 		) {
@@ -151,20 +151,20 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			  cellWidth, nestedEntry.getCaptionHeight(), mouseX, mouseY, isSelected, delta);
 		}
 		
-		public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
 			return Collections.singletonList(nestedEntry);
 		}
 		
-		public boolean isRequiresRestart() {
+		@Override public boolean isRequiresRestart() {
 			return nestedEntry.isRequiresRestart();
 		}
 		
-		public void updateSelected(boolean isSelected) {
+		@Override public void updateSelected(boolean isSelected) {
 			super.updateSelected(isSelected);
 			nestedEntry.updateFocused(isSelected);
 		}
 		
-		public boolean isEdited() {
+		@Override public boolean isEdited() {
 			return super.isEdited() || nestedEntry.isEdited();
 		}
 		
@@ -172,7 +172,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			return nestedEntry;
 		}
 		
-		public void doSetValue(T value) {
+		@Override public void doSetValue(T value) {
 			nestedEntry.setDisplayedValue(value);
 			nestedEntry.setValue(value);
 		}

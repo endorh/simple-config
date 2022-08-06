@@ -22,6 +22,7 @@ import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -60,28 +61,28 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		 * When true (the default), items without an item group are not accepted.<br>
 		 * This excludes the AIR and BARRIER item blocks, as well as other special blocks.
 		 */
-		public Builder setRequireGroup(boolean requireGroup) {
+		@Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		public Builder from(Ingredient filter) {
+		@Contract(pure=true) public Builder from(Ingredient filter) {
 			return from(i -> filter.test(new ItemStack(i)));
 		}
 		
-		public Builder from(Predicate<Item> filter) {
+		@Contract(pure=true) public Builder from(Predicate<Item> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		public Builder from(List<Item> items) {
+		@Contract(pure=true) public Builder from(List<Item> items) {
 			List<Item> listCopy = new ArrayList<>(items);
 			return from(listCopy::contains);
 		}
 		
-		public Builder from(Item... items) {
+		@Contract(pure=true) public Builder from(Item... items) {
 			return from(Ingredient.fromItems(items));
 		}
 		
@@ -90,7 +91,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item, ItemEntry
 		 * This can only be done on server configs, since tags
 		 * are server-dependant
 		 */
-		public Builder from(ITag<Item> tag) {
+		@Contract(pure=true) public Builder from(ITag<Item> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

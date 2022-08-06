@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 /**
  * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
@@ -60,6 +61,7 @@ import static java.lang.Math.max;
     * returned by a call to substring on its contents.
     * @throws StringIndexOutOfBoundsException if start is out of bounds
     */
+	@OnlyIn(Dist.CLIENT)
 	public static IFormattableTextComponent subText(ITextComponent component, int start) {
 		int length = component.getString().length();
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
@@ -78,6 +80,7 @@ import static java.lang.Math.max;
 	 * @return Formatted component corresponding to the text that would be
 	 *         returned by a call to substring on its contents.
 	 */
+	@OnlyIn(Dist.CLIENT)
 	public static IFormattableTextComponent subText(ITextComponent component, int start, int end) {
 		int length = component.getString().length();
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
@@ -87,6 +90,7 @@ import static java.lang.Math.max;
 		return visitor.getResult();
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	private static class SubTextVisitor implements IStyledTextAcceptor<Boolean> {
 		private final int start;
 		private final int end;
@@ -120,6 +124,94 @@ import static java.lang.Math.max;
 		
 		public IFormattableTextComponent getResult() {
 			return result != null? result : StringTextComponent.EMPTY.deepCopy();
+		}
+	}
+	
+	/**
+	 * Apply a style to a specific range of a component.<br>
+	 * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+	 *
+	 * @param component Component to style
+	 * @param style Style to apply
+	 * @param start Inclusive index of styled range
+	 * @param end Exclusive index of styled range
+	 * @return A new component with the style applied to the specified range
+	 * @throws StringIndexOutOfBoundsException if start or end are out of bounds
+	 */
+	@OnlyIn(Dist.CLIENT) public static IFormattableTextComponent applyStyle(
+	  ITextComponent component, TextFormatting style, int start, int end
+	) {
+		return applyStyle(component, Style.EMPTY.applyFormatting(style), start, end);
+	}
+	
+	/**
+	 * Apply a style to a specific range of a component.<br>
+	 * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+	 *
+	 * @param component Component to style
+	 * @param style Style to apply
+	 * @param start Inclusive index of styled range
+	 * @param end Exclusive index of styled range
+	 * @return A new component with the style applied to the specified range
+	 * @throws StringIndexOutOfBoundsException if start or end are out of bounds
+	 */
+	@OnlyIn(Dist.CLIENT) public static IFormattableTextComponent applyStyle(
+	  ITextComponent component, Style style, int start, int end
+	) {
+		int length = component.getString().length();
+		checkBounds(start, length);
+		checkBounds(end, length);
+		if (start == end) return component.deepCopy();
+		ApplyStyleVisitor visitor = new ApplyStyleVisitor(style, start, end);
+		component.getComponentWithStyle(visitor, Style.EMPTY);
+		return visitor.getResult();
+	}
+	
+	private static void checkBounds(int index, int length) {
+		if (index < 0 || index > length) throw new StringIndexOutOfBoundsException(index);
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	private static final class ApplyStyleVisitor implements IStyledTextAcceptor<Boolean> {
+		private final Style style;
+		private final int start;
+		private final int end;
+		private IFormattableTextComponent result = null;
+		private int length = 0;
+		
+		private ApplyStyleVisitor(Style style, int start, int end) {
+			this.style = style;
+			this.start = start;
+			this.end = end;
+		}
+		
+		@Override
+		public @NotNull Optional<Boolean> accept(@NotNull Style style, @NotNull String text) {
+			int l = text.length();
+			if (l + length <= start || length >= end) {
+				appendFragment(text, style);
+			} else {
+				int relStart = max(0, start - length);
+				int relEnd = min(l, end - length);
+				if (relStart > 0)
+					appendFragment(text.substring(0, relStart), style);
+				if (relEnd > relStart)
+					appendFragment(text.substring(relStart, relEnd), this.style.mergeStyle(style));
+				if (relEnd < l)
+					appendFragment(text.substring(relEnd), style);
+			}
+			length += l;
+			return Optional.empty();
+		}
+		
+		public IFormattableTextComponent getResult() {
+			return result != null? result : StringTextComponent.EMPTY.copyRaw();
+		}
+		
+		private void appendFragment(String fragment, Style style) {
+			if (result == null) {
+				result = new StringTextComponent(fragment).setStyle(style);
+			} else result.append(new StringTextComponent(fragment).setStyle(style));
 		}
 	}
 	

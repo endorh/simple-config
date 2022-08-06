@@ -113,7 +113,7 @@ public class EntryPairListListEntry<
 	}
 	
 	@Override public String providePath(AbstractConfigEntry<?> child) {
-		String prefix = getPath() + ".";
+		String prefix = getRelPath() + ".";
 		int i = 0;
 		for (EntryPairCell<K, V, KE, E> cell : cells) {
 			if (cell.keyEntry == child) return prefix + "key." + i;
@@ -204,7 +204,7 @@ public class EntryPairListListEntry<
 			return errors;
 		}
 		
-		public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<ITextComponent> getErrorMessage() {
 			return Optional.empty();
 		}
 		

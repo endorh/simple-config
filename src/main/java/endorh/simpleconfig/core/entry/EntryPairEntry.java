@@ -6,7 +6,10 @@ import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.impl.builders.PairListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
@@ -57,13 +60,14 @@ public class EntryPairEntry<
 			this.rightBuilder = rightBuilder;
 		}
 		
+		@Contract(pure=true)
 		public Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> withMiddleIcon(@Nullable Icon icon) {
 			final Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> copy = copy();
 			copy.middleIcon = icon;
 			return copy;
 		}
 		
-		public Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> withSplitPosition(
+		@Contract(pure=true) public Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> withSplitPosition(
 		  @Range(from = 0, to = 1) double splitPosition
 		) {
 			if (splitPosition < 0 || splitPosition > 1) throw new IllegalArgumentException(
@@ -158,6 +162,7 @@ public class EntryPairEntry<
 		return tooltips;
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<AbstractConfigListEntry<Pair<LG, RG>>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {

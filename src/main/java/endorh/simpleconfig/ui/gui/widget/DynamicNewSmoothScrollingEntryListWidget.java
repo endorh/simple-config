@@ -127,7 +127,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 		scrollTo(scroll, true);
 	}
 	
-	public void scrollTo(ListEntry entry) {
+	@Override public void scrollTo(ListEntry entry) {
 		entry.expandParents();
 		scrollTargetEntry = entry;
 		followedEntry = null;

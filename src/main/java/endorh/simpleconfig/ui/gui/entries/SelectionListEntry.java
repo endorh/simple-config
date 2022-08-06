@@ -7,7 +7,6 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionButton;
-import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -20,7 +19,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -58,7 +56,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			}
 			return false;
 		});
-		intEntry = new IntegerListEntry(StringTextComponent.EMPTY, 0);
+		intEntry = new IntegerListEntry(StringTextComponent.EMPTY, 1);
 		intEntry.setSubEntry(true);
 		intEntry.setParentEntry(this);
 		widgetReference = new RedirectGuiEventListener(buttonWidget);
@@ -76,30 +74,6 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		final int index = values.indexOf(value);
 		if (0 <= index && index < values.size())
 			this.displayedIndex = index;
-	}
-	
-	@Override public void setHotKeyActionType(
-	  HotKeyActionType<T, ?> type, @Nullable HotKeyAction<T> prev
-	) {
-		super.setHotKeyActionType(type, prev);
-		if (type == HotKeyActionTypes.ENUM_ADD) {
-			widgetReference.setTarget(intEntry);
-			intEntry.setValue(1);
-		} else {
-			widgetReference.setTarget(buttonWidget);
-		}
-	}
-	
-	@Override public Object getHotKeyActionValue() {
-		if (getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD) {
-			return intEntry.getValue();
-		} else return super.getHotKeyActionValue();
-	}
-	
-	@Override public void setHotKeyActionValue(Object value) {
-		if (getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD) {
-			intEntry.setValue((Integer) value);
-		} else super.setHotKeyActionValue(value);
 	}
 	
 	@Override public void tick() {

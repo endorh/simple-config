@@ -177,11 +177,11 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 			return reversed.isEmpty()? null : reversed.get(0);
 		}
 		
-		public List<AbstractDialog> getAdded() {
+		protected List<AbstractDialog> getAdded() {
 			return added;
 		}
 		
-		public List<AbstractDialog> getRemoved() {
+		protected List<AbstractDialog> getRemoved() {
 			return removed;
 		}
 		
@@ -189,6 +189,7 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 			List<AbstractDialog> dialogs = getDialogs();
 			List<AbstractDialog> added = getAdded();
 			List<AbstractDialog> removed = getRemoved();
+			dialogs.removeAll(added);
 			dialogs.addAll(added);
 			dialogs.removeAll(removed);
 			added.clear();
@@ -200,10 +201,14 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		}
 		
 		public void add(AbstractDialog dialog) {
+			added.remove(dialog);
+			removed.remove(dialog);
 			added.add(dialog);
 		}
 		
 		public void remove(AbstractDialog dialog) {
+			added.remove(dialog);
+			removed.remove(dialog);
 			removed.add(dialog);
 		}
 	}

@@ -7,6 +7,9 @@ import endorh.simpleconfig.ui.gui.entries.ButtonListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Contract;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -31,20 +34,20 @@ public class ButtonEntry extends GUIOnlyEntry<
 			super(value, Void.class);
 		}
 		
-		public Builder label(String translation) {
+		@Contract(pure=true) public Builder label(String translation) {
 			Builder copy = copy();
 			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}
 		
-		public Builder label(ITextComponent label) {
+		@Contract(pure=true) public Builder label(ITextComponent label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = () -> label;
 			return copy;
 		}
 		
-		public Builder label(Supplier<ITextComponent> label) {
+		@Contract(pure=true) public Builder label(Supplier<ITextComponent> label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = label;
 			return copy;
@@ -69,7 +72,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 		return () -> value.accept(parent);
 	}
 	
-	@Override public Optional<AbstractConfigListEntry<Runnable>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Runnable>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final ButtonListEntry entry =
