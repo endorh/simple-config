@@ -1,12 +1,16 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
 import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.IConfigHotKeyGroupEntry;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
-import net.minecraftforge.fml.config.ModConfig.Type;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,15 +20,15 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	private ModifierKeyCode keyCode;
 	private String name = "";
 	private boolean enabled = true;
-	private Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions;
+	private Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions;
 	private Map<String, Map<String, Map<String, Object>>> unknown;
 	
 	public ConfigHotKey() {
-		this(ModifierKeyCode.unknown(), new HashMap<>(), new HashMap<>());
+		this(ModifierKeyCode.unknown(), new LinkedHashMap<>(), new LinkedHashMap<>());
 	}
 	
 	public ConfigHotKey(
-	  ModifierKeyCode keyCode, Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions,
+	  ModifierKeyCode keyCode, Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions,
 	  Map<String, Map<String, Map<String, Object>>> unknown
 	) {
 		this.keyCode = keyCode;
@@ -33,18 +37,49 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	}
 	
 	@Override public void applyHotkey() {
-		Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions = getActions();
-		List<ITextComponent> messages = new ArrayList<>();
-		actions.forEach((config, configActions) -> configActions.forEach((path, action) -> {
-			ITextComponent r = action.apply(config, path);
-			if (r != null) messages.add(r);
+		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = getActions();
+		Map<Pair<String, EditType>, HotKeyExecutionContext> contexts = new HashMap<>();
+		actions.forEach((pair, configActions) -> configActions.forEach((path, action) -> {
+			SimpleConfig config = getConfig(pair);
+			if (config != null) {
+				HotKeyExecutionContext context = contexts.computeIfAbsent(
+				  pair, k -> new HotKeyExecutionContext(config));
+				ITextComponent r = action.apply(config, path, context.result);
+				if (r != null) context.report.add(r);
+			}
 		}));
+		List<ITextComponent> messages = new ArrayList<>();
+		contexts.forEach((pair, context) -> {
+			if (pair.getRight().isRemote()) {
+				if (SimpleConfigNetworkHandler.applyRemoteSnapshot(
+				  context.config, context.result, context.report
+				)) {
+					messages.addAll(context.report);
+				} else messages.add(new TranslationTextComponent(
+				  "simpleconfig.hotkey.no_permission",
+				  new StringTextComponent(context.config.getModName())
+					 .mergeStyle(TextFormatting.GRAY)));
+			} else {
+				context.config.loadSnapshot(context.result, false, false, null);
+				context.config.save();
+				messages.addAll(context.report);
+			}
+		});
 		int size = messages.size();
 		if (size > 4) {
 			 messages.subList(4, size).clear();
 			 messages.add(new TranslationTextComponent("simpleconfig.hotkey.more", size - 4));
 		}
 		ConfigHotKeyOverlay.addMessage(getTitle(), messages);
+	}
+	
+	private static class HotKeyExecutionContext {
+		public final SimpleConfig config;
+		public final CommentedConfig result = CommentedConfig.inMemory();
+		public final List<ITextComponent> report = new ArrayList<>();
+		private HotKeyExecutionContext(SimpleConfig config) {
+			this.config = config;
+		}
 	}
 	
 	public ITextComponent getTitle() {
@@ -75,12 +110,10 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		this.enabled = enabled;
 	}
 	
-	public Map<SimpleConfig, Map<String, HotKeyAction<?>>> getActions() {
+	public Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> getActions() {
 		return actions;
 	}
-	public void setActions(
-	  Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions
-	) {
+	public void setActions(Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions) {
 		this.actions = actions;
 	}
 	public Map<String, Map<String, Map<String, Object>>> getUnknown() {
@@ -101,28 +134,36 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		});
 	}
 	
+	private static SimpleConfig getConfig(Pair<String, EditType> pair) {
+		if (pair.getRight().isRemote() && !permissions.permissionFor(pair.getLeft()).getLeft().canEdit())
+			return null;
+		return SimpleConfig.getConfigOrNull(pair.getLeft(), pair.getRight().getType());
+	}
+	
 	protected Map<String, Map<String, Map<String, Object>>> serializeActions() {
 		return Util.make(new LinkedHashMap<>(), m -> {
-			getActions().forEach((config, actions) -> {
+			getActions().forEach((pair, actions) -> {
 				Map<String, Object> mm =
-				  m.computeIfAbsent(config.getModId(), k -> new HashMap<>())
-					 .computeIfAbsent(config.getType().extension(), t -> new HashMap<>());
-				actions.forEach((path, action) -> {
+				  m.computeIfAbsent(pair.getLeft(), k -> new LinkedHashMap<>())
+					 .computeIfAbsent(pair.getRight().getAlias(), t -> new LinkedHashMap<>());
+				SimpleConfig config = getConfig(pair);
+				if (config != null) actions.forEach((path, action) -> {
 					if (config.hasEntry(path)) {
 						try {
-							HotKeyActionWrapper<?, ?> wrapper = serialize(action, config.getEntry(path));
+							HotKeyActionWrapper<?, ?> wrapper =
+							  serialize(action, config.getEntry(path));
 							mm.put(path, wrapper);
 						} catch (ClassCastException ignored) {}
 					}
 				});
 			});
 			getUnknown().forEach((modId, mm) -> m.computeIfAbsent(
-			  modId, k -> new HashMap<>()).putAll(mm));
+			  modId, k -> new LinkedHashMap<>()).putAll(mm));
 		});
 	}
 	
 	@SuppressWarnings("unchecked") protected <V, A extends HotKeyAction<V>,
-	  E extends AbstractConfigEntry<Object, Object, V, ?>
+	  E extends AbstractConfigEntry<Object, Object, V>
 	> HotKeyActionWrapper<V, A> serialize(A action, E entry) {
 		HotKeyActionType<V, A> type = (HotKeyActionType<V, A>) action.getType();
 		Object value = type.serialize(entry, action);
@@ -133,18 +174,19 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		boolean enabled = getAsOrElse(packed, "enabled", Boolean.class, true);
 		String name = getAsOrElse(packed, "name", String.class, "");
 		Map<?, ?> a = getAsOrElse(packed, "actions", Map.class, null);
-		Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions = new HashMap<>();
-		Map<String, Map<String, Map<String, Object>>> unknown = new HashMap<>();
+		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = new LinkedHashMap<>();
+		Map<String, Map<String, Map<String, Object>>> unknown = new LinkedHashMap<>();
 		a.forEach((id, s) -> {
 			if (id instanceof String && s instanceof Map) {
 				final String modId = (String) id;
 				((Map<?, ?>) s).forEach((t, ss) -> {
 					if (t instanceof String && ss instanceof Map) {
-						Optional<Type> opt = Arrays.stream(Type.values()).filter(tt -> tt.extension().equals(t)).findFirst();
-						if (opt.isPresent() && SimpleConfig.hasConfig(modId, opt.get())) {
-							SimpleConfig config = SimpleConfig.getConfig(modId, opt.get());
-							Map<String, HotKeyAction<?>> aa =
-							  actions.computeIfAbsent(config, cc -> new HashMap<>());
+						EditType type = EditType.fromAlias((String) t);
+						if (type != null && SimpleConfig.hasConfig(modId, type.getType())) {
+							SimpleConfig config = SimpleConfig.getConfig(modId, type.getType());
+							Pair<String, EditType> pair = Pair.of(modId, type);
+							Map<String, HotKeyAction<?>> aa = actions
+							  .computeIfAbsent(pair, cc -> new LinkedHashMap<>());
 							((Map<?, ?>) ss).forEach((p, v) -> {
 								if (p instanceof String && v instanceof HotKeyActionWrapper) {
 									String path = (String) p;
@@ -159,8 +201,8 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 								}
 							});
 						} else {
-							Map<String, Object> mm = unknown.computeIfAbsent(modId, k -> new HashMap<>())
-							  .computeIfAbsent((String) t, k -> new HashMap<>());
+							Map<String, Object> mm = unknown.computeIfAbsent(modId, k -> new LinkedHashMap<>())
+							  .computeIfAbsent((String) t, k -> new LinkedHashMap<>());
 							((Map<?, ?>) ss).forEach((p, v) -> {
 								if (p instanceof String) mm.put((String) p, v);
 							});
@@ -175,7 +217,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		return hotKey;
 	}
 	
-	protected static <V, A extends HotKeyAction<V>, E extends AbstractConfigEntry<Object, Object, V, ?>> A deserialize(
+	protected static <V, A extends HotKeyAction<V>, E extends AbstractConfigEntry<Object, Object, V>> A deserialize(
 	  HotKeyActionWrapper<V, A> wrapper, E entry, Object value
 	) {
 		return wrapper.getType().deserialize(entry, value);
@@ -193,13 +235,13 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		hotKey.setKeyCode(keyCode);
 		hotKey.setName(name);
 		hotKey.setEnabled(enabled);
-		Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions = new HashMap<>();
-		this.actions.forEach((config, map) -> actions.put(config, new HashMap<>(map)));
+		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = new LinkedHashMap<>();
+		this.actions.forEach((pair, map) -> actions.put(pair, new LinkedHashMap<>(map)));
 		hotKey.setActions(actions);
-		Map<String, Map<String, Map<String, Object>>> unknown = new HashMap<>();
+		Map<String, Map<String, Map<String, Object>>> unknown = new LinkedHashMap<>();
 		this.unknown.forEach((modId, sub) -> {
-			Map<String, Map<String, Object>> s = unknown.computeIfAbsent(modId, k -> new HashMap<>());
-			sub.forEach((t, subSub) -> s.computeIfAbsent(t, k -> new HashMap<>()).putAll(subSub));
+			Map<String, Map<String, Object>> s = unknown.computeIfAbsent(modId, k -> new LinkedHashMap<>());
+			sub.forEach((t, subSub) -> s.computeIfAbsent(t, k -> new LinkedHashMap<>()).putAll(subSub));
 		});
 		hotKey.setUnknown(unknown);
 		return hotKey;

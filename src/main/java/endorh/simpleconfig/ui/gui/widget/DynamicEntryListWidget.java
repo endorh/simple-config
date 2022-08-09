@@ -29,6 +29,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -515,13 +516,13 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		if (target != null && target.handleNavigationKey(keyCode, scanCode, modifiers))
 			return true;
 		switch (keyCode) {
-			case 264: // Down
+			case GLFW.GLFW_KEY_DOWN:
 				navigateEntries(1);
 				return true;
-			case 265: // Up
+			case GLFW.GLFW_KEY_UP:
 				navigateEntries(-1);
 				return true;
-			case 263: // Left
+			case GLFW.GLFW_KEY_LEFT:
 				if (subTarget instanceof IExpandable && ((IExpandable) subTarget).isExpanded()) {
 					((IExpandable) subTarget).setExpanded(false, Screen.hasShiftDown());
 					playFeedbackTap(0.4F);
@@ -543,7 +544,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 					}
 				}
 				break;
-			case 262: // Right
+			case GLFW.GLFW_KEY_RIGHT:
 				if (subTarget instanceof IExpandable && !((IExpandable) subTarget).isExpanded()) {
 					((IExpandable) subTarget).setExpanded(true, Screen.hasShiftDown());
 					playFeedbackTap(0.4F);

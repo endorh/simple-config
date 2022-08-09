@@ -13,7 +13,7 @@ public class ColorFieldBuilder
 	private boolean alpha = false;
 	
 	public ColorFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, int value) {
-		super(builder, name, value);
+		super(ColorListEntry.class, builder, name, value);
 	}
 	
 	public ColorFieldBuilder setAlphaMode(boolean withAlpha) {

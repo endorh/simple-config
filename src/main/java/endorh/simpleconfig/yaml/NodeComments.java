@@ -2,6 +2,7 @@ package endorh.simpleconfig.yaml;
 
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.comments.CommentLine;
+import org.yaml.snakeyaml.comments.CommentType;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 
@@ -11,6 +12,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.blankLine;
 import static java.util.Arrays.asList;
 
 public class NodeComments {
@@ -86,6 +88,14 @@ public class NodeComments {
 		).filter(Objects::nonNull).flatMap(List::stream).collect(Collectors.toList());
 	}
 	
+	public void addSeparatorLine() {
+		List<CommentLine> comments = getBlockComments();
+		if (comments == null) comments = new ArrayList<>();
+		if (comments.isEmpty() || comments.get(0).getCommentType() != CommentType.BLANK_LINE)
+			comments.add(0, blankLine());
+		setBlockComments(comments);
+	}
+	
 	public NodeComments appendAsPrefix(@Nullable NodeComments comments) {
 		return appendAsPrefix(comments, true);
 	}
@@ -97,7 +107,7 @@ public class NodeComments {
 		if (blockComments == null) blockComments = new ArrayList<>();
 		List<CommentLine> list = getAllLines();
 		if (!list.isEmpty()) {
-			if (addBlankLine) list.add(SimpleConfigCommentedYamlWriter.blankLine());
+			if (addBlankLine) list.add(blankLine());
 			blockComments.addAll(0, list);
 		}
 		comments.setBlockComments(blockComments);
@@ -115,7 +125,7 @@ public class NodeComments {
 		if (endComments == null) endComments = new ArrayList<>();
 		List<CommentLine> list = getAllLines();
 		if (!list.isEmpty()) {
-			if (addBlankLine) endComments.add(SimpleConfigCommentedYamlWriter.blankLine());
+			if (addBlankLine) endComments.add(blankLine());
 			endComments.addAll(list);
 		}
 		comments.setEndComments(endComments);

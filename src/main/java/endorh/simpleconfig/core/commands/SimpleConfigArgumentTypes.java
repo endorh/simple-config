@@ -18,6 +18,7 @@ public class SimpleConfigArgumentTypes {
 	
 	public static void registerArgumentTypes() {
 		register("mod-id", SimpleConfigModIdArgumentType.class, new SimpleConfigModIdArgumentType.Serializer());
+		register("type", SimpleConfigTypeArgumentType.class, new SimpleConfigTypeArgumentType.Serializer());
 		register("key", SimpleConfigKeyArgumentType.class, new SimpleConfigKeyArgumentType.Serializer());
 		register("value", SimpleConfigValueArgumentType.class, new SimpleConfigValueArgumentType.Serializer());
 	}

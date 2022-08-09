@@ -40,10 +40,10 @@ public abstract class HotKeyActionType<V, A extends HotKeyAction<V>> {
 		return new TranslationTextComponent("simpleconfig.hotkey.type.action." + getTranslationKey());
 	}
 	
-	public abstract @Nullable <T, C, E extends AbstractConfigEntry<T, C, V, ?>> A deserialize(E entry, Object value);
-	public abstract <T, C, E extends AbstractConfigEntry<T, C, V, ?>> @Nullable Object serialize(E entry, A action);
+	public abstract @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> A deserialize(E entry, Object value);
+	public abstract <T, C, E extends AbstractConfigEntry<T, C, V>> @Nullable Object serialize(E entry, A action);
 	
-	public <T, C, E extends AbstractConfigEntry<T, C, V, ?>> Optional<ITextComponent> getActionError(E entry, Object value) {
+	public <T, C, E extends AbstractConfigEntry<T, C, V>> Optional<ITextComponent> getActionError(E entry, Object value) {
 		return Optional.empty();
 	}
 }

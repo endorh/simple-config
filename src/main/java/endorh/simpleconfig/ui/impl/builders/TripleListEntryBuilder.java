@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.Icon;
@@ -12,14 +12,17 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
 public class TripleListEntryBuilder<
-  L, M, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
-  ME extends AbstractConfigEntry<M> & IChildListEntry,
-  RE extends AbstractConfigEntry<R> & IChildListEntry
+  L, M, R, LE extends AbstractConfigListEntry<L> & IChildListEntry,
+  ME extends AbstractConfigListEntry<M> & IChildListEntry,
+  RE extends AbstractConfigListEntry<R> & IChildListEntry,
+  LEB extends FieldBuilder<L, LE, LEB>,
+  MEB extends FieldBuilder<M, ME, MEB>,
+  REB extends FieldBuilder<R, RE, REB>
   > extends FieldBuilder<Triple<L, M, R>, TripleListEntry<L, M, R, LE, ME, RE>,
-  TripleListEntryBuilder<L, M, R, LE, ME, RE>> {
-	protected final LE leftEntry;
-	protected final ME middleEntry;
-	protected final RE rightEntry;
+  TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB>> {
+	protected final LEB leftEntry;
+	protected final MEB middleEntry;
+	protected final REB rightEntry;
 	protected @Nullable Icon leftIcon;
 	protected @Nullable Icon rightIcon;
 	protected float leftWeight = 0.333F;
@@ -27,15 +30,15 @@ public class TripleListEntryBuilder<
 	
 	public TripleListEntryBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, Triple<L, M, R> value,
-	  LE leftEntry, ME middleEntry, RE rightEntry
+	  LEB leftEntry, MEB middleEntry, REB rightEntry
 	) {
-		super(builder, name, value);
+		super(TripleListEntry.class, builder, name, value);
 		this.leftEntry = leftEntry;
 		this.middleEntry = middleEntry;
 		this.rightEntry = rightEntry;
 	}
 	
-	public TripleListEntryBuilder<L, M, R, LE, ME, RE> withIcons(
+	public TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB> withIcons(
 	  @Nullable Icon leftIcon, @Nullable Icon rightIcon
 	) {
 		this.leftIcon = leftIcon;
@@ -43,7 +46,7 @@ public class TripleListEntryBuilder<
 		return self();
 	}
 	
-	public TripleListEntryBuilder<L, M, R, LE, ME, RE> withWeights(
+	public TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB> withWeights(
 	  @Range(from = 0, to = 1) float leftWeight, @Range(from = 0, to = 1) float rightWeight
 	) {
 		if (leftWeight < 0 || rightWeight < 0 || leftWeight + rightWeight > 1F)
@@ -55,7 +58,8 @@ public class TripleListEntryBuilder<
 	}
 	
 	@Override protected TripleListEntry<L, M, R, LE, ME, RE> buildEntry() {
-		return new TripleListEntry<>(fieldNameKey, value, leftEntry, middleEntry, rightEntry);
+		return new TripleListEntry<>(
+		  fieldNameKey, value, leftEntry.build(), middleEntry.build(), rightEntry.build());
 	}
 	
 	@Override public @NotNull TripleListEntry<L, M, R, LE, ME, RE> build() {

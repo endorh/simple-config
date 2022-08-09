@@ -7,12 +7,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
-import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IRemoteCommonConfigProvider;
 import endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
@@ -40,13 +40,13 @@ import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.ClickEvent.Action;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -70,7 +70,6 @@ public abstract class AbstractConfigScreen extends Screen
 	protected boolean confirmSave = confirm.save;
 	protected boolean alwaysShowTabs = false;
 	protected boolean transparentBackground = false;
-	protected @Nullable ConfigCategory defaultFallbackCategory = null;
 	protected boolean editable = true;
 	protected @Nullable IModalInputProcessor modalInputProcessor = null;
 	protected @Nullable Runnable savingRunnable = null;
@@ -78,16 +77,11 @@ public abstract class AbstractConfigScreen extends Screen
 	protected @Nullable Consumer<Screen> afterInitConsumer = null;
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	protected Map<String, Map<String, ConfigCategory>> categoryMap;
-	protected Map<String, ConfigCategory> clientCategoryMap;
-	protected Map<String, ConfigCategory> commonCategoryMap;
-	protected Map<String, ConfigCategory> serverCategoryMap;
 	protected ExternalChangesDialog externalChangesDialog;
 	
 	protected ConfigCategory selectedCategory;
-	protected List<ConfigCategory> sortedClientCategories;
-	protected List<ConfigCategory> sortedCommonCategories;
-	protected List<ConfigCategory> sortedServerCategories;
 	protected List<ConfigCategory> sortedCategories;
+	protected EnumMap<EditType, List<ConfigCategory>> sortedCategoriesMap;
 	
 	protected SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
 	
@@ -97,41 +91,53 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	private final SortedDialogCollection dialogs = new SortedDialogCollection();
 	protected @Nullable IConfigSnapshotHandler snapshotHandler;
-	protected @Nullable IRemoteCommonConfigProvider remoteConfigProvider;
+	protected @Nullable ConfigScreenBuilder.IRemoteConfigProvider remoteConfigProvider;
 	
-	protected boolean isEditingRemoteCommon = false;
-	protected @Nullable CommentedConfig remoteCommon = null;
-	protected boolean loadedRemoteCommon = false;
+	protected Map<EditType, CommentedConfig> remoteConfigs = new EnumMap<>(EditType.class);
+	protected Set<EditType> loadedRemoteConfigs = Collections.newSetFromMap(new EnumMap<EditType, Boolean>(EditType.class));
 	
 	protected AbstractConfigScreen(
 	  Screen parent, String modId, ITextComponent title, ResourceLocation backgroundLocation,
 	  Collection<ConfigCategory> clientCategories,
 	  Collection<ConfigCategory> commonCategories,
+	  Collection<ConfigCategory> serverCommonCategories,
 	  Collection<ConfigCategory> serverCategories
 	) {
 		super(title);
 		this.parent = parent;
 		this.modId = modId;
 		this.backgroundLocation = backgroundLocation;
-		clientCategoryMap = clientCategories.stream()
+		Map<String, ConfigCategory> clientCategoryMap = clientCategories.stream()
 		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
-		sortedClientCategories = clientCategories.stream()
+		List<ConfigCategory> sortedClientCategories = clientCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
-		serverCategoryMap = serverCategories.stream()
+		Map<String, ConfigCategory> commonCategoryMap = commonCategories.stream()
 		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
-		sortedServerCategories = serverCategories.stream()
+		List<ConfigCategory> sortedCommonCategories = commonCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
-		commonCategoryMap = commonCategories.stream()
+		Map<String, ConfigCategory> serverCommonCategoryMap = serverCommonCategories.stream()
 		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
-		sortedCommonCategories = commonCategories.stream()
+		List<ConfigCategory> sortedServerCommonCategories = serverCommonCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
-		categoryMap = Util.make(new HashMap<>(), m -> {
-			m.put("client", clientCategoryMap);
-			m.put("common", commonCategoryMap);
-			m.put("server", serverCategoryMap);
+		Map<String, ConfigCategory> serverCategoryMap = serverCategories.stream()
+		  .collect(Collectors.toMap(ConfigCategory::getName, c -> c, (a, b) -> a));
+		List<ConfigCategory> sortedServerCategories = serverCategories.stream()
+		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
+		categoryMap = Util.make(new HashMap<>(4), m -> {
+			m.put(EditType.CLIENT.getAlias(), clientCategoryMap);
+			m.put(EditType.COMMON.getAlias(), commonCategoryMap);
+			m.put(EditType.SERVER_COMMON.getAlias(), serverCommonCategoryMap);
+			m.put(EditType.SERVER.getAlias(), serverCategoryMap);
+		});
+		sortedCategoriesMap = Util.make(new EnumMap<>(EditType.class), m -> {
+			m.put(EditType.CLIENT, sortedClientCategories);
+			m.put(EditType.COMMON, sortedCommonCategories);
+			m.put(EditType.SERVER_COMMON, sortedServerCommonCategories);
+			m.put(EditType.SERVER, sortedServerCategories);
 		});
 		sortedCategories = Stream.of(
-		  sortedClientCategories, sortedCommonCategories, sortedServerCategories
+		  sortedClientCategories, sortedCommonCategories,
+		  sortedServerCommonCategories, sortedServerCategories
 		).flatMap(Collection::stream).collect(Collectors.toList());
 		history = new EditHistory();
 		history.setOwner(this);
@@ -183,21 +189,13 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public boolean isRequiresRestart() {
-		for (Map<String, ConfigCategory> m: categoryMap.values()) {
-			for (ConfigCategory cat : m.values()) {
-				for (AbstractConfigEntry<?> entry : cat.getHeldEntries()) {
-					if (entry.hasError() || !entry.isEdited() ||
-					    !entry.isRequiresRestart()) continue;
-					return true;
-				}
-			}
-		}
-		return false;
+		return getAllMainEntries().stream().anyMatch(
+		  e -> e.isRequiresRestart() && e.isEdited());
 	}
 	
 	public void selectNextCategory(boolean forward) {
 		int i = sortedCategories.indexOf(selectedCategory);
-		if (i == -1) throw new IllegalStateException();
+		if (i == -1) throw new IllegalStateException("Unknown selected category: " + selectedCategory);
 		i = (i + (forward? 1 : -1) + sortedCategories.size()) % sortedCategories.size();
 		setSelectedCategory(sortedCategories.get(i));
 	}
@@ -207,10 +205,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public void setSelectedCategory(ConfigCategory category) {
-		if (!clientCategoryMap.containsValue(category)
-		    && !commonCategoryMap.containsValue(category)
-		    && !serverCategoryMap.containsValue(category)
-		) throw new IllegalArgumentException("Unknown category");
+		if (categoryMap.values().stream().noneMatch(m -> m.containsKey(category.getName())))
+			throw new IllegalStateException("Unknown category: " + category.getName());
 		selectedCategory = category;
 	}
 	
@@ -228,25 +224,20 @@ public abstract class AbstractConfigScreen extends Screen
 		return null;
 	}
 	
-	public Type getEditedType() {
+	public EditType getEditedType() {
 		return getSelectedCategory().getType();
 	}
 	
 	public List<ConfigCategory> getSortedTypeCategories() {
-		switch (getEditedType()) {
-			case CLIENT: return sortedClientCategories;
-			case COMMON: return sortedCommonCategories;
-			case SERVER: return sortedServerCategories;
-			default: throw new IllegalStateException();
-		}
+		return sortedCategoriesMap.get(getEditedType());
 	}
 	
 	public Map<String, ConfigCategory> getTypeCategories() {
-		return categoryMap.get(getEditedType().extension());
+		return categoryMap.get(getEditedType().getAlias());
 	}
 	
 	public boolean isEditingServer() {
-		return getEditedType() == Type.SERVER;
+		return getEditedType() == EditType.SERVER;
 	}
 	
 	public boolean isShowingTabs() {
@@ -381,12 +372,16 @@ public abstract class AbstractConfigScreen extends Screen
 		for (ConfigCategory cat : sortedCategories)
 			for (AbstractConfigEntry<?> entry : cat.getHeldEntries())
 				entry.save();
+		if (remoteConfigProvider != null) for (EditType type: loadedRemoteConfigs) {
+			boolean requiresRestart = sortedCategoriesMap.get(type).stream()
+			  .flatMap(c -> c.getAllMainEntries().stream())
+			  .anyMatch(e -> e.isEdited() && e.isRequiresRestart());
+			remoteConfigProvider.saveRemoteConfig(type, requiresRestart);
+		}
 		save();
 		if (openOtherScreens && minecraft != null) {
 			if (closingRunnable != null) closingRunnable.run();
-			if (isRequiresRestart()) {
-				minecraft.displayGuiScreen(new ClothRequiresRestartScreen(parent));
-			} else minecraft.displayGuiScreen(parent);
+			minecraft.displayGuiScreen(parent);
 		}
 	}
 	
@@ -412,14 +407,18 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean hasConflictingExternalChanges() {
-		return Stream.of(sortedClientCategories, sortedCommonCategories)
+		return Arrays.stream(EditType.values()).filter(t -> !t.isRemote())
+		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())
 		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
 	}
 	
 	public boolean hasConflictingRemoteChanges() {
-		return sortedServerCategories.stream().flatMap(c -> c.getAllMainEntries().stream())
+		return Arrays.stream(EditType.values()).filter(EditType::isRemote)
+		  .map(sortedCategoriesMap::get)
+		  .flatMap(Collection::stream)
+		  .flatMap(c -> c.getAllMainEntries().stream())
 		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
 	}
 	
@@ -514,7 +513,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (handleModalKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (handleDialogsKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (getDragged() != null) return true; // Suppress
-		if (keyCode == 256) { // Escape key
+		if ( keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			if (handleOverlaysEscapeKey())
 				return true;
 			if (shouldCloseOnEsc()) {
@@ -697,25 +696,21 @@ public abstract class AbstractConfigScreen extends Screen
 		return super.handleComponentClicked(style);
 	}
 	
-	public boolean hasClient() {
-		return !sortedClientCategories.isEmpty();
+	public boolean hasType(EditType type) {
+		return !sortedCategoriesMap.get(type).isEmpty()
+		       && (!type.isOnlyRemote()
+		           || remoteConfigProvider != null && remoteConfigs.containsKey(type));
 	}
 	
-	public boolean hasCommon() {
-		return !sortedCommonCategories.isEmpty();
+	public boolean mayHaveType(EditType type) {
+		return sortedCategoriesMap.containsKey(type)
+		       && (!type.isOnlyRemote()
+		           || remoteConfigProvider != null
+		              && remoteConfigProvider.mayHaveRemoteConfig(type));
 	}
 	
-	public boolean mayHaveRemoteCommon() {
-		return !sortedCommonCategories.isEmpty() && remoteConfigProvider != null;
-	}
-	
-	public boolean hasRemoteCommon() {
-		return !sortedCommonCategories.isEmpty() && remoteConfigProvider != null
-		       && remoteCommon != null;
-	}
-	
-	public boolean hasServer() {
-		return !sortedServerCategories.isEmpty();
+	public boolean hasLoadedType(EditType type) {
+		return !type.isOnlyRemote() || loadedRemoteConfigs.contains(type);
 	}
 	
 	@Override public Pair<Integer, IGuiEventListener> getDragged() {
@@ -768,11 +763,11 @@ public abstract class AbstractConfigScreen extends Screen
 		if (snapshotHandler != null) snapshotHandler.setExternalChangeHandler(this);
 	}
 	
-	public @Nullable IRemoteCommonConfigProvider getRemoteConfigProvider() {
+	public @Nullable ConfigScreenBuilder.IRemoteConfigProvider getRemoteConfigProvider() {
 		return remoteConfigProvider;
 	}
 	
-	public void setRemoteCommonConfigProvider(@Nullable IRemoteCommonConfigProvider remoteConfigProvider) {
+	public void setRemoteCommonConfigProvider(@Nullable ConfigScreenBuilder.IRemoteConfigProvider remoteConfigProvider) {
 		this.remoteConfigProvider = remoteConfigProvider;
 	}
 	
@@ -786,7 +781,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public void updateSelection() {}
 	
-	@Override public void handleExternalChange(Type type) {
+	@Override public void handleExternalChange(EditType type) {
 		// Changes sometimes arrive in batches
 		if (externalChangesDialog != null) externalChangesDialog.cancel(false);
 		externalChangesDialog = ExternalChangesDialog.create(type, response -> {
@@ -794,6 +789,15 @@ public abstract class AbstractConfigScreen extends Screen
 			externalChangesDialog = null;
 		});
 		addDialog(externalChangesDialog);
+	}
+	
+	@Override public void handleRemoteConfigExternalChange(
+	  EditType type, CommentedConfig remoteConfig
+	) {
+		if (remoteConfigProvider == null) return;
+		if (!loadedRemoteConfigs.contains(type)) {
+			remoteConfigs.put(type, remoteConfig);
+		} else remoteConfigProvider.loadRemoteConfig(type, remoteConfig, true);
 	}
 	
 	public void handleExternalChangeResponse(ExternalChangeResponse response) {

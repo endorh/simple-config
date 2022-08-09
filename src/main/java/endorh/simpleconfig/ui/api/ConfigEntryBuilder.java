@@ -16,6 +16,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -33,9 +34,11 @@ public interface ConfigEntryBuilder {
 	StringListBuilder startStrList(ITextComponent name, List<String> value);
 	
 	SubCategoryBuilder startSubCategory(ITextComponent name);
-	SubCategoryBuilder startSubCategory(ITextComponent name, List<AbstractConfigListEntry<?>> value);
-	<T, HE extends AbstractConfigEntry<T> & IChildListEntry> CaptionedSubCategoryBuilder<T, HE>
-	startCaptionedSubCategory(ITextComponent name, HE captionEntry);
+	SubCategoryBuilder startSubCategory(ITextComponent name, List<FieldBuilder<?, ?, ?>> value);
+	
+	<T, HE extends AbstractConfigListEntry<T> & IChildListEntry,
+	  HEB extends FieldBuilder<T, HE, HEB>
+	> CaptionedSubCategoryBuilder<T, HE, HEB> startCaptionedSubCategory(ITextComponent name, HEB captionEntry);
 	
 	BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value);
 	ColorFieldBuilder startColorField(ITextComponent name, int value);
@@ -83,6 +86,11 @@ public interface ConfigEntryBuilder {
 	FloatSliderBuilder startFloatSlider(ITextComponent name, float value, float min, float max);
 	DoubleSliderBuilder startDoubleSlider(ITextComponent name, double value, double min, double max);
 	
+	ButtonFieldBuilder startButton(ITextComponent name, Runnable action);
+	<V, E extends AbstractConfigListEntry<V> & IChildListEntry,
+	  B extends FieldBuilder<V, E, B>
+	> EntryButtonFieldBuilder<V, E, B> startButton(ITextComponent name, B entry, Consumer<V> action);
+	
 	KeyCodeBuilder startModifierKeyCodeField(ITextComponent name, ModifierKeyCode value);
 	default KeyCodeBuilder startKeyCodeField(
 	  ITextComponent name, InputMappings.Input value
@@ -94,23 +102,25 @@ public interface ConfigEntryBuilder {
 	<T> ComboBoxFieldBuilder<T> startComboBox(
 	  ITextComponent name, ITypeWrapper<T> typeWrapper, T value);
 	
-	<V, E extends AbstractListListEntry<V, ?, E>, C,
-	  CE extends AbstractConfigListEntry<C> & IChildListEntry>
-	CaptionedListEntryBuilder<V, E, C, CE> startCaptionedList(
-		 ITextComponent name, E listEntry, CE captionEntry, Pair<C, List<V>> value);
+	<V, E extends AbstractListListEntry<V, ?, E>, EB extends FieldBuilder<List<V>, E, ?>,
+	  C, CE extends AbstractConfigListEntry<C> & IChildListEntry, CEB extends FieldBuilder<C, CE, ?>
+	> CaptionedListEntryBuilder<V, E, EB, C, CE, CEB> startCaptionedList(
+	  ITextComponent name, EB listEntry, CEB captionEntry, Pair<C, List<V>> value);
 	
 	<L, R, LE extends AbstractConfigListEntry<L> & IChildListEntry,
-	  RE extends AbstractConfigListEntry<R> & IChildListEntry>
-	PairListEntryBuilder<L, R, LE, RE> startPair(
-	  ITextComponent name, LE leftEntry, RE rightEntry, Pair<L, R> value
-	);
+	  RE extends AbstractConfigListEntry<R> & IChildListEntry,
+	  LEB extends FieldBuilder<L, LE, LEB>, REB extends FieldBuilder<R, RE, REB>
+	> PairListEntryBuilder<L, R, LE, RE, LEB, REB> startPair(
+	  ITextComponent name, LEB leftEntry, REB rightEntry, Pair<L, R> value);
 	
 	<L, R, M, LE extends AbstractConfigListEntry<L> & IChildListEntry,
 	  ME extends AbstractConfigListEntry<M> & IChildListEntry,
-	  RE extends AbstractConfigListEntry<R> & IChildListEntry
-	> TripleListEntryBuilder<L, M, R, LE, ME, RE> startTriple(
-	  ITextComponent name, LE leftEntry, ME middleEntry, RE rightEntry, Triple<L, M, R> value
-	);
+	  RE extends AbstractConfigListEntry<R> & IChildListEntry,
+	  LEB extends FieldBuilder<L, LE, LEB>,
+	  MEB extends FieldBuilder<M, ME, MEB>,
+	  REB extends FieldBuilder<R, RE, REB>
+	> TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB> startTriple(
+	  ITextComponent name, LEB leftEntry, MEB middleEntry, REB rightEntry, Triple<L, M, R> value);
 	
 	<V extends Comparable<V>, R extends AbstractRange<V, R>,
 	  E extends AbstractConfigListEntry<V> & IChildListEntry

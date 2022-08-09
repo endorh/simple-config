@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Collections;
 import java.util.List;
@@ -208,9 +209,8 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				int yy = area.y + 1 - ((int) this.dropDownScroll) % suggestionHeight;
 				for (int i = firstIdx; i <= lastIdx; i++) {
 					renderSuggestion(
-					  i, lastSortedSuggestions.get(i), mStack, area.x + 1, yy, suggestionWidth,
-					  suggestionHeight,
-					  mouseX, mouseY, delta, i == suggestionCursor);
+					  i, lastSortedSuggestions.get(i), mStack, area.x + 1, yy,
+					  suggestionWidth, suggestionHeight, mouseX, mouseY, delta, i == suggestionCursor);
 					yy += suggestionHeight;
 				}
 				
@@ -250,7 +250,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	) {
 		boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
 		if (selected) {
-			fill(mStack, x, y, x + w, y + h, 0xA0E0E0E0);
+			fill(mStack, x, y, x + w, y + 1, 0xA0E0E0E0);
+			fill(mStack, x, y + h - 1, x + w, y + h, 0xA0E0E0E0);
+			fill(mStack, x, y + 1, x + 1, y + h - 1, 0xA0E0E0E0);
+			fill(mStack, x + w - 1, y + 1, x + w, y + h - 1, 0xA0E0E0E0);
 			fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, hovered? 0x80646464 : 0x80484848);
 		} else fill(mStack, x, y, x + w, y + h, hovered? 0x80646464 : 0x80242424);
 		
@@ -783,49 +786,49 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					return true;
 				} else {
 					switch(keyCode) {
-						case 259: // Backspace
+						case GLFW.GLFW_KEY_BACKSPACE:
 							if (isEditable()) delete(-1);
 							return true;
-						case 261: // Delete
+						case GLFW.GLFW_KEY_DELETE:
 							if (isEditable()) delete(1);
 							return true;
-						case 264: // Down
+						case GLFW.GLFW_KEY_DOWN:
 							moveSuggestionCursor(1);
 							return true;
-						case 265: // Up
+						case GLFW.GLFW_KEY_UP:
 							moveSuggestionCursor(-1);
 							return true;
-						case 257: // Enter
+						case GLFW.GLFW_KEY_ENTER:
 							autoComplete();
 							playFeedbackTap(1F);
 							return true;
-						case 266: // Page Up
+						case GLFW.GLFW_KEY_PAGE_UP:
 							moveSuggestionCursor(-max(1, dropDownHeight / getSuggestionHeight() - 1));
 							return true;
-						case 267: // Page Down
+						case GLFW.GLFW_KEY_PAGE_DOWN:
 							moveSuggestionCursor(max(1, dropDownHeight / getSuggestionHeight() - 1));
 							return true;
-						case 262: // Right
+						case GLFW.GLFW_KEY_RIGHT:
 							if (hasSelection() && !Screen.hasShiftDown()) {
 								moveCaretWithAnchor(max(anchorPos, caretPos));
 							} else if (Screen.hasControlDown()) {
 								moveCaret(getWordPosFromCaret(1));
 							} else moveCaretBy(1);
 							return true;
-						case 263: // Left
+						case GLFW.GLFW_KEY_LEFT:
 							if (hasSelection() && !Screen.hasShiftDown()) {
 								moveCaretWithAnchor(min(anchorPos, caretPos));
 							} else if (Screen.hasControlDown()) {
 								moveCaret(getWordPosFromCaret(-1));
 							} else moveCaretBy(-1);
 							return true;
-						case 268: // Home
+						case GLFW.GLFW_KEY_HOME:
 							moveCaretToStart();
 							return true;
-						case 269: // End
+						case GLFW.GLFW_KEY_END:
 							moveCaretToEnd();
 							return true;
-						case 260: // Insert
+						case GLFW.GLFW_KEY_INSERT:
 						default:
 							return false;
 					}
@@ -873,7 +876,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	@Override public boolean charTyped(char codePoint, int modifiers) {
 		if (!canConsumeInput()) {
 			return false;
-		} else if (codePoint == 32 && (modifiers & 2) != 0) {
+		} else if ( codePoint == GLFW.GLFW_KEY_SPACE &&(modifiers & 2) != 0) {
 			autoComplete();
 			playFeedbackTap(1F);
 			return true;
@@ -1045,7 +1048,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (isVisible()) {
 			updateSuggestions();
 			if (shouldDrawBackground()) {
-				int color = isFocused() ? focusedBorderColor : borderColor;
+				int color = isHovered() ? focusedBorderColor : borderColor;
 				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, color);
 				fill(mStack, x, y, x + width, y + height, backgroundColor);
 				if (!isRestrictedToSuggestions())

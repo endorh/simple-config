@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfig;
 import net.minecraft.util.text.ITextComponent;
@@ -18,13 +19,15 @@ public abstract class HotKeyAction<V> {
 		return type;
 	}
 	
-	public abstract <T, C, E extends AbstractConfigEntry<T, C, V, ?>>
-	@Nullable ITextComponent apply(E entry);
+	public abstract <T, C, E extends AbstractConfigEntry<T, C, V>>
+	@Nullable ITextComponent apply(String path, E entry, CommentedConfig result);
 	
-	public @Nullable ITextComponent apply(SimpleConfig config, String path) {
+	public @Nullable ITextComponent apply(
+	  SimpleConfig config, String path, CommentedConfig result
+	) {
 		try {
-			AbstractConfigEntry<?, ?, V, ?> entry = config.getEntryOrNull(path);
-			if (entry != null) return apply(entry);
+			AbstractConfigEntry<?, ?, V> entry = config.getEntryOrNull(path);
+			if (entry != null) return apply(entry.getPath(), entry, result);
 		} catch (ClassCastException ignored) {}
 		return null;
 	}

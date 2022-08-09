@@ -12,7 +12,7 @@ public class IntFieldBuilder
   extends RangedFieldBuilder<Integer, IntegerListEntry, IntFieldBuilder> {
 	
 	public IntFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, int value) {
-		super(builder, name, value);
+		super(IntegerListEntry.class, builder, name, value);
 	}
 	
 	@Override

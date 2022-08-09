@@ -3,6 +3,7 @@ package endorh.simpleconfig.demo;
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
+import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigCategory;
 import endorh.simpleconfig.core.SimpleConfigGroup;
@@ -562,17 +563,26 @@ public class DemoConfigCategory {
 		       .add("dynamic_tooltip", string("Steve")
 			      .tooltip(s -> asList(
 				     ttc(prefix("text.hello"), stc(s).mergeStyle(TextFormatting.DARK_AQUA)))))
-		       // However, most of the time it's enough to just set the
-		       //   format arguments that will be passed to the tooltip,
-		       //   which can also be functions receiving the value of
-		       //   the entry
-		       .add("tooltip_args", string("Alex")
-			      .tooltipArgs(s -> stc(s).mergeStyle(TextFormatting.DARK_AQUA)))
 		       // Any value can be marked as requiring a restart to be effective
 		       //   Entire groups and categories can be marked as well
 		       .add("restart_bool", bool(false).restart())
+		       // Entries may be marked as experimental
+		       .add("experimental_bool", bool(false).experimental())
+		       // Entries may be marked as advanced using a built-in tag
+		       //   You may also create your own tags.
+		       //   The states of requiring restart, being experimental or not being persistent are
+		       //   displayed using tags as well.
+		       // Custom tags may define a click action and a tooltip, besides an icon.
+		       .add("advanced_bool", bool(false).withTags(EntryTag.ADVANCED))
+		       // The order in which tags are specified is irrelevant, since the tags themselves
+		       //   define an ordering. An entry may have an arbitrary amount of tags
+		       .add("mixed_bool", bool(false).experimental().restart().withTags(
+					EntryTag.ADVANCED, EntryTag.coloredTag(TextFormatting.RED),
+					EntryTag.coloredTag(TextFormatting.GREEN),
+					EntryTag.coloredTag(TextFormatting.BLUE),
+					EntryTag.coloredBookmark(TextFormatting.YELLOW)))
 		       .add("enable_switch", bool(false))
-		       .add("enable_test", string("text").editable(() -> CLIENT_CONFIG.getGUIBoolean("demo.errors_tooltips_n_links.enable_switch"))))
+		       .add("enable_test", string("text").editable(g -> g.getGUIBoolean("enable_switch"))))
 		  .text("end", new TranslationTextComponent("simpleconfig.text.wiki")
 		    .modifyStyle(style -> style.setFormatting(TextFormatting.AQUA)
 		      .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
@@ -766,6 +776,5 @@ public class DemoConfigCategory {
 		@Bind public static int max;
 		@Bind public static List<Integer> even_int_list;
 		@Bind public static String dynamic_tooltip;
-		@Bind public static String tooltip_args;
 	}
 }

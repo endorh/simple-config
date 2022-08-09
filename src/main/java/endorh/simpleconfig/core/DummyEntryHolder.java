@@ -7,19 +7,19 @@ import org.jetbrains.annotations.Nullable;
  * Dummy entry holder containing a single entry
  */
 public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
-	
 	protected SimpleConfig root;
 	
 	public DummyEntryHolder(SimpleConfig root) {
 		this.root = root;
 	}
 	
-	public static <V, E extends AbstractConfigEntry<V, ?, ?, E>> E build(
+	public static <V, E extends AbstractConfigEntry<V, ?, ?>> E build(
 	  ISimpleConfigEntryHolder parent, AbstractConfigEntryBuilder<V, ?, ?, E, ?> builder
 	) {
 		final E e = builder.build(new DummyEntryHolder<>(parent.getRoot()), "");
 		e.nonPersistent = true;
 		e.actualValue = builder.value;
+		e.setSaver((v, h) -> {});
 		return e;
 	}
 	

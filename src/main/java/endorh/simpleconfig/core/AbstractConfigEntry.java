@@ -3,11 +3,13 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.core.SimpleConfig.*;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NodeComments;
@@ -19,11 +21,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
@@ -51,48 +55,39 @@ import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLi
  * @param <V> The type of the value held by the entry
  * @param <Config> The type of the associated config entry
  * @param <Gui> The type of the associated GUI config entry
- * @param <Self> The actual subtype of this entry to be
- *              returned by builder-like methods
  * @see AbstractConfigEntryBuilder
  */
-public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractConfigEntry<V, Config, Gui, Self>>
-  implements IGUIEntry {
+public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
-	protected final ISimpleConfigEntryHolder parent;
-	/**
-	 * The default value of this entry
-	 */
+	private static final ITextComponent[] EMPTY_TEXT_ARRAY = new ITextComponent[0];
+	
 	public final V defValue;
+	protected final ISimpleConfigEntryHolder parent;
 	protected String name;
 	protected Class<?> typeClass;
 	protected @Nullable String translation = null;
 	protected @Nullable String tooltip = null;
 	protected boolean requireRestart = false;
-	protected @Nullable Function<Config, Optional<ITextComponent>> configErrorSupplier = null;
-	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
-	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
-	protected @Nullable Function<V, List<ITextComponent>> tooltipSupplier = null;
-	protected @Nullable Function<Gui, List<ITextComponent>> guiTooltipSupplier = null;
+	protected boolean experimental;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> tooltipSupplier = null;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> warningSupplier = null;
 	protected @Nullable BiConsumer<Gui, ISimpleConfigEntryHolder> saver = null;
-	/**
-	 * Returning false makes the entry not editable in the GUI<br>
-	 * Note that users may still be able to modify these entries from the
-	 * config file. This feature is only meant to visually express that
-	 * an entry's value is currently irrelevant, perhaps due to other
-	 * entries' values, but don't overuse it to the point where editing
-	 * the config becomes frustrating.
-	 */
-	protected @Nullable Supplier<Boolean> editableSupplier = null;
+	protected @Nullable Function<ISimpleConfigEntryHolder, Boolean> editableSupplier = null;
 	protected @Nullable BackingField<V, ?> backingField;
 	protected @Nullable List<BackingField<V, ?>> secondaryBackingFields;
 	protected boolean dirty = false;
 	protected @Nullable ITextComponent displayName = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
-	protected @OnlyIn(Dist.CLIENT) @Nullable AbstractConfigListEntry<Gui> guiEntry;
-	protected @OnlyIn(Dist.CLIENT) @Nullable AbstractConfigListEntry<Gui> remoteGuiEntry;
+	@OnlyIn(Dist.CLIENT) private @Nullable AbstractConfigListEntry<Gui> guiEntry;
+	@OnlyIn(Dist.CLIENT) private @Nullable AbstractConfigListEntry<Gui> remoteGuiEntry;
 	protected boolean nonPersistent = false;
+	protected final Set<EntryTag> tags = new HashSet<>();
+	protected final Set<EntryTag> builtInTags = new HashSet<>();
+	protected final Set<EntryTag> allTags = Sets.union(tags, builtInTags);
+	protected EntryTag copyTag;
 	protected V actualValue = null;
 	protected @Nullable ConfigValue<?> configValue = null;
 	protected boolean ignored = false;
@@ -103,6 +98,12 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		this.parent = parent;
 		this.defValue = defValue;
 		this.name = name;
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected static void addTranslationsDebugSuffix(List<ITextComponent> tooltip) {
+		tooltip.add(new StringTextComponent(" "));
+		tooltip.add(new StringTextComponent(" ⚠ Simple Config translation debug mode active").mergeStyle(TextFormatting.GOLD));
 	}
 	
 	public String getPath() {
@@ -119,24 +120,20 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		} else return name;
 	}
 	
-	@SuppressWarnings("unchecked") protected Self self() {
-		return (Self) this;
+	protected @Nullable String getTranslation() {
+		return translation;
 	}
 	
 	protected void setTranslation(@Nullable String translation) {
 		this.translation = translation;
 	}
 	
-	protected @Nullable String getTranslation() {
-		return translation;
+	protected @Nullable String getTooltipKey() {
+		return tooltip;
 	}
 	
 	protected void setTooltipKey(@Nullable String translation) {
 		tooltip = translation;
-	}
-	
-	protected @Nullable String getTooltipKey() {
-		return tooltip;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -146,28 +143,44 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	protected Object[] formatArgs(V value, List<Object> args) {
 		return args.stream().map(a -> {
-			if (a instanceof Function) {
+			if (a instanceof Supplier) {
 				try {
-					//noinspection unchecked
-					return ((Function<V, ?>) a).apply(value);
-				} catch (ClassCastException e) {
-					throw new InvalidConfigValueTypeException(
-					  getGlobalPath(), e, "A translation argument provider expected an invalid value type");
+					return ((Supplier<?>) a).get();
+				} catch (RuntimeException e){
+					return new StringTextComponent("<null>").mergeStyle(TextFormatting.RED);
 				}
-			} else if (a instanceof Supplier) {
-				return ((Supplier<?>) a).get();
 			} else return a;
 		}).toArray();
 	}
 	
-	@Internal public Self withSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
+	@Internal public void setSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
 		this.saver = saver;
-		return self();
 	}
 	
-	@Internal public Self withDisplayName(ITextComponent name) {
+	@Internal public void setDisplayName(ITextComponent name) {
 		displayName = name;
-		return self();
+	}
+	
+	private <T> void toggle(Set<T> set, T value, boolean include) {
+		if (set.contains(value) != include) {
+			if (include) set.add(value);
+			else set.remove(value);
+		}
+	}
+	
+	@Internal protected Set<EntryTag> getTags() {
+		toggle(builtInTags, EntryTag.REQUIRES_RESTART, requireRestart);
+		toggle(builtInTags, EntryTag.EXPERIMENTAL, experimental);
+		toggle(builtInTags, EntryTag.NON_PERSISTENT, nonPersistent);
+		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+			String path = getPath();
+			builtInTags.remove(copyTag);
+			List<ITextComponent> tooltip = splitTtc("simpleconfig.config.tag.copy_path", path)
+			  .stream().map(l -> l.deepCopy().mergeStyle(TextFormatting.GRAY))
+			  .collect(Collectors.toList());
+			builtInTags.add(copyTag = EntryTag.copyTag(-1000, path, () -> tooltip));
+		});
+		return allTags;
 	}
 	
 	protected boolean debugTranslations() {
@@ -198,23 +211,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			}
 			TextFormatting format =
 			  I18n.hasKey(translation)? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			// status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
-			//   .setFormatting(TextFormatting.WHITE)
-			//   .setHoverEvent(new HoverEvent(
-			// 	 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-			// 	 "simpleconfig.debug.copy").mergeStyle(TextFormatting.GRAY)))
-			//   .setClickEvent(new ClickEvent(
-			//     ClickEvent.Action.COPY_TO_CLIPBOARD, translation)))
-			// ).appendString(" ");
-			// if (tooltip != null)
-			// 	status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
-			// 	  .setFormatting(TextFormatting.GRAY)
-			// 	  .setHoverEvent(new HoverEvent(
-			// 		 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-			// 		 "simpleconfig.debug.copy.help").mergeStyle(TextFormatting.GRAY)))
-			// 	  .setClickEvent(new ClickEvent(
-			// 	    ClickEvent.Action.COPY_TO_CLIPBOARD, tooltip)))
-			// 	).appendString(" ");
 			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).mergeStyle(format));
 		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}
@@ -313,7 +309,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		this.dirty = dirty;
 		if (dirty) parent.markDirty();
 	}
-	
+
 	protected Consumer<Gui> createSaveConsumer() {
 		if (saver != null)
 			return g -> saver.accept(g, parent);
@@ -324,27 +320,20 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 				if (trySet(v)) dirty();
 				else LOGGER.error("Unexpected error saving config entry \"" + getGlobalPath() + "\"");
 			}
-			// guiEntry = null; // Discard the entry
+			// setGuiEntry(null); // Discard the entry
 		};
 	}
 	
-	private static final ITextComponent[] EMPTY_TEXT_ARRAY = new ITextComponent[0];
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> getTooltip(Gui value) {
 		if (debugTranslations())
 			return supplyDebugTooltip(value);
 		List<ITextComponent> l;
-		if (guiTooltipSupplier != null) {
-			l = guiTooltipSupplier.apply(value);
+		if (tooltipSupplier != null) {
+			l = tooltipSupplier.apply(this, value);
 			if (!l.isEmpty()) return Optional.of(addExtraTooltip(l.toArray(EMPTY_TEXT_ARRAY), value));
 		}
 		final V v = fromGui(value);
-		if (tooltipSupplier != null) {
-			if (v != null) {
-				l = tooltipSupplier.apply(v);
-				if (!l.isEmpty()) return Optional.of(addExtraTooltip(l.toArray(EMPTY_TEXT_ARRAY), value));
-			}
-		}
 		if (tooltip != null && I18n.hasKey(tooltip)) {
 			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs)).toArray(EMPTY_TEXT_ARRAY))
 			  .map(t -> addExtraTooltip(t, value));
@@ -369,20 +358,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	public Optional<ITextComponent> getErrorFromGUI(Gui value) {
 		Optional<ITextComponent> o;
-		if (guiErrorSupplier != null) {
-			o = guiErrorSupplier.apply(value);
-			if (o.isPresent()) return o;
-		}
-		final V v = fromGui(value);
-		if (v == null) return Optional.of(new TranslationTextComponent(
-		  "simpleconfig.config.error.missing_value"));
 		if (errorSupplier != null) {
-			o = errorSupplier.apply(v);
-			if (o.isPresent()) return o;
-		}
-		Config c = forConfig(v);
-		if (configErrorSupplier != null) {
-			o = configErrorSupplier.apply(c);
+			o = errorSupplier.apply(this, value);
 			if (o.isPresent()) return o;
 		}
 		return Optional.empty();
@@ -411,20 +388,25 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		List<CommentLine> blockComments = previous.getBlockComments();
 		String configComment = getConfigComment();
 		if (configComment.endsWith("\n")) configComment = configComment.substring(0, configComment.length() - 1);
-		if (!configComment.isEmpty()) {
-			if (blockComments == null) blockComments = Lists.newArrayList();
-			blockComments.removeIf(l -> l.getValue().startsWith("#"));
-			Arrays.stream(LINE_BREAK.split(configComment))
-			  .map(line -> commentLine("# " + line))
-			  .forEach(blockComments::add);
-			previous.setBlockComments(blockComments);
+		if (blockComments == null) blockComments = Lists.newArrayList();
+		// Remove doc comments (starting with ##)
+		blockComments.removeIf(l -> l.getValue().startsWith("#"));
+		if (!configComment.isEmpty()) Arrays.stream(LINE_BREAK.split(configComment))
+		  .map(line -> commentLine("# " + line))
+		  .forEach(blockComments::add);
+		// FIXME: Remove once snakeyaml is updated to 1.31 (see bitbucket.org/snakeyaml/snakeyaml/issues/518)
+		if (blockComments.size() > 90) {
+			LOGGER.warn("Entry " + getGlobalPath() + " has too many comments [BUG]. Trimmed to the last 90");
+			blockComments.subList(0, blockComments.size() - 90).clear();
 		}
+		if (blockComments.isEmpty()) blockComments = null;
+		previous.setBlockComments(blockComments);
 		return previous.isNotEmpty()? previous : null;
 	}
 	
 	@Internal public List<String> getConfigCommentTooltips() {
-		ArrayList<String> tooltips = Lists.newArrayList();
-		if (requireRestart) tooltips.add("Requires restart!");
+		List<String> tooltips = Lists.newArrayList();
+		getTags().stream().map(EntryTag::getComment).filter(Objects::nonNull).forEach(tooltips::add);
 		return tooltips;
 	}
 	
@@ -452,26 +434,27 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		return builder.toString();
 	}
 	
+	@MustBeInvokedByOverriders
 	protected ForgeConfigSpec.Builder decorate(ForgeConfigSpec.Builder builder) {
 		// Forge's comment change detection is too buggy to use and runs before
 		// I18n entries have been loaded, so it can't use the entries' descriptions.
-		// String comment = getConfigComment();
-		// if (comment != null)
-		// 	builder = builder.comment(comment);
-		// if (tooltip != null)
-		// 	builder = builder.translation(tooltip);
+		// Instead, we patch the comments on write, and update them once I18n has been loaded.
+		// Comments starting with "##" are removed and replaced with the correct ones.
+		// Other comments are treated as user comments and preserved.
+		// builder = builder.comment(comment);
 		return builder;
 	}
 	
-	@OnlyIn(Dist.CLIENT)
+	@OnlyIn(Dist.CLIENT) @MustBeInvokedByOverriders
 	protected <F extends FieldBuilder<Gui, ?, F>> F decorate(F builder) {
 		builder.requireRestart(requireRestart)
 		  .nonPersistent(nonPersistent)
 		  .setDefaultValue(() -> forGui(defValue))
 		  .setTooltipSupplier(this::getTooltip)
 		  .setErrorSupplier(this::getErrorFromGUI)
-		  .setSaveConsumer(createSaveConsumer())
-		  .setEditableSupplier(editableSupplier)
+		  .withSaveConsumer(createSaveConsumer())
+		  .setEditableSupplier(() -> editableSupplier == null || editableSupplier.apply(parent))
+		  .withTags(getTags())
 		  .setName(name)
 		  .setIgnoreEdits(ignored);
 		return builder;
@@ -528,13 +511,18 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	
 	/**
 	 * Generate an {@link AbstractConfigListEntry} to be added to the GUI, if any
+	 *
 	 * @param builder Entry builder
 	 */
-	@OnlyIn(Dist.CLIENT)
-	public Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) public Optional<FieldBuilder<Gui, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		return Optional.empty();
+	}
+	
+	public void decorateGUIBuilder(FieldBuilder<Gui, ?, ?> builder, boolean forRemote) {
+		if (forRemote) builder.withSaveConsumer(g -> {});
+		builder.withBuildListener(forRemote? this::setRemoteGuiEntry : this::setGuiEntry);
 	}
 	
 	/**
@@ -542,11 +530,11 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigEntryBuilder)}
 	 */
 	@OnlyIn(Dist.CLIENT) public void buildGUI(
-	  CaptionedSubCategoryBuilder<?, ?> group, ConfigEntryBuilder entryBuilder, boolean forHotKey
+	  CaptionedSubCategoryBuilder<?, ?, ?> group, ConfigEntryBuilder entryBuilder, boolean forRemote
 	) {
-		buildGUIEntry(entryBuilder).ifPresent(e -> {
-			if (!forHotKey) guiEntry = e;
-			group.add(e);
+		buildGUIEntry(entryBuilder).ifPresent(b -> {
+			decorateGUIBuilder(b, forRemote);
+			group.add(b);
 		});
 	}
 	
@@ -556,16 +544,55 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Override @Internal public void buildGUI(
-	  ConfigCategory category, ConfigEntryBuilder entryBuilder
+	  ConfigCategoryBuilder category, ConfigEntryBuilder entryBuilder, boolean forRemote
 	) {
-		buildGUIEntry(entryBuilder).ifPresent(e -> {
-			guiEntry = e;
-			category.addEntry(e);
+		buildGUIEntry(entryBuilder).ifPresent(b -> {
+			decorateGUIBuilder(b, forRemote);
+			category.addEntry(b);
 		});
+	}
+	
+	@Internal protected @Nullable AbstractConfigListEntry<Gui> getGuiEntry() {
+		if (remoteGuiEntry != null) {
+			AbstractConfigScreen screen = parent.getRoot().getGUI();
+			if (screen != null && screen.isEditingServer()) return remoteGuiEntry;
+		}
+		return guiEntry;
+	}
+	
+	@Internal protected @Nullable AbstractConfigListEntry<Gui> getGuiEntry(boolean remote) {
+		return remote ? remoteGuiEntry : guiEntry;
+	}
+	
+	@Internal protected void setGuiEntry(@Nullable AbstractConfigListEntry<Gui> guiEntry) {
+		this.guiEntry = guiEntry;
+	}
+	
+	@Internal protected void setRemoteGuiEntry(@Nullable AbstractConfigListEntry<Gui> guiEntry) {
+		remoteGuiEntry = guiEntry;
+	}
+	
+	protected void removeGUI() {
+		guiEntry = null;
+		remoteGuiEntry = null;
 	}
 	
 	@Internal public void setConfigValue(@Nullable ConfigValue<?> value) {
 		configValue = value;
+	}
+	
+	/**
+	 * Convenience method to capture generics.
+	 */
+	@Internal public <T> T apply(Function<? super AbstractConfigEntry<V, Config, Gui>, T> f) {
+		return f.apply(this);
+	}
+	
+	/**
+	 * Convenience method to capture generics.
+	 */
+	@Internal public void accept(Consumer<? super AbstractConfigEntry<V, Config, Gui>> c) {
+		c.accept(this);
 	}
 	
 	@Internal public V get() {
@@ -584,8 +611,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		} else {
 			set(configValue, value);
 		}
-		if (FMLEnvironment.dist == Dist.CLIENT)
+		if (FMLEnvironment.dist == Dist.CLIENT) {
+			AbstractConfigListEntry<Gui> guiEntry = getGuiEntry();
 			if (guiEntry != null) guiEntry.setExternalValue(forGui(value));
+		}
 	}
 	
 	@Internal public boolean trySet(V value) {
@@ -608,7 +637,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 	protected V get(ConfigValue<?> spec) {
 		return fromConfigOrDefault(fromActualConfig(spec.get()));
 	}
-	
+
 	/**
 	 * Set the value held by this entry
 	 *
@@ -620,62 +649,48 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 		((ConfigValue<Object>) spec).set(forActualConfig(forConfig(value)));
 		bakeField();
 	}
+
 	protected boolean hasGUI() {
 		if (FMLEnvironment.dist != Dist.CLIENT) return false;
-		return guiEntry != null;
-	}
-	protected Gui getGUI() {
-		if (FMLEnvironment.dist != Dist.CLIENT) return forGui(get());
-		return guiEntry != null? guiEntry.getValue() : forGui(get());
-	}
-	protected V getFromGUI() {
-		if (FMLEnvironment.dist != Dist.CLIENT) return get();
-		return guiEntry != null? fromGui(getGUI()) : get();
-	}
-	protected Config guiForConfig() {
-		return forConfig(getFromGUI());
-	}
-	protected Config getForConfig() {
-		return forConfig(get());
+		return getGuiEntry() != null;
 	}
 	
+	protected boolean hasGUI(boolean remote) {
+		if (FMLEnvironment.dist != Dist.CLIENT) return false;
+		return getGuiEntry(remote) != null;
+	}
+
+	protected Gui getGUI() {
+		if (FMLEnvironment.dist != Dist.CLIENT) return forGui(get());
+		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry();
+		return guiEntry != null? guiEntry.getValue() : forGui(get());
+	}
+	
+	protected Gui getGUI(boolean remote) {
+		if (FMLEnvironment.dist != Dist.CLIENT) return forGui(get());
+		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry(remote);
+		return guiEntry != null? guiEntry.getValue() : forGui(get());
+	}
+
 	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value) {
+		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry();
 		if (guiEntry != null) {
 			guiEntry.setValueTransparently(value);
 		} else throw new IllegalStateException("Cannot set GUI value without GUI");
 	}
-	@OnlyIn(Dist.CLIENT) protected void setGUIAsExternal(Gui value) {
+	
+	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value, boolean remote) {
+		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry(remote);
 		if (guiEntry != null) {
-			guiEntry.setExternalValue(value);
+			guiEntry.setValueTransparently(value);
 		} else throw new IllegalStateException("Cannot set GUI value without GUI");
 	}
-	@OnlyIn(Dist.CLIENT) protected void setForGUI(V value) {
-		setGUI(forGui(value));
-	}
-	@OnlyIn(Dist.CLIENT) protected void setForGUIAsExternal(V value) {
-		setGUIAsExternal(forGui(value));
-	}
-	@OnlyIn(Dist.CLIENT) protected void setFromConfigForGUI(Config value) {
-		setForGUI(fromConfigOrDefault(value));
-	}
-	@OnlyIn(Dist.CLIENT) protected void setFromConfigForGUIAsExternal(Config value) {
-		setForGUIAsExternal(fromConfigOrDefault(value));
-	}
 	
-	protected void setFromGUI(Gui value) {
-		set(fromGui(value));
-	}
-	
-	protected void trySetFromGUI(Gui value) {
-		trySet(fromGui(value));
-	}
-	
-	protected void setFromConfig(Config value) {
-		set(fromConfigOrDefault(value));
-	}
-	
-	protected void trySetFromConfig(Config value) {
-		trySet(fromConfigOrDefault(value));
+	@OnlyIn(Dist.CLIENT) protected void setGUIAsExternal(Gui value, boolean forRemote) {
+		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry(forRemote);
+		if (guiEntry != null) {
+			guiEntry.setExternalValue(value);
+		} else throw new IllegalStateException("Cannot set GUI value for " + getGlobalPath() + " without GUI");
 	}
 	
 	@Internal public @Nullable String forCommand(V value) {
@@ -742,26 +757,18 @@ public abstract class AbstractConfigEntry<V, Config, Gui, Self extends AbstractC
 			}
 		}
 	}
-	
+
 	/**
 	 * Overrides should call super
 	 */
 	@OnlyIn(Dist.CLIENT)
 	protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
-		if (guiTooltipSupplier != null)
-			tooltip.add(new StringTextComponent(" + Has GUI tooltip supplier").mergeStyle(TextFormatting.GRAY));
 		if (tooltipSupplier != null)
 			tooltip.add(new StringTextComponent(" + Has tooltip supplier").mergeStyle(TextFormatting.GRAY));
-		if (guiErrorSupplier != null)
-			tooltip.add(new StringTextComponent(" + Has GUI error supplier").mergeStyle(TextFormatting.GRAY));
 		if (errorSupplier != null)
 			tooltip.add(new StringTextComponent(" + Has error supplier").mergeStyle(TextFormatting.GRAY));
 	}
-	@OnlyIn(Dist.CLIENT)
-	protected static void addTranslationsDebugSuffix(List<ITextComponent> tooltip) {
-		tooltip.add(new StringTextComponent(" "));
-		tooltip.add(new StringTextComponent(" ⚠ Simple Config translation debug mode active").mergeStyle(TextFormatting.GOLD));
-	}
+
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> supplyDebugTooltip(Gui value) {
 		List<ITextComponent> lines = new ArrayList<>();

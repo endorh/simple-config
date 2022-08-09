@@ -18,7 +18,7 @@ public class TextDescriptionBuilder
 	public TextDescriptionBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, Supplier<ITextComponent> value
 	) {
-		super(builder, name, null);
+		super(TextListEntry.class, builder, name, null);
 		this.textSupplier = value;
 	}
 	

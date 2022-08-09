@@ -18,7 +18,7 @@ public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, Text
 	public TextFieldBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, String value
 	) {
-		super(builder, name, Objects.requireNonNull(value));
+		super(StringListEntry.class, builder, name, Objects.requireNonNull(value));
 	}
 	
 	public TextFieldBuilder setMaxLength(int maxLength) {

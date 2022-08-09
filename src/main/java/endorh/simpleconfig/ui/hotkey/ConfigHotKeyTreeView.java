@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
@@ -24,8 +25,8 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.*;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -248,15 +249,11 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		public static class ConfigHotKeyTreeViewModEntry extends ConfigHotKeyTreeViewEntry {
 			private final ConfigHotKey hotKey;
 			private final String modId;
-			private final SimpleConfig client;
-			private final SimpleConfig server;
 			private final MultiFunctionImageButton editButton;
 			
 			public ConfigHotKeyTreeViewModEntry(ConfigHotKey hotKey, String modId) {
 				this.hotKey = hotKey;
 				this.modId = modId;
-				client = SimpleConfig.hasConfig(modId, Type.CLIENT)? SimpleConfig.getConfig(modId, Type.CLIENT) : null;
-				server = SimpleConfig.hasConfig(modId, Type.SERVER)? SimpleConfig.getConfig(modId, Type.SERVER) : null;
 				editButton = new MultiFunctionImageButton(
 				  0, 0, 20, 20, SimpleConfigIcons.Buttons.GEAR,
 				  ButtonAction.of(this::editHotKey));
@@ -323,20 +320,18 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			protected List<ITextComponent> getResumeTooltip() {
-				Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
+				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
 				List<ITextComponent> tt = new ArrayList<>();
-				if (client != null) {
-					Map<String, HotKeyAction<?>> clientActions = actions.get(client);
-					if (clientActions != null && !clientActions.isEmpty()) {
-						tt.add(new TranslationTextComponent("simpleconfig.config.category.client").mergeStyle(TextFormatting.BOLD));
-						clientActions.forEach((k, v) -> tt.add(formatAction(k, v)));
-					}
-				}
-				if (server != null) {
-					Map<String, HotKeyAction<?>> serverActions = actions.get(server);
-					if (serverActions != null && !serverActions.isEmpty()) {
-						tt.add(new TranslationTextComponent("simpleconfig.config.category.server").mergeStyle(TextFormatting.BOLD));
-						serverActions.forEach((k, v) -> tt.add(formatAction(k, v)));
+				for (EditType type: EditType.values()) {
+					SimpleConfig config = SimpleConfig.getConfigOrNull(modId, type.getType());
+					if (config != null) {
+						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
+						if (a != null && !a.isEmpty()) {
+							tt.add(new TranslationTextComponent(
+							  "simpleconfig.config.category." + type.getAlias()
+							).mergeStyle(TextFormatting.BOLD));
+							a.forEach((k, v) -> tt.add(formatAction(k, v)));
+						}
 					}
 				}
 				return tt;
@@ -355,14 +350,13 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			
 			protected int getCount() {
 				int size = 0;
-				Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
-				if (client != null) {
-					Map<String, HotKeyAction<?>> configActions = actions.get(client);
-					if (configActions != null) size += configActions.size();
-				}
-				if (server != null) {
-					Map<String, HotKeyAction<?>> configActions = actions.get(server);
-					if (configActions != null) size += configActions.size();
+				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
+				for (EditType type: EditType.values()) {
+					SimpleConfig config = SimpleConfig.getConfigOrNull(modId, type.getType());
+					if (config != null) {
+						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
+						if (a != null) size += a.size();
+					}
 				}
 				return size;
 			}

@@ -5,6 +5,7 @@ import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.*;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.function.Predicate;
 
 public abstract class AbstractRangedEntry
   <V extends Comparable<V>, Config, Gui, This extends AbstractRangedEntry<V, Config, Gui, This>>
-  extends AbstractConfigEntry<V, Config, Gui, This> {
+  extends AbstractConfigEntry<V, Config, Gui> {
 	
 	protected double commentMin = Integer.MIN_VALUE;
 	protected double commentMax = Integer.MAX_VALUE;
@@ -111,7 +112,7 @@ public abstract class AbstractRangedEntry
 		}
 		
 		@Override
-		protected final Entry build(ISimpleConfigEntryHolder parent, String name) {
+		protected final Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 			checkBounds();
 			final Entry e = super.build(parent, name);
 			e.min = min;

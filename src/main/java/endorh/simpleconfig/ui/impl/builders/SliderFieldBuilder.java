@@ -20,9 +20,9 @@ public abstract class SliderFieldBuilder<
 	protected Function<V, ITextComponent> textGetter = null;
 	
 	public SliderFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, V value, V min, V max
+	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, V value, V min, V max
 	) {
-		super(builder, name, Objects.requireNonNull(value));
+		super(entryClass, builder, name, Objects.requireNonNull(value));
 		this.min = Objects.requireNonNull(min);
 		this.max = Objects.requireNonNull(max);
 		if (min.compareTo(value) > 0 || value.compareTo(max) > 0)

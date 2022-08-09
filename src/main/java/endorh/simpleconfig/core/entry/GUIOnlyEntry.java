@@ -11,6 +11,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Self>>
-  extends AbstractConfigEntry<V, Void, Gui, Self> {
+  extends AbstractConfigEntry<V, Void, Gui> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected boolean addNonPersistentTooltip;
 	
@@ -47,7 +48,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		}
 		
 		@Override
-		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+		protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 			nonPersistent = true;
 			/*if (parent.getRoot().type != Type.CLIENT)
 				throw new IllegalArgumentException(

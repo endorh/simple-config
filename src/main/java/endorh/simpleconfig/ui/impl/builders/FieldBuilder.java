@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.impl.builders;
 
+import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.gui.entries.TooltipListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,7 +11,6 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -19,35 +18,48 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, Self extends FieldBuilder<V, Entry, Self>> {
-	private final WeakReference<ConfigEntryBuilder> builder;
+	private final Class<?> entryClass;
+	private final ConfigEntryBuilder builder;
 	@NotNull protected final ITextComponent fieldNameKey;
+	protected Consumer<Entry> onBuildListener;
 	protected boolean requireRestart = false;
 	protected V value;
+	protected V original;
 	protected String name;
 	@NotNull protected Supplier<V> defaultValue;
 	@NotNull protected Consumer<V> saveConsumer = t -> {};
 	@NotNull protected Function<V, Optional<ITextComponent>> errorSupplier = t -> Optional.empty();
 	@NotNull protected Function<V, Optional<ITextComponent[]>> tooltipSupplier = t -> Optional.empty();
 	@Nullable protected Supplier<Boolean> editableSupplier = null;
-	protected List<EntryFlag> entryFlags = new ArrayList<>();
+	protected List<EntryTag> entryTags = new ArrayList<>();
 	protected boolean ignoreEdits = false;
 	
 	@Internal protected FieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, V value
+	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, V value
 	) {
-		this.builder = new WeakReference<>(builder);
-		this.value = value;
-		this.defaultValue = () -> value;
-		this.fieldNameKey = Objects.requireNonNull(name);
+		this.entryClass = entryClass;
+		this.builder = builder;
+		this.value = original = value;
+		defaultValue = () -> value;
+		fieldNameKey = Objects.requireNonNull(name);
+	}
+	
+	@Internal public Class<?> getEntryClass() {
+		return entryClass;
 	}
 	
 	protected ConfigEntryBuilder getEntryBuilder() {
-		return builder.get();
+		return builder;
 	}
 	
 	protected Self self() {
 		//noinspection unchecked
 		return (Self) this;
+	}
+	
+	public Self setOriginal(V original) {
+		this.original = original;
+		return self();
 	}
 	
 	public Self setName(String name) {
@@ -59,41 +71,48 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		this.errorSupplier = errorSupplier;
 		return self();
 	}
-	
 	public Self setTooltipSupplier(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
 		this.tooltipSupplier = tooltipSupplier;
 		return self();
 	}
-	
 	public Self setTooltipSupplier(Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
 		return setTooltipSupplier(v -> tooltipSupplier.get());
 	}
-	
 	public Self setTooltip(ITextComponent... tooltip) {
 		return setTooltipSupplier(() -> Optional.ofNullable(tooltip));
 	}
 	
-	public Self withFlags(EntryFlag... flags) {
-		entryFlags.addAll(Arrays.asList(flags));
+	public Self withTags(Collection<? extends EntryTag> flags) {
+		entryTags.addAll(flags);
 		return self();
 	}
 	
-	public Self withoutFlags(EntryFlag... flags) {
-		entryFlags.removeAll(Arrays.asList(flags));
+	public Self withTags(EntryTag... flags) {
+		entryTags.addAll(Arrays.asList(flags));
+		return self();
+	}
+	
+	public Self withoutTags(Collection<? extends EntryTag> flags) {
+		entryTags.removeAll(flags);
+		return self();
+	}
+	
+	public Self withoutTags(EntryTag... flags) {
+		entryTags.removeAll(Arrays.asList(flags));
 		return self();
 	}
 	
 	public Self requireRestart(boolean requireRestart) {
 		this.requireRestart = requireRestart;
-		if (requireRestart) withFlags(EntryFlag.REQUIRES_RESTART);
-		else withoutFlags(EntryFlag.REQUIRES_RESTART);
+		if (requireRestart) withTags(EntryTag.REQUIRES_RESTART);
+		else withoutTags(EntryTag.REQUIRES_RESTART);
 		return self();
 	}
 	
 	public Self nonPersistent(boolean nonPersistent) {
 		return nonPersistent
-		       ? withFlags(EntryFlag.NON_PERSISTENT)
-		       : withoutFlags(EntryFlag.NON_PERSISTENT);
+		       ? withTags(EntryTag.NON_PERSISTENT)
+		       : withoutTags(EntryTag.NON_PERSISTENT);
 	}
 	
 	public Self setEditableSupplier(@Nullable Supplier<Boolean> editableSupplier) {
@@ -101,7 +120,7 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		return self();
 	}
 	
-	public Self setSaveConsumer(Consumer<V> saveConsumer) {
+	public Self withSaveConsumer(Consumer<V> saveConsumer) {
 		this.saveConsumer = saveConsumer;
 		return self();
 	}
@@ -120,6 +139,11 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		return setDefaultValue(() -> defaultValue);
 	}
 	
+	public Self withBuildListener(Consumer<Entry> listener) {
+		onBuildListener = listener;
+		return self();
+	}
+	
 	@NotNull public Entry build() {
 		final Entry entry = buildEntry();
 		entry.setRequiresRestart(requireRestart);
@@ -130,9 +154,10 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 			((TooltipListEntry<?>) entry).setTooltipSupplier(() -> tooltipSupplier.apply(entry.getValue()));
 		entry.setOriginal(value);
 		if (name != null) entry.setName(name);
-		entry.getEntryFlags().addAll(entryFlags);
+		entry.getEntryTags().addAll(entryTags);
 		entry.setEditableSupplier(editableSupplier);
 		entry.setIgnoreEdits(ignoreEdits);
+		if (onBuildListener != null) onBuildListener.accept(entry);
 		return entry;
 	}
 	

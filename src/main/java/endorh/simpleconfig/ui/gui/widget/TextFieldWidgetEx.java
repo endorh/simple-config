@@ -24,6 +24,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -320,38 +321,38 @@ public class TextFieldWidgetEx extends Widget {
 					return true;
 				} else {
 					switch(keyCode) {
-						case 259: // Backspace
+						case GLFW.GLFW_KEY_BACKSPACE:
 							if (isEditable()) delete(-1);
 							return true;
-						case 261: // Delete
+						case GLFW.GLFW_KEY_DELETE:
 							if (isEditable()) delete(1);
 							return true;
-						case 262: // Right
+						case GLFW.GLFW_KEY_RIGHT:
 							if (hasSelection() && !Screen.hasShiftDown()) {
 								moveCaretWithAnchor(max(anchorPos, caretPos));
 							} else if (Screen.hasControlDown()) {
 								moveCaret(getWordPosFromCaret(1));
 							} else moveCaretBy(1);
 							return true;
-						case 263: // Left
+						case GLFW.GLFW_KEY_LEFT:
 							if (hasSelection() && !Screen.hasShiftDown()) {
 								moveCaretWithAnchor(min(anchorPos, caretPos));
 							} else if (Screen.hasControlDown()) {
 								moveCaret(getWordPosFromCaret(-1));
 							} else moveCaretBy(-1);
 							return true;
-						case 268: // Home
+						case GLFW.GLFW_KEY_HOME:
 							moveCaretToStart();
 							return true;
-						case 269: // End
+						case GLFW.GLFW_KEY_END:
 							moveCaretToEnd();
 							return true;
-						case 260: // Insert
-						case 257: // Enter
-						case 264: // Down
-						case 265: // Up
-						case 266: // Page Up
-						case 267: // Page Down
+						case GLFW.GLFW_KEY_INSERT:
+						case GLFW.GLFW_KEY_ENTER:
+						case GLFW.GLFW_KEY_DOWN:
+						case GLFW.GLFW_KEY_UP:
+						case GLFW.GLFW_KEY_PAGE_UP:
+						case GLFW.GLFW_KEY_PAGE_DOWN:
 						default:
 							return false;
 					}

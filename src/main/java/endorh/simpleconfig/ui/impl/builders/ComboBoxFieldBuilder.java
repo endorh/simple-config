@@ -26,7 +26,7 @@ public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T
 	public ComboBoxFieldBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, T value, ITypeWrapper<T> typeWrapper
 	) {
-		super(builder, name, value);
+		super(ComboBoxListEntry.class, builder, name, value);
 		this.typeWrapper = typeWrapper;
 	}
 	

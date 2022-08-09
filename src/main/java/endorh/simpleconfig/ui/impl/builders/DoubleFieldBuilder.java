@@ -12,7 +12,7 @@ public class DoubleFieldBuilder
   extends RangedFieldBuilder<Double, DoubleListEntry, DoubleFieldBuilder> {
 	
 	public DoubleFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, double value) {
-		super(builder, name, value);
+		super(DoubleListEntry.class, builder, name, value);
 	}
 	
 	public DoubleFieldBuilder setMin(double min) {

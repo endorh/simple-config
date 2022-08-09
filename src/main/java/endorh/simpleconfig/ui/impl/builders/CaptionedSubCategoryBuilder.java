@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -16,33 +15,41 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
-public class CaptionedSubCategoryBuilder<T, HE extends AbstractConfigEntry<T> & IChildListEntry>
-  extends FieldBuilder<T, CaptionedSubCategoryListEntry<T, HE>, CaptionedSubCategoryBuilder<T, HE>>
-  implements List<AbstractConfigListEntry<?>> {
-	protected List<AbstractConfigListEntry<?>> entries = Lists.newArrayList();
+public class CaptionedSubCategoryBuilder<
+  T, HE extends AbstractConfigListEntry<T> & IChildListEntry,
+  HEB extends FieldBuilder<T, HE, HEB>
+> extends FieldBuilder<T, CaptionedSubCategoryListEntry<T, HE>, CaptionedSubCategoryBuilder<T, HE, HEB>>
+  implements List<FieldBuilder<?, ?, ?>> {
+	protected List<FieldBuilder<?, ?, ?>> entries = Lists.newArrayList();
 	protected boolean expanded = false;
-	protected @Nullable HE captionEntry;
+	protected @Nullable HEB captionEntry;
 	
 	public CaptionedSubCategoryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, @Nullable HE captionEntry
+	  ConfigEntryBuilder builder, ITextComponent name, @Nullable HEB captionEntry
 	) {
-		super(builder, name, captionEntry != null? captionEntry.getValue() : null);
+		super(CaptionedSubCategoryListEntry.class, builder, name,
+		      captionEntry != null? captionEntry.value : null);
 		this.captionEntry = captionEntry;
 	}
 	
-	public CaptionedSubCategoryBuilder<T, HE> setExpanded(boolean expanded) {
+	public CaptionedSubCategoryBuilder<T, HE, HEB> setExpanded(boolean expanded) {
 		this.expanded = expanded;
 		return this;
 	}
 	
-	protected @Nullable HE getCaptionEntry() {
+	protected @Nullable HEB getCaptionEntry() {
 		return captionEntry;
 	}
 	
 	@Override @NotNull protected CaptionedSubCategoryListEntry<T, HE> buildEntry() {
-		return new CaptionedSubCategoryListEntry<>(fieldNameKey, entries, captionEntry);
+		List<AbstractConfigListEntry<?>> builtEntries = entries.stream()
+		  .map(FieldBuilder::build)
+		  .collect(Collectors.toList());
+		return new CaptionedSubCategoryListEntry<>(
+		  fieldNameKey, builtEntries, captionEntry != null? captionEntry.build() : null);
 	}
 	
 	@Override public @NotNull CaptionedSubCategoryListEntry<T, HE> build() {
@@ -64,7 +71,7 @@ public class CaptionedSubCategoryBuilder<T, HE extends AbstractConfigEntry<T> & 
 		return entries.contains(o);
 	}
 	
-	@Override @NotNull public Iterator<AbstractConfigListEntry<?>> iterator() {
+	@Override @NotNull public Iterator<FieldBuilder<?, ?, ?>> iterator() {
 		return entries.iterator();
 	}
 	
@@ -77,7 +84,7 @@ public class CaptionedSubCategoryBuilder<T, HE extends AbstractConfigEntry<T> & 
 		return entries.toArray(a);
 	}
 	
-	@Override public boolean add(AbstractConfigListEntry entry) {
+	@Override public boolean add(FieldBuilder<?, ?, ?> entry) {
 		return entries.add(entry);
 	}
 	
@@ -90,11 +97,11 @@ public class CaptionedSubCategoryBuilder<T, HE extends AbstractConfigEntry<T> & 
 		return entries.containsAll(c);
 	}
 	
-	@Override public boolean addAll(@NotNull Collection<? extends AbstractConfigListEntry<?>> c) {
+	@Override public boolean addAll(@NotNull Collection<? extends FieldBuilder<?, ?, ?>> c) {
 		return entries.addAll(c);
 	}
 	
-	@Override public boolean addAll(int index, @NotNull Collection<? extends AbstractConfigListEntry<?>> c) {
+	@Override public boolean addAll(int index, @NotNull Collection<? extends FieldBuilder<?, ?, ?>> c) {
 		return entries.addAll(index, c);
 	}
 	
@@ -110,19 +117,19 @@ public class CaptionedSubCategoryBuilder<T, HE extends AbstractConfigEntry<T> & 
 		entries.clear();
 	}
 	
-	@Override public AbstractConfigListEntry<?> get(int index) {
+	@Override public FieldBuilder<?, ?, ?> get(int index) {
 		return entries.get(index);
 	}
 	
-	@Override public AbstractConfigListEntry<?> set(int index, AbstractConfigListEntry element) {
+	@Override public FieldBuilder<?, ?, ?> set(int index, FieldBuilder<?, ?, ?> element) {
 		return entries.set(index, element);
 	}
 	
-	@Override public void add(int index, AbstractConfigListEntry element) {
+	@Override public void add(int index, FieldBuilder<?, ?, ?> element) {
 		entries.add(index, element);
 	}
 	
-	@Override public AbstractConfigListEntry<?> remove(int index) {
+	@Override public FieldBuilder<?, ?, ?> remove(int index) {
 		return entries.remove(index);
 	}
 	
@@ -134,15 +141,15 @@ public class CaptionedSubCategoryBuilder<T, HE extends AbstractConfigEntry<T> & 
 		return entries.lastIndexOf(o);
 	}
 	
-	@Override @NotNull public ListIterator<AbstractConfigListEntry<?>> listIterator() {
+	@Override @NotNull public ListIterator<FieldBuilder<?, ?, ?>> listIterator() {
 		return entries.listIterator();
 	}
 	
-	@Override @NotNull public ListIterator<AbstractConfigListEntry<?>> listIterator(int index) {
+	@Override @NotNull public ListIterator<FieldBuilder<?, ?, ?>> listIterator(int index) {
 		return entries.listIterator(index);
 	}
 	
-	@Override @NotNull public List<AbstractConfigListEntry<?>> subList(int fromIndex, int toIndex) {
+	@Override @NotNull public List<FieldBuilder<?, ?, ?>> subList(int fromIndex, int toIndex) {
 		return entries.subList(fromIndex, toIndex);
 	}
 }

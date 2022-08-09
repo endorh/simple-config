@@ -19,6 +19,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -91,17 +92,6 @@ public class CaptionedSubCategoryListEntry<
 	
 	@Override public void setDisplayedValue(T value) {
 		if (captionEntry != null) captionEntry.setDisplayedValue(value);
-	}
-	
-	@Override public boolean isRequiresRestart() {
-		return captionEntry != null && captionEntry.isEdited() && captionEntry.isRequiresRestart()
-		       || entries.stream().anyMatch(e -> e.isEdited() && e.isRequiresRestart());
-	}
-	
-	@Override public void setRequiresRestart(boolean requiresRestart) {
-		entries.forEach(e -> e.setRequiresRestart(requiresRestart));
-		if (captionEntry != null)
-			captionEntry.setRequiresRestart(requiresRestart);
 	}
 	
 	@Override public boolean isShown() {
@@ -384,11 +374,11 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getListener() == label && keyCode == 263 && isExpanded()) { // Left
+		if (getListener() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
 			setExpanded(false, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;
-		} else if (keyCode == 262 && !isExpanded()) { // Right
+		} else if (keyCode == GLFW.GLFW_KEY_RIGHT && !isExpanded()) { // Right
 			setExpanded(true, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;
@@ -460,14 +450,14 @@ public class CaptionedSubCategoryListEntry<
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 			final IExpandable parent = getParent();
 			switch (keyCode) {
-				case 262: // Right
+				case GLFW.GLFW_KEY_RIGHT:
 					if (!parent.isExpanded()) {
 						parent.setExpanded(true, Screen.hasShiftDown());
 						playFeedbackTap(0.4F);
 						return true;
 					}
 					break;
-				case 263: // Left
+				case GLFW.GLFW_KEY_LEFT:
 					if (parent.isExpanded()) {
 						parent.setExpanded(false, Screen.hasShiftDown());
 						playFeedbackTap(0.4F);

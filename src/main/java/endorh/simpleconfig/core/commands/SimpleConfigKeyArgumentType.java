@@ -5,15 +5,13 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import net.minecraft.command.arguments.IArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,40 +19,35 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
-	private static final DynamicCommandExceptionType UNKNOWN_CONFIG = new DynamicCommandExceptionType(
-		 m -> new TranslationTextComponent("simpleconfig.command.error.no_such_config", m));
-	private static final SimpleCommandExceptionType UNKNOWN_KEY = new SimpleCommandExceptionType(
-	  new TranslationTextComponent("simpleconfig.command.error.no_such_entry"));
-	
-	public static SimpleConfigKeyArgumentType entryPath(String modId, Type type, boolean includeGroups) {
+	public static SimpleConfigKeyArgumentType entryPath(
+	  @Nullable String modId, @Nullable EditType type, boolean includeGroups
+	) {
 		return new SimpleConfigKeyArgumentType(modId, type, includeGroups);
 	}
 	
-	private final String modId;
-	private final Type type;
+	private final @Nullable String modId;
+	private final @Nullable EditType type;
 	private final boolean includeGroups;
 	
-	private SimpleConfigKeyArgumentType(String modId, Type type, boolean includedGroups) {
+	private SimpleConfigKeyArgumentType(@Nullable String modId, @Nullable EditType type, boolean includeGroups) {
 		this.modId = modId;
 		this.type = type;
-		this.includeGroups = includedGroups;
+		this.includeGroups = includeGroups;
 	}
 	
 	public @Nullable SimpleConfig getConfig(CommandContext<?> ctx) {
 		String modId = this.modId;
+		EditType type = this.type;
 		if (modId == null) modId = ctx.getArgument("modId", String.class);
-		if (SimpleConfig.hasConfig(modId, type))
-			return SimpleConfig.getConfig(modId, type);
+		if (type == null) type = ctx.getArgument("type", EditType.class);
+		Type configType = type.getType();
+		if (SimpleConfig.hasConfig(modId, configType))
+			return SimpleConfig.getConfig(modId, configType);
 		return null;
 	}
 	
 	@Override public String parse(StringReader reader) throws CommandSyntaxException {
 		return reader.readUnquotedString();
-		// SimpleConfig config = getConfig();
-		// if (config == null) throw UNKNOWN_CONFIG.create(modId + " [" + type.extension() + "]");
-		// if (!config.hasEntry(path) && (!includeGroups || !config.hasChild(path)))
-		// 	throw UNKNOWN_KEY.createWithContext(reader);
-		// return path;
 	}
 	
 	@Override public <S> CompletableFuture<Suggestions> listSuggestions(
@@ -71,20 +64,21 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 		@Override public void write(@NotNull SimpleConfigKeyArgumentType arg, @NotNull PacketBuffer buf) {
 			buf.writeBoolean(arg.modId != null);
 			if (arg.modId != null) buf.writeString(arg.modId);
-			buf.writeEnumValue(arg.type);
+			buf.writeBoolean(arg.type != null);
+			if (arg.type != null) buf.writeEnumValue(arg.type);
 			buf.writeBoolean(arg.includeGroups);
 		}
 		
 		@Override public @NotNull SimpleConfigKeyArgumentType read(@NotNull PacketBuffer buf) {
 			return new SimpleConfigKeyArgumentType(
 			  buf.readBoolean()? buf.readString(32767) : null,
-			  buf.readEnumValue(Type.class),
+			  buf.readBoolean()? buf.readEnumValue(EditType.class) : null,
 			  buf.readBoolean());
 		}
 		
 		@Override public void write(@NotNull SimpleConfigKeyArgumentType arg, @NotNull JsonObject obj) {
 			obj.addProperty("modId", arg.modId);
-			obj.addProperty("type", arg.type.extension());
+			obj.addProperty("type", arg.type != null? arg.type.getAlias() : null);
 			obj.addProperty("includeGroups", arg.includeGroups);
 		}
 	}

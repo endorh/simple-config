@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
 import com.ibm.icu.impl.Pair;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry;
@@ -29,7 +31,6 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -74,7 +75,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	private String name = "";
 	private ITextComponent title;
 	
-	private final NavigableSet<EntryFlag> entryFlags = new TreeSet<>();
+	private final NavigableSet<EntryTag> entryTags = new TreeSet<>();
 	
 	protected String matchedText = null;
 	protected String matchedValueText = null;
@@ -99,7 +100,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	protected List<HotKeyActionType<T, ?>> hotKeyActionTypes;
 	private HotKeyActionType<T, ?> hotKeyActionType;
 	private HotKeyAction<T> prevHotKeyAction = null;
-	protected @Nullable endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> configEntry = null;
+	protected @Nullable endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T> configEntry = null;
 	
 	public AbstractConfigEntry(ITextComponent title) {
 		this.title = title;
@@ -109,14 +110,8 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		hotKeyActionTypes = Lists.newArrayList(HotKeyActionTypes.ASSIGN.cast());
 	}
 	
-	public String getTypePath() {
-		Type type = getCategory().getType();
-		if (type == Type.COMMON && isEditingServer()) return "server-common";
-		return type.extension();
-	}
-	
 	public String getPath() {
-		return getTypePath() + "." + getRelPath();
+		return getCategory().getType().getAlias() + "." + getRelPath();
 	}
 	
 	/**
@@ -175,14 +170,14 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		this.requiresRestart = requiresRestart;
 	}
 	
-	public NavigableSet<EntryFlag> getEntryFlags() {
-		return entryFlags;
+	public NavigableSet<EntryTag> getEntryTags() {
+		return entryTags;
 	}
-	public void addEntryFlag(EntryFlag flag) {
-		getEntryFlags().add(flag);
+	public void addTag(EntryTag flag) {
+		getEntryTags().add(flag);
 	}
-	public void removeEntryFlag(EntryFlag flag) {
-		getEntryFlags().remove(flag);
+	public void removeTag(EntryTag flag) {
+		getEntryTags().remove(flag);
 	}
 	
 	public boolean isFocused() {
@@ -221,12 +216,12 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	
 	public @Nullable BaseListEntry<?, ?, ?> getListParent() {
 		return parentEntry instanceof BaseListEntry<?, ?, ?>
-		       ? ((BaseListEntry<?, ?, ?>) parentEntry)
+		       ? (BaseListEntry<?, ?, ?>) parentEntry
 		       : parentEntry != null? parentEntry.getListParent() : null;
 	}
 	
 	public @Nullable IExpandable getExpandableParent() {
-		return parentEntry instanceof IExpandable ? ((IExpandable) parentEntry) :
+		return parentEntry instanceof IExpandable? (IExpandable) parentEntry :
 		       parentEntry != null? parentEntry.getExpandableParent() : null;
 	}
 	
@@ -279,15 +274,6 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 			if (!hasError && !isEdited) text.mergeStyle(TextFormatting.GRAY);
 		}
 		return text;
-	}
-	
-	public boolean isEditingServer() {
-		ConfigCategory cat = getCategory();
-		if (cat == null) return false;
-		Type type = cat.getType();
-		if (type == Type.CLIENT) return false;
-		if (type == Type.SERVER) return false;
-		return getScreen().isEditingServer();
 	}
 	
 	public T getValue() {
@@ -557,9 +543,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	}
 	
 	public boolean shouldRenderEditable() {
-		return isEditable()
-		       || isPreviewingExternal()
-		       || (parentEntry != null && parentEntry.shouldRenderEditable());
+		return isEditable() || isPreviewingExternal();
 	}
 	
 	public void setEditable(boolean editable) {
@@ -591,7 +575,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 			if (prev.getType() != type) return true;
 			return !prev.equals(createHotKeyAction());
 		}
-		return hasError() || !areEqual(getValue(), getOriginal());
+		return hasError() || !areEqual(getValue(), getOriginal()) || hasConflictingExternalDiff();
 	}
 	
 	public boolean isResettable() {
@@ -893,13 +877,13 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		prevHotKeyAction = prev;
 	}
 	
-	protected @Nullable endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> getConfigEntry() {
+	protected @Nullable endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T> getConfigEntry() {
 		if (configEntry != null) return configEntry;
 		AbstractConfigScreen screen = getScreen();
 		String modId = screen.getModId();
 		ConfigCategory category = getCategory();
 		if (category == null) return null;
-		Type type = category.getType();
+		Type type = category.getType().getType();
 		if (SimpleConfig.hasConfig(modId, type)) {
 			SimpleConfig config = SimpleConfig.getConfig(modId, type);
 			String path = getRelPath();
@@ -910,7 +894,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	
 	public @Nullable HotKeyAction<T> createHotKeyAction() {
 		HotKeyActionType<T, ?> type = getHotKeyActionType();
-		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> entry = getConfigEntry();
+		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T> entry = getConfigEntry();
 		return type != null && entry != null? type.deserialize(entry, getHotKeyActionValue()) : null;
 	}
 	
@@ -934,7 +918,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		List<EntryError> errors = new ArrayList<>();
 		if (type instanceof HotKeyActionTypes.AssignHotKeyActionType)
 			errors.addAll(getEntryErrors());
-		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T, ?> entry = getConfigEntry();
+		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T> entry = getConfigEntry();
 		if (entry != null) type.getActionError(entry, getHotKeyActionValue())
 		  .map(m -> EntryError.of(m, this))
 		  .ifPresent(errors::add);

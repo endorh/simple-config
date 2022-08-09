@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 public class DoubleSliderBuilder extends SliderFieldBuilder<Double, DoubleSliderEntry, DoubleSliderBuilder> {
 	
 	@Internal public DoubleSliderBuilder(ConfigEntryBuilder builder, ITextComponent name, double value, double min, double max) {
-		super(builder, name, value, min, max);
+		super(DoubleSliderEntry.class, builder, name, value, min, max);
 	}
 	
 	@Override @NotNull public DoubleSliderEntry buildEntry() {

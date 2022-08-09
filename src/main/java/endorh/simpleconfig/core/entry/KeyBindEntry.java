@@ -4,10 +4,10 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.Modifier;
 import endorh.simpleconfig.ui.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.KeyCodeBuilder;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
@@ -36,8 +36,8 @@ import java.util.Optional;
  */
 @OnlyIn(Dist.CLIENT)
 public class KeyBindEntry extends AbstractConfigEntry<
-  ModifierKeyCode, String, ModifierKeyCode, KeyBindEntry
-> implements IKeyEntry<ModifierKeyCode> {
+  ModifierKeyCode, String, ModifierKeyCode
+  > implements IKeyEntry<ModifierKeyCode> {
 	protected boolean allowKey = true;
 	protected boolean allowModifiers = true;
 	protected boolean allowMouse = true;
@@ -172,7 +172,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<ModifierKeyCode>> buildGUIEntry(
+	public Optional<FieldBuilder<ModifierKeyCode, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final KeyCodeBuilder valBuilder = builder
@@ -180,7 +180,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		  .setAllowKey(allowKey)
 		  .setAllowModifiers(allowModifiers)
 		  .setAllowMouse(allowMouse);
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 	
 }

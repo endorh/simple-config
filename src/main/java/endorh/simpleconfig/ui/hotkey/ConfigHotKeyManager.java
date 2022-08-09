@@ -14,12 +14,11 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
 
@@ -44,28 +43,26 @@ public class ConfigHotKeyManager {
 	
 	private ConfigHotKeyManager() {}
 	
-	@SubscribeEvent public static void init(FMLClientSetupEvent event) {
-		event.enqueueWork(() -> {
-			File file = INSTANCE.configHotKeysFile;
-			try {
-				if (!file.isFile()) {
-					file.getParentFile().mkdirs();
-					file.createNewFile();
-				}
-				FileWatcher.defaultInstance().addWatch(file, () -> {
-					LOGGER.info("SimpleConfigHotKeyManager: Config hotkeys file changed, reloading.");
-					INSTANCE.loadHotkeys();
-				});
-			} catch (IOException e) {
-				LOGGER.error("I/O Error accessing config hotkeys file \"" + file + "\"", e);
+	@Internal public static void initHotKeyManager() {
+		File file = INSTANCE.configHotKeysFile;
+		try {
+			if (!file.isFile()) {
+				file.getParentFile().mkdirs();
+				file.createNewFile();
 			}
-			INSTANCE.loadHotkeys();
-			List<ConfigHotKeyGroup> queue = INSTANCE.defaultGroupQueue;
-			if (queue != null) {
-				INSTANCE.defaultGroupQueue = null;
-				queue.forEach(INSTANCE::addDefaultGroup);
-			}
-		});
+			FileWatcher.defaultInstance().addWatch(file, () -> {
+				LOGGER.info("SimpleConfigHotKeyManager: Config hotkeys file changed, reloading.");
+				INSTANCE.loadHotkeys();
+			});
+		} catch (IOException e) {
+			LOGGER.error("I/O Error accessing config hotkeys file \"" + file + "\"", e);
+		}
+		INSTANCE.loadHotkeys();
+		List<ConfigHotKeyGroup> queue = INSTANCE.defaultGroupQueue;
+		if (queue != null) {
+			INSTANCE.defaultGroupQueue = null;
+			queue.forEach(INSTANCE::addDefaultGroup);
+		}
 	}
 	
 	public void addDefaultGroup(ConfigHotKeyGroup group) {

@@ -19,7 +19,7 @@ public class KeyCodeBuilder
 	public KeyCodeBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, ModifierKeyCode value
 	) {
-		super(builder, name, value.copy());
+		super(KeyCodeEntry.class, builder, name, value.copy());
 	}
 	
 	public KeyCodeBuilder setAllowModifiers(boolean allowModifiers) {

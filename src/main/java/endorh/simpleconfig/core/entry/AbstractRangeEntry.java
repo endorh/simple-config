@@ -5,12 +5,14 @@ import endorh.simpleconfig.core.AbstractRange.AbstractSizedRange;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -21,7 +23,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractRangeEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>,
   E extends AbstractRangeEntry<V, R, E>
-> extends AbstractConfigEntry<R, String, R, E> implements IKeyEntry<R> {
+> extends AbstractConfigEntry<R, String, R> implements IKeyEntry<R> {
 	protected @Nullable V min = null;
 	protected @Nullable V max = null;
 	protected boolean canEditMinExclusiveness = false;
@@ -96,7 +98,7 @@ public abstract class AbstractRangeEntry<
 			return copy;
 		}
 		
-		@Override protected E build(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected E build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 			E built = super.build(parent, name);
 			built.min = min;
 			built.max = max;
@@ -168,7 +170,7 @@ public abstract class AbstractRangeEntry<
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<R>> buildGUIEntry(ConfigEntryBuilder builder) {
+	@Override public Optional<FieldBuilder<R, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
 		R guiValue = forGui(get());
 		RangeListEntryBuilder<V, R, ? extends AbstractConfigListEntry<V>> entryBuilder = builder.startRange(
 		  getDisplayName(), guiValue,
@@ -176,7 +178,7 @@ public abstract class AbstractRangeEntry<
 		  buildLimitGUIEntry(builder, "max", guiValue.getMax()))
 		  .withMinExclusivenessEditable(canEditMinExclusiveness)
 		  .withMaxExclusivenessEditable(canEditMaxExclusiveness);
-		return Optional.of(decorate(entryBuilder).build());
+		return Optional.of(decorate(entryBuilder));
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected abstract <EE extends AbstractConfigListEntry<V> & IChildListEntry>
@@ -234,7 +236,7 @@ public abstract class AbstractRangeEntry<
 				return copy;
 			}
 			
-			@Override protected E build(ISimpleConfigEntryHolder parent, String name) {
+			@Override protected E build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 				E entry = super.build(parent, name);
 				entry.minSize = minSize;
 				entry.maxSize = maxSize;

@@ -8,8 +8,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(value = Dist.CLIENT)
-public class ClothRequiresRestartScreen
-  extends ConfirmScreen {
+public class ClothRequiresRestartScreen extends ConfirmScreen {
 	public ClothRequiresRestartScreen(Screen parent) {
 		super(
 		  t -> {

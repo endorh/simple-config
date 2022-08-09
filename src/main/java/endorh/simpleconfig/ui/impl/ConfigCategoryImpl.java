@@ -1,17 +1,15 @@
 package endorh.simpleconfig.ui.impl;
 
-import com.google.common.collect.Lists;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategory;
-import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -21,7 +19,6 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ConfigCategoryImpl implements ConfigCategory {
-	protected final ConfigScreenBuilder builder;
 	protected final List<AbstractConfigEntry<?>> entries;
 	protected final String name;
 	protected ITextComponent title;
@@ -29,28 +26,39 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected @Nullable ResourceLocation background;
 	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
-	protected Type type;
+	protected EditType type;
 	protected boolean isEditable = true;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
 	
-	ConfigCategoryImpl(ConfigScreenBuilder builder, String name, Type type) {
-		this.builder = builder;
-		this.entries = Lists.newArrayList();
+	@Internal public ConfigCategoryImpl(
+	  String name, EditType type, List<AbstractConfigEntry<?>> entries,
+	  ITextComponent title, int sortingOrder, @Nullable ResourceLocation background,
+	  @Nullable Supplier<Optional<ITextComponent[]>> description, @Nullable Path containingFile,
+	  boolean isEditable, Icon icon, int color
+	) {
+		this.entries = entries;
 		this.name = name;
-		this.title = new StringTextComponent(name);
+		this.title = title;
 		this.type = type;
+		this.sortingOrder = sortingOrder;
+		this.background = background;
+		this.description = description;
+		this.containingFile = containingFile;
+		this.isEditable = isEditable;
+		this.icon = icon;
+		this.color = color;
 	}
 	
 	@Override public ITextComponent getTitle() {
-		return this.title;
+		return title;
 	}
 	@Override public void setTitle(ITextComponent name) {
-		this.title = name;
+		title = name;
 	}
 	
 	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
-		return this.entries;
+		return entries;
 	}
 	
 	@Override public String getName() {
@@ -58,35 +66,22 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	}
 	
 	@Override public ConfigCategory addEntry(AbstractConfigListEntry<?> entry) {
-		this.entries.add(entry);
+		entries.add(entry);
 		return this;
-	}
-	@Override public ConfigCategory setCategoryBackground(ResourceLocation background) {
-		if (this.builder.hasTransparentBackground()) throw new IllegalStateException(
-		  "Cannot set category background if screen is using transparent background.");
-		this.background = background;
-		return this;
-	}
-	@Override public void removeCategory() {
-		this.builder.removeCategory(this.name, type);
 	}
 	
 	@Override public Optional<Path> getContainingFile() {
 		return Optional.ofNullable(containingFile);
 	}
 	
-	@Override public void setContainingFile(@Nullable Path file) {
-		containingFile = file;
-	}
-	
 	@Override public @Nullable ResourceLocation getBackground() {
-		return this.background;
+		return background;
 	}
 	@Override public void setBackground(@Nullable ResourceLocation background) {
 		this.background = background;
 	}
 	
-	@Override public Type getType() {
+	@Override public EditType getType() {
 		return type;
 	}
 	
@@ -98,16 +93,10 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		isEditable = editable;
 	}
 	
-	@Override public void setColor(int color) {
-		this.color = color;
-	}
 	@Override public int getColor() {
 		return color;
 	}
 	
-	@Override public void setIcon(Icon icon) {
-		this.icon = icon;
-	}
 	@Override public Icon getIcon() {
 		return icon;
 	}
@@ -115,15 +104,9 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	@Override public int getSortingOrder() {
 		return sortingOrder;
 	}
-	@Override public void setSortingOrder(int order) {
-		sortingOrder = order;
-	}
 	
 	@Override public @Nullable Supplier<Optional<ITextComponent[]>> getDescription() {
-		return this.description;
-	}
-	@Override public void setDescription(@Nullable Supplier<Optional<ITextComponent[]>> description) {
-		this.description = description;
+		return description;
 	}
 }
 

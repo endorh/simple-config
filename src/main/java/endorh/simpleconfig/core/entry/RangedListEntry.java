@@ -103,7 +103,7 @@ public abstract class RangedListEntry<
 		protected void checkBounds() {}
 		
 		@Override
-		protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+		protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 			checkBounds();
 			final Entry e = super.build(parent, name);
 			e.min = min;

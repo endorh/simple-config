@@ -4,9 +4,9 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, ColorEntry>
+public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
   implements IKeyEntry<Integer> {
 	protected final boolean alpha;
 	@Internal public ColorEntry(
@@ -107,13 +107,13 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer, Colo
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Integer>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Integer, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		ColorFieldBuilder valBuilder = builder
 		  .startAlphaColorField(getDisplayName(), forGui(get()))
 		  .setAlphaMode(alpha);
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 	
 }

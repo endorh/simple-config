@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.ImageButton;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -80,7 +81,7 @@ public class ToggleImageButton extends ImageButton {
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 257 || keyCode == 32 || keyCode == 335) { // Enter | Space | NumPadEnter
+		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
 			setValue(!isToggle());
 			return true;
 		}

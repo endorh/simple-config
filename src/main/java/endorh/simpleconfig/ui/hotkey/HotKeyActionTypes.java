@@ -25,7 +25,7 @@ public class HotKeyActionTypes {
 			super("assign", Actions.ASSIGN, (entry, value, storage) -> storage);
 		}
 		
-		@Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, Object, ?>> SimpleHotKeyAction<Object, Object> deserialize(
+		@Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, Object>> SimpleHotKeyAction<Object, Object> deserialize(
 		  E entry, Object value
 		) {
 			T v = entry.fromConfig(entry.fromActualConfig(value));
@@ -35,7 +35,7 @@ public class HotKeyActionTypes {
 			return new SimpleHotKeyAction<>(this, entry, action, g);
 		}
 		
-		@Override public <T, C, E extends AbstractConfigEntry<T, C, Object, ?>> Object serialize(
+		@Override public <T, C, E extends AbstractConfigEntry<T, C, Object>> Object serialize(
 		  E entry, SimpleHotKeyAction<Object, Object> action
 		) {
 			Object storage = action.getStorage();
@@ -49,7 +49,7 @@ public class HotKeyActionTypes {
 		}
 		
 		private <T> ITextComponent formatAction(
-		  AbstractConfigEntry<T, ?, Object, ?> entry, SimpleHotKeyAction<Object, Object> action
+		  AbstractConfigEntry<T, ?, Object> entry, SimpleHotKeyAction<Object, Object> action
 		) {
 			String value = entry.forCommand(entry.fromGui(action.getStorage()));
 			return new TranslationTextComponent(
@@ -132,7 +132,7 @@ public class HotKeyActionTypes {
 		}
 		
 		@Override
-		public <T, C, EE extends AbstractConfigEntry<T, C, E, ?>> Optional<ITextComponent> getActionError(
+		public <T, C, EE extends AbstractConfigEntry<T, C, E>> Optional<ITextComponent> getActionError(
 		  EE entry, Object value
 		) {
 			if (value == null) return Optional.of(new TranslationTextComponent(
@@ -171,7 +171,7 @@ public class HotKeyActionTypes {
 	
 	@FunctionalInterface public interface IRangedSimpleHotKeyAction<V, S> {
 		V applyValue(
-		  AbstractConfigEntry<?, ?, V, ?> entry, V value, S storage, Number min, Number max);
+		  AbstractConfigEntry<?, ?, V> entry, V value, S storage, Number min, Number max);
 	}
 	
 	public static <V, S> ISimpleHotKeyAction<V, S> ranged(

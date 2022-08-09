@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.Icon;
@@ -12,29 +12,30 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
 public class PairListEntryBuilder<
-  L, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
-  RE extends AbstractConfigEntry<R> & IChildListEntry
-> extends FieldBuilder<Pair<L, R>, PairListEntry<L, R, LE, RE>, PairListEntryBuilder<L, R, LE, RE>> {
-	protected final LE leftEntry;
-	protected final RE rightEntry;
+  L, R, LE extends AbstractConfigListEntry<L> & IChildListEntry,
+  RE extends AbstractConfigListEntry<R> & IChildListEntry,
+  LEB extends FieldBuilder<L, LE, LEB>, REB extends FieldBuilder<R, RE, REB>
+> extends FieldBuilder<Pair<L, R>, PairListEntry<L, R, LE, RE>, PairListEntryBuilder<L, R, LE, RE, LEB, REB>> {
+	protected final LEB leftEntry;
+	protected final REB rightEntry;
 	protected @Nullable Icon middleIcon = null;
 	protected float splitPos = 0.5F;
 	
 	public PairListEntryBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, Pair<L, R> value,
-	  LE leftEntry, RE rightEntry
+	  LEB leftEntry, REB rightEntry
 	) {
-		super(builder, name, value);
+		super(PairListEntry.class, builder, name, value);
 		this.leftEntry = leftEntry;
 		this.rightEntry = rightEntry;
 	}
 	
-	public PairListEntryBuilder<L, R, LE, RE> withMiddleIcon(Icon middleIcon) {
+	public PairListEntryBuilder<L, R, LE, RE, LEB, REB> withMiddleIcon(Icon middleIcon) {
 		this.middleIcon = middleIcon;
 		return self();
 	}
 	
-	public PairListEntryBuilder<L, R, LE, RE> withSplitPos(
+	public PairListEntryBuilder<L, R, LE, RE, LEB, REB> withSplitPos(
 	  @Range(from = 0, to = 1) float splitPos
 	) {
 		if (splitPos < 0 || splitPos > 1) throw new IllegalArgumentException(
@@ -44,7 +45,7 @@ public class PairListEntryBuilder<
 	}
 	
 	@Override protected PairListEntry<L, R, LE, RE> buildEntry() {
-		return new PairListEntry<>(fieldNameKey, value, leftEntry, rightEntry);
+		return new PairListEntry<>(fieldNameKey, value, leftEntry.build(), rightEntry.build());
 	}
 	
 	@Override public @NotNull PairListEntry<L, R, LE, RE> build() {

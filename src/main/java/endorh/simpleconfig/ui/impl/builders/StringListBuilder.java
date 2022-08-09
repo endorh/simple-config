@@ -16,7 +16,7 @@ public class StringListBuilder
 	public StringListBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, List<String> value
 	) {
-		super(builder, name, value);
+		super(StringListListEntry.class, builder, name, value);
 	}
 	
 	@Override @NotNull public StringListListEntry buildEntry() {

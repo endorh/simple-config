@@ -1,11 +1,12 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntry;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
@@ -26,7 +27,7 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 		return Collections.emptyList();
 	}
 	
-	@Internal public static abstract class VoidEntry extends AbstractConfigEntry<Void> implements IChildListEntry {
+	@Internal public static abstract class VoidEntry extends AbstractConfigListEntry<Void> implements IChildListEntry {
 		private VoidEntry(ITextComponent title) {
 			super(title);
 		}
@@ -39,8 +40,15 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 		@Override public int getScrollY() {
 			return 0;
 		}
-		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
 			return Collections.emptyList();
+		}
+	}
+	
+	@Internal public static abstract class VoidEntryBuilder
+	  extends FieldBuilder<Void, VoidEntry, VoidEntryBuilder> {
+		protected VoidEntryBuilder(ConfigEntryBuilder builder, ITextComponent name, Void value) {
+			super(VoidEntry.class, builder, name, value);
 		}
 	}
 }

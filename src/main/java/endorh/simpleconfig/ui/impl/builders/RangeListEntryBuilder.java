@@ -31,7 +31,7 @@ public class RangeListEntryBuilder<
 	public RangeListEntryBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, R value, E minEntry, E maxEntry
 	) {
-		super(builder, name, value);
+		super(RangeListEntry.class, builder, name, value);
 		this.minEntry = minEntry;
 		this.maxEntry = maxEntry;
 	}

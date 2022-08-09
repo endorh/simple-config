@@ -3,8 +3,8 @@ package endorh.simpleconfig.core;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.impl.builders.EntryListFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -27,13 +27,13 @@ import java.util.stream.Collectors;
  * @param <E> The type of the entry nested within the list
  */
 public class EntryListEntry
-  <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+  <V, C, G, E extends AbstractConfigEntry<V, C, G>,
     B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
   extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, E, B>> {
 	protected static final String TOOLTIP_KEY_SUFFIX = ":help";
 	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ":sub";
 	
-	protected final AbstractConfigEntry<V, C, G, E> entry;
+	protected final AbstractConfigEntry<V, C, G> entry;
 	protected final B entryBuilder;
 	protected FakeEntryHolder holder;
 	
@@ -43,7 +43,7 @@ public class EntryListEntry
 		super(parent, name, value);
 		holder = new FakeEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
-		entry = entryBuilder.build(holder, name).withSaver((g, c) -> {});
+		entry = entryBuilder.build(holder, name);
 		if (!entry.canBeNested())
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
@@ -54,7 +54,7 @@ public class EntryListEntry
 			setTooltipKey(tooltip);
 	}
 	
-	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
 	  extends AbstractListEntry.Builder<V, C, G, EntryListEntry<V, C, G, E, B>, Builder<V, C, G, E, B>> {
 		protected B builder;
@@ -74,23 +74,19 @@ public class EntryListEntry
 		}
 	}
 	
-	@Override
-	protected void setTranslation(String translation) {
+	@Override protected void setTranslation(String translation) {
 		super.setTranslation(translation);
 		if (translation != null)
 			entry.setTranslation(translation + SUB_ELEMENTS_KEY_SUFFIX);
-		self();
 	}
 	
-	@Override
-	protected void setTooltipKey(String translation) {
+	@Override protected void setTooltipKey(String translation) {
 		super.setTooltipKey(translation);
 		if (tooltip != null)
 			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX))
 				entry.setTooltipKey(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
 				                    + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
 			else entry.setTooltipKey(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
-		self();
 	}
 	
 	@Override public Object forActualConfig(@Nullable List<C> value) {
@@ -137,16 +133,16 @@ public class EntryListEntry
 	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(
 	  ConfigEntryBuilder builder
 	) {
-		final E e = entryBuilder.build(holder, holder.nextName())
-		  .withSaver((g, h) -> {})
-		  .withDisplayName(new StringTextComponent("•"));
+		final E e = entryBuilder.build(holder, holder.nextName());
+		e.setSaver((g, h) -> {});
+		e.setDisplayName(new StringTextComponent("•"));
 		e.nonPersistent = true;
 		e.actualValue = e.defValue;
-		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
+		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
 		  .orElseThrow(() -> new IllegalStateException(
 		    "List config entry's sub-entry did not produce a GUI entry"));
-		g.removeEntryFlag(EntryFlag.NON_PERSISTENT);
-		e.guiEntry = g;
+		g.removeTag(EntryTag.NON_PERSISTENT);
+		e.setGuiEntry(g);
 		return g;
 	}
 	
@@ -155,12 +151,12 @@ public class EntryListEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<List<G>>> buildGUIEntry(
+	public Optional<FieldBuilder<List<G>, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		holder.clear();
 		final EntryListFieldBuilder<G, AbstractConfigListEntry<G>> valBuilder =
 		  builder.startEntryList(getDisplayName(), forGui(get()), en -> buildCell(builder));
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 }

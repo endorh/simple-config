@@ -3,6 +3,7 @@ package endorh.simpleconfig.ui.api;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
@@ -419,7 +420,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		final FontRenderer font = Minecraft.getInstance().fontRenderer;
 		font.func_238407_a_(
 		  mStack, title.func_241878_f(), textX, (float) y + 6, getPreferredTextColor());
-		final NavigableSet<EntryFlag> entryFlags = getEntryFlags();
+		final NavigableSet<EntryTag> entryFlags = getEntryTags();
 		if (!entryFlags.isEmpty()) {
 			final int textW = font.getStringPropertyWidth(title);
 			int flagsX =
@@ -429,8 +430,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 			int flagsY = y + 6 + font.FONT_HEIGHT / 2 - 7;
 			flagsRectangle.setBounds(flagsX, flagsY, 14 * entryFlags.size(), 14);
 			int xx = flagsX;
-			for (EntryFlag entryFlag : font.getBidiFlag() ? entryFlags.descendingSet() : entryFlags) {
-				entryFlag.icon.renderCentered(mStack, xx, flagsY, 14, 14);
+			for (EntryTag entryFlag : font.getBidiFlag()? entryFlags.descendingSet() : entryFlags) {
+				entryFlag.getIcon().renderCentered(mStack, xx, flagsY, 14, 14);
 				xx += 14;
 			}
 		}

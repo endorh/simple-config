@@ -36,7 +36,7 @@ public class SimpleConfigModConfig extends ModConfig {
 	public SimpleConfigModConfig(
 	  SimpleConfig config, ModContainer container
 	) {
-		super(config.getType(), config.spec, container, config.getFileName());
+		super(config.getType().asConfigType(), config.spec, container, config.getFileName());
 		this.config = config;
 		this.configFormat = SimpleConfigCommentedYamlFormat.forConfig(config);
 		// Prevent default handling of S2CConfigData packet, which assumes Toml format for files

@@ -4,9 +4,9 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.BooleanToggleBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class BooleanEntry
-  extends AbstractConfigEntry<Boolean, Boolean, Boolean, BooleanEntry> implements IKeyEntry<Boolean> {
+  extends AbstractConfigEntry<Boolean, Boolean, Boolean> implements IKeyEntry<Boolean> {
 	protected BooleanDisplayer yesNoSupplier = BooleanDisplayer.TRUE_FALSE;
 	
 	@Internal public BooleanEntry(ISimpleConfigEntryHolder parent, String name, boolean value) {
@@ -130,13 +130,17 @@ public class BooleanEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Boolean>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Boolean, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final BooleanToggleBuilder valBuilder = builder
 		  .startBooleanToggle(getDisplayName(), get())
 		  .setYesNoTextSupplier(yesNoSupplier::getDisplayName);
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
+	}
+	
+	@Override public @Nullable String forCommand(Boolean value) {
+		return value == null? null : value? "true" : "false";
 	}
 	
 	/**

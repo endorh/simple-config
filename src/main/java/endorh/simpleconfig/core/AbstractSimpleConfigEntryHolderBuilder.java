@@ -120,7 +120,7 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 		return self();
 	}
 	
-	protected abstract void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry);
+	protected abstract void buildTranslations(AbstractConfigEntry<?, ?, ?> entry);
 	
 	/**
 	 * Add a config group

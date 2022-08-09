@@ -20,6 +20,9 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	
 	/**
 	 * Provide error messages for invalid values<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #guiErrorNullable(Function)} to
 	 * use a function returning nullable values instead of {@link Optional}
 	 * @param guiErrorSupplier Error message supplier. Empty return values indicate
@@ -29,6 +32,9 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	
 	/**
 	 * Provide error messages for invalid values<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #guiError(Function)} to
 	 * use a function returning {@link Optional} instead of nullable values
 	 * @param errorSupplier Error message supplier. null return values
@@ -40,6 +46,9 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	
 	/**
 	 * Provide error messages for invalid values<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #configError(Function)}to
 	 * use a function returning {@link Optional} instead of nullable values
 	 *
@@ -52,6 +61,9 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	
 	/**
 	 * Provide error messages for invalid values<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #errorNullable(Function)} to
 	 * use a function returning nullable values instead of {@link Optional}
 	 * @param errorSupplier Error message supplier. Empty return values indicate correct values
@@ -59,7 +71,10 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	@Contract(pure=true) Self error(Function<V, Optional<ITextComponent>> errorSupplier);
 	
 	/**
-	 * Provide error messages for invalid values<br>
+	 * Provide error messages for invalid values.<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #configErrorNullable(Function)} to use a function returning nullable
 	 * values instead of {@link Optional}
 	 * @param errorSupplier Error message supplier. Empty return values indicate correct values
@@ -67,7 +82,17 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	@Contract(pure=true) Self configError(Function<Config, Optional<ITextComponent>> errorSupplier);
 	
 	/**
+	 * Remove error checks from this entry previously added with
+	 * {@link #guiError(Function)}, {@link #error(Function)}, {@link #configError(Function)}
+	 * or their variants.
+	 */
+	@Contract(pure=true) Self withoutError();
+	
+	/**
 	 * Restrict the values of this entry<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #error(Function)}
 	 * to provide users with an explicative error message
 	 * @param validator Should return true for all valid elements
@@ -82,6 +107,9 @@ public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBu
 	
 	/**
 	 * Provide error messages for invalid values<br>
+	 * Subsequent calls to this and any other error methods <b>add more error checks</b> to the
+	 * entry, <b>rather than replacing</b> them.<br>
+	 * Use {@link #withoutError()} to remove all error checks.<br><br>
 	 * You may also use {@link #error(Function)} to use
 	 * a function returning {@link Optional} instead of nullable values
 	 * @param errorSupplier Error message supplier. null return values indicate

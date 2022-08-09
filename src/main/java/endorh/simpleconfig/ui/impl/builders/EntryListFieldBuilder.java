@@ -17,7 +17,7 @@ public class EntryListFieldBuilder<V, E extends AbstractConfigListEntry<V>>
 	  ConfigEntryBuilder builder, ITextComponent name, List<V> value,
 	  Function<NestedListListEntry<V, E>, E> cellFactory
 	) {
-		super(builder, name, value);
+		super(NestedListListEntry.class, builder, name, value);
 		this.cellFactory = cellFactory;
 	}
 	

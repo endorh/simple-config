@@ -7,11 +7,11 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -30,7 +30,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class EnumEntry<E extends Enum<E>>
-  extends AbstractConfigEntry<E, E, E, EnumEntry<E>> implements IKeyEntry<E> {
+  extends AbstractConfigEntry<E, E, E> implements IKeyEntry<E> {
 	protected final Class<E> enumClass;
 	protected final Map<String, E> nameMap;
 	protected final Map<String, E> lowerCaseNameMap;
@@ -179,7 +179,7 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<E>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<E, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (useComboBox != null? useComboBox : advanced.prefer_combo_box < enumClass.getEnumConstants().length) {
@@ -189,13 +189,13 @@ public class EnumEntry<E extends Enum<E>>
 				   choices, e -> e.name().toLowerCase(), this::enumName), get()
 				 ).setSuggestionMode(false)
 				 .setSuggestions(choices);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		} else {
 			final EnumSelectorBuilder<E> valBuilder = builder
 			  .startEnumSelector(getDisplayName(), get());
 			//noinspection unchecked
 			valBuilder.setEnumNameProvider(e -> enumName((E) e));
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		}
 	}
 	

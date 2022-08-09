@@ -4,9 +4,9 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -19,7 +19,7 @@ import java.util.Optional;
 
 public abstract class AbstractSerializableEntry
   <V, Self extends AbstractSerializableEntry<V, Self>>
-  extends AbstractConfigEntry<V, String, String, Self>
+  extends AbstractConfigEntry<V, String, String>
   implements IKeyEntry<String> {
 	
 	public AbstractSerializableEntry(
@@ -93,13 +93,13 @@ public abstract class AbstractSerializableEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<String, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder
 		  .startTextField(getDisplayName(), forGui(get()))
 		  .setTextFormatter(getTextFormatter());
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 	
 }

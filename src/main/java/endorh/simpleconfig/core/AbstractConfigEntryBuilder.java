@@ -3,16 +3,16 @@ package endorh.simpleconfig.core;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -30,25 +30,24 @@ import java.util.function.Supplier;
  */
 public abstract class AbstractConfigEntryBuilder<
   V, Config, Gui,
-  Entry extends AbstractConfigEntry<V, Config, Gui, Entry>,
+  Entry extends AbstractConfigEntry<V, Config, Gui>,
   Self extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self>
 > implements IGUIEntryBuilder, ITooltipEntryBuilder<V, Gui, Self>,
              IErrorEntryBuilder<V, Config, Gui, Self> {
 	protected V value;
 	
-	protected @Nullable Function<Config, Optional<ITextComponent>> configErrorSupplier = null;
-	protected @Nullable Function<V, Optional<ITextComponent>> errorSupplier = null;
-	protected @Nullable Function<Gui, Optional<ITextComponent>> guiErrorSupplier = null;
-	protected @Nullable Function<V, List<ITextComponent>> tooltipSupplier = null;
-	protected @Nullable Function<Gui, List<ITextComponent>> guiTooltipSupplier = null;
-	protected @Nullable Supplier<Boolean> editableSupplier = null;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> tooltipSupplier = null;
+	protected @Nullable Function<ISimpleConfigEntryHolder, Boolean> editableSupplier = null;
 	protected @Nullable String translation = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
 	protected boolean requireRestart = false;
+	protected boolean experimental = false;
 	protected Class<?> typeClass;
 	protected boolean nonPersistent = false;
 	protected boolean ignored = false;
+	protected Set<EntryTag> tags = new HashSet<>();
 	protected BackingFieldBuilder<V, ?> backingFieldBuilder;
 	protected List<BackingFieldBinding<V, ?>> backingFieldBindings = new ArrayList<>();
 	
@@ -62,68 +61,94 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	@Contract(pure=true) protected abstract Entry buildEntry(ISimpleConfigEntryHolder parent, String name);
 	
+	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+	private static <T> Optional<T> or(Optional<T> a, Supplier<Optional<T>> b) {
+		return a.isPresent()? a : b.get();
+	}
+	
 	@Contract(pure=true)
 	@Override public Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier) {
 		final Self copy = copy();
-		copy.guiErrorSupplier = guiErrorSupplier;
+		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
+		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
+		copy.errorSupplier = (e, g) -> or(prev.apply(e, g), () -> guiErrorSupplier.apply(g));
 		return copy;
 	}
 	
 	@Contract(pure=true)
 	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
 		final Self copy = copy();
-		copy.errorSupplier = errorSupplier;
+		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
+		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
+		copy.errorSupplier = (e, g) -> or(
+		  prev.apply(e, g),
+		  () -> {
+			  V v = e.fromGui(g);
+			  if (v == null) return Optional.of(new TranslationTextComponent(
+			    "simpleconfig.config.error.missing_value"));
+			  return errorSupplier.apply(v);
+		  });
 		return copy;
 	}
 	
 	@Contract(pure=true)
 	@Override public Self configError(Function<Config, Optional<ITextComponent>> configErrorSupplier) {
 		final Self copy = copy();
-		copy.configErrorSupplier = configErrorSupplier;
+		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
+		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
+		copy.errorSupplier = (e, g) -> or(
+		  prev.apply(e, g),
+		  () -> {
+			  V v = e.fromGui(g);
+			  if (v == null) return Optional.of(new TranslationTextComponent(
+			    "simpleconfig.config.error.missing_value"));
+			  return configErrorSupplier.apply(e.forConfig(v));
+		  });
+		return copy;
+	}
+	
+	@Contract(pure=true)
+	@Override public Self withoutError() {
+		final Self copy = copy();
+		copy.errorSupplier = null;
 		return copy;
 	}
 	
 	@Contract(pure=true)
 	@Override public Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier) {
 		final Self copy = copy();
-		copy.guiTooltipSupplier = tooltipSupplier;
+		copy.tooltipSupplier = (e, g) -> tooltipSupplier.apply(g);
 		return copy;
 	}
 	
 	@Contract(pure=true)
 	@Override public Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier) {
 		final Self copy = copy();
-		copy.tooltipSupplier = tooltipSupplier;
+		copy.tooltipSupplier = (e, g) -> {
+			V v = e.fromGui(g);
+			if (v == null) return Collections.emptyList();
+			return tooltipSupplier.apply(v);
+		};
+		return copy;
+	}
+	
+	@Contract(pure=true) @Override public Self withoutTooltip() {
+		final Self copy = copy();
+		copy.tooltipSupplier = null;
 		return copy;
 	}
 	
 	/**
 	 * Set the arguments that will be passed to the tooltip translation key<br>
-	 * As a special case, {@code Function}s and {@code Supplier}s passed
-	 * will be invoked before being passed as arguments, with the entry value
-	 * as argument
+	 * As a special case, {@code Supplier}s passed will be invoked before being
+	 * passed as arguments.<br>
 	 */
-	@Contract(pure=true) public Self tooltipArgs(Object... args) {
+	@Contract(pure=true)
+	public Self tooltipArgs(Object... args) {
 		final Self copy = copy();
-		for (Object o : args) { // Check function types to fail fast
-			if (o instanceof Function) {
-				try {
-					//noinspection unchecked
-					((Function<V, ?>) o).apply(value);
-				} catch (ClassCastException e) {
-					throw new InvalidConfigValueTypeException("",
-					  e, "A translation argument provider expected an invalid value type");
-				}
-			}
-		}
 		copy.tooltipArgs.clear();
 		copy.tooltipArgs.addAll(Arrays.asList(args));
 		return copy;
-	}
-	
-	@Contract(pure=true)
-	@SafeVarargs public final Self tooltipArgs(Function<Gui, Object>... args) {
-		return tooltipArgs((Object[]) args);
 	}
 	
 	@Contract(pure=true)
@@ -133,17 +158,14 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	/**
 	 * Set the arguments that will be passed to the name translation key<br>
-	 * As a special case, {@code Supplier}s passed
-	 * will be invoked before being passed as arguments
+	 * As a special case, {@code Supplier}s passed will be invoked before being passed as
+	 * arguments.<br><br>
+	 * Since names aren't refreshed, the suppliers are only invoked once, and
+	 * can't be used to animate the title.
 	 */
 	@Contract(pure=true)
 	public Self nameArgs(Object... args) {
 		Self copy = copy();
-		for (Object arg : args) {
-			if (arg instanceof Function)
-				throw new IllegalArgumentException(
-				  "Name args cannot be functions that depend on the value, since names aren't refreshed");
-		}
 		copy.nameArgs.clear();
 		copy.nameArgs.addAll(Arrays.asList(args));
 		return copy;
@@ -220,7 +242,45 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy;
 	}
 	
+	/**
+	 * Flag this entry as experimental.<br>
+	 */
+	@Contract(pure=true) public Self experimental() {
+		return experimental(true);
+	}
+	
+	/**
+	 * Flag this entry as experimental.<br>
+	 */
+	@Contract(pure=true) public Self experimental(boolean experimental) {
+		Self copy = copy();
+		copy.experimental = experimental;
+		return copy;
+	}
+	
+	/**
+	 * Makes this entry conditionally editable in the config menu.<br>
+	 * <b>This should only be used as a visual cue</b> to express that the value of this entry is
+	 * contextually irrelevant.<br>
+	 * Avoid overusing it, since users may find it frustrating.<br>
+	 * <b>Users may be able to edit this entry through other means.</b><br>
+	 * You may alse use {@link #editable(Function)} to receive the parent entry holder
+	 * of this entry as an argument.
+	 */
 	@Contract(pure=true) public Self editable(Supplier<Boolean> editable) {
+		Self copy = copy();
+		copy.editableSupplier = h -> editable.get();
+		return copy;
+	}
+	
+	/**
+	 * Makes this entry conditionally editable in the config menu.<br>
+	 * <b>This should only be used as a visual cue</b> to express that the value of this entry is
+	 * contextually irrelevant.<br>
+	 * Avoid overusing it, since users may find it frustrating.<br>
+	 * <b>Users may be able to edit this entry through other means.</b>
+	 */
+	@Contract(pure=true) public Self editable(Function<ISimpleConfigEntryHolder, Boolean> editable) {
 		Self copy = copy();
 		copy.editableSupplier = editable;
 		return copy;
@@ -279,19 +339,36 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	/**
+	 * Add {@link EntryTag}s to this entry.
+	 */
+	@Contract(pure=true) public Self withTags(EntryTag... tags) {
+		Self copy = copy();
+		copy.tags.addAll(Arrays.asList(tags));
+		return copy;
+	}
+	
+	/**
+	 * Remove {@link EntryTag}s from this entry.
+	 */
+	@Contract(pure=true) public Self withoutTags(EntryTag... tags) {
+		Self copy = copy();
+		Arrays.stream(tags).forEach(copy.tags::remove);
+		return copy;
+	}
+	
+	/**
 	 * Subclasses should instead override
 	 * {@link AbstractConfigEntryBuilder#buildEntry(ISimpleConfigEntryHolder, String)}
 	 * in most cases<br>
 	 * Overrides should call super
 	 */
-	@Contract(pure=true) protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+	@Contract(value="_, _ -> new", pure=true) @MustBeInvokedByOverriders
+	protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 		final Entry e = buildEntry(parent, name);
 		e.requireRestart = requireRestart;
-		e.configErrorSupplier = configErrorSupplier;
+		e.experimental = experimental;
 		e.errorSupplier = errorSupplier;
-		e.guiErrorSupplier = guiErrorSupplier;
 		e.tooltipSupplier = tooltipSupplier;
-		e.guiTooltipSupplier = guiTooltipSupplier;
 		e.translation = translation;
 		e.nameArgs = nameArgs;
 		e.tooltipArgs = tooltipArgs;
@@ -301,6 +378,8 @@ public abstract class AbstractConfigEntryBuilder<
 		if (nonPersistent)
 			e.actualValue = e.defValue;
 		e.ignored = ignored;
+		e.tags.clear();
+		e.tags.addAll(tags);
 		// if (!e.isValidValue(value))
 		// 	throw new InvalidDefaultConfigValueException(e.getGlobalPath(), value);
 		return e;
@@ -315,34 +394,34 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Do not call directly, instead use {@link AbstractConfigEntryBuilder#copy()}<br>
 	 * Subclasses should implement this method copying all of their fields.
 	 */
-	@Contract("-> new") protected abstract Self createCopy();
+	@Contract(value="-> new", pure=true) protected abstract Self createCopy();
 	
 	/**
 	 * Creates a copy of this builder
 	 */
-	@Contract("-> new") protected Self copy() {
+	@Contract(value="-> new", pure=true) @MustBeInvokedByOverriders
+	protected Self copy() {
 		final Self copy = createCopy();
 		copy.value = value;
-		copy.configErrorSupplier = configErrorSupplier;
-		copy.errorSupplier = errorSupplier;
-		copy.guiErrorSupplier = guiErrorSupplier;
-		copy.tooltipSupplier = tooltipSupplier;
-		copy.guiTooltipSupplier = guiTooltipSupplier;
 		copy.translation = translation;
+		copy.errorSupplier = errorSupplier;
+		copy.tooltipSupplier = tooltipSupplier;
 		copy.nameArgs = new ArrayList<>(nameArgs);
 		copy.tooltipArgs = new ArrayList<>(tooltipArgs);
 		copy.requireRestart = requireRestart;
+		copy.experimental = experimental;
 		copy.typeClass = typeClass;
 		copy.editableSupplier = editableSupplier;
 		copy.nonPersistent = nonPersistent;
 		copy.ignored = ignored;
 		copy.backingFieldBindings = new ArrayList<>(backingFieldBindings);
+		copy.tags = new HashSet<>(tags);
 		return copy;
 	}
 	
 	// Accessor
 	protected static <
-	  V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	  V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
 	> B copyBuilder(B builder) {
 		return builder.copy();

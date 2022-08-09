@@ -5,7 +5,7 @@ import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
@@ -43,7 +43,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected final @Nullable Consumer<SimpleConfigCategory> baker;
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
-	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategory> decorator;
+	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
@@ -63,7 +63,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@Internal protected void build(
-	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
+	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
 	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> order,
 	  Icon icon, int color
 	) {
@@ -127,9 +127,11 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(
-	  ConfigScreenBuilder builder, ConfigEntryBuilder entryBuilder
+	  ConfigScreenBuilder builder, ConfigEntryBuilder entryBuilder,
+	  boolean forRemote
 	) {
-		ConfigCategory category = builder.getOrCreateCategory(name, root.getType());
+		ConfigCategoryBuilder category = builder.getOrCreateCategory(
+		  name, root.getType().asEditType(forRemote));
 		category.setEditable(getRoot().canEdit());
 		category.setTitle(getTitle());
 		category.setDescription(
@@ -137,18 +139,18 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
 		        : Optional.empty());
 		root.getFilePath().ifPresent(category::setContainingFile);
-		if (background != null)
+		if (background != null) {
 			category.setBackground(background);
-		else if (parent.background != null)
+		} else if (parent.background != null) {
 			category.setBackground(parent.background);
+		}
 		category.setColor(color);
 		category.setIcon(icon);
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order)
-				entry.buildGUI(category, entryBuilder);
+				entry.buildGUI(category, entryBuilder, forRemote);
 		}
-		if (decorator != null)
-			decorator.accept(this, category);
+		if (decorator != null) decorator.accept(this, category);
 	}
 	
 	@Override protected void bake() {
@@ -164,7 +166,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	protected void bakeFields() {
 		for (SimpleConfigGroup group : groups.values())
 			group.bakeFields();
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+		for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 			entry.bakeField();
 	}
 	
@@ -177,7 +179,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		try {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
-			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+			for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 				entry.commitField();
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(

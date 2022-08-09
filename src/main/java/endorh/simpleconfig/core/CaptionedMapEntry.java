@@ -4,9 +4,10 @@ import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.Config.Entry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.EntryFlag;
-import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
+import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
@@ -21,14 +22,14 @@ import java.util.Map;
 import java.util.Optional;
 
 public class CaptionedMapEntry<K, V, KC, C, KG, G,
-  E extends AbstractConfigEntry<V, C, G, E>,
+  E extends AbstractConfigEntry<V, C, G>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
   KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
   MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>>
-  extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>,
-  CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>> {
+  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>>
+  extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>
+  > {
 	
 	protected final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry;
 	protected final CE captionEntry;
@@ -38,17 +39,17 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 	  Pair<CV, Map<K, V>> value, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry, CE captionEntry
 	) {
 		super(parent, name, value);
-		this.mapEntry = mapEntry.withSaver((v, h) -> {});
-		this.captionEntry = captionEntry.withSaver((v, h) -> {});
+		this.mapEntry = mapEntry;
+		this.captionEntry = captionEntry;
 	}
 	
 	public static class Builder<K, V, KC, C, KG, G,
-	  E extends AbstractConfigEntry<V, C, G, E>,
+	  E extends AbstractConfigEntry<V, C, G>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
 	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>
 	> extends AbstractConfigEntryBuilder<
 	  Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>,
@@ -67,11 +68,10 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		@Override protected CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> me =
-			  DummyEntryHolder.build(parent, mapEntryBuilder).withSaver((v, h) -> {});
+			final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> me = DummyEntryHolder.build(parent, mapEntryBuilder);
 			// final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> me =
 			//   mapEntryBuilder.buildEntry(parent, name + "$val");
-			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder).withSaver((v, h) -> {});
+			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder);
 			// final CE ce = captionEntryBuilder.buildEntry(parent, name + "$key");
 			return new CaptionedMapEntry<>(parent, name, value, me, ce);
 		}
@@ -150,19 +150,30 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 		return tooltips;
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<Pair<KG, G>>>>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <
+	  MGE extends AbstractListListEntry<Pair<KG, G>, ?, MGE>,
+	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
+	CaptionedListEntryBuilder<Pair<KG, G>, MGE, ?, CG, CGE, ?> makeGUIEntry(
+	  ConfigEntryBuilder builder, ITextComponent name,
+	  FieldBuilder<List<Pair<KG, G>>, ?, ?> mapEntry, Pair<CG, List<Pair<KG, G>>> value
+	) {
+		final FieldBuilder<CG, CGE, ?> cge = captionEntry.buildChildGUIEntry(builder);
+		cge.setOriginal(value.getKey());
+		return new CaptionedListEntryBuilder<>(
+		  builder, name, value, (FieldBuilder<List<Pair<KG, G>>, MGE, ?>) mapEntry, cge);
+	}
+	
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Pair<CG, List<Pair<KG, G>>>, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		mapEntry.withDisplayName(getDisplayName());
-		final Optional<AbstractConfigListEntry<List<Pair<KG, G>>>> opt =
-		  mapEntry.buildGUIEntry(builder);
+		mapEntry.setDisplayName(getDisplayName());
+		final Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> opt = mapEntry.buildGUIEntry(builder);
 		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
-		final AbstractConfigListEntry<List<Pair<KG, G>>> mapGUIEntry = opt.get();
-		mapGUIEntry.removeEntryFlag(EntryFlag.NON_PERSISTENT);
+		final FieldBuilder<List<Pair<KG, G>>, ?, ?> mapGUIEntry = opt.get();
+		mapGUIEntry.withoutTags(EntryTag.NON_PERSISTENT);
 		final Pair<CG, List<Pair<KG, G>>> gv = forGui(get());
-		final CaptionedListEntryBuilder<Pair<KG, G>, ?, CG, ?> entryBuilder = builder.startCaptionedList(
-		  getDisplayName(), (EntryPairListListEntry<KG, G, ?, ?>) mapGUIEntry,
-		  Util.make(captionEntry.buildChildGUIEntry(builder), cge -> cge.setOriginal(gv.getKey())), gv);
-		return Optional.of(decorate(entryBuilder).build());
+		final CaptionedListEntryBuilder<Pair<KG, G>, ?, ?, CG, ?, ?> entryBuilder =
+		  makeGUIEntry(builder, getDisplayName(), mapGUIEntry, forGui(get()));
+		return Optional.of(decorate(entryBuilder));
 	}
 }

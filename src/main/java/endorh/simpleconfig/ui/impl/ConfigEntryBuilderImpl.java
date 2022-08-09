@@ -1,7 +1,10 @@
 package endorh.simpleconfig.ui.impl;
 
 import endorh.simpleconfig.core.AbstractRange;
-import endorh.simpleconfig.ui.api.*;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
@@ -16,6 +19,7 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -52,16 +56,18 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 	}
 	
 	@Override public SubCategoryBuilder startSubCategory(
-	  ITextComponent name, List<AbstractConfigListEntry<?>> entries
+	  ITextComponent name, List<FieldBuilder<?, ?, ?>> entries
 	) {
 		SubCategoryBuilder builder = new SubCategoryBuilder(this, name);
 		builder.addAll(entries);
 		return builder;
 	}
 	
-	@Override public <T, HE extends AbstractConfigEntry<T> & IChildListEntry>
-	CaptionedSubCategoryBuilder<T, HE> startCaptionedSubCategory(
-	  ITextComponent name, HE captionEntry
+	@Override public <
+	  T, HE extends AbstractConfigListEntry<T> & IChildListEntry,
+	  HEB extends FieldBuilder<T, HE, HEB>
+	> CaptionedSubCategoryBuilder<T, HE, HEB> startCaptionedSubCategory(
+	  ITextComponent name, HEB captionEntry
 	) {
 		return new CaptionedSubCategoryBuilder<>(this, name, captionEntry);
 	}
@@ -156,6 +162,18 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 		return new DoubleSliderBuilder(this, name, value, min, max);
 	}
 	
+	@Override public ButtonFieldBuilder startButton(ITextComponent name, Runnable action) {
+		return new ButtonFieldBuilder(this, name, action);
+	}
+	
+	@Override public <
+	  V, E extends AbstractConfigListEntry<V> & IChildListEntry, B extends FieldBuilder<V, E, B>
+	> EntryButtonFieldBuilder<V, E, B> startButton(
+	  ITextComponent name, B entry, Consumer<V> action
+	) {
+		return new EntryButtonFieldBuilder<>(this, name, entry, action);
+	}
+	
 	@Override public KeyCodeBuilder startModifierKeyCodeField(
 	  ITextComponent name, ModifierKeyCode value
 	) {
@@ -168,10 +186,11 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 		return new ComboBoxFieldBuilder<>(this, name, value, typeWrapper);
 	}
 	
-	@Override public <V, E extends AbstractListListEntry<V, ?, E>,
-	  C, CE extends AbstractConfigListEntry<C> & IChildListEntry>
-	CaptionedListEntryBuilder<V, E, C, CE> startCaptionedList(
-	  ITextComponent name, E listEntry, CE captionEntry, Pair<C, List<V>> value
+	@Override public <
+	  V, E extends AbstractListListEntry<V, ?, E>, EB extends FieldBuilder<List<V>, E, ?>,
+	  C, CE extends AbstractConfigListEntry<C> & IChildListEntry, CEB extends FieldBuilder<C, CE, ?>
+	> CaptionedListEntryBuilder<V, E, EB, C, CE, CEB> startCaptionedList(
+	  ITextComponent name, EB listEntry, CEB captionEntry, Pair<C, List<V>> value
 	) {
 		return new CaptionedListEntryBuilder<>(
 		  this, name, value, listEntry, captionEntry);
@@ -179,9 +198,10 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 	
 	@Override public <
 	  L, R, LE extends AbstractConfigListEntry<L> & IChildListEntry,
-	  RE extends AbstractConfigListEntry<R> & IChildListEntry
-	> PairListEntryBuilder<L, R, LE, RE> startPair(
-	  ITextComponent name, LE leftEntry, RE rightEntry, Pair<L, R> value
+	  RE extends AbstractConfigListEntry<R> & IChildListEntry,
+	  LEB extends FieldBuilder<L, LE, LEB>, REB extends FieldBuilder<R, RE, REB>
+	> PairListEntryBuilder<L, R, LE, RE, LEB, REB> startPair(
+	  ITextComponent name, LEB leftEntry, REB rightEntry, Pair<L, R> value
 	) {
 		return new PairListEntryBuilder<>(this, name, value, leftEntry, rightEntry);
 	}
@@ -189,9 +209,12 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 	@Override public <
 	  L, R, M, LE extends AbstractConfigListEntry<L> & IChildListEntry,
 	  ME extends AbstractConfigListEntry<M> & IChildListEntry,
-	  RE extends AbstractConfigListEntry<R> & IChildListEntry
-	> TripleListEntryBuilder<L, M, R, LE, ME, RE> startTriple(
-	  ITextComponent name, LE leftEntry, ME middleEntry, RE rightEntry, Triple<L, M, R> value
+	  RE extends AbstractConfigListEntry<R> & IChildListEntry,
+	  LEB extends FieldBuilder<L, LE, LEB>,
+	  MEB extends FieldBuilder<M, ME, MEB>,
+	  REB extends FieldBuilder<R, RE, REB>
+	> TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB> startTriple(
+	  ITextComponent name, LEB leftEntry, MEB middleEntry, REB rightEntry, Triple<L, M, R> value
 	) {
 		return new TripleListEntryBuilder<>(this, name, value, leftEntry, middleEntry, rightEntry);
 	}

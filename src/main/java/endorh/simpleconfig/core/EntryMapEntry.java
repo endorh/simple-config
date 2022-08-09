@@ -5,9 +5,9 @@ import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Util;
@@ -42,12 +42,12 @@ import static java.util.Collections.singletonList;
  * Currently, serializes in the config file as a {@link CompoundNBT}
  */
 public class EntryMapEntry<K, V, KC, C, KG, G,
-  E extends AbstractConfigEntry<V, C, G, E>,
+  E extends AbstractConfigEntry<V, C, G>,
   B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
   KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
   extends AbstractConfigEntry<
-  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
+  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected final KB keyEntryBuilder;
 	protected final KE keyEntry;
@@ -86,9 +86,9 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	}
 	
 	public static class Builder<K, V, KC, C, KG, G,
-	  E extends AbstractConfigEntry<V, C, G, E>,
+	  E extends AbstractConfigEntry<V, C, G>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
 	  extends AbstractConfigEntryBuilder<
 	  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
@@ -327,23 +327,23 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(
 	  ConfigEntryBuilder builder
 	) {
-		final KE ke = keyEntryBuilder.build(holder, holder.nextName())
-		  .withSaver((g, h) -> {})
-		  .withDisplayName(new StringTextComponent(""));
+		final KE ke = keyEntryBuilder.build(holder, holder.nextName());
+		ke.setSaver((g, h) -> {});
+		ke.setDisplayName(new StringTextComponent(""));
 		ke.nonPersistent = true;
-		final E e = entryBuilder.build(holder, holder.nextName())
-		  .withSaver((g, h) -> {})
-		  .withDisplayName(new StringTextComponent(""));
+		final E e = entryBuilder.build(holder, holder.nextName());
+		e.setSaver((g, h) -> {});
+		e.setDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
-		KGE kg = ke.buildChildGUIEntry(builder);
-		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder)
+		KGE kg = (KGE) ke.buildChildGUIEntry(builder).build();
+		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));
-		g.removeEntryFlag(EntryFlag.NON_PERSISTENT);
-		ke.guiEntry = kg;
-		e.guiEntry = g;
+		g.removeTag(EntryTag.NON_PERSISTENT);
+		ke.setGuiEntry(kg);
+		e.setGuiEntry(g);
 		return Pair.of(kg, g);
 	}
 	
@@ -424,7 +424,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<List<Pair<KG, G>>>> buildGUIEntry(
+	public Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		List<Pair<KG, G>> guiValue = forGui(get());
@@ -437,6 +437,6 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  .setCellErrorSupplier(this::getCellError)
 		  .setMultiCellErrorSupplier(this::getMultiCellError)
 		  .setExpanded(expand);
-		return Optional.of(decorate(entryBuilder).build());
+		return Optional.of(decorate(entryBuilder));
 	}
 }

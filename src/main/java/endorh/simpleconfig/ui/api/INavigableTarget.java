@@ -83,6 +83,9 @@ public interface INavigableTarget extends INestedGuiEventHandler {
 	default void applyMergeHighlight() {
 		applyFocusHighlight(0x80603070);
 	}
+	default void applyWarningHighlight() {
+		applyFocusHighlight(0xA0646448);
+	}
 	default void applyErrorHighlight() {
 		applyFocusHighlight(0x80FF4242);
 	}

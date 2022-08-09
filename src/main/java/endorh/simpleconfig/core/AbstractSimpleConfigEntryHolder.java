@@ -11,7 +11,6 @@ import endorh.simpleconfig.core.entry.TextEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.yaml.NodeComments;
-import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -25,13 +24,13 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.blankLine;
+import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
 
 public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
 	protected static final Pattern DOT = Pattern.compile("\\.");
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries;
+	protected Map<String, AbstractConfigEntry<?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
 	protected SimpleConfig root;
 	protected boolean dirty = false;
@@ -68,15 +67,20 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		if (previous == null) previous = new NodeComments();
 		List<CommentLine> blockComments = previous.getBlockComments();
 		String configComment = getConfigComment();
-		if (configComment.endsWith("\n")) configComment = configComment.substring(0, configComment.length() - 1);
-		if (!configComment.isEmpty()) {
-			if (blockComments == null) blockComments = Lists.newArrayList();
-			blockComments.clear();
-			Arrays.stream(LINE_BREAK.split(configComment))
-			  .map(line -> SimpleConfigCommentedYamlWriter.commentLine(" " + line))
-			  .forEach(blockComments::add);
-			previous.setBlockComments(blockComments);
+		if (configComment.endsWith("\n"))
+			configComment = configComment.substring(0, configComment.length() - 1);
+		if (blockComments == null) blockComments = Lists.newArrayList();
+		blockComments.removeIf(l -> l.getValue().startsWith("#"));
+		if (!configComment.isEmpty()) Arrays.stream(LINE_BREAK.split(configComment))
+		  .map(line -> commentLine("# " + line))
+		  .forEach(blockComments::add);
+		// FIXME: Remove once snakeyaml is updated to 1.31 (see bitbucket.org/snakeyaml/snakeyaml/issues/518)
+		if (blockComments.size() > 90) {
+			LOGGER.warn("Group " + getGlobalPath() + " has too many comments [BUG]. Trimmed to the last 90");
+			blockComments.subList(0, blockComments.size() - 90).clear();
 		}
+		if (blockComments.isEmpty()) blockComments = null;
+		previous.setBlockComments(blockComments);
 		return previous.isNotEmpty()? previous : null;
 	}
 	
@@ -93,44 +97,50 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		return dirty;
 	}
 	
+	protected void removeGUI() {
+		entries.values().forEach(AbstractConfigEntry::removeGUI);
+		children.values().forEach(AbstractSimpleConfigEntryHolder::removeGUI);
+	}
+	
 	protected void saveSnapshot(
-	  CommentedConfig config, boolean fromGUI, @Nullable Set<String> selectedPaths
+	  CommentedConfig config, boolean fromGUI, boolean fromRemote, @Nullable Set<String> selectedPaths
 	) {
 		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
 			final CommentedConfig subConfig = config.createSubConfig();
-			e.getValue().saveSnapshot(subConfig, fromGUI, selectedPaths);
+			e.getValue().saveSnapshot(subConfig, fromGUI, fromRemote, selectedPaths);
 			if (!subConfig.isEmpty())
 				config.set(e.getKey(), subConfig);
 		}
-		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
+		for (Entry<String, AbstractConfigEntry<?, ?, ?>> e : entries.entrySet()) {
 			//noinspection unchecked
-			final AbstractConfigEntry<?, Object, ?, ?> entry =
-			  (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
-			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
-			    && !entry.nonPersistent)
-				entry.put(config, fromGUI? entry.guiForConfig() : entry.getForConfig());
+			final AbstractConfigEntry<?, Object, ?> entry =
+			  (AbstractConfigEntry<?, Object, ?>) e.getValue();
+			if ((selectedPaths == null || selectedPaths.contains(entry.getPath())) && !entry.nonPersistent)
+				entry.put(
+				  config, fromGUI? entry.apply(ee -> ee.forConfig(ee.fromGuiOrDefault(ee.getGUI())))
+				                 : entry.apply(ee -> ee.forConfig(ee.get())));
 		}
 	}
 	
 	protected void loadSnapshot(
-	  CommentedConfig config, boolean intoGUI, @Nullable Set<String> selectedPaths
+	  CommentedConfig config, boolean intoGUI, boolean forRemote, @Nullable Set<String> selectedPaths
 	) {
 		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
 			if (config.contains(e.getKey())) {
 				final Object sub = config.get(e.getKey());
 				if (sub instanceof CommentedConfig)
-					e.getValue().loadSnapshot(((CommentedConfig) sub), intoGUI, selectedPaths);
+					e.getValue().loadSnapshot((CommentedConfig) sub, intoGUI, forRemote, selectedPaths);
 			}
 		}
-		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
+		for (Entry<String, AbstractConfigEntry<?, ?, ?>> e : entries.entrySet()) {
 			//noinspection unchecked
-			AbstractConfigEntry<?, Object, ?, ?> entry = (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
+			AbstractConfigEntry<?, Object, ?> entry = (AbstractConfigEntry<?, Object, ?>) e.getValue();
 			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
-			    && config.contains(e.getKey())) {
+			    && config.contains(e.getKey()) && !entry.nonPersistent) {
 				try {
 					if (intoGUI) {
-						entry.setFromConfigForGUI(entry.get(config));
-					} else entry.setFromConfig(entry.get(config));
+						entry.accept(ee -> ee.setGUI(ee.forGui(ee.fromConfigOrDefault(ee.get(config))), forRemote));
+					} else entry.accept(ee -> ee.set(ee.fromConfig(ee.get(config))));
 				} catch (InvalidConfigValueTypeException ignored) {
 					LOGGER.warn("Error loading config snapshot. Invalid value type for entry " + entry.getGlobalPath());
 				}
@@ -139,37 +149,28 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected void saveGUISnapshot(CommentedConfig config, @Nullable Set<String> selectedPaths) {
-		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
-			final CommentedConfig subConfig = config.createSubConfig();
-			e.getValue().saveGUISnapshot(subConfig, selectedPaths);
-			if (!subConfig.isEmpty())
-				config.set(e.getKey(), subConfig);
-		}
-		for (Entry<String, AbstractConfigEntry<?, ?, ?, ?>> e : entries.entrySet()) {
-			//noinspection unchecked
-			final AbstractConfigEntry<?, Object, ?, ?> entry =
-			  (AbstractConfigEntry<?, Object, ?, ?>) e.getValue();
-			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
-			    && !entry.nonPersistent)
-				entry.put(config, entry.guiForConfig());
-		}
-	}
-	
-	@OnlyIn(Dist.CLIENT)
 	protected void loadGUIExternalChanges() {
 		children.values().forEach(AbstractSimpleConfigEntryHolder::loadGUIExternalChanges);
-		entries.values().forEach(AbstractSimpleConfigEntryHolder::setForGUIAsExternal);
+		entries.values().forEach(entry -> entry.accept(e -> e.setGUIAsExternal(e.forGui(e.get()), false)));
 	}
 	
-	private static <V> void setForGUIAsExternal(AbstractConfigEntry<V, ?, ?, ?> entry) {
-		entry.setForGUIAsExternal(entry.get());
+	protected void loadGUIRemoteExternalChanges(CommentedConfig config) {
+		children.forEach((k, child) -> {
+			Object sub = config.get(k);
+			if (sub instanceof CommentedConfig) child.loadGUIRemoteExternalChanges((CommentedConfig) sub);
+		});
+		entries.forEach((k, entry) -> {
+			if (config.contains(k) && !entry.nonPersistent) {
+				Object v = config.get(k);
+				entry.accept(e -> e.setGUIAsExternal(e.forGui(e.fromConfigOrDefault(e.fromActualConfig(v))), true));
+			}
+		});
 	}
 	
 	protected void updateComments(Map<String, NodeComments> comments) {
-		String type = root.getType().extension();
+		String type = root.getType().getAlias();
 		boolean first = true;
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values()) {
+		for (AbstractConfigEntry<?, ?, ?> entry : entries.values()) {
 			String path = entry.getPath();
 			if (path.startsWith(type + ".")) path = path.substring(type.length() + 1);
 			NodeComments nodeComments = entry.getNodeComments(comments.get(path));
@@ -184,7 +185,10 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 			NodeComments nodeComments = child.getNodeComments(comments.get(path));
 			if (first) {
 				first = false;
-			} else nodeComments = NodeComments.prefix(blankLine()).appendAsPrefix(nodeComments, false);
+			} else {
+				if (nodeComments == null) nodeComments = new NodeComments();
+				nodeComments.addSeparatorLine();
+			}
 			if (nodeComments != null && nodeComments.isNotEmpty())
 				comments.put(path, nodeComments);
 			else comments.remove(path);
@@ -194,7 +198,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	protected void buildConfigSpec(ConfigSpec spec, String path) {
 		final String thisPath = path + getName() + '.';
-		for (AbstractConfigEntry<?, ?, ?, ?> e : entries.values())
+		for (AbstractConfigEntry<?, ?, ?> e : entries.values())
 			e.buildSpec(spec, thisPath);
 		for (AbstractSimpleConfigEntryHolder child : children.values())
 			child.buildConfigSpec(spec, thisPath);
@@ -213,14 +217,6 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 			children.values().forEach(c -> c.markDirty(false));
 			entries.values().forEach(e -> e.dirty(false));
 		}
-	}
-	
-	/**
-	 * Remove GUI bindings after saving a GUI
-	 */
-	@OnlyIn(Dist.CLIENT) protected void removeGUI() {
-		entries.values().forEach(e -> e.guiEntry = null);
-		children.values().forEach(AbstractSimpleConfigEntryHolder::removeGUI);
 	}
 	
 	/**
@@ -271,11 +267,11 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @see #set(String, Object)
 	 * @see #getEntry(String)
 	 */
-	@Internal public <T, C, Gui> @Nullable AbstractConfigEntry<T, C, Gui, ?> getEntryOrNull(String path) {
-		AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(path);
+	@Internal public <T, C, Gui> @Nullable AbstractConfigEntry<T, C, Gui> getEntryOrNull(String path) {
+		AbstractConfigEntry<?, ?, ?> entry = entries.get(path);
 		if (entry == null) entry = getSubEntry(path);
 		//noinspection unchecked
-		return (AbstractConfigEntry<T, C, Gui, ?>) entry;
+		return (AbstractConfigEntry<T, C, Gui>) entry;
 	}
 	
 	/**
@@ -288,8 +284,8 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @see #set(String, Object)
 	 * @see #getEntryOrNull(String)
 	 */
-	@Internal public <T, C, Gui> @NotNull AbstractConfigEntry<T, C, Gui, ?> getEntry(String path) {
-		AbstractConfigEntry<T, C, Gui, ?> entry = getEntryOrNull(path);
+	@Internal public <T, C, Gui> @NotNull AbstractConfigEntry<T, C, Gui> getEntry(String path) {
+		AbstractConfigEntry<T, C, Gui> entry = getEntryOrNull(path);
 		if (entry == null) throw new NoSuchConfigEntryError(getPath() + "." + path);
 		return entry;
 	}
@@ -303,7 +299,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @param <T> Expected type of the entry
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
-	protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
+	protected <T> AbstractConfigEntry<T, ?, ?> getSubEntry(String path) {
 		final String[] split = DOT.split(path, 2);
 		if (split.length < 2) return null;
 		AbstractSimpleConfigEntryHolder child = getChildOrNull(split[0]);
@@ -317,7 +313,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @return {@code true} if the entry exists, {@code false} otherwise
 	 */
 	@Internal public boolean hasEntry(String path) {
-		AbstractConfigEntry<?, ?, ?, ?> entry = getEntryOrNull(path);
+		AbstractConfigEntry<?, ?, ?> entry = getEntryOrNull(path);
 		return entry != null && !(entry instanceof TextEntry);
 	}
 	
@@ -392,7 +388,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 */
 	@Internal @Deprecated @Override public <V> void doSet(String path, V value) {
 		try {
-			AbstractConfigEntry<V, ?, Object, ?> entry = this.getEntry(path);
+			AbstractConfigEntry<V, ?, Object> entry = this.getEntry(path);
 			if (!entry.typeClass.isInstance(value))
 				throw new InvalidConfigValueTypeException(getPath() + "." + path);
 			entry.set(value);
@@ -423,7 +419,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	protected <V> void doSetForGUI(String path, V value) {
 		try {
-			getEntry(path).setForGUI(value);
+			getEntry(path).accept(e -> e.setGUI(e.forGui(value)));
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
@@ -505,7 +501,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	
 	@Override public <V> V getFromGUI(String path) {
 		try {
-			return this.<V, Object, Object>getEntry(path).getFromGUI();
+			return this.<V, Object, Object>getEntry(path).apply(e -> e.fromGui(e.getGUI()));
 		} catch (ClassCastException e) {
 			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
 		}
@@ -515,9 +511,9 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * Reset all entries to their default values.
 	 */
 	public void reset() {
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : this.entries.values()) {
+		for (AbstractConfigEntry<?, ?, ?> entry : this.entries.values()) {
 			//noinspection unchecked
-			AbstractConfigEntry<Object, ?, ?, ?> e = (AbstractConfigEntry<Object, ?, ?, ?>) entry;
+			AbstractConfigEntry<Object, ?, ?> e = (AbstractConfigEntry<Object, ?, ?>) entry;
 			e.set(e.defValue);
 		}
 		for (AbstractSimpleConfigEntryHolder child: children.values())
@@ -534,7 +530,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		if (child != null) {
 			child.reset();
 		} else {
-			AbstractConfigEntry<Object, Object, Object, ?> entry = getEntry(path);
+			AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 			entry.set(entry.defValue);
 		}
 	}
@@ -546,9 +542,9 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
 	@OnlyIn(Dist.CLIENT) public boolean resetInGUI(String path) {
-		AbstractConfigEntry<Object, Object, Object, ?> entry = getEntry(path);
+		AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 		if (entry.hasGUI()) {
-			AbstractConfigListEntry<Object> guiEntry = entry.guiEntry;
+			AbstractConfigListEntry<Object> guiEntry = entry.getGuiEntry();
 			if (guiEntry != null) guiEntry.resetValue();
 			return true;
 		} else return false;
@@ -561,9 +557,9 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * @throws NoSuchConfigEntryError if the entry is not found
 	 */
 	@OnlyIn(Dist.CLIENT) public boolean restoreInGUI(String path) {
-		AbstractConfigEntry<Object, Object, Object, ?> entry = getEntry(path);
+		AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 		if (entry.hasGUI()) {
-			AbstractConfigListEntry<Object> guiEntry = entry.guiEntry;
+			AbstractConfigListEntry<Object> guiEntry = entry.getGuiEntry();
 			if (guiEntry != null) guiEntry.restoreValue();
 			return true;
 		} else return false;

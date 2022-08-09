@@ -46,6 +46,12 @@ public class MultiFunctionIconButton extends TintedButton {
 	protected int defaultTint = 0;
 	
 	public static MultiFunctionIconButton of(
+	  @NotNull Icon icon,   ButtonActionBuilder builder
+	) {
+		return of(icon, icon.w, icon.w, builder);
+	}
+	
+	public static MultiFunctionIconButton of(
 	  @NotNull Icon icon, int minWidth, int maxWidth, ButtonActionBuilder builder
 	) {
 		return new MultiFunctionIconButton(0, 0, minWidth, maxWidth, icon, builder);
@@ -115,6 +121,11 @@ public class MultiFunctionIconButton extends TintedButton {
 		return this;
 	}
 	
+	public ITextComponent getTitle() {
+		ButtonAction action = activeAction;
+		return action.titleSupplier != null? action.titleSupplier.get() : defaultTitle.get();
+	}
+	
 	@Override public void renderButton(
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
@@ -128,7 +139,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		
 		Minecraft mc = Minecraft.getInstance();
 		FontRenderer font = mc.fontRenderer;
-		ITextComponent title = action.titleSupplier != null ? action.titleSupplier.get() : defaultTitle.get();
+		ITextComponent title = getTitle();
 		Icon icon = action.icon != null ? action.icon.get() : null;
 		if (icon == null) icon = defaultIcon;
 		final int textWidth = font.getStringPropertyWidth(title);
@@ -217,7 +228,7 @@ public class MultiFunctionIconButton extends TintedButton {
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 257 || keyCode == 32 || keyCode == 335) // Enter | Space | NumPadEnter
+		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_KP_ENTER)
 			return press(modifiers);
 		return false;
 	}

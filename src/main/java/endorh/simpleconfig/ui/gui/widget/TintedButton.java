@@ -64,6 +64,6 @@ public class TintedButton extends Button {
 	}
 	
 	public void setTintColor(int color) {
-		this.tintColor = color;
+		tintColor = color;
 	}
 }

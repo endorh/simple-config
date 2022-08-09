@@ -2,8 +2,8 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -92,19 +92,19 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float, FloatE
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Float>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Float, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {
 			final FloatFieldBuilder valBuilder = builder
 			  .startFloatField(getDisplayName(), get())
 			  .setMin(min).setMax(max);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		} else {
 			final FloatSliderBuilder valBuilder =
 			  new FloatSliderBuilder(builder, getDisplayName(), get(), min, max)
 				 .setTextGetter(sliderTextSupplier);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		}
 	}
 	

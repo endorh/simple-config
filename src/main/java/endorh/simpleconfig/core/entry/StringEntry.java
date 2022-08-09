@@ -6,10 +6,10 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -32,7 +32,7 @@ import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofString
 import static java.lang.Math.min;
 
 public class StringEntry
-  extends AbstractConfigEntry<String, String, String, StringEntry>
+  extends AbstractConfigEntry<String, String, String>
   implements IKeyEntry<String> {
 	protected Supplier<List<String>> choiceSupplier;
 	protected SimpleComboBoxModel<String> suggestionProvider;
@@ -221,21 +221,21 @@ public class StringEntry
 		return tooltips;
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<String, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (choiceSupplier == null) {
 			final TextFieldBuilder valBuilder = builder
 			  .startTextField(getDisplayName(), get())
 			  .setMaxLength(maxLength);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		} else {
 			final ComboBoxFieldBuilder<String> valBuilder =
 			  builder.startComboBox(getDisplayName(), ofString(), forGui(get()))
 				 .setSuggestionMode(!restrict)
 			    .setSuggestionProvider(suggestionProvider)
 			    .setMaxLength(maxLength);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		}
 	}
 	

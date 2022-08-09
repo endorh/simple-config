@@ -23,7 +23,7 @@ public class EntryPairListBuilder<
 	  ConfigEntryBuilder builder, ITextComponent name, List<Pair<K, V>> value,
 	  Function<EntryPairListListEntry<K, V, KE, VE>, Pair<KE, VE>> cellFactory
 	) {
-		super(builder, name, value);
+		super(EntryPairListListEntry.class, builder, name, value);
 		this.cellFactory = cellFactory;
 	}
 	

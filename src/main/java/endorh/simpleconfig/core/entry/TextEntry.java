@@ -6,8 +6,8 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextDescriptionBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> {
+public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected @Nullable Supplier<ITextComponent> translationSupplier = null; // Lazy
 	protected boolean own = false;
@@ -209,12 +209,12 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void, TextEntry> 
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Void>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Void, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final TextDescriptionBuilder valBuilder = builder
 		  .startTextDescription(this::getDisplayName)
-		  .setTooltipSupplier(() -> this.getTooltip(null));
-		return Optional.of(decorate(valBuilder).build());
+		  .setTooltipSupplier(() -> getTooltip(null));
+		return Optional.of(decorate(valBuilder));
 	}
 }

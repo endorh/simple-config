@@ -10,13 +10,14 @@ import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<Self>>
-  extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation, Self>
+  extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation>
   implements IKeyEntry<ResourceLocation> {
 	protected SimpleComboBoxModel<ResourceLocation> suggestionProvider;
 	
@@ -49,7 +50,7 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			return copy;
 		}
 		
-		@Override protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 			final Entry entry = super.build(parent, name);
 			entry.suggestionProvider = new SimpleComboBoxModel<>(suggestionSupplier);
 			return entry;

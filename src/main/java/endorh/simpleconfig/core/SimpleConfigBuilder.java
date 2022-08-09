@@ -3,8 +3,9 @@ package endorh.simpleconfig.core;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.command.CommandSource;
@@ -16,8 +17,6 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -52,7 +51,7 @@ import static java.util.Collections.unmodifiableMap;
 public class SimpleConfigBuilder
   extends AbstractSimpleConfigEntryHolderBuilder<SimpleConfigBuilder> {
 	protected final String modId;
-	protected final ModConfig.Type type;
+	protected final Type type;
 	protected @Nullable LiteralArgumentBuilder<CommandSource> commandRoot = null;
 	
 	protected final String title;
@@ -219,7 +218,7 @@ public class SimpleConfigBuilder
 		return translation(name) + ":help";
 	}
 	
-	@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry) {
+	@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?> entry) {
 		if (entry.getTranslation() == null)
 			entry.setTranslation(translation(entry.name));
 		if (entry.getTooltipKey() == null)
@@ -274,7 +273,7 @@ public class SimpleConfigBuilder
 		
 		protected String path;
 		
-		protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategory> decorator;
+		protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator;
 		protected @Nullable ResourceLocation background;
 		
 		protected CategoryBuilder(String name) {
@@ -368,7 +367,7 @@ public class SimpleConfigBuilder
 		 */
 		@OnlyIn(Dist.CLIENT)
 		@Contract("_ -> this") public CategoryBuilder withGUIDecorator(
-		  BiConsumer<SimpleConfigCategory, ConfigCategory> decorator
+		  BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator
 		) {
 			this.decorator = decorator;
 			return this;
@@ -401,7 +400,7 @@ public class SimpleConfigBuilder
 			return translation(name) + ":help";
 		}
 		
-		@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry) {
+		@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?> entry) {
 			if (entry.getTranslation() == null)
 				entry.setTranslation(translation(entry.name));
 			if (entry.getTooltipKey() == null)
@@ -427,10 +426,10 @@ public class SimpleConfigBuilder
 			if (!isRoot) builder.enterSection(name);
 			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, isRoot, baker);
 			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
-			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			entries.forEach((name, value) -> {
 				if (builder.canBuildEntry(name)) {
-					final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(cat, name);
+					final AbstractConfigEntry<?, ?, ?> entry = value.build(cat, name);
 					entriesByName.put(name, entry);
 					buildTranslations(entry);
 					entry.backingField = getBackingField(name);
@@ -536,7 +535,7 @@ public class SimpleConfigBuilder
 		
 		@Contract("_, _ -> this")
 		public <
-		  V, C, G, E extends AbstractConfigEntry<V, C, G, E> & IKeyEntry<G>,
+		  V, C, G, E extends AbstractConfigEntry<V, C, G> & IKeyEntry<G>,
 		  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
 		> GroupBuilder caption(String name, B entry) {
 			if (heldEntryBuilder != null)
@@ -575,7 +574,7 @@ public class SimpleConfigBuilder
 			return translation(name) + ":help";
 		}
 		
-		@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?, ?> entry) {
+		@Override protected void buildTranslations(AbstractConfigEntry<?, ?, ?> entry) {
 			if (entry.getTranslation() == null)
 				entry.setTranslation(translation(entry.name));
 			if (entry.getTooltipKey() == null)
@@ -601,8 +600,8 @@ public class SimpleConfigBuilder
 				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded, baker);
 			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded, baker);
 			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
-			final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
-			final AbstractConfigEntry<?, ?, ?, ?> heldEntry =
+			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
+			final AbstractConfigEntry<?, ?, ?> heldEntry =
 			  heldEntryBuilder != null ? heldEntryBuilder.build(group, heldEntryName) : null;
 			if (heldEntry != null && builder.canBuildEntry(heldEntryName)) {
 				entriesByName.put(heldEntryName, heldEntry);
@@ -613,7 +612,7 @@ public class SimpleConfigBuilder
 			}
 			entries.forEach((name, b) -> {
 				if (b == heldEntryBuilder || !builder.canBuildEntry(name)) return;
-				final AbstractConfigEntry<?, ?, ?, ?> entry = b.build(group, name);
+				final AbstractConfigEntry<?, ?, ?> entry = b.build(group, name);
 				entriesByName.put(name, entry);
 				buildTranslations(entry);
 				entry.backingField = getBackingField(name);
@@ -686,16 +685,21 @@ public class SimpleConfigBuilder
 		preBuildHook();
 		if (type == Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
-			        ? (SimpleConfig::syncToClients)
-			        : (SimpleConfig::syncToServer);
-		} else saver = SimpleConfig::checkRestart;
+			        ? SimpleConfig::syncToClients
+			        : SimpleConfig::syncToServer;
+		} else if (type == Type.COMMON) {
+			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
+			        ? SimpleConfig::syncToClients
+			        : SimpleConfig::checkRestart;
+		} else if (FMLEnvironment.dist != Dist.DEDICATED_SERVER)
+			saver = SimpleConfig::checkRestart;
 		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
-		final Map<String, AbstractConfigEntry<?, ?, ?, ?>> entriesByName = new LinkedHashMap<>();
+		final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
 		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
 		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
 		entries.forEach((name, value) -> {
 			if (builder.canBuildEntry(name)) {
-				final AbstractConfigEntry<?, ?, ?, ?> entry = value.build(config, name);
+				final AbstractConfigEntry<?, ?, ?> entry = value.build(config, name);
 				entriesByName.put(name, entry);
 				buildTranslations(entry);
 				entry.backingField = getBackingField(name);
@@ -744,7 +748,7 @@ public class SimpleConfigBuilder
 		boolean canBuildSection(String name) {
 			return true;
 		}
-		abstract void build(AbstractConfigEntry<?, ?, ?, ?> entry);
+		abstract void build(AbstractConfigEntry<?, ?, ?> entry);
 		void enterSection(String name) {}
 		void exitSection() {}
 		abstract ForgeConfigSpec build();
@@ -760,7 +764,7 @@ public class SimpleConfigBuilder
 			modContainer.addConfig(modConfig);
 		}
 		
-		@Override void build(AbstractConfigEntry<?, ?, ?, ?> entry) {
+		@Override void build(AbstractConfigEntry<?, ?, ?> entry) {
 			entry.buildConfig(builder);
 		}
 		

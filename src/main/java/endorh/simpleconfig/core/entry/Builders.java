@@ -122,7 +122,7 @@ public class Builders {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui> & IKeyEntry<Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner, Consumer<V> action
 	) { return button(inner, (v, h) -> action.accept(v)); }
@@ -132,7 +132,7 @@ public class Builders {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
+	public static <V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui> & IKeyEntry<Gui>>
 	EntryButtonEntry.Builder<V, Gui, Inner> button(
 	  AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner,
 	  BiConsumer<V, ISimpleConfigEntryHolder> action
@@ -784,7 +784,7 @@ public class Builders {
 	 */
 	public static <V, C, G, E extends AbstractListEntry<V, C, G, E>,
 	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	CaptionedListEntry.Builder<V, C, G, E, B, CV, CC, CG, CE, CB> caption(
 	  CB caption, B list
@@ -798,12 +798,12 @@ public class Builders {
 	 * Attach an entry as the caption of a map entry<br>
 	 * Changes the value to a {@link Pair} of the caption's value and the map's value
 	 */
-	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
 	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	CaptionedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
 	caption(CB caption, MB map) {
@@ -819,7 +819,7 @@ public class Builders {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
 	EntryListEntry.Builder<V, C, G, E, Builder> list(Builder entry) {
 		return list(entry, Collections.emptyList());
@@ -830,7 +830,7 @@ public class Builders {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
 	EntryListEntry.Builder<V, C, G, E, Builder> list(Builder entry, List<V> value) {
 		return new EntryListEntry.Builder<>(value, entry);
@@ -841,7 +841,7 @@ public class Builders {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	@SuppressWarnings("unchecked") public static <V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
 	EntryListEntry.Builder<V, C, G, E, Builder> list(Builder entry, V... values) {
 		return list(entry, Arrays.stream(values).collect(Collectors.toList()));
@@ -860,9 +860,9 @@ public class Builders {
 	 * @param entry    The entry to be used as value, which may be another map
 	 *                 entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryMapEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry
@@ -880,9 +880,9 @@ public class Builders {
 	 *                 entry, or a list entry. Not persistent entries cannot be used
 	 * @param value    Entry value
 	 */
-	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryMapEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
@@ -897,7 +897,7 @@ public class Builders {
 	 * @param entry The entry to be used as value, which may be other
 	 *              map entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
 	EntryMapEntry.Builder<String, V, String, C, String, G, E, Builder, StringEntry, StringEntry.Builder> map(
 	  Builder entry
@@ -913,7 +913,7 @@ public class Builders {
 	 *              map entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value (default: empty map)
 	 */
-	public static <V, C, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <V, C, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>>
 	EntryMapEntry.Builder<String, V, String, C, String, G, E, Builder, StringEntry, StringEntry.Builder> map(
 	  Builder entry, Map<String, V> value
@@ -932,9 +932,9 @@ public class Builders {
 	 * @param entry    The entry to be used as value, which may be another map
 	 *                 entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry
@@ -952,9 +952,9 @@ public class Builders {
 	 *                 entry, or a list entry. Not persistent entries cannot be used
 	 * @param value    Entry value
 	 */
-	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G, E>,
+	public static <K, V, KC, C, KG, G, E extends AbstractConfigEntry<V, C, G>,
 	  Builder extends AbstractConfigEntryBuilder<V, C, G, E, Builder>,
-	  KE extends AbstractConfigEntry<K, KC, KG, KE> & IKeyEntry<KG>,
+	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
 	  KeyBuilder extends AbstractConfigEntryBuilder<K, KC, KG, KE, KeyBuilder>>
 	EntryPairListEntry.Builder<K, V, KC, C, KG, G, E, Builder, KE, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
@@ -973,8 +973,8 @@ public class Builders {
     * @param rightEntry The entry for the right
     */
 	public static <L, R, LC, RC, LG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
 	> EntryPairEntry.Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> pair(
@@ -994,8 +994,8 @@ public class Builders {
 	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
 	public static <L, R, LC, RC, LG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
 	> EntryPairEntry.Builder<L, R, LC, RC, LG, RG, LE, RE, LB, RB> pair(
@@ -1018,9 +1018,9 @@ public class Builders {
     * @param rightEntry  The entry for the right
     */
 	public static <L, M, R, LC, MC, RC, LG, MG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
@@ -1043,9 +1043,9 @@ public class Builders {
 	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
 	public static <L, M, R, LC, MC, RC, LG, MG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>

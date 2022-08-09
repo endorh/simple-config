@@ -15,7 +15,7 @@ public class IntListBuilder
   extends RangedListFieldBuilder<Integer, IntegerListCell, IntegerListListEntry, IntListBuilder> {
 	
 	public IntListBuilder(ConfigEntryBuilder builder, ITextComponent name, List<Integer> value) {
-		super(builder, name, value);
+		super(IntegerListListEntry.class, builder, name, value);
 	}
 	
 	public IntListBuilder setMin(int min) {

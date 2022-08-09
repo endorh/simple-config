@@ -3,7 +3,9 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -18,13 +20,12 @@ import java.util.Optional;
 
 public class EntryTripleEntry<
   L, M, R, LC, MC, RC, LG, MG, RG,
-  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
-  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>
+  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+  ME extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>,
+  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>
 > extends AbstractConfigEntry<
-  Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>,
-  EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE>
-> implements IKeyEntry<Triple<LG, MG, RG>> {
+  Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>
+  > implements IKeyEntry<Triple<LG, MG, RG>> {
 	protected final LE leftEntry;
 	protected final ME middleEntry;
 	protected final RE rightEntry;
@@ -46,9 +47,9 @@ public class EntryTripleEntry<
 	
 	public static class Builder<
 	  L, M, R, LC, MC, RC, LG, MG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-	  ME extends AbstractConfigEntry<M, MC, MG, ME> & IKeyEntry<MG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+	  ME extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>,
+	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
@@ -120,9 +121,9 @@ public class EntryTripleEntry<
 		@Override protected EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			LE leftEntry = DummyEntryHolder.build(parent, leftBuilder).withSaver((v, h) -> {});
-			ME middleEntry = DummyEntryHolder.build(parent, middleBuilder).withSaver((v, h) -> {});
-			RE rightEntry = DummyEntryHolder.build(parent, rightBuilder).withSaver((v, h) -> {});
+			LE leftEntry = DummyEntryHolder.build(parent, leftBuilder);
+			ME middleEntry = DummyEntryHolder.build(parent, middleBuilder);
+			RE rightEntry = DummyEntryHolder.build(parent, rightBuilder);
 			final EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE> entry =
 			  new EntryTripleEntry<>(parent, name, value, leftEntry, middleEntry, rightEntry);
 			entry.leftIcon = leftIcon;
@@ -222,18 +223,34 @@ public class EntryTripleEntry<
 		return tooltips;
 	}
 	
+	@SuppressWarnings("unchecked") public <
+	  LGE extends AbstractConfigListEntry<LG> & IChildListEntry,
+	  MGE extends AbstractConfigListEntry<MG> & IChildListEntry,
+	  RGE extends AbstractConfigListEntry<RG> & IChildListEntry,
+	  LGEB extends FieldBuilder<LG, LGE, LGEB>,
+	  MGEB extends FieldBuilder<MG, MGE, MGEB>,
+	  RGEB extends FieldBuilder<RG, RGE, RGEB>
+	  > TripleListEntryBuilder<LG, MG, RG, LGE, MGE, RGE, LGEB, MGEB, RGEB> makeGUIBuilder(
+	  ConfigEntryBuilder builder,
+	  FieldBuilder<LG, LGE, ?> leftBuilder,
+	  FieldBuilder<MG, MGE, ?> middleBuilder,
+	  FieldBuilder<RG, RGE, ?> rightBuilder
+	) {
+		return builder.startTriple(
+		  getDisplayName(), (LGEB) leftBuilder, (MGEB) middleBuilder,
+		  (RGEB) rightBuilder, forGui(get()));
+	}
+	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Triple<LG, MG, RG>>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Triple<LG, MG, RG>, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		TripleListEntryBuilder<LG, MG, RG, ?, ?, ?> entryBuilder = builder.startTriple(
-		  getDisplayName(),
-		  leftEntry.buildChildGUIEntry(builder),
+		TripleListEntryBuilder<LG, MG, RG, ?, ?, ?, ?, ?, ?> entryBuilder = makeGUIBuilder(
+		  builder, leftEntry.buildChildGUIEntry(builder),
 		  middleEntry.buildChildGUIEntry(builder),
-		  rightEntry.buildChildGUIEntry(builder),
-		  forGui(get()))
+		  rightEntry.buildChildGUIEntry(builder))
 		  .withIcons(leftIcon, rightIcon)
 		  .withWeights(leftWeight, rightWeight);
-		return Optional.of(decorate(entryBuilder).build());
+		return Optional.of(decorate(entryBuilder));
 	}
 }

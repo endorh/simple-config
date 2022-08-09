@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.hotkey.NestedHotKeyActionType.NestedHotKeyAction;
@@ -19,7 +20,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 	}
 	
 	@Override
-	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V, ?>> NestedHotKeyAction<V> deserialize(
+	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> NestedHotKeyAction<V> deserialize(
 	  E entry, Object value
 	) {
 		if (value instanceof Map) {
@@ -29,7 +30,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 		return null;
 	}
 	
-	@Override public <T, C, E extends AbstractConfigEntry<T, C, V, ?>> Object serialize(
+	@Override public <T, C, E extends AbstractConfigEntry<T, C, V>> Object serialize(
 	  E entry, NestedHotKeyAction<V> action
 	) {
 		return action.getStorage();
@@ -45,8 +46,8 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 			this.storage = storage;
 		}
 		
-		@Override public <T, C, E extends AbstractConfigEntry<T, C, V, ?>>
-		@Nullable ITextComponent apply(E entry) {
+		@Override public <T, C, E extends AbstractConfigEntry<T, C, V>>
+		@Nullable ITextComponent apply(String path, E entry, CommentedConfig result) {
 			try {
 				action.apply(entry, storage);
 			} catch (ClassCastException ignored) {}
@@ -65,6 +66,6 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 	}
 	
 	public interface INestedHotKeyAction<V> {
-		<E extends AbstractConfigEntry<?, ?, V, ?>> void apply(E entry, Map<String, HotKeyAction<?>> storage);
+		<E extends AbstractConfigEntry<?, ?, V>> void apply(E entry, Map<String, HotKeyAction<?>> storage);
 	}
 }

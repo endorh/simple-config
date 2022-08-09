@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.api;
 
+import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.gui.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,37 +23,20 @@ public interface ConfigCategory extends IEntryHolder {
 	@Override @Internal List<AbstractConfigEntry<?>> getHeldEntries();
 	
 	String getName();
-	
 	ConfigCategory addEntry(AbstractConfigListEntry<?> var1);
 	
-	ConfigCategory setCategoryBackground(ResourceLocation background);
 	void setBackground(@Nullable ResourceLocation background);
 	@Nullable ResourceLocation getBackground();
-	
-	Type getType();
+	EditType getType();
 	
 	boolean isEditable();
 	void setEditable(boolean editable);
 	
-	void setColor(int color);
 	int getColor();
-	
-	void setIcon(Icon icon);
 	Icon getIcon();
-	
 	int getSortingOrder();
-	void setSortingOrder(int order);
 	
 	@Nullable Supplier<Optional<ITextComponent[]>> getDescription();
-	void setDescription(@Nullable Supplier<Optional<ITextComponent[]>> var1);
-	
-	default void setDescription(@Nullable ITextComponent[] description) {
-		this.setDescription(() -> Optional.ofNullable(description));
-	}
-	
-	void removeCategory();
-	
 	Optional<Path> getContainingFile();
-	void setContainingFile(Path path);
 }
 

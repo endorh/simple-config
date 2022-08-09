@@ -20,7 +20,7 @@ public class SelectorBuilder<V>
 	public SelectorBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, V[] valuesArray, V value
 	) {
-		super(builder, name, value);
+		super(SelectionListEntry.class, builder, name, value);
 		Objects.requireNonNull(value);
 		this.valuesArray = valuesArray;
 		this.value = value;

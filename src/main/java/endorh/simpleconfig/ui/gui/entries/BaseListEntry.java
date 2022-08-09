@@ -30,6 +30,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 import java.util.function.Function;
@@ -880,7 +881,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		}
 		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-			if (getListEntry().isEditable() && (keyCode == 257 || keyCode == 32 || keyCode == 260)) {
+			if (getListEntry().isEditable() && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_INSERT)) {
 				getListEntry().addTransparently();
 				return true;
 			}

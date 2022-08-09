@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.gui.entries.ButtonListEntry;
+import endorh.simpleconfig.ui.impl.builders.ButtonFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -72,11 +72,11 @@ public class ButtonEntry extends GUIOnlyEntry<
 		return () -> value.accept(parent);
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Runnable>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Runnable, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final ButtonListEntry entry =
-		  new ButtonListEntry(forGui(get()), getDisplayName(), buttonLabelSupplier);
-		return Optional.of(entry);
+		ButtonFieldBuilder entryBuilder = builder.startButton(getDisplayName(), forGui(get()))
+		  .withButtonLabel(buttonLabelSupplier);
+		return Optional.of(entryBuilder);
 	}
 }

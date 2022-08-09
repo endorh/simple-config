@@ -1,8 +1,8 @@
 package endorh.simpleconfig;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.menu;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler;
@@ -50,15 +50,14 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 import java.util.List;
@@ -69,11 +68,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.SimpleConfigMod.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
+import static endorh.simpleconfig.core.SimpleConfig.category;
 import static endorh.simpleconfig.core.SimpleConfig.group;
 import static endorh.simpleconfig.core.entry.Builders.*;
+import static java.util.Arrays.asList;
 import static net.minecraftforge.client.settings.KeyConflictContext.GUI;
-import static net.minecraftforge.client.settings.KeyModifier.CONTROL;
-import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
+import static net.minecraftforge.client.settings.KeyModifier.*;
 
 @Mod(SimpleConfigMod.MOD_ID)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
@@ -99,21 +99,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			// Create and register the client config for the mod
 			CLIENT_CONFIG = SimpleConfig.builder(MOD_ID, Type.CLIENT, ClientConfig.class)
 			  .withIcon(SimpleConfigIcons.Types.CLIENT)
-			  .withColor(0x8090FF80)
+			  .withColor(0x6490FF80)
 			  .withBackground("textures/block/bookshelf.png")
 			  .n(group("menu", true)
 			       .add("add_pause_menu_button", yesNo(true))
 			       .add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
-				      .editable(() -> CLIENT_CONFIG.getGUIBoolean("menu.add_pause_menu_button")))
-			       .add("provide_config_menus", yesNo(true).restart())
-			       .add("provide_menu_exceptions", list(
-						string("").suggest(modNameSupplier)
-			       ).restart().editable(() -> CLIENT_CONFIG.getGUIBoolean("menu.provide_config_menus")))
-			       .add("replace_config_menus", yesNo(false).restart()
-				      .editable(() -> CLIENT_CONFIG.getGUIBoolean("menu.provide_config_menus")))
-			       .add("replace_menu_exceptions", list(
-						string("").suggest(modNameSupplier)
-			       ).restart())
+				      .editable(g -> g.getGUIBoolean("add_pause_menu_button")))
 			  ).n(group("confirm")
 			       .add("save", yesNo(true))
 			       .add("discard", yesNo(true))
@@ -177,7 +168,7 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 			  roles.add(0, "[all]");
 			  roles.add(1, "[op]");
 			  return roles;
-		  }).error(s -> roleNameSupplier.get().contains(s) || s.equals("[op]") || s.equals("[all]")
+		  }).error(s -> roleNameSupplier.get().contains(s) || "[op]".equals(s) || "[all]".equals(s)
 		                ? Optional.empty() : Optional.of(new TranslationTextComponent(
 								"simpleconfig.error.unknown_role")));
 		StringEntry.Builder modGroupOrName = string("").suggest(() -> {
@@ -189,19 +180,36 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		});
 		COMMON_CONFIG = SimpleConfig.builder(MOD_ID, Type.COMMON, CommonConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.COMMON)
-		  .withColor(0x80FFA090)
+		  .withColor(0x64FFA090)
 		  .withBackground("textures/block/warped_planks.png")
 		  .text("desc")
-		  .n(group("commands")
-		       .add("provide_commands", yesNo(true).restart())
-		       .add("provide_commands_exceptions", list(
-			      string("").suggest(modNameSupplier))
-			      .editable(() -> COMMON_CONFIG.getGUIBoolean("commands.provide_commands"))
-			      .restart())
+		  .n(
+			 group("menu", true)
+			   .add("wrap_configs", yesNo(true).restart())
+			   .add("wrap_config_exceptions", list(
+				  string("").suggest(modNameSupplier))
+			     .restart())
+			   .add("replace_config_menus", yesNo(false).restart()
+				  .editable(g -> g.getGUIBoolean("wrap_configs")
+				                 || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
+			   .add("replace_menu_exceptions", list(
+				  string("").suggest(modNameSupplier)
+			   ).restart().editable(g -> g.getGUIBoolean("wrap_configs")
+			                             || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
+		  ).n(
+			 category("demo")
+			   .withIcon(SimpleConfigIcons.Status.INFO)
+			   .withColor(0x80607080)
+			   .withBackground("textures/block/warped_planks.png")
+			   .add("bool", yesNo(true))
+			   .add("number", number(0).min(0))
+			   .add("slider", fraction(0.5))
+			   .add("color_list", list(color(Color.GRAY).alpha(), asList(
+				  Color.RED, Color.GREEN, Color.BLUE)))
 		  ).buildAndRegister();
 		SERVER_CONFIG = SimpleConfig.builder(MOD_ID, Type.SERVER, ServerConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.SERVER)
-		  .withColor(0x808090FF)
+		  .withColor(0x648090FF)
 		  .withBackground("textures/block/blackstone_bricks.png")
 		  .text("desc", makeLink(
 			 "simpleconfig.config.server.desc.permission_level",
@@ -211,12 +219,12 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		  .n(group("permissions", true)
 		       .add("roles", map(
 					string("").notEmpty()
-					  .error(s -> s.equals("[op]") || s.equals("[all]")? Optional.of(new TranslationTextComponent(
+					  .error(s -> "[op]".equals(s) || "[all]".equals(s)? Optional.of(new TranslationTextComponent(
 						 "simpleconfig.config.error.role.reserved", s)) : Optional.empty()),
 					list(playerName)))
 		       .add("mod_groups", map(
 					string("").notEmpty()
-					  .error(s -> s.equals("[all]")? Optional.of(new TranslationTextComponent(
+					  .error(s -> "[all]".equals(s)? Optional.of(new TranslationTextComponent(
 						 "simpleconfig.config.error.mod_group.reserved", s)) : Optional.empty()),
 					caption(option(ListType.WHITELIST), list(modName))))
 		       .add("rules", pairList(
@@ -254,18 +262,6 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		@Bind public static class menu {
 			@Bind public static boolean add_pause_menu_button;
 			@Bind public static MenuButtonPosition menu_button_position;
-			@Bind public static boolean provide_config_menus;
-			@Bind public static List<String> provide_menu_exceptions;
-			@Bind public static boolean replace_config_menus;
-			@Bind public static List<String> replace_menu_exceptions;
-			
-			public static boolean shouldWrapConfig(String modId) {
-				return provide_config_menus != provide_menu_exceptions.contains(modId);
-			}
-			
-			public static boolean shouldReplaceMenu(String modId) {
-				return shouldWrapConfig(modId) && replace_config_menus != replace_menu_exceptions.contains(modId);
-			}
 		}
 		@Bind public static class confirm {
 			@Bind public static boolean save;
@@ -303,12 +299,18 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	}
 	
 	public static class CommonConfig {
-		@Bind public static class commands {
-			@Bind public static boolean provide_commands;
-			@Bind public static List<String> provide_commands_exceptions;
+		@Bind public static class menu {
+			@Bind public static boolean wrap_configs;
+			@Bind public static List<String> wrap_config_exceptions;
+			@Bind public static boolean replace_config_menus;
+			@Bind public static List<String> replace_menu_exceptions;
 			
-			public static boolean shouldProvideCommandFor(String modId) {
-				return provide_commands != provide_commands_exceptions.contains(modId);
+			public static boolean shouldWrapConfig(String modId) {
+				return wrap_configs != wrap_config_exceptions.contains(modId);
+			}
+			
+			public static boolean shouldReplaceMenu(String modId) {
+				return shouldWrapConfig(modId) && replace_config_menus != replace_menu_exceptions.contains(modId);
 			}
 		}
 	}
@@ -382,12 +384,6 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 		}
 	}
 	
-	public static boolean shouldWrapConfig(String modId) {
-		return FMLEnvironment.dist == Dist.DEDICATED_SERVER
-		       ? CommonConfig.commands.shouldProvideCommandFor(modId)
-		       : menu.shouldWrapConfig(modId);
-	}
-	
 	public enum ListType {
 		WHITELIST, BLACKLIST
 	}
@@ -459,19 +455,26 @@ import static net.minecraftforge.client.settings.KeyModifier.SHIFT;
 	public static class KeyBindings {
 		public static final String CATEGORY = "Simple Config";
 		public static KeyBinding
-		  SEARCH, PREV_PAGE, NEXT_PAGE, UNDO, REDO, PREV_ERROR, NEXT_ERROR, SAVE, RESET_RESTORE;
+		  SEARCH,
+		  PREV_TYPE, NEXT_TYPE,
+		  PREV_PAGE, NEXT_PAGE,
+		  UNDO, REDO,
+		  PREV_ERROR, NEXT_ERROR,
+		  SAVE, RESET_RESTORE;
 		
 		@SubscribeEvent public static void register(FMLClientSetupEvent event) {
 			event.enqueueWork(() -> {
-				SEARCH = reg("search", CONTROL, 70);               // Ctrl + F
-				PREV_PAGE = reg("prev_page", CONTROL, 266);        // Ctrl + PgUp
-				NEXT_PAGE = reg("next_page", CONTROL, 267);        // Ctrl + PgDown
-				UNDO = reg("undo", CONTROL, 90);                   // Ctrl + Z
-				REDO = reg("redo", CONTROL, 89);                   // Ctrl + Y
-				PREV_ERROR = reg("prev_error", SHIFT, 290);        // Shift + F1
-				NEXT_ERROR = reg("next_error", 290);               // F1
-				SAVE = reg("save", CONTROL, 83);                   // Ctrl + S
-				RESET_RESTORE = reg("reset_restore", CONTROL, 82); // Ctrl + R
+				SEARCH = reg("search", CONTROL, GLFW.GLFW_KEY_F);
+				PREV_TYPE = reg("prev_type", ALT, GLFW.GLFW_KEY_PAGE_UP);
+				NEXT_TYPE = reg("next_type", ALT, GLFW.GLFW_KEY_PAGE_DOWN);
+				PREV_PAGE = reg("prev_page", CONTROL, GLFW.GLFW_KEY_PAGE_UP);
+				NEXT_PAGE = reg("next_page", CONTROL, GLFW.GLFW_KEY_PAGE_DOWN);
+				UNDO = reg("undo", CONTROL, GLFW.GLFW_KEY_Z);
+				REDO = reg("redo", CONTROL, GLFW.GLFW_KEY_Y);
+				PREV_ERROR = reg("prev_error", SHIFT, GLFW.GLFW_KEY_F1);
+				NEXT_ERROR = reg("next_error", GLFW.GLFW_KEY_F1);
+				SAVE = reg("save", CONTROL, GLFW.GLFW_KEY_S);
+				RESET_RESTORE = reg("reset_restore", CONTROL, GLFW.GLFW_KEY_R);
 				
 				MinecraftForge.EVENT_BUS.register(ConfigHotKeyInputHandler.INSTANCE);
 			});

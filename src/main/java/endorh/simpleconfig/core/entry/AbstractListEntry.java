@@ -12,6 +12,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
 
 public abstract class AbstractListEntry
   <V, Config, Gui, Self extends AbstractListEntry<V, Config, Gui, Self>>
-  extends AbstractConfigEntry<List<V>, List<Config>, List<Gui>, Self> {
+  extends AbstractConfigEntry<List<V>, List<Config>, List<Gui>> {
 	protected Class<?> innerType;
 	protected Function<V, Optional<ITextComponent>> elemErrorSupplier;
 	protected boolean expand;
@@ -96,7 +97,7 @@ public abstract class AbstractListEntry
 			return copy;
 		}
 		
-		@Override protected Entry build(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
 			final Entry e = super.build(parent, name);
 			e.elemErrorSupplier = elemErrorSupplier;
 			e.expand = expand;
@@ -116,23 +117,8 @@ public abstract class AbstractListEntry
 			return copy;
 		}
 	}
-	/**
-	 * Expand this list automatically in the GUI
-	 */
-	public Self expand() {
-		return expand(true);
-	}
 	
-	/**
-	 * Expand this list automatically in the GUI
-	 */
-	public Self expand(boolean expand) {
-		this.expand = expand;
-		return self();
-	}
-	
-	@Override
-	public List<Gui> forGui(List<V> list) {
+	@Override public List<Gui> forGui(List<V> list) {
 		return list.stream().map(this::elemForGui).collect(Collectors.toList());
 	}
 	

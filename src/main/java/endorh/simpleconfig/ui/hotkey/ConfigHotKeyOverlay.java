@@ -10,6 +10,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
@@ -36,24 +37,25 @@ public class ConfigHotKeyOverlay {
 	}
 	
 	@SubscribeEvent public static void onRenderOverlay(RenderGameOverlayEvent.Post event) {
-		FontRenderer font = Minecraft.getInstance().fontRenderer;
-		MatrixStack mStack = event.getMatrixStack();
-		MainWindow window = event.getWindow();
-		int w = window.getScaledWidth();
-		int h = window.getScaledHeight();
-		int b = (int) (h * 0.9);
-		int minY = (int) (h * 0.5);
-		int maxWidth = (int) (w * 0.35);
-		long time = System.currentTimeMillis();
-		synchronized (messages) {
-			if (messages.isEmpty()) return;
-			ListIterator<QueuedHotKeyMessage> iter = messages.listIterator(messages.size());
-			while (iter.hasPrevious()) {
-				QueuedHotKeyMessage message = iter.previous();
-				if (b <= minY) message.evict();
-				b -= message.getHeight();
-				message.render(mStack, w, b, maxWidth);
-				if (time - message.getTimestamp() > DURATION + FADE_OUT) iter.remove();
+		if (event.getType() == ElementType.ALL) {
+			MatrixStack mStack = event.getMatrixStack();
+			MainWindow window = event.getWindow();
+			int w = window.getScaledWidth();
+			int h = window.getScaledHeight();
+			int b = (int) (h * 0.9);
+			int minY = (int) (h * 0.5);
+			int maxWidth = (int) (w * 0.35);
+			long time = System.currentTimeMillis();
+			synchronized (messages) {
+				if (messages.isEmpty()) return;
+				ListIterator<QueuedHotKeyMessage> iter = messages.listIterator(messages.size());
+				while (iter.hasPrevious()) {
+					QueuedHotKeyMessage message = iter.previous();
+					if (b <= minY) message.evict();
+					b -= message.getHeight();
+					message.render(mStack, w, b, maxWidth);
+					if (time - message.getTimestamp() > DURATION + FADE_OUT) iter.remove();
+				}
 			}
 		}
 	}
@@ -99,7 +101,8 @@ public class ConfigHotKeyOverlay {
 			int lH = font.FONT_HEIGHT + 2;
 			int h = lH * (messages.size() + 1);
 			int x = r - width - 2;
-			int backgroundColor = alpha(0x32323232, alpha);
+			int opacity = (int) (0xFF * ((float) Minecraft.getInstance().gameSettings.accessibilityTextBackgroundOpacity * 0.9F + 0.1F));
+			int backgroundColor = alpha(opacity << 24, alpha);
 			int textColor = alpha(0xE0E0E0E0, alpha);
 			fill(mStack, x, y, r, y + h, backgroundColor);
 			drawStringTrimmed(mStack, title, width - 2, x + 1, y + 1, textColor);

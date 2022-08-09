@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -72,9 +72,9 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<List<Integer>>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Integer>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final IntListBuilder valBuilder = builder
 		  .startIntList(getDisplayName(), forGui(get()));
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 }

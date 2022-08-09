@@ -5,8 +5,10 @@ import endorh.simpleconfig.core.DummyEntryHolder;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
+import endorh.simpleconfig.ui.impl.builders.EntryButtonFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwitcherEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
@@ -75,6 +78,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		final Map<String, Object> preset = presets.get(name);
 		final AbstractSimpleConfigEntryHolder h =
 		  (global ? parent.getRoot() : (AbstractSimpleConfigEntryHolder) parent).getChild(path);
+		AbstractConfigListEntry<String> guiEntry = getGuiEntry();
 		if (guiEntry != null) {
 			AbstractConfigScreen screen = guiEntry.getScreen();
 			screen.runAtomicTransparentAction(() -> {
@@ -91,13 +95,20 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		}
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<String>> buildGUIEntry(
+	@SuppressWarnings("unchecked") public <E extends AbstractConfigListEntry<String> & IChildListEntry,
+	  B extends FieldBuilder<String, E, B>
+	> EntryButtonFieldBuilder<String, E, B> makeGUIEntry(
+	  ConfigEntryBuilder builder, FieldBuilder<String, ?, ?> entryBuilder, Consumer<String> action
+	) {
+		return builder.startButton(getDisplayName(), (B) entryBuilder, action);
+	}
+	
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<String, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final EntryButtonListEntry<String, ?> entry = new EntryButtonListEntry<>(
-		  getDisplayName(), inner.buildChildGUIEntry(builder), this::applyPreset,
-		  () -> new TranslationTextComponent("simpleconfig.label.preset.apply")
-		);
-		return Optional.of(entry);
+		EntryButtonFieldBuilder<String, ?, ?> entryBuilder = makeGUIEntry(
+			 builder, inner.buildChildGUIEntry(builder), this::applyPreset)
+		  .withButtonLabel(() -> new TranslationTextComponent("simpleconfig.label.preset.apply"));
+		return Optional.of(entryBuilder);
 	}
 }

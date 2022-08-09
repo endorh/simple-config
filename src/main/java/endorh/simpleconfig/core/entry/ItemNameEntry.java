@@ -1,9 +1,10 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.tags.ITag;
@@ -11,7 +12,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
@@ -93,11 +93,11 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<ResourceLocation>> buildGUIEntry(
+	public Optional<FieldBuilder<ResourceLocation, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofItemName(), forGui(get()));
-		return Optional.of(decorate(entryBuilder).build());
+		return Optional.of(decorate(entryBuilder));
 	}
 }

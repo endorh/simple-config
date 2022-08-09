@@ -4,11 +4,13 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Presets;
+import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.Location;
@@ -16,11 +18,11 @@ import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,13 +36,13 @@ import java.util.stream.Stream;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.forceUnFocus;
 
-public class PresetPickerWidget extends FocusableGui {
+public class PresetPickerWidget extends FocusableGui implements IRectanglePositionableRenderable {
 	protected List<IGuiEventListener> listeners;
 	protected long lastUpdate = 0L;
 	protected long updateCooldown = 1000L;
 	protected @Nullable CompletableFuture<Void> lastFuture = null;
 	
-	public int x, y, w, h;
+	private final Rectangle area = new Rectangle();
 	
 	protected AbstractConfigScreen screen;
 	
@@ -60,10 +62,7 @@ public class PresetPickerWidget extends FocusableGui {
 	  AbstractConfigScreen screen, int x, int y, int w
 	) {
 		this.screen = screen;
-		this.x = x;
-		this.y = y;
-		this.w = w;
-		this.h = 18;
+		area.setBounds(x, y, w, 18);
 		for (Type type: Type.values()) {
 			knownLocalPresets.put(type, Maps.newHashMap());
 			knownRemotePresets.put(type, Maps.newHashMap());
@@ -73,16 +72,15 @@ public class PresetPickerWidget extends FocusableGui {
 			  final Preset value = selector.getValue();
 			  if (value != null) load(value);
 		}).active(() -> getHandler() != null
-		                && isKnownPreset(selector.getText(), screen.getEditedType())
+		                && isKnownPreset(selector.getText(), screen.getEditedType().getType())
 		                && screen.isEditable()
 		  ).tooltip(() -> {
 			  final Preset value = selector.getValue();
 			  if (value == null) return Lists.newArrayList();
 			  return Lists.newArrayList(
-			    new TranslationTextComponent(String.format(
-			      "simpleconfig.preset.load.%s.%s",
-			      value.getType().extension(),
-			      value.isResource()? "resource" : value.isRemote()? "remote" : "local")));
+			    new TranslationTextComponent(
+			      "simpleconfig.preset.load." + value.getLocation().getAlias(),
+			      new TranslationTextComponent("simpleconfig.preset." + value.getType().getAlias())));
 		  }), new TranslationTextComponent("simpleconfig.preset.load.label"));
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 		  () -> save(selector.getText(), false)
@@ -113,7 +111,7 @@ public class PresetPickerWidget extends FocusableGui {
 		  new TranslationTextComponent("simpleconfig.preset.picker.label"));
 		selector.setHint(new TranslationTextComponent("simpleconfig.preset.picker.hint"));
 		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
-		  () -> getKnownPresets(screen.getEditedType()));
+		  () -> getKnownPresets(screen.getEditedType().getType()));
 		provider.setPlaceholder(new TranslationTextComponent("simpleconfig.ui.no_presets_found"));
 		selector.setSuggestionProvider(provider);
 		listeners = Lists.newArrayList(selector, loadButton, saveButton);
@@ -125,12 +123,13 @@ public class PresetPickerWidget extends FocusableGui {
 		final IConfigSnapshotHandler handler = getHandler();
 		if (handler == null || !isValidName(selector.getText()))
 			return Lists.newArrayList();
-		Type type = screen.getEditedType();
-		final ArrayList<ITextComponent> tt = Lists.newArrayList(
+		Type type = screen.getEditedType().getType();
+		final List<ITextComponent> tt = Lists.newArrayList(
 		  new TranslationTextComponent(String.format(
-		    "simpleconfig.preset.%s.%s.%s",
-		    delete? "delete" : "save", type.extension(),
-			 remote? "remote" : "local")));
+		    "simpleconfig.preset.%s.%s",
+		    delete? "delete" : "save",
+			 remote? "remote" : "local"
+		  ), new TranslationTextComponent("simpleconfig.preset." + type.getAlias())));
 		if (!delete && !remote && handler.canSaveRemote())
 			tt.add(new TranslationTextComponent("simpleconfig.preset.save.remote.shift"));
 		if (!delete && selector.getValue() != null)
@@ -145,26 +144,29 @@ public class PresetPickerWidget extends FocusableGui {
 		  .collect(Collectors.toList());
 	}
 	
+	@Override public Rectangle getArea() {
+		return area;
+	}
+	
 	protected void position() {
 		if (screen.getListener() != this) forceUnFocus(listeners);
 		
-		selector.x = x;
-		selector.y = y + 2;
-		selector.setHeight(h - 2);
-		selector.setWidth(w - 42);
+		selector.x = area.x + 1;
+		selector.y = area.y + 2;
+		selector.setHeight(area.height - 2);
+		selector.setWidth(area.width - 42);
 		
-		loadButton.x = x + w - 40;
-		loadButton.y = y;
+		loadButton.x = area.getMaxX() - 40;
+		loadButton.y = area.y;
 		
-		saveButton.x = x + w - 20;
-		saveButton.y = y;
+		saveButton.x = area.getMaxX() - 20;
+		saveButton.y = area.y;
 	}
 	
 	protected IConfigSnapshotHandler getHandler() {
 		return screen.getSnapshotHandler();
 	}
 	
-	private static final Pattern HYPHEN = Pattern.compile("-");
 	protected void update() {
 		knownLocalPresets.values().forEach(Map::clear);
 		for (Preset preset: getHandler().getLocalPresets())
@@ -194,7 +196,7 @@ public class PresetPickerWidget extends FocusableGui {
 		}
 	}
 	
-	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final long time = System.currentTimeMillis();
 		if ((selector.isFocused() || lastUpdate == 0L) && time - lastUpdate > updateCooldown) {
 			lastUpdate = time;
@@ -229,7 +231,7 @@ public class PresetPickerWidget extends FocusableGui {
 	}
 	
 	public void load(Preset preset) {
-		final Type type = screen.getEditedType();
+		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
 		Set<String> s = screen.getSelectedEntries().stream()
 		  .map(AbstractConfigEntry::getRelPath)
@@ -253,8 +255,8 @@ public class PresetPickerWidget extends FocusableGui {
 	  CommentedConfig snapshot, Preset preset, Type type, @Nullable Set<String> selection
 	) {
 		final IConfigSnapshotHandler handler = getHandler();
-		String ll = preset.isResource()? "resource." : preset.isRemote()? "remote." : "local.";
-		String tt = type == Type.SERVER? "server" : "client";
+		String ll = preset.getLocation().getAlias();
+		TextComponent tt = new TranslationTextComponent("simpleconfig.preset." + type.getAlias());
 		int matches = getMatches(snapshot, selection);
 		int total = getTotalSize(snapshot);
 		screen.runAtomicTransparentAction(
@@ -263,7 +265,8 @@ public class PresetPickerWidget extends FocusableGui {
 		  "simpleconfig.preset.dialog.load.success.title"
 		), Util.make(new ArrayList<>(), b -> {
 			b.addAll(splitTtc(
-			  "simpleconfig.preset.dialog.load.success." + ll + tt, presetName(preset.getName())));
+			  "simpleconfig.preset.dialog.load.success." + ll,
+			  tt, presetName(preset.getName())));
 			if (selection != null && matches > 0) {
 				b.addAll(splitTtc(
 				  "simpleconfig.preset.dialog.load.success.selected",
@@ -279,7 +282,9 @@ public class PresetPickerWidget extends FocusableGui {
 	
 	protected int getMatches(CommentedConfig snapshot, Set<String> selection) {
 		if (selection == null) return 0;
-		return (int) selection.stream().filter(snapshot::contains).count();
+		return (int) selection.stream()
+		  .map(p -> p.startsWith(".")? p.substring(1) : p)
+		  .filter(snapshot::contains).count();
 	}
 	
 	protected int getTotalSize(CommentedConfig snapshot) {
@@ -298,7 +303,7 @@ public class PresetPickerWidget extends FocusableGui {
 	
 	public static boolean userSkipOverwriteDialog = false;
 	public void save(String name, boolean remote, boolean overwrite) {
-		final Type type = screen.getEditedType();
+		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
 		Set<String> s = screen.getSelectedEntries().stream()
 		  .map(AbstractConfigEntry::getRelPath)
@@ -309,8 +314,8 @@ public class PresetPickerWidget extends FocusableGui {
 		final Map<String, Preset> presetMap = getKnownPresets(type, remote? Location.REMOTE : Location.LOCAL);
 		final Map<String, Preset> otherMap = getKnownPresets(type, remote? Location.LOCAL : Location.REMOTE);
 		final Map<String, Preset> resourceMap = getKnownPresets(type, Location.RESOURCE);
-		String ll = remote? "remote." : "local.";
-		String tt = type.extension();
+		String ll = remote? "remote" : "local";
+		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + type.getAlias());
 		if (!overwrite && !userSkipOverwriteDialog && presetMap.containsKey(name)
 		    && presetMap.get(name).getType() == type) {
 			screen.addDialog(ConfirmDialog.create(
@@ -323,7 +328,7 @@ public class PresetPickerWidget extends FocusableGui {
 				  }, CheckboxButton.of(false, new TranslationTextComponent(
 				    "simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
-					 "simpleconfig.preset.dialog.overwrite." + ll + tt, presetName(name)));
+				    "simpleconfig.preset.dialog.overwrite." + ll, tt, presetName(name)));
 				  d.setConfirmText(new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.confirm"));
 				  d.setConfirmButtonTint(0xAAAA00AA);
 			  }));
@@ -335,14 +340,14 @@ public class PresetPickerWidget extends FocusableGui {
 				  d.withAction(b -> {
 					  if (b) save(name, remote, true);
 				  });
-				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + r + ll + "body", presetName(name)));
+				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + r + ll + ".body", presetName(name)));
 				  d.setConfirmText(new TranslationTextComponent(
-				    "simpleconfig.preset.dialog.mistaken.option." + ll + "create"));
+				    "simpleconfig.preset.dialog.mistaken.option." + ll + ".create"));
 				  d.setConfirmButtonTint(remote ? 0xAA429090 : 0xAA429042);
 				  if (!resource) {
 					  d.addButton(1, TintedButton.of(
 						 new TranslationTextComponent(
-							"simpleconfig.preset.dialog.mistaken.option." + ll + "overwrite"),
+							"simpleconfig.preset.dialog.mistaken.option." + ll + ".overwrite"),
 						 remote? 0xAA429042 : 0xAA429090, p -> {
 							 save(name, !remote, true);
 							 d.cancel(false);
@@ -377,12 +382,12 @@ public class PresetPickerWidget extends FocusableGui {
 	protected AbstractDialog getSaveSuccessDialog(
 	  boolean remote, Type type, String name, int selected
 	) {
-		final String ll = remote? "remote." : "local.";
-		final String tt = type.extension();
+		String ll = remote? "remote" : "local";
+		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + type.getAlias());
 		return InfoDialog.create(
 		  new TranslationTextComponent("simpleconfig.preset.dialog.save.success.title"),
 		  Util.make(new ArrayList<>(), b -> {
-			  b.addAll(splitTtc("simpleconfig.preset.dialog.save.success." + ll + tt, presetName(name)));
+			  b.addAll(splitTtc("simpleconfig.preset.dialog.save.success." + ll, tt, presetName(name)));
 			  if (selected > 0) {
 				  b.addAll(splitTtc(
 					 "simpleconfig.preset.dialog.save.success.selected", selectedCount(selected)));
@@ -395,10 +400,10 @@ public class PresetPickerWidget extends FocusableGui {
 		delete(preset, false);
 	}
 	public void delete(Preset preset, boolean skipConfirm) {
-		final Type type = screen.getEditedType();
+		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
-		String ll = preset.isRemote()? "remote." : "local.";
-		String tt = preset.getType().extension();
+		String ll = preset.isRemote()? "remote" : "local";
+		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + preset.getType().getAlias());
 		if (!userSkipConfirmDeleteDialog && !skipConfirm) {
 			screen.addDialog(ConfirmDialog.create(
 			  new TranslationTextComponent("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
@@ -410,7 +415,7 @@ public class PresetPickerWidget extends FocusableGui {
 				  }, CheckboxButton.of(false, new TranslationTextComponent(
 				    "simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
-					 "simpleconfig.preset.dialog.delete.confirm." + ll + tt, presetName(preset.getName())));
+					 "simpleconfig.preset.dialog.delete.confirm." + ll, tt, presetName(preset.getName())));
 				  d.setConfirmText(new TranslationTextComponent(
 					 "simpleconfig.preset.dialog.delete.confirm.delete"));
 				  d.setConfirmButtonTint(0x80BD2424);
@@ -436,12 +441,11 @@ public class PresetPickerWidget extends FocusableGui {
 	protected AbstractDialog getDeleteSuccessDialog(
 	  Preset preset
 	) {
-		final String ll = preset.isRemote()? "remote." : "local.";
-		final String tt = preset.getType().extension();
+		String ll = preset.isRemote()? "remote" : "local";
+		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + preset.getType().getAlias());
 		return InfoDialog.create(
 		  new TranslationTextComponent("simpleconfig.preset.dialog.delete.success.title"),
-		  splitTtc("simpleconfig.preset.dialog.delete.success." + ll + tt, presetName(
-		    preset.getName())));
+		  splitTtc("simpleconfig.preset.dialog.delete.success." + ll, tt, presetName(preset.getName())));
 	}
 	
 	protected IFormattableTextComponent selectedCount(int count) {
@@ -548,7 +552,17 @@ public class PresetPickerWidget extends FocusableGui {
 			return Objects.hash(getName(), getType(), getLocation());
 		}
 		
-		public enum Location { LOCAL, REMOTE, RESOURCE }
+		public enum Location {
+			LOCAL, REMOTE, RESOURCE;
+			
+			private final String alias;
+			Location() {
+				alias = name().toLowerCase();
+			}
+			public String getAlias() {
+				return alias;
+			}
+		}
 		
 		public static class TypeWrapper implements ITypeWrapper<Preset> {
 			public final PresetPickerWidget widget;
@@ -560,7 +574,7 @@ public class PresetPickerWidget extends FocusableGui {
 			@Override public Pair<Optional<Preset>, Optional<ITextComponent>> parseElement(
 			  @NotNull String text
 			) {
-				final Type type = widget.screen.getEditedType();
+				final Type type = widget.screen.getEditedType().getType();
 				for (Location location: Location.values()) {
 					Map<String, Preset> presets = widget.getKnownPresets(type, location);
 					if (presets.containsKey(text))
@@ -590,7 +604,7 @@ public class PresetPickerWidget extends FocusableGui {
 			) { // @formatter:off
 				if (element == null) {
 					return text.isEmpty()? Optional.empty() : Optional.ofNullable(
-					  Presets.saveIconFor(widget.screen.getEditedType()));
+					  Presets.saveIconFor(widget.screen.getEditedType().getType()));
 				} else {
 					return Optional.ofNullable(Presets.iconFor(element.getType(), element.getLocation()));
 				}

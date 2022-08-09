@@ -7,6 +7,8 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -19,6 +21,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +32,6 @@ public abstract class SliderListEntry<V extends Comparable<V>>
   extends TooltipListEntry<V> implements IChildListEntry {
 	protected V sliderValue;
 	protected SliderWidget sliderWidget;
-	private boolean canUseTextField = true;
 	protected boolean showText = false;
 	protected TextFieldListEntry<V> textFieldEntry = null;
 	protected V min;
@@ -81,12 +83,20 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		textChildWidgets.add(0, textFieldEntry);
 	}
 	
-	public boolean getCanUseTextField() {
-		return canUseTextField && isEditable();
+	public boolean canUseTextField() {
+		return isEditable();
 	}
 	
-	public void setCanUseTextField(boolean canUseTextField) {
-		this.canUseTextField = canUseTextField;
+	@Override public void setHotKeyActionType(HotKeyActionType<V, ?> type) {
+		super.setHotKeyActionType(type);
+		if (type != null && type != HotKeyActionTypes.ASSIGN.<V>cast())
+			setTextFieldShown(true, true);
+	}
+	
+	protected boolean isTextFieldEnforced() {
+		if (!isEditingHotKeyAction()) return false;
+		HotKeyActionType<?, ?> type = getHotKeyActionType();
+		return type != null && type != HotKeyActionTypes.ASSIGN;
 	}
 	
 	public V getMin() {
@@ -165,10 +175,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		if (showText && (!getCanUseTextField() || getListener() != textFieldEntry))
+		if (showText && (!canUseTextField() || getListener() != textFieldEntry)) {
 			setTextFieldShown(false, false);
+		}
 		
-		if (getCanUseTextField()) {
+		if (canUseTextField() && !isTextFieldEnforced()) {
 			SimpleConfigIcons.Entries.SLIDER_EDIT.renderCentered(
 			  mStack, x - 15, y + 5, 9, 9,
 			  (isTextFieldShown()? 1 : 0) + (
@@ -202,8 +213,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	public void setTextFieldShown(boolean show, boolean focus) {
-		if (!getCanUseTextField())
-			show = false;
+		if (!canUseTextField()) show = false;
+		if (isTextFieldEnforced()) show = true;
 		showText = show;
 		if (focus)
 			WidgetUtils.forceUnFocus(sideButtonReference);
@@ -231,11 +242,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		}
 		if (super.onMouseClicked(mouseX, mouseY, button))
 			return true;
-		if (button == 0 && !Screen.hasAltDown() && getCanUseTextField()
+		if (button == 0 && !Screen.hasAltDown() && canUseTextField()
 		    && entryArea.grow(32, 0, 0, 0).contains(mouseX, mouseY)) {
 			setTextFieldShown(!isTextFieldShown(), true);
 			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(getCanUseTextField()? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			  SimpleSound.master(canUseTextField()? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return false;
@@ -244,7 +255,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	@Override public boolean charTyped(char codePoint, int modifiers) {
 		final IGuiEventListener listener = getListener();
 		if ((listener == sliderWidget || listener == textFieldEntry)
-		    && getCanUseTextField() && codePoint == ' ') {
+		    && canUseTextField() && codePoint == ' ') {
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
 			boolean change = state != isTextFieldShown();
@@ -260,7 +271,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		final IGuiEventListener listener = getListener();
 		if (Screen.hasAltDown()) return true; // Prevent navigation key from triggering slider
 		if ((listener == sliderWidget || listener == textFieldEntry)
-		    && getCanUseTextField() && keyCode == 257) { // Enter
+		    && canUseTextField() && keyCode == 257) { // Enter
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
 			boolean change = state != isTextFieldShown();
@@ -309,8 +320,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 			if (isEditable()) {
-				boolean left = keyCode == 263; // Left
-				if (left || keyCode == 262) { // Right
+				boolean left = keyCode == GLFW.GLFW_KEY_LEFT;
+				if (left || keyCode == GLFW.GLFW_KEY_RIGHT) {
 					final double step = getStep(left);
 					final double v = MathHelper.clamp(sliderValue + step, 0D, 1D);
 					sliderValue = v;

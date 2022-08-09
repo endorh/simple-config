@@ -28,6 +28,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -410,13 +411,13 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			comboBox.setDropDownShown(false);
 		if (!comboBox.isDropDownShown()) {
 			switch (keyCode) {
-				case 256: // Escape
+				case GLFW.GLFW_KEY_ESCAPE:
 					if (expanded) {
 						close();
 						return true;
 					}
 					break;
-				case 257: // Enter
+				case GLFW.GLFW_KEY_ENTER:
 					if (isFilter() || Screen.hasControlDown()) {
 						WidgetUtils.forceUnFocus(getComboBox());
 						handler.focusResults();
@@ -424,10 +425,10 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 						next(!Screen.hasShiftDown());
 					}
 					return true;
-				case 264: // Down
+				case GLFW.GLFW_KEY_DOWN:
 					next(true);
 					return true;
-				case 265: // Up
+				case GLFW.GLFW_KEY_UP:
 					next(false);
 					return true;
 			}

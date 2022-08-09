@@ -10,9 +10,10 @@ import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPacket;
+import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigServerCommonConfigPacket;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -23,8 +24,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.command.CommandSource;
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
@@ -38,7 +38,6 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.io.FileUtils;
@@ -59,7 +58,6 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
-import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.blankLine;
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
 import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
@@ -86,7 +84,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected final @Nullable Consumer<SimpleConfig> saver;
 	protected final @Nullable Consumer<SimpleConfig> baker;
 	protected final @Nullable Object configClass;
-	private final ModConfig.Type type;
+	private final Type type;
 	private final String modId;
 	protected Icon defaultCategoryIcon;
 	protected int defaultCategoryColor;
@@ -108,14 +106,15 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
 	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
+	protected Set<PlayerEntity> remoteListeners = new HashSet<>();
 	private ModConfig modConfig;
 	private ModContainer modContainer;
 	private @Nullable LiteralArgumentBuilder<CommandSource> commandRoot;
 	private Map<String, NodeComments> comments = new HashMap<>();
-	private SimpleConfigCommentedYamlFormat configFormat = SimpleConfigCommentedYamlFormat.forConfig(this);
+	private final SimpleConfigCommentedYamlFormat configFormat = SimpleConfigCommentedYamlFormat.forConfig(this);
 	
 	@Internal protected SimpleConfig(
-	  String modId, ModConfig.Type type, String defaultTitle,
+	  String modId, Type type, String defaultTitle,
 	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
 	  @Nullable Object configClass
 	) {
@@ -128,7 +127,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		tooltip = defaultTitle + ":help";
 		root = this;
 		
-		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
+		Pair<String, Type> key = Pair.of(modId, type);
 		synchronized (INSTANCES) {
 			if (!INSTANCES.containsKey(key))
 				INSTANCES.put(key, this);
@@ -137,18 +136,18 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
-	@Internal public static SimpleConfig getConfig(
-	  String modId, ModConfig.Type type
-	) {
-		Pair<String, ModConfig.Type> key = Pair.of(modId, type);
-		if (!INSTANCES.containsKey(key)) {
-			throw new IllegalStateException(
-			  "Attempted to get unregistered config for mod id \"" + modId + "\" of type " + type);
-		}
+	@Internal public static SimpleConfig getConfigOrNull(String modId, Type type) {
+		return INSTANCES.get(Pair.of(modId, type));
+	}
+	
+	@Internal public static SimpleConfig getConfig(String modId, Type type) {
+		Pair<String, Type> key = Pair.of(modId, type);
+		if (!INSTANCES.containsKey(key)) throw new IllegalStateException(
+		  "Attempted to get unregistered config for mod id \"" + modId + "\" of type " + type);
 		return INSTANCES.get(key);
 	}
 	
-	@Internal public static boolean hasConfig(String modId, ModConfig.Type type) {
+	@Internal public static boolean hasConfig(String modId, Type type) {
 		return INSTANCES.containsKey(Pair.of(modId, type));
 	}
 	
@@ -172,9 +171,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
 	 *
 	 * @param modId Your mod id
-	 * @param type  A {@link ModConfig.Type}, usually either CLIENT or SERVER
+	 * @param type  A {@link Type}, usually either CLIENT or SERVER
 	 */
-	public static SimpleConfigBuilder builder(String modId, ModConfig.Type type) {
+	public static SimpleConfigBuilder builder(String modId, Type type) {
 		return new SimpleConfigBuilder(modId, type);
 	}
 	
@@ -186,12 +185,12 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
 	 *
 	 * @param modId       Your mod id
-	 * @param type        A {@link ModConfig.Type}, usually either CLIENT or SERVER
+	 * @param type        A {@link Type}, usually either CLIENT or SERVER
 	 * @param configClass Backing class for the config. It will be parsed
 	 *                    for static backing fields and config annotations
 	 */
 	public static SimpleConfigBuilder builder(
-	  String modId, ModConfig.Type type, Class<?> configClass
+	  String modId, Type type, Class<?> configClass
 	) {
 		return new SimpleConfigBuilder(modId, type, configClass);
 	}
@@ -247,11 +246,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@Internal public static void updateAllFileTranslations() {
-		for (SimpleConfig config : INSTANCES.values()) {
-			if (config.modConfig != null && config.modConfig.getConfigData() != null) {
-				config.spec.save();
-			}
-		}
+		INSTANCES.values().stream().filter(
+		  c -> c.modConfig != null
+		       && c.modConfig.getConfigData() != null
+		       && !c.isWrapper()
+		).forEach(c -> c.spec.save());
 	}
 	
 	public boolean isWrapper() {
@@ -271,7 +270,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 * Setup the config
 	 */
 	@Internal protected void build(
-	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
+	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
 	  Map<String, SimpleConfigCategory> categories,
 	  Map<String, SimpleConfigGroup> groups,
 	  List<IGUIEntry> order, ForgeConfigSpec spec,
@@ -310,7 +309,16 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@Internal public String getFileName() {
-		return String.format("%s-%s.yaml", getModId(), getType().extension());
+		return String.format("%s-%s.yaml", getModId(), getType().getAlias());
+	}
+	
+	@Override
+	public @Nullable <T, C, Gui> AbstractConfigEntry<T, C, Gui> getEntryOrNull(String path) {
+		if (path.startsWith(".")) path = path.substring(1);
+		AbstractConfigEntry<?, ?, ?> entry = entries.get(path);
+		if (entry == null) entry = getSubEntry(path);
+		//noinspection unchecked
+		return (AbstractConfigEntry<T, C, Gui>) entry;
 	}
 	
 	@Override public @Nullable AbstractSimpleConfigEntryHolder getChildOrNull(String path) {
@@ -319,12 +327,12 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return super.getChildOrNull(path);
 	}
 	
-	@Override protected <T> AbstractConfigEntry<T, ?, ?, ?> getSubEntry(String path) {
+	@Override protected <T> AbstractConfigEntry<T, ?, ?> getSubEntry(String path) {
 		String[] split = DOT.split(path, 2);
 		if (split[0].isEmpty()) {
-			AbstractConfigEntry<?, ?, ?, ?> entry = entries.get(split[1]);
+			AbstractConfigEntry<?, ?, ?> entry = entries.get(split[1]);
 			if (entry != null) //noinspection unchecked
-				return (AbstractConfigEntry<T, ?, ?, ?>) entry;
+				return (AbstractConfigEntry<T, ?, ?>) entry;
 			return super.getSubEntry(split[1]);
 		}
 		return super.getSubEntry(path);
@@ -338,7 +346,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			cat.bakeFields();
 		for (SimpleConfigGroup group : groups.values())
 			group.bakeFields();
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+		for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 			entry.bakeField();
 	}
 	
@@ -354,7 +362,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 				cat.commitFields();
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
-			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+			for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 				entry.commitField();
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(
@@ -376,9 +384,14 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override protected void removeGUI() {
+		// Synchronization is needed, because the file watcher thread may trigger
+		// a reload, which could start loading external changes using the snapshot
+		// handler, while some entries get their GUI references removed
+		synchronized (this) {
+			gui = null;
+			snapshotHandler = null;
+		}
 		super.removeGUI();
-		gui = null;
-		snapshotHandler = null;
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected void setGUI(
@@ -420,30 +433,46 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
-	protected void syncToClients() {
-		new SSimpleConfigSyncPacket(this).sendToAll();
+	@Internal public void sync() {
+		if (FMLEnvironment.dist == Dist.CLIENT) {
+			syncToServer();
+		} else syncToClients();
 	}
 	
-	protected void syncToServer() {
+	@Internal public void syncToClients() {
+		if (type == Type.SERVER) {
+			new SSimpleConfigSyncPacket(this).sendToAll();
+		} else if (type == Type.COMMON) {
+			new SSimpleConfigServerCommonConfigPacket(this).sendTo(remoteListeners);
+		}
+	}
+	
+	@Internal public void syncToServer() {
 		if (SimpleConfigNetworkHandler.isConnectedToSimpleConfigServer())
 			new CSimpleConfigSyncPacket(this).send();
 	}
 	
-	protected CommentedConfig takeSnapshot(boolean fromGUI) {
-		return takeSnapshot(fromGUI, null);
+	@Internal protected void addRemoteListener(PlayerEntity listener) {
+		remoteListeners.add(listener);
 	}
 	
-	protected CommentedConfig takeSnapshot(boolean fromGUI, @Nullable Set<String> selectedPaths) {
+	@Internal protected void removeRemoteListener(PlayerEntity listener) {
+		remoteListeners.remove(listener);
+	}
+	
+	@Internal public CommentedConfig takeSnapshot(
+	  boolean fromGUI, boolean fromRemote, @Nullable Set<String> selectedPaths
+	) {
 		if (selectedPaths != null) selectedPaths = selectedPaths.stream()
 		  .map(p -> p.startsWith(".")? p.substring(1) : p)
 		  .collect(Collectors.toSet());
 		final CommentedConfig config = CommentedConfig.of(LinkedHashMap::new, SimpleConfigCommentedYamlFormat.forConfig(this));
-		saveSnapshot(config, fromGUI, selectedPaths);
+		saveSnapshot(config, fromGUI, fromRemote, selectedPaths);
 		return config;
 	}
 	
-	@Override protected void loadSnapshot(
-	  CommentedConfig config, boolean intoGUI, @Nullable Set<String> selectedPaths
+	@Internal @Override public void loadSnapshot(
+	  CommentedConfig config, boolean intoGUI, boolean forRemote, @Nullable Set<String> selectedPaths
 	) {
 		if (intoGUI) {
 			if (FMLEnvironment.dist != Dist.CLIENT) throw new IllegalStateException(
@@ -451,20 +480,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			AbstractConfigScreen screen = getGUI();
 			if (screen != null) {
 				screen.runAtomicTransparentAction(
-				  () -> super.loadSnapshot(config, true, selectedPaths));
+				  () -> super.loadSnapshot(config, true, forRemote, selectedPaths));
 			} else throw new IllegalStateException(
 			  "Cannot load snapshot into GUI when no GUI is active");
-		} else super.loadSnapshot(config, false, selectedPaths);
-	}
-	
-	protected void reload() {
-		bake();
-		if (getType() == Type.SERVER)
-			DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> this::syncToClients);
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			SimpleConfigSnapshotHandler handler = getSnapshotHandler();
-			if (handler != null) handler.notifyExternalChanges(this);
-		});
+		} else super.loadSnapshot(config, false, forRemote, selectedPaths);
 	}
 	
 	/**
@@ -473,14 +492,15 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	@SubscribeEvent
 	protected void onModConfigEvent(final ModConfig.ModConfigEvent event) {
 		final ModConfig c = event.getConfig();
-		if (c instanceof SimpleConfigModConfig) {
-			SimpleConfig config = ((SimpleConfigModConfig) c).getSimpleConfig();
-			config.bake();
-			if (type == ModConfig.Type.SERVER)
-				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> config::syncToClients);
+		if (c == getModConfig()) {
+			bake();
+			if (type == Type.SERVER || type == Type.COMMON)
+				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> this::syncToClients);
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-				SimpleConfigSnapshotHandler handler = config.getSnapshotHandler();
-				if (handler != null) handler.notifyExternalChanges(config);
+				synchronized (this) {
+					SimpleConfigSnapshotHandler handler = getSnapshotHandler();
+					if (handler != null) handler.notifyExternalChanges(this);
+				}
 			});
 		}
 	}
@@ -521,9 +541,14 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected String getHeaderComment() {
-		String type = this.getType().extension();
+		String type = getType().getAlias();
 		type = Character.toUpperCase(type.charAt(0)) + type.substring(1);
-		return getModNameOrId(getModId()) + " - " + type + " config\n";
+		boolean loaded = ServerI18n.hasKey("simpleconfig.config.title");
+		String lang = loaded? ServerI18n.getCurrentLanguage() : "<not loaded yet...>";
+		String comment =
+		  loaded? "\n" + ServerI18n.format("simpleconfig.config.header")
+		        : "\nComments starting with 2 hash symbols (##) are documentation comments and will be reset if modified.";
+		return getModNameOrId(getModId()) + " - " + type + " config\nLang: " + lang + comment;
 	}
 	
 	@Internal public Map<String, NodeComments> getComments() {
@@ -532,7 +557,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		List<CommentLine> headerLines = Arrays.stream(LINE_BREAK.split(headerComment))
 		  .map(l -> commentLine("# " + l))
 		  .collect(Collectors.toList());
-		headerLines.add(blankLine());
 		comments.put("", Util.make(new NodeComments(), c -> c.setBlockComments(headerLines)));
 		return comments;
 	}
@@ -543,7 +567,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	protected ConfigSpec buildConfigSpec() {
 		final ConfigSpec spec = new ConfigSpec();
-		for (AbstractConfigEntry<?, ?, ?, ?> e : entries.values())
+		for (AbstractConfigEntry<?, ?, ?> e : entries.values())
 			e.buildSpec(spec, "");
 		for (AbstractSimpleConfigEntryHolder child : children.values())
 			child.buildConfigSpec(spec, "");
@@ -551,17 +575,20 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	protected boolean canEdit() {
-		return getType() != Type.SERVER || permissions.permissionFor(modId).getLeft().canEdit();
+		return getType() != Type.SERVER
+		       || FMLEnvironment.dist == Dist.DEDICATED_SERVER
+		       || permissions.permissionFor(modId).getLeft().canEdit();
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected void buildGUI(ConfigScreenBuilder configBuilder) {
+	protected void buildGUI(ConfigScreenBuilder configBuilder, boolean forRemote) {
 		if (background != null)
 			configBuilder.setDefaultBackgroundTexture(background);
 		configBuilder.setTransparentBackground(transparent);
 		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
-			final ConfigCategory category = configBuilder.getOrCreateCategory("", type);
+			final ConfigCategoryBuilder category = configBuilder.getOrCreateCategory(
+			  "", type.asEditType(forRemote));
 			category.setEditable(canEdit());
 			category.setTitle(getTitle());
 			getFilePath().ifPresent(category::setContainingFile);
@@ -574,17 +601,17 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			category.setIcon(defaultCategoryIcon);
 			category.setColor(defaultCategoryColor);
 			for (IGUIEntry entry : order)
-				entry.buildGUI(category, entryBuilder);
+				entry.buildGUI(category, entryBuilder, forRemote);
 		}
 		for (SimpleConfigCategory cat : categories.values())
-			cat.buildGUI(configBuilder, entryBuilder);
+			cat.buildGUI(configBuilder, entryBuilder, forRemote);
 		if (decorator != null)
 			decorator.accept(this, configBuilder);
 	}
 	
 	// null config implies deletion
 	protected CompletableFuture<Void> saveLocalPreset(String name, @Nullable CommentedConfig config) {
-		final String typePrefix = "-" + getType().extension() + "-";
+		final String typePrefix = "-" + getType().getAlias() + "-";
 		final String fileName = getModId() + typePrefix + name + ".yaml";
 		final File dest = LOCAL_PRESETS_DIR.resolve(fileName).toFile();
 		if (dest.isDirectory())
@@ -619,7 +646,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	protected CompletableFuture<CommentedConfig> getLocalPreset(String name) {
 		final CompletableFuture<CommentedConfig> future = new CompletableFuture<>();
-		final String prefix = "-" + getType().extension() + "-";
+		final String prefix = "-" + getType().getAlias() + "-";
 		final File file = LOCAL_PRESETS_DIR.resolve(getModId() + prefix + name + ".yaml").toFile();
 		if (!file.isFile()) {
 			future.completeExceptionally(new FileNotFoundException(file.getPath()));
@@ -635,17 +662,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 			future.completeExceptionally(e);
 			return future;
 		}
-	}
-	
-	protected List<String> getDefaultPresets() {
-		try {
-			IResourceManager manager = Minecraft.getInstance().getResourceManager();
-			List<IResource> resources = manager
-			  .getAllResources(new ResourceLocation("simpleconfig", "config-presets"));
-			List<String> paths = resources.stream().map(r -> r.getLocation().getPath()).collect(Collectors.toList());
-			return paths;
-		} catch (IOException ignored) {}
-		return null;
 	}
 	
 	protected CompletableFuture<CommentedConfig> getRemotePreset(String name) {
@@ -683,8 +699,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	protected interface IGUIEntryBuilder {}
 	
 	protected interface IGUIEntry extends IGUIEntryBuilder {
-		@Internal void buildGUI(
-		  ConfigCategory category, ConfigEntryBuilder entryBuilder);
+		@Internal void buildGUI(ConfigCategoryBuilder category, ConfigEntryBuilder entryBuilder, boolean forRemote);
 	}
 	
 	public static class NoSuchConfigEntryError extends RuntimeException {
@@ -734,6 +749,128 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	public static class ConfigReflectiveOperationException extends RuntimeException {
 		public ConfigReflectiveOperationException(String message, Exception cause) {
 			super(message, cause);
+		}
+	}
+	
+	public enum Type {
+		CLIENT(ModConfig.Type.CLIENT, true, false),
+		COMMON(ModConfig.Type.COMMON, true, true),
+		SERVER(ModConfig.Type.SERVER, false, true);
+		
+		private static final Map<String, Type> BY_ALIAS = Util.make(
+		  new HashMap<>(values().length), m -> {
+			  for (Type v: values()) m.put(v.getAlias(), v);
+		  });
+		private static final Map<ModConfig.Type, Type> BY_CONFIG_TYPE = Util.make(
+		  new HashMap<>(values().length), m -> {
+			  for (Type v: values()) m.put(v.asConfigType(), v);
+		  });
+		private static final Set<Type> LOCAL_TYPES = Util.make(
+		  Collections.newSetFromMap(new EnumMap<>(Type.class)),
+		  s -> Arrays.stream(values()).filter(Type::isLocal).forEach(s::add));
+		private static final Set<Type> REMOTE_TYPES = Util.make(
+		  Collections.newSetFromMap(new EnumMap<>(Type.class)),
+		  s -> Arrays.stream(values()).filter(Type::isRemote).forEach(s::add));
+		
+		public static Set<Type> localTypes() {
+			return LOCAL_TYPES;
+		}
+		public static Set<Type> remoteTypes() {
+			return REMOTE_TYPES;
+		}
+		
+		public static Type fromAlias(String alias) {
+			return BY_ALIAS.get(alias);
+		}
+		public static Type fromConfigType(ModConfig.Type type) {
+			return BY_CONFIG_TYPE.get(type);
+		}
+		
+		private final ModConfig.Type type;
+		private final boolean isLocal;
+		private final boolean isRemote;
+		private final String alias;
+		
+		Type(ModConfig.Type type, boolean isLocal, boolean isRemote) {
+			this.type = type;
+			this.isLocal = isLocal;
+			this.isRemote = isRemote;
+			alias = type.extension();
+		}
+		
+		public boolean isLocal() {
+			return isLocal;
+		}
+		
+		public boolean isRemote() {
+			return isRemote;
+		}
+		
+		public ModConfig.Type asConfigType() {
+			return type;
+		}
+		public EditType asEditType(boolean remote) {
+			return Arrays.stream(EditType.values()).filter(
+			  t -> t.getType() == this && t.isOnlyRemote() == remote
+			).findFirst().orElseGet(() -> Arrays.stream(EditType.values()).filter(
+			  t -> t.getType() == this
+			).findFirst().orElse(null));
+		}
+		public String getAlias() {
+			return alias;
+		}
+	}
+	
+	public enum EditType {
+		CLIENT(Type.CLIENT, false, false),
+		COMMON(Type.COMMON, false, false),
+		SERVER_COMMON(Type.COMMON, true, true),
+		SERVER(Type.SERVER, true, false);
+		
+		private final static Map<String, EditType> BY_ALIAS = Util.make(
+		  new HashMap<>(values().length), m -> {
+			  for (EditType v: values()) m.put(v.getAlias(), v);
+		  });
+		
+		private static final EditType[] LOCAL_TYPES = Arrays.stream(values())
+		  .filter(editType -> !editType.isRemote()).toArray(EditType[]::new);
+		private static final EditType[] REMOTE_TYPES = Arrays.stream(values())
+		  .filter(EditType::isRemote).toArray(EditType[]::new);
+		
+		public static EditType[] localTypes() {
+			return LOCAL_TYPES;
+		}
+		
+		public static EditType[] remoteTypes() {
+			return REMOTE_TYPES;
+		}
+		
+		public static EditType fromAlias(String extension) {
+			return BY_ALIAS.get(extension);
+		}
+		
+		private final Type type;
+		private final boolean isRemote;
+		private final boolean onlyRemote;
+		private final String alias;
+		EditType(Type type, boolean isRemote, boolean onlyRemote) {
+			this.type = type;
+			this.isRemote = isRemote;
+			this.onlyRemote = onlyRemote;
+			alias = name().toLowerCase().replace('_', '-');
+		}
+		
+		public Type getType() {
+			return type;
+		}
+		public boolean isRemote() {
+			return isRemote;
+		}
+		public boolean isOnlyRemote() {
+			return onlyRemote;
+		}
+		public String getAlias() {
+			return alias;
 		}
 	}
 }

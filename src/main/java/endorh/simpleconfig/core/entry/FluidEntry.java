@@ -4,10 +4,11 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
@@ -17,7 +18,6 @@ import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofFluid;
 
-public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid, FluidEntry>
+public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
   implements IKeyEntry<Fluid> {
 	protected @NotNull Predicate<Fluid> filter;
 	
@@ -158,14 +158,14 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid, FluidE
 		return tooltips;
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Fluid>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Fluid, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		final ComboBoxFieldBuilder<Fluid> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofFluid(), forGui(get()))
 			 .setSuggestionProvider(new SimpleComboBoxModel<>(this::supplyOptions))
 			 .setSuggestionMode(false);
-		return Optional.of(decorate(entryBuilder).build());
+		return Optional.of(decorate(entryBuilder));
 	}
 }
 

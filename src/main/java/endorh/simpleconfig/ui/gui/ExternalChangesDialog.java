@@ -1,10 +1,9 @@
 package endorh.simpleconfig.ui.gui;
 
+import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,17 +16,17 @@ import static endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeRes
 
 public class ExternalChangesDialog extends ConfirmDialog {
 	TintedButton acceptAllButton;
-	protected ModConfig.Type type;
+	protected EditType type;
 	protected @Nullable Consumer<ExternalChangeResponse> responseAction;
 	
 	public static ExternalChangesDialog create(
-	  Type type, Consumer<ExternalChangeResponse> handler
+	  EditType type, Consumer<ExternalChangeResponse> handler
 	) {
 		return create(type, handler, null);
 	}
 	
 	public static ExternalChangesDialog create(
-	  Type type, Consumer<ExternalChangeResponse> handler,
+	  EditType type, Consumer<ExternalChangeResponse> handler,
 	  @Nullable Consumer<ExternalChangesDialog> builder
 	) {
 		ExternalChangesDialog dialog = new ExternalChangesDialog(type, handler);
@@ -36,16 +35,16 @@ public class ExternalChangesDialog extends ConfirmDialog {
 	}
 	
 	protected ExternalChangesDialog(
-	  Type type, @NotNull Consumer<ExternalChangeResponse> action
+	  EditType type, @NotNull Consumer<ExternalChangeResponse> action
 	) {
 		super(new TranslationTextComponent(
-		  type == Type.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
+		  type == EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		  "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;
 		this.responseAction = action;
 		setPersistent(true);
 		setBody(Stream.concat(
-		  splitTtc(type == Type.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
+		  splitTtc(type == EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
 		           "simpleconfig.ui.external_changes_detected.body"
 		  ).stream(), Stream.of(
 			 StringTextComponent.EMPTY, new TranslationTextComponent(

@@ -5,10 +5,12 @@ import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
+import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,7 +33,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
 	protected @Nullable Consumer<SimpleConfigGroup> baker;
-	protected AbstractConfigEntry<?, ?, ?, ?> heldEntry;
+	protected AbstractConfigEntry<?, ?, ?> heldEntry;
 	
 	@Internal protected SimpleConfigGroup(
 	  SimpleConfigGroup parent, String name, String title,
@@ -62,9 +64,9 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	}
 	
 	@Internal protected void build(
-	  Map<String, AbstractConfigEntry<?, ?, ?, ?>> entries,
+	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
 	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder,
-	  @Nullable AbstractConfigEntry<?, ?, ?, ?> heldEntry
+	  @Nullable AbstractConfigEntry<?, ?, ?> heldEntry
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
@@ -215,9 +217,11 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected CaptionedSubCategoryListEntry<?, ?> buildGUI(ConfigEntryBuilder entryBuilder) {
-		CaptionedSubCategoryBuilder<?, ?> group =
-		  heldEntry != null ? createAndDecorateGUI(entryBuilder, heldEntry) :
+	protected CaptionedSubCategoryBuilder<?, ?, ?> buildGUI(
+	  ConfigEntryBuilder entryBuilder, boolean forRemote
+	) {
+		CaptionedSubCategoryBuilder<?, ?, ?> group =
+		  heldEntry != null ? createAndDecorateGUI(entryBuilder, heldEntry, forRemote) :
 		  entryBuilder.startSubCategory(getTitle());
 		group.setExpanded(expanded)
 		  .setTooltipSupplier(this::getTooltip)
@@ -225,32 +229,43 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		if (!order.isEmpty()) {
 			for (IGUIEntry entry : order) {
 				if (entry instanceof AbstractConfigEntry) {
-					((AbstractConfigEntry<?, ?, ?, ?>) entry).buildGUI(group, entryBuilder, false);
+					((AbstractConfigEntry<?, ?, ?>) entry).buildGUI(group, entryBuilder, forRemote);
 				} else if (entry instanceof SimpleConfigGroup) {
-					group.add(((SimpleConfigGroup) entry).buildGUI(entryBuilder));
+					group.add(((SimpleConfigGroup) entry).buildGUI(entryBuilder, forRemote));
 				}
 			}
 		}
-		return group.build();
+		return group;
 	}
 	
 	@OnlyIn(Dist.CLIENT) private <
-	  T, CE extends AbstractConfigEntry<?, ?, T, ?> & IKeyEntry<T>
-	> CaptionedSubCategoryBuilder<T, ?> createAndDecorateGUI(
-	  ConfigEntryBuilder entryBuilder, AbstractConfigEntry<?, ?, ?, ?> heldEntry
+	  T, CE extends AbstractConfigEntry<?, ?, T> & IKeyEntry<T>
+	> CaptionedSubCategoryBuilder<T, ?, ?> createAndDecorateGUI(
+	  ConfigEntryBuilder entryBuilder, AbstractConfigEntry<?, ?, T> heldEntry, boolean forRemote
 	) {
 		//noinspection unchecked
 		final CE cast = (CE) heldEntry;
-		return entryBuilder.startCaptionedSubCategory(
-		  getTitle(), cast.buildChildGUIEntry(entryBuilder))
-		  .setSaveConsumer(cast.createSaveConsumer());
+		FieldBuilder<T, ?, ?> builder = cast.buildChildGUIEntry(entryBuilder);
+		cast.decorateGUIBuilder(builder, forRemote);
+		return makeGUI(entryBuilder, builder)
+		  .withSaveConsumer(cast.createSaveConsumer());
+	}
+	
+	@SuppressWarnings("unchecked") @OnlyIn(Dist.CLIENT) private <
+	  T, HE extends AbstractConfigListEntry<T> & IChildListEntry,
+	  HEB extends FieldBuilder<T, HE, HEB>
+	> CaptionedSubCategoryBuilder<T, ?, ?> makeGUI(
+	  ConfigEntryBuilder entryBuilder, FieldBuilder<T, ?, ?> builder
+	) {
+		return entryBuilder.startCaptionedSubCategory(getTitle(), (HEB) builder);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override @Internal public void buildGUI(
-	  ConfigCategory category, ConfigEntryBuilder entryBuilder
+	  ConfigCategoryBuilder category, ConfigEntryBuilder entryBuilder,
+	  boolean forRemote
 	) {
-		category.addEntry(buildGUI(entryBuilder));
+		category.addEntry(buildGUI(entryBuilder, forRemote));
 	}
 	
 	@Override
@@ -267,7 +282,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	protected void bakeFields() {
 		for (SimpleConfigGroup group : groups.values())
 			group.bakeFields();
-		for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+		for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 			entry.bakeField();
 	}
 	
@@ -281,7 +296,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		try {
 			for (SimpleConfigGroup group : groups.values())
 				group.commitFields();
-			for (AbstractConfigEntry<?, ?, ?, ?> entry : entries.values())
+			for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 				entry.commitField();
 		} catch (IllegalAccessException e) {
 			throw new ConfigReflectiveOperationException(

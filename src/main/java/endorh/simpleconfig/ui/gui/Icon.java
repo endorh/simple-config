@@ -7,6 +7,12 @@ import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.Color;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextFormatting;
+import org.jetbrains.annotations.Contract;
+
+import java.util.Objects;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -66,8 +72,37 @@ public class Icon {
 		this.tint = tint;
 	}
 	
-	public Icon withTint(int tint) {
+	/**
+	 * Obtain a tinted version of this icon.<br>
+	 * <b>Ensure the tint has a non-zero alpha value, or the icon will be invisible.</b>
+	 * @param tint Color to use, in ARGB format.
+	 */
+	@Contract(pure=true) public Icon withTint(int tint) {
 		return new Icon(location, u, v, w, h, levelOffsetX, levelOffsetY, tw, th, twoLevel, tint);
+	}
+	
+	/**
+	 * Obtain a tinted version of this icon.<br>
+	 * @param tint Color to use.
+	 */
+	@Contract(pure=true) public Icon withTint(TextFormatting tint) {
+		Integer color = tint.getColor();
+		if (color == null) throw new IllegalArgumentException("Not a valid color style: " + tint);
+		return withTint(color | 0xFF000000);
+	}
+	
+	/**
+	 * Obtain a tinted version of this icon, using the color of a given style.<br>
+	 * If the style has no color, defaults to white color.
+	 */
+	@Contract(pure=true) public Icon withTint(Style style) {
+		Color color = style.getColor();
+		int c;
+		if (color != null) {
+			c = color.getColor();
+		} else c = Objects.requireNonNull(TextFormatting.WHITE.getColor());
+		if ((c & 0xFF000000) == 0) c |= 0xFF000000;
+		return withTint(c);
 	}
 	
 	public static void setShaderColorMask(int color) {

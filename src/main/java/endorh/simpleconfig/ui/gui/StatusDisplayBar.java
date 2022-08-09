@@ -52,6 +52,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		).active(this::hasDialog).tooltip(this::getDialogTooltip));
 		states.add(StatusState.ERROR_STATE);
 		states.add(StatusState.READ_ONLY);
+		states.add(StatusState.REQUIRES_RESTART);
 		states.add(StatusState.EXTERNAL_CHANGES);
 	}
 	
@@ -83,7 +84,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 	}
 	
 	public boolean hasDialog() {
-		return activeState != null && activeState.getDialog(screen) != null;
+		return activeState != null && activeState.hasDialog(screen);
 	}
 	
 	public List<ITextComponent> getDialogTooltip() {
@@ -162,6 +163,78 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 		};
 		
+		public static final StatusState REQUIRES_RESTART = new StatusState(5) {
+			@Override public boolean isActive(SimpleConfigScreen screen) {
+				return screen.isRequiresRestart();
+			}
+			
+			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
+				return new TranslationTextComponent("simpleconfig.ui.status.requires_restart")
+				  .mergeStyle(TextFormatting.GOLD);
+			}
+			
+			@Override public boolean hasDialog(SimpleConfigScreen screen) {
+				return true;
+			}
+			
+			@Override public StatusStyle getStyle(SimpleConfigScreen screen) {
+				return new StatusStyle(SimpleConfigIcons.Entries.REQUIRES_RESTART, 0xF0A0A080, 0xA0646448);
+			}
+			
+			@Override
+			public void onClick(SimpleConfigScreen screen, double mouseX, double mouseY, int button) {
+				screen.focusNextRequiresRestart(!Screen.hasShiftDown());
+			}
+			
+			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
+				final List<AbstractConfigEntry<?>> entries = screen.getAllMainEntries().stream()
+				  .filter(e -> e.isRequiresRestart() && e.isEdited())
+				  .collect(Collectors.toList());
+				final List<ITextComponent> lines = IntStream.range(0, entries.size()).mapToObj(i -> {
+					AbstractConfigEntry<?> entry = entries.get(i);
+					IFormattableTextComponent title = entry.getTitle().deepCopy();
+					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
+					               .mergeStyle(TextFormatting.GRAY));
+					title.modifyStyle(s -> s.setFormatting(TextFormatting.GOLD)
+					  .setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslationTextComponent(
+						 "simpleconfig.ui.go_to_entry")))
+					  .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i)));
+					return title;
+				}).collect(Collectors.toList());
+				return InfoDialog.create(
+				  new TranslationTextComponent("simpleconfig.ui.status.requires_restart.all.title"),
+				  lines,
+				  d -> {
+					  d.setIcon(SimpleConfigIcons.Entries.REQUIRES_RESTART);
+					  d.setLinkActionHandler(s -> {
+						  if (s.startsWith("goto/")) {
+							  try {
+								  int pos = Integer.parseInt(s.substring("goto/".length()));
+								  if (pos >= 0 && pos < entries.size()) {
+									  d.cancel(true);
+									  INavigableTarget target = entries.get(pos);
+									  target.navigate();
+									  target.applyWarningHighlight();
+								  }
+							  } catch (NumberFormatException ignored) {}
+						  }
+					  });
+					  d.addButton(TintedButton.of(
+						 new TranslationTextComponent(
+							"simpleconfig.ui.action.restore.all"), 0x806480FF, b -> {
+							 d.cancel(true);
+							 screen.runAtomicTransparentAction(
+								() -> entries.forEach(AbstractConfigEntry::restoreValue));
+						 }
+					  ));
+				  });
+			}
+			
+			@Override public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
+				return SimpleConfigTextUtil.splitTtc("simpleconfig.ui.status.requires_restart.click");
+			}
+		};
+		
 		public static final StatusState EXTERNAL_CHANGES = new StatusState(10) {
 			@Override public boolean isActive(SimpleConfigScreen screen) {
 				return screen.getAllMainEntries().stream()
@@ -190,6 +263,10 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				  + (menu? "all" : "click"),
 				  KeyBindings.NEXT_ERROR.func_238171_j_().deepCopy().mergeStyle(TextFormatting.DARK_AQUA),
 				  KeyBindings.PREV_ERROR.func_238171_j_().deepCopy().mergeStyle(TextFormatting.DARK_AQUA));
+			}
+			
+			@Override public boolean hasDialog(SimpleConfigScreen screen) {
+				return true;
 			}
 			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
@@ -265,6 +342,10 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				)).mergeStyle(TextFormatting.RED);
 			}
 			
+			@Override public boolean hasDialog(SimpleConfigScreen screen) {
+				return true;
+			}
+			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<EntryError> errors = screen.getErrors();
 				final List<ITextComponent> lines = IntStream.range(0, errors.size()).mapToObj(i -> {
@@ -329,6 +410,9 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		public abstract boolean isActive(SimpleConfigScreen screen);
 		public void onClick(SimpleConfigScreen screen, double mouseX, double mouseY, int button) {}
 		public abstract ITextComponent getTitle(SimpleConfigScreen screen);
+		public boolean hasDialog(SimpleConfigScreen screen) {
+			return getDialog(screen) != null;
+		}
 		public @Nullable AbstractDialog getDialog(SimpleConfigScreen screen) {
 			return null;
 		}

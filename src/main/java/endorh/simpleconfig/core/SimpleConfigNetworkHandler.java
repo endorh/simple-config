@@ -4,25 +4,32 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingException;
+import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfig.Type;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKeyOverlay;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.RemoteSavedHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.SavedHotKeyGroup;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.config.ModConfig.ModConfigEvent;
 import net.minecraftforge.fml.config.ModConfig.Reloading;
-import net.minecraftforge.fml.config.ModConfig.Type;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.network.FMLHandshakeHandler;
 import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
@@ -61,7 +68,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
-import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExtension;
 
 /**
  * Handle synchronization of {@link SimpleConfig} data with server config
@@ -193,7 +199,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 	  SimpleConfig config, @Nullable CommentedConfig snapshot
 	) {
 		try {
-			if (snapshot == null) snapshot = config.takeSnapshot(false);
+			if (snapshot == null) snapshot = config.takeSnapshot(false, false, null);
 			if (snapshot instanceof CommentedFileConfig) {
 				return Files.readAllBytes(((CommentedFileConfig) snapshot).getNioPath());
 			} else {
@@ -222,6 +228,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		return CHANNEL;
 	}
 	
+	public static boolean isServerReady() {
+		if (FMLEnvironment.dist != Dist.DEDICATED_SERVER) return false;
+		return ServerLifecycleHooks.getCurrentServer() != null;
+	}
+	
 	public static boolean isConnectedToSimpleConfigServer() {
 		ClientPlayNetHandler connection = Minecraft.getInstance().getConnection();
 		if (connection == null) return false;
@@ -240,6 +251,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		registerServer(SSavedHotKeyGroupPacket::new);
 		registerServer(SSaveRemoteHotKeyGroupPacket::new);
 		registerServer(SSimpleConfigServerCommonConfigPacket::new);
+		registerServer(SSimpleConfigPatchReportPacket::new);
 		
 		registerClient(CSimpleConfigSyncPacket::new);
 		registerClient(CSimpleConfigSavePresetPacket::new);
@@ -250,6 +262,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		registerClient(CSaveRemoteHotKeyGroupPacket::new);
 		registerClient(CSimpleConfigRequestServerCommonConfigPacket::new);
 		registerClient(CSimpleConfigSaveServerCommonConfigPacket::new);
+		registerClient(CSimpleConfigReleaseServerCommonConfigPacket::new);
+		registerClient(CSimpleConfigApplyPatchPacket::new);
 		
 		registerLogin(CAcknowledgePacket::new);
 		registerLogin(SLoginConfigDataPacket::new, SimpleConfigNetworkHandler::getLoginConfigDataPackets);
@@ -313,7 +327,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 	/**
 	 * Subclasses must have a no-arg constructor
 	 */
-	protected static abstract class AbstractPacket {
+	protected abstract static class AbstractPacket {
 		protected abstract void handle(Supplier<Context> ctxSupplier);
 		public abstract void write(PacketBuffer buf);
 		public abstract void read(PacketBuffer buf);
@@ -329,7 +343,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		}
 	}
 	
-	protected static abstract class CAbstractPacket extends AbstractPacket {
+	protected abstract static class CAbstractPacket extends AbstractPacket {
 		@Override protected final void handle(Supplier<Context> ctxSupplier) {
 			Context ctx = ctxSupplier.get();
 			ctx.setPacketHandled(true);
@@ -343,19 +357,33 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		}
 	}
 	
-	protected static abstract class SAbstractPacket extends AbstractPacket {
-		private static final PacketDistributor<ServerPlayerEntity> EXCEPT =
+	protected abstract static class SAbstractPacket extends AbstractPacket {
+		private static final PacketDistributor<ServerPlayerEntity> EXCEPT = new PacketDistributor<>(
+		  (distributor, supplier) -> packet -> {
+			  final ServerPlayerEntity exception = supplier.get();
+			  final MinecraftServer server = exception.world.getServer();
+			  if (server == null) return;
+			  server.getPlayerList().getPlayers()
+				 .stream().filter(p -> exception != p)
+				 .forEach(p -> p.connection.sendPacket(packet));
+		  }, NetworkDirection.PLAY_TO_CLIENT);
+		private static final PacketDistributor<ServerPlayerEntity> OPS_EXCEPT = new PacketDistributor<>(
+		  (distributor, supplier) -> packet -> {
+			  final ServerPlayerEntity exception = supplier.get();
+			  final MinecraftServer server = exception.world.getServer();
+			  if (server == null) return;
+			  server.getPlayerList().getPlayers()
+			    .stream().filter(p -> exception != p && p.hasPermissionLevel(2))
+			    .forEach(p -> p.connection.sendPacket(packet));
+		  }, NetworkDirection.PLAY_TO_CLIENT);
+		private static final PacketDistributor<Collection<? extends PlayerEntity>> LIST =
 		  new PacketDistributor<>(
-			 (distributor, supplier) -> packet -> {
-				 final ServerPlayerEntity exception = supplier.get();
-				 final MinecraftServer server = exception.world.getServer();
-				 if (server == null)
-					 return;
-				 server.getPlayerList().getPlayers()
-					.stream().filter(p -> exception != p)
-					.forEach(p -> p.connection.sendPacket(packet));
-			 }, NetworkDirection.PLAY_TO_CLIENT
-		  );
+		    (distributor, supplier) -> packet -> {
+			    final Collection<? extends PlayerEntity> players = supplier.get();
+			    players.stream()
+			      .filter(p -> p instanceof ServerPlayerEntity)
+			      .forEach(p -> ((ServerPlayerEntity) p).connection.sendPacket(packet));
+		    }, NetworkDirection.PLAY_TO_CLIENT);
 		
 		public static void sendMessage(ITextComponent message) {
 			final ClientPlayerEntity player = Minecraft.getInstance().player;
@@ -382,8 +410,16 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 			CHANNEL.sendTo(this, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
 		}
 		
+		public void sendTo(Collection<? extends PlayerEntity> players) {
+			CHANNEL.send(LIST.with(() -> Lists.newArrayList(players)), this);
+		}
+		
 		public void sendExcept(ServerPlayerEntity player) {
 			CHANNEL.send(SAbstractPacket.EXCEPT.with(() -> player), this);
+		}
+		
+		public void sendToOpsExcept(ServerPlayerEntity player) {
+			CHANNEL.send(SAbstractPacket.OPS_EXCEPT.with(() -> player), this);
 		}
 		
 		public void sendToAll() {
@@ -399,7 +435,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		}
 	}
 	
-	protected static abstract class SAbstractLoginPacket extends SAbstractPacket implements ILoginPacket {
+	protected abstract static class SAbstractLoginPacket extends SAbstractPacket implements ILoginPacket {
 		private int loginIndex;
 		@Override public int getLoginIndex() {
 			return loginIndex;
@@ -426,7 +462,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		}
 	}
 	
-	protected static abstract class CAbstractLoginPacket extends CAbstractPacket implements ILoginPacket {
+	protected abstract static class CAbstractLoginPacket extends CAbstractPacket implements ILoginPacket {
 		private int loginIndex;
 		@Override public int getLoginIndex() {
 			return loginIndex;
@@ -521,8 +557,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 				LOGGER.warn("Player \"" + senderName + "\" tried to modify " +
 				            "the server config for mod \"" + modName + "\" without privileges");
 				broadcastToOperators(new TranslationTextComponent(
-				  "simpleconfig.config.msg.tried_to_update_by",
-				  senderName, modName).mergeStyle(DENIED_UPDATE_STYLE));
+				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
+				).mergeStyle(DENIED_UPDATE_STYLE));
 				// Send back a re-sync packet
 				new SSimpleConfigSyncPacket(modId, snapshot).sendTo(sender);
 				return;
@@ -536,7 +572,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.error_updating_by",
-				  modName, senderName, e.getMessage()).mergeStyle(ERROR_UPDATE_STYLE));
+				  modName, senderName, e.getMessage()
+				).mergeStyle(ERROR_UPDATE_STYLE));
 			}
 			
 			LOGGER.info(
@@ -631,6 +668,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 				new SSimpleConfigServerCommonConfigPacket(modId, null).sendTo(sender);
 			} else {
 				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				config.addRemoteListener(sender);
 				byte[] snapshot = serializeSnapshot(config, null);
 				new SSimpleConfigServerCommonConfigPacket(modId, snapshot).sendTo(sender);
 				LOGGER.info("Sending server common config for mod \"" + modName + "\" to player \"" + senderName + "\"");
@@ -650,6 +688,9 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		private byte @Nullable[] snapshot;
 		
 		public SSimpleConfigServerCommonConfigPacket() {}
+		public SSimpleConfigServerCommonConfigPacket(SimpleConfig config) {
+			this(config.getModId(), serializeSnapshot(config, null));
+		}
 		public SSimpleConfigServerCommonConfigPacket(String modId, byte @Nullable[] snapshot) {
 			this.modId = modId;
 			this.snapshot = snapshot;
@@ -657,7 +698,22 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		
 		@Override public void onClient(Context ctx) {
 			CompletableFuture<CommentedConfig> future = CSimpleConfigRequestServerCommonConfigPacket.FUTURES.remove(modId);
-			if (future != null && !future.isCancelled()) {
+			if (future == null) {
+				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				SimpleConfigSnapshotHandler snapshotHandler = config.getSnapshotHandler();
+				if (snapshotHandler == null) {
+					LOGGER.warn("No snapshot handler for mod \"" + modId + "\"");
+					sendUnsubscribeMessage();
+					return;
+				}
+				IExternalChangeHandler handler = snapshotHandler.getExternalChangeHandler();
+				if (handler == null) {
+					LOGGER.warn("No external change handler for mod \"" + modId + "\"");
+					sendUnsubscribeMessage();
+					return;
+				}
+				handler.handleRemoteConfigExternalChange(EditType.SERVER_COMMON, deserializeSnapshot(config, snapshot));
+			} else if (!future.isCancelled()) {
 				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
 				String modName = config.getModName();
 				if (snapshot == null) {
@@ -668,6 +724,10 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 				future.complete(deserializeSnapshot(config, snapshot));
 				LOGGER.info("Received server common config for mod \"" + modName + "\"");
 			}
+		}
+		
+		protected void sendUnsubscribeMessage() {
+			new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
 		}
 		
 		@Override public void write(PacketBuffer buf) {
@@ -690,20 +750,26 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 	}
 	
 	@Internal public static void saveServerCommonConfig(
-	  String modId, SimpleConfig config, CommentedConfig snapshot
+	  String modId, SimpleConfig config, boolean requiresRestart, CommentedConfig snapshot
 	) {
 		if (!isConnectedToSimpleConfigServer()) throw new IllegalStateException(
 		  "Not connected to SimpleConfig server");
-		new CSimpleConfigSaveServerCommonConfigPacket(modId, serializeSnapshot(config, snapshot)).send();
+		new CSimpleConfigSaveServerCommonConfigPacket(
+		  modId, requiresRestart, serializeSnapshot(config, snapshot)
+		).send();
 	}
 	
 	protected static class CSimpleConfigSaveServerCommonConfigPacket extends CAbstractPacket {
 		private String modId;
+		private boolean requireRestart;
 		private byte @Nullable[] snapshot;
 		
 		public CSimpleConfigSaveServerCommonConfigPacket() {}
-		public CSimpleConfigSaveServerCommonConfigPacket(String modId, byte @Nullable[] snapshot) {
+		public CSimpleConfigSaveServerCommonConfigPacket(
+		  String modId, boolean requireRestart, byte @Nullable[] snapshot
+		) {
 			this.modId = modId;
+			this.requireRestart = requireRestart;
 			this.snapshot = snapshot;
 		}
 		
@@ -717,23 +783,197 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" attempted to save server common config " +
 				            "for mod \"" + modName + "\"");
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
+				).mergeStyle(DENIED_UPDATE_STYLE));
 				return;
 			}
-			SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
-			tryUpdateConfig(config, snapshot, false);
-			LOGGER.info("Sending server common config for mod \"" + modName + "\" to player \"" + senderName + "\"");
+			try {
+				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				tryUpdateConfig(config, snapshot, false);
+			} catch (ConfigUpdateReflectionError e) {
+				e.printStackTrace();
+				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.error_updating_by",
+				  modName, senderName, e.getMessage()
+				).mergeStyle(ERROR_UPDATE_STYLE));
+				return;
+			}
+			LOGGER.info(
+			  "Server common config for mod \"" + modName + "\" " +
+			  "has been updated by authorized player \"" + senderName + "\"");
+			IFormattableTextComponent msg = new TranslationTextComponent(
+			  "simpleconfig.config.msg.updated_by",
+			  modName, senderName
+			).mergeStyle(ALLOWED_UPDATE_STYLE);
+			if (requireRestart)
+				msg = msg.appendString("\n").append(new TranslationTextComponent(
+				  "simpleconfig.config.msg.server_changes_require_restart"
+				).mergeStyle(REQUIRES_RESTART_STYLE));
+			broadcastToOperators(msg);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
 			buf.writeString(modId);
+			buf.writeBoolean(requireRestart);
 			buf.writeBoolean(snapshot != null);
 			if (snapshot != null) buf.writeByteArray(snapshot);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
 			modId = buf.readString(32767);
+			requireRestart = buf.readBoolean();
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
 		}
+	}
+	
+	protected static class CSimpleConfigReleaseServerCommonConfigPacket extends CAbstractPacket {
+		private String modId;
+		
+		public CSimpleConfigReleaseServerCommonConfigPacket() {}
+		public CSimpleConfigReleaseServerCommonConfigPacket(String modId) {
+			this.modId = modId;
+		}
+		
+		@Override public void onServer(Context ctx) {
+			final ServerPlayerEntity sender = ctx.getSender();
+			final String modName = SimpleConfig.getModNameOrId(modId);
+			if (sender == null) throw new IllegalStateException(
+			  "Received server config update from non-player source for mod \"" + modName + "\"");
+			final String senderName = sender.getScoreboardName();
+			if (!SimpleConfig.hasConfig(modId, Type.COMMON)) return;
+			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
+				LOGGER.warn("Player \"" + senderName + "\" attempted to release server common config " +
+				            "for mod \"" + modName + "\"");
+				return;
+			}
+			SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+			config.removeRemoteListener(sender);
+			LOGGER.info("Released server common config for mod \"" + modName + "\" by player " + sender);
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeString(modId);
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			modId = buf.readString(32767);
+		}
+	}
+	
+	protected static class CSimpleConfigApplyPatchPacket extends CAbstractPacket {
+		private String modId;
+		private Type type;
+		private List<ITextComponent> report;
+		private byte @Nullable[] snapshot;
+		
+		public CSimpleConfigApplyPatchPacket() {}
+		public CSimpleConfigApplyPatchPacket(
+		  SimpleConfig config, CommentedConfig snapshot, List<ITextComponent> report
+		) {
+			modId = config.getModId();
+			type = config.getType();
+			this.snapshot = serializeSnapshot(config, snapshot);
+			this.report = report;
+		}
+		
+		@Override public void onServer(Context ctx) {
+			final ServerPlayerEntity sender = ctx.getSender();
+			final String modName = SimpleConfig.getModNameOrId(modId);
+			if (sender == null) throw new IllegalStateException(
+			  "Received server config update from non-player source for mod \"" + modName + "\"");
+			final String senderName = sender.getScoreboardName();
+			if (!SimpleConfig.hasConfig(modId, type)) return;
+			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
+				LOGGER.warn(
+				  "Player \"" + senderName + "\" attempted to apply patch to config " +
+				  "for mod \"" + modName + "\"");
+				return;
+			}
+			try {
+				SimpleConfig config = SimpleConfig.getConfig(modId, type);
+				tryUpdateConfig(config, snapshot, false);
+			} catch (ConfigUpdateReflectionError e) {
+				e.printStackTrace();
+				LOGGER.error("Error applying snapshot to config for mod \"" + modName + "\"");
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.error_updating_by",
+				  modName, senderName, e.getMessage()
+				).mergeStyle(ERROR_UPDATE_STYLE));
+				return;
+			}
+			LOGGER.info("Snapshot applied to config for mod \"" + modName + "\" by player " + sender);
+			if (report.isEmpty()) {
+				broadcastToOperators(new TranslationTextComponent(
+				  "simpleconfig.config.msg.patched_by", modName, senderName
+				).mergeStyle(ALLOWED_UPDATE_STYLE));
+			} else {
+				new SSimpleConfigPatchReportPacket(new TranslationTextComponent(
+				  "simpleconfig.hotkey.remote", sender.getName()), report
+				).sendToOpsExcept(sender);
+			}
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeString(modId);
+			buf.writeEnumValue(type);
+			buf.writeBoolean(snapshot != null);
+			if (snapshot != null) buf.writeByteArray(snapshot);
+			buf.writeVarInt(report.size());
+			report.forEach(buf::writeTextComponent);
+		}
+		
+		@Override public void read(PacketBuffer buf) {
+			modId = buf.readString(32767);
+			type = buf.readEnumValue(Type.class);
+			snapshot = buf.readBoolean()? buf.readByteArray() : null;
+			int size = buf.readVarInt();
+			List<ITextComponent> report = new ArrayList<>(size);
+			for (int i = 0; i < size; i++) report.add(buf.readTextComponent());
+			this.report = report;
+		}
+	}
+	
+	protected static class SSimpleConfigPatchReportPacket extends SAbstractPacket {
+		private ITextComponent title;
+		private List<ITextComponent> report;
+		
+		public SSimpleConfigPatchReportPacket() {}
+		public SSimpleConfigPatchReportPacket(ITextComponent title, List<ITextComponent> report) {
+			this.title = title;
+			this.report = report;
+		}
+		
+		@Override public void onClient(Context ctx) {
+			if (title != null && report != null)
+				ConfigHotKeyOverlay.addMessage(title, report);
+			super.onClient(ctx);
+		}
+		
+		@Override public void write(PacketBuffer buf) {
+			buf.writeTextComponent(title);
+			buf.writeVarInt(report.size());
+			report.forEach(buf::writeTextComponent);
+		}
+		@Override public void read(PacketBuffer buf) {
+			title = buf.readTextComponent();
+			int size = buf.readVarInt();
+			List<ITextComponent> report = new ArrayList<>(size);
+			for (int i = 0; i < size; i++) report.add(buf.readTextComponent());
+			this.report = report;
+		}
+	}
+	
+	@Internal public static boolean applyRemoteSnapshot(
+	  SimpleConfig config, CommentedConfig snapshot, List<ITextComponent> report
+	) {
+		if (!isConnectedToSimpleConfigServer()
+		    || !config.getType().isRemote()
+		    || !permissions.permissionFor(config.getModId()).getLeft().canEdit()
+		) return false;
+		new CSimpleConfigApplyPatchPacket(config, snapshot, report).send();
+		return true;
 	}
 	
 	protected static class CSimpleConfigSavePresetPacket extends CAbstractPacket {
@@ -769,7 +1009,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 				LOGGER.error("Received server config preset from non-player source for mod \"" + modId + "\"");
 				return;
 			}
-			String tt = type.extension();
+			String tt = type.getAlias();
 			String presetName = tt + "-" + this.presetName;
 			String fileName = modId + "-" + presetName + ".yaml";
 			String action = fileData == null? "delete" : "save"; // For messages
@@ -890,8 +1130,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		protected String modId;
 		
 		public CSimpleConfigRequestPresetListPacket() {}
-		public CSimpleConfigRequestPresetListPacket(String modId) {
+		public CSimpleConfigRequestPresetListPacket(
+		  String modId, CompletableFuture<List<Preset>> future
+		) {
 			this.modId = modId;
+			CompletableFuture<List<Preset>> prev = FUTURES.get(modId);
+			if (prev != null) prev.cancel(true);
+			FUTURES.put(modId, future);
 		}
 		
 		@Override public void onServer(Context ctx) {
@@ -907,8 +1152,9 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 			  .map(f -> {
 				  Matcher m = pat.matcher(f.getName());
 				  if (!m.matches()) return null;
-				  return Preset.remote(m.group("name"), typeFromExtension(m.group("type")));
+				  return Preset.remote(m.group("name"), Type.fromAlias(m.group("type")));
 			  }).filter(Objects::nonNull).collect(Collectors.toList());
+			LOGGER.info("Sending server preset list for mod \"" + modId + "\" to player \"" + sender.getScoreboardName() + "\"");
 			new SSimpleConfigPresetListPacket(modId, names).sendTo(sender);
 		}
 		
@@ -934,6 +1180,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		}
 		
 		@Override public void onClient(Context ctx) {
+			LOGGER.info("Received server preset list for mod \"" + modId + "\"");
 			final CompletableFuture<List<Preset>> future = CSimpleConfigRequestPresetListPacket.FUTURES.remove(modId);
 			if (future != null) future.complete(presets);
 		}
@@ -973,7 +1220,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 			final ServerPlayerEntity sender = ctx.getSender();
 			if (sender == null) return;
 			Path dir = SimpleConfigPaths.getRemotePresetsDir();
-			String tt = type.extension();
+			String tt = type.getAlias();
 			String fileName = modId + "-" + tt + "-" + presetName + ".yaml";
 			File file = dir.resolve(fileName).toFile();
 			if (!file.isFile())
@@ -1068,10 +1315,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.typeFromExten
 		if (!isConnectedToSimpleConfigServer())
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		final CompletableFuture<List<Preset>> future = new CompletableFuture<>();
-		final CompletableFuture<List<Preset>> prev = CSimpleConfigRequestPresetListPacket.FUTURES.get(modId);
-		if (prev != null) prev.cancel(false);
-		CSimpleConfigRequestPresetListPacket.FUTURES.put(modId, future);
-		new CSimpleConfigRequestPresetListPacket(modId).send();
+		new CSimpleConfigRequestPresetListPacket(modId, future).send();
 		return future;
 	}
 	

@@ -1,10 +1,13 @@
 package endorh.simpleconfig.ui.impl;
 
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
+import endorh.simpleconfig.ui.impl.builders.ConfigCategoryBuilderImpl;
 import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.ResourceLocation;
@@ -13,13 +16,11 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
 
 @OnlyIn(value = Dist.CLIENT)
@@ -35,19 +36,15 @@ import java.util.function.Consumer;
 	protected boolean transparentBackground = false;
 	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
-	protected final Map<String, ConfigCategory> serverCategories = new LinkedHashMap<>();
-	protected final Map<String, ConfigCategory> commonCategories = new LinkedHashMap<>();
-	protected final Map<String, ConfigCategory> clientCategories = new LinkedHashMap<>();
-	protected final EnumMap<Type, Map<String, ConfigCategory>> categories = Util.make(new EnumMap<>(Type.class), m -> {
-		m.put(Type.CLIENT, clientCategories);
-		m.put(Type.COMMON, commonCategories);
-		m.put(Type.SERVER, serverCategories);
-	});
-	protected ConfigCategory fallbackCategory = null;
+	protected final EnumMap<EditType, Map<String, ConfigCategoryBuilder>> categories =
+	  Util.make(new EnumMap<>(EditType.class), m -> {
+		  for (EditType type: EditType.values()) m.put(type, new LinkedHashMap<>());
+	  });
+	protected ConfigCategoryBuilder fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
 	protected @Nullable IConfigSnapshotHandler snapshotHandler;
-	protected @Nullable IRemoteCommonConfigProvider remoteConfigProvider;
-	private ConfigCategory selectedCategory;
+	protected @Nullable ConfigScreenBuilder.IRemoteConfigProvider remoteConfigProvider;
+	private ConfigCategoryBuilder selectedCategory;
 	private IConfigScreenGUIState previousGUIState;
 	
 	@Internal public ConfigScreenBuilderImpl(String modId) {
@@ -77,7 +74,7 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigScreenBuilder setRemoteCommonConfigProvider(IRemoteCommonConfigProvider provider) {
+	@Override public ConfigScreenBuilder setRemoteCommonConfigProvider(IRemoteConfigProvider provider) {
 		remoteConfigProvider = provider;
 		return this;
 	}
@@ -87,7 +84,7 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigScreenBuilder setFallbackCategory(ConfigCategory fallbackCategory) {
+	@Override public ConfigScreenBuilder setFallbackCategory(ConfigCategoryBuilder fallbackCategory) {
 		this.fallbackCategory = fallbackCategory;
 		return this;
 	}
@@ -124,11 +121,11 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigCategory getSelectedCategory() {
+	@Override public ConfigCategoryBuilder getSelectedCategory() {
 		return selectedCategory;
 	}
 	
-	@Override public ConfigScreenBuilder setSelectedCategory(ConfigCategory category) {
+	@Override public ConfigScreenBuilder setSelectedCategory(ConfigCategoryBuilder category) {
 		selectedCategory = category;
 		return this;
 	}
@@ -150,16 +147,16 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigCategory getOrCreateCategory(String name, Type type) {
-		Map<String, ConfigCategory> categories = this.categories.get(type);
-		ConfigCategory cat = categories.computeIfAbsent(
-		  name, key -> new ConfigCategoryImpl(this, name, type));
+	@Override public ConfigCategoryBuilder getOrCreateCategory(String name, EditType type) {
+		Map<String, ConfigCategoryBuilder> categories = this.categories.get(type);
+		ConfigCategoryBuilder cat = categories.computeIfAbsent(
+		  name, key -> new ConfigCategoryBuilderImpl(this, name, type));
 		if (fallbackCategory == null) fallbackCategory = cat;
 		return cat;
 	}
 	
-	@Override public ConfigScreenBuilder removeCategory(String name, Type type) {
-		Map<String, ConfigCategory> categories = this.categories.get(type);
+	@Override public ConfigScreenBuilder removeCategory(String name, EditType type) {
+		Map<String, ConfigCategoryBuilder> categories = this.categories.get(type);
 		if (!categories.containsKey(name))
 			throw new IllegalArgumentException("Category " + name + " does not exist");
 		if (categories.get(name) == fallbackCategory)
@@ -168,15 +165,15 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ConfigScreenBuilder removeCategoryIfExists(String name, Type type) {
-		Map<String, ConfigCategory> categories = this.categories.get(type);
+	@Override public ConfigScreenBuilder removeCategoryIfExists(String name, EditType type) {
+		Map<String, ConfigCategoryBuilder> categories = this.categories.get(type);
 		if (categories.containsKey(name))
 			removeCategory(name, type);
 		return this;
 	}
 	
-	@Override public boolean hasCategory(String name, Type type) {
-		Map<String, ConfigCategory> categories = this.categories.get(type);
+	@Override public boolean hasCategory(String name, EditType type) {
+		Map<String, ConfigCategoryBuilder> categories = this.categories.get(type);
 		return categories.containsKey(name);
 	}
 	
@@ -211,17 +208,29 @@ import java.util.function.Consumer;
 	}
 	
 	@Override public AbstractConfigScreen build() {
-		if (serverCategories.isEmpty() && clientCategories.isEmpty() && commonCategories.isEmpty() || fallbackCategory == null)
+		if (categories.values().stream().allMatch(Map::isEmpty) || fallbackCategory == null)
 			throw new IllegalStateException("Config screen without categories or fallback category");
+		ConfigCategoryBuilder selectedBuilder =
+		  selectedCategory != null? selectedCategory : fallbackCategory;
+		ConfigCategory selected = null;
+		EnumMap<EditType, List<ConfigCategory>> builtMap = new EnumMap<>(EditType.class);
+		for (Entry<EditType, Map<String, ConfigCategoryBuilder>> e: categories.entrySet()) {
+			List<ConfigCategory> categories = builtMap.computeIfAbsent(e.getKey(), k -> new ArrayList<>());
+			for (ConfigCategoryBuilder builder: e.getValue().values()) {
+				ConfigCategory built = builder.build();
+				categories.add(built);
+				if (builder == selectedBuilder) selected = built;
+			}
+		}
 		AbstractConfigScreen screen = new SimpleConfigScreen(
-		  parent, modId, title,
-		  clientCategories.values(), commonCategories.values(),
-		  serverCategories.values(), defaultBackground);
+		  parent, modId, title, builtMap.get(EditType.CLIENT), builtMap.get(EditType.COMMON),
+		  builtMap.get(EditType.SERVER_COMMON), builtMap.get(EditType.SERVER),
+		  defaultBackground);
 		screen.setEditedConfigHotKey(editedConfigHotkey, hotKeySaver);
 		screen.setSavingRunnable(savingRunnable);
 		screen.setClosingRunnable(closingRunnable);
 		screen.setEditable(editable);
-		screen.setSelectedCategory(selectedCategory != null? selectedCategory : fallbackCategory);
+		screen.setSelectedCategory(selected);
 		screen.setTransparentBackground(transparentBackground);
 		screen.setAlwaysShowTabs(alwaysShowTabs);
 		screen.setAfterInitConsumer(afterInitConsumer);

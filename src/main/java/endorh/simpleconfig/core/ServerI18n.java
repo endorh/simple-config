@@ -1,6 +1,7 @@
 package endorh.simpleconfig.core;
 
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.text.LanguageMap;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.ForgeI18n;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -30,5 +31,16 @@ import java.util.Map;
 		  ForgeI18n.class, null, "i18n");
 		if (i18n == null) return false;
 		return i18n.containsKey(key);
+	}
+	
+	public static String getCurrentLanguage() {
+		String KEY = "language.code";
+		String lang = KEY;
+		if (FMLEnvironment.dist == Dist.CLIENT) {
+			lang = I18n.format(KEY);
+		} else if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+			lang = LanguageMap.getInstance().func_230503_a_(KEY);
+		}
+		return KEY.equals(lang)? "<not loaded>" : lang;
 	}
 }

@@ -6,6 +6,7 @@ import endorh.simpleconfig.ui.gui.AbstractDialog;
 import net.minecraft.client.gui.INestedGuiEventHandler;
 import net.minecraft.client.gui.screen.Screen;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -113,8 +114,8 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 	}
 	
 	default boolean handleDialogsKeyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 256) return handleDialogsEscapeKey(); // Esc
-		if (keyCode == 258) return handleDialogsChangeFocus(!Screen.hasShiftDown());
+		if (keyCode == GLFW.GLFW_KEY_ESCAPE) return handleDialogsEscapeKey();
+		if (keyCode == GLFW.GLFW_KEY_TAB) return handleDialogsChangeFocus(!Screen.hasShiftDown());
 		AbstractDialog last = getDialogs().getLast();
 		if (last != null) {
 			last.keyPressed(keyCode, scanCode, modifiers);

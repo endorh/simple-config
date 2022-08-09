@@ -5,7 +5,6 @@ import com.electronwill.nightconfig.core.Config.Entry;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
@@ -24,9 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 
 public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>,
-  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>>
-  extends AbstractConfigEntry<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
-  CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>> {
+  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>>
+  extends AbstractConfigEntry<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>
+  > {
 	
 	protected final E listEntry;
 	protected final CE captionEntry;
@@ -36,13 +35,13 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	  Pair<CV, List<V>> value, E listEntry, CE captionEntry
 	) {
 		super(parent, name, value);
-		this.listEntry = listEntry.withSaver((v, h) -> {});
-		this.captionEntry = captionEntry.withSaver((v, h) -> {});
+		this.listEntry = listEntry;
+		this.captionEntry = captionEntry;
 	}
 	
 	public static class Builder<V, C, G, E extends AbstractListEntry<V, C, G, E>,
 	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG, CE> & IKeyEntry<CG>,
+	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>,
 	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
 	  extends AbstractConfigEntryBuilder<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
 	  CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>, Builder<
@@ -60,8 +59,8 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		@Override protected CaptionedListEntry<V, C, G, E, CV, CC, CG, CE> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			final E le = DummyEntryHolder.build(parent, listEntryBuilder).withSaver((v, h) -> {});
-			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder).withSaver((v, h) -> {});
+			final E le = DummyEntryHolder.build(parent, listEntryBuilder);
+			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder);
 			return new CaptionedListEntry<>(parent, name, value, le, ce);
 		}
 		
@@ -140,32 +139,31 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 		return tooltips;
 	}
 	
-	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <LGE extends AbstractListListEntry<G, ?, LGE>,
+	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <
+	  LGE extends AbstractListListEntry<G, ?, LGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
-	CaptionedListEntryBuilder<G, LGE, CG, CGE> makeGUIEntry(
+	CaptionedListEntryBuilder<G, LGE, ?, CG, CGE, ?> makeGUIEntry(
 	  ConfigEntryBuilder builder, ITextComponent name,
-	  AbstractConfigListEntry<List<G>> listEntry, Pair<CG, List<G>> value
+	  FieldBuilder<List<G>, ?, ?> listEntry, Pair<CG, List<G>> value
 	) {
-		final CGE cge = captionEntry.buildChildGUIEntry(builder);
+		final FieldBuilder<CG, CGE, ?> cge = captionEntry.buildChildGUIEntry(builder);
 		cge.setOriginal(value.getKey());
 		return new CaptionedListEntryBuilder<>(
-		  builder, name, value, (LGE) listEntry, cge);
+		  builder, name, value, (FieldBuilder<List<G>, LGE, ?>) listEntry, cge);
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Pair<CG, List<G>>>> buildGUIEntry(
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Pair<CG, List<G>>, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		listEntry.withDisplayName(getDisplayName());
-		final Optional<AbstractConfigListEntry<List<G>>> opt = listEntry.buildGUIEntry(builder);
+		listEntry.setDisplayName(getDisplayName());
+		final Optional<FieldBuilder<List<G>, ?, ?>> opt = listEntry.buildGUIEntry(builder);
 		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
-		final AbstractConfigListEntry<List<G>> listGUIEntry = opt.get();
-		listGUIEntry.removeEntryFlag(EntryFlag.NON_PERSISTENT);
-		final CaptionedListEntryBuilder<G, ?, CG, ?> entryBuilder =
-		  makeGUIEntry(builder, getDisplayName(), listGUIEntry, forGui(get()));
-		return Optional.of(decorate(entryBuilder).build());
-	}
-	
-	@OnlyIn(Dist.CLIENT) @Override protected <F extends FieldBuilder<Pair<CG, List<G>>, ?, F>> F decorate(F builder) {
-		return super.decorate(builder);
+		final FieldBuilder<List<G>, ?, ?> listGUIEntry = opt.get();
+		listGUIEntry.withoutTags(EntryTag.NON_PERSISTENT);
+		final CaptionedListEntryBuilder<G, ?, ?, CG, ?, ?> entryBuilder =
+		  makeGUIEntry(builder, getDisplayName(), listEntry.buildGUIEntry(builder).map(
+			 l -> l.withoutTags(EntryTag.NON_PERSISTENT)).orElseThrow(() -> new IllegalStateException(
+				"List entry has no GUI entry")), forGui(get()));
+		return Optional.of(decorate(entryBuilder));
 	}
 }

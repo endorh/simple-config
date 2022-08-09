@@ -20,8 +20,10 @@ import java.util.List;
 	V min;
 	V max;
 	
-	protected RangedListFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, List<V> value) {
-		super(builder, name, value);
+	protected RangedListFieldBuilder(
+	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, List<V> value
+	) {
+		super(entryClass, builder, name, value);
 	}
 	
 	public Self setMin(V min) {

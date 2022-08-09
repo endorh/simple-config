@@ -18,7 +18,7 @@ public class BooleanToggleBuilder
 	public BooleanToggleBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, boolean value
 	) {
-		super(builder, name, value);
+		super(BooleanListEntry.class, builder, name, value);
 	}
 	
 	public BooleanToggleBuilder setYesNoTextSupplier(

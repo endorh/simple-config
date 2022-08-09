@@ -30,10 +30,10 @@ public class EditHistory {
 	protected int cursor = 0;
 	protected Runnable onHistory;
 	protected Supplier<Boolean> peek;
-	protected boolean insideTransparentAction = false;
+	protected boolean insideAtomicAction = false;
 	
 	public EditHistory() {
-		this.records = new ArrayList<>();
+		records = new ArrayList<>();
 	}
 	
 	public EditHistory(EditHistory previous) {
@@ -45,7 +45,7 @@ public class EditHistory {
 		onHistory = null;
 		peek = null;
 		owner = null;
-		insideTransparentAction = false;
+		insideAtomicAction = false;
 	}
 	
 	public void setOwner(@Nullable AbstractConfigScreen owner) {
@@ -57,20 +57,37 @@ public class EditHistory {
 		return owner;
 	}
 	
+	/**
+	 * Perform a batch of modifications that won't be recorded in the history.
+	 * <b>Only useful for loading purposes.</b> Instead, consider using
+	 * {@link #runAtomicTransparentAction(Runnable)}.
+	 * @param action Action to run.
+	 */
+	public void runUnrecordedAction(Runnable action) {
+		if (insideAtomicAction) throw new IllegalStateException(
+		  "Cannot run unrecorded action within another atomic action");
+		insideAtomicAction = true;
+		startBatch(null);
+		action.run();
+		discardPreservedState();
+		collector = null;
+		insideAtomicAction = false;
+	}
+	
 	public void runAtomicTransparentAction(Runnable action) {
 		runAtomicTransparentAction(null, action);
 	}
 	
 	public void runAtomicTransparentAction(@Nullable AbstractConfigEntry<?> focus, Runnable action) {
-		final boolean insideAction = insideTransparentAction;
+		final boolean insideAction = insideAtomicAction;
 		if (!insideAction) {
 			startBatch(focus);
-			insideTransparentAction = true;
+			insideAtomicAction = true;
 		}
 		action.run();
 		if (!insideAction) {
 			saveBatch();
-			insideTransparentAction = false;
+			insideAtomicAction = false;
 		}
 		// getOwner().commitHistory();
 	}
@@ -92,10 +109,10 @@ public class EditHistory {
 	public void saveBatch() {
 		saveState();
 		if (collector != null) {
-			final EditRecord c = this.collector;
+			final EditRecord c = collector;
 			collector = null;
 			c.flatten(getOwner());
-			addRecord(c);
+			if (!c.isEmpty()) addRecord(c);
 		}
 	}
 	
@@ -121,8 +138,7 @@ public class EditHistory {
 	public void saveState() {
 		if (preservedState != null) {
 			preservedState.flatten(getOwner());
-			if (preservedState.size() > 0)
-				addRecord(preservedState);
+			if (!preservedState.isEmpty()) addRecord(preservedState);
 			preservedState = null;
 		}
 	}
@@ -146,7 +162,7 @@ public class EditHistory {
 	}
 	
 	public void apply(boolean forward) {
-		if (insideTransparentAction) throw new IllegalStateException(
+		if (insideAtomicAction) throw new IllegalStateException(
 		  "Cannot apply history inside transparent history action");
 		if (preservedState != null) saveState();
 		if (onHistory != null) onHistory.run();

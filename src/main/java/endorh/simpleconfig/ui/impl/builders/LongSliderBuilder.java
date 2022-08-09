@@ -13,7 +13,7 @@ public class LongSliderBuilder extends SliderFieldBuilder<Long, LongSliderEntry,
 	public LongSliderBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, long value, long min, long max
 	) {
-		super(builder, name, value, min, max);
+		super(LongSliderEntry.class, builder, name, value, min, max);
 	}
 	
 	@Override @NotNull public LongSliderEntry buildEntry() {

@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -69,9 +69,9 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<List<Long>>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Long>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final LongListBuilder valBuilder = builder
 		  .startLongList(getDisplayName(), get());
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 }

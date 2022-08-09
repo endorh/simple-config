@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.gui;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -7,6 +8,8 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.*;
@@ -44,12 +47,12 @@ import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -65,16 +68,14 @@ import static java.lang.Math.min;
 
 @OnlyIn(value = Dist.CLIENT)
 public class SimpleConfigScreen
-  extends AbstractTabbedConfigScreen implements ISearchHandler {
+  extends AbstractConfigScreen implements ISearchHandler {
 	private final ScrollingHandler tabsScroller = new ScrollingHandler() {
 		@Override public Rectangle getBounds() {
 			return new Rectangle(0, 0, 1, width - 40);
 		}
-		
 		@Override public int getMaxScrollHeight() {
 			return (int) tabsMaximumScrolled;
 		}
-		
 		@Override public void updatePosition(float delta) {
 			super.updatePosition(delta);
 			scrollAmount = clamp(scrollAmount, 0.0);
@@ -86,6 +87,7 @@ public class SimpleConfigScreen
 	protected TintedButton quitButton;
 	protected SaveButton saveButton;
 	protected List<MultiFunctionIconButton> modeButtons = Lists.newArrayList();
+	protected EnumMap<EditType, MultiFunctionIconButton> modeButtonMap;
 	protected MultiFunctionIconButton clientButton;
 	protected MultiFunctionIconButton commonButton;
 	protected MultiFunctionIconButton remoteCommonButton;
@@ -108,16 +110,14 @@ public class SimpleConfigScreen
 	protected Rectangle tabsLeftBounds;
 	protected Rectangle tabsRightBounds;
 	protected double tabsMaximumScrolled = -1.0;
-	protected final List<ClothConfigTabButton> tabButtons = Lists.newArrayList();
+	protected final List<ConfigCategoryButton> tabButtons = Lists.newArrayList();
 	protected TooltipSearchBarWidget searchBar;
 	protected StatusDisplayBar statusDisplayBar;
 	
 	protected final Set<AbstractConfigEntry<?>> selectedEntries = new HashSet<>();
 	protected boolean isSelecting = false;
 	
-	protected ConfigCategory lastClientCategory = null;
-	protected ConfigCategory lastCommonCategory = null;
-	protected ConfigCategory lastServerCategory = null;
+	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
 	
 	// Tick caches
 	private List<EntryError> errors = new ArrayList<>();
@@ -125,14 +125,13 @@ public class SimpleConfigScreen
 	
 	@Internal public SimpleConfigScreen(
 	  Screen parent, String modId, ITextComponent title,
-	  Collection<ConfigCategory> clientCategories,
-	  Collection<ConfigCategory> commonCategories,
-	  Collection<ConfigCategory> serverCategories,
+	  Collection<ConfigCategory> clientCategories, Collection<ConfigCategory> commonCategories,
+	  Collection<ConfigCategory> serverCommonCategories, Collection<ConfigCategory> serverCategories,
 	  ResourceLocation backgroundLocation
 	) {
 		super(parent, modId, title, backgroundLocation,
-		      clientCategories, commonCategories, serverCategories);
-		this.displayTitle = new StringTextComponent(getModNameOrId(modId));
+		      clientCategories, commonCategories, serverCommonCategories, serverCategories);
+		displayTitle = new StringTextComponent(getModNameOrId(modId));
 		for (ConfigCategory category : sortedCategories) {
 			for (AbstractConfigEntry<?> entry : category.getHeldEntries()) {
 				entry.setCategory(category);
@@ -141,11 +140,7 @@ public class SimpleConfigScreen
 		}
 		selectedCategory = sortedCategories.stream().findFirst().orElseThrow(
 		  () -> new IllegalArgumentException("No categories for config GUI"));
-		if (getEditedType() == Type.SERVER) {
-			lastServerCategory = selectedCategory;
-		} else if (getEditedType() == Type.COMMON) {
-			lastCommonCategory = selectedCategory;
-		} else lastClientCategory = selectedCategory;
+		lastCategories.put(selectedCategory.getType(), selectedCategory);
 		statusDisplayBar = new StatusDisplayBar(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
 		presetPickerWidget = new PresetPickerWidget(this, 0, 0, 70);
@@ -157,38 +152,69 @@ public class SimpleConfigScreen
 		  "simpleconfig.ui.hotkey.unnamed_hotkey.hint"));
 		minecraft = Minecraft.getInstance();
 		listWidgets = new HashMap<>();
-		clientButton =
-		  new MultiFunctionIconButton(0, 2, 20, 70, SimpleConfigIcons.Types.CLIENT, ButtonAction
-			 .of(this::showClientCategories)
-			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.client"))
-			 .tooltip(() -> hasClient() && getEditedType() != Type.CLIENT
-			                ? Lists.newArrayList(new TranslationTextComponent(
-				"simpleconfig.ui.switch.client")) : Collections.emptyList())
-			 .active(this::hasClient));
-		commonButton =
-		  new MultiFunctionIconButton(0, 2, 20, 70, SimpleConfigIcons.Types.COMMON, ButtonAction
-			 .of(this::showCommonCategories)
-			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.common"))
-			 .tooltip(() -> hasCommon() && getEditedType() != Type.COMMON
-			                ? Lists.newArrayList(new TranslationTextComponent(
-				"simpleconfig.ui.switch.common")) : Collections.emptyList())
-			 .active(this::hasCommon));
-		remoteCommonButton =
-		  new MultiFunctionIconButton(0, 2, 20, 70, Types.COMMON_SERVER, ButtonAction
-			 .of(this::showRemoteCommonCategories)
-			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.remote.common"))
-			 .tooltip(() -> hasRemoteCommon() && (getEditedType() != Type.COMMON || !isEditingServer())
-			                ? Lists.newArrayList(new TranslationTextComponent(
-				"simpleconfig.ui.switch.remote.common")) : Collections.emptyList())
-			 .active(this::hasRemoteCommon));
-		serverButton =
-		  new MultiFunctionIconButton(0, 2, 20, 70, SimpleConfigIcons.Types.SERVER, ButtonAction
-			 .of(this::showServerCategories)
-			 .title(() -> new TranslationTextComponent("simpleconfig.config.category.server"))
-			 .tooltip(() -> hasServer() && getEditedType() != Type.SERVER
-			                ? Lists.newArrayList(new TranslationTextComponent(
-				"simpleconfig.ui.switch.server")) : Collections.emptyList())
-			 .active(this::hasServer));
+		modeButtonMap = Util.make(new EnumMap<>(EditType.class), m -> {
+			m.put(EditType.CLIENT, clientButton = createModeButton(EditType.CLIENT));
+			m.put(EditType.COMMON, commonButton = createModeButton(EditType.COMMON));
+			m.put(EditType.SERVER_COMMON, remoteCommonButton = createModeButton(EditType.SERVER_COMMON));
+			m.put(EditType.SERVER, serverButton = createModeButton(EditType.SERVER));
+		});
+		
+		editFileButton = MultiFunctionImageButton.of(20, 20, Buttons.EDIT_FILE, ButtonAction.of(
+			 () -> selectedCategory.getContainingFile().ifPresent(
+				f -> addDialog(EditConfigFileDialog.create(this, f.toAbsolutePath())))
+		  ).active(() -> selectedCategory.getContainingFile().isPresent())
+		  .tooltip(new TranslationTextComponent("simpleconfig.file.open")));
+		undoButton = MultiFunctionImageButton.of(20, 20, Buttons.UNDO, ButtonAction.of(() -> {
+			undo();
+			setListener(listWidget);
+		}).active(() -> history.canUndo()));
+		redoButton = MultiFunctionImageButton.of(20, 20, Buttons.REDO, ButtonAction.of(() -> {
+			redo();
+			setListener(listWidget);
+		}).active(() -> history.canRedo()));
+		
+		hotKeyButton = MultiFunctionIconButton.of(
+		  Buttons.KEYBOARD, 20, 20,
+		  ButtonAction.of(() -> addDialog(HotKeyListDialog.forModId(modId)))
+			 .tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.edit")));
+		
+		buttonLeftTab = MultiFunctionImageButton.of(
+		  12, 18, Buttons.LEFT_TAB, ButtonAction.of(
+				() -> tabsScroller.offset(-48, true))
+			 .active(() -> tabsScroller.scrollAmount > 0.0));
+		buttonRightTab = MultiFunctionImageButton.of(
+		  12, 18, Buttons.RIGHT_TAB,
+		  ButtonAction.of(() -> tabsScroller.offset(48, true)).active(
+			 () -> tabsScroller.scrollAmount < tabsMaximumScrolled - (double) width + 40.0));
+		
+		quitButton = TintedButton.of(DialogTexts.GUI_CANCEL, widget -> {
+			if (isEditingConfigHotKey()) {
+				discardHotkey();
+			} else quit();
+		});
+		// quitButton.setTintColor(0x80BD4242);
+		saveButton = new SaveButton(this);
+		
+		settingsButton = MultiFunctionImageButton.of(
+		  18, 18, SimpleConfigIcons.Buttons.GEAR,
+		  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
+			 .tooltip(new TranslationTextComponent("simpleconfig.ui.simple_config_settings")));
+		keyboardButton = MultiFunctionImageButton.of(
+		  18, 18, SimpleConfigIcons.Buttons.KEYBOARD,
+		  ButtonAction.of(() -> addDialog(getControlsDialog()))
+			 .tooltip(new TranslationTextComponent("simpleconfig.ui.controls")));
+	}
+	
+	@NotNull private MultiFunctionIconButton createModeButton(EditType type) {
+		String alias = type.getAlias().replace('-', '.');
+		return MultiFunctionIconButton.of(Types.iconFor(type), 20, 70, ButtonAction.of(
+			 () -> showType(type)
+		  ).title(() -> new TranslationTextComponent("simpleconfig.config.category." + alias))
+		  .tooltip(
+			 () -> hasType(type) && getEditedType() != type
+			       ? Lists.newArrayList(new TranslationTextComponent("simpleconfig.ui.switch." + alias))
+			       : Collections.emptyList()
+		  ).active(() -> hasType(type)));
 	}
 	
 	protected static String getModNameOrId(String modId) {
@@ -211,7 +237,7 @@ public class SimpleConfigScreen
 	}
 	
 	@Override public boolean isEditingServer() {
-		return super.isEditingServer() || getEditedType() == Type.COMMON && isEditingRemoteCommon();
+		return super.isEditingServer() || getEditedType().isOnlyRemote();
 	}
 	
 	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
@@ -231,19 +257,18 @@ public class SimpleConfigScreen
 		if (hotkey != null) {
 			editedHotKeyButton.setKey(hotkey.getHotKey());
 			editedHotKeyNameTextField.setText(hotkey.getName());
-			loadConfigHotKeyActions(hotkey, Type.CLIENT, clientCategoryMap);
-			loadConfigHotKeyActions(hotkey, Type.COMMON, commonCategoryMap);
-			loadConfigHotKeyActions(hotkey, Type.SERVER, serverCategoryMap);
+			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, EditType.fromAlias(alias), map));
 		}
 		getAllMainEntries().forEach(e -> e.setEditingHotKeyAction(isEditingConfigHotKey()));
 	}
 	
 	protected void loadConfigHotKeyActions(
-	  ConfigHotKey hotkey, Type type, Map<String, ConfigCategory> categoryMap
+	  ConfigHotKey hotkey, EditType type, Map<String, ConfigCategory> categoryMap
 	) {
-		if (SimpleConfig.hasConfig(modId, type)) {
+		Type configType = type.getType();
+		if (SimpleConfig.hasConfig(modId, configType)) {
 			Map<String, HotKeyAction<?>> actionMap = hotkey.getActions()
-			  .get(SimpleConfig.getConfig(modId, type));
+			  .get(SimpleConfig.getConfig(modId, configType));
 			if (actionMap == null) return;
 			actionMap.forEach((k, a) -> {
 				String[] path = DOT.split(k, 2);
@@ -262,7 +287,7 @@ public class SimpleConfigScreen
 		List<HotKeyActionType<T, ?>> types = entry.getHotKeyActionTypes();
 		int idx = types.indexOf(type);
 		if (idx >= 0) {
-			//noinspection unchecked
+			// noinspection unchecked
 			entry.setHotKeyActionType(types.get(idx), (HotKeyAction<T>) action);
 		}
 	}
@@ -275,38 +300,24 @@ public class SimpleConfigScreen
 		addListener(searchBar);
 		
 		int bx = 24;
-		editFileButton = new MultiFunctionImageButton(
-		  bx, 2, 20, 20, Buttons.EDIT_FILE, ButtonAction.of(
-			 () -> selectedCategory.getContainingFile().ifPresent(
-				f -> addDialog(EditConfigFileDialog.create(this, f.toAbsolutePath())))
-		  ).active(() -> selectedCategory.getContainingFile().isPresent())
-		  .tooltip(new TranslationTextComponent("simpleconfig.file.open")));
-		addButton(editFileButton);
+		pos(editFileButton, bx, 2);
 		bx += 20 + 4;
-		
-		undoButton = new MultiFunctionImageButton(
-		  bx, 2, 20, 20, Buttons.UNDO, ButtonAction.of(() -> {
-			undo();
-			setListener(listWidget);
-		}).active(() -> history.canUndo()));
+		pos(undoButton, bx, 2);
 		bx += 20;
-		redoButton = new MultiFunctionImageButton(
-		  bx, 2, 20, 20, Buttons.REDO, ButtonAction.of(() -> {
-			redo();
-			setListener(listWidget);
-		}).active(() -> history.canRedo()));
+		pos(redoButton, bx, 2);
 		bx += 20 + 4;
+		addButton(editFileButton);
 		if (hasUndoButtons()) {
 			addButton(undoButton);
 			addButton(redoButton);
 		} else bx -= 44;
 		
-		Type type = getEditedType();
-		clientButton.setTintColor(type == Type.CLIENT? 0x80287734 : 0);
-		boolean isRemoteCommon = isEditingServer();
-		remoteCommonButton.setTintColor(type == Type.COMMON && isRemoteCommon? 0x80A0903A : 0);
-		commonButton.setTintColor(type == Type.COMMON && !isRemoteCommon? 0x80A09034 : 0);
-		serverButton.setTintColor(type == Type.SERVER? 0x800A426A : 0);
+		EditType type = getEditedType();
+		clientButton.setTintColor(type == EditType.CLIENT? 0x80287734 : 0);
+		commonButton.setDefaultIcon(mayHaveType(EditType.SERVER_COMMON)? Types.COMMON_CLIENT : Types.COMMON);
+		commonButton.setTintColor(type == EditType.COMMON? 0x80906434 : 0);
+		remoteCommonButton.setTintColor(type == EditType.SERVER_COMMON? 0x80906434 : 0);
+		serverButton.setTintColor(type == EditType.SERVER? 0x800A426A : 0);
 		
 		clientButton.setWidthRange(20, 80);
 		commonButton.setWidthRange(20, 80);
@@ -314,18 +325,15 @@ public class SimpleConfigScreen
 		serverButton.setWidthRange(20, 80);
 		
 		modeButtons = new ArrayList<>();
-		if (hasClient()) modeButtons.add(clientButton);
-		if (hasCommon()) {
+		if (hasType(EditType.CLIENT)) modeButtons.add(clientButton);
+		if (hasType(EditType.COMMON)) {
 			modeButtons.add(commonButton);
-			// if (mayHaveRemoteCommon()) modeButtons.add(remoteCommonButton);
+			if (mayHaveType(EditType.SERVER_COMMON)) modeButtons.add(remoteCommonButton);
 		}
-		if (hasServer()) modeButtons.add(serverButton);
+		if (hasType(EditType.SERVER)) modeButtons.add(serverButton);
 		
-		if (bx + modeButtons.stream().mapToInt(MultiFunctionIconButton::getWidth).sum() > 0.35 * width) {
-			clientButton.setExactWidth(20);
-			commonButton.setExactWidth(20);
-			serverButton.setExactWidth(20);
-		}
+		if (bx + modeButtons.stream().mapToInt(MultiFunctionIconButton::getWidth).sum() > 0.35 * width)
+			modeButtons.forEach(b -> b.setExactWidth(20));
 		
 		for (MultiFunctionIconButton b: modeButtons) {
 			pos(b, bx, 2);
@@ -338,16 +346,12 @@ public class SimpleConfigScreen
 		addListener(selectionToolbar);
 		
 		// Right toolbar
-		presetPickerWidget.w = MathHelper.clamp(width / 3, 80, 250);
-		presetPickerWidget.x = width - presetPickerWidget.w - 2;
-		presetPickerWidget.y = 2;
 		if (!isEditingConfigHotKey()) {
-			hotKeyButton = new MultiFunctionIconButton(
-			  presetPickerWidget.x - 22, 2, 20, 20, SimpleConfigIcons.Buttons.KEYBOARD,
-			  ButtonAction.of(() -> addDialog(HotKeyListDialog.forModId(modId)))
-			    .tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.edit")));
-			addButton(hotKeyButton);
+			int presetPickerWidth = MathHelper.clamp(width / 3, 80, 250);
+			presetPickerWidget.setPosition(width - presetPickerWidth - 24, 2, presetPickerWidth);
+			pos(hotKeyButton, width - 22, 2);
 			addListener(presetPickerWidget);
+			addButton(hotKeyButton);
 		}
 		
 		// Tab bar
@@ -355,27 +359,20 @@ public class SimpleConfigScreen
 			tabsBounds = new Rectangle(0, 24, width, 24);
 			tabsLeftBounds = new Rectangle(0, 24, 18, 24);
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
-			buttonLeftTab = new MultiFunctionImageButton(
-			  4, 27, 12, 18, Buttons.LEFT_TAB,
-			  ButtonAction.of(() -> tabsScroller.offset(-48, true))
-				 .active(() -> tabsScroller.scrollAmount > 0.0));
+			pos(buttonLeftTab, 4, 27);
 			children.add(buttonLeftTab);
 			tabButtons.clear();
 			int ww = 0;
 			for (ConfigCategory cat : getSortedTypeCategories()) {
 				final int w = font.getStringPropertyWidth(cat.getTitle());
 				ww += w + 2;
-				tabButtons.add(new ClothConfigTabButton(
+				tabButtons.add(new ConfigCategoryButton(
 				  this, cat, -100, 26,
 				  cat.getTitle(), cat.getDescription()));
 			}
 			tabsMaximumScrolled = ww;
 			children.addAll(tabButtons);
-			buttonRightTab = new MultiFunctionImageButton(
-			  width - 16, 27, 12, 18, Buttons.RIGHT_TAB,
-			  ButtonAction.of(() -> tabsScroller.offset(48, true))
-				 .active(
-					() -> tabsScroller.scrollAmount < tabsMaximumScrolled - (double) width + 40.0));
+			pos(buttonRightTab, width - 16, 27);
 			children.add(buttonRightTab);
 		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
 		
@@ -415,17 +412,9 @@ public class SimpleConfigScreen
 			pos(editedHotKeyNameTextField, cX + buttonWidths + 6, by + 10 - font.FONT_HEIGHT / 2, buttonWidths, 20);
 			addButton(editedHotKeyButton);
 		}
-		quitButton = new TintedButton(
-		  cX - buttonWidths - 2, by, buttonWidths, 20,
-		  DialogTexts.GUI_CANCEL, widget -> {
-			  if (isEditingConfigHotKey()) {
-				  discardHotkey();
-			  } else quit();
-		  });
-		// quitButton.setTintColor(0x80BD4242);
+		pos(quitButton, cX - buttonWidths - 2, by, buttonWidths);
 		addButton(quitButton);
-		saveButton = new SaveButton(this, cX + 2, by, buttonWidths, 20);
-		saveButton.setTintColor(0x8042BD42);
+		pos(saveButton, cX + 2, by, buttonWidths);
 		addButton(saveButton);
 		saveButton.active = isEdited();
 		if (isEditingConfigHotKey())
@@ -433,16 +422,10 @@ public class SimpleConfigScreen
 		
 		// Right buttons
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
-			settingsButton = new MultiFunctionImageButton(
-			  width - 41, height - 21, 18, 18, SimpleConfigIcons.Buttons.GEAR,
-			  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
-				 .tooltip(new TranslationTextComponent("simpleconfig.ui.simple_config_settings")));
+			pos(settingsButton, width - 41, height - 21);
 			addButton(settingsButton);
 		}
-		keyboardButton = new MultiFunctionImageButton(
-		  width - 21, height - 21, 18, 18, SimpleConfigIcons.Buttons.KEYBOARD,
-		  ButtonAction.of(() -> addDialog(getControlsDialog()))
-		    .tooltip(new TranslationTextComponent("simpleconfig.ui.controls")));
+		pos(keyboardButton, width - 21, height - 21);
 		addButton(keyboardButton);
 		
 		// Update UI mode
@@ -469,12 +452,12 @@ public class SimpleConfigScreen
 	
 	public void updateErrors() {
 		List<EntryError> errors = Lists.newArrayList();
-		// Add errors in order
-		Type type = getEditedType();
+		EditType type = getEditedType();
+		// First add for the current type
 		updateErrors(errors, getSortedTypeCategories());
-		if (type != Type.CLIENT) updateErrors(errors, sortedClientCategories);
-		if (type != Type.COMMON) updateErrors(errors, sortedCommonCategories);
-		if (type != Type.SERVER) updateErrors(errors, sortedServerCategories);
+		// Then for the other types
+		for (EditType t: EditType.values())
+			if (t != type) updateErrors(errors, sortedCategoriesMap.get(t));
 		this.errors = errors;
 	}
 	
@@ -482,57 +465,51 @@ public class SimpleConfigScreen
 		for (ConfigCategory cat: categories) errors.addAll(cat.getErrors());
 	}
 	
-	public void showClientCategories() {
-		if (hasClient() && getEditedType() != Type.CLIENT) setSelectedCategory(
-		  lastClientCategory != null? lastClientCategory : sortedClientCategories.get(0));
-	}
-	
-	public void showCommonCategories() {
-		if (!hasCommon()) return;
-		if (getEditedType() != Type.COMMON) setSelectedCategory(
-		  lastCommonCategory != null? lastCommonCategory : sortedCommonCategories.get(0));
-		setEditingRemoteCommon(false);
-	}
-	
-	public void showServerCategories() {
-		if (hasServer() && getEditedType() != Type.SERVER) setSelectedCategory(
-		  lastServerCategory != null ? lastServerCategory : sortedServerCategories.get(0));
-	}
-	
-	public void showRemoteCommonCategories() {
-		if (!hasRemoteCommon()) return;
-		if (getEditedType() != Type.COMMON) setSelectedCategory(
-		  lastCommonCategory != null? lastCommonCategory : sortedCommonCategories.get(0));
-		setEditingRemoteCommon(true);
-	}
-	
-	public boolean isEditingRemoteCommon() {
-		return remoteCommon != null && isEditingRemoteCommon;
-	}
-	
-	public void setEditingRemoteCommon(boolean editing) {
-		if (remoteCommon == null || remoteConfigProvider == null) editing = false;
-		boolean change = isEditingRemoteCommon != editing;
-		isEditingRemoteCommon = editing;
-		if (editing && !loadedRemoteCommon) {
-			remoteConfigProvider.loadRemoteCommonConfig(remoteCommon);
-			loadedRemoteCommon = true;
+	public void showType(EditType type) {
+		EditType prevType = getEditedType();
+		if (hasType(type) && prevType != type) {
+			ConfigCategory lastCategory = lastCategories.get(type);
+			setSelectedCategory(lastCategory != null? lastCategory : sortedCategoriesMap.get(type).get(0));
+			if (!hasLoadedType(type)) loadType(type);
 		}
-		if (change) init(Minecraft.getInstance(), width, height);
+	}
+	
+	protected void loadType(EditType type) {
+		if (hasLoadedType(type)) return;
+		if (remoteConfigProvider == null) throw new IllegalStateException("Missing remote config provider");
+		CommentedConfig config = remoteConfigs.get(type);
+		if (config == null) throw new IllegalStateException("Can't load type yet: " + type.getAlias());
+		history.runUnrecordedAction(() -> remoteConfigProvider.loadRemoteConfig(type, config, false));
+		sortedCategoriesMap.get(type).stream()
+		  .flatMap(c -> c.getAllMainEntries().stream())
+		  .forEach(SimpleConfigScreen::resetOriginal);
+		loadedRemoteConfigs.add(type);
+	}
+	
+	private static <T> void resetOriginal(AbstractConfigEntry<T> entry) {
+		entry.setOriginal(entry.getValue());
 	}
 	
 	@Override public void setRemoteCommonConfigProvider(
-	  @Nullable ConfigScreenBuilder.IRemoteCommonConfigProvider remoteConfigProvider
+	  @Nullable ConfigScreenBuilder.IRemoteConfigProvider remoteConfigProvider
 	) {
 		super.setRemoteCommonConfigProvider(remoteConfigProvider);
-		remoteCommon = null;
-		loadedRemoteCommon = false;
-		if (remoteConfigProvider != null) {
-			remoteConfigProvider.getRemoteCommonConfig().thenAccept(c -> {
-				remoteCommon = c;
-				loadedRemoteCommon = false;
-			});
+		if (getEditedType().isOnlyRemote()) {
+			showType(Arrays.stream(EditType.values()).filter(
+			  t -> !t.isOnlyRemote() && hasType(t)
+			).findFirst().orElseThrow(
+			  () -> new IllegalStateException("Config screen cannot have only remote configs")));
 		}
+		remoteConfigs.clear();
+		loadedRemoteConfigs.clear();
+		if (remoteConfigProvider != null) Arrays.stream(EditType.values())
+		  .filter(EditType::isOnlyRemote)
+		  .forEach(t -> remoteConfigProvider.getRemoteConfig(t).thenAccept(c -> {
+			  if (c != null) {
+				  remoteConfigs.put(t, c);
+				  loadedRemoteConfigs.remove(t);
+			  }
+		  }));
 	}
 	
 	public List<ITextComponent> getErrorsMessages() {
@@ -546,24 +523,23 @@ public class SimpleConfigScreen
 	@Override public void setSelectedCategory(ConfigCategory category) {
 		if (selectedCategory != category) {
 			// Switching sides is prevented while selecting
+			int prevIndex = sortedCategories.indexOf(selectedCategory);
+			int index = sortedCategories.indexOf(category);
 			boolean typeChange = getEditedType() != category.getType();
 			if (isSelecting() && typeChange) return;
-			if (getEditedType() == Type.CLIENT) {
-				lastClientCategory = selectedCategory;
-			} else if (getEditedType() == Type.COMMON) {
-				lastCommonCategory = selectedCategory;
-			} else lastServerCategory = selectedCategory;
+			lastCategories.put(selectedCategory.getType(), selectedCategory);
 			super.setSelectedCategory(category);
 			ListWidget<AbstractConfigEntry<?>> prevListWidget = listWidget;
 			init(Minecraft.getInstance(), width, height);
 			prevListWidget.onReplaced(listWidget);
 			if (typeChange) presetPickerWidget.refresh();
+			listWidget.playTabSlideAnimation(prevIndex > index);
 			if (isShowingTabs()) {
-				final int index = getTabbedCategories().indexOf(category);
+				final int innerIndex = getSortedTypeCategories().indexOf(category);
 				int x = 0;
-				for (int i = 0; i < index; i++)
+				for (int i = 0; i < innerIndex; i++)
 					x += tabButtons.get(i).getWidth() + 2;
-				x += tabButtons.get(index).getWidth() / 2;
+				x += tabButtons.get(innerIndex).getWidth() / 2;
 				x -= tabsScroller.getBounds().width / 2;
 				tabsScroller.scrollTo(x, true, 250L);
 			}
@@ -578,12 +554,6 @@ public class SimpleConfigScreen
 	}
 	
 	protected void updateIsEdited() {
-		if (isEditingConfigHotKey()) {
-			// isEdited = categoryMap.values().stream()
-			//   .flatMap(c -> c.getAllMainEntries().stream())
-			//   .anyMatch(e -> e.getHotKeyActionType() != null);
-		} else {
-		}
 		isEdited = super.isEdited();
 	}
 	
@@ -621,15 +591,7 @@ public class SimpleConfigScreen
 	
 	@Override public void loadConfigScreenGUIState(IConfigScreenGUIState state) {
 		if (state != null) {
-			sortedClientCategories.stream().filter(c -> c.getName().equals(state.getClientCategory()))
-			  .findFirst().ifPresent(e -> lastClientCategory = e);
-			sortedServerCategories.stream().filter(c -> c.getName().equals(state.getServerCategory()))
-			  .findFirst().ifPresent(e -> lastServerCategory = e);
-			if (state.isServerSelected() && lastServerCategory != null) {
-				selectedCategory = lastServerCategory;
-			} else if (!state.isServerSelected() && lastClientCategory != null) {
-				selectedCategory = lastClientCategory;
-			}
+			// TODO
 		}
 	}
 	@Override public IConfigScreenGUIState saveConfigScreenGUIState() {
@@ -639,32 +601,31 @@ public class SimpleConfigScreen
 	@Override protected void saveHotkey() {
 		ConfigHotKey hotkey = editedConfigHotKey;
 		if (!isEditingConfigHotKey() || hotkey == null) return;
-		addHotKeyActions(hotkey, Type.CLIENT, sortedClientCategories);
-		addHotKeyActions(hotkey, Type.SERVER, sortedServerCategories);
+		sortedCategoriesMap.forEach((type, categories) -> {
+			addHotKeyActions(hotkey, type, categories);
+		});
 		hotkey.setName(editedHotKeyNameTextField.getText());
 		hotkey.setKeyCode(editedHotKeyButton.getKey());
 		super.saveHotkey();
 	}
 	
 	private void addHotKeyActions(
-	  ConfigHotKey hotKey, Type type, Collection<ConfigCategory> categories
+	  ConfigHotKey hotKey, EditType type, Collection<ConfigCategory> categories
 	) {
-		Map<SimpleConfig, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
-		if (SimpleConfig.hasConfig(modId, type)) {
-			SimpleConfig config = SimpleConfig.getConfig(modId, type);
-			Map<String, HotKeyAction<?>> actionMap = actions
-			  .computeIfAbsent(config, k -> new LinkedHashMap<>());
-			actionMap.clear();
-			categories.stream()
-			  .flatMap(c -> c.getAllMainEntries().stream())
-			  .filter(e -> e.getHotKeyActionType() != null)
-			  .forEach(e -> {
-				  String path = e.getRelPath();
-				  HotKeyAction<?> action = e.createHotKeyAction();
-				  if (action != null) actionMap.put(path, action);
-			  });
-			if (actionMap.isEmpty()) actions.remove(config);
-		}
+		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
+		Pair<String, EditType> pair = Pair.of(modId, type);
+		Map<String, HotKeyAction<?>> actionMap = actions
+		  .computeIfAbsent(pair, k -> new LinkedHashMap<>());
+		actionMap.clear();
+		categories.stream()
+		  .flatMap(c -> c.getAllMainEntries().stream())
+		  .filter(e -> e.getHotKeyActionType() != null)
+		  .forEach(e -> {
+			  String path = e.getRelPath();
+			  HotKeyAction<?> action = e.createHotKeyAction();
+			  if (action != null) actionMap.put(path, action);
+		  });
+		if (actionMap.isEmpty()) actions.remove(pair);
 	}
 	
 	@Override protected void recomputeFocus() {
@@ -675,7 +636,7 @@ public class SimpleConfigScreen
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (super.keyPressed(keyCode, scanCode, modifiers))
 			return true;
-		if (keyCode == 264 || keyCode == 265) { // Up | Down
+		if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN) {
 			setListener(listWidget);
 			return listWidget.keyPressed(keyCode, scanCode, modifiers);
 		}
@@ -686,7 +647,27 @@ public class SimpleConfigScreen
 		if (super.screenKeyPressed(keyCode, scanCode, modifiers)) return true;
 		InputMappings.Input key = InputMappings.getInputByCode(keyCode, scanCode);
 		// Navigation key bindings first
-		if (KeyBindings.NEXT_ERROR.isActiveAndMatches(key)) { // F1
+		if (KeyBindings.NEXT_TYPE.isActiveAndMatches(key)) {
+			MultiFunctionIconButton modeButton = modeButtonMap.get(getEditedType());
+			int i = modeButtons.indexOf(modeButton);
+			if (i < 0) return true;
+			int s = modeButtons.size();
+			i = (i + 1) % s;
+			while (modeButton != modeButtons.get(i) && !modeButtons.get(i).active)
+				i = (i + 1) % s;
+			if (modeButton != modeButtons.get(i)) modeButtons.get(i).press(0);
+			return true;
+		} else if(KeyBindings.PREV_TYPE.isActiveAndMatches(key)) {
+			MultiFunctionIconButton modeButton = modeButtonMap.get(getEditedType());
+			int i = modeButtons.indexOf(modeButton);
+			if (i < 0) return true;
+			int s = modeButtons.size();
+			i = (i + s - 1) % s;
+			while (modeButton != modeButtons.get(i) && !modeButtons.get(i).active)
+				i = (i + s - 1) % s;
+			if (modeButton != modeButtons.get(i)) modeButtons.get(i).press(0);
+			return true;
+		} else if (KeyBindings.NEXT_ERROR.isActiveAndMatches(key)) { // F1
 			if (hasErrors()) focusNextError(true);
 			else if (hasConflictingExternalChanges()) focusNextExternalConflict(true);
 			playFeedbackTap(0.4F);
@@ -760,14 +741,9 @@ public class SimpleConfigScreen
 		final boolean selecting = !selectedEntries.isEmpty();
 		if (selecting != isSelecting) {
 			if (selecting) {
-				if (hasUndoButtons()) {
-					undoButton.visible = redoButton.visible = false;
-				}
+				if (hasUndoButtons()) undoButton.visible = redoButton.visible = false;
 				selectAllButton.visible = invertSelectionButton.visible = true;
-				Type type = getEditedType();
-				MultiFunctionIconButton visible =
-				  type == Type.COMMON? isEditingServer()? remoteCommonButton : commonButton :
-				  type == Type.SERVER? serverButton : clientButton;
+				MultiFunctionIconButton visible = modeButtonMap.get(getEditedType());
 				modeButtons.stream().filter(b -> b != visible).forEach(b -> b.visible = false);
 				visible.setExactWidth(20);
 				visible.x = editFileButton.x + 24;
@@ -779,16 +755,10 @@ public class SimpleConfigScreen
 					bx += 44;
 				}
 				selectAllButton.visible = invertSelectionButton.visible = false;
-				clientButton.setWidthRange(20, 70);
-				commonButton.setWidthRange(20, 70);
+				modeButtons.forEach(b -> b.setWidthRange(20, 70));
 				remoteCommonButton.setExactWidth(20);
-				serverButton.setWidthRange(20, 70);
-				if (modeButtons.stream().mapToInt(Widget::getWidth).sum() > 0.35 * width) {
-					clientButton.setExactWidth(20);
-					commonButton.setExactWidth(20);
-					remoteCommonButton.setExactWidth(20);
-					serverButton.setExactWidth(20);
-				}
+				if (modeButtons.stream().mapToInt(Widget::getWidth).sum() > 0.35 * width)
+					modeButtons.forEach(b -> b.setExactWidth(20));
 				for (MultiFunctionIconButton b: modeButtons) {
 					b.x = bx;
 					bx += b.getWidth();
@@ -821,7 +791,7 @@ public class SimpleConfigScreen
 		if (isShowingTabs()) {
 			tabsScroller.updatePosition(delta * 3.0f);
 			int xx = 24 - (int) tabsScroller.scrollAmount;
-			for (ClothConfigTabButton tabButton : tabButtons) {
+			for (ConfigCategoryButton tabButton : tabButtons) {
 				tabButton.x = xx;
 				xx += tabButton.getWidth() + 2;
 			}
@@ -917,6 +887,22 @@ public class SimpleConfigScreen
 		}
 	}
 	
+	public void focusNextRequiresRestart(boolean forwards) {
+		Predicate<INavigableTarget> predicate = t -> {
+			if (!(t instanceof AbstractConfigEntry<?>)) return false;
+			final AbstractConfigEntry<?> entry = (AbstractConfigEntry<?>) t;
+			return !entry.isSubEntry() && entry.isRequiresRestart() && entry.isEdited();
+		};
+		INavigableTarget next = getNext(predicate.and(INavigableTarget::isNavigable), forwards);
+		boolean foundVisible = next != null;
+		if (next == null) next = getNext(predicate, forwards);
+		if (next != null) {
+			if (!foundVisible) getSearchBar().close();
+			next.navigate();
+			next.applyWarningHighlight();
+		}
+	}
+	
 	public void focusNextError(boolean forwards) {
 		Map<INavigableTarget, EntryError> errorMap = sortedCategories.stream()
 		  .flatMap(c -> c.getErrors().stream())
@@ -985,6 +971,8 @@ public class SimpleConfigScreen
 			 .key("up_down", "alt+up/down")
 			 .key("left", "alt+left")
 			 .key("right", "alt+right")
+			 .key("type.prev", KeyBindings.PREV_TYPE)
+			 .key("type.next", KeyBindings.NEXT_TYPE)
 			 .key("page.prev", KeyBindings.PREV_PAGE)
 			 .key("page.next", KeyBindings.NEXT_PAGE)
 			 .key("error.prev", KeyBindings.PREV_ERROR)
@@ -1017,6 +1005,7 @@ public class SimpleConfigScreen
 		private double currentY;
 		private double currentWidth;
 		private double currentHeight;
+		private ToggleAnimator tabSlideAnimator = new ToggleAnimator(100);
 		private EntryDragAction<?> entryDragAction;
 		public Rectangle target;
 		public Rectangle thisTimeTarget;
@@ -1094,6 +1083,11 @@ public class SimpleConfigScreen
 			this.screen = screen;
 		}
 		
+		public void playTabSlideAnimation(boolean fromRight) {
+			tabSlideAnimator.resetTarget();
+			tabSlideAnimator.setOutputRange(fromRight? width * 0.2F : -width * 0.2F, 0);
+		}
+		
 		@Override public int getItemWidth() {
 			return (right - left) - 80;
 		}
@@ -1125,46 +1119,54 @@ public class SimpleConfigScreen
 		@Override protected void renderList(
 		  MatrixStack mStack, int startX, int startY, int mouseX, int mouseY, float delta
 		) {
-			// Needs to be checked even when the mouse is not moved (mouse wheel)
-			if (entryDragAction != null) entryDragAction.applyToList(this, mouseX, mouseY);
-			long timePast;
-			thisTimeTarget = null;
-			if (hasCurrent) {
-				timePast = System.currentTimeMillis() - lastTouch;
-				int alpha = timePast <= 200L ? 255 : MathHelper.ceil(
-				  255.0 - (double) (min((float) (timePast - 200L), 500.0f) / 500.0f) * 255.0);
-				alpha = alpha * 36 / 255 << 24;
-				fillGradient(
-				  mStack, currentX, currentY, currentX + currentWidth,
-				  currentY + currentHeight, 0xFFFFFF | alpha, 0xFFFFFF | alpha);
+			boolean animated = tabSlideAnimator.isInProgress();
+			if (animated) {
+				mStack.push();
+				mStack.translate(-tabSlideAnimator.getEaseOut(), 0, 0);
 			}
-			super.renderList(mStack, startX, startY, mouseX, mouseY, delta);
-			if (isDragging() || thisTimeTarget != null && !thisTimeTarget.contains(mouseX, mouseY))
+			/* mStack */ {
+				// Needs to be checked even when the mouse is not moved (due to the mouse wheel)
+				if (entryDragAction != null) entryDragAction.applyToList(this, mouseX, mouseY);
+				long timePast;
 				thisTimeTarget = null;
-			if (thisTimeTarget != null && isMouseOver(mouseX, mouseY))
-				lastTouch = System.currentTimeMillis();
-			if (thisTimeTarget != null)
-				thisTimeTarget = new Rectangle(0, thisTimeTarget.y, width, thisTimeTarget.height);
-			if (thisTimeTarget != null && !thisTimeTarget.equals(target)) {
-				if (!hasCurrent) {
-					currentX = thisTimeTarget.x;
-					currentY = thisTimeTarget.y;
-					currentWidth = thisTimeTarget.width;
-					currentHeight = thisTimeTarget.height;
-					hasCurrent = true;
+				if (hasCurrent) {
+					timePast = System.currentTimeMillis() - lastTouch;
+					int alpha = timePast <= 200L? 255 : MathHelper.ceil(
+					  255.0 - (double) (min((float) (timePast - 200L), 500.0f) / 500.0f) * 255.0);
+					alpha = alpha * 36 / 255 << 24;
+					fillGradient(
+					  mStack, currentX, currentY, currentX + currentWidth,
+					  currentY + currentHeight, 0xFFFFFF | alpha, 0xFFFFFF | alpha);
 				}
-				target = thisTimeTarget.copy();
-				start = lastTouch;
-				duration = 40L;
-			} else if (hasCurrent && target != null) {
-				timePast = System.currentTimeMillis() - start;
-				// @formatter:off
-				currentX = (int) ScrollingHandler.ease(currentX, target.x, min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				currentY = (int) ScrollingHandler.ease(currentY, target.y, min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				currentWidth = (int) ScrollingHandler.ease(currentWidth, target.width, min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				currentHeight = (int) ScrollingHandler.ease(currentHeight, target.height, min((double) timePast / (double) duration * (double) delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
-				// @formatter:on
+				super.renderList(mStack, startX, startY, mouseX, mouseY, delta);
+				if (isDragging() || thisTimeTarget != null && !thisTimeTarget.contains(mouseX, mouseY))
+					thisTimeTarget = null;
+				if (thisTimeTarget != null && isMouseOver(mouseX, mouseY))
+					lastTouch = System.currentTimeMillis();
+				if (thisTimeTarget != null)
+					thisTimeTarget = new Rectangle(0, thisTimeTarget.y, width, thisTimeTarget.height);
+				if (thisTimeTarget != null && !thisTimeTarget.equals(target)) {
+					if (!hasCurrent) {
+						currentX = thisTimeTarget.x;
+						currentY = thisTimeTarget.y;
+						currentWidth = thisTimeTarget.width;
+						currentHeight = thisTimeTarget.height;
+						hasCurrent = true;
+					}
+					target = thisTimeTarget.copy();
+					start = lastTouch;
+					duration = 40L;
+				} else if (hasCurrent && target != null) {
+					timePast = System.currentTimeMillis() - start;
+					// @formatter:off
+					currentX = (int) ScrollingHandler.ease(currentX, target.x, min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+					currentY = (int) ScrollingHandler.ease(currentY, target.y, min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+					currentWidth = (int) ScrollingHandler.ease(currentWidth, target.width, min((double) timePast / duration * delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+					currentHeight = (int) ScrollingHandler.ease(currentHeight, target.height, min((double) timePast / (double) duration * (double) delta * 3.0, 1.0), EasingMethod.EasingMethodImpl.LINEAR);
+					// @formatter:on
+				}
 			}
+			if (animated) mStack.pop();
 		}
 		
 		@Override protected IFormattableTextComponent getEmptyPlaceHolder() {
@@ -1267,7 +1269,7 @@ public class SimpleConfigScreen
 		  sortedCategories.stream().filter(p -> p != selectedCategory)
 			 .collect(Collectors.toMap(c -> c, c -> c.getHeldEntries().stream()
 				.mapToLong(e -> e.search(query).size()).sum()));
-		for (ClothConfigTabButton button : tabButtons)
+		for (ConfigCategoryButton button : tabButtons)
 			button.setTintColor(searches.getOrDefault(button.category, 0L) > 0 ? 0x80BDBD42 : 0);
 		return result;
 	}
@@ -1400,13 +1402,14 @@ public class SimpleConfigScreen
 	protected static class SaveButton extends TintedButton {
 		private final SimpleConfigScreen screen;
 		
-		public SaveButton(SimpleConfigScreen screen, int x, int y, int width, int height) {
-			super(x, y, width, height, NarratorChatListener.EMPTY, button -> {
+		public SaveButton(SimpleConfigScreen screen) {
+			super(0, 0, 80, 20, NarratorChatListener.EMPTY, button -> {
 				if (screen.isEditingConfigHotKey()) {
 					screen.saveHotkey();
 				} else screen.saveAll(true);
 			});
 			this.screen = screen;
+			setTintColor(0x8042BD42);
 		}
 		
 		public void tick() {

@@ -15,7 +15,7 @@ public class FloatListBuilder
   extends RangedListFieldBuilder<Float, FloatListCell, FloatListListEntry, FloatListBuilder> {
 	
 	public FloatListBuilder(ConfigEntryBuilder builder, ITextComponent name, List<Float> value) {
-		super(builder, name, value);
+		super(FloatListListEntry.class, builder, name, value);
 	}
 	
 	public FloatListBuilder setMin(float min) {

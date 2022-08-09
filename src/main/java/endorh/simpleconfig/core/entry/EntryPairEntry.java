@@ -3,7 +3,9 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.PairListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -18,12 +20,11 @@ import java.util.Optional;
 
 public class EntryPairEntry<
   L, R, LC, RC, LG, RG,
-  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>
+  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>
 > extends AbstractConfigEntry<
-  Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>,
-  EntryPairEntry<L, R, LC, RC, LG, RG, LE, RE>
-> implements IKeyEntry<Pair<LG, RG>> {
+  Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>
+  > implements IKeyEntry<Pair<LG, RG>> {
 	protected final LE leftEntry;
 	protected final RE rightEntry;
 	protected float splitPos = 0.5F;
@@ -34,14 +35,14 @@ public class EntryPairEntry<
 	  LE leftEntry, RE rightEntry
 	) {
 		super(parent, name, value);
-		this.leftEntry = leftEntry.withSaver((v, h) -> {});
-		this.rightEntry = rightEntry.withSaver((v, h) -> {});
+		this.leftEntry = leftEntry;
+		this.rightEntry = rightEntry;
 	}
 	
 	public static class Builder<
 	  L, R, LC, RC, LG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG, LE> & IKeyEntry<LG>,
-	  RE extends AbstractConfigEntry<R, RC, RG, RE> & IKeyEntry<RG>,
+	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
+	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
 	> extends AbstractConfigEntryBuilder<
@@ -80,8 +81,8 @@ public class EntryPairEntry<
 		@Override protected EntryPairEntry<L, R, LC, RC, LG, RG, LE, RE> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			LE leftEntry = DummyEntryHolder.build(parent, leftBuilder).withSaver((v, h) -> {});
-			RE rightEntry = DummyEntryHolder.build(parent, rightBuilder).withSaver((v, h) -> {});
+			LE leftEntry = DummyEntryHolder.build(parent, leftBuilder);
+			RE rightEntry = DummyEntryHolder.build(parent, rightBuilder);
 			final EntryPairEntry<L, R, LC, RC, LG, RG, LE, RE> entry =
 			  new EntryPairEntry<>(parent, name, value, leftEntry, rightEntry);
 			entry.middleIcon = middleIcon;
@@ -162,17 +163,27 @@ public class EntryPairEntry<
 		return tooltips;
 	}
 	
+	@SuppressWarnings("unchecked") public <
+	  LGE extends AbstractConfigListEntry<LG> & IChildListEntry,
+	  RGE extends AbstractConfigListEntry<RG> & IChildListEntry,
+	  LGEB extends FieldBuilder<LG, LGE, LGEB>, RGEB extends FieldBuilder<RG, RGE, RGEB>
+	> PairListEntryBuilder<LG, RG, LGE, RGE, LGEB, RGEB> makeGUIBuilder(
+	  ConfigEntryBuilder builder,
+	  FieldBuilder<LG, LGE, ?> leftBuilder, FieldBuilder<RG, RGE, ?> rightBuilder
+	) {
+		return builder.startPair(
+		  getDisplayName(), (LGEB) leftBuilder, (RGEB) rightBuilder, forGui(get()));
+	}
+	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Pair<LG, RG>>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Pair<LG, RG>, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		PairListEntryBuilder<LG, RG, ?, ?> entryBuilder = builder.startPair(
-		  getDisplayName(),
-		  leftEntry.buildChildGUIEntry(builder),
-		  rightEntry.buildChildGUIEntry(builder),
-		  forGui(get()))
+		PairListEntryBuilder<LG, RG, ?, ?, ?, ?> entryBuilder = makeGUIBuilder(
+		  builder, leftEntry.buildChildGUIEntry(builder),
+		  rightEntry.buildChildGUIEntry(builder))
 		  .withMiddleIcon(middleIcon)
 		  .withSplitPos(splitPos);
-		return Optional.of(decorate(entryBuilder).build());
+		return Optional.of(decorate(entryBuilder));
 	}
 }

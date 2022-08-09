@@ -2,13 +2,15 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
-import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IRemoteCommonConfigProvider;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IRemoteConfigProvider;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.Nullable;
 
 import javax.naming.NoPermissionException;
@@ -23,7 +25,7 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static java.util.Collections.emptyList;
 
-class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteCommonConfigProvider {
+class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteConfigProvider {
 	private final String modId;
 	private final Map<Type, SimpleConfig> configMap;
 	private IExternalChangeHandler externalChangeHandler;
@@ -39,7 +41,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteComm
 	@Override public CommentedConfig preserve(Type type, @Nullable Set<String> selectedPaths) {
 		final SimpleConfig c = configMap.get(type);
 		if (c == null) throw new IllegalArgumentException("Unsupported config type: " + type);
-		return c.takeSnapshot(true, selectedPaths);
+		return c.takeSnapshot(true, false, selectedPaths);
 	}
 	
 	@Override public void restore(
@@ -47,7 +49,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteComm
 	) {
 		SimpleConfig c = configMap.get(type);
 		if (c == null) return;
-		c.loadSnapshot(config, true, selectedPaths);
+		c.loadSnapshot(config, true, false, selectedPaths);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -138,14 +140,8 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteComm
 			Matcher m = pattern.matcher(f.getName());
 			if (!m.matches()) return null;
 			return Preset.local(
-			  m.group("name"), typeFromExtension(m.group("type")));
+			  m.group("name"), Type.fromAlias(m.group("type")));
 		}).filter(Objects::nonNull).collect(Collectors.toList());
-	}
-	
-	public static Type typeFromExtension(String type) {
-		return Arrays.stream(Type.values())
-		  .filter(t -> t.extension().equals(type))
-		  .findFirst().orElse(null);
 	}
 	
 	@Override public CompletableFuture<List<Preset>> getRemotePresets() {
@@ -158,6 +154,10 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteComm
 		return SimpleConfigResourcePresetHandler.INSTANCE.getResourcePresets(modId);
 	}
 	
+	@Override public IExternalChangeHandler getExternalChangeHandler() {
+		return externalChangeHandler;
+	}
+	
 	@Override public void setExternalChangeHandler(IExternalChangeHandler handler) {
 		externalChangeHandler = handler;
 	}
@@ -166,7 +166,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteComm
 		if (externalChangeHandler != null) {
 			if (configMap.containsValue(config)) {
 				config.loadGUIExternalChanges();
-				externalChangeHandler.handleExternalChange(config.getType());
+				externalChangeHandler.handleExternalChange(config.getType().asEditType(false));
 			}
 		}
 	}
@@ -188,20 +188,48 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteComm
 		return Optional.empty();
 	}
 	
-	@Override public CompletableFuture<CommentedConfig> getRemoteCommonConfig() {
-		SimpleConfig config = configMap.get(Type.COMMON);
-		if (config == null) return failedFuture(new IllegalArgumentException("Missing common config"));
+	@Override public CompletableFuture<CommentedConfig> getRemoteConfig(EditType type) {
+		if (!type.isOnlyRemote()) return failedFuture(new IllegalArgumentException(
+		  "Config type is not remote! Cannot get from remote: " + type.getAlias()));
+		Type configType = type.getType();
+		if (configType != Type.COMMON) return failedFuture(new IllegalArgumentException(
+		  "Unsupported remote config type: " + type.getAlias()));
+		SimpleConfig config = configMap.get(configType);
+		if (config == null) return failedFuture(new IllegalArgumentException(
+		  "Missing config type: " + type.getAlias()));
 		return SimpleConfigNetworkHandler.requestServerCommonConfig(modId);
 	}
 	
-	@Override public void loadRemoteCommonConfig(CommentedConfig snapshot) {
+	@Override public boolean mayHaveRemoteConfig(EditType type) {
+		if (type != EditType.SERVER_COMMON) return false;
 		SimpleConfig config = configMap.get(Type.COMMON);
-		config.loadSnapshot(snapshot, true, null);
+		return config != null
+		       && !Minecraft.getInstance().isIntegratedServerRunning()
+		       && permissions.permissionFor(modId).getLeft().canView();
 	}
 	
-	@Override public void saveRemoteCommonConfig() {
-		SimpleConfig config = configMap.get(Type.COMMON);
-		CommentedConfig snapshot = config.takeSnapshot(true);
-		SimpleConfigNetworkHandler.saveServerCommonConfig(modId, config, snapshot);
+	@Override public void loadRemoteConfig(
+	  EditType type, CommentedConfig snapshot, boolean asExternal
+	) {
+		if (!type.isOnlyRemote()) throw new IllegalArgumentException(
+		  "Config type is not remote! Cannot get from remote: " + type.getAlias());
+		Type configType = type.getType();
+		if (configType != Type.COMMON) throw new IllegalArgumentException(
+		  "Unsupported remote config type: " + type.getAlias());
+		SimpleConfig config = configMap.get(configType);
+		if (asExternal) {
+			config.loadGUIRemoteExternalChanges(snapshot);
+		} else config.loadSnapshot(snapshot, true, true, null);
+	}
+	
+	@Override public void saveRemoteConfig(EditType type, boolean requiresRestart) {
+		if (!type.isOnlyRemote()) throw new IllegalArgumentException(
+		  "Config type is not remote! Cannot save to remote: " + type.getAlias());
+		Type configType = type.getType();
+		if (configType != Type.COMMON) throw new IllegalArgumentException(
+		  "Unsupported remote config type: " + type.getAlias());
+		SimpleConfig config = configMap.get(configType);
+		CommentedConfig snapshot = config.takeSnapshot(true, true, null);
+		SimpleConfigNetworkHandler.saveServerCommonConfig(modId, config, requiresRestart, snapshot);
 	}
 }

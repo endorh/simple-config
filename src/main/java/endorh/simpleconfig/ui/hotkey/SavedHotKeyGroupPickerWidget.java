@@ -109,7 +109,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			 })
 		    .tooltip(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.delete_group")));
 		selector = new ComboBoxWidget<>(
-		  new SavedHotKeyGroupWrapper(this), () -> overlayContainer, 0, 0, 20, 20);
+		  new SavedHotKeyGroupWrapper(this), () -> overlayContainer, 0, 0, 80, 18);
 		selector.setSuggestionProvider(new SimpleComboBoxModel<>(this::getSavedGroups));
 		selector.setHint(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.hint"));
 		Stream.of(selector, loadButton, saveButton).forEach(listeners::add);
@@ -336,7 +336,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			update();
 		}
 		Rectangle area = getArea();
-		pos(selector, area.x + 1, area.y + 1, area.width - 42, area.height - 2);
+		pos(selector, area.x + 1, area.y + 2, area.width - 42, area.height - 4);
 		pos(loadButton, area.getMaxX() - 40, area.y);
 		pos(saveButton, area.getMaxX() - 20, area.y);
 		

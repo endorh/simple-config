@@ -1,6 +1,9 @@
 package endorh.simpleconfig.ui.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfig.Type;
+import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
@@ -11,7 +14,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,7 +32,7 @@ public interface ConfigScreenBuilder {
 		return new ConfigScreenBuilderImpl(modId);
 	}
 	
-	ConfigScreenBuilder setFallbackCategory(ConfigCategory fallbackCategory);
+	ConfigScreenBuilder setFallbackCategory(ConfigCategoryBuilder fallbackCategory);
 	
 	Screen getParentScreen();
 	ConfigScreenBuilder setParentScreen(Screen parent);
@@ -42,9 +44,9 @@ public interface ConfigScreenBuilder {
 	Consumer<Boolean> getHotKeySaver();
 	ConfigScreenBuilder setEditedConfigHotKey(ConfigHotKey hotkey, Consumer<Boolean> hotKeySaver);
 	
-	ConfigCategory getSelectedCategory();
-	ConfigScreenBuilder setSelectedCategory(ConfigCategory category);
-	default ConfigScreenBuilder setSelectedCategory(String name, Type type) {
+	ConfigCategoryBuilder getSelectedCategory();
+	ConfigScreenBuilder setSelectedCategory(ConfigCategoryBuilder category);
+	default ConfigScreenBuilder setSelectedCategory(String name, EditType type) {
 		return setSelectedCategory(getOrCreateCategory(name, type));
 	}
 	
@@ -54,10 +56,10 @@ public interface ConfigScreenBuilder {
 	boolean isEditable();
 	ConfigScreenBuilder setEditable(boolean editable);
 	
-	ConfigCategory getOrCreateCategory(String name, Type type);
-	ConfigScreenBuilder removeCategory(String name, Type type);
-	ConfigScreenBuilder removeCategoryIfExists(String name, Type type);
-	boolean hasCategory(String name, Type type);
+	ConfigCategoryBuilder getOrCreateCategory(String name, EditType type);
+	ConfigScreenBuilder removeCategory(String name, EditType type);
+	ConfigScreenBuilder removeCategoryIfExists(String name, EditType type);
+	boolean hasCategory(String name, EditType type);
 	
 	ResourceLocation getDefaultBackgroundTexture();
 	ConfigScreenBuilder setDefaultBackgroundTexture(ResourceLocation texture);
@@ -94,12 +96,13 @@ public interface ConfigScreenBuilder {
 	AbstractConfigScreen build();
 	
 	ConfigScreenBuilder setSnapshotHandler(IConfigSnapshotHandler handler);
-	ConfigScreenBuilder setRemoteCommonConfigProvider(IRemoteCommonConfigProvider provider);
+	ConfigScreenBuilder setRemoteCommonConfigProvider(IRemoteConfigProvider provider);
 	
-	interface IRemoteCommonConfigProvider {
-		CompletableFuture<CommentedConfig> getRemoteCommonConfig();
-		void loadRemoteCommonConfig(CommentedConfig config);
-		void saveRemoteCommonConfig();
+	interface IRemoteConfigProvider {
+		CompletableFuture<CommentedConfig> getRemoteConfig(EditType type);
+		boolean mayHaveRemoteConfig(EditType type);
+		void loadRemoteConfig(EditType type, CommentedConfig config, boolean asExternal);
+		void saveRemoteConfig(EditType type, boolean requiresRestart);
 	}
 	
 	interface IConfigSnapshotHandler {
@@ -120,11 +123,12 @@ public interface ConfigScreenBuilder {
 		List<Preset> getLocalPresets();
 		CompletableFuture<List<Preset>> getRemotePresets();
 		List<Preset> getResourcePresets();
+		IExternalChangeHandler getExternalChangeHandler();
 		void setExternalChangeHandler(IExternalChangeHandler handler);
 		
 		interface IExternalChangeHandler {
-			void handleExternalChange(Type type);
-			default void handleRemoteConfigExternalChange(CommentedConfig remoteConfig) {}
+			void handleExternalChange(EditType type);
+			void handleRemoteConfigExternalChange(EditType type, CommentedConfig remoteConfig);
 		}
 	}
 	

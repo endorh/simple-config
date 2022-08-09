@@ -13,7 +13,7 @@ public class IntSliderBuilder extends SliderFieldBuilder<Integer, IntegerSliderE
 	public IntSliderBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, int value, int min, int max
 	) {
-		super(builder, name, value, min, max);
+		super(IntegerSliderEntry.class, builder, name, value, min, max);
 	}
 	
 	@Override @NotNull public IntegerSliderEntry buildEntry() {

@@ -15,7 +15,7 @@ public class StorageLessHotKeyActionType<V> extends SimpleHotKeyActionType<V, Vo
 	}
 	
 	@Override
-	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V, ?>> SimpleHotKeyAction<V, Void> deserialize(
+	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> SimpleHotKeyAction<V, Void> deserialize(
 	  E entry, Object value
 	) {
 		return new StorageLessHotKeyAction<>(this, entry, action);
@@ -23,7 +23,7 @@ public class StorageLessHotKeyActionType<V> extends SimpleHotKeyActionType<V, Vo
 	
 	public static class StorageLessHotKeyAction<V> extends SimpleHotKeyAction<V, Void> {
 		public StorageLessHotKeyAction(
-		  StorageLessHotKeyActionType<V> type, AbstractConfigEntry<?, ?, V, ?> entry,
+		  StorageLessHotKeyActionType<V> type, AbstractConfigEntry<?, ?, V> entry,
 		  IStorageLessHotKeyAction<V> action
 		) {
 			super(type, entry, action, null);
@@ -35,10 +35,10 @@ public class StorageLessHotKeyActionType<V> extends SimpleHotKeyActionType<V, Vo
 	}
 	
 	@FunctionalInterface public interface IStorageLessHotKeyAction<V> extends ISimpleHotKeyAction<V, Void> {
-		@Nullable V applyValue(AbstractConfigEntry<?, ?, V, ?> entry, V value);
+		@Nullable V applyValue(AbstractConfigEntry<?, ?, V> entry, V value);
 		
 		@Override default @Nullable V applyValue(
-		  AbstractConfigEntry<?, ?, V, ?> entry, V value, Void serialized
+		  AbstractConfigEntry<?, ?, V> entry, V value, Void serialized
 		) {
 			return applyValue(entry, value);
 		}

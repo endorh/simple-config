@@ -3,7 +3,9 @@ package endorh.simpleconfig.core;
 import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
+import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.impl.builders.EntryButtonFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -14,9 +16,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
+public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui> & IKeyEntry<Gui>>
   extends GUIOnlyEntry<V, Gui, EntryButtonEntry<V, Gui, Inner>> {
 	
 	protected Inner inner;
@@ -34,7 +37,7 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 		this.action = action;
 	}
 	
-	public static class Builder<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui, Inner> & IKeyEntry<Gui>>
+	public static class Builder<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gui> & IKeyEntry<Gui>>
 	  extends GUIOnlyEntry.Builder<V, Gui, EntryButtonEntry<V, Gui, Inner>, Builder<V, Gui, Inner>> {
 		
 		protected AbstractConfigEntryBuilder<V, ?, Gui, Inner, ?> inner;
@@ -93,13 +96,24 @@ public class EntryButtonEntry<V, Gui, Inner extends AbstractConfigEntry<V, ?, Gu
 		return inner.fromGui(value);
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override public Optional<AbstractConfigListEntry<Gui>> buildGUIEntry(
+	@SuppressWarnings("unchecked")
+	public <
+	  E extends AbstractConfigListEntry<Gui> & IChildListEntry,
+	  B extends FieldBuilder<Gui, E, B>
+	  > EntryButtonFieldBuilder<Gui, E, B> makeGUIEntry(
+	  ConfigEntryBuilder builder, FieldBuilder<Gui, ?, ?> entryBuilder, Consumer<Gui> action
+	) {
+		return builder.startButton(getDisplayName(), (B) entryBuilder, action);
+	}
+	
+	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Gui, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
-		final EntryButtonListEntry<Gui, ?> entry = new EntryButtonListEntry<>(
-		  getDisplayName(), inner.buildChildGUIEntry(builder),
-		  g -> action.accept(fromGuiOrDefault(g), parent), buttonLabelSupplier);
-		entry.entry.setIgnoreEdits(true);
-		return Optional.of(entry);
+		EntryButtonFieldBuilder<Gui, ?, ?> entryBuilder = makeGUIEntry(
+		  builder, inner.buildChildGUIEntry(builder),
+		  g -> action.accept(fromGuiOrDefault(g), parent))
+		  .withButtonLabel(buttonLabelSupplier)
+		  .setIgnoreEdits(true);
+		return Optional.of(entryBuilder);
 	}
 }

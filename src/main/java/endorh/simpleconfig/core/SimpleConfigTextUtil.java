@@ -30,6 +30,10 @@ import static java.lang.Math.min;
 		return FORMATTING_CODE_PATTERN.matcher(text).replaceAll("");
 	}
 	
+	public static String toTitleCase(String s) {
+		return s.substring(0, 1).toUpperCase() + s.substring(1);
+	}
+	
 	/**
 	 * Build a translated paragraph.<br>
 	 * Accepts a list of translation keys, with optional objects following each of them,

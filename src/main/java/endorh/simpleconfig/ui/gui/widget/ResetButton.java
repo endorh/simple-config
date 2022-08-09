@@ -34,10 +34,12 @@ public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
 	protected static List<ITextComponent> resetTooltip = asList(
 	  new TranslationTextComponent("simpleconfig.ui.reset"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt"));
+	  new TranslationTextComponent("simpleconfig.ui.restore.alt"),
+	  new TranslationTextComponent("simpleconfig.ui.hotkey.ctrl"));
 	protected static List<ITextComponent> resetTooltipGroup = asList(
 	  new TranslationTextComponent("simpleconfig.ui.reset.group"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt"));
+	  new TranslationTextComponent("simpleconfig.ui.restore.alt"),
+	  new TranslationTextComponent("simpleconfig.ui.hotkey.ctrl"));
 	protected static List<ITextComponent> restoreTooltip = asList(
 	  new TranslationTextComponent("simpleconfig.ui.restore"));
 	protected static List<ITextComponent> restoreTooltipGroup = asList(

@@ -16,9 +16,9 @@ public abstract class RangedFieldBuilder<V extends Comparable<V>,
 	V max;
 	
 	protected RangedFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, V value
+	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, V value
 	) {
-		super(builder, name, value);
+		super(entryClass, builder, name, value);
 	}
 	
 	public Self setMin(V min) {

@@ -12,7 +12,7 @@ public class FloatFieldBuilder
   extends RangedFieldBuilder<Float, FloatListEntry, FloatFieldBuilder> {
 	
 	public FloatFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, float value) {
-		super(builder, name, value);
+		super(FloatListEntry.class, builder, name, value);
 	}
 	
 	@Override

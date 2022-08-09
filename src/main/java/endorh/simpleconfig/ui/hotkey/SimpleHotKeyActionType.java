@@ -1,9 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
 import net.minecraft.util.text.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -56,21 +59,21 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 		return new StringTextComponent(value).mergeStyle(TextFormatting.DARK_AQUA);
 	}
 	
-	@SuppressWarnings("unchecked") @Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V, ?>> SimpleHotKeyAction<V, S> deserialize(
+	@SuppressWarnings("unchecked") @Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> SimpleHotKeyAction<V, S> deserialize(
 	  E entry, Object value
 	) {
 		if (value == null) return null;
 		return new SimpleHotKeyAction<>(this, entry, action, (S) value);
 	}
 	
-	@Override public <T, C, E extends AbstractConfigEntry<T, C, V, ?>> Object serialize(
+	@Override public <T, C, E extends AbstractConfigEntry<T, C, V>> Object serialize(
 	  E entry, SimpleHotKeyAction<V, S> action
 	) {
 		return action.getStorage();
 	}
 	
 	@Override
-	public <T, C, E extends AbstractConfigEntry<T, C, V, ?>> Optional<ITextComponent> getActionError(
+	public <T, C, E extends AbstractConfigEntry<T, C, V>> Optional<ITextComponent> getActionError(
 	  E entry, Object value
 	) {
 		try {
@@ -83,12 +86,13 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 	}
 	
 	public static class SimpleHotKeyAction<V, S> extends HotKeyAction<V> {
-		private final AbstractConfigEntry<?, ?, V, ?> entry;
+		private static final Logger LOGGER = LogManager.getLogger();
+		private final AbstractConfigEntry<?, ?, V> entry;
 		private final ISimpleHotKeyAction<V, S> action;
 		private final S storage;
 		
 		public SimpleHotKeyAction(
-		  SimpleHotKeyActionType<V, S> type, AbstractConfigEntry<?, ?, V, ?> entry,
+		  SimpleHotKeyActionType<V, S> type, AbstractConfigEntry<?, ?, V> entry,
 		  ISimpleHotKeyAction<V, S> action, S storage
 		) {
 			super(type);
@@ -105,22 +109,31 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 			return storage;
 		}
 		
-		public AbstractConfigEntry<?, ?, V, ?> getEntry() {
+		public AbstractConfigEntry<?, ?, V> getEntry() {
 			return entry;
 		}
 		
-		@Override public <T, C, E extends AbstractConfigEntry<T, C, V, ?>>
-		@Nullable ITextComponent apply(E entry) {
+		@Override public <T, C, E extends AbstractConfigEntry<T, C, V>>
+		@Nullable ITextComponent apply(String path, E entry, CommentedConfig result) {
 			ITextComponent prev = formatValue(entry.getForCommand());
 			T prevValue = entry.get();
-			boolean success = entry.trySet(entry.fromGui(applyValue(entry.forGui(prevValue))));
-			ITextComponent set = formatValue(entry.getForCommand());
-			boolean change = success && !Objects.equals(prevValue, entry.get());
-			return formatPath(entry.getPath()).appendString(" ")
+			T newValue = entry.fromGui(applyValue(entry.forGui(prevValue)));
+			boolean success = entry.isValidValue(newValue);
+			if (!success) {
+				LOGGER.error(entry.getGlobalPath() + ": Error applying config hotkey, result value is not a valid value: " + newValue);
+				newValue = entry.defValue;
+			}
+			ITextComponent set = formatValue(entry.forCommand(newValue));
+			boolean change = success && !Objects.equals(prevValue, newValue);
+			if (success) result.set(path, entry.forConfig(newValue));
+			IFormattableTextComponent report = formatPath(entry.getPath()).appendString(" ")
 			  .append(new TranslationTextComponent(
 				 "simpleconfig.hotkey.type.report." + getType().getTranslationKey(),
 				 getType().formatStorage(getStorage()), prev, set)
-			            .mergeStyle(change? TextFormatting.WHITE : TextFormatting.GRAY));
+				         .mergeStyle(change? TextFormatting.WHITE : TextFormatting.GRAY));
+			if (!success) report.appendString(" ").append(new TranslationTextComponent(
+			  "simpleconfig.hotkey.report.failure").mergeStyle(TextFormatting.RED));
+			return report;
 		}
 		
 		private IFormattableTextComponent formatPath(String path) {
@@ -169,10 +182,10 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 	}
 	
 	@FunctionalInterface public interface ISimpleHotKeyAction<V, S> {
-		@Nullable V applyValue(AbstractConfigEntry<?, ?, V, ?> entry, V value, S serialized);
+		@Nullable V applyValue(AbstractConfigEntry<?, ?, V> entry, V value, S serialized);
 	}
 	
 	@FunctionalInterface public interface ISimpleHotKeyError<V, S> {
-		Optional<ITextComponent> getError(AbstractConfigEntry<?, ?, V, ?> entry, S storage);
+		Optional<ITextComponent> getError(AbstractConfigEntry<?, ?, V> entry, S storage);
 	}
 }

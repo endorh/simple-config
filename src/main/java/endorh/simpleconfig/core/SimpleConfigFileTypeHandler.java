@@ -118,7 +118,12 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 				LOGGER.debug(
 				  CONFIG, "Config file {} changed, sending notifies", modConfig.getFileName());
 				modConfig.getSpec().afterReload();
-				SimpleConfigNetworkHandler.tryFireEvent(modConfig, SimpleConfigNetworkHandler.newReloading(modConfig));
+				try {
+					SimpleConfigNetworkHandler.tryFireEvent(
+					  modConfig, SimpleConfigNetworkHandler.newReloading(modConfig));
+				} catch (RuntimeException e) {
+					LOGGER.error("Error updating config from file {}", modConfig.getFileName(), e);
+				}
 			}
 		}
 	}

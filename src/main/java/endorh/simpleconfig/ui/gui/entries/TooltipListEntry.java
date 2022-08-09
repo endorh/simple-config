@@ -3,10 +3,10 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.EntryFlag;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.TooltipSearchBarWidget;
@@ -35,19 +35,19 @@ import java.util.stream.Collectors;
 public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	@Nullable private Supplier<Optional<ITextComponent[]>> tooltipSupplier;
 	protected String matchedTooltipText = null;
-	protected EntryFlag helpEntryFlag;
-	protected EntryFlag matchedHelpEntryFlag;
+	protected EntryTag helpEntryFlag;
+	protected EntryTag matchedHelpEntryFlag;
 	protected MultiFunctionImageButton matchedHelpButton;
 	private @Nullable ITextComponent[] lastTooltip = null;
 	
-	public TooltipListEntry(ITextComponent fieldName) {
+	protected TooltipListEntry(ITextComponent fieldName) {
 		super(fieldName);
-		helpEntryFlag = new EntryFlag(
-		  0, SimpleConfigIcons.Entries.HELP,
-		  () -> getTooltip().map(Arrays::asList).orElse(Collections.emptyList()));
-		matchedHelpEntryFlag = new EntryFlag(
-		  0, SimpleConfigIcons.Entries.HELP_SEARCH_MATCH,
-		  () -> getTooltip().map(Arrays::asList).orElse(Collections.emptyList()));
+		helpEntryFlag = new EntryTag(
+		  -200, null, SimpleConfigIcons.Entries.HELP,
+		  () -> getTooltip().map(Arrays::asList).orElse(Collections.emptyList()), null);
+		matchedHelpEntryFlag = new EntryTag(
+		  -200, null, SimpleConfigIcons.Entries.HELP_SEARCH_MATCH,
+		  () -> getTooltip().map(Arrays::asList).orElse(Collections.emptyList()), null);
 		matchedHelpButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Entries.HELP_SEARCH_MATCH, ButtonAction.of(() -> {})
 		  .active(() -> false).sound(Optional::empty)
@@ -61,7 +61,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		if (this.tooltipSupplier != null) {
 			lastTooltip = this.tooltipSupplier.get().map(this::decorateTooltip).orElse(null);
 		} else lastTooltip = null;
-		NavigableSet<EntryFlag> flags = getEntryFlags();
+		NavigableSet<EntryTag> flags = getEntryTags();
 		if (lastTooltip != null) {
 			if (matchesTooltipSearch()) {
 				flags.remove(helpEntryFlag);
@@ -120,15 +120,30 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		return Optional.empty();
 	}
 	
+	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {
+		if (flagsRectangle.contains(mouseX, mouseY)) {
+			NavigableSet<EntryTag> entryTags = getEntryTags();
+			int index = ((int) mouseX - flagsRectangle.x) / 14;
+			if (index >= 0 && index < entryTags.size()) {
+				Iterator<EntryTag> iterator = entryTags.iterator();
+				EntryTag flag = null;
+				for (int i = 0; i <= index; i++) flag = iterator.next();
+				flag.onClick(button);
+			}
+			return true;
+		}
+		return super.onMouseClicked(mouseX, mouseY, button);
+	}
+	
 	public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
 		if (flagsRectangle.contains(mouseX, mouseY)) {
 			int index = (mouseX - flagsRectangle.x) / 14;
-			final NavigableSet<EntryFlag> entryFlags = getEntryFlags();
+			final NavigableSet<EntryTag> entryFlags = getEntryTags();
 			if (index >= 0 && index < entryFlags.size()) {
-				Iterator<EntryFlag> iterator = entryFlags.iterator();
-				EntryFlag flag = null;
+				Iterator<EntryTag> iterator = entryFlags.iterator();
+				EntryTag flag = null;
 				for (int i = 0; i <= index; i++) flag = iterator.next();
-				List<ITextComponent> tooltip = flag.tooltip.get();
+				List<ITextComponent> tooltip = flag.getTooltip();
 				return Optional.of(tooltip.toArray(new ITextComponent[0]));
 			}
 		}

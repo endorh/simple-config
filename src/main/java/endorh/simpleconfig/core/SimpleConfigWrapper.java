@@ -3,6 +3,8 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.SimpleConfigMod.CommonConfig.menu;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigBuilder.ConfigValueBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
@@ -10,11 +12,9 @@ import endorh.simpleconfig.core.entry.AbstractRangedEntry;
 import endorh.simpleconfig.core.entry.AbstractRangedEntry.Builder;
 import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.core.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -26,7 +26,6 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,8 +45,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static endorh.simpleconfig.SimpleConfigMod.shouldWrapConfig;
 import static endorh.simpleconfig.core.SimpleConfig.group;
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.applyStyle;
 import static endorh.simpleconfig.core.entry.Builders.*;
 import static java.util.Collections.singletonList;
 
@@ -81,22 +80,25 @@ public class SimpleConfigWrapper {
 	}
 	
 	@SubscribeEvent public static void onLoadComplete(FMLLoadCompleteEvent event) {
-		event.enqueueWork(SimpleConfigWrapper::wrapConfigs);
+		event.enqueueWork(() -> {
+			wrapConfigs();
+			ConfigHotKeyManager.initHotKeyManager();
+		});
 	}
 	
 	public static void wrapConfigs() {
-		if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) return;
 		ModList.get().forEachModContainer((modId, container) -> {
-			EnumMap<Type, ModConfig> configs = getConfigs(container);
+			EnumMap<ModConfig.Type, ModConfig> configs = getConfigs(container);
 			if (!configs.isEmpty()) {
 				String displayName = container.getModInfo().getDisplayName();
 				String logName = displayName + " (" + modId + ")";
 				for (Type type: Type.values()) {
-					String tt = type.extension();
+					ModConfig.Type configType = type.asConfigType();
+					String tt = type.getAlias();
 					try {
-						if (configs.containsKey(type)) {
-							ModConfig config = configs.get(type);
-							if (!(config instanceof SimpleConfigModConfig) && shouldWrapConfig(modId)) {
+						if (configs.containsKey(configType)) {
+							ModConfig config = configs.get(configType);
+							if (!(config instanceof SimpleConfigModConfig) && menu.shouldWrapConfig(modId)) {
 								LOGGER.info("Wrapping " + tt + " config for mod {}", modId);
 								SimpleConfigBuilder builder = wrap(container, config);
 								if (builder != null) builder.buildAndRegister(
@@ -116,7 +118,8 @@ public class SimpleConfigWrapper {
 	
 	private static SimpleConfigBuilder wrap(ModContainer container, ModConfig config) {
 		if (config instanceof SimpleConfigModConfig) return null;
-		SimpleConfigBuilder builder = SimpleConfig.builder(config.getModId(), config.getType());
+		Type type = Type.fromConfigType(config.getType());
+		SimpleConfigBuilder builder = SimpleConfig.builder(config.getModId(), type);
 		
 		ForgeConfigSpec forgeSpec = config.getSpec();
 		UnmodifiableConfig spec = forgeSpec.getSpec();
@@ -141,7 +144,7 @@ public class SimpleConfigWrapper {
 			config.build(container, modConfig);
 		}
 		
-		@Override void build(AbstractConfigEntry<?, ?, ?, ?> entry) {
+		@Override void build(AbstractConfigEntry<?, ?, ?> entry) {
 			Object o = getConfigValues().get(entry.name);
 			if (o instanceof ConfigValue) {
 				entry.setConfigValue(((ConfigValue<?>) o));
@@ -261,6 +264,8 @@ public class SimpleConfigWrapper {
 	
 	private static final Pattern INDENT = Pattern.compile("^\\s*+");
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
+	private static final Pattern EXPERIMENTAL = Pattern.compile(
+	  "EXPERIMENTAL", Pattern.CASE_INSENSITIVE);
 	private static <B extends AbstractConfigEntryBuilder<?, ?, ?, ?, B>> B decorateBuilder(
 	  B builder, ValueSpec spec
 	) {
@@ -276,9 +281,18 @@ public class SimpleConfigWrapper {
 				if (!m.matches()) return 0;
 				return m.end();
 			}).min().orElse(0);
-			Arrays.stream(lines)
-			  .map(l -> new StringTextComponent(l.substring(commonIndent)).mergeStyle(TextFormatting.GRAY))
-			  .forEach(tooltip::add);
+			for (String l: lines) {
+				l = l.substring(commonIndent);
+				IFormattableTextComponent ll = new StringTextComponent(l)
+				  .mergeStyle(TextFormatting.GRAY);
+				Matcher m = EXPERIMENTAL.matcher(l);
+				if (m.find()) {
+					builder = builder.withTags(EntryTag.EXPERIMENTAL);
+					if (FMLEnvironment.dist == Dist.CLIENT)
+						ll = applyStyle(ll, TextFormatting.GOLD, m.start(), m.end());
+				}
+				tooltip.add(ll);
+			}
 			builder = builder.tooltip(tooltip);
 		}
 		builder = builder.configError(t -> !spec.test(t)? Optional.of(new TranslationTextComponent(
@@ -484,7 +498,7 @@ public class SimpleConfigWrapper {
 		}
 	}
 	
-	@Internal public static EnumMap<Type, ModConfig> getConfigs(ModContainer container) {
+	@Internal public static EnumMap<ModConfig.Type, ModConfig> getConfigs(ModContainer container) {
 		return ObfuscationReflectionHelper.getPrivateValue(
 		  ModContainer.class, container, "configs");
 	}

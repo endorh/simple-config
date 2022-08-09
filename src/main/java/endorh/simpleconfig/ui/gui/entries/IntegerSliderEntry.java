@@ -1,10 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
+import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import java.util.stream.Stream;
 
 import static java.lang.Math.*;
 
@@ -25,14 +28,14 @@ public class IntegerSliderEntry extends SliderListEntry<Integer> {
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
 		textEntry.setChildSubEntry(true);
-		this.textFieldEntry = textEntry;
+		textFieldEntry = textEntry;
+		Stream.of(HotKeyActionTypes.INT_ADD, HotKeyActionTypes.INT_ADD_CYCLE)
+		  .forEach(hotKeyActionTypes::add);
 		initWidgets(new IntegerSliderEntry.SliderWidget(0, 0, 100, 24), textEntry);
 	}
 	
 	public class SliderWidget extends SliderListEntry<Integer>.SliderWidget {
-		public SliderWidget(
-		  int x, int y, int width, int height
-		) {
+		public SliderWidget(int x, int y, int width, int height) {
 			super(x, y, width, height);
 		}
 		

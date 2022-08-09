@@ -2,8 +2,8 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -75,19 +75,19 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<AbstractConfigListEntry<Long>> buildGUIEntry(
+	@Override public Optional<FieldBuilder<Long, ?, ?>> buildGUIEntry(
 	  ConfigEntryBuilder builder
 	) {
 		if (!asSlider) {
 			final LongFieldBuilder valBuilder = builder
 			  .startLongField(getDisplayName(), get())
 			  .setMin(min).setMax(max);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		} else {
 			final LongSliderBuilder valBuilder = builder
 			  .startLongSlider(getDisplayName(), get(), min, max)
 			  .setTextGetter(sliderTextSupplier);
-			return Optional.of(decorate(valBuilder).build());
+			return Optional.of(decorate(valBuilder));
 		}
 	}
 	

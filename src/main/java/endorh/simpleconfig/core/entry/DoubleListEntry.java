@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleListBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -69,9 +69,9 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<AbstractConfigListEntry<List<Double>>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Double>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
 		final DoubleListBuilder valBuilder = builder
 		  .startDoubleList(getDisplayName(), get());
-		return Optional.of(decorate(valBuilder).build());
+		return Optional.of(decorate(valBuilder));
 	}
 }

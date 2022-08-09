@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  public class FloatSliderBuilder extends SliderFieldBuilder<Float, FloatSliderEntry, FloatSliderBuilder> {
 	
 	public FloatSliderBuilder(ConfigEntryBuilder builder, ITextComponent name, float value, float min, float max) {
-		super(builder, name, value, min, max);
+		super(FloatSliderEntry.class, builder, name, value, min, max);
 	}
 	
 	@Override @NotNull public FloatSliderEntry buildEntry() {

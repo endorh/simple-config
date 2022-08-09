@@ -12,7 +12,7 @@ public class LongFieldBuilder
   extends RangedFieldBuilder<Long, LongListEntry, LongFieldBuilder> {
 	
 	public LongFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, long value) {
-		super(builder, name, value);
+		super(LongListEntry.class, builder, name, value);
 	}
 	
 	@Override

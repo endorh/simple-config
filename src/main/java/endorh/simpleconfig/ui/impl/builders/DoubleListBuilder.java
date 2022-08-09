@@ -17,7 +17,7 @@ public class DoubleListBuilder extends RangedListFieldBuilder<
 	public DoubleListBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, List<Double> value
 	) {
-		super(builder, name, value);
+		super(DoubleListListEntry.class, builder, name, value);
 	}
 	
 	public DoubleListBuilder setMin(double min) {

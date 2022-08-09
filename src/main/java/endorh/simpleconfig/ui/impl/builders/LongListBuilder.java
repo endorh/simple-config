@@ -15,7 +15,7 @@ public class LongListBuilder
   extends RangedListFieldBuilder<Long, LongListCell, LongListListEntry, LongListBuilder> {
 	
 	public LongListBuilder(ConfigEntryBuilder builder, ITextComponent name, List<Long> value) {
-		super(builder, name, value);
+		super(LongListListEntry.class, builder, name, value);
 	}
 	
 	@Override @NotNull public LongListListEntry buildEntry() {

@@ -18,7 +18,7 @@ public class EnumSelectorBuilder<V extends Enum<?>> extends FieldBuilder<V, Enum
 	public EnumSelectorBuilder(
 	  ConfigEntryBuilder builder, ITextComponent name, V value
 	) {
-		super(builder, name, value);
+		super(EnumListEntry.class, builder, name, value);
 		Objects.requireNonNull(value);
 		this.value = value;
 		//noinspection unchecked

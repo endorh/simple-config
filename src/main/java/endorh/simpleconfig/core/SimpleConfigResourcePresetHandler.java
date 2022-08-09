@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Maps;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler.Loader;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
@@ -13,7 +14,6 @@ import net.minecraft.resources.IResource;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.JSONUtils;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
@@ -81,10 +80,10 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 		l.getPresetMap().forEach((modId, m) -> {
 			Map<Preset, CommentedConfig> mm = presetRegistry.computeIfAbsent(modId, i -> Maps.newHashMap());
 			SimpleConfigCommentedYamlFormat format;
-			if (SimpleConfig.hasConfig(modId, ModConfig.Type.CLIENT))
-				format = SimpleConfigCommentedYamlFormat.forConfig(SimpleConfig.getConfig(modId, ModConfig.Type.CLIENT));
-			else if (SimpleConfig.hasConfig(modId, ModConfig.Type.SERVER))
-				format = SimpleConfigCommentedYamlFormat.forConfig(SimpleConfig.getConfig(modId, ModConfig.Type.SERVER));
+			if (SimpleConfig.hasConfig(modId, Type.CLIENT))
+				format = SimpleConfigCommentedYamlFormat.forConfig(SimpleConfig.getConfig(modId, Type.CLIENT));
+			else if (SimpleConfig.hasConfig(modId, Type.SERVER))
+				format = SimpleConfigCommentedYamlFormat.forConfig(SimpleConfig.getConfig(modId, Type.SERVER));
 			else return;
 			m.forEach((preset, location) -> {
 				try {
@@ -108,19 +107,19 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			for (String name: descriptor.clientPresets) {
 				String fileName = modId + "-client-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, ModConfig.Type.CLIENT);
+				Preset preset = Preset.resource(name, Type.CLIENT);
 				map.put(preset, r);
 			}
 			for (String name: descriptor.commonPresets) {
 				String fileName = modId + "-common-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, ModConfig.Type.COMMON);
+				Preset preset = Preset.resource(name, Type.COMMON);
 				map.put(preset, r);
 			}
 			for (String name: descriptor.serverPresets) {
 				String fileName = modId + "-server-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, ModConfig.Type.SERVER);
+				Preset preset = Preset.resource(name, Type.SERVER);
 				map.put(preset, r);
 			}
 			if (map.isEmpty()) presetMap.remove(modId);
@@ -144,7 +143,7 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 		
 		public static class Serializer implements JsonDeserializer<PresetsDescriptor>, JsonSerializer<PresetsDescriptor> {
 			@Override public PresetsDescriptor deserialize(
-			  JsonElement json, Type type, JsonDeserializationContext ctx
+			  JsonElement json, java.lang.reflect.Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
 				JsonObject obj = JSONUtils.getJsonObject(json, "mod config presets");
 				Optional<String> first = obj.entrySet().stream().map(Entry::getKey)
@@ -167,7 +166,7 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			}
 			
 			@Override public JsonElement serialize(
-			  PresetsDescriptor src, Type typeOfSrc, JsonSerializationContext ctx
+			  PresetsDescriptor src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext ctx
 			) {
 				JsonObject obj = new JsonObject();
 				List<String> clientPresets = new ArrayList<>(src.clientPresets);

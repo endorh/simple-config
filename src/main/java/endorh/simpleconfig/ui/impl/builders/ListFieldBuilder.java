@@ -35,9 +35,9 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 	// protected @Nullable AbstractConfigListEntry<?> heldEntry = null;
 	
 	protected ListFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, List<V> value
+	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, List<V> value
 	) {
-		super(builder, name, value);
+		super(entryClass, builder, name, value);
 	}
 	
 	public Self setCellErrorSupplier(@NotNull BiFunction<Integer, V, Optional<ITextComponent>> cellError) {

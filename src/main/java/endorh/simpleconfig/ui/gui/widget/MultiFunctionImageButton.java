@@ -36,9 +36,32 @@ public class MultiFunctionImageButton extends ImageButton {
 	protected @NotNull ButtonAction defaultAction;
 	protected Boolean activeOverride = null;
 	
+	public static MultiFunctionImageButton of(
+	  @NotNull Icon icon, ButtonActionBuilder action
+	) {
+		return of(NarratorChatListener.EMPTY, icon, action);
+	}
+	
+	public static MultiFunctionImageButton of(
+	  ITextComponent title, @NotNull Icon icon, ButtonActionBuilder action
+	) {
+		return of(title, icon.w, icon.h, icon, action);
+	}
+	
+	public static MultiFunctionImageButton of(
+	  int width, int height, @NotNull Icon icon, ButtonActionBuilder action
+	) {
+		return of(NarratorChatListener.EMPTY, width, height, icon, action);
+	}
+	
+	public static MultiFunctionImageButton of(
+	  ITextComponent title, int width, int height, @NotNull Icon icon, ButtonActionBuilder action
+	) {
+		return new MultiFunctionImageButton(0, 0, width, height, icon, action, title);
+	}
+	
 	public MultiFunctionImageButton(
-	  int x, int y, int width, int height, @NotNull Icon icon,
-	  ButtonActionBuilder action
+	  int x, int y, int width, int height, @NotNull Icon icon, ButtonActionBuilder action
 	) {
 		this(x, y, width, height, icon, action, NarratorChatListener.EMPTY);
 	}
@@ -174,7 +197,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		updateState();
-		if (keyCode == 257 || keyCode == 32 || keyCode == 335) // Enter | Space | NumPadEnter
+		if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_KP_ENTER)
 			return press(modifiers);
 		return false;
 	}

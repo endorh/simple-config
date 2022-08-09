@@ -10,12 +10,12 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.command.arguments.IArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
@@ -24,28 +24,31 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.util.concurrent.CompletableFuture;
 
 public class SimpleConfigValueArgumentType implements ArgumentType<String> {
-	private static final DynamicCommandExceptionType UNKNOWN_CONFIG = new DynamicCommandExceptionType(
-	  m -> new TranslationTextComponent("simpleconfig.command.error.no_such_config", m));
 	private static final DynamicCommandExceptionType INVALID_YAML = new DynamicCommandExceptionType(
 	  m -> new TranslationTextComponent("simpleconfig.command.error.invalid_yaml", m));
 	
-	public static SimpleConfigValueArgumentType entryValue(String modId, Type type) {
+	public static SimpleConfigValueArgumentType entryValue(
+	  @Nullable String modId, @Nullable EditType type
+	) {
 		return new SimpleConfigValueArgumentType(modId, type);
 	}
 	
 	private final @Nullable String modId;
-	private final ModConfig.Type type;
+	private final @Nullable EditType type;
 	
-	private SimpleConfigValueArgumentType(@Nullable String modId, Type type) {
+	private SimpleConfigValueArgumentType(@Nullable String modId, @Nullable EditType type) {
 		this.modId = modId;
 		this.type = type;
 	}
 	
 	public @Nullable SimpleConfig getConfig(CommandContext<?> ctx) {
 		String modId = this.modId;
+		EditType type = this.type;
 		if (modId == null) modId = ctx.getArgument("modId", String.class);
-		if (SimpleConfig.hasConfig(modId, type))
-			return SimpleConfig.getConfig(modId, type);
+		if (type == null) type = ctx.getArgument("type", EditType.class);
+		Type configType = type.getType();
+		if (SimpleConfig.hasConfig(modId, configType))
+			return SimpleConfig.getConfig(modId, configType);
 		return null;
 	}
 	
@@ -71,7 +74,7 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		String key = context.getArgument("key", String.class);
 		SimpleConfig config = getConfig(context);
 		if (config == null) return Suggestions.empty();
-		AbstractConfigEntry<Object, Object, Object, ?> entry = config.getEntry(key);
+		AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 		String serialized = entry.getForCommand();
 		if (serialized != null)
 			builder.suggest(serialized, new TranslationTextComponent(
@@ -87,18 +90,19 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		@Override public void write(@NotNull SimpleConfigValueArgumentType arg, @NotNull PacketBuffer buf) {
 			buf.writeBoolean(arg.modId != null);
 			if (arg.modId != null) buf.writeString(arg.modId);
-			buf.writeEnumValue(arg.type);
+			buf.writeBoolean(arg.type != null);
+			if (arg.type != null) buf.writeEnumValue(arg.type);
 		}
 		
 		@Override public @NotNull SimpleConfigValueArgumentType read(@NotNull PacketBuffer buf) {
 			return new SimpleConfigValueArgumentType(
 			  buf.readBoolean()? buf.readString(32767) : null,
-			  buf.readEnumValue(Type.class));
+			  buf.readBoolean()? buf.readEnumValue(EditType.class) : null);
 		}
 		
 		@Override public void write(@NotNull SimpleConfigValueArgumentType arg, @NotNull JsonObject obj) {
 			obj.addProperty("modId", arg.modId);
-			obj.addProperty("type", arg.type.extension());
+			obj.addProperty("type", arg.type != null? arg.type.getAlias() : null);
 		}
 	}
 }

@@ -2,7 +2,10 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.ClientConfig.menu;
+import endorh.simpleconfig.SimpleConfigMod.CommonConfig;
 import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
+import endorh.simpleconfig.core.SimpleConfig.Type;
+import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigReleaseServerCommonConfigPacket;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -25,7 +28,6 @@ import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.config.ModConfig.Type;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -46,14 +48,7 @@ public class SimpleConfigGUIManager {
 	
 	protected static boolean addButton = false;
 	protected static boolean autoAddedButton = false;
-	protected static Comparator<SimpleConfig> typeOrder = Comparator.comparingInt(c -> {
-		switch (c.getType()) {
-			case CLIENT: return 1;
-			case COMMON: return 2;
-			case SERVER: return 4;
-			default: return 3;
-		}
-	});
+	protected static Comparator<SimpleConfig> typeOrder = Comparator.comparing(SimpleConfig::getType);
 	protected static ResourceLocation defaultBackground = new ResourceLocation(
 	  "textures/block/oak_planks.png");
 	
@@ -79,10 +74,10 @@ public class SimpleConfigGUIManager {
 		ModContainer container = config.getModContainer();
 		Optional<BiFunction<Minecraft, Screen, Screen>> ext = container.getCustomExtension(ExtensionPoint.CONFIGGUIFACTORY);
 		if (config.isWrapper() && (
-		  !menu.shouldWrapConfig(modId)
+		  !CommonConfig.menu.shouldWrapConfig(modId)
 		  || ext.isPresent()
 		     && !(ext.get() instanceof ConfigGUIFactory)
-		     && !menu.shouldReplaceMenu(modId)
+		     && !CommonConfig.menu.shouldReplaceMenu(modId)
 		)) return;
 		if (!autoAddedButton)
 			autoAddedButton = addButton = true;
@@ -94,6 +89,9 @@ public class SimpleConfigGUIManager {
 		} else modConfigs.get(modId).put(config.getType(), config);
 	}
 	
+	/**
+	 * Used for marking instead of an anonymous lambda.
+	 */
 	private static class ConfigGUIFactory implements BiFunction<Minecraft, Screen, Screen> {
 		private final String modId;
 		private ConfigGUIFactory(String modId) {
@@ -140,12 +138,16 @@ public class SimpleConfigGUIManager {
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  // .setSnapshotHandler(handler)
 		  .setEditedConfigHotKey(hotkey, r -> {
-			  for (SimpleConfig c: orderedConfigs) c.removeGUI();
 			  activeScreens.remove(modId);
+			  if (configs.containsKey(Type.COMMON)
+			      && !Minecraft.getInstance().isIntegratedServerRunning()
+			      && hasPermission
+			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
+			  for (SimpleConfig c: orderedConfigs) c.removeGUI();
 			  Minecraft.getInstance().displayGuiScreen(parentScreen);
 			  if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
 		  }); //.setClosingRunnable(() -> activeScreens.remove(modId));
-		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder);
+		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder, false);
 		final AbstractConfigScreen gui = builder.build();
 		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, null);
 		activeScreens.put(modId, gui);
@@ -172,17 +174,27 @@ public class SimpleConfigGUIManager {
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parent)
 		  .setSavingRunnable(() -> {
-			  for (SimpleConfig c: orderedConfigs) {
+			  for (SimpleConfig c: orderedConfigs)
 				  if (c.isDirty()) c.save();
-				  c.removeGUI();
-			  }
-		  }).setClosingRunnable(() -> activeScreens.remove(modId))
-		  .setTitle(new TranslationTextComponent(
+		  }).setClosingRunnable(() -> {
+			  activeScreens.remove(modId);
+			  if (configs.containsKey(Type.COMMON)
+			      && !Minecraft.getInstance().isIntegratedServerRunning()
+			      && hasPermission
+			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
+			  for (SimpleConfig c: orderedConfigs) c.removeGUI();
+		  }).setTitle(new TranslationTextComponent(
 		    "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setSnapshotHandler(handler)
 		  .setRemoteCommonConfigProvider(handler);
-		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder);
+		for (SimpleConfig config : orderedConfigs) {
+			config.buildGUI(builder, false);
+			if (config.getType() == Type.COMMON
+			    && !Minecraft.getInstance().isIntegratedServerRunning()
+			    && hasPermission
+			) config.buildGUI(builder, true);
+		}
 		final AbstractConfigScreen gui = builder.build();
 		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, handler);
 		activeScreens.put(modId, gui);
@@ -261,8 +273,7 @@ public class SimpleConfigGUIManager {
 			Button modOptions = new ImageButton(
 			  x, y, w, h, 0, 0, 20,
 			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/menu.png"),
-			  32, 64, p -> showModListGUI()
-			);
+			  32, 64, p -> showModListGUI());
 			event.addWidget(modOptions);
 		}
 	}
