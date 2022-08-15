@@ -5,10 +5,10 @@ import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.impl.ConfigEntryBuilderImpl;
 import endorh.simpleconfig.ui.impl.builders.*;
 import endorh.simpleconfig.ui.math.Color;
-import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -91,13 +91,7 @@ public interface ConfigEntryBuilder {
 	  B extends FieldBuilder<V, E, B>
 	> EntryButtonFieldBuilder<V, E, B> startButton(ITextComponent name, B entry, Consumer<V> action);
 	
-	KeyCodeBuilder startModifierKeyCodeField(ITextComponent name, ModifierKeyCode value);
-	default KeyCodeBuilder startKeyCodeField(
-	  ITextComponent name, InputMappings.Input value
-	) {
-		return this.startModifierKeyCodeField(
-		  name, ModifierKeyCode.of(value, Modifier.none())).setAllowModifiers(false);
-	}
+	KeyBindFieldBuilder startKeyBindField(ITextComponent name, KeyBindMapping value);
 	
 	<T> ComboBoxFieldBuilder<T> startComboBox(
 	  ITextComponent name, ITypeWrapper<T> typeWrapper, T value);

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
-import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
@@ -19,6 +18,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewHotKeyEntry;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
 import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.renderAll;
 import static java.lang.Math.min;
@@ -43,23 +44,32 @@ import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeViewEntry> {
 	private final Supplier<IDialogCapableScreen> dialogScreenSupplier;
+	private final Supplier<IOverlayCapableContainer> containerSupplier;
 	private @Nullable String contextModId = null;
 	private final BiConsumer<String, ConfigHotKey> hotKeyEditor;
 	public static final WidgetDragBroadcastableAction<CheckboxButton> ENABLE_ACTION = (b, s) -> b.setToggle(s.getValue());
+	public final CandidateHotKeyProvider provider = new CandidateHotKeyProvider();
 	
 	public ConfigHotKeyTreeView(
 	  Supplier<IDialogCapableScreen> screenSupplier, IOverlayCapableContainer overlayContainer,
 	  ConfigHotKeyGroup group, BiConsumer<String, ConfigHotKey> hotKeyEditor
 	) {
-		super(overlayContainer, new ConfigHotKeyTreeViewGroupEntry(screenSupplier::get, group));
+		super(overlayContainer, new ConfigHotKeyTreeViewGroupEntry(
+		  screenSupplier, () -> overlayContainer, group));
 		dialogScreenSupplier = screenSupplier;
+		containerSupplier = () -> overlayContainer;
 		this.hotKeyEditor = hotKeyEditor;
 		setCaption(new ConfigHotKeyTreeViewCaption(screenSupplier, overlayContainer, this));
 		setPlaceHolder(new TranslationTextComponent("simpleconfig.ui.no_hotkeys"));
+		ExtendedKeyBindDispatcher.registerProvider(provider);
 	}
 	
 	@SuppressWarnings("unchecked") public <T extends Screen & IDialogCapableScreen> T getDialogScreen() {
 		return (T) dialogScreenSupplier.get();
+	}
+	
+	public IOverlayCapableContainer getOverlayContainer() {
+		return containerSupplier.get();
 	}
 	
 	public @Nullable String getContextModId() {
@@ -74,11 +84,23 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 	}
 	
 	public void addHotKey() {
-		tryAddEntry(new ConfigHotKeyTreeViewHotKeyEntry(this::getDialogScreen, new ConfigHotKey()));
+		ConfigHotKey hotKey = new ConfigHotKey();
+		provider.getHotKeys().add(hotKey.getKeyBind());
+		tryAddEntry(new ConfigHotKeyTreeViewHotKeyEntry(
+		  this::getDialogScreen, containerSupplier, hotKey));
 	}
 	
 	public void addGroup() {
-		tryAddEntry(new ConfigHotKeyTreeViewGroupEntry(this::getDialogScreen, new ConfigHotKeyGroup()));
+		ConfigHotKeyGroup group = new ConfigHotKeyGroup();
+		provider.getHotKeys().add(group.getKeyBind());
+		tryAddEntry(new ConfigHotKeyTreeViewGroupEntry(
+		  this::getDialogScreen, containerSupplier, group));
+	}
+	
+	public void removeCandidates() {
+		provider.getHotKeys().clear();
+		ExtendedKeyBindDispatcher.unregisterProvider(provider);
+		getRoot().removeCandidate();
 	}
 	
 	public static class ConfigHotKeyTreeViewCaption
@@ -165,12 +187,15 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			return false;
 		}
 		
+		public void removeCandidate() {}
+		
 		public static class ConfigHotKeyTreeViewHotKeyEntry extends ConfigHotKeyTreeViewEntry {
 			private final ConfigHotKey hotKey;
 			private final TextFieldWidgetEx textField;
-			private final HotKeyButton hotKeyButton;
+			private final KeyBindButton hotKeyButton;
 			private final DragBroadcastableWidget<CheckboxButton> enabledCheckbox;
 			private final Map<String, ConfigHotKeyTreeViewModEntry> entries = new HashMap<>();
+			private final ExtendedKeyBind keyBind;
 			private final Comparator<String> modOrder = (l, r) -> {
 				ConfigHotKeyTreeView tree = getTree();
 				String contextModId = tree.getContextModId();
@@ -182,8 +207,11 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			};
 			
 			public ConfigHotKeyTreeViewHotKeyEntry(
-			  Supplier<IModalInputCapableScreen> screenSupplier, ConfigHotKey hotKey
+			  Supplier<IDialogCapableScreen> screenSupplier,
+			  Supplier<IOverlayCapableContainer> containerSupplier,
+			  ConfigHotKey hotKey
 			) {
+				keyBind = hotKey.getKeyBind();
 				hotKey = hotKey.copy();
 				this.hotKey = hotKey;
 				textField = TextFieldWidgetEx.of(hotKey.getName());
@@ -191,7 +219,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField.setBordered(false);
 				textField.setEmptyHint(new TranslationTextComponent(
 				  "simpleconfig.ui.hotkey.unnamed.hint"));
-				hotKeyButton = HotKeyButton.ofKeyAndMouse(screenSupplier, hotKey.getHotKey());
+				hotKeyButton = KeyBindButton.of(
+				  screenSupplier::get, containerSupplier, keyBind);
 				enabledCheckbox = draggable(
 				  ENABLE_ACTION, CheckboxButton.of(hotKey.isEnabled(), StringTextComponent.EMPTY));
 				Stream.of(hotKeyButton, textField, enabledCheckbox).forEach(listeners::add);
@@ -200,10 +229,15 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			public ConfigHotKey buildHotKey() {
-				hotKey.setKeyCode(hotKeyButton.getKey());
+				hotKey.setKeyMapping(hotKeyButton.getMapping());
 				hotKey.setName(textField.getText());
 				hotKey.setEnabled(enabledCheckbox.getWidget().getValue());
-				return this.hotKey;
+				return hotKey;
+			}
+			
+			@Override public void removeCandidate() {
+				keyBind.setCandidateName(null);
+				keyBind.setCandidateDefinition(null);
 			}
 			
 			@Override
@@ -223,6 +257,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				entries.keySet().stream()
 				  .sorted(modOrder)
 				  .map(entries::get).forEach(subEntries::add);
+				keyBind.setCandidateName(new StringTextComponent(textField.getText()));
+				hotKeyButton.tick();
 			}
 			
 			@Override public void render(
@@ -235,10 +271,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			@Override public void renderContent(
 			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
-				pos(hotKeyButton, x, y);
 				int hotKeyButtonWidth = min(150, (w - 46) / 2);
-				hotKeyButton.setExactWidth(hotKeyButtonWidth);
-				pos(textField, x + hotKeyButtonWidth + 4, y + 6, w - 48 - hotKeyButtonWidth, h - 4);
+				hotKeyButton.setPosition(x, y, hotKeyButtonWidth);
+				pos(textField, x + hotKeyButtonWidth + 4, y + 6, w - 48 - hotKeyButtonWidth, h - 10);
 				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
 				renderAll(mStack, mouseX, mouseY, delta,
@@ -364,17 +399,22 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		
 		public static class ConfigHotKeyTreeViewGroupEntry extends ConfigHotKeyTreeViewEntry {
 			private final TextFieldWidgetEx textField;
-			private final HotKeyButton hotKeyButton;
+			private final KeyBindButton hotKeyButton;
 			private final DragBroadcastableWidget<CheckboxButton> enabledCheckbox;
+			private final ExtendedKeyBind keyBind;
 			
 			public ConfigHotKeyTreeViewGroupEntry(
-			  Supplier<IModalInputCapableScreen> screenSupplier, ConfigHotKeyGroup group
+			  Supplier<IDialogCapableScreen> screenSupplier,
+			  Supplier<IOverlayCapableContainer> containerSupplier,
+			  ConfigHotKeyGroup group
 			) {
 				subEntries = group.getEntries().stream().map(e -> {
 					if (e instanceof ConfigHotKeyGroup) {
-						return new ConfigHotKeyTreeViewGroupEntry(screenSupplier, (ConfigHotKeyGroup) e);
+						return new ConfigHotKeyTreeViewGroupEntry(
+						  screenSupplier, containerSupplier, (ConfigHotKeyGroup) e);
 					} else if (e instanceof ConfigHotKey) {
-						return new ConfigHotKeyTreeViewHotKeyEntry(screenSupplier, (ConfigHotKey) e);
+						return new ConfigHotKeyTreeViewHotKeyEntry(
+						  screenSupplier, containerSupplier, (ConfigHotKey) e);
 					} else return null;
 				}).filter(Objects::nonNull).collect(Collectors.toList());
 				textField = TextFieldWidgetEx.of(group.getName());
@@ -382,7 +422,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField.setBordered(false);
 				textField.setEmptyHint(new TranslationTextComponent(
 				  "simpleconfig.ui.hotkey.unnamed.hint"));
-				hotKeyButton = HotKeyButton.ofKeyAndMouse(screenSupplier, group.getHotKey());
+				keyBind = group.getKeyBind();
+				hotKeyButton = KeyBindButton.of(screenSupplier::get, containerSupplier, keyBind);
+				hotKeyButton.setTooltip(splitTtc("simpleconfig.ui.hotkey.group.hotkey"));
 				enabledCheckbox = draggable(
 				  ENABLE_ACTION, CheckboxButton.of(group.isEnabled(), StringTextComponent.EMPTY));
 				Stream.of(textField, hotKeyButton, enabledCheckbox).forEach(listeners::add);
@@ -399,9 +441,20 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 					} else return null;
 				}).filter(Objects::nonNull).forEach(group.getEntries()::add);
 				group.setName(textField.getText());
-				group.setKeyCode(hotKeyButton.getKey());
+				group.setKeyMapping(hotKeyButton.getMapping());
 				group.setEnabled(enabledCheckbox.getWidget().getValue());
 				return group;
+			}
+			
+			@Override protected void tick() {
+				keyBind.setCandidateName(new StringTextComponent(textField.getText()));
+				hotKeyButton.tick();
+			}
+			
+			@Override public void removeCandidate() {
+				keyBind.setCandidateName(null);
+				keyBind.setCandidateDefinition(null);
+				subEntries.forEach(ConfigHotKeyTreeViewEntry::removeCandidate);
 			}
 			
 			@Override
@@ -419,9 +472,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				int hotKeyButtonWidth = min(140, (int) (w * 0.4));
-				pos(textField, x + 4, y + 6, w - 30 - hotKeyButtonWidth, h);
-				pos(hotKeyButton, x + w - 24 - hotKeyButtonWidth, y, hotKeyButtonWidth);
-				hotKeyButton.setExactWidth(hotKeyButtonWidth);
+				pos(textField, x + 4, y + 6, w - 30 - hotKeyButtonWidth, h - 10);
+				hotKeyButton.setPosition(x + w - 24 - hotKeyButtonWidth, y, hotKeyButtonWidth);
 				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
 				renderAll(mStack, mouseX, mouseY, delta,
@@ -431,6 +483,24 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			@Override public boolean isForceRenderAsGroup() {
 				return true;
 			}
+		}
+	}
+	
+	private static class CandidateHotKeyProvider implements ExtendedKeyBindProvider {
+		private final Set<ExtendedKeyBind> hotKeys = new HashSet<>();
+		@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+			return Collections.emptyList();
+		}
+		@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
+			return hotKeys;
+		}
+		
+		@Override public int getPriority() {
+			return -999;
+		}
+		
+		public Set<ExtendedKeyBind> getHotKeys() {
+			return hotKeys;
 		}
 	}
 }

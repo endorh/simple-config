@@ -3,7 +3,7 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.CommonConfig.menu;
+import endorh.simpleconfig.config.CommonConfig.menu;
 import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigBuilder.ConfigValueBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;

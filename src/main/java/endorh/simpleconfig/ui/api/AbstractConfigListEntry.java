@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;

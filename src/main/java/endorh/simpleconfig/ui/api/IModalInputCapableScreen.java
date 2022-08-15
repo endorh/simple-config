@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
 import net.minecraft.client.gui.screen.Screen;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -9,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
 public interface IModalInputCapableScreen {
 	@Nullable IModalInputProcessor getModalInputProcessor();
 	/**
-	 * @deprecated Should not be called directly, instead use
+	 * Should not be called directly, instead use
 	 * {@link #claimModalInput(IModalInputProcessor)}.
 	 */
-	@Deprecated void setModalInputProcessor(IModalInputProcessor processor);
+	@Internal void setModalInputProcessor(IModalInputProcessor processor);
 	
 	/**
 	 * Claim modal input for this screen.<br>
@@ -101,6 +102,20 @@ public interface IModalInputCapableScreen {
 		IModalInputProcessor proc = getModalInputProcessor();
 		if (proc != null) {
 			if (!proc.modalMouseReleased(mouseX, mouseY, button))
+				cancelModalInput();
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Call this method from the top of {@link Screen#mouseScrolled(double, double, double)},
+	 * forwarding {@code true} return values.
+	 */
+	default boolean handleModalMouseScrolled(double mouseX, double mouseY, double scrollDelta) {
+		IModalInputProcessor proc = getModalInputProcessor();
+		if (proc != null) {
+			if (!proc.modalMouseScrolled(mouseX, mouseY, scrollDelta))
 				cancelModalInput();
 			return true;
 		}

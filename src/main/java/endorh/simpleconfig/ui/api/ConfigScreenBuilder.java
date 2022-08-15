@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.api;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;

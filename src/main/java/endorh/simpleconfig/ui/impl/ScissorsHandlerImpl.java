@@ -1,8 +1,6 @@
 package endorh.simpleconfig.ui.impl;
 
-import com.google.common.collect.Lists;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.api.ScissorsScreen;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
@@ -11,8 +9,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.opengl.GL11;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.Stack;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -23,69 +22,48 @@ public final class ScissorsHandlerImpl
   implements ScissorsHandler {
 	@ApiStatus.Internal
 	public static final ScissorsHandler INSTANCE = new ScissorsHandlerImpl();
-	private final List<Rectangle> scissorsAreas = Lists.newArrayList();
+	private final Stack<Rectangle> scissorsAreas = new Stack<>();
 	
-	@Override
-	public void clearScissors() {
-		this.scissorsAreas.clear();
-		this.applyScissors();
+	@Override public void clearScissors() {
+		scissorsAreas.clear();
+		applyScissors();
 	}
 	
 	@Override
-	public List<Rectangle> getScissorsAreas() {
-		return Collections.unmodifiableList(this.scissorsAreas);
+	public Collection<Rectangle> getScissorsAreas() {
+		return Collections.unmodifiableCollection(scissorsAreas);
 	}
 	
-	@Override
-	public void pushScissor(Rectangle clipArea) {
-		this.scissorsAreas.add(clipArea);
-		this.applyScissors();
+	@Override public void pushScissor(Rectangle clipArea) {
+		scissorsAreas.add(clipArea);
+		applyScissors();
 	}
 	
-	@Override
-	public void popScissor() {
-		if (!this.scissorsAreas.isEmpty())
-			this.scissorsAreas.remove(this.scissorsAreas.size() - 1);
-		this.applyScissors();
+	@Override public void popScissor() {
+		if (!scissorsAreas.isEmpty())
+			scissorsAreas.remove(scissorsAreas.size() - 1);
+		applyScissors();
 	}
 	
-	@Override
-	public void applyScissors() {
-		final Minecraft mc = Minecraft.getInstance();
-		if (!this.scissorsAreas.isEmpty()) {
-			Rectangle r = this.scissorsAreas.get(0).copy();
-			for (int i = 1; i < this.scissorsAreas.size(); ++i) {
-				Rectangle r1 = this.scissorsAreas.get(i);
-				if (!r.intersects(r1)) {
-					if (mc.currentScreen instanceof ScissorsScreen) {
-						this._applyScissor(
-						  ((ScissorsScreen) mc.currentScreen).handleScissor(
-							 new Rectangle()));
-					} else {
-						this._applyScissor(new Rectangle());
-					}
-					return;
-				}
-				r.setBounds(r.intersection(r1));
-			}
+	@Override public void withoutScissors(Runnable runnable) {
+		applyScissor(null);
+		runnable.run();
+		applyScissors();
+	}
+	
+	private void applyScissors() {
+		if (!scissorsAreas.isEmpty()) {
+			Rectangle r = scissorsAreas.stream()
+			  .reduce(Rectangle::intersection)
+			  .orElse(new Rectangle());
 			r.setBounds(
 			  min(r.x, r.x + r.width), min(r.y, r.y + r.height),
 			  abs(r.width), abs(r.height));
-			if (mc.currentScreen instanceof ScissorsScreen) {
-				this._applyScissor(
-				  ((ScissorsScreen) mc.currentScreen).handleScissor(r));
-			} else {
-				this._applyScissor(r);
-			}
-		} else if (mc.currentScreen instanceof ScissorsScreen) {
-			this._applyScissor(
-			  ((ScissorsScreen) mc.currentScreen).handleScissor(null));
-		} else {
-			this._applyScissor(null);
-		}
+			applyScissor(r);
+		} else applyScissor(null);
 	}
 	
-	public void _applyScissor(Rectangle r) {
+	private void applyScissor(Rectangle r) {
 		if (r != null) {
 			GL11.glEnable(3089);
 			if (r.isEmpty()) {

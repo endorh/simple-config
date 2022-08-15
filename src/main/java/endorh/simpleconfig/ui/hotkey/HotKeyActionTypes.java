@@ -2,8 +2,8 @@ package endorh.simpleconfig.ui.hotkey;
 
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.entry.AbstractRangedEntry;
-import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Actions;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyAction;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
@@ -23,6 +23,12 @@ public class HotKeyActionTypes {
 	public static class AssignHotKeyActionType extends SimpleHotKeyActionType<Object, Object> {
 		public AssignHotKeyActionType() {
 			super("assign", Actions.ASSIGN, (entry, value, storage) -> storage);
+		}
+		
+		@Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, Object>> SimpleHotKeyAction<Object, Object> create(
+		  E entry, Object value
+		) {
+			return deserialize(entry, entry.forActualConfig(entry.forConfig(entry.fromGuiOrDefault(value))));
 		}
 		
 		@Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, Object>> SimpleHotKeyAction<Object, Object> deserialize(

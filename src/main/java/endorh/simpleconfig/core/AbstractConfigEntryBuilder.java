@@ -172,24 +172,28 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	/**
-	 * Add a secondary field with the given suffix to the entry
+	 * Add a secondary field with the given suffix to the entry<br>
+	 * To instead use a snake_case suffix, use {@link #add_field(String, Function, Class)}<br>
+	 * To instead specify the full field name, use {@link #field(String, Function, Class)}
 	 * @param suffix Suffix for the field name
 	 * @param mapper Transformation to apply for this field
 	 * @param type   Type of the field
 	 */
 	@Contract(pure=true)
-	public <F> Self addField(String suffix, Function<V, F> mapper, Class<F> type) {
+	public <F> Self addField(String suffix, Function<V, F> mapper, Class<?> type) {
 		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, type)));
 	}
 	
 	/**
-	 * Add a secondary field with the given snake_case suffix to the entry
+	 * Add a secondary field with the given snake_case suffix to the entry<br>
+	 * To instead use a camelCase suffix, use {@link #addField(String, Function, Class)}<br>
+	 * To instead specify the full field name, use {@link #field(String, Function, Class)}
 	 * @param suffix Suffix for the field name (will be prepended with '_')
 	 * @param mapper Transformation to apply for this field
 	 * @param type   Type of the field
 	 */
 	@Contract(pure=true)
-	public <F> Self add_field(String suffix, Function<V, F> mapper, Class<F> type) {
+	public <F> Self add_field(String suffix, Function<V, F> mapper, Class<?> type) {
 		return addField("_" + suffix, mapper, type);
 	}
 	
@@ -200,10 +204,19 @@ public abstract class AbstractConfigEntryBuilder<
 	 * @param type   The type of the field, used for checking
 	 */
 	@Contract(pure=true)
-	public <F> Self field(Function<V, F> mapper, Function<F, V> reader, Class<F> type) {
+	public <F> Self field(Function<V, F> mapper, Function<F, V> reader, Class<?> type) {
 		Self copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type).withCommitter(reader);
 		return copy;
+	}
+	
+	/**
+	 * Add a secondary field with the given name to the entry.<br>
+	 * To instead provide a suffix, use {@link #addField(String, Function, Class)}<br>
+	 * To instead replace the default field, use {@link #field(Function, Function, Class)}<br>
+	 */
+	public <F> Self field(String name, Function<V, F> mapper, Class<?> type) {
+		return addField(BackingFieldBinding.withName(name, BackingFieldBuilder.of(mapper, type)));
 	}
 	
 	/**
@@ -214,13 +227,14 @@ public abstract class AbstractConfigEntryBuilder<
 	 * @param type   The type of the field, used for checking
 	 */
 	@Contract(pure=true)
-	public <F> Self field(Function<V, F> mapper, Class<F> type) {
+	public <F> Self field(Function<V, F> mapper, Class<?> type) {
 		Self copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type);
 		return copy;
 	}
 	
-	@Contract(pure=true) protected <F> Self addField(BackingFieldBinding<V, F> binding) {
+	@Contract(pure=true)
+	@Internal public <F> Self addField(BackingFieldBinding<V, F> binding) {
 		Self copy = copy();
 		copy.backingFieldBindings.add(binding);
 		return copy;

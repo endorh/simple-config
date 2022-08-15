@@ -1,14 +1,14 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
+import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.ui.ConfigCategoryBuilder;
+import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -83,6 +83,10 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@Override protected String getPathPart() {
 		return isRoot? "" : name + ".";
+	}
+	
+	@Override public @Nullable AbstractSimpleConfigEntryHolder getParent() {
+		return root;
 	}
 	
 	@Override protected String getName() {

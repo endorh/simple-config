@@ -2,7 +2,8 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
+import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
@@ -16,6 +17,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import net.minecraft.client.gui.DialogTexts;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,6 +114,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 				));
 			} else {
 				save();
+				getTreeView().removeCandidates();
 				super.cancel(true);
 			}
 		} else if (confirm.discard_hotkeys && isEdited()) {
@@ -134,7 +137,10 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 				  )));
 			  }
 			));
-		} else super.cancel(false);
+		} else {
+			getTreeView().removeCandidates();
+			super.cancel(false);
+		}
 	}
 	
 	protected void save() {
@@ -166,5 +172,13 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	
 	@Override public int getInnerHeight() {
 		return clamp(getTreeView().getPreferredHeight() + 4, 64, (int) (getScreen().height * 0.9) - 60);
+	}
+	
+	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (KeyBindings.SAVE.isActiveAndMatches(InputMappings.getInputByCode(keyCode, scanCode))) {
+			cancel(true);
+			return true;
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
 	}
 }

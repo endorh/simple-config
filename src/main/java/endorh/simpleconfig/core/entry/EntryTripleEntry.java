@@ -4,7 +4,7 @@ import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;

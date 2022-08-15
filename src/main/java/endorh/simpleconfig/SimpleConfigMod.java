@@ -1,42 +1,25 @@
 package endorh.simpleconfig;
 
-import com.google.common.collect.Lists;
+import endorh.simpleconfig.config.ClientConfig;
+import endorh.simpleconfig.config.CommonConfig;
+import endorh.simpleconfig.config.ServerConfig;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler;
-import endorh.simpleconfig.core.annotation.Bind;
-import endorh.simpleconfig.core.annotation.NotEntry;
-import endorh.simpleconfig.core.entry.StringEntry;
-import endorh.simpleconfig.demo.DemoConfigCategory;
-import endorh.simpleconfig.demo.DemoServerCategory;
 import endorh.simpleconfig.grammar.nbt.SNBTLexer;
 import endorh.simpleconfig.grammar.nbt.SNBTParser;
 import endorh.simpleconfig.grammar.regex.RegexLexer;
 import endorh.simpleconfig.grammar.regex.RegexParser;
 import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
-import endorh.simpleconfig.ui.hotkey.ConfigHotKeyInputHandler;
+import endorh.simpleconfig.ui.hotkey.ConfigKeyBindProvider;
 import endorh.simpleconfig.ui.hotkey.ResourceConfigHotKeyGroupHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.resources.IReloadableResourceManager;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
-import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
@@ -45,33 +28,15 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.IForgeRegistry;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
-import java.awt.*;
-import java.util.List;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static endorh.simpleconfig.SimpleConfigMod.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
-import static endorh.simpleconfig.core.SimpleConfig.category;
-import static endorh.simpleconfig.core.SimpleConfig.group;
-import static endorh.simpleconfig.core.entry.Builders.*;
-import static java.util.Arrays.asList;
 import static net.minecraftforge.client.settings.KeyConflictContext.GUI;
 import static net.minecraftforge.client.settings.KeyModifier.*;
 
@@ -83,7 +48,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	public static SoundEvent UI_DOUBLE_TAP;
 	
 	// Storing the config instances is optional
-	public static SimpleConfig CLIENT_CONFIG;
+	@OnlyIn(Dist.CLIENT) public static SimpleConfig CLIENT_CONFIG;
 	public static SimpleConfig COMMON_CONFIG;
 	public static SimpleConfig SERVER_CONFIG;
 	
@@ -93,153 +58,12 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	public static final LanguageReloadManager LANGUAGE_RELOAD_MANAGER = LanguageReloadManager.INSTANCE;
 	
 	public SimpleConfigMod() {
-		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
-		  .map(ModInfo::getModId).collect(Collectors.toList());
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 			// Create and register the client config for the mod
-			CLIENT_CONFIG = SimpleConfig.builder(MOD_ID, Type.CLIENT, ClientConfig.class)
-			  .withIcon(SimpleConfigIcons.Types.CLIENT)
-			  .withColor(0x6490FF80)
-			  .withBackground("textures/block/bookshelf.png")
-			  .n(group("menu", true)
-			       .add("add_pause_menu_button", yesNo(true))
-			       .add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
-				      .editable(g -> g.getGUIBoolean("add_pause_menu_button")))
-			  ).n(group("confirm")
-			       .add("save", yesNo(true))
-			       .add("discard", yesNo(true))
-			       .add("overwrite_external", yesNo(true))
-			       .add("overwrite_remote", yesNo(true))
-			       .add("reset", yesNo(false))
-			       .add("group_reset", yesNo(true))
-			       .add("restore", yesNo(false))
-			       .add("group_restore", yesNo(true))
-			       .add("save_hotkeys", yesNo(true))
-			       .add("discard_hotkeys", yesNo(true))
-			  ).n(group("advanced")
-			       .add("show_ui_tips", yesNo(true))
-			       .add("tooltip_max_width", percent(60F))
-			       .add("prefer_combo_box", number(8))
-			       .add("max_options_in_config_comment", number(16).min(5).restart())
-			       .add("color_picker_saved_colors", map(
-			         number(0), color(Color.BLACK).alpha(),
-			         Util.make(new HashMap<>(), m -> {
-			         	// Default Minecraft palette (Java edition) (only light colors)
-			         	m.put(0, new Color(0xFF5555)); // Red
-			         	m.put(1, new Color(0xFFAA00)); // Gold
-			         	m.put(2, new Color(0xFFFF55)); // Yellow
-			         	m.put(3, new Color(0x55FF55)); // Green
-			         	m.put(4, new Color(0x55FFFF)); // Aqua
-			         	m.put(5, new Color(0x5555FF)); // Blue
-			         	m.put(6, new Color(0xFF55FF)); // Light Purple
-			         	m.put(7, new Color(0xAAAAAA)); // Gray
-			         })))
-			       .add("search_history", caption(number(20).min(0).max(1000), list(string(""))))
-			       .add("regex_search_history", caption(number(20).max(1000), list(pattern(""))))
-			       .add("translation_debug_mode", enable(false).temp())
-			  // Hook here the demo category
-			  ).n(DemoConfigCategory.getDemoCategory())
-			  .buildAndRegister();
+			CLIENT_CONFIG = ClientConfig.build();
 		});
-		// Entry builders are immutable, so they can be cached, reused and modified
-		//   freely without any concern. All their methods return modified copies
-		final StringEntry.Builder playerName = string("").suggest(() -> {
-			MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-			final List<String> names = Lists.newArrayList();
-			if (server != null) {
-				final PlayerList pl = server.getPlayerList();
-				final List<String> ops = Lists.newArrayList(pl.getOppedPlayerNames());
-				final List<String> whl = Lists.newArrayList(pl.getWhitelistedPlayerNames());
-				final List<String> nms = Lists.newArrayList(pl.getOnlinePlayerNames());
-				whl.removeAll(ops);
-				nms.removeAll(ops);
-				nms.removeAll(whl);
-				names.addAll(ops);
-				names.addAll(whl);
-				names.addAll(nms);
-			}
-			return names;
-		});
-		final Supplier<List<String>> roleNameSupplier = () ->
-		  new ArrayList<>(SERVER_CONFIG.<Map<String, List<String>>>getFromGUI("permissions.roles").keySet());
-		StringEntry.Builder modName = string("").suggest(modNameSupplier);
-		StringEntry.Builder roleName = string("").suggest(() -> {
-			  List<String> roles = roleNameSupplier.get();
-			  roles.add(0, "[all]");
-			  roles.add(1, "[op]");
-			  return roles;
-		  }).error(s -> roleNameSupplier.get().contains(s) || "[op]".equals(s) || "[all]".equals(s)
-		                ? Optional.empty() : Optional.of(new TranslationTextComponent(
-								"simpleconfig.error.unknown_role")));
-		StringEntry.Builder modGroupOrName = string("").suggest(() -> {
-			List<Pair<String, ?>> modGroups = SERVER_CONFIG.getGUI("permissions.mod_groups");
-			List<String> names = modGroups.stream().map(Pair::getKey).collect(Collectors.toList());
-			ModList.get().getMods().stream().map(ModInfo::getModId).forEachOrdered(names::add);
-			names.add(0, "[all]");
-			return names;
-		});
-		COMMON_CONFIG = SimpleConfig.builder(MOD_ID, Type.COMMON, CommonConfig.class)
-		  .withIcon(SimpleConfigIcons.Types.COMMON)
-		  .withColor(0x64FFA090)
-		  .withBackground("textures/block/warped_planks.png")
-		  .text("desc")
-		  .n(
-			 group("menu", true)
-			   .add("wrap_configs", yesNo(true).restart())
-			   .add("wrap_config_exceptions", list(
-				  string("").suggest(modNameSupplier))
-			     .restart())
-			   .add("replace_config_menus", yesNo(false).restart()
-				  .editable(g -> g.getGUIBoolean("wrap_configs")
-				                 || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
-			   .add("replace_menu_exceptions", list(
-				  string("").suggest(modNameSupplier)
-			   ).restart().editable(g -> g.getGUIBoolean("wrap_configs")
-			                             || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
-		  ).n(
-			 category("demo")
-			   .withIcon(SimpleConfigIcons.Status.INFO)
-			   .withColor(0x80607080)
-			   .withBackground("textures/block/warped_planks.png")
-			   .add("bool", yesNo(true))
-			   .add("number", number(0).min(0))
-			   .add("slider", fraction(0.5))
-			   .add("color_list", list(color(Color.GRAY).alpha(), asList(
-				  Color.RED, Color.GREEN, Color.BLUE)))
-		  ).buildAndRegister();
-		SERVER_CONFIG = SimpleConfig.builder(MOD_ID, Type.SERVER, ServerConfig.class)
-		  .withIcon(SimpleConfigIcons.Types.SERVER)
-		  .withColor(0x648090FF)
-		  .withBackground("textures/block/blackstone_bricks.png")
-		  .text("desc", makeLink(
-			 "simpleconfig.config.server.desc.permission_level",
-			 "simpleconfig.config.server.desc.permission_level:help",
-			 "https://minecraft.fandom.com/wiki/Permission_level",
-			 TextFormatting.DARK_GRAY, TextFormatting.UNDERLINE))
-		  .n(group("permissions", true)
-		       .add("roles", map(
-					string("").notEmpty()
-					  .error(s -> "[op]".equals(s) || "[all]".equals(s)? Optional.of(new TranslationTextComponent(
-						 "simpleconfig.config.error.role.reserved", s)) : Optional.empty()),
-					list(playerName)))
-		       .add("mod_groups", map(
-					string("").notEmpty()
-					  .error(s -> "[all]".equals(s)? Optional.of(new TranslationTextComponent(
-						 "simpleconfig.config.error.mod_group.reserved", s)) : Optional.empty()),
-					caption(option(ListType.WHITELIST), list(modName))))
-		       .add("rules", pairList(
-					roleName, caption(
-					  pair(option(ConfigPermission.EDIT_SERVER_CONFIG), option(PresetPermission.SAVE_PRESETS))
-					    .withSplitPosition(0.4),
-					  list(modGroupOrName)
-		         ), Lists.newArrayList(Pair.of("[op]", Pair.of(
-			        Pair.of(ConfigPermission.EDIT_SERVER_CONFIG, PresetPermission.SAVE_PRESETS), Lists.newArrayList("[all]"))))))
-		       .add("hotkey_rules", pairList(
-					roleName, yesNo(true), Lists.newArrayList(Pair.of("[op]", true))))
-		  ).text("end")
-		  // Register the demo server config category as well
-		  .n(DemoServerCategory.getDemoServerCategory())
-		  .buildAndRegister();
+		COMMON_CONFIG = CommonConfig.build();
+		SERVER_CONFIG = ServerConfig.build();
 	}
 	
 	@SubscribeEvent
@@ -253,188 +77,6 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
 		  "snbt", SNBTLexer::new, SNBTParser::new, SNBTParser::root));
 		manager.addReloadListener(LANGUAGE_RELOAD_MANAGER);
-	}
-	
-	/**
-	 * Client config backing class
-	 */
-	public static class ClientConfig {
-		@Bind public static class menu {
-			@Bind public static boolean add_pause_menu_button;
-			@Bind public static MenuButtonPosition menu_button_position;
-		}
-		@Bind public static class confirm {
-			@Bind public static boolean save;
-			@Bind public static boolean discard;
-			@Bind public static boolean overwrite_external;
-			@Bind public static boolean overwrite_remote;
-			@Bind public static boolean reset;
-			@Bind public static boolean restore;
-			@Bind public static boolean group_reset;
-			@Bind public static boolean group_restore;
-			@Bind public static boolean save_hotkeys;
-			@Bind public static boolean discard_hotkeys;
-		}
-		@Bind public static class advanced {
-			@Bind public static boolean show_ui_tips;
-			@Bind public static float tooltip_max_width;
-			@Bind public static int prefer_combo_box;
-			@Bind public static int max_options_in_config_comment = 4;
-			@Bind public static Map<Integer, Color> color_picker_saved_colors;
-			public static int search_history_size;
-			@NotEntry public static List<String> search_history;
-			public static int regex_search_history_size;
-			@NotEntry public static List<Pattern> regex_search_history;
-			@Bind public static boolean translation_debug_mode;
-			
-			static void bake(SimpleConfigGroup g) {
-				final Pair<Integer, List<String>> sh = g.get("search_history");
-				search_history = sh.getValue();
-				search_history_size = sh.getKey();
-				final Pair<Integer, List<Pattern>> rsh = g.get("regex_search_history");
-				regex_search_history = rsh.getValue();
-				regex_search_history_size = rsh.getKey();
-			}
-		}
-	}
-	
-	public static class CommonConfig {
-		@Bind public static class menu {
-			@Bind public static boolean wrap_configs;
-			@Bind public static List<String> wrap_config_exceptions;
-			@Bind public static boolean replace_config_menus;
-			@Bind public static List<String> replace_menu_exceptions;
-			
-			public static boolean shouldWrapConfig(String modId) {
-				return wrap_configs != wrap_config_exceptions.contains(modId);
-			}
-			
-			public static boolean shouldReplaceMenu(String modId) {
-				return shouldWrapConfig(modId) && replace_config_menus != replace_menu_exceptions.contains(modId);
-			}
-		}
-	}
-	
-	/**
-	 * Server config backing class
-	 */
-	public static class ServerConfig {
-		@Bind public static class permissions {
-			// Each role contains a list of players
-			//   The roles "[op]" and "[all]" are reserved
-			@Bind public static Map<String, List<String>> roles;
-			// Each mod group contains a list of mods, either included or excluded
-			//   There's a reserved group, "[all]", which contains all mods
-			@Bind public static Map<String, Pair<ListType, List<String>>> mod_groups;
-			// Each pair contains the permission and a pair with a role
-			//   name and a list of mod group names or just mod names
-			// The permissions are applied in order. Each player is ruled
-			//   by the last rule that affects them for each mod.
-			// By default, op players have ALLOW permission for the [all] mod group
-			@Bind public static List<Pair<String, Pair<Pair<ConfigPermission, PresetPermission>, List<String>>>> rules;
-			@Bind public static List<Pair<String, Boolean>> hotkey_rules;
-			
-			@OnlyIn(Dist.CLIENT) public static Pair<ConfigPermission, PresetPermission> permissionFor(String mod) {
-				ClientPlayerEntity player = Minecraft.getInstance().player;
-				return player == null? Pair.of(ConfigPermission.DENY, PresetPermission.LOAD_PRESETS) : permissionFor(player, mod);
-			}
-			
-			public static Pair<ConfigPermission, PresetPermission> permissionFor(PlayerEntity player, String mod) {
-				final Set<String> roles = permissions.roles.entrySet().stream().filter(
-				  e -> e.getValue().contains(player.getScoreboardName())
-				).map(Entry::getKey).collect(Collectors.toSet());
-				if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
-					return Pair.of(ConfigPermission.EDIT_SERVER_CONFIG, PresetPermission.SAVE_PRESETS);
-				if (player.hasPermissionLevel(2)) roles.add("[op]");
-				roles.add("[all]");
-				final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
-				  e -> e.getValue().getKey() == ListType.BLACKLIST ^ e.getValue().getValue().contains(mod)
-				).map(Entry::getKey).collect(Collectors.toSet());
-				modGroups.add("[all]");
-				modGroups.add(mod);
-				ConfigPermission config = ConfigPermission.DENY;
-				PresetPermission preset = PresetPermission.LOAD_PRESETS;
-				for (Pair<String, Pair<Pair<ConfigPermission, PresetPermission>, List<String>>> rule: rules) {
-					if (roles.contains(rule.getKey()) && rule.getValue().getValue().stream().anyMatch(modGroups::contains)) {
-						Pair<ConfigPermission, PresetPermission> pair = rule.getValue().getKey();
-						if (pair.getKey() != ConfigPermission.INHERIT) config = pair.getKey();
-						if (pair.getValue() != PresetPermission.INHERIT) preset = pair.getValue();
-					}
-				}
-				return Pair.of(config, preset);
-			}
-			
-			@OnlyIn(Dist.CLIENT) public static boolean canEditServerHotKeys() {
-				ClientPlayerEntity player = Minecraft.getInstance().player;
-				return player != null && canEditServerHotKeys(player);
-			}
-			
-			public static boolean canEditServerHotKeys(PlayerEntity player) {
-				final Set<String> roles = permissions.roles.entrySet().stream().filter(
-				  e -> e.getValue().contains(player.getScoreboardName())
-				).map(Entry::getKey).collect(Collectors.toSet());
-				if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
-					return true;
-				if (player.hasPermissionLevel(2)) roles.add("[op]");
-				roles.add("[all]");
-				for (Pair<String, Boolean> rule: Lists.reverse(hotkey_rules))
-					if (roles.contains(rule.getKey())) return rule.getValue();
-				return false;
-			}
-		}
-	}
-	
-	public enum ListType {
-		WHITELIST, BLACKLIST
-	}
-	
-	public enum ConfigPermission {
-		INHERIT(false, false),
-		DENY(false, false),
-		VIEW_SERVER_CONFIG(true, false),
-		EDIT_SERVER_CONFIG(true, true);
-		
-		private final boolean canView;
-		private final boolean canEdit;
-		
-		ConfigPermission(boolean canView, boolean canEdit) {
-			this.canView = canView;
-			this.canEdit = canEdit;
-		}
-		
-		public boolean canView() {
-			return canView;
-		}
-		public boolean canEdit() {
-			return canEdit;
-		}
-	}
-	
-	public enum PresetPermission {
-		INHERIT(false, false),
-		LOAD_PRESETS(true, false),
-		SAVE_PRESETS(true, true);
-		
-		private final boolean canLoad;
-		private final boolean canSave;
-		
-		PresetPermission(boolean canLoad, boolean canSave) {
-			this.canLoad = canLoad;
-			this.canSave = canSave;
-		}
-		
-		public boolean canLoad() {
-			return canLoad;
-		}
-		public boolean canSave() {
-			return canSave;
-		}
-	}
-	
-	public enum MenuButtonPosition {
-		SPLIT_OPTIONS_BUTTON, LEFT_OF_OPTIONS_BUTTON,
-		TOP_LEFT_CORNER, TOP_RIGHT_CORNER,
-		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
 	}
 	
 	@SubscribeEvent
@@ -460,7 +102,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		  PREV_PAGE, NEXT_PAGE,
 		  UNDO, REDO,
 		  PREV_ERROR, NEXT_ERROR,
-		  SAVE, RESET_RESTORE;
+		  SAVE, RESET_RESTORE, HOTKEY;
 		
 		@SubscribeEvent public static void register(FMLClientSetupEvent event) {
 			event.enqueueWork(() -> {
@@ -475,33 +117,22 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 				NEXT_ERROR = reg("next_error", GLFW.GLFW_KEY_F1);
 				SAVE = reg("save", CONTROL, GLFW.GLFW_KEY_S);
 				RESET_RESTORE = reg("reset_restore", CONTROL, GLFW.GLFW_KEY_R);
+				HOTKEY = reg("hotkey", CONTROL, GLFW.GLFW_KEY_H);
 				
-				MinecraftForge.EVENT_BUS.register(ConfigHotKeyInputHandler.INSTANCE);
+				MinecraftForge.EVENT_BUS.register(ConfigKeyBindProvider.INSTANCE);
 			});
 		}
 		
-		private static KeyBinding reg(String name, int keyCode) {
+		@OnlyIn(Dist.CLIENT) private static KeyBinding reg(String name, int keyCode) {
 			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrMakeInput(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
-		private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
+		
+		@OnlyIn(Dist.CLIENT) private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
 			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrMakeInput(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
-	}
-	
-	private static IFormattableTextComponent makeLink(
-	  String key, @Nullable String tooltipKey, String url, TextFormatting... styles
-	) {
-		return new TranslationTextComponent(key).modifyStyle(s -> {
-			s = s.createStyleFromFormattings(styles);
-			if (tooltipKey != null)
-				s = s.setHoverEvent(new HoverEvent(
-				  Action.SHOW_TEXT, new TranslationTextComponent(tooltipKey)));
-			return s.setClickEvent(new ClickEvent(
-			  ClickEvent.Action.OPEN_URL, url));
-		});
 	}
 }

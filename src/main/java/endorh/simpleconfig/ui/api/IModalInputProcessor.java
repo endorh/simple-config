@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.api;
 
-import endorh.simpleconfig.ui.gui.widget.HotKeyButton;
+import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
 import net.minecraft.client.gui.FocusableGui;
 
 /**
  * Feature interface intended for widgets that can capture modal input from an
  * {@link IModalInputCapableScreen}.<br>
- * Convenient for {@link HotKeyButton}s.
+ * Convenient for {@link KeyBindButton}s.
  */
 public interface IModalInputProcessor {
 	/**
@@ -42,7 +42,7 @@ public interface IModalInputProcessor {
 	 * @see FocusableGui#mouseClicked(double, double, int)
 	 */
 	default boolean modalMouseClicked(double mouseX, double mouseY, int button) {
-		return false;
+		return true;
 	}
 	
 	/**
@@ -51,7 +51,16 @@ public interface IModalInputProcessor {
 	 * @see FocusableGui#mouseReleased(double, double, int)
 	 */
 	default boolean modalMouseReleased(double mouseX, double mouseY, int button) {
-		return false;
+		return true;
+	}
+	
+	/**
+	 * Handle a modal mouse scroll event.
+	 * @return true if modal input processing should continue, false if modal input is released.
+	 * @see FocusableGui#mouseScrolled(double, double, double)
+	 */
+	default boolean modalMouseScrolled(double mouseX, double mouseY, double amount) {
+		return true;
 	}
 	
 	/**

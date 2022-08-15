@@ -51,7 +51,7 @@ public class CaptionedSubCategoryListEntry<
 		super(title);
 		this.entries = Lists.newArrayList(entries);
 		heldEntries = Lists.newArrayList(entries);
-		this.captionEntry = heldEntry;
+		captionEntry = heldEntry;
 		entries.forEach(e -> e.setParentEntry(this));
 		label = new CaptionWidget<>(this);
 		if (heldEntry != null) {

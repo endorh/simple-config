@@ -1,4 +1,4 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.gui.icon;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -17,6 +17,32 @@ import java.util.Objects;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+/**
+ * Icon class abstracting the texture mapping logic from icon rendering.<br>
+ * To map multiple icons from the same texture with ease, use the {@link IconBuilder}.<br>
+ * Supports three rendering methods:
+ * <ul>
+ *    <li>{@link #renderCentered}</li>
+ *    <li>{@link #renderStretch}</li>
+ *    <li>{@link #renderFill}</li>
+ * </ul>
+ * Tinted copies can be created using {@link #withTint} in its many variants.<br><br>
+ * Subclasses may be interested in overriding the following methods:
+ * <ul>
+ *    <li>{@link #withTint(int)}, to return tinted copies of your subclass.</li>
+ *    <li>{@link #beforeRender(int)}, which is called from the 3 rendering methods.</li>
+ *    <li>{@link #afterRender(int)}, which is called from the 3 rendering methods.</li>
+ *    <li>{@link #translateLevel(int)}, to change the hover variants behavior.</li>
+ *    <li>{@link #isTwoLevel()}, to change the hover variants behavior.</li>
+ *    <li>{@link #bindTexture()}, if you need to swap textures.</li>
+ *    <li>{@link #getU()}, for animation purposes.</li>
+ *    <li>{@link #getV()}, for animation purposes.</li>
+ *    <li>{@link #blit(MatrixStack, int, int, int, int, float, float, int, int, int, int)}, to alter the main rendering logic</li>
+ *    <li>{@link #renderCentered(MatrixStack, int, int, int, int, int)}, if the above hooks aren't enough</li>
+ *    <li>{@link #renderStretch(MatrixStack, int, int, int, int, int)}, if the above hooks aren't enough</li>
+ *    <li>{@link #renderFill(MatrixStack, int, int, int, int, int)}, if the above hooks aren't enough</li>
+ * </ul>
+ */
 public class Icon {
 	/**
 	 * The empty icon. Draws nothing.
@@ -30,9 +56,9 @@ public class Icon {
 		@Override public void bindTexture() {}
 	}; // @formatter:on
 	
-	public final ResourceLocation location;
-	public final int u;
-	public final int v;
+	protected final ResourceLocation texture;
+	protected final int u;
+	protected final int v;
 	public final int w;
 	public final int h;
 	public final int levelOffsetX;
@@ -40,21 +66,21 @@ public class Icon {
 	public final int tw;
 	public final int th;
 	public final int tint;
-	public final boolean twoLevel;
+	protected final boolean twoLevel;
 	
-	public Icon(ResourceLocation location, int u, int v, int w, int h, int tw, int th) {
-		this(location, u, v, w, h, tw, th, false);
+	public Icon(ResourceLocation texture, int u, int v, int w, int h, int tw, int th) {
+		this(texture, u, v, w, h, tw, th, false);
 	}
 	
-	public Icon(ResourceLocation location, int u, int v, int w, int h, int tw, int th, boolean twoLevel) {
-		this(location, u, v, w, h, Integer.MAX_VALUE, Integer.MAX_VALUE, tw, th, twoLevel, 0);
+	public Icon(ResourceLocation texture, int u, int v, int w, int h, int tw, int th, boolean twoLevel) {
+		this(texture, u, v, w, h, Integer.MAX_VALUE, Integer.MAX_VALUE, tw, th, twoLevel, 0);
 	}
 	
 	public Icon(
-	  ResourceLocation location, int u, int v, int w, int h, int lX, int lY, int tw, int th,
+	  ResourceLocation texture, int u, int v, int w, int h, int lX, int lY, int tw, int th,
 	  boolean twoLevel, int tint
 	) {
-		this.location = location;
+		this.texture = texture;
 		this.u = u;
 		this.v = v;
 		this.w = w;
@@ -78,7 +104,7 @@ public class Icon {
 	 * @param tint Color to use, in ARGB format.
 	 */
 	@Contract(pure=true) public Icon withTint(int tint) {
-		return new Icon(location, u, v, w, h, levelOffsetX, levelOffsetY, tw, th, twoLevel, tint);
+		return new Icon(getTexture(), u, v, w, h, levelOffsetX, levelOffsetY, tw, th, isTwoLevel(), tint);
 	}
 	
 	/**
@@ -118,7 +144,7 @@ public class Icon {
 	}
 	
 	public int translateLevel(int level) {
-		if (twoLevel)
+		if (isTwoLevel())
 			return max(0, level - 1);
 		return level;
 	}
@@ -140,7 +166,7 @@ public class Icon {
 	public void renderCentered(
 	  MatrixStack mStack, int x, int y, int w, int h, int level
 	) {
-		beforeRender();
+		beforeRender(level);
 		int xx = x + w / 2 - this.w / 2;
 		int yy = y + h / 2 - this.h / 2;
 		final int ww = min(w, this.w);
@@ -152,7 +178,7 @@ public class Icon {
 		blit(
 		  mStack, max(x, xx), max(y, yy), ww, hh,
 		  u, v, ww, hh, tw, th);
-		afterRender();
+		afterRender(level);
 	}
 	
 	public void renderStretch(MatrixStack mStack, Rectangle rect) {
@@ -172,11 +198,11 @@ public class Icon {
 	public void renderStretch(
 	  MatrixStack mStack, int x, int y, int w, int h, int level
 	) {
-		beforeRender();
+		beforeRender(level);
 		final int l = translateLevel(level);
 		blit(mStack, x, y, w, h, getU() + l * levelOffsetX, getV() + l * levelOffsetY,
 		     this.w, this.h, tw, th);
-		afterRender();
+		afterRender(level);
 	}
 	
 	public void renderFill(MatrixStack mStack, Rectangle rect) {
@@ -196,7 +222,7 @@ public class Icon {
 	public void renderFill(
 	  MatrixStack mStack, int x, int y, int w, int h, int level
 	) {
-		beforeRender();
+		beforeRender(level);
 		final int l = translateLevel(level);
 		int u = getU() + l * levelOffsetX;
 		int v = getV() + l * levelOffsetY;
@@ -212,20 +238,24 @@ public class Icon {
 			blit(mStack, xx, yy, xw, this.h, u, v, xw, this.h, tw, th);
 		yh = y + h - yy;
 		blit(mStack, xx, yy, xw, yh, u, v, xw, yh, tw, th);
-		afterRender();
+		afterRender(level);
 	}
 	
-	protected void beforeRender() {
+	protected void beforeRender(int level) {
 		bindTexture();
 		if (tint != 0) setShaderColorMask(tint);
 	}
 	
-	protected void afterRender() {
+	protected void afterRender(int level) {
 		removeShaderColorMask();
 	}
 	
 	public void bindTexture() {
-		Minecraft.getInstance().getTextureManager().bindTexture(location);
+		Minecraft.getInstance().getTextureManager().bindTexture(getTexture());
+	}
+	
+	public ResourceLocation getTexture() {
+		return texture;
 	}
 	
 	public int getU() {
@@ -234,6 +264,10 @@ public class Icon {
 	
 	public int getV() {
 		return v;
+	}
+	
+	public boolean isTwoLevel() {
+		return twoLevel;
 	}
 	
 	protected void blit(
@@ -246,7 +280,7 @@ public class Icon {
 	}
 	
 	public static class IconBuilder {
-		private ResourceLocation location;
+		private ResourceLocation texture;
 		private int tw = 256;
 		private int th = 256;
 		
@@ -258,8 +292,20 @@ public class Icon {
 		private int lX = Integer.MAX_VALUE;
 		private int lY = Integer.MAX_VALUE;
 		
+		private int u = 0;
+		private int v = 0;
 		private int w = 24;
 		private int h = 24;
+		
+		private int cropU = 0;
+		private int cropV = 0;
+		private int cropW = 0;
+		private int cropH = 0;
+		
+		private int patchL = 0;
+		private int patchT = 0;
+		private int patchR = 0;
+		private int patchB = 0;
 		
 		private boolean twoLevel = false;
 		
@@ -270,16 +316,16 @@ public class Icon {
 		}
 		
 		private IconBuilder(ResourceLocation location) {
-			this.location = location;
+			texture = location;
 		}
 		
 		/**
 		 * Change the texture of the icons.
 		 */
 		public IconBuilder texture(ResourceLocation location, int width, int height) {
-			this.location = location;
-			this.tw = width;
-			this.th = height;
+			texture = location;
+			tw = width;
+			th = height;
 			return this;
 		}
 		
@@ -315,8 +361,8 @@ public class Icon {
 		 * Change the offset applied to all created icons
 		 */
 		public IconBuilder offset(int ox, int oy) {
-			this.ou = ox;
-			this.ov = oy;
+			ou = ox;
+			ov = oy;
 			return this;
 		}
 		
@@ -325,9 +371,91 @@ public class Icon {
 		 * Convenient for icons arranged from right to left (at the right edge of the texture).
 		 */
 		public IconBuilder reverseOffset(boolean reverseX, boolean reverseY) {
-			this.revU = reverseX;
-			this.revV = reverseY;
+			revU = reverseX;
+			revV = reverseY;
 			return this;
+		}
+		
+		/**
+		 * Define icon coordinates to be used in subsequent calls to
+		 * {@link #crop(int, int, int, int)}, to generate cropped icons from the same position.
+		 * @see #cropArea(int, int, int, int)
+		 */
+		public IconBuilder cropPos(int baseU, int baseV) {
+			u = baseU;
+			v = baseV;
+			return this;
+		}
+		
+		/**
+		 * Define a crop area to be used in subsequent calls to {@link #cropAt(int, int)}, to generate
+		 * icons with the same crop area at different positions.
+		 */
+		public IconBuilder cropArea(int uOffset, int vOffset, int cropW, int cropH) {
+			cropU = uOffset;
+			cropV = vOffset;
+			this.cropW = cropW;
+			this.cropH = cropH;
+			return this;
+		}
+		
+		/**
+		 * Create a cropped icon at the given pos, using the previous crop area set by
+		 * {@link #cropArea(int, int, int, int)}.
+		 * @see #crop(int, int, int, int)
+		 * @see #cropPos(int, int)
+		 */
+		public CropIcon cropAt(int baseU, int baseV) {
+			return new CropIcon(
+			  texture, revU? ou - baseU - w : ou + baseU, revV? ov - baseV - h : ov + baseV, w, h,
+			  lX, lY, tw, th, twoLevel, 0, cropU, cropV, cropW, cropH);
+		}
+		
+		/**
+		 * Create a cropped icon using the previous crop area set by
+		 * {@link #cropArea(int, int, int, int)}, but using the passed coordinates
+		 * as the top left corner of the resulting crop area.<br><br>
+		 * In general, you might want to use {@link #cropAt(int, int)} instead, but this
+		 * variant is convenient when multiple variants of a crop icon do not fit in the same
+		 * crop position.
+		 */
+		public CropIcon cropFor(int cropU, int cropV) {
+			return cropAt(cropU  - this.cropU, cropV - this.cropV);
+		}
+		
+		/**
+		 * Create a cropped icon using the given crop area, and the position set by {@link #cropPos(int, int)}<br>
+		 * Cropped icons only render their cropped region, leaving the rest of their area
+		 * transparent, which is useful for rendering composed icons.
+		 * @see #cropAt(int, int)
+		 * @see #cropArea(int, int, int, int)
+		 */
+		public CropIcon crop(int uOffset, int vOffset, int cropW, int cropH) {
+			return new CropIcon(
+			  texture, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h, lX, lY,
+			  tw, th, twoLevel, 0, uOffset, vOffset, cropW, cropH);
+		}
+		
+		/**
+		 * Configure margin sizes to create 9 patch icons with {@link #patchAt(int, int)}.
+		 */
+		public IconBuilder patchSize(int left, int top, int right, int bottom) {
+			patchL = left;
+			patchT = top;
+			patchR = right;
+			patchB = bottom;
+			return this;
+		}
+		
+		/**
+		 * Create a 9 patch icon, using the margin sizes defined by
+		 * a previous call to {@link #patchSize(int, int, int, int)}
+		 */
+		public NinePatchIcon patchAt(int u, int v) {
+			return new NinePatchIcon(
+			  texture, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h,
+			  patchL, patchT, w - patchL - patchR, h - patchT - patchB,
+			  lX, lY, tw, th, twoLevel, 0);
 		}
 		
 		/**
@@ -336,7 +464,7 @@ public class Icon {
 		 */
 		public Icon at(int u, int v) {
 			return new Icon(
-			  location, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h,
+			  texture, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h,
 			  lX, lY, tw, th, twoLevel, 0);
 		}
 	}

@@ -4,165 +4,167 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.api.Modifier;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import endorh.simpleconfig.ui.impl.builders.KeyCodeBuilder;
+import endorh.simpleconfig.ui.impl.builders.KeyBindFieldBuilder;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 
 /**
- * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
- * This is because handling mouse keys requires extra code on your end,
- * if you only ever handle keyCode and scanCode in keyPress events, you won't
- * be able to detect mouse keys.<br><br>
- * <b>Prefer registering regular {@link KeyBinding}s through
+ * Key binding entry. Supports advanced key combinations, and other advanced
+ * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
+ * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
+ * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
+ * <b>Consider registering regular {@link KeyBinding}s through
  * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
  * </b><br>
- * <b>KeyBindings registered the proper way can be configured altogether with
- * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
- * The only encouraged use of KeyBind entries is when you need further
- * flexibility, such as <em>a map of KeyBinds to user-defined actions of some kind</em>.
- * Use wisely.
  */
 @OnlyIn(Dist.CLIENT)
 public class KeyBindEntry extends AbstractConfigEntry<
-  ModifierKeyCode, String, ModifierKeyCode
-  > implements IKeyEntry<ModifierKeyCode> {
-	protected boolean allowKey = true;
-	protected boolean allowModifiers = true;
-	protected boolean allowMouse = true;
+  KeyBindMapping, String, KeyBindMapping
+> implements IKeyEntry<KeyBindMapping> {
+	// Give entries without an assigned keybind a fallback keybind that can be used
+	//   to identify them for overlap detection.
+	private static final Map<AbstractConfigListEntry<?>, ExtendedKeyBind> UNBOUND_KEYBINDS = new HashMap<>();
+	private static final ExtendedKeyBindProvider UNBOUND_PROVIDER = new ExtendedKeyBindProvider() {
+		@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+			return Collections.emptyList();
+		}
+		@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
+			return UNBOUND_KEYBINDS.values();
+		}
+		@Override public int getPriority() {
+			return -1000; // Low priority
+		}
+	};
+	static { ExtendedKeyBindDispatcher.registerProvider(UNBOUND_PROVIDER); }
 	
-	public KeyBindEntry(ISimpleConfigEntryHolder parent, String name, ModifierKeyCode value) {
+	protected ExtendedKeyBindSettings defaultSettings;
+	protected @Nullable ExtendedKeyBind keyBind;
+	protected boolean reportOverlaps = true;
+	private ExtendedKeyBind pendingKeyBind = null;
+	
+	public KeyBindEntry(ISimpleConfigEntryHolder parent, String name, KeyBindMapping value) {
 		super(parent, name, value);
 	}
 	
 	public static class Builder extends AbstractConfigEntryBuilder<
-	  ModifierKeyCode, String, ModifierKeyCode, KeyBindEntry, Builder> {
-		
-		protected boolean allowKey = true;
-		protected boolean allowModifiers = true;
-		// False by default, since allowing requires implementing
-		//   additional code to handle mouse keys.
-		//   Allowing by default would be error-prone.
-		protected boolean allowMouse = false;
+	  KeyBindMapping, String, KeyBindMapping, KeyBindEntry, Builder
+	> {
+		protected ExtendedKeyBindSettings defaultSettings = ExtendedKeyBindSettings.ingame().build();
+		protected @Nullable ExtendedKeyBind keyBind = null;
+		protected boolean reportOverlaps = true;
+		protected boolean inheritTitle = false;
 		
 		public Builder() {
-			this(ModifierKeyCode.unknown());
+			this(KeyBindMapping.unset());
 		}
 		
 		public Builder(String key) {
-			this(ModifierKeyCode.parse(key));
+			this(KeyBindMapping.parse(key));
 		}
 		
-		public Builder(InputMappings.Input key, Modifier modifier) {
-			this(ModifierKeyCode.of(key, modifier));
+		public Builder(KeyBindMapping value) {
+			super(value, KeyBindMapping.class);
 		}
 		
-		public Builder(ModifierKeyCode value) {
-			super(value, ModifierKeyCode.class);
-		}
-		
-		@Contract(pure=true) public Builder allowModifiers(boolean allowModifiers) {
-			final Builder copy = copy();
-			copy.allowModifiers = allowModifiers;
-			return copy;
-		}
-		
-		@Contract(pure=true) public Builder allowModifiers() {
-			return allowModifiers(true);
-		}
-		@Contract(pure=true) public Builder noModifiers() {
-			return allowModifiers(false);
-		}
-		
-		@Contract(pure=true) public Builder keyboard(boolean allowKeys) {
-			final Builder copy = copy();
-			copy.allowKey = allowKeys;
+		/**
+		 * Configure the default keybind settings for this entry.
+		 */
+		public Builder withDefaultSettings(ExtendedKeyBindSettings settings) {
+			Builder copy = copy();
+			copy.defaultSettings = settings;
 			return copy;
 		}
 		
 		/**
-		 * Allow/disallow mouse keys.<br>
-		 * <b>Warning:</b> If you allow mouse KeyBinds, your code must
-		 * expect them. If you only check for keyCode and scanCode, you
-		 * won't be able to handle mouse KeyBinds.
+		 * Set the associated keybind for this entry, used for overlap reporting.
 		 */
-		@Contract(pure=true) public Builder mouse(boolean allowMouse) {
-			final Builder copy = copy();
-			copy.allowMouse = allowMouse;
+		public Builder bakeTo(ExtendedKeyBind keyBind) {
+			Builder copy = copy();
+			copy.keyBind = keyBind;
 			return copy;
 		}
 		
 		/**
-		 * Allow mouse keys.<br>
-		 * <b>Warning:</b> If you allow mouse KeyBinds, your code must
-		 * expect them. If you only check for keyCode and scanCode, you
-		 * won't be able to handle mouse KeyBinds.
+		 * Configure if the entry should report global overlaps with other keybinds.
 		 */
-		@Contract(pure=true) public Builder allowMouse() {
-			return mouse(true);
+		public Builder reportOverlaps(boolean reportOverlaps) {
+			Builder copy = copy();
+			copy.reportOverlaps = reportOverlaps;
+			return copy;
 		}
 		
 		/**
-		 * Only allow mouse keys.<br>
-		 * <b>Warning:</b> If you allow mouse KeyBinds, your code must
-		 * expect them. If you only check for keyCode and scanCode, you
-		 * won't be able to handle mouse KeyBinds.
+		 * Replace this' keybind's title with the title of this entry.
 		 */
-		@Contract(pure=true) public Builder mouseOnly() {
-			return mouse(true).keyboard(false);
+		public Builder inheritTitle() {
+			return inheritTitle(true);
+		}
+		
+		/**
+		 * Replace this' keybind's title with the title of this entry.
+		 */
+		public Builder inheritTitle(boolean inheritTitle) {
+			Builder copy = copy();
+			copy.inheritTitle = inheritTitle;
+			return copy;
 		}
 		
 		@Override protected KeyBindEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (!allowKey && !allowMouse) throw new IllegalArgumentException(
-			  "KeyBindEntry must allow either keys, mouse or both");
 			final KeyBindEntry entry = new KeyBindEntry(parent, name, value);
-			entry.allowModifiers = allowModifiers;
-			entry.allowKey = allowKey;
-			entry.allowMouse = allowMouse;
+			entry.defaultSettings = defaultSettings;
+			entry.keyBind = keyBind;
+			entry.reportOverlaps = reportOverlaps;
+			if (inheritTitle && keyBind != null)
+				keyBind.setTitle(entry.getDisplayName());
 			return entry;
 		}
 		
 		@Override protected Builder createCopy() {
 			final Builder copy = new Builder(value.copy());
-			copy.allowModifiers = allowModifiers;
-			copy.allowKey = allowKey;
-			copy.allowMouse = allowMouse;
+			copy.defaultSettings = defaultSettings;
+			copy.keyBind = keyBind;
+			copy.reportOverlaps = reportOverlaps;
 			return copy;
 		}
 	}
 	
-	@Override public String forConfig(ModifierKeyCode value) {
-		return value != null ? value.serializedName() : "";
+	@Override public String forConfig(KeyBindMapping value) {
+		return value != null ? value.serialize() : "";
 	}
 	
-	@Nullable @Override public ModifierKeyCode fromConfig(@Nullable String value) {
-		return ModifierKeyCode.parse(value);
+	@Override public KeyBindMapping fromConfig(@Nullable String value) {
+		return value == null? null : KeyBindMapping.parse(value);
+	}
+	
+	@Override protected void setGuiEntry(@Nullable AbstractConfigListEntry<KeyBindMapping> guiEntry) {
+		if (guiEntry != null && pendingKeyBind != null) {
+			UNBOUND_KEYBINDS.put(guiEntry, pendingKeyBind);
+			pendingKeyBind = null;
+		} else if (guiEntry == null)
+			UNBOUND_KEYBINDS.remove(getGuiEntry(false));
+		super.setGuiEntry(guiEntry);
+		if (keyBind != null) keyBind.setCandidateDefinition(null);
 	}
 	
 	protected String getTypeComment() {
-		if (allowKey && allowMouse) {
-			return "Mouse/Keyboard Key";
-		} else if (allowKey) {
-			return "Key";
-		} else return "Mouse Key";
+		return "Hotkey";
 	}
 	
 	protected String getFormatComment() {
-		StringBuilder b = new StringBuilder();
-		if (allowModifiers) b.append("[ctrl+][shift+][alt+]");
-		b.append("key");
-		return b.toString();
+		return "!key+\"char\"+mouse.left!>:press#game";
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {
@@ -171,16 +173,26 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		return tooltips;
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<ModifierKeyCode, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
-	) {
-		final KeyCodeBuilder valBuilder = builder
-		  .startModifierKeyCodeField(getDisplayName(), forGui(get()))
-		  .setAllowKey(allowKey)
-		  .setAllowModifiers(allowModifiers)
-		  .setAllowMouse(allowMouse);
-		return Optional.of(decorate(valBuilder));
+	protected @Nullable ExtendedKeyBind createFallbackKeyBind() {
+		ExtendedKeyBind keyBind = new ExtendedKeyBind(
+		  parent.getRoot().getModId(), getDisplayName(),
+		  get(), () -> {});
+		pendingKeyBind = keyBind;
+		return keyBind;
 	}
 	
+	@Override protected void bakeField() {
+		super.bakeField();
+		if (keyBind != null) keyBind.setDefinition(get());
+	}
+	
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<FieldBuilder<KeyBindMapping, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+		final KeyBindFieldBuilder valBuilder = builder
+		  .startKeyBindField(getDisplayName(), forGui(get()))
+		  .setAssociatedKeyBind(keyBind != null? keyBind : createFallbackKeyBind())
+		  .setReportOverlaps(reportOverlaps)
+		  .setDefaultSettings(defaultSettings);
+		return Optional.of(decorate(valBuilder));
+	}
 }

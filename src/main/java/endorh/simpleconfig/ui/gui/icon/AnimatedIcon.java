@@ -1,4 +1,4 @@
-package endorh.simpleconfig.ui.gui;
+package endorh.simpleconfig.ui.gui.icon;
 
 import net.minecraft.util.ResourceLocation;
 
@@ -37,7 +37,7 @@ public class AnimatedIcon extends Icon {
 	
 	@Override public AnimatedIcon withTint(int tint) {
 		return new AnimatedIcon(
-		  location, u, v, w, h, levelOffsetX, levelOffsetY, tw, th,
+		  getTexture(), u, v, w, h, levelOffsetX, levelOffsetY, tw, th,
 		  twoLevel, tint, rows, cols, delay);
 	}
 	
@@ -57,8 +57,8 @@ public class AnimatedIcon extends Icon {
 		return v + (lastFrame / rows) * h;
 	}
 	
-	@Override protected void beforeRender() {
-		super.beforeRender();
+	@Override protected void beforeRender(int level) {
+		super.beforeRender(level);
 		update();
 	}
 	

@@ -8,6 +8,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,6 +25,7 @@ public class HotKeyActionButton<T> extends MultiFunctionIconButton {
 		defaultAction = ButtonAction.of(i -> {
 			if (!entry.isEditingHotKeyAction())
 				entry.getScreen().setEditedConfigHotKey(new ConfigHotKey(), null);
+			if (i == -1) i = Screen.hasShiftDown()? 1 : 0;
 			changeAction(i == 0? 1 : i == 1? -1 : 0);
 		}).tooltip(this::getTypeTooltip)
 		  .build();

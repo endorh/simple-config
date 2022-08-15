@@ -1,12 +1,11 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.IConfigHotKeyGroupEntry;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
@@ -17,37 +16,41 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
-	private ModifierKeyCode keyCode;
+	private final ExtendedKeyBind keyBind;
+	private KeyBindMapping keyMapping;
 	private String name = "";
 	private boolean enabled = true;
 	private Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions;
 	private Map<String, Map<String, Map<String, Object>>> unknown;
 	
 	public ConfigHotKey() {
-		this(ModifierKeyCode.unknown(), new LinkedHashMap<>(), new LinkedHashMap<>());
+		this(KeyBindMapping.unset(), new LinkedHashMap<>(), new LinkedHashMap<>());
 	}
 	
 	public ConfigHotKey(
-	  ModifierKeyCode keyCode, Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions,
+	  KeyBindMapping keyMapping, Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions,
 	  Map<String, Map<String, Map<String, Object>>> unknown
 	) {
-		this.keyCode = keyCode;
+		this.keyMapping = keyMapping;
 		this.actions = actions;
 		this.unknown = unknown;
+		keyBind = new ExtendedKeyBind(getTitle(), keyMapping, this::applyHotkey);
 	}
 	
 	@Override public void applyHotkey() {
 		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = getActions();
 		Map<Pair<String, EditType>, HotKeyExecutionContext> contexts = new HashMap<>();
-		actions.forEach((pair, configActions) -> configActions.forEach((path, action) -> {
+		actions.forEach((pair, configActions) -> {
 			SimpleConfig config = getConfig(pair);
 			if (config != null) {
 				HotKeyExecutionContext context = contexts.computeIfAbsent(
 				  pair, k -> new HotKeyExecutionContext(config));
-				ITextComponent r = action.apply(config, path, context.result);
-				if (r != null) context.report.add(r);
+				configActions.forEach((path, action) -> {
+					ITextComponent r = action.apply(config, path, context.result);
+					if (r != null) context.report.add(r);
+				});
 			}
-		}));
+		});
 		List<ITextComponent> messages = new ArrayList<>();
 		contexts.forEach((pair, context) -> {
 			if (pair.getRight().isRemote()) {
@@ -65,12 +68,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 				messages.addAll(context.report);
 			}
 		});
-		int size = messages.size();
-		if (size > 4) {
-			 messages.subList(4, size).clear();
-			 messages.add(new TranslationTextComponent("simpleconfig.hotkey.more", size - 4));
-		}
-		ConfigHotKeyOverlay.addMessage(getTitle(), messages);
+		ConfigHotKeyLogger.logHotKey(getCaption(), messages);
 	}
 	
 	private static class HotKeyExecutionContext {
@@ -82,11 +80,14 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		}
 	}
 	
-	public ITextComponent getTitle() {
-		IFormattableTextComponent title = new StringTextComponent(name != null? name + " " : "")
+	public IFormattableTextComponent getTitle() {
+		return new StringTextComponent(name != null? name : "")
 		  .mergeStyle(TextFormatting.WHITE);
-		title.append(getHotKey().getLocalizedName(TextFormatting.BLUE, TextFormatting.BLUE).deepCopy());
-		return title;
+	}
+	
+	public ITextComponent getCaption() {
+		return getTitle().appendString(" ").append(
+		  getKeyMapping().getDisplayName(TextFormatting.GRAY));
 	}
 	
 	public String getName() {
@@ -94,13 +95,18 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	}
 	public void setName(String name) {
 		this.name = name;
+		keyBind.setTitle(getTitle());
 	}
 	
-	@Override public ModifierKeyCode getHotKey() {
-		return keyCode;
+	@Override public ExtendedKeyBind getKeyBind() {
+		return keyBind;
 	}
-	public void setKeyCode(ModifierKeyCode keyCode) {
-		this.keyCode = keyCode;
+	@Override public KeyBindMapping getKeyMapping() {
+		return keyMapping;
+	}
+	public void setKeyMapping(KeyBindMapping keyMapping) {
+		this.keyMapping = keyMapping;
+		keyBind.setDefinition(keyMapping);
 	}
 	
 	public boolean isEnabled() {
@@ -124,7 +130,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	}
 	
 	@Override public Object getSerializationKey() {
-		return getHotKey().serializedName();
+		return getKeyMapping().serialize();
 	}
 	@Override public Object serialize() {
 		return Util.make(new LinkedHashMap<>(), m -> {
@@ -170,7 +176,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		return new HotKeyActionWrapper<>(type, value);
 	}
 	
-	public static ConfigHotKey deserialize(ModifierKeyCode keyCode, Map<Object, Object> packed) {
+	public static ConfigHotKey deserialize(KeyBindMapping keyCode, Map<Object, Object> packed) {
 		boolean enabled = getAsOrElse(packed, "enabled", Boolean.class, true);
 		String name = getAsOrElse(packed, "name", String.class, "");
 		Map<?, ?> a = getAsOrElse(packed, "actions", Map.class, null);
@@ -232,7 +238,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	
 	public ConfigHotKey copy() {
 		ConfigHotKey hotKey = new ConfigHotKey();
-		hotKey.setKeyCode(keyCode);
+		hotKey.setKeyMapping(keyMapping);
 		hotKey.setName(name);
 		hotKey.setEnabled(enabled);
 		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = new LinkedHashMap<>();
@@ -251,12 +257,12 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		ConfigHotKey that = (ConfigHotKey) o;
-		return enabled == that.enabled && keyCode.equals(that.keyCode)
+		return enabled == that.enabled && keyMapping.equals(that.keyMapping)
 		       && name.equals(that.name) && actions.equals(that.actions)
 		       && unknown.equals(that.unknown);
 	}
 	
 	@Override public int hashCode() {
-		return Objects.hash(keyCode, name, enabled, actions, unknown);
+		return Objects.hash(keyMapping, name, enabled, actions, unknown);
 	}
 }

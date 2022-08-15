@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.core.PairList;
 import endorh.simpleconfig.core.SimpleConfigPaths;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
@@ -63,6 +62,7 @@ public class ConfigHotKeyManager {
 			INSTANCE.defaultGroupQueue = null;
 			queue.forEach(INSTANCE::addDefaultGroup);
 		}
+		ExtendedKeyBindDispatcher.registerProvider(ConfigKeyBindProvider.INSTANCE);
 	}
 	
 	public void addDefaultGroup(ConfigHotKeyGroup group) {
@@ -187,35 +187,47 @@ public class ConfigHotKeyManager {
 	}
 	
 	private void updateHotKeys(List<IConfigHotKey> keys, ConfigHotKeyGroup group) {
-		if (!group.getHotKey().isUnknown()) keys.add(group);
+		if (!group.getKeyMapping().isUnset()) keys.add(group);
 		if (group.isEnabled()) for (IConfigHotKeyGroupEntry entry: group.getEntries()) {
 			if (entry instanceof ConfigHotKeyGroup) {
 				updateHotKeys(keys, (ConfigHotKeyGroup) entry);
 			} else if (entry instanceof ConfigHotKey) {
 				ConfigHotKey hotkey = (ConfigHotKey) entry;
-				if (hotkey.isEnabled() && !hotkey.getHotKey().isUnknown()) keys.add(hotkey);
+				if (hotkey.isEnabled() && !hotkey.getKeyMapping().isUnset()) keys.add(hotkey);
 			}
 		}
 	}
 	
 	public static class ConfigHotKeyGroup implements IConfigHotKeyGroupEntry, IConfigHotKey {
+		private final ExtendedKeyBind keyBind;
 		private String name = "";
-		private ModifierKeyCode keyCode = ModifierKeyCode.unknown();
+		private KeyBindMapping keyMapping = KeyBindMapping.unset();
 		private boolean enabled = true;
 		private final List<IConfigHotKeyGroupEntry> entries = new ArrayList<>();
+		
+		public ConfigHotKeyGroup() {
+			keyBind = new ExtendedKeyBind(
+			  new StringTextComponent(getName()),
+			  keyMapping, this::applyHotkey);
+		}
 		
 		public String getName() {
 			return name;
 		}
 		public void setName(String name) {
 			this.name = name;
+			keyBind.setTitle(new StringTextComponent(name));
 		}
 		
-		@Override public ModifierKeyCode getHotKey() {
-			return keyCode;
+		@Override public ExtendedKeyBind getKeyBind() {
+			return keyBind;
 		}
-		public void setKeyCode(ModifierKeyCode keyCode) {
-			this.keyCode = keyCode;
+		@Override public KeyBindMapping getKeyMapping() {
+			return keyMapping;
+		}
+		public void setKeyMapping(KeyBindMapping keyMapping) {
+			this.keyMapping = keyMapping;
+			keyBind.setDefinition(keyMapping);
 		}
 		
 		public boolean isEnabled() {
@@ -241,7 +253,7 @@ public class ConfigHotKeyManager {
 			enabled = !enabled;
 			ConfigHotKeyManager manager = ConfigHotKeyManager.INSTANCE;
 			manager.updateHotKeys(manager.getHotKeys());
-			ConfigHotKeyOverlay.addMessage(getHotkeyReport(enabled), Collections.emptyList());
+			ConfigHotKeyLogger.logHotKey(getHotkeyReport(enabled), Collections.emptyList());
 		}
 		
 		public ITextComponent getHotkeyReport(boolean enable) {
@@ -254,7 +266,7 @@ public class ConfigHotKeyManager {
 		@Override public Map<String, Object> serialize() {
 			return Util.make(new LinkedHashMap<>(2), m -> {
 				m.put("enabled", enabled);
-				if (!keyCode.isUnknown()) m.put("key", keyCode.serializedName());
+				if (!keyMapping.isUnset()) m.put("key", keyMapping.serialize());
 				m.put("entries", new PairList<>(entries.stream().map(
 				  e -> Pair.of(e.getSerializationKey(), e.serialize())
 				).collect(Collectors.toList())));
@@ -268,7 +280,8 @@ public class ConfigHotKeyManager {
 				Object enabled = value.get("enabled");
 				group.setEnabled(enabled instanceof Boolean ? (Boolean) enabled : true);
 				Object groupKey = value.get("key");
-				group.setKeyCode(groupKey instanceof String? ModifierKeyCode.parse(((String) groupKey)) : ModifierKeyCode.unknown());
+				group.setKeyMapping(groupKey instanceof String?
+				                    KeyBindMapping.parse(((String) groupKey)) : KeyBindMapping.unset());
 				Object entries = value.get("entries");
 				if (entries instanceof PairList) {
 					((PairList<?, ?>) entries).forEach((k, v) -> {
@@ -279,7 +292,7 @@ public class ConfigHotKeyManager {
 								ConfigHotKeyGroup sub = deserialize(nm, (Map<?, ?>) v);
 								group.addEntry(sub);
 							} else {
-								ModifierKeyCode keyCode = ModifierKeyCode.parse(key);
+								KeyBindMapping keyCode = KeyBindMapping.parse(key);
 								if (v instanceof Map) {
 									//noinspection unchecked
 									group.addEntry(ConfigHotKey.deserialize(
@@ -298,15 +311,15 @@ public class ConfigHotKeyManager {
 			if (o == null || getClass() != o.getClass()) return false;
 			ConfigHotKeyGroup that = (ConfigHotKeyGroup) o;
 			return enabled == that.enabled && name.equals(that.name)
-			       && keyCode.equals(that.keyCode) && entries.equals(that.entries);
+			       && keyMapping.equals(that.keyMapping) && entries.equals(that.entries);
 		}
 		
 		@Override public int hashCode() {
-			return Objects.hash(name, keyCode, enabled, entries);
+			return Objects.hash(name, keyMapping, enabled, entries);
 		}
 	}
 	
-	public interface IConfigHotKeyGroupEntry {
+	public interface IConfigHotKeyGroupEntry extends IConfigHotKey {
 		Object getSerializationKey();
 		Object serialize();
 	}

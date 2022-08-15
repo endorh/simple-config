@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
@@ -105,7 +105,7 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@Override public @Nullable E fromActualConfig(@Nullable Object value) {
 		if (!(value instanceof String)) return null;
-		return parseName(((String) value));
+		return parseName((String) value);
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {

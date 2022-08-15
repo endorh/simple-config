@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.screen.Screen;
@@ -39,7 +39,7 @@ public class ToggleImageButton extends ImageButton {
 	  boolean value, int x, int y, int width, int height, Icon icon,
 	  @Nullable Consumer<Boolean> onChange
 	) {
-		super(x, y, width, height, icon.u, icon.v, icon.h, icon.location, b -> {});
+		super(x, y, width, height, icon.getU(), icon.getV(), icon.h, icon.getTexture(), b -> {});
 		this.toggle = value;
 		this.icon = icon;
 		this.onChange = onChange;

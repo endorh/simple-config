@@ -2,11 +2,14 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.config.ClientConfig.hotkey_log.overlay;
+import endorh.simpleconfig.config.ClientConfig.hotkey_log.toast;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -20,14 +23,25 @@ import java.util.ListIterator;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static net.minecraft.client.gui.AbstractGui.drawString;
 import static net.minecraft.client.gui.AbstractGui.fill;
 
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
 public class ConfigHotKeyOverlay {
 	private static final List<QueuedHotKeyMessage> messages = new ArrayList<>();
-	private static final int DURATION = 1500;
 	private static final int FADE_OUT = 500;
+	private static ITextComponent toastMessage;
+	private static long toastTimestamp;
+	
+	public static void addToastMessage(String message) {
+		addToastMessage(new StringTextComponent(message));
+	}
+	
+	public static void addToastMessage(ITextComponent message) {
+		ConfigHotKeyOverlay.toastMessage = message;
+		toastTimestamp = System.currentTimeMillis();
+	}
 	
 	public static void addMessage(ITextComponent title, List<ITextComponent> message) {
 		QueuedHotKeyMessage m = new QueuedHotKeyMessage(title, message, System.currentTimeMillis());
@@ -39,13 +53,19 @@ public class ConfigHotKeyOverlay {
 	@SubscribeEvent public static void onRenderOverlay(RenderGameOverlayEvent.Post event) {
 		if (event.getType() == ElementType.ALL) {
 			MatrixStack mStack = event.getMatrixStack();
+			long time = System.currentTimeMillis();
+			ITextComponent msg = toastMessage;
+			if (msg != null) {
+				if (time - toastTimestamp > toast.display_time_ms) toastMessage = null;
+				renderToastMessage(mStack, msg);
+			}
 			MainWindow window = event.getWindow();
 			int w = window.getScaledWidth();
 			int h = window.getScaledHeight();
 			int b = (int) (h * 0.9);
 			int minY = (int) (h * 0.5);
 			int maxWidth = (int) (w * 0.35);
-			long time = System.currentTimeMillis();
+			int duration = overlay.display_time_ms;
 			synchronized (messages) {
 				if (messages.isEmpty()) return;
 				ListIterator<QueuedHotKeyMessage> iter = messages.listIterator(messages.size());
@@ -53,11 +73,33 @@ public class ConfigHotKeyOverlay {
 					QueuedHotKeyMessage message = iter.previous();
 					if (b <= minY) message.evict();
 					b -= message.getHeight();
-					message.render(mStack, w, b, maxWidth);
-					if (time - message.getTimestamp() > DURATION + FADE_OUT) iter.remove();
+					if (time - message.getTimestamp() > duration) {
+						iter.remove();
+					} else message.render(mStack, w, b, maxWidth);
 				}
 			}
 		}
+	}
+	
+	private static void renderToastMessage(MatrixStack mStack, ITextComponent message) {
+		int duration = max(0, toast.display_time_ms - FADE_OUT);
+		long time = System.currentTimeMillis() - toastTimestamp;
+		if (time >= duration + FADE_OUT) return;
+		float alpha = time > duration? 1F - (time - duration) / (float) FADE_OUT : 1F;
+		if (alpha < 0.05F) return; // Small alpha values render as opaque?
+		FontRenderer font = Minecraft.getInstance().fontRenderer;
+		int width = font.getStringPropertyWidth(message);
+		MainWindow window = Minecraft.getInstance().getMainWindow();
+		int screenWidth = window.getScaledWidth();
+		int screenHeight = window.getScaledHeight();
+		int textX = screenWidth / 2 - width / 2;
+		int textY = (int) ((screenHeight - font.FONT_HEIGHT - 2) * (1F - toast.relative_height));
+		int opacity = (int) (0xFF * (toast.background_opacity * 0.9F + 0.1F));
+		int backgroundColor = alpha(opacity << 24, alpha);
+		int textColor = alpha(0xE0E0E0E0, alpha);
+		fill(mStack, textX - 2, textY - 1, textX + width + 4,
+		     textY + font.FONT_HEIGHT + 2, backgroundColor);
+		drawString(mStack, font, message, textX, textY, textColor);
 	}
 	
 	public static class QueuedHotKeyMessage {
@@ -84,14 +126,17 @@ public class ConfigHotKeyOverlay {
 		}
 		
 		public void evict() {
+			int duration = max(0, overlay.display_time_ms - FADE_OUT);
 			long time = System.currentTimeMillis();
-			if (time - timestamp < DURATION) timestamp = time - DURATION;
+			if (time - timestamp < duration) timestamp = time - duration;
 		}
 		
 		public void render(MatrixStack mStack, int r, int y, int maxWidth) {
+			int duration = max(0, overlay.display_time_ms - FADE_OUT);
 			long time = System.currentTimeMillis() - getTimestamp();
-			if (time >= DURATION + FADE_OUT) return;
-			float alpha = time > DURATION? 1F - (time - DURATION) / (float) FADE_OUT : 1F;
+			if (time >= duration + FADE_OUT) return;
+			float alpha = time > duration? 1F - (time - duration) / (float) FADE_OUT : 1F;
+			if (alpha < 0.05F) return; // Small alpha values render as opaque?
 			FontRenderer font = Minecraft.getInstance().fontRenderer;
 			List<ITextComponent> messages = getMessage();
 			ITextComponent title = getTitle();
@@ -101,7 +146,7 @@ public class ConfigHotKeyOverlay {
 			int lH = font.FONT_HEIGHT + 2;
 			int h = lH * (messages.size() + 1);
 			int x = r - width - 2;
-			int opacity = (int) (0xFF * ((float) Minecraft.getInstance().gameSettings.accessibilityTextBackgroundOpacity * 0.9F + 0.1F));
+			int opacity = (int) (0xFF * (overlay.background_opacity * 0.9F + 0.1F));
 			int backgroundColor = alpha(opacity << 24, alpha);
 			int textColor = alpha(0xE0E0E0E0, alpha);
 			fill(mStack, x, y, r, y + h, backgroundColor);
@@ -128,8 +173,8 @@ public class ConfigHotKeyOverlay {
 			return lineHeight * (getMessage().size() + 1);
 		}
 		
-		private int alpha(int color, float alpha) {
-			return 0xFFFFFF & color | (int) (((color >> 24) & 0xFF) * alpha) << 24;
-		}
+	}
+	private static int alpha(int color, float alpha) {
+		return 0xFFFFFF & color | (int) ((color >> 24 & 0xFF) * alpha) << 24;
 	}
 }

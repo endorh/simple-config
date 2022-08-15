@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
 import static net.minecraft.util.math.MathHelper.clamp;
 
 /**
@@ -381,17 +382,6 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 				cell.setExpanded(expanded, false);
 			}
 		}
-	}
-	
-	protected static void drawBorderRect(
-	  MatrixStack mStack, int l, int t, int r, int b, int w, int color, int innerColor
-	) {
-		fill(mStack, l, t, r, t + w, color);
-		fill(mStack, l, b - w, r, b, color);
-		fill(mStack, l, t + w, l + w, b - w, color);
-		fill(mStack, r - w, t + w, r, b - w, color);
-		if (innerColor != 0)
-			fill(mStack, l + w, t + w, r - w, b - w, innerColor);
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {

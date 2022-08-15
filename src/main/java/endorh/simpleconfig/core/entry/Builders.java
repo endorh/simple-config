@@ -2,22 +2,26 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.AbstractRange.DoubleRange;
+import endorh.simpleconfig.core.AbstractRange.FloatRange;
+import endorh.simpleconfig.core.AbstractRange.IntRange;
 import endorh.simpleconfig.core.AbstractRange.LongRange;
 import endorh.simpleconfig.core.annotation.Entry;
 import endorh.simpleconfig.core.annotation.HasAlpha;
 import endorh.simpleconfig.core.annotation.Slider;
 import endorh.simpleconfig.core.entry.BooleanEntry.BooleanDisplayer;
-import endorh.simpleconfig.core.entry.KeyBindEntry.Builder;
-import endorh.simpleconfig.ui.api.Modifier;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import net.minecraft.block.Block;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -451,6 +455,26 @@ public class Builders {
 	}
 	
 	/**
+	 * Float range entry, which defines a min and max values, optionally exclusive.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 *
+	 * @see FloatRange
+	 */
+	public static FloatRangeEntry.Builder range(FloatRange range) {
+		return new FloatRangeEntry.Builder(range);
+	}
+	
+	/**
+	 * Float range entry, which defines a min and max values, inclusive by default.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 *
+	 * @see FloatRange
+	 */
+	public static FloatRangeEntry.Builder range(float min, float max) {
+		return range(FloatRange.inclusive(min, max));
+	}
+	
+	/**
 	 * Long range entry, which defines a min and max values, optionally exclusive.<br>
 	 * You may allow users to change the exclusiveness of the bounds.
 	 * @see LongRange
@@ -466,6 +490,26 @@ public class Builders {
 	 */
 	public static LongRangeEntry.Builder range(long min, long max) {
 		return range(LongRange.inclusive(min, max));
+	}
+	
+	/**
+	 * Integer range entry, which defines a min and max values, optionally exclusive.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 *
+	 * @see IntRange
+	 */
+	public static IntegerRangeEntry.Builder range(IntRange range) {
+		return new IntegerRangeEntry.Builder(range);
+	}
+	
+	/**
+	 * Integer range entry, which defines a min and max values, inclusive by default.<br>
+	 * You may allow users to change the exclusiveness of the bounds.
+	 *
+	 * @see IntRange
+	 */
+	public static IntegerRangeEntry.Builder range(int min, int max) {
+		return range(IntRange.inclusive(min, max));
 	}
 	
 	/**
@@ -554,92 +598,62 @@ public class Builders {
 	}
 	
 	/**
-	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
-	 * This is because handling mouse keys requires extra code on your end,
-	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
-	 * be able to detect mouse keys.<br><br>
-	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * Key binding entry. Supports advanced key combinations, and other advanced
+	 * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
+	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
+	 * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
+	 * <b>Consider registering regular {@link KeyBinding}s through
 	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
 	 * </b><br>
-	 * <b>KeyBindings registered the proper way can be configured altogether with
-	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
-	 * The only encouraged use of KeyBind entries is when you need further
-	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
-	 * Use wisely.
 	 */
-	public static KeyBindEntry.Builder key(ModifierKeyCode key) {
+	@OnlyIn(Dist.CLIENT) public static KeyBindEntry.Builder key(ExtendedKeyBind keyBind) {
+		return key(keyBind.getDefinition())
+		  .bakeTo(keyBind)
+		  .withDefaultSettings(keyBind.getDefinition().getSettings());
+	}
+	
+	/**
+	 * Key binding entry. Supports advanced key combinations, and other advanced
+	 * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
+	 * <b>If you're using this entry as a static keybind for your mod, prefer using
+	 * {@link #key(ExtendedKeyBind)}, as it'll provide better overlap detection.</b><br>
+	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
+	 * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
+	 * <b>Consider registering regular {@link KeyBinding}s through
+	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+	 * </b><br>
+	 */
+	@OnlyIn(Dist.CLIENT) public static KeyBindEntry.Builder key(KeyBindMapping key) {
 		return new KeyBindEntry.Builder(key);
 	}
 	
 	/**
-	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
-	 * This is because handling mouse keys requires extra code on your end,
-	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
-	 * be able to detect mouse keys.<br><br>
-	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * Key binding entry. Supports advanced key combinations, and other advanced
+	 * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
+	 * <b>If you're using this entry as a static keybind for your mod, prefer using
+	 * {@link #key(ExtendedKeyBind)}, as it'll provide better overlap detection.</b><br>
+	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
+	 * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
+	 * <b>Consider registering regular {@link KeyBinding}s through
 	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
 	 * </b><br>
-	 * <b>KeyBindings registered the proper way can be configured altogether with
-	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
-	 * The only encouraged use of KeyBind entries is when you need further
-	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
-	 * Use wisely.
 	 */
-	public static Builder key(InputMappings.Input key) {
-		return key(key, Modifier.none());
-	}
-	
-	/**
-	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
-	 * This is because handling mouse keys requires extra code on your end,
-	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
-	 * be able to detect mouse keys.<br><br>
-	 * <b>Prefer registering regular {@link KeyBinding}s through
-	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
-	 * </b><br>
-	 * <b>KeyBindings registered the proper way can be configured altogether with
-	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
-	 * The only encouraged use of KeyBind entries is when you need further
-	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
-	 * Use wisely.
-	 */
-	public static KeyBindEntry.Builder key(InputMappings.Input key, Modifier modifier) {
-		return new KeyBindEntry.Builder(key, modifier);
-	}
-	
-	/**
-	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
-	 * This is because handling mouse keys requires extra code on your end,
-	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
-	 * be able to detect mouse keys.<br><br>
-	 * <b>Prefer registering regular {@link KeyBinding}s through
-	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
-	 * </b><br>
-	 * <b>KeyBindings registered the proper way can be configured altogether with
-	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
-	 * The only encouraged use of KeyBind entries is when you need further
-	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
-	 * Use wisely.
-	 */
-	public static KeyBindEntry.Builder key(String key) {
+	@OnlyIn(Dist.CLIENT) public static KeyBindEntry.Builder key(String key) {
 		return new KeyBindEntry.Builder(key);
 	}
 	
 	/**
-	 * Key binding entry. By default, accepts modifiers but not mouse keys.<br>
-	 * This is because handling mouse keys requires extra code on your end,
-	 * if you only ever handle keyCode and scanCode in keyPress events, you won't
-	 * be able to detect mouse keys.<br><br>
-	 * <b>Prefer registering regular {@link KeyBinding}s through
+	 * Key binding entry. Supports advanced key combinations, and other advanced
+	 * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
+	 * <b>If you're using this entry as a static keybind for your mod, prefer using
+	 * {@link #key(ExtendedKeyBind)}, as it'll provide better overlap detection.</b><br>
+	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
+	 * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
+	 * <b>Consider registering regular {@link KeyBinding}s through
 	 * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
 	 * </b><br>
-	 * <b>KeyBindings registered the proper way can be configured altogether with
-	 * other vanilla/modded keybindings, with highlighted conflicts</b><br><br>
-	 * The only encouraged use of KeyBind entries is when you need further
-	 * flexibility, such as <em>a map of KeyBinds to actions of some kind</em>.
-	 * Use wisely.
 	 */
-	public static KeyBindEntry.Builder key() {
+	@OnlyIn(Dist.CLIENT) public static KeyBindEntry.Builder key() {
 		return new KeyBindEntry.Builder();
 	}
 	

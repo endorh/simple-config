@@ -849,6 +849,10 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		fill(mStack, x, maxY - bw, maxX, maxY, color);
 	}
 	
+	public HotKeyActionButton<T> getHotKeyActionTypeButton() {
+		return hotKeyActionButton;
+	}
+	
 	public List<HotKeyActionType<T, ?>> getHotKeyActionTypes() {
 		return hotKeyActionTypes;
 	}
@@ -895,7 +899,7 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	public @Nullable HotKeyAction<T> createHotKeyAction() {
 		HotKeyActionType<T, ?> type = getHotKeyActionType();
 		endorh.simpleconfig.core.AbstractConfigEntry<?, ?, T> entry = getConfigEntry();
-		return type != null && entry != null? type.deserialize(entry, getHotKeyActionValue()) : null;
+		return type != null && entry != null? type.create(entry, getHotKeyActionValue()) : null;
 	}
 	
 	public Object getHotKeyActionValue() {

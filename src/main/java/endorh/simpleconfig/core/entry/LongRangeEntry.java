@@ -74,7 +74,7 @@ public class LongRangeEntry
 	@Override public Optional<ITextComponent> getErrorFromGUI(LongRange value) {
 		if (value.getMin() == null || value.getMax() == null)
 			return Optional.of(new TranslationTextComponent(
-			  "text.cloth-config.error.not_valid_number_Long"));
+			  "text.cloth-config.error.not_valid_number_long"));
 		return super.getErrorFromGUI(value);
 	}
 }

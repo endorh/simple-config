@@ -2,6 +2,8 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.Config.Entry;
+import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
+import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -14,6 +16,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ConcurrentModificationException;
@@ -63,6 +66,84 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 			super(value, Pair.class);
 			this.mapEntryBuilder = mapEntryBuilder;
 			this.captionEntryBuilder = captionEntryBuilder;
+		}
+		
+		/**
+		 * Bind a field to the caption entry.
+		 * @see #mapField(String)
+		 * @see #mapField()
+		 * @see #splitFields(String)
+		 */
+		@Contract(pure=true)
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> captionField(String name) {
+			return field(name, Pair::getKey, captionEntryBuilder.typeClass);
+		}
+		
+		/**
+		 * Bind a field to the map entry.<br>
+		 * You may also omit the name to replace the default field with a field for the map.
+		 * @see #captionField(String)
+		 * @see #mapField()
+		 * @see #splitFields(String)
+		 */
+		@Contract(pure=true)
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> mapField(String name) {
+			return field(name, Pair::getValue, mapEntryBuilder.typeClass);
+		}
+		
+		/**
+		 * Replace the default field with a field for the map value.
+		 * @see #captionField(String)
+		 * @see #mapField(String)
+		 * @see #splitFields(String)
+		 */
+		@Contract(pure=true)
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> mapField() {
+			return addField(BackingFieldBinding.sameName(BackingFieldBuilder.of(
+			  Pair::getValue, mapEntryBuilder.typeClass)));
+		}
+		
+		/**
+		 * Bind a field to the caption entry and replace the default field with a field
+		 * for the map value.
+		 * @see #captionField(String)
+		 * @see #mapField(String)
+		 * @see #mapField()
+		 */
+		@Contract(pure=true)
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> splitFields(String captionSuffix) {
+			return addField(captionSuffix, Pair::getKey, captionEntryBuilder.typeClass).mapField();
+		}
+		
+		/**
+		 * Bind a field to the caption entry and replace the default field with a field
+		 * for the map value.
+		 * @param fullFieldName {@code true} if the caption field name should be treated
+		 *        as the full name of the field. {@code false} (default) if it should be
+		 *        treated as a camelCase suffix to this entry's name.
+		 * @see #captionField(String)
+		 * @see #mapField(String)
+		 * @see #mapField()
+		 */
+		@Contract(pure=true)
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> splitFields(
+		  String captionField, boolean fullFieldName
+		) {
+			if (!fullFieldName) return splitFields(captionField);
+			return captionField(captionField).mapField();
+		}
+		
+		/**
+		 * Bind a field to the caption entry and replace the default field with a field
+		 * for the map value.
+		 *
+		 * @see #captionField(String)
+		 * @see #mapField(String)
+		 * @see #mapField()
+		 */
+		@Contract(pure=true)
+		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> split_fields(String caption_suffix) {
+			return add_field(caption_suffix, Pair::getKey, captionEntryBuilder.typeClass).mapField();
 		}
 		
 		@Override protected CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE> buildEntry(

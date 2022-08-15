@@ -10,6 +10,6 @@ import java.lang.annotation.Target;
  * to the backing class of a Simple Config, but wasn't bound to a
  * config entry.
  */
-@Target({ElementType.FIELD, ElementType.TYPE})
+@Target({ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Bind {}

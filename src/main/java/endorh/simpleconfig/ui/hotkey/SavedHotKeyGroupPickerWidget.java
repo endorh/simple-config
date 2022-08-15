@@ -2,15 +2,19 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.config.ServerConfig;
+import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
 import endorh.simpleconfig.core.SimpleConfigPaths;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
-import endorh.simpleconfig.ui.gui.*;
+import endorh.simpleconfig.ui.gui.ConfirmDialog;
+import endorh.simpleconfig.ui.gui.InfoDialog;
+import endorh.simpleconfig.ui.gui.ProgressDialog;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Hotkeys;
+import endorh.simpleconfig.ui.gui.WidgetUtils;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
@@ -160,7 +164,8 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			  new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.loading"),
 			  group.load().thenAccept(g -> {
 				  if (g != null) tree.tryAddEntry(
-				    new ConfigHotKeyTreeViewGroupEntry(tree::getDialogScreen, g));
+				    new ConfigHotKeyTreeViewGroupEntry(
+						tree::getDialogScreen, tree::getOverlayContainer, g));
 			  }), d -> {
 				  d.setBody(paragraph(
 					 "simpleconfig.ui.saved_hotkeys.loading." + rr, displayName

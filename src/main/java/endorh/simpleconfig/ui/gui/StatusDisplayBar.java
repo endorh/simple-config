@@ -10,6 +10,7 @@ import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse;
 import endorh.simpleconfig.ui.gui.StatusDisplayBar.StatusState.StatusStyle;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;

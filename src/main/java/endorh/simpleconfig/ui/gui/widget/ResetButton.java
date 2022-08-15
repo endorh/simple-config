@@ -2,15 +2,15 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
+import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.IEntryHolder;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;

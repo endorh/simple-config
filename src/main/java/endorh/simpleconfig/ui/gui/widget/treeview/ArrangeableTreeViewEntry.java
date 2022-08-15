@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -445,14 +446,12 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		if (tree.isSelected(this))
 			fill(mStack, l, y, r, b, 0x64646480);
 		if (parent != null && parent.getFocusedSubEntry() == this && getFocusedSubEntry() == null)
-			ArrangeableTreeView.drawBorderRect(mStack, l, y, r, b, 1, 0x80808080, 0);
+			drawBorderRect(mStack, l, y, r, b, 1, 0x80808080, 0);
 		if (DEBUG_DRAG) {
 			if (tree.getDraggedOver() == this)
-				ArrangeableTreeView.drawBorderRect(
-				  mStack, l - 1, y - 1, r + 1, b + 1, 1, 0x8000FF00, 0);
+				drawBorderRect(mStack, l - 1, y - 1, r + 1, b + 1, 1, 0x8000FF00, 0);
 			if (tree.getDraggedOverParent() == this && parent != null)
-				ArrangeableTreeView.drawBorderRect(
-				  mStack, l - 2, y - 2, r + 2, b + 2, 1, 0x80FFFF00, 0);
+				drawBorderRect(mStack, l - 2, y - 2, r + 2, b + 2, 1, 0x80FFFF00, 0);
 		}
 	}
 	
@@ -508,9 +507,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	protected void renderDragPreview(MatrixStack mStack, int y) {
 		ArrangeableTreeView<E> tree = getTree();
 		int destX = tree.getDraggedOverParent().getArea().x + tree.getIndent();
-		ArrangeableTreeView.drawBorderRect(
-		  mStack, destX, y, tree.area.getMaxX(),
-		  y + 20, 1, 0x8080A0FF, 0x646480FF);
+		drawBorderRect(mStack, destX, y, tree.area.getMaxX(), y + 20, 1, 0x8080A0FF, 0x646480FF);
 		SimpleConfigIcons.Widgets.TREE_DRAG_HANDLE.renderCentered(
 		  mStack, destX + 16, y, 8, 20);
 	}

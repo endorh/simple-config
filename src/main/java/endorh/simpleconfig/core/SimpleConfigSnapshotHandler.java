@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.config.ServerConfig;
+import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
@@ -56,7 +56,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteConf
 	@Override public boolean canSaveRemote() {
 		final Minecraft mc = Minecraft.getInstance();
 		if (mc.getConnection() == null || mc.player == null) return false;
-		return SimpleConfigMod.ServerConfig.permissions.permissionFor(mc.player, modId).getRight().canSave();
+		return ServerConfig.permissions.permissionFor(mc.player, modId).getRight().canSave();
 	}
 	
 	@Override public CompletableFuture<CommentedConfig> getPresetSnapshot(Preset preset) {

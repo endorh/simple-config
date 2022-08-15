@@ -69,10 +69,18 @@ public abstract class AbstractRangeEntry<
 			return min(min).max(max);
 		}
 		
+		@Contract(pure=true) public Self canEditMinExclusive() {
+			return canEditMinExclusive(true);
+		}
+		
 		@Contract(pure=true) public Self canEditMinExclusive(boolean exclusive) {
 			Self copy = copy();
 			copy.canEditMinExclusiveness = exclusive;
 			return copy;
+		}
+		
+		@Contract(pure=true) public Self canEditMaxExclusive() {
+			return canEditMaxExclusive(true);
 		}
 		
 		@Contract(pure=true) public Self canEditMaxExclusive(boolean exclusive) {
@@ -83,6 +91,10 @@ public abstract class AbstractRangeEntry<
 		
 		@Contract(pure=true) public Self canEditExclusiveness(boolean min, boolean max) {
 			return canEditMinExclusive(min).canEditMaxExclusive(max);
+		}
+		
+		@Contract(pure=true) public Self canEditExclusiveness() {
+			return canEditExclusiveness(true);
 		}
 		
 		@Contract(pure=true) public Self canEditExclusiveness(boolean canEdit) {

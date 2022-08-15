@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
 import net.minecraft.util.text.*;
 import org.apache.logging.log4j.LogManager;
@@ -123,9 +123,10 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 				LOGGER.error(entry.getGlobalPath() + ": Error applying config hotkey, result value is not a valid value: " + newValue);
 				newValue = entry.defValue;
 			}
-			ITextComponent set = formatValue(entry.forCommand(newValue));
-			boolean change = success && !Objects.equals(prevValue, newValue);
-			if (success) result.set(path, entry.forConfig(newValue));
+			T v = newValue;
+			ITextComponent set = formatValue(entry.forCommand(v));
+			boolean change = success && !Objects.equals(prevValue, v);
+			if (success) result.set(path, entry.apply(e -> e.forActualConfig(e.forConfig(v))));
 			IFormattableTextComponent report = formatPath(entry.getPath()).appendString(" ")
 			  .append(new TranslationTextComponent(
 				 "simpleconfig.hotkey.type.report." + getType().getTranslationKey(),

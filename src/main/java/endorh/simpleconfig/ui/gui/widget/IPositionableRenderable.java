@@ -10,7 +10,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Generic interface useful for layout controllers.<br>
- * Use {@link #wrap(Widget)} to wrap a {@link Widget} in this interface.
+ * Use {@link #wrap(Widget)} to wrap a {@link Widget} in this interface.<br>
+ *
+ * Subclasses should consider implementing the optional methods
+ * {@link #isFocused()}, {@link #isActive()} and their setters.
  */
 public interface IPositionableRenderable extends IGuiEventListener, IRenderable {
 	static <W extends Widget> WidgetPositionableWrapper<W> wrap(W widget) {
@@ -33,6 +36,11 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		return false;
 	}
 	default void setFocused(boolean focused) {}
+	
+	default boolean isActive() {
+		return true;
+	}
+	default void setActive(boolean active) {}
 	
 	default void setPosition(int x, int y) {
 		setX(x);
@@ -173,6 +181,13 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		@Override public void setFocused(boolean focused) {
 			WidgetUtils.forceSetFocus(widget, focused);
 		}
+		
+		@Override public boolean isActive() {
+			return widget.active;
+		}
+		@Override public void setActive(boolean active) {
+			widget.active = active;
+		}
 	}
 	
 	interface IDelegatedPositionableRenderable extends IPositionableRenderable {
@@ -211,6 +226,13 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		}
 		@Override default void setFocused(boolean focused) {
 			getDelegate().setFocused(focused);
+		}
+		
+		@Override default boolean isActive() {
+			return getDelegate().isActive();
+		}
+		@Override default void setActive(boolean active) {
+			getDelegate().setActive(active);
 		}
 		
 		@Override default void setPosition(int x, int y) {

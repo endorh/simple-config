@@ -218,8 +218,8 @@ public class SimpleConfigClassParser {
 					final ITextComponent tc = (ITextComponent) value;
 					textBuilder = new TextEntry.Builder(() -> tc);
 				} else if (value instanceof Supplier && ITextComponent.class.isAssignableFrom(
-				  ((Class<?>) ((ParameterizedType) field.getGenericType())
-				    .getActualTypeArguments()[0]))) {
+				  (Class<?>) ((ParameterizedType) field.getGenericType())
+				    .getActualTypeArguments()[0])) {
 					//noinspection unchecked
 					final Supplier<ITextComponent> supplier = (Supplier<ITextComponent>) value;
 					textBuilder = new TextEntry.Builder(supplier);
@@ -364,14 +364,22 @@ public class SimpleConfigClassParser {
 			}
 		} else if (builder instanceof CategoryBuilder) {
 			final CategoryBuilder b = (CategoryBuilder) builder;
-			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigCategory.class);
+			boolean useArg = true;
+			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategory.class);
+			if (m == null) {
+				useArg = false;
+				m = tryGetMethod(configClass, "bake");
+			}
+			final Method baker = m;
 			if (baker != null) {
 				if (!Modifier.isStatic(baker.getModifiers()))
 					throw new SimpleConfigClassParseException(builder,
 					  "Found non-static bake method in config category class " + className);
 				final String errorMsg = "Reflective error invoking config category baker method %s";
 				if (b.baker == null) {
-					b.withBaker(c -> invoke(baker, null, errorMsg, Object.class, c));
+					b.withBaker(
+					  useArg? c -> invoke(baker, null, errorMsg, Object.class, c)
+					        : c -> invoke(baker, null, errorMsg, Object.class));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config category class " + className + ", but the category " +
@@ -379,17 +387,31 @@ public class SimpleConfigClassParser {
 					  "be used.\nIf the configured baker is precisely this method, rename it " +
 					  "to suppress this warning.");
 				}
+			} else if (
+			  Arrays.stream(configClass.getDeclaredMethods()).anyMatch(mm -> mm.getName().equals("bake"))
+			) {
+				LOGGER.warn(
+				  "Found method named \"bake\" in config category class " + className + " with an " +
+				  "unsupported signature.\nRename the method to suppress this warning, or fix the bug");
 			}
 		} else if (builder instanceof GroupBuilder) {
 			final GroupBuilder b = (GroupBuilder) builder;
-			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigGroup.class);
+			boolean useArg = true;
+			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroup.class);
+			if (m == null) {
+				useArg = false;
+				m = tryGetMethod(configClass, "bake");
+			}
+			final Method baker = m;
 			if (baker != null) {
 				if (!Modifier.isStatic(baker.getModifiers()))
 					throw new SimpleConfigClassParseException(builder,
 					  "Found non-static bake method in config group class " + className);
 				final String errorMsg = "Reflective error invoking config category baker method %s";
 				if (b.baker == null) {
-					b.withBaker(c -> invoke(baker, null, errorMsg, Object.class, c));
+					b.withBaker(
+					  useArg? c -> invoke(baker, null, errorMsg, Object.class, c)
+					        : c -> invoke(baker, null, errorMsg, Object.class));
 				} else {
 					LOGGER.warn(
 					  "Found bake method in config group class " + className + ", but the group " +
@@ -397,6 +419,12 @@ public class SimpleConfigClassParser {
 					  "be used.\nIf the configured builder is precisely this method, rename it " +
 					  "to suppress this warning.");
 				}
+			} else if (
+			  Arrays.stream(configClass.getDeclaredMethods()).anyMatch(mm -> mm.getName().equals("bake"))
+			) {
+				LOGGER.warn(
+				  "Found method named \"bake\" in config group class " + className + " with an " +
+				  "unsupported signature.\nRename the method to suppress this warning, or fix the bug");
 			}
 		}
 		builders.remove(configClass);

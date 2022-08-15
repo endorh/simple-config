@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
 import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
@@ -71,7 +71,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	  ButtonActionBuilder action, ITextComponent title
 	) {
 		super(
-		  x, y, width, height, icon.u, icon.v, icon.h, icon.location,
+		  x, y, width, height, icon.getU(), icon.getV(), icon.h, icon.getTexture(),
 		  icon.tw, icon.th, b -> {}, field_238486_s_, title);
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;

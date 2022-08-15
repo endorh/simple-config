@@ -17,6 +17,5 @@ public interface ConfigScreen {
 	boolean isEdited();
 	
 	void saveAll(boolean var1);
-	void addTooltip(Tooltip var1);
 }
 

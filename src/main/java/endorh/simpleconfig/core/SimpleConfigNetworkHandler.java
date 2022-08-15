@@ -6,12 +6,12 @@ import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
-import endorh.simpleconfig.ui.hotkey.ConfigHotKeyOverlay;
+import endorh.simpleconfig.ui.hotkey.ConfigHotKeyLogger;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.RemoteSavedHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.SavedHotKeyGroup;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
@@ -947,7 +947,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		
 		@Override public void onClient(Context ctx) {
 			if (title != null && report != null)
-				ConfigHotKeyOverlay.addMessage(title, report);
+				ConfigHotKeyLogger.logRemoteHotKey(title, report);
 			super.onClient(ctx);
 		}
 		

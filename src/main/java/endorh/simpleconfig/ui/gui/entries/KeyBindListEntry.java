@@ -3,34 +3,47 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
-import endorh.simpleconfig.ui.gui.widget.HotKeyButton;
-import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
+import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 @OnlyIn(value = Dist.CLIENT)
-public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements IChildListEntry {
-	protected final HotKeyButton hotKeyButton;
+public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implements IChildListEntry {
+	protected final KeyBindButton hotKeyButton;
 	protected final List<IGuiEventListener> widgets;
 	protected final List<IGuiEventListener> childWidgets;
 	
-	@Internal public KeyCodeEntry(ITextComponent fieldName, ModifierKeyCode value) {
+	@Internal public KeyBindListEntry(
+	  ITextComponent fieldName, KeyBindMapping value, @Nullable ExtendedKeyBind keyBind
+	) {
 		super(fieldName);
 		setOriginal(value.copy());
 		setValue(value.copy());
-		hotKeyButton = HotKeyButton.ofKey(this::getScreen, value);
+		hotKeyButton = KeyBindButton.of(this::getScreen, this::getScreen, keyBind);
+		hotKeyButton.setMapping(value);
 		widgets = Lists.newArrayList(hotKeyButton, sideButtonReference);
 		childWidgets = Lists.newArrayList(hotKeyButton);
-		hotKeyActionTypes.remove(HotKeyActionTypes.ASSIGN.cast());
+	}
+	
+	@Override public void tick() {
+		super.tick();
+		hotKeyButton.tick();
+	}
+	
+	@Override public int getExtraScrollHeight() {
+		return hotKeyButton.getExtraHeight();
 	}
 	
 	@Override public void resetValue() {
@@ -40,54 +53,42 @@ public class KeyCodeEntry extends TooltipListEntry<ModifierKeyCode> implements I
 			screen.cancelModalInput();
 	}
 	
-	public boolean isAllowModifiers() {
-		return hotKeyButton.isAllowModifiers();
+	public ExtendedKeyBindSettings getDefaultSettings() {
+		return hotKeyButton.getDefaultSettings();
+	}
+	public void setDefaultSettings(ExtendedKeyBindSettings settings) {
+		hotKeyButton.setDefaultSettings(settings);
 	}
 	
-	public void setAllowModifiers(boolean allowModifiers) {
-		hotKeyButton.setAllowModifiers(allowModifiers);
+	public boolean isReportOverlaps() {
+		return hotKeyButton.isReportOverlaps();
+	}
+	public void setReportOverlaps(boolean reportOverlaps) {
+		hotKeyButton.setReportOverlaps(reportOverlaps);
 	}
 	
-	public boolean isAllowKey() {
-		return hotKeyButton.isAllowKey();
+	@Override public KeyBindMapping getDisplayedValue() {
+		return hotKeyButton.getMapping();
 	}
 	
-	public void setAllowKey(boolean allowKey) {
-		hotKeyButton.setAllowKey(allowKey);
+	@Override public void setDisplayedValue(KeyBindMapping value) {
+		hotKeyButton.setMapping(value);
 	}
 	
-	public boolean isAllowMouse() {
-		return hotKeyButton.isAllowMouse();
-	}
-	
-	public void setAllowMouse(boolean allowMouse) {
-		hotKeyButton.setAllowMouse(allowMouse);
-	}
-	
-	@Override public ModifierKeyCode getDisplayedValue() {
-		return hotKeyButton.getKey();
-	}
-	
-	@Override public void setDisplayedValue(ModifierKeyCode value) {
-		hotKeyButton.setKey(value);
-	}
-	
-	@Override public ModifierKeyCode getDefaultValue() {
-		final ModifierKeyCode v = super.getDefaultValue();
+	@Override public KeyBindMapping getDefaultValue() {
+		final KeyBindMapping v = super.getDefaultValue();
 		return v == null ? null : v.copy();
 	}
 	
 	private ITextComponent getLocalizedName() {
-		return getDisplayedValue().getLocalizedName();
+		return getDisplayedValue().getDisplayName();
 	}
 	
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		hotKeyButton.active = shouldRenderEditable();
-		hotKeyButton.x = x;
-		hotKeyButton.y = y;
-		hotKeyButton.setExactWidth(w);
+		hotKeyButton.setActive(shouldRenderEditable());
+		hotKeyButton.setPosition(x, y, w);
 		hotKeyButton.setHeight(h);
 		hotKeyButton.render(mStack, mouseX, mouseY, delta);
 	}

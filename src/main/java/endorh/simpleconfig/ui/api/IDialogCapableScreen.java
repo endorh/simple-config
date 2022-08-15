@@ -160,6 +160,14 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		return false;
 	}
 	
+	@Override default int getScreenWidth() {
+		return ((Screen) this).width;
+	}
+	
+	@Override default int getScreenHeight() {
+		return ((Screen) this).height;
+	}
+	
 	class SortedDialogCollection {
 		private final List<AbstractDialog> dialogs = Lists.newArrayList();
 		private final List<AbstractDialog> reversed = Lists.reverse(dialogs);

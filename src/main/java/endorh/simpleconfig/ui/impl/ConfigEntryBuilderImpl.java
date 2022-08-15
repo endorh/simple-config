@@ -4,11 +4,11 @@ import endorh.simpleconfig.core.AbstractRange;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.impl.builders.*;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -174,10 +174,10 @@ public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
 		return new EntryButtonFieldBuilder<>(this, name, entry, action);
 	}
 	
-	@Override public KeyCodeBuilder startModifierKeyCodeField(
-	  ITextComponent name, ModifierKeyCode value
+	@Override public KeyBindFieldBuilder startKeyBindField(
+	  ITextComponent name, KeyBindMapping value
 	) {
-		return new KeyCodeBuilder(this, name, value);
+		return new KeyBindFieldBuilder(this, name, value);
 	}
 	
 	@Override public <T> ComboBoxFieldBuilder<T> startComboBox(

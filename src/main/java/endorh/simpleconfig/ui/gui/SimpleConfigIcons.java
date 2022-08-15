@@ -3,13 +3,17 @@ package endorh.simpleconfig.ui.gui;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.gui.Icon.IconBuilder;
+import endorh.simpleconfig.ui.gui.icon.AnimatedIcon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon.IconBuilder;
+import endorh.simpleconfig.ui.gui.icon.NinePatchIcon;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.Location;
+import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 
 @SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
-	private static final ResourceLocation TEXTURE = new ResourceLocation(
+	public static final ResourceLocation TEXTURE = new ResourceLocation(
 	  SimpleConfigMod.MOD_ID, "textures/gui/simple_config/config_menu.png");
 	
 	public static class Types {
@@ -205,6 +209,40 @@ import net.minecraft.util.text.TextFormatting;
 		  REMOTE_HOTKEY = b.at(0, 14),
 		  SAVE_HOTKEY = b.at(14, 0),
 		  RESOURCE_HOTKEY = b.at(14, 14);
+		
+		/** Size 8×9 */
+		public static final Icon
+		  CONTEXT_GAME = b.offset(160, 216).size(8, 9).at(1, 1),
+		  CONTEXT_MENU = b.at(1, 21),
+		  CONTEXT_ALL = b.at(21, 1);
+		/** Size 5×9 */
+		public static final Icon
+		  ACTIVATION_PRESS = b.size(5, 9).at(10, 1),
+		  ACTIVATION_RELEASE = b.at(10, 21),
+		  ACTIVATION_BOTH = b.at(30, 1),
+		  ACTIVATION_TOGGLE = b.at(30, 21),
+		  ACTIVATION_TOGGLE_RELEASE = b.at(35, 21),
+		  ACTIVATION_REPEAT = b.at(20, 21),
+		  ACTIVATION_REPEAT_RELEASE = b.at(25, 21);
+		/** Size 8×5 */
+		public static final Icon
+		  ORDER_INSENSITIVE = b.size(8, 5).at(1, 10),
+		  ORDER_SENSITIVE = b.at(1, 30);
+		/** Size 8×4 */
+		public static final Icon
+		  EXTRA_KEYS_ALLOW = b.size(8, 4).at(1, 15),
+		  EXTRA_KEYS_BLOCK = b.at(1, 35);
+		/** Size 4×9 **/
+		public static final Icon
+		  EXCLUSIVE_NO = b.size(4, 9).at(15, 1),
+		  EXCLUSIVE_YES = b.at(15, 21);
+		/** Size 5×7 */
+		public static final Icon
+		  MATCH_BY_CODE = b.size(5, 7).at(9, 11),
+		  MATCH_BY_NAME = b.at(9, 31),
+		  PREVENT_FURTHER_NO = b.at(14, 11),
+		  PREVENT_FURTHER_YES = b.at(14, 31);
+		
 		static { b = null; }
 	}
 	
@@ -291,6 +329,15 @@ import net.minecraft.util.text.TextFormatting;
 		/** Size 11×11 */
 		public static final Icon
 		  POINTER = b.size(11, 11).at(80, 14);
+		static { b = null; }
+	}
+	
+	public static class Backgrounds {
+		private static IconBuilder b = IconBuilder.ofTexture(Widget.WIDGETS_LOCATION, 256, 256);
+		
+		public static final NinePatchIcon
+		  BUTTON_BACKGROUND = b.size(200, 20).patchSize(2, 2, 2, 3).patchAt(0, 46);
+		
 		static { b = null; }
 	}
 	

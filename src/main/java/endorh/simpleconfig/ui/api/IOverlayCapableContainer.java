@@ -111,6 +111,9 @@ public interface IOverlayCapableContainer {
 		}
 	}
 	
+	int getScreenWidth();
+	int getScreenHeight();
+	
 	/**
 	 * Get the sorted list of overlays of this container.
 	 */
@@ -217,7 +220,7 @@ public interface IOverlayCapableContainer {
 			mStack.translate(0D, 0D, 100D);
 			Screen screen = Minecraft.getInstance().currentScreen;
 			IMultiTooltipScreen tScreen =
-			  screen instanceof IMultiTooltipScreen? ((IMultiTooltipScreen) screen) : null;
+			  screen instanceof IMultiTooltipScreen? (IMultiTooltipScreen) screen : null;
 			for (OverlayTicket ticket : sortedOverlays) {
 				if (tScreen != null) tScreen.removeTooltips(ticket.area);
 				ScissorsHandler.INSTANCE.pushScissor(ticket.area);

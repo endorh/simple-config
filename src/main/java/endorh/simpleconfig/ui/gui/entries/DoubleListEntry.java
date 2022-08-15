@@ -13,8 +13,8 @@ import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
 public class DoubleListEntry extends TextFieldListEntry<Double> implements IRangedEntry<Double> {
-	private double minimum = Double.MIN_VALUE;
-	private double maximum = Double.MAX_VALUE;
+	private double minimum = Double.NEGATIVE_INFINITY;
+	private double maximum = Double.POSITIVE_INFINITY;
 	
 	@Internal public DoubleListEntry(ITextComponent fieldName, Double value) {
 		super(fieldName, value, false);

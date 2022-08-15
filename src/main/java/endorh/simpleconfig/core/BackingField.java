@@ -96,7 +96,7 @@ public class BackingField<V, F> {
 		private final Function<F, V> committer;
 		private final Class<?> fieldType;
 		
-		protected static <V, F> BackingFieldBuilder<V, F> of(
+		@Internal public static <V, F> BackingFieldBuilder<V, F> of(
 		  Function<V, F> mapper, Class<?> type
 		) {
 			return new BackingFieldBuilder<>(mapper, null, type);

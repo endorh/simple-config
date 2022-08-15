@@ -7,6 +7,7 @@ import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.RectangleAnimator;
@@ -67,7 +68,7 @@ public abstract class AbstractDialog
 		if (!(screen instanceof Screen)) throw new IllegalArgumentException(
 		  "Invalid screen type: " + screen.getClass().getName() + " does not implement " +
 		  "IDialogCapableScreen");
-		this.screen = ((AbstractConfigScreen) screen);
+		this.screen = (Screen) screen;
 		int width = this.screen.width, height = this.screen.height;
 		areaAnimator.setOrigin(new Rectangle(
 		  width / 2 - 30, height / 2 - 20, 60, 40));
@@ -210,6 +211,13 @@ public abstract class AbstractDialog
 	}
 	
 	// IOverlayCapableContainer
+	
+	@Override public int getScreenWidth() {
+		return getScreen().width;
+	}
+	@Override public int getScreenHeight() {
+		return getScreen().height;
+	}
 	
 	@Override public SortedOverlayCollection getSortedOverlays() {
 		return sortedOverlays;

@@ -12,7 +12,9 @@ public interface IMultiTooltipScreen {
 	/**
 	 * Add a tooltip for this frame
 	 */
-	void addTooltip(Tooltip tooltip);
+	default void addTooltip(Tooltip tooltip) {
+		getTooltips().add(tooltip);
+	}
 	
 	/**
 	 * @return Mutable tooltip list for this frame

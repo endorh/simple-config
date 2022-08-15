@@ -3,6 +3,7 @@ package endorh.simpleconfig.core;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -21,6 +22,14 @@ public interface ISimpleConfigEntryHolder {
 	 * Get the root config of this entry holder
 	 */
 	SimpleConfig getRoot();
+	
+	/**
+	 * Get the parent of this entry holder.
+	 * Will throw {@link NoSuchConfigGroupError} if it has no parent.
+	 */
+	default AbstractSimpleConfigEntryHolder getParent() {
+		throw new NoSuchConfigGroupError("");
+	}
 	
 	/**
 	 * Get the current configuration GUI of this holder, if any.

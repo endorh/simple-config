@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.hotkey.NestedHotKeyActionType.NestedHotKeyAction;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.Nullable;

@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.screen.ControlsScreen;
@@ -56,10 +56,11 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		}
 		
 		private IFormattableTextComponent parseSingle(String key) {
-			if (key.endsWith("!"))
-				return ModifierKeyCode.parse(key.substring(0, key.length() - 1))
-				  .getLayoutAgnosticLocalizedName(modifierStyle, keyStyle).deepCopy();
-			return ModifierKeyCode.parse(key).getLocalizedName(modifierStyle, keyStyle).deepCopy();
+			return KeyBindMapping.parse(key).getDisplayName(keyStyle).deepCopy();
+			// if (key.endsWith("!"))
+			// 	return ModifierKeyCode.parse(key.substring(0, key.length() - 1))
+			// 	  .getLayoutAgnosticLocalizedName(modifierStyle, keyStyle).deepCopy();
+			// return ModifierKeyCode.parse(key).getLocalizedName(modifierStyle, keyStyle).deepCopy();
 		}
 		
 		private IFormattableTextComponent parse(String keys) {

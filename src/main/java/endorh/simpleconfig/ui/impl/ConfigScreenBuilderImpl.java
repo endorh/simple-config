@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.impl;
 
 import endorh.simpleconfig.core.SimpleConfig.EditType;
-import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigCategory;
+import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;

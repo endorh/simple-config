@@ -5,7 +5,7 @@ import com.electronwill.nightconfig.core.ConfigSpec;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig.permissions;
+import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
@@ -13,11 +13,11 @@ import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPack
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigServerCommonConfigPacket;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.ui.ConfigCategoryBuilder;
+import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.yaml.NodeComments;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.Minecraft;
@@ -694,6 +694,10 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal public LiteralArgumentBuilder<CommandSource> getCommandRoot() {
 		return commandRoot;
+	}
+	
+	@Override public AbstractSimpleConfigEntryHolder getParent() {
+		throw new NoSuchConfigGroupError(getGlobalPath());
 	}
 	
 	protected interface IGUIEntryBuilder {}

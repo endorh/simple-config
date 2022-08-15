@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core;
 
 import com.google.common.collect.Maps;
-import endorh.simpleconfig.ui.gui.Icon;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Entries;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -38,6 +38,8 @@ public class EntryTag implements Comparable<EntryTag> {
 	public static final EntryTag EXPERIMENTAL = translated(
 	  300, "EXPERIMENTAL!", Entries.EXPERIMENTAL, "simpleconfig.config.tag.experimental", null);
 	public static final EntryTag ADVANCED = coloredWrench(TextFormatting.GOLD);
+	public static final EntryTag OPERATOR = translated(
+	  99, "Operator", Entries.WRENCH.withTint(TextFormatting.BLUE), "simpleconfig.config.tag.operator", null);
 	public static final EntryTag NON_PERSISTENT = translated(
 	  400, null, Entries.NOT_PERSISTENT, "simpleconfig.config.tag.not_persistent", null);
 	

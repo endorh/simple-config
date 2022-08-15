@@ -5,8 +5,8 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.confirm;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.*;
@@ -59,7 +59,7 @@ import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 
 public abstract class AbstractConfigScreen extends Screen
-  implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler, ScissorsScreen,
+  implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler,
              IExternalChangeHandler, IEntryHolder, IDialogCapableScreen {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected final ResourceLocation backgroundLocation;
@@ -170,6 +170,23 @@ public abstract class AbstractConfigScreen extends Screen
 		bb.pos(m, (float) xEnd,   (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
 		// @formatter:on
 		tessellator.draw();
+	}
+	
+	public static void drawBorderRect(
+	  MatrixStack mStack, Rectangle area, int w, int color, int innerColor
+	) {
+		drawBorderRect(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), w, color, innerColor);
+	}
+	
+	public static void drawBorderRect(
+	  MatrixStack mStack, int l, int t, int r, int b, int w, int color, int innerColor
+	) {
+		fill(mStack, l, t, r, t + w, color);
+		fill(mStack, l, b - w, r, b, color);
+		fill(mStack, l, t + w, l + w, b - w, color);
+		fill(mStack, r - w, t + w, r, b - w, color);
+		if (innerColor != 0)
+			fill(mStack, l + w, t + w, r - w, b - w, innerColor);
 	}
 	
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
@@ -478,6 +495,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (handleModalMouseScrolled(mouseX, mouseY, delta)) return true;
 		if (handleDialogsMouseScrolled(mouseX, mouseY, delta)) return true;
 		if (handleOverlaysMouseScrolled(mouseX, mouseY, delta)) return true;
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -516,7 +534,11 @@ public abstract class AbstractConfigScreen extends Screen
 		if ( keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			if (handleOverlaysEscapeKey())
 				return true;
-			if (shouldCloseOnEsc()) {
+			if (isEditingConfigHotKey()) {
+				discardHotkey();
+				playFeedbackTap(1F);
+				return true;
+			} else if (shouldCloseOnEsc()) {
 				playFeedbackTap(1F);
 				return quit();
 			}
@@ -548,7 +570,9 @@ public abstract class AbstractConfigScreen extends Screen
 			playFeedbackTap(1F);
 			return true;
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
-			if (canSave()) saveAll(true, false, false);
+			if (isEditingConfigHotKey()) {
+				saveHotkey();
+			} else if (canSave()) saveAll(true, false, false);
 			playFeedbackTap(1F);
 			return true;
 		}
@@ -624,10 +648,6 @@ public abstract class AbstractConfigScreen extends Screen
 		tooltips.clear();
 	}
 	
-	@Override public void addTooltip(Tooltip tooltip) {
-		tooltips.add(tooltip);
-	}
-	
 	@Override public List<Tooltip> getTooltips() {
 		return tooltips;
 	}
@@ -636,10 +656,6 @@ public abstract class AbstractConfigScreen extends Screen
 		final List<Tooltip> removed =
 		  tooltips.stream().filter(t -> area.contains(t.getPoint())).collect(Collectors.toList());
 		return tooltips.removeAll(removed);
-	}
-	
-	@Override @Nullable public Rectangle handleScissor(@Nullable Rectangle area) {
-		return area;
 	}
 	
 	protected void overlayBackground(

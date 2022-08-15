@@ -1,14 +1,15 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.menu;
-import endorh.simpleconfig.SimpleConfigMod.CommonConfig;
-import endorh.simpleconfig.SimpleConfigMod.ServerConfig;
+import endorh.simpleconfig.config.ClientConfig.menu;
+import endorh.simpleconfig.config.CommonConfig;
+import endorh.simpleconfig.config.ServerConfig;
 import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigReleaseServerCommonConfigPacket;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import endorh.simpleconfig.ui.gui.DialogScreen;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import net.minecraft.client.Minecraft;
@@ -229,6 +230,14 @@ public class SimpleConfigGUIManager {
 	public static void showModListGUI() {
 		final Minecraft mc = Minecraft.getInstance();
 		mc.displayGuiScreen(new ModListScreen(mc.currentScreen));
+	}
+	
+	/**
+	 * Show the Config Hotkey GUI
+	 */
+	public static void showConfigHotkeysGUI() {
+		Minecraft mc = Minecraft.getInstance();
+		mc.displayGuiScreen(new DialogScreen(mc.currentScreen, new HotKeyListDialog(null)));
 	}
 	
 	/**

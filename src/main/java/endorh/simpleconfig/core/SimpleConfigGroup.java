@@ -1,12 +1,12 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
+import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
@@ -85,6 +85,12 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		return parentGroup != null
 		       ? parentGroup.getPathPart() + name
 		       : category.getPathPart() + name;
+	}
+	
+	@Override public @Nullable AbstractSimpleConfigEntryHolder getParent() {
+		return parentGroup != null
+		       ? parentGroup
+		       : category.isRoot? root : category;
 	}
 	
 	@Override protected String getName() {

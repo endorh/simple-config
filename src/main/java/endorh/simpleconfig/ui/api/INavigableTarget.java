@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,13 @@ public interface INavigableTarget extends INestedGuiEventHandler {
 		return getNavigableChildren(onlyVisible).stream().flatMap(e -> Stream.concat(
 		  Stream.of(e), e.getNavigableDescendants(onlyVisible).stream()
 		)).collect(Collectors.toList());
+	}
+	
+	default List<INavigableTarget> getNavigableDescendantsAndSubDescendants(boolean onlyVisible) {
+		return getNavigableChildren(onlyVisible).stream().flatMap(e -> Stream.of(
+		  Stream.of(e), e.getNavigableSubTargets().stream(),
+		  e.getNavigableDescendantsAndSubDescendants(onlyVisible).stream()
+		)).flatMap(Function.identity()).collect(Collectors.toList());
 	}
 	
 	default boolean isNavigableSubTarget() {

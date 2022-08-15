@@ -134,7 +134,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		this.sliderValue = value;
 		this.sliderWidget.setValue(value);
 		this.sliderWidget.func_230979_b_();
-		if (showText && !areEqual(textFieldEntry.getValue(), value))
+		if (showText && !areEqual(textFieldEntry.getDisplayedValue(), value))
 			textFieldEntry.setDisplayedValue(value);
 	}
 	
@@ -196,8 +196,10 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			textFieldEntry.updateFocused(isFocused() && getListener() == textFieldEntry);
 			textFieldEntry.setEditable(shouldRenderEditable());
 			textFieldEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
-			if (!textFieldEntry.getErrorMessage().isPresent())
-				setDisplayedValue(textFieldEntry.getValue());
+			if (!textFieldEntry.getErrorMessage().isPresent() || isTextFieldEnforced()) {
+				V value = textFieldEntry.getDisplayedValue();
+				if (value != null) setDisplayedValue(value);
+			}
 		} else {
 			sliderWidget.active = shouldRenderEditable();
 			sliderWidget.x = x;

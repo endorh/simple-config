@@ -45,7 +45,7 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 	}
 	
 	@SuppressWarnings("unchecked") protected <T> List<BackingField<T, ?>> getSecondaryBackingFields(String name) {
-		return ((List<BackingField<T, ?>>) (List<?>) secondaryBackingFields.get(name));
+		return (List<BackingField<T, ?>>) (List<?>) secondaryBackingFields.get(name);
 	}
 	
 	protected void checkName(String name) {

@@ -5,11 +5,11 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.config.ClientConfig;
+import endorh.simpleconfig.config.ClientConfig.advanced.search;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.core.SimpleConfig.EditType;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.*;
@@ -37,6 +37,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.util.InputMappings;
+import net.minecraft.client.util.InputMappings.Input;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
@@ -65,9 +66,9 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.min;
+import static net.minecraft.util.math.MathHelper.clamp;
 
-@OnlyIn(value = Dist.CLIENT)
-public class SimpleConfigScreen
+@OnlyIn(Dist.CLIENT) public class SimpleConfigScreen
   extends AbstractConfigScreen implements ISearchHandler {
 	private final ScrollingHandler tabsScroller = new ScrollingHandler() {
 		@Override public Rectangle getBounds() {
@@ -103,7 +104,7 @@ public class SimpleConfigScreen
 	protected MultiFunctionImageButton selectAllButton;
 	protected MultiFunctionImageButton invertSelectionButton;
 	protected MultiFunctionIconButton hotKeyButton;
-	protected HotKeyButton editedHotKeyButton;
+	protected KeyBindButton editedHotKeyButton;
 	protected TextFieldWidgetEx editedHotKeyNameTextField;
 	protected SelectionToolbar selectionToolbar;
 	protected Rectangle tabsBounds;
@@ -144,8 +145,8 @@ public class SimpleConfigScreen
 		statusDisplayBar = new StatusDisplayBar(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
 		presetPickerWidget = new PresetPickerWidget(this, 0, 0, 70);
-		editedHotKeyButton = HotKeyButton.ofKeyAndMouse(() -> this, ModifierKeyCode.unknown());
-		editedHotKeyButton.setTintColor(0x8080A0FF);
+		editedHotKeyButton = KeyBindButton.of(() -> this, () -> this);
+		editedHotKeyButton.setTintColor(0x424280FF);
 		editedHotKeyNameTextField = TextFieldWidgetEx.of("");
 		editedHotKeyNameTextField.setBordered(false);
 		editedHotKeyNameTextField.setEmptyHint(new TranslationTextComponent(
@@ -255,7 +256,7 @@ public class SimpleConfigScreen
 	) {
 		super.setEditedConfigHotKey(hotkey, hotKeySaver);
 		if (hotkey != null) {
-			editedHotKeyButton.setKey(hotkey.getHotKey());
+			editedHotKeyButton.setMapping(hotkey.getKeyMapping());
 			editedHotKeyNameTextField.setText(hotkey.getName());
 			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, EditType.fromAlias(alias), map));
 		}
@@ -265,20 +266,16 @@ public class SimpleConfigScreen
 	protected void loadConfigHotKeyActions(
 	  ConfigHotKey hotkey, EditType type, Map<String, ConfigCategory> categoryMap
 	) {
-		Type configType = type.getType();
-		if (SimpleConfig.hasConfig(modId, configType)) {
-			Map<String, HotKeyAction<?>> actionMap = hotkey.getActions()
-			  .get(SimpleConfig.getConfig(modId, configType));
-			if (actionMap == null) return;
-			actionMap.forEach((k, a) -> {
-				String[] path = DOT.split(k, 2);
-				ConfigCategory cat = categoryMap.get(path[0]);
-				if (cat != null) {
-					AbstractConfigEntry<?> entry = cat.getEntry(path[1]);
-					if (entry != null) loadHotKeyAction(entry, a);
-				}
-			});
-		}
+		Map<String, HotKeyAction<?>> actionMap = hotkey.getActions().get(Pair.of(modId, type));
+		if (actionMap == null) return;
+		actionMap.forEach((k, a) -> {
+			String[] path = DOT.split(k, 2);
+			ConfigCategory cat = categoryMap.get(path[0]);
+			if (cat != null) {
+				AbstractConfigEntry<?> entry = cat.getEntry(path[1]);
+				if (entry != null) loadHotKeyAction(entry, a);
+			}
+		});
 	}
 	protected <T, V, A extends HotKeyAction<V>> void loadHotKeyAction(
 	  AbstractConfigEntry<T> entry, A action
@@ -345,13 +342,23 @@ public class SimpleConfigScreen
 		selectionToolbar.visible = false;
 		addListener(selectionToolbar);
 		
+		if (isEditingConfigHotKey()) {
+			int textFieldWidth = (int) clamp(width / 5, 100, 300);
+			pos(editedHotKeyNameTextField, width / 2 - textFieldWidth / 2, 8, textFieldWidth, 12);
+			addButton(editedHotKeyNameTextField);
+		}
+		
 		// Right toolbar
 		if (!isEditingConfigHotKey()) {
-			int presetPickerWidth = MathHelper.clamp(width / 3, 80, 250);
+			int presetPickerWidth = clamp(width / 3, 80, 250);
 			presetPickerWidget.setPosition(width - presetPickerWidth - 24, 2, presetPickerWidth);
 			pos(hotKeyButton, width - 22, 2);
 			addListener(presetPickerWidget);
 			addButton(hotKeyButton);
+		} else {
+			int hotKeyButtonWidth = clamp(width / 3, 80, 250);
+			editedHotKeyButton.setPosition(width - hotKeyButtonWidth - 2, 2, hotKeyButtonWidth);
+			addListener(editedHotKeyButton);
 		}
 		
 		// Tab bar
@@ -405,20 +412,11 @@ public class SimpleConfigScreen
 		int buttonWidths = min(200, (width - 88) / 3);
 		int cX = width / 2;
 		int by = height - 24;
-		if (isEditingConfigHotKey()) {
-			buttonWidths = min(180, (width - 88) / 5);
-			pos(editedHotKeyButton, cX - buttonWidths * 2 - 6, by);
-			editedHotKeyButton.setExactWidth(buttonWidths);
-			pos(editedHotKeyNameTextField, cX + buttonWidths + 6, by + 10 - font.FONT_HEIGHT / 2, buttonWidths, 20);
-			addButton(editedHotKeyButton);
-		}
 		pos(quitButton, cX - buttonWidths - 2, by, buttonWidths);
 		addButton(quitButton);
 		pos(saveButton, cX + 2, by, buttonWidths);
 		addButton(saveButton);
 		saveButton.active = isEdited();
-		if (isEditingConfigHotKey())
-			addButton(editedHotKeyNameTextField);
 		
 		// Right buttons
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
@@ -605,7 +603,7 @@ public class SimpleConfigScreen
 			addHotKeyActions(hotkey, type, categories);
 		});
 		hotkey.setName(editedHotKeyNameTextField.getText());
-		hotkey.setKeyCode(editedHotKeyButton.getKey());
+		hotkey.setKeyMapping(editedHotKeyButton.getMapping());
 		super.saveHotkey();
 	}
 	
@@ -645,7 +643,7 @@ public class SimpleConfigScreen
 	
 	@Override protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
 		if (super.screenKeyPressed(keyCode, scanCode, modifiers)) return true;
-		InputMappings.Input key = InputMappings.getInputByCode(keyCode, scanCode);
+		Input key = InputMappings.getInputByCode(keyCode, scanCode);
 		// Navigation key bindings first
 		if (KeyBindings.NEXT_TYPE.isActiveAndMatches(key)) {
 			MultiFunctionIconButton modeButton = modeButtonMap.get(getEditedType());
@@ -726,8 +724,29 @@ public class SimpleConfigScreen
 					}
 				}
 			}
-			playFeedbackTap(1F);
+			playFeedbackTap(0.4F);
 			return true;
+		} else if (KeyBindings.HOTKEY.isActiveAndMatches(key)) {
+			if (!isSelecting()) {
+				AbstractConfigEntry<?> entry = listWidget.getSelectedEntry();
+				while (entry != null && entry.isSubEntry()) entry = entry.getParentEntry();
+				if (entry != null) {
+					HotKeyActionButton<?> button = entry.getHotKeyActionTypeButton();
+					if (button != null && button.active) {
+						IGuiEventListener focused = entry.getListener();
+						if (focused != button) {
+							if (focused instanceof Widget && ((Widget) focused).isFocused())
+								WidgetUtils.forceUnFocus(focused);
+							if (entry.getEventListeners().contains(button))
+								entry.setListener(button);
+							WidgetUtils.forceFocus(button);
+						}
+						if (button.click(0)) return true;
+					}
+				}
+				playFeedbackTap(0.4F);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -777,6 +796,7 @@ public class SimpleConfigScreen
 		updateIsEdited();
 		statusDisplayBar.tick();
 		saveButton.tick();
+		if (isEditingConfigHotKey()) editedHotKeyButton.tick();
 	}
 	
 	@Override
@@ -801,47 +821,45 @@ public class SimpleConfigScreen
 		} else renderDirtBackground(0);
 		listWidget.render(mStack, smX, smY, delta);
 		
-		final ITextComponent title = getDisplayedTitle();
-		if (isSelecting()) {
-			selectionToolbar.render(mStack, mouseX, mouseY, delta);
-			drawString(
-			  mStack, font, new TranslationTextComponent(
-				 "simpleconfig.ui.n_selected", new StringTextComponent(
-					String.valueOf(selectedEntries.size())).mergeStyle(TextFormatting.AQUA)),
-			  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xffffffff);
-		} else drawCenteredString(mStack, font, title, width / 2, 8, 0xffffffff);
+		if (!isEditingConfigHotKey()) {
+			final ITextComponent title = getDisplayedTitle();
+			if (isSelecting()) {
+				selectionToolbar.render(mStack, smX, smY, delta);
+				drawString(
+				  mStack, font, new TranslationTextComponent(
+					 "simpleconfig.ui.n_selected", new StringTextComponent(
+					 String.valueOf(selectedEntries.size())).mergeStyle(TextFormatting.AQUA)),
+				  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xffffffff);
+			} else drawCenteredString(mStack, font, title, width / 2, 8, 0xffffffff);
+		}
 		if (isShowingTabs()) {
 			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
 			ScissorsHandler.INSTANCE.pushScissor(r); {
 				if (isTransparentBackground()) {
 					fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
-				} else {
-					overlayBackground(mStack, r, 32, 32, 32);
-				}
+				} else overlayBackground(mStack, r, 32, 32, 32);
 				tabButtons.forEach(widget -> widget.render(mStack, smX, smY, delta));
 				drawTabsShades(mStack, 0, isTransparentBackground() ? 120 : 255);
 			} ScissorsHandler.INSTANCE.popScissor();
 			buttonLeftTab.render(mStack, smX, smY, delta);
 			buttonRightTab.render(mStack, smX, smY, delta);
 		}
-		editFileButton.render(mStack, mouseX, mouseY, delta);
-		searchBar.render(mStack, hasDialog ? -1 : mouseX, hasDialog ? -1 : mouseY, delta);
+		searchBar.render(mStack, smX, smY, delta);
 		if (listWidget.isScrollingNow())
 			removeTooltips(
 			  new Rectangle(listWidget.left, listWidget.top, listWidget.width, listWidget.height));
-		if (!isEditingConfigHotKey())
-			presetPickerWidget.render(mStack, mouseX, mouseY, delta);
+		if (!isEditingConfigHotKey()) {
+			presetPickerWidget.render(mStack, smX, smY, delta);
+		} else editedHotKeyButton.render(mStack, smX, smY, delta);
 		super.render(mStack, mouseX, mouseY, delta);
 	}
 	
 	public ITextComponent getDisplayedTitle() {
-		if (isEditingConfigHotKey())
-			return new TranslationTextComponent("simpleconfig.ui.title.editing_hotkey", displayTitle);
 		return displayTitle;
 	}
 	
 	public @Nullable INavigableTarget getNext(Predicate<INavigableTarget> predicate, boolean forwards) {
-		List<INavigableTarget> targets = listWidget.getNavigableTargets(false);
+		List<INavigableTarget> targets = listWidget.getNavigableTargets(false, true);
 		if (targets.isEmpty()) return null;
 		INavigableTarget target = listWidget.getSelectedTarget();
 		if (target == null) {
@@ -863,7 +881,7 @@ public class SimpleConfigScreen
 		for (int i = step.apply(selectedIndex); i != selectedIndex; i = step.apply(i)) {
 			ConfigCategory cat = sortedCategories.get(i);
 			Optional<INavigableTarget> opt = getListWidget(cat)
-			  .getNavigableTargets(false).stream()
+			  .getNavigableTargets(false, true).stream()
 			  .filter(predicate).findFirst();
 			if (opt.isPresent()) return opt.get();
 		}
@@ -961,16 +979,18 @@ public class SimpleConfigScreen
 		    .key("undo", KeyBindings.UNDO)
 		    .key("redo", KeyBindings.REDO)
 		    .key("reset_restore", KeyBindings.RESET_RESTORE)
+		    .key("hotkey", KeyBindings.HOTKEY)
 		  ).category("search", c -> c
 			 .key("open", KeyBindings.SEARCH)
-			 .key("next_prev", "up/down, enter/shift+enter")
-			 .key("toggle_case", "alt+c!")
-			 .key("toggle_tooltips", "alt+t!")
-			 .key("toggle_regex", "alt+r!")
+			 .key("next_prev", "up/down, enter/left.shift+enter")
+			 .key("toggle_filter", "left.alt+\"f\"")
+			 .key("toggle_case", "left.alt+\"c\"")
+			 .key("toggle_tooltips", "left.alt+\"t\"")
+			 .key("toggle_regex", "left.alt+\"r\"")
 		  ).category("navigation", c -> c
-			 .key("up_down", "alt+up/down")
-			 .key("left", "alt+left")
-			 .key("right", "alt+right")
+			 .key("up_down", "left.alt+up/down")
+			 .key("left", "left.alt+left")
+			 .key("right", "left.alt+right")
 			 .key("type.prev", KeyBindings.PREV_TYPE)
 			 .key("type.next", KeyBindings.NEXT_TYPE)
 			 .key("page.prev", KeyBindings.PREV_PAGE)
@@ -978,10 +998,10 @@ public class SimpleConfigScreen
 			 .key("error.prev", KeyBindings.PREV_ERROR)
 			 .key("error.next", KeyBindings.NEXT_ERROR)
 		  ).category("lists", c -> c
-			 .key("move", "ctrl+alt+up/down")
-			 .key("move.drag", "mouse.middle/alt+mouse.left")
-			 .key("insert", "alt+insert")
-			 .key("remove", "alt+delete")
+			 .key("move", "left.control+left.alt+up/down")
+			 .key("move.drag", "mouse.middle/left.alt+mouse.left")
+			 .key("insert", "left.alt+insert")
+			 .key("remove", "left.alt+delete")
 		  ).category("color", c -> c
 			 .key("use", "mouse.left")
 			 .key("save", "mouse.right")
@@ -1060,7 +1080,7 @@ public class SimpleConfigScreen
 			public void applyToList(
 			  DynamicEntryListWidget<?> list, int mouseX, int mouseY
 			) {
-				Lists.reverse(list.getNavigableTargets(true)).stream()
+				Lists.reverse(list.getNavigableTargets(true, false)).stream()
 				  .filter(e -> e.getRowArea().contains(mouseX, mouseY))
 				  .findFirst().ifPresent(entry -> {
 					  if (apply(entry, mouseX, mouseY)) {
@@ -1093,11 +1113,11 @@ public class SimpleConfigScreen
 		}
 		
 		@Override public int getFieldWidth() {
-			return (int) MathHelper.clamp((right - left) * 0.3F, 80, 250);
+			return (int) clamp((right - left) * 0.3F, 80, 250);
 		}
 		
 		@Override public int getKeyFieldWidth() {
-			return (int) MathHelper.clamp((right - left) * 0.25F, 80, 250);
+			return (int) clamp((right - left) * 0.25F, 80, 250);
 		}
 		
 		@Override protected int getScrollBarPosition() {
@@ -1297,7 +1317,7 @@ public class SimpleConfigScreen
 			 TextFormatting.GRAY)};
 		
 		protected ToggleImageButton tooltipButton;
-		protected boolean searchTooltips = true;
+		protected boolean searchTooltips = search.search_tooltips;
 		
 		public TooltipSearchBarWidget(
 		  ISearchHandler handler, int x, int y, int w, IDialogCapableScreen screen
@@ -1315,6 +1335,11 @@ public class SimpleConfigScreen
 		
 		@Override protected void updateModifiers() {
 			searchTooltips = tooltipButton.getValue();
+			ISimpleConfigEntryHolder g = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+			String SEARCH_TOOLTIPS = "search_tooltips";
+			if (g.hasGUI()) {
+				g.setGUI(SEARCH_TOOLTIPS, searchTooltips);
+			} else g.set(SEARCH_TOOLTIPS, searchTooltips);
 			super.updateModifiers();
 		}
 		

@@ -10,8 +10,8 @@ import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.core.annotation.Bind;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simpleconfig.core.entry.IConfigEntrySerializer;
-import endorh.simpleconfig.ui.api.ModifierKeyCode;
 import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluids;
@@ -45,7 +45,7 @@ import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simpleconfig.core.SimpleConfig.category;
 import static endorh.simpleconfig.core.SimpleConfig.group;
 import static endorh.simpleconfig.core.entry.Builders.*;
-import static endorh.simpleconfig.ui.api.ModifierKeyCode.parse;
+import static endorh.simpleconfig.ui.hotkey.KeyBindMapping.parse;
 import static java.lang.Math.abs;
 import static java.util.Arrays.asList;
 
@@ -382,8 +382,8 @@ public class DemoConfigCategory {
 						  Pair.of("move", 2), Pair.of("tower", 1))))
 		          .add("key_map", map(
 						key(), string("/execute ..."), ImmutableMap.of(
-						  parse("ctrl+h"), "/tp 0 0 0",
-						  parse("ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true"))))
+			           parse("left.control+h"), "/tp 0 0 0",
+						  parse("left.ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true"))))
 		     .n(group("pairs_n_triples", false)
 		          .add("int_pair", pair(number(0, 0, 10), number(10, 0, 10)))
 		          .add("slider_pair", pair(number(0.5F, 0F, 1F).slider(), volume(0.5F)))
@@ -754,7 +754,7 @@ public class DemoConfigCategory {
 			@Bind public static Map<String, List<String>> list_map;
 			@Bind public static Pair<Integer, Map<String, Map<String, Integer>>> divisible_int_map_map;
 			@Bind public static Map<Integer, Integer> int_to_int_map;
-			@Bind public static Map<ModifierKeyCode, String> key_map;
+			@Bind public static Map<KeyBindMapping, String> key_map;
 		}
 		
 		@Bind public static class special {

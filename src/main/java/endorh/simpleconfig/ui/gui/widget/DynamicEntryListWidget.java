@@ -35,6 +35,7 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -140,7 +141,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	public @Nullable INavigableTarget getSelectedTarget() {
-		final List<INavigableTarget> targets = getNavigableTargets(true);
+		final List<INavigableTarget> targets = getNavigableTargets(true, false);
 		if (selectedTarget == null) return null;
 		if (targets.contains(selectedTarget))
 			return selectedTarget;
@@ -151,7 +152,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	public @Nullable INavigableTarget getSelectedSubTarget() {
-		final List<INavigableTarget> targets = getNavigableTargets(true);
+		final List<INavigableTarget> targets = getNavigableTargets(true, false);
 		if (selectedTarget == null) return null;
 		if (targets.contains(selectedTarget))
 			return selectedTarget;
@@ -817,17 +818,23 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		playFeedbackTap(0.4F);
 	}
 	
-	public List<INavigableTarget> getNavigableTargets(boolean onlyVisible) {
+	public List<INavigableTarget> getNavigableTargets(boolean onlyVisible, boolean subTargets) {
 		return entries.stream()
 		  .filter(INavigableTarget::isNavigable)
-		  .flatMap(e -> Stream.concat(
-			 Stream.of(e), e.getNavigableDescendants(onlyVisible).stream()
-		  )).collect(Collectors.toList());
+		  .flatMap(
+			 subTargets
+			 ? e -> Stream.of(
+				Stream.of(e), e.getNavigableSubTargets().stream(),
+				e.getNavigableDescendantsAndSubDescendants(onlyVisible).stream()
+			 ).flatMap(Function.identity())
+			 : e -> Stream.concat(
+				Stream.of(e), e.getNavigableDescendants(onlyVisible).stream())
+		  ).collect(Collectors.toList());
 	}
 	
 	public void navigateEntries(int step) {
 		if (step == 0) return;
-		final List<INavigableTarget> targets = getNavigableTargets(true);
+		final List<INavigableTarget> targets = getNavigableTargets(true, false);
 		INavigableTarget selected = getSelectedTarget();
 		INavigableTarget subTarget = getSelectedSubTarget();
 		int i = selected != null ? targets.indexOf(selected) : -1;

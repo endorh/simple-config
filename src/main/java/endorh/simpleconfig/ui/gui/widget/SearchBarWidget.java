@@ -3,8 +3,8 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig.advanced;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.config.ClientConfig.advanced.search;
+import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.Tooltip;
@@ -77,9 +77,9 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	protected int currentMatch = 0;
 	protected int totalMatches = 0;
 	
-	protected boolean caseSensitive = false;
-	protected boolean regex = false;
-	protected boolean filter = false;
+	protected boolean caseSensitive = search.search_case_sensitive;
+	protected boolean regex = search.search_regex;
+	protected boolean filter = search.search_filter;
 	
 	protected boolean closeOnClickOutside = false;
 	protected boolean expanded = false;
@@ -108,8 +108,8 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		regexComboBox.setValueListener(s -> makeQuery());
 		comboBox.setAutoDropDown(false);
 		regexComboBox.setAutoDropDown(false);
-		comboBox.setSuggestions(advanced.search_history);
-		regexComboBox.setSuggestions(advanced.regex_search_history);
+		comboBox.setSuggestions(search.search_history);
+		regexComboBox.setSuggestions(search.regex_search_history);
 		up = new MultiFunctionImageButton(
 		  x + w - 68, y, 18, 18, Buttons.UP, ButtonAction.of(
 			 b -> next(b == 1)
@@ -122,9 +122,9 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		  x + w - 20, y, 20, 20, Buttons.SEARCH_CLOSE, ButtonAction.of(this::close));
 		open = new MultiFunctionImageButton(
 		  x + 2, y, 20, 20, Buttons.SEARCH, ButtonAction.of(this::open));
-		caseButton = ToggleImageButton.of(false, 18, SearchBar.SEARCH_CASE_SENSITIVE, b -> updateModifiers());
-		regexButton = ToggleImageButton.of(false,  18, SearchBar.SEARCH_REGEX, b -> updateModifiers());
-		filterButton = ToggleImageButton.of(false, 18, SearchBar.SEARCH_FILTER, b -> updateModifiers());
+		caseButton = ToggleImageButton.of(caseSensitive, 18, SearchBar.SEARCH_CASE_SENSITIVE, b -> updateModifiers());
+		regexButton = ToggleImageButton.of(regex,  18, SearchBar.SEARCH_REGEX, b -> updateModifiers());
+		filterButton = ToggleImageButton.of(filter, 18, SearchBar.SEARCH_FILTER, b -> updateModifiers());
 		optionButtons = Lists.newArrayList(caseButton, regexButton, filterButton);
 		expandedListeners = Lists.newArrayList(caseButton, regexButton, filterButton, comboBox, up, down, close);
 		regexListeners = Lists.newArrayList(caseButton, regexButton, filterButton, regexComboBox, up, down, close);
@@ -167,41 +167,41 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		if (regex) {
 			final Pattern value = regexComboBox.getValue();
 			if (value != null && !value.pattern().isEmpty()) {
-				final List<Pattern> sh = new LinkedList<>(advanced.regex_search_history);
+				final List<Pattern> sh = new LinkedList<>(search.regex_search_history);
 				if (sh.indexOf(value) == 0)
 					return;
 				sh.remove(value);
 				sh.add(0, value);
-				final int size = advanced.regex_search_history_size;
+				final int size = search.regex_search_history_size;
 				final Pair<Integer, List<Pattern>> newHistory = Pair.of(
 				  size, new ArrayList<>(sh.subList(0, min(sh.size(), size))));
-				SimpleConfig c = SimpleConfigMod.CLIENT_CONFIG;
-				String REGEX_SEARCH_HISTORY = "advanced.regex_search_history";
+				ISimpleConfigEntryHolder c = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+				String REGEX_SEARCH_HISTORY = "regex_search_history";
 				if (c.hasGUI()) {
 					Pair<Integer, List<String>> newGUIHistory = Pair.of(
 					  newHistory.getLeft(), newHistory.getRight().stream()
 						 .map(Pattern::pattern).collect(Collectors.toList()));
 					c.setGUI(REGEX_SEARCH_HISTORY, newGUIHistory);
-					advanced.regex_search_history = newHistory.getValue();
+					search.regex_search_history = newHistory.getValue();
 				} else c.set(REGEX_SEARCH_HISTORY, newHistory);
 				regexComboBox.setSuggestions(newHistory.getValue());
 			}
 		} else {
 			final String value = comboBox.getValue();
 			if (value != null && !value.isEmpty()) {
-				final List<String> sh = new LinkedList<>(advanced.search_history);
+				final List<String> sh = new LinkedList<>(search.search_history);
 				if (sh.indexOf(value) == 0)
 					return;
 				sh.remove(value);
 				sh.add(0, value);
-				final int size = advanced.search_history_size;
+				final int size = search.search_history_size;
 				final Pair<Integer, List<String>> newHistory = Pair.of(
 				  size, new ArrayList<>(sh.subList(0, min(sh.size(), size))));
-				String SEARCH_HISTORY = "advanced.search_history";
-				SimpleConfig c = SimpleConfigMod.CLIENT_CONFIG;
+				String SEARCH_HISTORY = "search_history";
+				ISimpleConfigEntryHolder c = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
 				if (c.hasGUI()) {
 					c.setGUI(SEARCH_HISTORY, newHistory);
-					advanced.search_history = newHistory.getValue();
+					search.search_history = newHistory.getValue();
 				} else c.set(SEARCH_HISTORY, newHistory);
 				comboBox.setSuggestions(newHistory.getValue());
 			}
@@ -219,6 +219,19 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		caseSensitive = caseButton.getValue();
 		regex = regexButton.getValue();
 		filter = filterButton.getValue();
+		ISimpleConfigEntryHolder g = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+		String SEARCH_FILTER = "search_filter";
+		String SEARCH_CASE_SENSITIVE = "search_case_sensitive";
+		String SEARCH_REGEX = "search_regex";
+		if (g.hasGUI()) {
+			g.setGUI(SEARCH_FILTER, filter);
+			g.setGUI(SEARCH_CASE_SENSITIVE, caseSensitive);
+			g.setGUI(SEARCH_REGEX, regex);
+		} else {
+			g.set(SEARCH_FILTER, filter);
+			g.set(SEARCH_CASE_SENSITIVE, caseSensitive);
+			g.set(SEARCH_REGEX, regex);
+		}
 		makeQuery();
 		setListener(getComboBox());
 		if (!getComboBox().isFocused()) getComboBox().changeFocus(true);

@@ -4,16 +4,26 @@ import endorh.simpleconfig.ui.impl.ScissorsHandlerImpl;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
-import java.util.List;
+import java.util.Collection;
 
 @OnlyIn(value = Dist.CLIENT)
 public interface ScissorsHandler {
 	ScissorsHandler INSTANCE = ScissorsHandlerImpl.INSTANCE;
-	void clearScissors();
-	List<Rectangle> getScissorsAreas();
+	
+	@Internal void clearScissors();
+	Collection<Rectangle> getScissorsAreas();
+	
 	void pushScissor(Rectangle clipArea);
 	void popScissor();
-	void applyScissors();
+	
+	default void withScissor(Rectangle clipArea, Runnable runnable) {
+		pushScissor(clipArea);
+		runnable.run();
+		popScissor();
+	}
+	
+	void withoutScissors(Runnable runnable);
 }
 

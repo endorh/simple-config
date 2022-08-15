@@ -3,9 +3,12 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.OverlayInjector;
+import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Backgrounds;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
@@ -27,6 +30,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -44,6 +48,8 @@ public class MultiFunctionIconButton extends TintedButton {
 	protected int maxWidth;
 	protected int minWidth;
 	protected int defaultTint = 0;
+	protected Rectangle overlayArea;
+	protected ButtonOverlay overlay = new ButtonOverlay(this);
 	
 	public static MultiFunctionIconButton of(
 	  @NotNull Icon icon,   ButtonActionBuilder builder
@@ -141,13 +147,12 @@ public class MultiFunctionIconButton extends TintedButton {
 		FontRenderer font = mc.fontRenderer;
 		ITextComponent title = getTitle();
 		Icon icon = action.icon != null ? action.icon.get() : null;
-		if (icon == null) icon = defaultIcon;
+		if (icon == null) icon = getDefaultIcon();
 		final int textWidth = font.getStringPropertyWidth(title);
 		final int iconWidth = icon != Icon.EMPTY ? 20 : 4;
 		final int contentWidth = textWidth + iconWidth + 4;
-		if (minWidth != -1 && maxWidth != -1) {
+		if (minWidth != -1 && maxWidth != -1)
 			width = max(minWidth, min(maxWidth, (contentWidth + 1) / 2 * 2));
-		}
 		if (action.tint != null) {
 			Integer tint = action.tint.get();
 			super.setTintColor(tint != null? tint : 0);
@@ -158,9 +163,8 @@ public class MultiFunctionIconButton extends TintedButton {
 		RenderSystem.defaultBlendFunc();
 		
 		mc.getTextureManager().bindTexture(WIDGETS_LOCATION);
-		int i = getYImage(isHovered());
-		blit(mStack, x, y, 0, 46 + i * 20, width / 2, height);
-		blit(mStack, x + width / 2, y, 200 - width / 2, 46 + i * 20, width / 2, height);
+		int level = getYImage(isHovered());
+		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, x, y, width, height, level);
 		renderBg(mStack, mc, mouseX, mouseY);
 		int color = getFGColor();
 		mStack.push(); {
@@ -175,15 +179,27 @@ public class MultiFunctionIconButton extends TintedButton {
 			RenderSystem.color4f(1F, 1F, 1F, 1F);
 			if (width > iconWidth) {
 				if (contentWidth > width) {
-					ScissorsHandler.INSTANCE.pushScissor(new Rectangle(x, y, width, height));
-					drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
-					ScissorsHandler.INSTANCE.popScissor();
+					ScissorsHandler.INSTANCE.withScissor(
+					  new Rectangle(x + 2, y, width - 4, height), () -> drawString(
+						 mStack, font, title, x + iconWidth, y + (height - 8) / 2,
+						 color | MathHelper.ceil(alpha * 255.0F) << 24));
+					if (overlayArea == null) {
+						overlayArea = new Rectangle(x, y, contentWidth + 4, height + 1);
+						Screen screen = Minecraft.getInstance().currentScreen;
+						if (screen != null && overlayArea.getMaxX() > screen.width)
+							overlayArea.x = max(4, screen.width - 4 - overlayArea.getWidth());
+						OverlayInjector.injectVisualOverlay(overlayArea, overlay, 10);
+					} else {
+						overlayArea.setBounds(x, y, contentWidth + 4, height + 1);
+						Screen screen = Minecraft.getInstance().currentScreen;
+						if (screen != null && overlayArea.getMaxX() > screen.width)
+							overlayArea.x = max(4, screen.width - 4 - overlayArea.getWidth());
+					}
 				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
 			}
 		} mStack.pop();
 		
-		if (isHovered())
-			renderToolTip(mStack, mouseX, mouseY);
+		if (isHovered()) renderToolTip(mStack, mouseX, mouseY);
 	}
 	
 	private static final ITextComponent[] EMPTY_TEXT_COMPONENT_ARRAY = new ITextComponent[0];
@@ -262,6 +278,10 @@ public class MultiFunctionIconButton extends TintedButton {
 		setMaxWidth(max);
 	}
 	
+	@Override public void setWidth(int width) {
+		setExactWidth(width);
+	}
+	
 	public void setExactWidth(int width) {
 		setMinWidth(width);
 		setMaxWidth(width);
@@ -287,9 +307,41 @@ public class MultiFunctionIconButton extends TintedButton {
 		FontRenderer font = mc.fontRenderer;
 		ITextComponent title = action.titleSupplier != null ? action.titleSupplier.get() : defaultTitle.get();
 		Icon icon = action.icon != null ? action.icon.get() : null;
-		if (icon == null) icon = defaultIcon;
+		if (icon == null) icon = getDefaultIcon();
 		final int textWidth = font.getStringPropertyWidth(title);
 		final int contentWidth = textWidth + (icon != Icon.EMPTY? 20 : 4) + 4;
 		return max(minWidth, min(maxWidth, (contentWidth + 1) / 2 * 2));
+	}
+	
+	public static class ButtonOverlay implements IOverlayRenderer {
+		private final MultiFunctionIconButton button;
+		
+		public ButtonOverlay(MultiFunctionIconButton button) {
+			this.button = button;
+		}
+		
+		@Override public boolean renderOverlay(
+		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+		) {
+			if (!button.isMouseOver(mouseX, mouseY)) {
+				button.overlayArea = null;
+				return false;
+			}
+			int x = button.x;
+			int y = button.y;
+			int minW = button.minWidth;
+			int maxW = button.maxWidth;
+			int h = button.height;
+			pos(button, area.x, area.y);
+			button.setExactWidth(area.width);
+			button.setHeight(area.height);
+			button.render(mStack, mouseX, mouseY, delta);
+			button.x = x;
+			button.y = y;
+			button.minWidth = minW;
+			button.maxWidth = maxW;
+			button.height = h;
+			return true;
+		}
 	}
 }

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.ui.gui.Icon;
+import endorh.simpleconfig.ui.gui.icon.Icon;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +40,9 @@ public abstract class HotKeyActionType<V, A extends HotKeyAction<V>> {
 		return new TranslationTextComponent("simpleconfig.hotkey.type.action." + getTranslationKey());
 	}
 	
+	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> A create(E entry, Object value) {
+		return deserialize(entry, value);
+	}
 	public abstract @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> A deserialize(E entry, Object value);
 	public abstract <T, C, E extends AbstractConfigEntry<T, C, V>> @Nullable Object serialize(E entry, A action);
 	

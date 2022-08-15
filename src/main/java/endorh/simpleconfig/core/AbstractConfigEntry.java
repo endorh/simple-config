@@ -4,10 +4,10 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import endorh.simpleconfig.SimpleConfigMod.ClientConfig;
+import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.core.SimpleConfig.*;
-import endorh.simpleconfig.ui.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
@@ -748,7 +748,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 	
 	protected void bakeField() {
-		if (backingField != null) {
+		if (backingField != null || secondaryBackingFields != null && !secondaryBackingFields.isEmpty()) {
 			try {
 				setBackingField(get());
 			} catch (IllegalAccessException e) {

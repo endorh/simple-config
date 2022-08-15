@@ -14,8 +14,8 @@ import java.util.stream.Stream;
 
 @OnlyIn(value = Dist.CLIENT)
 public class FloatListEntry extends TextFieldListEntry<Float> implements IRangedEntry<Float> {
-	private float minimum = Float.MIN_VALUE;
-	private float maximum = Float.MAX_VALUE;
+	private float minimum = Float.NEGATIVE_INFINITY;
+	private float maximum = Float.POSITIVE_INFINITY;
 	
 	@Internal public FloatListEntry(
 	  ITextComponent fieldName, Float value

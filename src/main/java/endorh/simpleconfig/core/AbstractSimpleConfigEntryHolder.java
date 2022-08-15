@@ -3,6 +3,7 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
@@ -30,9 +31,9 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	protected static final Pattern DOT = Pattern.compile("\\.");
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	private static final Logger LOGGER = LogManager.getLogger();
+	protected SimpleConfig root;
 	protected Map<String, AbstractConfigEntry<?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
-	protected SimpleConfig root;
 	protected boolean dirty = false;
 	
 	/**
@@ -142,7 +143,9 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 						entry.accept(ee -> ee.setGUI(ee.forGui(ee.fromConfigOrDefault(ee.get(config))), forRemote));
 					} else entry.accept(ee -> ee.set(ee.fromConfig(ee.get(config))));
 				} catch (InvalidConfigValueTypeException ignored) {
-					LOGGER.warn("Error loading config snapshot. Invalid value type for entry " + entry.getGlobalPath());
+					LOGGER.error("Error loading config snapshot. Invalid value type for entry " + entry.getGlobalPath());
+				} catch (InvalidConfigValueException ignored) {
+					LOGGER.error("Error loading config snapshot. Invalid value for entry " + entry.getGlobalPath());
 				}
 			}
 		}
