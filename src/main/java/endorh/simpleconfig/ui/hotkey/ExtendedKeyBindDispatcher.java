@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import com.google.common.collect.Lists;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindRegistrar;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.Util;
@@ -9,7 +9,6 @@ import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
 import net.minecraftforge.client.event.InputEvent.MouseScrollEvent;
 import net.minecraftforge.client.event.InputEvent.RawMouseEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -24,19 +23,28 @@ import java.util.stream.StreamSupport;
 
 public class ExtendedKeyBindDispatcher {
 	public static final ExtendedKeyBindDispatcher INSTANCE = new ExtendedKeyBindDispatcher();
+	
 	// Minecraft can sometimes miss release events for the Windows keys, and
 	//   having hotkeys on release for them is a bad idea anyways.
 	private static final IntSet AUTO_RELEASED_KEYS = Util.make(
 	  new IntOpenHashSet(2), s -> IntStream.of(
 		 GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER).forEach(s::add));
 	
+	// Accessed from ExtendedKeyBindProxy by reflection
+	@SuppressWarnings("unused") protected static final ExtendedKeyBindRegistrar REGISTRAR =
+	  new ExtendedKeyBindRegistrar() {
+		  @Override public void registerProvider(ExtendedKeyBindProvider provider) {
+			  ExtendedKeyBindDispatcher.registerProvider(provider);
+		  }
+		
+		  @Override public void unregisterProvider(ExtendedKeyBindProvider provider) {
+			  ExtendedKeyBindDispatcher.unregisterProvider(provider);
+		  }
+	  };
+	
 	protected InputMatchingContext ctx = new InputMatchingContextImpl();
 	protected WeakHashMap<ExtendedKeyBindProvider, ExtendedKeyBindProviderTicket> tickets = new WeakHashMap<>();
 	protected SortedMap<ExtendedKeyBindProviderTicket, Integer> providers = new TreeMap<>();
-	
-	public static void registerKeyBinds(ExtendedKeyBind... keyBinds) {
-		registerProvider(new SimpleExtendedKeyBindProvider(Lists.newArrayList(keyBinds)));
-	}
 	
 	public static void registerProvider(ExtendedKeyBindProvider provider) {
 		ExtendedKeyBindProviderTicket ticket = INSTANCE.tickets.computeIfAbsent(
@@ -48,10 +56,6 @@ public class ExtendedKeyBindDispatcher {
 	public static void unregisterProvider(ExtendedKeyBindProvider provider) {
 		ExtendedKeyBindProviderTicket ticket = INSTANCE.tickets.remove(provider);
 		if (ticket != null) INSTANCE.providers.remove(ticket);
-	}
-	
-	protected ExtendedKeyBindDispatcher() {
-		MinecraftForge.EVENT_BUS.register(this);
 	}
 	
 	protected Collection<ExtendedKeyBindProvider> getSortedProviders() {
@@ -138,20 +142,6 @@ public class ExtendedKeyBindDispatcher {
 				if (ctx.isCancelled()) return;
 			}
 		}
-	}
-	
-	public interface InputMatchingContext {
-		IntList getSortedPressedKeys();
-		IntSet getPressedKeys();
-		Int2ObjectMap<String> getCharMap();
-		Set<String> getPressedChars();
-		Set<ExtendedKeyBind> getRepeatableKeyBinds();
-		boolean isTriggered();
-		void setTriggered(boolean triggered);
-		boolean isPreventFurther();
-		void setPreventFurther(boolean prevent);
-		boolean isCancelled();
-		void setCancelled(boolean cancelled);
 	}
 	
 	// Highest should probably be left for mods that remap events.
@@ -287,64 +277,18 @@ public class ExtendedKeyBindDispatcher {
 		}
 	}
 	
-	public interface ExtendedKeyBindProvider {
-		/**
-		 * Provide active keybinds.<br>
-		 * This doesn't need to check for keybind context, it merely allows providers to
-		 * add another layer of enable-ability to keybinds.
-		 */
-		Iterable<ExtendedKeyBind> getActiveKeyBinds();
-		
-		/**
-		 * Provide a collection of all potential keybinds that could be
-		 * returned by this provider, for the purpose of checking for conflicts.
-		 */
-		default Iterable<ExtendedKeyBind> getAllKeyBinds() {
-			return getActiveKeyBinds();
-		}
-		
-		/**
-		 * Priority of this provider. Higher values receive events earlier.
-		 */
-		default int getPriority() {
-			return 0;
-		}
-	}
-	
-	public static class SimpleExtendedKeyBindProvider implements ExtendedKeyBindProvider {
-		private final Collection<ExtendedKeyBind> keyBinds;
-		private int priority;
-		
-		public SimpleExtendedKeyBindProvider(Collection<ExtendedKeyBind> keyBinds) {
-			this(0, keyBinds);
-		}
-		
-		public SimpleExtendedKeyBindProvider(int priority, Collection<ExtendedKeyBind> keyBinds) {
-			this.priority = priority;
-			this.keyBinds = keyBinds;
-		}
-		
-		@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
-			return keyBinds;
-		}
-		@Override public int getPriority() {
-			return priority;
-		}
-		public void setPriority(int priority) {
-			this.priority = priority;
-		}
-	}
-	
-	public List<ExtendedKeyBind> getOverlaps(ExtendedKeyBind keyBind) {
+	public List<ExtendedKeyBindImpl> getOverlaps(ExtendedKeyBindImpl keyBind) {
 		return getSortedProviders().stream()
 		  .flatMap(p -> StreamSupport.stream(p.getAllKeyBinds().spliterator(), false))
-		  .filter(o -> keyBind != o && keyBind.overlaps(o))
+		  .filter(o -> o instanceof ExtendedKeyBindImpl && keyBind != o && keyBind.overlaps(o))
+		  .map(o -> (ExtendedKeyBindImpl) o)
 		  .collect(Collectors.toList());
 	}
 	
-	public List<ExtendedKeyBind> getOverlaps(KeyBindMapping mapping) {
+	public List<ExtendedKeyBindImpl> getOverlaps(KeyBindMapping mapping) {
 		return getSortedProviders().stream()
 		  .flatMap(p -> StreamSupport.stream(p.getAllKeyBinds().spliterator(), false))
+		  .filter(o -> o instanceof ExtendedKeyBindImpl).map(o -> (ExtendedKeyBindImpl) o)
 		  .filter(o -> mapping.overlaps(o.getCandidateDefinition()))
 		  .collect(Collectors.toList());
 	}

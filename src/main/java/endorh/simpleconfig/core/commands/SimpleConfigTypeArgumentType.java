@@ -8,9 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.command.arguments.IArgumentSerializer;
@@ -43,7 +44,7 @@ public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 	
 	@Override public EditType parse(StringReader reader) throws CommandSyntaxException {
 		String alias = reader.readUnquotedString();
-		EditType type = EditType.fromAlias(alias);
+		EditType type = ISimpleConfig.EditType.fromAlias(alias);
 		if (type == null || type.isRemote() != isRemote)
 			throw UNKNOWN_TYPE.createWithContext(reader, alias);
 		return type;
@@ -60,7 +61,7 @@ public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 		  .filter(c -> c.getModId().equals(modId))
 		  .map(c -> c.getType().asEditType(isRemote))
 		  .filter(t -> t.isRemote() == isRemote)
-		  .map(EditType::getAlias)
+		  .map(ISimpleConfig.EditType::getAlias)
 		  .forEach(builder::suggest);
 		return builder.buildFuture();
 	}

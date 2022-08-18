@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ButtonEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ButtonFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.ITextComponent;
@@ -26,7 +27,8 @@ public class ButtonEntry extends GUIOnlyEntry<
 	}
 	
 	public static class Builder extends GUIOnlyEntry.Builder<
-	  Consumer<ISimpleConfigEntryHolder>, Runnable, ButtonEntry, Builder> {
+	  Consumer<ISimpleConfigEntryHolder>, Runnable, ButtonEntry, ButtonEntryBuilder, Builder
+	> implements ButtonEntryBuilder {
 		protected Supplier<ITextComponent> buttonLabelSupplier =
 		  () -> new TranslationTextComponent("simpleconfig.label.run");
 		
@@ -34,20 +36,20 @@ public class ButtonEntry extends GUIOnlyEntry<
 			super(value, Void.class);
 		}
 		
-		@Contract(pure=true) public Builder label(String translation) {
+		@Override @Contract(pure=true) public Builder label(String translation) {
 			Builder copy = copy();
 			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder label(ITextComponent label) {
+		@Override @Contract(pure=true) public Builder label(ITextComponent label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = () -> label;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder label(Supplier<ITextComponent> label) {
+		@Override @Contract(pure=true) public Builder label(Supplier<ITextComponent> label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = label;
 			return copy;
@@ -73,7 +75,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Runnable, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		ButtonFieldBuilder entryBuilder = builder.startButton(getDisplayName(), forGui(get()))
 		  .withButtonLabel(buttonLabelSupplier);

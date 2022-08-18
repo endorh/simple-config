@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ColorEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;
-import java.awt.*;
+import java.awt.Color;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -29,18 +30,19 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
 		this.alpha = alpha;
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<Color, String, Integer, ColorEntry, Builder> {
+	public static class Builder extends AbstractConfigEntryBuilder<Color, String, Integer, ColorEntry, ColorEntryBuilder, Builder>
+	  implements ColorEntryBuilder {
 		protected boolean alpha;
 		
 		public Builder(Color value) {
 			super(value, Color.class);
 		}
 		
-		@Contract(pure=true) public Builder alpha() {
+		@Override @Contract(pure=true) public Builder alpha() {
 			return alpha(true);
 		}
 		
-		@Contract(pure=true) public Builder alpha(boolean hasAlpha) {
+		@Override @Contract(pure=true) public Builder alpha(boolean hasAlpha) {
 			Builder copy = copy();
 			copy.alpha = hasAlpha;
 			return copy;
@@ -108,7 +110,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Integer, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		ColorFieldBuilder valBuilder = builder
 		  .startAlphaColorField(getDisplayName(), forGui(get()))

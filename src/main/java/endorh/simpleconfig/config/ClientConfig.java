@@ -1,21 +1,20 @@
 package endorh.simpleconfig.config;
 
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.annotation.Bind;
+import endorh.simpleconfig.api.entry.KeyBindEntryBuilder;
 import endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation;
-import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
-import endorh.simpleconfig.core.annotation.Bind;
-import endorh.simpleconfig.core.entry.KeyBindEntry;
 import endorh.simpleconfig.demo.DemoConfigCategory;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProvider;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping.VanillaKeyBindContext;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,30 +24,27 @@ import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
-import java.util.List;
+import java.awt.Color;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.config.ClientConfig.KeyBindings.EDIT_CONFIG_HOTKEYS;
 import static endorh.simpleconfig.config.ClientConfig.KeyBindings.OPEN_MOD_LIST;
 import static endorh.simpleconfig.config.ClientConfig.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
 import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
-import static endorh.simpleconfig.core.SimpleConfig.category;
-import static endorh.simpleconfig.core.SimpleConfig.group;
-import static endorh.simpleconfig.core.entry.Builders.*;
 
 /**
  * Client config backing class
  */
 @OnlyIn(Dist.CLIENT) public class ClientConfig {
-	@Internal public static SimpleConfig build() {
+	@Internal public static ISimpleConfig build() {
 		KeyBindings.register();
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
 		  .map(ModInfo::getModId).collect(Collectors.toList());
-		return SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.CLIENT, ClientConfig.class)
+		return config(SimpleConfigMod.MOD_ID, ISimpleConfig.Type.CLIENT, ClientConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.CLIENT)
 		  .withColor(0x6490FF80)
 		  .withBackground("textures/block/bookshelf.png")
@@ -216,7 +212,7 @@ import static endorh.simpleconfig.core.entry.Builders.*;
 				String modId = e.getValue();
 				if (mapping.getSettings().getContext() != VanillaKeyBindContext.GAME) return null;
 				if (!SimpleConfig.getConfigModIds().contains(modId)) return null;
-				return new ExtendedKeyBind(
+				return ExtendedKeyBind.of(SimpleConfigMod.MOD_ID,
 				  new TranslationTextComponent(
 					 "simpleconfig.keybind.open_mod_config",
 					 SimpleConfig.getModNameOrId(modId)),
@@ -242,9 +238,8 @@ import static endorh.simpleconfig.core.entry.Builders.*;
 		}
 		
 		private static void register() {
-			ExtendedKeyBindDispatcher.registerProvider(new ModExtendedKeyBindProvider());
-			ExtendedKeyBindDispatcher.registerKeyBinds(
-			  OPEN_MOD_LIST, EDIT_CONFIG_HOTKEYS);
+			ExtendedKeyBindProvider.registerProvider(new ModExtendedKeyBindProvider());
+			ExtendedKeyBindProvider.registerKeyBinds(OPEN_MOD_LIST, EDIT_CONFIG_HOTKEYS);
 		}
 		
 		@NotNull private static ExtendedKeyBind keyBind(String def, Runnable action) {
@@ -252,7 +247,7 @@ import static endorh.simpleconfig.core.entry.Builders.*;
 		}
 	}
 	
-	private static KeyBindEntry.Builder keyBind(ExtendedKeyBind keyBind) {
+	private static KeyBindEntryBuilder keyBind(ExtendedKeyBind keyBind) {
 		return key(keyBind).inheritTitle();
 	}
 }

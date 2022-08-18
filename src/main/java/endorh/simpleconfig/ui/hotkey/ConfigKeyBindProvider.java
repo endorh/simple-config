@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.hotkey;
 
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.IConfigHotKeyGroupEntry;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;

@@ -1,13 +1,12 @@
 package endorh.simpleconfig.core;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import endorh.simpleconfig.api.*;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -34,22 +33,23 @@ import static java.util.Collections.unmodifiableMap;
 
 /**
  * Create a {@link SimpleConfig} using a chained method call<br>
- * Use {@link SimpleConfigBuilder#add(String, AbstractConfigEntryBuilder)}
+ * Use {@link ISimpleConfigBuilder#add(String, ConfigEntryBuilder)}
  * to add entries to the config (in order)<br>
- * Use {@link SimpleConfigBuilder#n(CategoryBuilder)} to add
+ * Use {@link ISimpleConfigBuilder#n(ICategoryBuilder)} to add
  * subcategories to the config, each with its own tab<br>
- * Use {@link SimpleConfigBuilder#n(GroupBuilder)} to add
+ * Use {@link ISimpleConfigBuilder#n(IGroupBuilder)} to add
  * subgroups to the config, each under a dropdown entry in the GUI.
  * Groups may contain other groups.<br><br>
  * You may create categories and groups with the
- * {@link SimpleConfig#category(String, Class)} and
- * {@link SimpleConfig#group(String, boolean)} methods<br>
+ * {@link ConfigBuilderFactoryProxy#category(String, Class)} and
+ * {@link ConfigBuilderFactoryProxy#group(String, boolean)} methods<br>
  * You may create entries to add using the builder methods under
- * {@link Builders}<br>
+ * {@link ConfigBuilderFactoryProxy}<br>
  * Entries can be further configured with their own builder methods
  */
 public class SimpleConfigBuilder
-  extends AbstractSimpleConfigEntryHolderBuilder<SimpleConfigBuilder> {
+  extends AbstractSimpleConfigEntryHolderBuilder<ISimpleConfigBuilder>
+  implements ISimpleConfigBuilder {
 	protected final String modId;
 	protected final Type type;
 	protected @Nullable LiteralArgumentBuilder<CommandSource> commandRoot = null;
@@ -63,9 +63,9 @@ public class SimpleConfigBuilder
 	protected String path;
 	
 	protected final @Nullable Class<?> configClass;
-	protected @Nullable Consumer<SimpleConfig> baker = null;
+	protected @Nullable Consumer<ISimpleConfig> baker = null;
 	protected @Nullable Consumer<SimpleConfig> saver = null;
-	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator = null;
+	protected @Nullable BiConsumer<ISimpleConfig, ConfigScreenBuilder> decorator = null;
 	protected @Nullable ResourceLocation background = null;
 	protected boolean transparent = true;
 	
@@ -76,7 +76,7 @@ public class SimpleConfigBuilder
 		this.type = type;
 		this.configClass = configClass;
 		String classifier = type.name().toLowerCase();
-		this.title = modId + ".config.category." + classifier;
+		title = modId + ".config.category." + classifier;
 		path = classifier;
 		
 		defaultCategory = new CategoryBuilder(classifier);
@@ -85,96 +85,50 @@ public class SimpleConfigBuilder
 		defaultCategory.title = modId + ".config.category." + path;
 	}
 	
-	/**
-	 * Set the baker method for this config<br>
-	 * You may also define a '{@code bake}' static method
-	 * in the config class accepting a {@link SimpleConfig}
-	 * and it will be set automatically as the baker (but you
-	 * may not define it and also call this method)
-	 */
-	@Contract("_ -> this") public SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder withBaker(
+	  Consumer<ISimpleConfig> baker
+	) {
 		this.baker = baker;
 		return this;
 	}
 	
-	/**
-	 * Set the default background for all categories
-	 * @see #withBackground(ResourceLocation)
-	 * @see #withGUIDecorator(BiConsumer)
-	 */
-	@Contract("_ -> this") public SimpleConfigBuilder withBackground(String resourceName) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder withBackground(String resourceName) {
 		return withBackground(new ResourceLocation(resourceName));
 	}
 	
-	/**
-	 * Set the default background for all categories
-	 * @see #withBackground(String)
-	 * @see #withIcon(Icon)
-	 * @see #withColor(int)
-	 * @see #withGUIDecorator(BiConsumer)
-	 */
-	@Contract("_ -> this") public SimpleConfigBuilder withBackground(ResourceLocation background) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder withBackground(
+	  ResourceLocation background
+	) {
 		this.background = background;
 		return this;
 	}
 	
-	/**
-	 * Set the icon for the default category.<br>
-	 * Doesn't affect other categories.<br>
-	 * The icon is displayed in the tab button for the category, when more than
-	 * one category is present.
-	 * @param icon Icon to display. Use {@link Icon#EMPTY} to display no icon (default).
-	 * @see #withColor(int)
-	 * @see #withBackground(ResourceLocation)
-	 * @see #withGUIDecorator(BiConsumer)
-	 */
-	@Contract("_ -> this") public SimpleConfigBuilder withIcon(Icon icon) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder withIcon(Icon icon) {
 		defaultCategory.withIcon(icon);
 		return this;
 	}
 	
-	/**
-	 * Set the color for the default category.<br>
-	 * Doesn't affect other categories.<br>
-	 * The color affects the tint applied to the tab button for the category,
-	 * visible when more than one category is present.
-	 * @param tint Color tint to use, in ARGB format. It's recommended
-	 *             a transparency of 0x80, so the button background is
-	 *             visible behind the color. A value of 0 means no tint.
-	 * @see #withColor(int)
-	 * @see #withBackground(ResourceLocation)
-	 * @see #withGUIDecorator(BiConsumer)
-	 */
-	@Contract("_ -> this") public SimpleConfigBuilder withColor(int tint) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder withColor(int tint) {
 		defaultCategory.withColor(tint);
 		return this;
 	}
 	
-	/**
-	 * Use the solid background too when ingame<br>
-	 * By default, config GUIs are transparent when ingame
-	 */
-	@Contract("-> this") public SimpleConfigBuilder withSolidInGameBackground() {
-		this.transparent = false;
+	@Override @Contract("-> this") public SimpleConfigBuilder withSolidInGameBackground() {
+		transparent = false;
 		return this;
 	}
 	
-	/**
-	 * Configure a decorator to modify the Cloth Config API's {@link ConfigScreenBuilder}
-	 * just when a config GUI is being built<br>
-	 * @see SimpleConfigBuilder#withBackground(ResourceLocation)
-	 */
 	@OnlyIn(Dist.CLIENT)
-	@Contract("_ -> this") public SimpleConfigBuilder withGUIDecorator(BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator) {
+	@Contract("_ -> this") public SimpleConfigBuilder withGUIDecorator(
+	  BiConsumer<ISimpleConfig, ConfigScreenBuilder> decorator
+	) {
 		this.decorator = decorator;
 		return this;
 	}
 	
-	/**
-	 * Register the config command at the given command root<br>
-	 * The config command will still be accessible at {@code /config ⟨sub⟩ ⟨modid⟩}<br>
-	 */
-	@Contract("_ -> this") public SimpleConfigBuilder withCommandRoot(LiteralArgumentBuilder<CommandSource> root) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder withCommandRoot(
+	  LiteralArgumentBuilder<CommandSource> root
+	) {
 		commandRoot = root;
 		return this;
 	}
@@ -192,17 +146,17 @@ public class SimpleConfigBuilder
 	}
 	
 	@Override protected void addEntry(
-	  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
+	  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entry
 	) {
 		checkName(name);
 		if (entries.containsKey(name) || groups.containsKey(name) || categories.containsKey(name))
 			throw new IllegalArgumentException("Duplicate name for entry: " + name);
-		if (requireRestart) entry = entry.restart();
+		if (requireRestart) entry = (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry.restart();
 		entries.put(name, entry);
 		guiOrder.put(name, order);
 	}
 	
-	@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
+	@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> getEntry(String name) {
 		return entries.get(name);
 	}
 	
@@ -225,27 +179,33 @@ public class SimpleConfigBuilder
 			entry.setTooltipKey(tooltip(entry.name));
 	}
 	
-	@Contract("_ -> this") public SimpleConfigBuilder n(CategoryBuilder cat) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilder n(ICategoryBuilder cat) {
 		return n(cat, 0);
 	}
 	
-	@Contract("_, _ -> this") public SimpleConfigBuilder n(CategoryBuilder cat, int index) {
-		checkName(cat.name);
-		categories.put(cat.name, cat);
-		categoryOrder.put(cat, index);
-		cat.setParent(this);
-		if (requireRestart) cat.restart();
+	@Override @Contract("_, _ -> this") public SimpleConfigBuilder n(ICategoryBuilder cat, int index) {
+		if (!(cat instanceof CategoryBuilder)) throw new IllegalArgumentException(
+		  "Category must be a CategoryBuilder");
+		CategoryBuilder c = (CategoryBuilder) cat;
+		checkName(c.name);
+		categories.put(c.name, c);
+		categoryOrder.put(c, index);
+		c.setParent(this);
+		if (requireRestart) c.restart();
 		return this;
 	}
 	
 	@Contract("_, _ -> this")
-	@Override public SimpleConfigBuilder n(GroupBuilder group, int index) {
-		checkName(group.name);
-		groups.put(group.name, group);
-		guiOrder.put(group.name, index);
-		group.setParent(defaultCategory);
+	@Override public SimpleConfigBuilder n(IGroupBuilder group, int index) {
+		if (!(group instanceof GroupBuilder)) throw new IllegalArgumentException(
+		  "Group must be a GroupBuilder");
+		GroupBuilder g = (GroupBuilder) group;
+		checkName(g.name);
+		groups.put(g.name, g);
+		guiOrder.put(g.name, index);
+		g.setParent(defaultCategory);
 		if (requireRestart)
-			group.restart();
+			g.restart();
 		return this;
 	}
 	
@@ -253,15 +213,16 @@ public class SimpleConfigBuilder
 	
 	/**
 	 * Builder for a {@link SimpleConfigCategory}<br>
-	 * Use {@link CategoryBuilder#add(String, AbstractConfigEntryBuilder)}
+	 * Use {@link ICategoryBuilder#add(String, ConfigEntryBuilder)}
 	 * to add new entries to the category<br>
-	 * Use {@link CategoryBuilder#n(GroupBuilder)} to add
+	 * Use {@link ICategoryBuilder#n(IGroupBuilder)} to add
 	 * subgroups to the category, which may contain further groups<br><br>
-	 * Create subgroups using {@link SimpleConfig#group(String, boolean)},
-	 * and entries with the methods under {@link Builders}
+	 * Create subgroups using {@link ConfigBuilderFactoryProxy#group(String, boolean)},
+	 * and entries with the methods under {@link ConfigBuilderFactoryProxy}
 	 */
 	public static class CategoryBuilder
-	  extends AbstractSimpleConfigEntryHolderBuilder<CategoryBuilder> {
+	  extends AbstractSimpleConfigEntryHolderBuilder<ICategoryBuilder>
+	  implements ICategoryBuilder {
 		protected SimpleConfigBuilder parent;
 		protected final String name;
 		protected String title;
@@ -269,11 +230,11 @@ public class SimpleConfigBuilder
 		protected int tint = 0;
 		protected Class<?> configClass;
 		
-		protected @Nullable Consumer<SimpleConfigCategory> baker = null;
+		protected @Nullable Consumer<ISimpleConfigCategory> baker = null;
 		
 		protected String path;
 		
-		protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator;
+		protected @Nullable BiConsumer<ISimpleConfigCategory, ConfigCategoryBuilder> decorator;
 		protected @Nullable ResourceLocation background;
 		
 		protected CategoryBuilder(String name) {
@@ -282,109 +243,67 @@ public class SimpleConfigBuilder
 		
 		protected CategoryBuilder(String name, Class<?> configClass) {
 			this.name = name;
-			this.path = name;
+			path = name;
 			this.configClass = configClass;
 		}
 		
 		protected void setParent(SimpleConfigBuilder parent) {
 			this.parent = parent;
-			this.path = parent.path + "." + name;
-			this.title = parent.modId + ".config." + path;
+			path = parent.path + "." + name;
+			title = parent.modId + ".config." + path;
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
 		}
 		
-		/**
-		 * Set the baker method for this config category<br>
-		 * You may also define a '{@code bake}' static method
-		 * in the backing class accepting a {@link SimpleConfig}
-		 * and it will be set automatically as the baker (but you
-		 * may not define it and also call this method)
-		 */
-		@Contract("_ -> this") public CategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker) {
+		@Override @Contract("_ -> this") public CategoryBuilder withBaker(
+		  Consumer<ISimpleConfigCategory> baker
+		) {
 			this.baker = baker;
 			return this;
 		}
 		
-		/**
-		 * Set the background texture to be used
-		 * @see #withBackground(ResourceLocation)
-		 * @see #withIcon(Icon)
-		 * @see #withColor(int)
-		 * @see #withGUIDecorator(BiConsumer)
-		 */
-		@Contract("_ -> this") public CategoryBuilder withBackground(String resourceName) {
+		@Override @Contract("_ -> this") public CategoryBuilder withBackground(String resourceName) {
 			return withBackground(new ResourceLocation(resourceName));
 		}
 		
-		/**
-		 * Set the background texture to be used
-		 * @see #withBackground(String)
-		 * @see #withIcon(Icon)
-		 * @see #withColor(int)
-		 * @see #withGUIDecorator(BiConsumer)
-		 */
-		@Contract("_ -> this") public CategoryBuilder withBackground(ResourceLocation background) {
+		@Override @Contract("_ -> this") public CategoryBuilder withBackground(
+		  ResourceLocation background
+		) {
 			this.background = background;
 			return this;
 		}
 		
-		/**
-		 * Set the icon of this category.<br>
-		 * Icons are displayed in the tab buttons when more than one category is present.<br>
-		 * Use {@link Icon#EMPTY} to disable the icon (default).
-		 * @see #withColor(int)
-		 * @see #withBackground(ResourceLocation)
-		 * @see #withGUIDecorator(BiConsumer)
-		 */
-		@Contract("_ -> this") public CategoryBuilder withIcon(Icon icon) {
+		@Override @Contract("_ -> this") public CategoryBuilder withIcon(Icon icon) {
 			this.icon = icon;
 			return this;
 		}
 		
-		/**
-		 * Set the color of this category.<br>
-		 * Affects the tint applied to the tab button for this category,
-		 * which will be visible when multiple categories are present.<br>
-		 * @param tint Color tint to use, in ARGB format. It's recommended
-		 *             a transparency of 0x80, so the button background is
-		 *             visible behind the color. A value of 0 means no tint.
-		 * @see #withIcon(Icon)
-		 * @see #withBackground(ResourceLocation)
-		 * @see #withGUIDecorator(BiConsumer)
-		 */
-		@Contract("_ -> this") public CategoryBuilder withColor(int tint) {
+		@Override @Contract("_ -> this") public CategoryBuilder withColor(int tint) {
 			this.tint = tint;
 			return this;
 		}
 		
-		/**
-		 * Set a decorator that will run when creating the category GUI<br>
-		 * @see #withBackground(ResourceLocation)
-		 * @see #withIcon(Icon)
-		 * @see #withColor(int)
-		 */
 		@OnlyIn(Dist.CLIENT)
 		@Contract("_ -> this") public CategoryBuilder withGUIDecorator(
-		  BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator
+		  BiConsumer<ISimpleConfigCategory, ConfigCategoryBuilder> decorator
 		) {
 			this.decorator = decorator;
 			return this;
 		}
 		
 		@Override protected void addEntry(
-		  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
+		  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entry
 		) {
 			checkName(name);
 			if (entries.containsKey(name) || groups.containsKey(name))
 				throw new IllegalArgumentException("Duplicate name for entry: " + name);
-			if (requireRestart) entry = entry.restart();
+			if (requireRestart) entry = (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry.restart();
 			entries.put(name, entry);
 			guiOrder.put(name, order);
 		}
 		
-		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
+		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
@@ -408,15 +327,18 @@ public class SimpleConfigBuilder
 		}
 		
 		@Contract("_, _ -> this")
-		@Override public CategoryBuilder n(GroupBuilder group, int index) {
-			if (groups.containsKey(group.name))
-				throw new IllegalArgumentException("Duplicated config group: \"" + group.name + "\"");
-			groups.put(group.name, group);
-			guiOrder.put(group.name, index);
+		@Override public CategoryBuilder n(IGroupBuilder group, int index) {
+			if (!(group instanceof GroupBuilder)) throw new IllegalArgumentException(
+			  "Group must be a GroupBuilder");
+			GroupBuilder g = (GroupBuilder) group;
+			if (groups.containsKey(g.name))
+				throw new IllegalArgumentException("Duplicated config group: \"" + g.name + "\"");
+			groups.put(g.name, g);
+			guiOrder.put(g.name, index);
 			if (parent != null)
-				group.setParent(this);
+				g.setParent(this);
 			if (requireRestart)
-				group.restart();
+				g.restart();
 			return this;
 		}
 		
@@ -465,100 +387,108 @@ public class SimpleConfigBuilder
 	
 	/**
 	 * Builder for a {@link SimpleConfigGroup}<br>
-	 * Use {@link GroupBuilder#add(String, AbstractConfigEntryBuilder)}
+	 * Use {@link IGroupBuilder#add(String, ConfigEntryBuilder)}
 	 * to add new entries to the group<br>
-	 * Use {@link GroupBuilder#n(GroupBuilder)} to add
+	 * Use {@link IGroupBuilder#n(IGroupBuilder)} to add
 	 * subgroups to this group<br><br>
 	 *
 	 * You may create new entries with the methods under
-	 * {@link Builders}
+	 * {@link ConfigBuilderFactoryProxy}
 	 */
-	public static class GroupBuilder extends AbstractSimpleConfigEntryHolderBuilder<GroupBuilder>
-	  implements IGUIEntryBuilder {
+	public static class GroupBuilder
+	  extends AbstractSimpleConfigEntryHolderBuilder<IGroupBuilder>
+	  implements IGroupBuilder {
 		protected CategoryBuilder category;
 		protected final String name;
 		
 		protected String title;
 		protected String tooltip;
 		protected final boolean expanded;
-		protected @Nullable Consumer<SimpleConfigGroup> baker = null;
+		protected @Nullable Consumer<ISimpleConfigGroup> baker = null;
 		
 		protected String path;
 		protected String heldEntryName;
-		protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> heldEntryBuilder = null;
+		protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> heldEntryBuilder = null;
 		
 		protected GroupBuilder(String name, boolean expanded) {
 			this.name = name;
-			this.path = name;
+			path = name;
 			this.expanded = expanded;
 		}
 		
 		protected void setParent(CategoryBuilder parent) {
-			this.category = parent;
-			this.path = parent.path + "." + name;
+			category = parent;
+			path = parent.path + "." + name;
 			final String modId = parent.parent.modId;
-			this.title = modId + ".config." + path;
-			this.tooltip = title + ":help";
+			title = modId + ".config." + path;
+			tooltip = title + ":help";
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
 		}
 		
 		protected void setParent(GroupBuilder parent) {
-			this.category = parent.category;
-			this.path = parent.path + "." + name;
+			category = parent.category;
+			path = parent.path + "." + name;
 			final String modId = parent.category.parent.modId;
-			this.title = modId + ".config." + path;
-			this.tooltip = title + ":help";
+			title = modId + ".config." + path;
+			tooltip = title + ":help";
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
 		}
 		
 		@Contract("_, _ -> this")
-		@Override public GroupBuilder n(GroupBuilder nested, int index) {
-			if (groups.containsKey(nested.name))
-				throw new IllegalArgumentException("Duplicated config group: \"" + nested.name + "\"");
+		@Override public GroupBuilder n(IGroupBuilder nested, int index) {
+			if (!(nested instanceof GroupBuilder)) throw new IllegalArgumentException(
+			  "Group must be a GroupBuilder");
+			GroupBuilder n = (GroupBuilder) nested;
+			if (groups.containsKey(n.name))
+				throw new IllegalArgumentException("Duplicated config group: \"" + n.name + "\"");
 			if (category != null)
-				nested.setParent(this);
-			groups.put(nested.name, nested);
-			guiOrder.put(nested.name, index);
+				n.setParent(this);
+			groups.put(n.name, n);
+			guiOrder.put(n.name, index);
 			if (requireRestart)
-				nested.restart();
+				n.restart();
 			return this;
 		}
 		
-		@Contract("_ -> this") public GroupBuilder withBaker(Consumer<SimpleConfigGroup> baker) {
+		@Override @Contract("_ -> this") public GroupBuilder withBaker(
+		  Consumer<ISimpleConfigGroup> baker
+		) {
 			this.baker = baker;
 			return this;
 		}
 		
-		@Contract("_, _ -> this")
+		@Override @Contract("_, _ -> this")
 		public <
-		  V, C, G, E extends AbstractConfigEntry<V, C, G> & IKeyEntry<G>,
-		  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
+		  V, C, G,
+		  B extends ConfigEntryBuilder<V, C, G, B>
 		> GroupBuilder caption(String name, B entry) {
 			if (heldEntryBuilder != null)
 				throw new IllegalArgumentException("Attempt to declare two caption entries for the same config group: " + path);
-			this.heldEntryBuilder = entry;
-			this.heldEntryName = name;
-			addEntry(0, name, entry);
+			if (!(entry instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+			  "ConfigEntryBuilder not instance of AbstractConfigEntryBuilder");
+			heldEntryBuilder = (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry;
+			heldEntryName = name;
+			addEntry(0, name, heldEntryBuilder);
 			guiOrder.remove(name);
 			return this;
 		}
 		
 		@Override protected void addEntry(
-		  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry
+		  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entry
 		) {
 			checkName(name);
 			if (entries.containsKey(name))
 				throw new IllegalArgumentException("Duplicate config entry name: " + name);
-			if (requireRestart) entry = entry.restart();
+			if (requireRestart) entry = (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry.restart();
 			entries.put(name, entry);
 			guiOrder.put(name, order);
 		}
 		
-		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name) {
+		@Override protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> getEntry(String name) {
 			return entries.get(name);
 		}
 		
@@ -652,14 +582,7 @@ public class SimpleConfigBuilder
 		SimpleConfigClassParser.decorateBuilder(this);
 	}
 	
-	/**
-	 * Build the actual config and register it within the Forge system<br><br>
-	 * <b>If your mod uses a different language than Java</b> you will need to
-	 * also pass in your mod event bus as an argument to
-	 * {@link #buildAndRegister(IEventBus)}
-	 * @return The built config, which is also received by the baker
-	 */
-	public SimpleConfig buildAndRegister() {
+	@Override public SimpleConfig buildAndRegister() {
 		try {
 			return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus());
 		} catch (ClassCastException e) {
@@ -669,25 +592,17 @@ public class SimpleConfigBuilder
 		}
 	}
 	
-	/**
-	 * Build the actual config and register it within the Forge system<br><br>
-	 * <i>If your mod uses Java as its language</i> you don't need to pass
-	 * the mod event bus
-	 *
-	 * @param modEventBus Your mod's language provider's mod event bus
-	 * @return The built config, which is also received by the baker
-	 */
-	public SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus) {
+	@Override public SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus) {
 		return buildAndRegister(modEventBus, new ForgeConfigSpecConfigValueBuilder());
 	}
 	
 	@Internal protected SimpleConfig buildAndRegister(IEventBus modEventBus, ConfigValueBuilder builder) {
 		preBuildHook();
-		if (type == Type.SERVER) {
+		if (type == ISimpleConfig.Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
 			        ? SimpleConfig::syncToClients
 			        : SimpleConfig::syncToServer;
-		} else if (type == Type.COMMON) {
+		} else if (type == ISimpleConfig.Type.COMMON) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
 			        ? SimpleConfig::syncToClients
 			        : SimpleConfig::checkRestart;

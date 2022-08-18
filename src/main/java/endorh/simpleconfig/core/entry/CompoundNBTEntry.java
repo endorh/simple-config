@@ -2,7 +2,8 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.CompoundNBTEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.JsonToNBT;
@@ -21,7 +22,9 @@ public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, Com
 		super(parent, name, value, CompoundNBT.class);
 	}
 	
-	public static class Builder extends AbstractSerializableEntry.Builder<CompoundNBT, CompoundNBTEntry, Builder> {
+	public static class Builder extends AbstractSerializableEntry.Builder<CompoundNBT,
+	  CompoundNBTEntry, CompoundNBTEntryBuilder, Builder>
+	  implements CompoundNBTEntryBuilder {
 		public Builder(CompoundNBT value) {
 			super(value, CompoundNBT.class);
 		}

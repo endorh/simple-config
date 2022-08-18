@@ -4,11 +4,17 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.config.ClientConfig;
-import endorh.simpleconfig.core.SimpleConfig.*;
+import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -41,8 +47,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
 
 /**
@@ -515,7 +521,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	 * @param builder Entry builder
 	 */
 	@OnlyIn(Dist.CLIENT) public Optional<FieldBuilder<Gui, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		return Optional.empty();
 	}
@@ -527,10 +533,10 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	
 	/**
 	 * Add entry to the GUI<br>
-	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigEntryBuilder)}
+	 * Subclasses should instead override {@link AbstractConfigEntry#buildGUIEntry(ConfigFieldBuilder)}
 	 */
 	@OnlyIn(Dist.CLIENT) public void buildGUI(
-	  CaptionedSubCategoryBuilder<?, ?, ?> group, ConfigEntryBuilder entryBuilder, boolean forRemote
+	  CaptionedSubCategoryBuilder<?, ?, ?> group, ConfigFieldBuilder entryBuilder, boolean forRemote
 	) {
 		buildGUIEntry(entryBuilder).ifPresent(b -> {
 			decorateGUIBuilder(b, forRemote);
@@ -544,7 +550,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Override @Internal public void buildGUI(
-	  ConfigCategoryBuilder category, ConfigEntryBuilder entryBuilder, boolean forRemote
+	  ConfigCategoryBuilder category, ConfigFieldBuilder entryBuilder, boolean forRemote
 	) {
 		buildGUIEntry(entryBuilder).ifPresent(b -> {
 			decorateGUIBuilder(b, forRemote);
@@ -554,7 +560,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	
 	@Internal protected @Nullable AbstractConfigListEntry<Gui> getGuiEntry() {
 		if (remoteGuiEntry != null) {
-			AbstractConfigScreen screen = parent.getRoot().getGUI();
+			AbstractConfigScreen screen = (AbstractConfigScreen) parent.getRoot().getGUI();
 			if (screen != null && screen.isEditingServer()) return remoteGuiEntry;
 		}
 		return guiEntry;

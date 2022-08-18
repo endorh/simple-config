@@ -6,9 +6,9 @@ import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.config.ServerConfig.permissions;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyLogger;
@@ -496,8 +496,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	  boolean isLocal
 	) {
 		return SimpleConfig.getConfigModIds().stream()
-		  .map(id -> SimpleConfig.hasConfig(id, Type.SERVER)
-		             ? SimpleConfig.getConfig(id, Type.SERVER) : null
+		  .map(id -> SimpleConfig.hasConfig(id, ISimpleConfig.Type.SERVER)
+		             ? SimpleConfig.getConfig(id, ISimpleConfig.Type.SERVER) : null
 		  ).filter(c -> c != null && !c.isWrapper())
 		  .map(c -> Pair.of(
 			 c.getModId(), new SLoginConfigDataPacket(c.getModId(), serializeSnapshot(c, null)))
@@ -517,7 +517,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		
 		@Override public void onClient(Context ctx) {
 			if (!Minecraft.getInstance().isIntegratedServerRunning()) {
-				SimpleConfig config = SimpleConfig.getConfig(modId, Type.SERVER);
+				SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.SERVER);
 				tryUpdateConfig(config, fileData, true);
 			}
 		}
@@ -547,7 +547,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		
 		@Override public void onServer(Context ctx) {
 			final ServerPlayerEntity sender = ctx.getSender();
-			SimpleConfig config = SimpleConfig.getConfig(modId, Type.SERVER);
+			SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.SERVER);
 			final String modName = SimpleConfig.getModNameOrId(modId);
 			if (sender == null)
 				throw new IllegalStateException(
@@ -623,7 +623,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		@Override public void onClient(Context ctx) {
 			if (!Minecraft.getInstance().isIntegratedServerRunning()) {
 				try {
-					tryUpdateConfig(SimpleConfig.getConfig(modId, Type.SERVER), snapshot, false);
+					tryUpdateConfig(SimpleConfig.getConfig(modId, ISimpleConfig.Type.SERVER), snapshot, false);
 				} catch (ConfigUpdateReflectionError e) {
 					LOGGER.error("Error updating client config for mod \"" + modId + "\"", e);
 					sendMessage(new TranslationTextComponent(
@@ -662,12 +662,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
 			final String senderName = sender.getScoreboardName();
-			if (!SimpleConfig.hasConfig(modId, Type.COMMON)
+			if (!SimpleConfig.hasConfig(modId, ISimpleConfig.Type.COMMON)
 			    || !permissions.permissionFor(sender, modId).getLeft().canView()
 			) {
 				new SSimpleConfigServerCommonConfigPacket(modId, null).sendTo(sender);
 			} else {
-				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.COMMON);
 				config.addRemoteListener(sender);
 				byte[] snapshot = serializeSnapshot(config, null);
 				new SSimpleConfigServerCommonConfigPacket(modId, snapshot).sendTo(sender);
@@ -699,7 +699,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		@Override public void onClient(Context ctx) {
 			CompletableFuture<CommentedConfig> future = CSimpleConfigRequestServerCommonConfigPacket.FUTURES.remove(modId);
 			if (future == null) {
-				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.COMMON);
 				SimpleConfigSnapshotHandler snapshotHandler = config.getSnapshotHandler();
 				if (snapshotHandler == null) {
 					LOGGER.warn("No snapshot handler for mod \"" + modId + "\"");
@@ -712,9 +712,9 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 					sendUnsubscribeMessage();
 					return;
 				}
-				handler.handleRemoteConfigExternalChange(EditType.SERVER_COMMON, deserializeSnapshot(config, snapshot));
+				handler.handleRemoteConfigExternalChange(ISimpleConfig.EditType.SERVER_COMMON, deserializeSnapshot(config, snapshot));
 			} else if (!future.isCancelled()) {
-				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.COMMON);
 				String modName = config.getModName();
 				if (snapshot == null) {
 					future.complete(null);
@@ -779,7 +779,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
 			final String senderName = sender.getScoreboardName();
-			if (!SimpleConfig.hasConfig(modId, Type.COMMON)) return;
+			if (!SimpleConfig.hasConfig(modId, ISimpleConfig.Type.COMMON)) return;
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" attempted to save server common config " +
 				            "for mod \"" + modName + "\"");
@@ -789,7 +789,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				return;
 			}
 			try {
-				SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+				SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.COMMON);
 				tryUpdateConfig(config, snapshot, false);
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
@@ -842,13 +842,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
 			final String senderName = sender.getScoreboardName();
-			if (!SimpleConfig.hasConfig(modId, Type.COMMON)) return;
+			if (!SimpleConfig.hasConfig(modId, ISimpleConfig.Type.COMMON)) return;
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" attempted to release server common config " +
 				            "for mod \"" + modName + "\"");
 				return;
 			}
-			SimpleConfig config = SimpleConfig.getConfig(modId, Type.COMMON);
+			SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.COMMON);
 			config.removeRemoteListener(sender);
 			LOGGER.info("Released server common config for mod \"" + modName + "\" by player " + sender);
 		}
@@ -991,7 +991,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			this.type = type;
 			this.presetName = presetName;
 			if (data != null) {
-				SimpleConfig config = SimpleConfig.getConfig(modId, Type.SERVER);
+				SimpleConfig config = SimpleConfig.getConfig(modId, ISimpleConfig.Type.SERVER);
 				SimpleConfigCommentedYamlFormat format = config.getConfigFormat();
 				final ByteArrayOutputStream os = new ByteArrayOutputStream();
 				try {
@@ -1014,7 +1014,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			String fileName = modId + "-" + presetName + ".yaml";
 			String action = fileData == null? "delete" : "save"; // For messages
 			// Ensure the config has been registered as a SimpleConfig
-			SimpleConfig.getConfig(modId, Type.SERVER);
+			SimpleConfig.getConfig(modId, ISimpleConfig.Type.SERVER);
 			final String modName = SimpleConfig.getModNameOrId(modId);
 			final String senderName = sender.getScoreboardName();
 			try {
@@ -1152,7 +1152,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			  .map(f -> {
 				  Matcher m = pat.matcher(f.getName());
 				  if (!m.matches()) return null;
-				  return Preset.remote(m.group("name"), Type.fromAlias(m.group("type")));
+				  return Preset.remote(m.group("name"), ISimpleConfig.Type.fromAlias(m.group("type")));
 			  }).filter(Objects::nonNull).collect(Collectors.toList());
 			LOGGER.info("Sending server preset list for mod \"" + modId + "\" to player \"" + sender.getScoreboardName() + "\"");
 			new SSimpleConfigPresetListPacket(modId, names).sendTo(sender);
@@ -1273,7 +1273,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			  CSimpleConfigRequestPresetPacket.FUTURES.remove(Triple.of(modId, type, presetName));
 			if (future != null) {
 				if (fileData != null) {
-					SimpleConfig config = Arrays.stream(Type.values())
+					SimpleConfig config = Arrays.stream(ISimpleConfig.Type.values())
 					  .filter(t -> SimpleConfig.hasConfig(modId, t))
 					  .findFirst().map(t -> SimpleConfig.getConfig(modId, t))
 					  .orElseThrow(IllegalStateException::new);

@@ -1,24 +1,27 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.KeyBindEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
+import endorh.simpleconfig.ui.hotkey.*;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.KeyBindFieldBuilder;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -36,13 +39,18 @@ public class KeyBindEntry extends AbstractConfigEntry<
 > implements IKeyEntry<KeyBindMapping> {
 	// Give entries without an assigned keybind a fallback keybind that can be used
 	//   to identify them for overlap detection.
-	private static final Map<AbstractConfigListEntry<?>, ExtendedKeyBind> UNBOUND_KEYBINDS = new HashMap<>();
+	private static final Int2ObjectMap<List<ExtendedKeyBind>> UNBOUND = new Int2ObjectOpenHashMap<>();
+	private static List<ExtendedKeyBind> getUnbound() {
+		int session = SimpleConfigGUIManager.getGuiSession();
+		UNBOUND.keySet().removeIf((int i) -> i < session - 1);
+		return UNBOUND.computeIfAbsent(session, s -> new ArrayList<>());
+	}
 	private static final ExtendedKeyBindProvider UNBOUND_PROVIDER = new ExtendedKeyBindProvider() {
 		@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
 			return Collections.emptyList();
 		}
 		@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
-			return UNBOUND_KEYBINDS.values();
+			return getUnbound();
 		}
 		@Override public int getPriority() {
 			return -1000; // Low priority
@@ -51,7 +59,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	static { ExtendedKeyBindDispatcher.registerProvider(UNBOUND_PROVIDER); }
 	
 	protected ExtendedKeyBindSettings defaultSettings;
-	protected @Nullable ExtendedKeyBind keyBind;
+	protected @Nullable ExtendedKeyBindImpl keyBind;
 	protected boolean reportOverlaps = true;
 	private ExtendedKeyBind pendingKeyBind = null;
 	
@@ -60,10 +68,10 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	}
 	
 	public static class Builder extends AbstractConfigEntryBuilder<
-	  KeyBindMapping, String, KeyBindMapping, KeyBindEntry, Builder
-	> {
+	  KeyBindMapping, String, KeyBindMapping, KeyBindEntry, KeyBindEntryBuilder, Builder
+	> implements KeyBindEntryBuilder {
 		protected ExtendedKeyBindSettings defaultSettings = ExtendedKeyBindSettings.ingame().build();
-		protected @Nullable ExtendedKeyBind keyBind = null;
+		protected @Nullable ExtendedKeyBindImpl keyBind = null;
 		protected boolean reportOverlaps = true;
 		protected boolean inheritTitle = false;
 		
@@ -79,44 +87,31 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			super(value, KeyBindMapping.class);
 		}
 		
-		/**
-		 * Configure the default keybind settings for this entry.
-		 */
-		public Builder withDefaultSettings(ExtendedKeyBindSettings settings) {
+		@Override public Builder withDefaultSettings(ExtendedKeyBindSettings settings) {
 			Builder copy = copy();
 			copy.defaultSettings = settings;
 			return copy;
 		}
 		
-		/**
-		 * Set the associated keybind for this entry, used for overlap reporting.
-		 */
-		public Builder bakeTo(ExtendedKeyBind keyBind) {
+		@Override public Builder bakeTo(ExtendedKeyBind keyBind) {
 			Builder copy = copy();
-			copy.keyBind = keyBind;
+			if (!(keyBind instanceof ExtendedKeyBindImpl)) throw new IllegalArgumentException(
+			  "Keybind is not instance of ExtendedKeyBindImpl");
+			copy.keyBind = (ExtendedKeyBindImpl) keyBind;
 			return copy;
 		}
 		
-		/**
-		 * Configure if the entry should report global overlaps with other keybinds.
-		 */
-		public Builder reportOverlaps(boolean reportOverlaps) {
+		@Override public Builder reportOverlaps(boolean reportOverlaps) {
 			Builder copy = copy();
 			copy.reportOverlaps = reportOverlaps;
 			return copy;
 		}
 		
-		/**
-		 * Replace this' keybind's title with the title of this entry.
-		 */
-		public Builder inheritTitle() {
+		@Override public Builder inheritTitle() {
 			return inheritTitle(true);
 		}
 		
-		/**
-		 * Replace this' keybind's title with the title of this entry.
-		 */
-		public Builder inheritTitle(boolean inheritTitle) {
+		@Override public Builder inheritTitle(boolean inheritTitle) {
 			Builder copy = copy();
 			copy.inheritTitle = inheritTitle;
 			return copy;
@@ -151,10 +146,9 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	
 	@Override protected void setGuiEntry(@Nullable AbstractConfigListEntry<KeyBindMapping> guiEntry) {
 		if (guiEntry != null && pendingKeyBind != null) {
-			UNBOUND_KEYBINDS.put(guiEntry, pendingKeyBind);
+			getUnbound().add(pendingKeyBind);
 			pendingKeyBind = null;
-		} else if (guiEntry == null)
-			UNBOUND_KEYBINDS.remove(getGuiEntry(false));
+		}
 		super.setGuiEntry(guiEntry);
 		if (keyBind != null) keyBind.setCandidateDefinition(null);
 	}
@@ -173,8 +167,8 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		return tooltips;
 	}
 	
-	protected @Nullable ExtendedKeyBind createFallbackKeyBind() {
-		ExtendedKeyBind keyBind = new ExtendedKeyBind(
+	protected @Nullable ExtendedKeyBindImpl createFallbackKeyBind() {
+		ExtendedKeyBindImpl keyBind = new ExtendedKeyBindImpl(
 		  parent.getRoot().getModId(), getDisplayName(),
 		  get(), () -> {});
 		pendingKeyBind = keyBind;
@@ -187,7 +181,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<KeyBindMapping, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<KeyBindMapping, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final KeyBindFieldBuilder valBuilder = builder
 		  .startKeyBindField(getDisplayName(), forGui(get()))
 		  .setAssociatedKeyBind(keyBind != null? keyBind : createFallbackKeyBind())

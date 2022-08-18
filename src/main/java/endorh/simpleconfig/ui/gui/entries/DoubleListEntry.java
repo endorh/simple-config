@@ -45,12 +45,12 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 		try {
 			double i = Double.parseDouble(getText());
 			if (i > this.maximum)
-				return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_large", this.maximum));
+				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_large", this.maximum));
 			if (i < this.minimum)
-				return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_small", this.minimum));
+				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_small", this.minimum));
 		} catch (NumberFormatException ex) {
 			return Optional.of(
-			  new TranslationTextComponent("text.cloth-config.error.not_valid_number_double"));
+			  new TranslationTextComponent("simpleconfig.config.error.invalid_float", getText()));
 		}
 		return super.getErrorMessage();
 	}

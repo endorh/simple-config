@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.BlockNameEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.block.Block;
@@ -38,7 +39,8 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		return "Block";
 	}
 	
-	public static class Builder extends AbstractResourceEntry.Builder<BlockNameEntry, Builder> {
+	public static class Builder extends AbstractResourceEntry.Builder<BlockNameEntry, BlockNameEntryBuilder, Builder>
+	  implements BlockNameEntryBuilder {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier;
 		protected ITag<Block> tag = null;
 		
@@ -49,12 +51,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 			  .collect(Collectors.toList());
 		}
 		
-		/**
-		 * Restrict the selectable items to those of a tag<br>
-		 * This can only be done on server configs, since tags
-		 * are server-dependant
-		 */
-		@Contract(pure=true) public Builder suggest(ITag<Block> tag) {
+		@Override @Contract(pure=true) public Builder suggest(ITag<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -62,7 +59,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		
 		@Override
 		protected BlockNameEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
@@ -84,7 +81,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<ResourceLocation, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofBlockName(), forGui(get()));

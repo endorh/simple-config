@@ -216,8 +216,11 @@
   "simpleconfig.config.msg.snapshot.error_updating_by": "Error inesperado actualizando el preset de servidor \"%s\" de \"%s\" por el jugador autorizado \"%s\":\\n%s",
 
   "simpleconfig.ui.save": "Guardar",
-  "simpleconfig.ui.error_cannot_save": "Error!",
+  "simpleconfig.ui.error_cannot_save": "¡Error!",
   "simpleconfig.ui.save_hotkey": "Guardar Atajo",
+  "simpleconfig.ui.discard.dialog": "Descartar Cambios",
+  "simpleconfig.ui.discard.confirm": "¿Estás seguro de que quieres dejar de editar esta configuración?\nTodos los cambios serán descartados",
+  "simpleconfig.ui.discard": "Descartar Cambios",
 
   "simpleconfig.ui.search": "Buscar",
   "simpleconfig.ui.search.case_sensitive": "Forzar Mayúsculas",
@@ -492,6 +495,9 @@
   "simpleconfig.command.error.set.invalid_type_generic": "Tipo incorrecto",
   "simpleconfig.command.error.set.invalid_type": "Tipo incorrecto, se esperaba\n  %s",
   "simpleconfig.command.error.set.invalid_value": "Valor inválido: %s",
+  "simpleconfig.config.error.invalid_float": "Número inválido! (real) %s",
+  "simpleconfig.config.error.invalid_integer": "Número inválido! (entero) %s",
+  "simpleconfig.config.error.invalid_color": "Color inválido! %s",
   "simpleconfig.command.error.invalid_yaml": "YAML inválido: %s",
   "simpleconfig.command.error.reset.unexpected": "Error inesperado reseteando entrada: %s",
   "simpleconfig.command.msg.get": "§7> Leer %s§7:\n    %s",

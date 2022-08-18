@@ -1,5 +1,8 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolderBuilder;
+import endorh.simpleconfig.api.IGroupBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.entry.TextEntry;
@@ -14,16 +17,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends AbstractSimpleConfigEntryHolderBuilder<Builder>> {
+public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends ConfigEntryHolderBuilder<Builder>>
+  implements ConfigEntryHolderBuilder<Builder> {
 	protected final Map<String, GroupBuilder> groups = new LinkedHashMap<>();
-	protected final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
+	protected final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
 	protected final Map<String, Integer> guiOrder = new LinkedHashMap<>();
 	protected boolean requireRestart = false;
 	protected final Map<String, BackingField<?, ?>> backingFields = new HashMap<>();
 	protected final Map<String, List<BackingField<?, ?>>> secondaryBackingFields = new HashMap<>();
 	
-	protected abstract void addEntry(int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entry);
-	protected abstract AbstractConfigEntryBuilder<?, ?, ?, ?, ?> getEntry(String name);
+	protected abstract void addEntry(int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entry);
+	protected abstract AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> getEntry(String name);
 	protected abstract boolean hasEntry(String name);
 	
 	@Internal protected void setBackingField(String name, BackingField<?, ?> field) {
@@ -57,14 +61,11 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 			throw new IllegalArgumentException("Duplicate config entry name: " + name);
 	}
 	
-	/**
-	 * Flag this config section as requiring a restart to be effective
-	 */
-	@Contract("-> this") public Builder restart() {
+	@Override @Contract("-> this") public Builder restart() {
 		requireRestart = true;
 		groups.values().forEach(GroupBuilder::restart);
-		for (Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entry: entries.entrySet())
-			entry.setValue(entry.getValue().restart());
+		for (Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>> entry: entries.entrySet())
+			entry.setValue((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry.getValue().restart());
 		return self();
 	}
 	
@@ -73,13 +74,12 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 		return (Builder) this;
 	}
 	
-	/**
-	 * Add an entry to the config
-	 */
-	@Contract("_, _ -> this") public Builder add(
-	  String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder
+	@Override @Contract("_, _ -> this") public Builder add(
+	  String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder
 	) {
-		return add(0, name, entryBuilder);
+		if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+		  "Entry builder not instance of AbstractConfigEntryBuilder");
+		return add(0, name, (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entryBuilder);
 	}
 	
 	/**
@@ -87,35 +87,24 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 	 * Used by the class parser to specify the order with annotations.
 	 */
 	@Contract("_, _, _ -> this") protected Builder add(
-	  int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder
+	  int order, String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder
 	) {
-		addEntry(order, name, entryBuilder);
+		if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+		  "Entry builder not instance of AbstractConfigEntryBuilder");
+		addEntry(order, name, (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entryBuilder);
 		return self();
 	}
 	
-	/**
-	 * Create a text entry in the config<br>
-	 * @param name Name of the entry
-	 * @param args Args to be passed to the translation<br>
-	 *             As a special case, {@code Supplier} args will be
-	 *             called before being filled in
-	 */
-	@Contract("_, _ -> this") public Builder text(String name, Object... args) {
+	@Override @Contract("_, _ -> this") public Builder text(String name, Object... args) {
 		add(name, new TextEntry.Builder().args(args));
 		return self();
 	}
 	
-	/**
-	 * Create a text entry in the config
-	 */
-	@Contract("_ -> this") public Builder text(ITextComponent text) {
+	@Override @Contract("_ -> this") public Builder text(ITextComponent text) {
 		add(SimpleConfig.nextTextID(), new TextEntry.Builder(() -> text));
 		return self();
 	}
-	/**
-	 * Create a text entry in the config
-	 */
-	@Contract("_ -> this") public Builder text(Supplier<ITextComponent> textSupplier) {
+	@Override @Contract("_ -> this") public Builder text(Supplier<ITextComponent> textSupplier) {
 		add(SimpleConfig.nextTextID(), new TextEntry.Builder(textSupplier));
 		return self();
 	}
@@ -125,12 +114,9 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Abs
 	/**
 	 * Add a config group
 	 */
-	@Contract("_, _ -> this") protected abstract Builder n(GroupBuilder group, int index);
+	@Contract("_, _ -> this") protected abstract Builder n(IGroupBuilder group, int index);
 	
-	/**
-	 * Add a config group
-	 */
-	@Contract("_ -> this") public Builder n(GroupBuilder group) {
+	@Override @Contract("_ -> this") public Builder n(IGroupBuilder group) {
 		return n(group, 0);
 	}
 }

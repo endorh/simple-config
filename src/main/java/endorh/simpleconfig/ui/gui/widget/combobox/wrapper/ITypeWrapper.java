@@ -2,9 +2,9 @@ package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.ITextFormatter;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
-import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
+import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;

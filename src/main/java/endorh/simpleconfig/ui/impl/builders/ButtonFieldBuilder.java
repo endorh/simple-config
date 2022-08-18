@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.ButtonListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -11,7 +11,7 @@ public class ButtonFieldBuilder extends FieldBuilder<Runnable, ButtonListEntry, 
 	private Supplier<ITextComponent> buttonLabelSupplier = () -> new StringTextComponent("");
 	
 	public ButtonFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, Runnable value
+	  ConfigFieldBuilder builder, ITextComponent name, Runnable value
 	) {
 		super(ButtonListEntry.class, builder, name, value);
 	}

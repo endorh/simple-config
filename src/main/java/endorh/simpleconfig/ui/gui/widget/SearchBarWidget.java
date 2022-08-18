@@ -3,19 +3,19 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.SearchBar;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.PatternTypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.StringTypeWrapper;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.SearchBar;
 import endorh.simpleconfig.ui.math.Point;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -41,15 +41,15 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
-	protected static ITextComponent[] CASE_SENSITIVE_TOOLTIP = new ITextComponent[] {
+	protected static ITextComponent[] CASE_SENSITIVE_TOOLTIP = {
 	  new TranslationTextComponent("simpleconfig.ui.search.case_sensitive"),
-	  new TranslationTextComponent("modifier.cloth-config.alt", "C").mergeStyle(TextFormatting.GRAY)};
+	  new TranslationTextComponent("key.modifier.alt").appendString(" + C").mergeStyle(TextFormatting.GRAY)};
 	protected static ITextComponent[] REGEX_TOOLTIP = new ITextComponent[] {
 	  new TranslationTextComponent("simpleconfig.ui.search.regex"),
-	  new TranslationTextComponent("modifier.cloth-config.alt", "R").mergeStyle(TextFormatting.GRAY)};
+	  new TranslationTextComponent("key.modifier.alt").appendString(" + R").mergeStyle(TextFormatting.GRAY)};
 	protected static ITextComponent[] FILTER_TOOLTIP = new ITextComponent[] {
 	  new TranslationTextComponent("simpleconfig.ui.search.filter"),
-	  new TranslationTextComponent("modifier.cloth-config.alt", "F").mergeStyle(TextFormatting.GRAY)};
+	  new TranslationTextComponent("key.modifier.alt").appendString(" + F").mergeStyle(TextFormatting.GRAY)};
 	
 	public int x;
 	public int y;

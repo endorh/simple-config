@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ShortEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @Deprecated
-public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, ShortEntry>
+public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer>
   implements IKeyEntry<Short> {
 	@Internal public ShortEntry(
 	  ISimpleConfigEntryHolder parent, String name, short value
@@ -24,21 +25,19 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 	}
 	
 	public static class Builder
-	  extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, Builder> {
+	  extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, ShortEntryBuilder, Builder>
+	  implements ShortEntryBuilder {
 		public Builder(Short value) {
 			super(value, Short.class);
 		}
 		
-		/** Set min (inclusive) */
-		@Contract(pure=true) public Builder min(short min) {
+		@Override @Contract(pure=true) public ShortEntryBuilder min(short min) {
 			return super.min(min);
 		}
-		/** Set max (inclusive) */
-		@Contract(pure=true) public Builder max(short max) {
+		@Override @Contract(pure=true) public ShortEntryBuilder max(short max) {
 			return super.max(max);
 		}
-		/** Set range (inclusive) */
-		@Contract(pure=true) public Builder range(short min, short max) {
+		@Override @Contract(pure=true) public ShortEntryBuilder range(short min, short max) {
 			return super.range(min, max);
 		}
 		
@@ -66,7 +65,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer, Shor
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Integer, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (!asSlider) {
 			final IntFieldBuilder valBuilder = builder

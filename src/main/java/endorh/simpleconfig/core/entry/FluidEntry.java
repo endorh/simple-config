@@ -1,11 +1,12 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.FluidEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -47,7 +48,8 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 		this.filter = filter != null? filter : f -> true;
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<Fluid, String, Fluid, FluidEntry, Builder> {
+	public static class Builder extends AbstractConfigEntryBuilder<Fluid, String, Fluid, FluidEntry, FluidEntryBuilder, Builder>
+	  implements FluidEntryBuilder {
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Fluid> filter = null;
 		protected @Nullable ITag<Fluid> tag = null;
@@ -58,56 +60,42 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			super(value, Fluid.class);
 		}
 		
-		/**
-		 * When true (the default), requires the filled bucket item to have an item group.<br>
-		 * This excludes the empty fluid.
-		 */
-		@Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
+		@Override @Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		/**
-		 * When true (the default), excludes the flowing variants of fluids, that is,
-		 * FlowingFluids whose still fluids are different from themselves.<br>
-		 * This excludes FLOWING_WATER and FLOWING_LAVA.
-		 */
-		@Contract(pure=true) public Builder setExcludeFlowing(boolean excludeFlowing) {
+		@Override @Contract(pure=true) public Builder setExcludeFlowing(boolean excludeFlowing) {
 			Builder copy = copy();
 			copy.excludeFlowing = excludeFlowing;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder from(Predicate<Fluid> filter) {
+		@Override @Contract(pure=true) public Builder from(Predicate<Fluid> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder from(List<Fluid> choices) {
+		@Override @Contract(pure=true) public Builder from(List<Fluid> choices) {
 			List<Fluid> listCopy = new ArrayList<>(choices);
 			return from(listCopy::contains);
 		}
 		
-		@Contract(pure=true) public Builder from(Fluid... choices) {
+		@Override @Contract(pure=true) public Builder from(Fluid... choices) {
 			List<Fluid> listCopy = Arrays.asList(choices);
 			return from(listCopy::contains);
 		}
 		
-		/**
-		 * Restrict the selectable items to those of a tag<br>
-		 * This can only be done on server configs, since tags
-		 * are server-dependant
-		 */
-		@Contract(pure=true) public Builder from(ITag<Fluid> tag) {
+		@Override @Contract(pure=true) public Builder from(ITag<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
 		}
 		
 		@Override protected FluidEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null)
@@ -159,7 +147,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Fluid, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final ComboBoxFieldBuilder<Fluid> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofFluid(), forGui(get()))

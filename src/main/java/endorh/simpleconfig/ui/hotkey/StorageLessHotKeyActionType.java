@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import org.jetbrains.annotations.Nullable;
 
 public class StorageLessHotKeyActionType<V> extends SimpleHotKeyActionType<V, Void> {

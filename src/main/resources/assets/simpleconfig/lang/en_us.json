@@ -19,6 +19,11 @@
   "key.abbrev.unknown": "§o§l§c??",
   "key.abbrev.unset": "Unset",
 
+  "key.modifier.win": "Win",
+  "key.modifier.ctrl": "Ctrl",
+  "key.modifier.alt": "Alt",
+  "key.modifier.shift": "Shift",
+
   "simpleconfig.keybind.context.game": "§aIn-Game",
   "simpleconfig.keybind.context.menu": "§bMenus",
   "simpleconfig.keybind.context.all": "§eAll",
@@ -233,6 +238,9 @@
   "simpleconfig.ui.save": "Save",
   "simpleconfig.ui.error_cannot_save": "Error!",
   "simpleconfig.ui.save_hotkey": "Save Hotkey",
+  "simpleconfig.ui.discard.dialog": "Confirm Discard Changes",
+  "simpleconfig.ui.discard.confirm": "Are you sure you want to quit editing the config?\nChanges will not be saved!",
+  "simpleconfig.ui.discard": "Discard Changes",
 
   "simpleconfig.ui.search": "Search",
   "simpleconfig.ui.search.case_sensitive": "Case Sensitive",
@@ -556,6 +564,9 @@
   "simpleconfig.config.help.pattern_flags": "Flags: %s",
   "simpleconfig.config.error.missing_value": "Missing value",
   "simpleconfig.config.error.invalid_value_generic": "Invalid value! %s",
+  "simpleconfig.config.error.invalid_float": "Invalid number! (real) %s",
+  "simpleconfig.config.error.invalid_integer": "Invalid number! (integer) %s",
+  "simpleconfig.config.error.invalid_color": "Invalid color! %s",
   "simpleconfig.config.error.invalid_resource_location": "%s",
   "simpleconfig.config.error.at_index": "at index %s",
   "simpleconfig.config.error.invalid_nbt": "Invalid NBT! %s",

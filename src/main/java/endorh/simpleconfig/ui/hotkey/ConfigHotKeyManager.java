@@ -199,14 +199,14 @@ public class ConfigHotKeyManager {
 	}
 	
 	public static class ConfigHotKeyGroup implements IConfigHotKeyGroupEntry, IConfigHotKey {
-		private final ExtendedKeyBind keyBind;
+		private final ExtendedKeyBindImpl keyBind;
 		private String name = "";
 		private KeyBindMapping keyMapping = KeyBindMapping.unset();
 		private boolean enabled = true;
 		private final List<IConfigHotKeyGroupEntry> entries = new ArrayList<>();
 		
 		public ConfigHotKeyGroup() {
-			keyBind = new ExtendedKeyBind(
+			keyBind = new ExtendedKeyBindImpl(
 			  new StringTextComponent(getName()),
 			  keyMapping, this::applyHotkey);
 		}
@@ -219,7 +219,7 @@ public class ConfigHotKeyManager {
 			keyBind.setTitle(new StringTextComponent(name));
 		}
 		
-		@Override public ExtendedKeyBind getKeyBind() {
+		@Override public ExtendedKeyBindImpl getKeyBind() {
 			return keyBind;
 		}
 		@Override public KeyBindMapping getKeyMapping() {

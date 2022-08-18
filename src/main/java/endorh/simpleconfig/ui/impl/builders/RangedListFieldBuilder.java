@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry.AbstractListCell;
 import endorh.simpleconfig.ui.gui.entries.IRangedEntry;
@@ -21,7 +21,7 @@ import java.util.List;
 	V max;
 	
 	protected RangedListFieldBuilder(
-	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, List<V> value
+	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, List<V> value
 	) {
 		super(entryClass, builder, name, value);
 	}

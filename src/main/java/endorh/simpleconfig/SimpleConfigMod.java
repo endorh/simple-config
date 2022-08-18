@@ -1,9 +1,9 @@
 package endorh.simpleconfig;
 
+import endorh.simpleconfig.api.ISimpleConfig;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
-import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler;
 import endorh.simpleconfig.grammar.nbt.SNBTLexer;
@@ -12,7 +12,7 @@ import endorh.simpleconfig.grammar.regex.RegexLexer;
 import endorh.simpleconfig.grammar.regex.RegexParser;
 import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
-import endorh.simpleconfig.ui.hotkey.ConfigKeyBindProvider;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
 import endorh.simpleconfig.ui.hotkey.ResourceConfigHotKeyGroupHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
@@ -43,14 +43,14 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 @Mod(SimpleConfigMod.MOD_ID)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
 @Internal public class SimpleConfigMod {
-	public static final String MOD_ID = "simpleconfig";
+	public static final String MOD_ID = ISimpleConfig.MOD_ID;
 	public static SoundEvent UI_TAP;
 	public static SoundEvent UI_DOUBLE_TAP;
 	
 	// Storing the config instances is optional
-	@OnlyIn(Dist.CLIENT) public static SimpleConfig CLIENT_CONFIG;
-	public static SimpleConfig COMMON_CONFIG;
-	public static SimpleConfig SERVER_CONFIG;
+	@OnlyIn(Dist.CLIENT) public static ISimpleConfig CLIENT_CONFIG;
+	public static ISimpleConfig COMMON_CONFIG;
+	public static ISimpleConfig SERVER_CONFIG;
 	
 	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
 	public static final SimpleConfigResourcePresetHandler RESOURCE_PRESET_HANDLER = SimpleConfigResourcePresetHandler.INSTANCE;
@@ -119,7 +119,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 				RESET_RESTORE = reg("reset_restore", CONTROL, GLFW.GLFW_KEY_R);
 				HOTKEY = reg("hotkey", CONTROL, GLFW.GLFW_KEY_H);
 				
-				MinecraftForge.EVENT_BUS.register(ConfigKeyBindProvider.INSTANCE);
+				MinecraftForge.EVENT_BUS.register(ExtendedKeyBindDispatcher.INSTANCE);
 			});
 		}
 		

@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ResourceEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.util.ResourceLocation;
@@ -29,8 +30,10 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 	
 	public static abstract class Builder<
 	  Entry extends AbstractResourceEntry<Entry>,
-	  Self extends Builder<Entry, Self>>
-	  extends AbstractConfigEntryBuilder<ResourceLocation, String, ResourceLocation, Entry, Self> {
+	  Self extends ResourceEntryBuilder<Self>,
+	  SelfImpl extends Builder<Entry, Self, SelfImpl>
+	> extends AbstractConfigEntryBuilder<ResourceLocation, String, ResourceLocation, Entry, Self, SelfImpl>
+	  implements ResourceEntryBuilder<Self> {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier = Lists::newArrayList;
 		protected boolean suggestionMode = true;
 		
@@ -38,16 +41,18 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			super(value, typeClass);
 		}
 		
-		@Contract(pure=true) public Self suggest(Supplier<List<ResourceLocation>> suggestionSupplier) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self suggest(
+		  Supplier<List<ResourceLocation>> suggestionSupplier
+		) {
+			SelfImpl copy = copy();
 			copy.suggestionSupplier = suggestionSupplier;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		@Contract(pure=true) public Self suggest(List<ResourceLocation> suggestions) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self suggest(List<ResourceLocation> suggestions) {
+			SelfImpl copy = copy();
 			copy.suggestionSupplier = () -> suggestions;
-			return copy;
+			return copy.castSelf();
 		}
 		
 		@Override protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
@@ -56,8 +61,8 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			return entry;
 		}
 		
-		@Override protected Self copy() {
-			final Self copy = super.copy();
+		@Override public SelfImpl copy() {
+			final SelfImpl copy = super.copy();
 			copy.suggestionSupplier = suggestionSupplier;
 			copy.suggestionMode = suggestionMode;
 			return copy;

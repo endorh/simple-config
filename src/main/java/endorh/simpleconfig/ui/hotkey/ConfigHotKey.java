@@ -1,10 +1,11 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.IConfigHotKeyGroupEntry;
 import net.minecraft.util.Util;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
-	private final ExtendedKeyBind keyBind;
+	private final ExtendedKeyBindImpl keyBind;
 	private KeyBindMapping keyMapping;
 	private String name = "";
 	private boolean enabled = true;
@@ -34,7 +35,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		this.keyMapping = keyMapping;
 		this.actions = actions;
 		this.unknown = unknown;
-		keyBind = new ExtendedKeyBind(getTitle(), keyMapping, this::applyHotkey);
+		keyBind = new ExtendedKeyBindImpl(getTitle(), keyMapping, this::applyHotkey);
 	}
 	
 	@Override public void applyHotkey() {
@@ -98,7 +99,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		keyBind.setTitle(getTitle());
 	}
 	
-	@Override public ExtendedKeyBind getKeyBind() {
+	@Override public ExtendedKeyBindImpl getKeyBind() {
 		return keyBind;
 	}
 	@Override public KeyBindMapping getKeyMapping() {
@@ -187,7 +188,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 				final String modId = (String) id;
 				((Map<?, ?>) s).forEach((t, ss) -> {
 					if (t instanceof String && ss instanceof Map) {
-						EditType type = EditType.fromAlias((String) t);
+						EditType type = ISimpleConfig.EditType.fromAlias((String) t);
 						if (type != null && SimpleConfig.hasConfig(modId, type.getType())) {
 							SimpleConfig config = SimpleConfig.getConfig(modId, type.getType());
 							Pair<String, EditType> pair = Pair.of(modId, type);

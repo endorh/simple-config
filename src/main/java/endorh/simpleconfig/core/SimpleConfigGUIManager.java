@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.config.ClientConfig.menu;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigReleaseServerCommonConfigPacket;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
@@ -29,6 +30,7 @@ import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -52,6 +54,14 @@ public class SimpleConfigGUIManager {
 	protected static Comparator<SimpleConfig> typeOrder = Comparator.comparing(SimpleConfig::getType);
 	protected static ResourceLocation defaultBackground = new ResourceLocation(
 	  "textures/block/oak_planks.png");
+	
+	// Used to evict unbound `ExtendedKeyBind`s for overlap checks to work properly
+	private static int guiSession;
+	private static final Map<String, Integer> guiSessions = new HashMap<>();
+	
+	@Internal public static int getGuiSession() {
+		return guiSession;
+	}
 	
 	/**
 	 * Modify the behaviour that adds a side button to the pause menu
@@ -112,10 +122,13 @@ public class SimpleConfigGUIManager {
 		AbstractConfigScreen screen = activeScreens.get(modId);
 		Screen parentScreen = (Screen) parent;
 		if (screen != null) {
+			int prevSession = guiSession;
+			guiSession = guiSessions.get(modId);
 			screen.setEditedConfigHotKey(hotkey, r -> {
 				screen.setEditedConfigHotKey(null, null);
 				Minecraft.getInstance().displayGuiScreen(parentScreen);
 				if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
+				guiSession = prevSession;
 			});
 			return screen;
 		}
@@ -127,7 +140,7 @@ public class SimpleConfigGUIManager {
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
 		final List<SimpleConfig> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
+		  .filter(c -> c.getType() != ISimpleConfig.Type.SERVER || hasPermission)
 		  .sorted(typeOrder)
 		  .collect(Collectors.toList());
 		// final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
@@ -140,7 +153,8 @@ public class SimpleConfigGUIManager {
 		  // .setSnapshotHandler(handler)
 		  .setEditedConfigHotKey(hotkey, r -> {
 			  activeScreens.remove(modId);
-			  if (configs.containsKey(Type.COMMON)
+			  guiSessions.remove(modId);
+			  if (configs.containsKey(ISimpleConfig.Type.COMMON)
 			      && !Minecraft.getInstance().isIntegratedServerRunning()
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
@@ -149,9 +163,10 @@ public class SimpleConfigGUIManager {
 			  if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
 		  }); //.setClosingRunnable(() -> activeScreens.remove(modId));
 		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder, false);
+		guiSessions.put(modId, ++guiSession);
 		final AbstractConfigScreen gui = builder.build();
-		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, null);
 		activeScreens.put(modId, gui);
+		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, null);
 		return gui;
 	}
 	
@@ -168,7 +183,7 @@ public class SimpleConfigGUIManager {
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
 		final List<SimpleConfig> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
+		  .filter(c -> c.getType() != ISimpleConfig.Type.SERVER || hasPermission)
 		  .sorted(typeOrder)
 		  .collect(Collectors.toList());
 		final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
@@ -179,7 +194,7 @@ public class SimpleConfigGUIManager {
 				  if (c.isDirty()) c.save();
 		  }).setClosingRunnable(() -> {
 			  activeScreens.remove(modId);
-			  if (configs.containsKey(Type.COMMON)
+			  if (configs.containsKey(ISimpleConfig.Type.COMMON)
 			      && !Minecraft.getInstance().isIntegratedServerRunning()
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
@@ -191,14 +206,15 @@ public class SimpleConfigGUIManager {
 		  .setRemoteCommonConfigProvider(handler);
 		for (SimpleConfig config : orderedConfigs) {
 			config.buildGUI(builder, false);
-			if (config.getType() == Type.COMMON
+			if (config.getType() == ISimpleConfig.Type.COMMON
 			    && !Minecraft.getInstance().isIntegratedServerRunning()
 			    && hasPermission
 			) config.buildGUI(builder, true);
 		}
+		guiSessions.put(modId, ++guiSession);
 		final AbstractConfigScreen gui = builder.build();
-		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, handler);
 		activeScreens.put(modId, gui);
+		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, handler);
 		return gui;
 	}
 	
@@ -281,7 +297,7 @@ public class SimpleConfigGUIManager {
 			
 			Button modOptions = new ImageButton(
 			  x, y, w, h, 0, 0, 20,
-			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simple_config/menu.png"),
+			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/menu.png"),
 			  32, 64, p -> showModListGUI());
 			event.addWidget(modOptions);
 		}

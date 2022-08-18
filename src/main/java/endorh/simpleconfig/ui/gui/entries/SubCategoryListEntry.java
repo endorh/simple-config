@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntry;
 import endorh.simpleconfig.ui.hotkey.HotKeyAction;
@@ -63,7 +63,7 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 	
 	@Internal public static abstract class VoidEntryBuilder
 	  extends FieldBuilder<Void, VoidEntry, VoidEntryBuilder> {
-		protected VoidEntryBuilder(ConfigEntryBuilder builder, ITextComponent name, Void value) {
+		protected VoidEntryBuilder(ConfigFieldBuilder builder, ITextComponent name, Void value) {
 			super(VoidEntry.class, builder, name, value);
 		}
 	}

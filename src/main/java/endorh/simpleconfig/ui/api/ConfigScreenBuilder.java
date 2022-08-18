@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
-import endorh.simpleconfig.core.SimpleConfig.Type;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-@OnlyIn(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public interface ConfigScreenBuilder {
 	static ConfigScreenBuilder create() {
 		return create("");
@@ -88,7 +88,7 @@ public interface ConfigScreenBuilder {
 	}
 	boolean hasTransparentBackground();
 	
-	default ConfigEntryBuilder entryBuilder() {
+	default ConfigFieldBuilder entryBuilder() {
 		return ConfigEntryBuilderImpl.create();
 	}
 	

@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
 import net.minecraft.util.text.ITextComponent;
@@ -28,7 +28,7 @@ public class CaptionedSubCategoryBuilder<
 	protected @Nullable HEB captionEntry;
 	
 	public CaptionedSubCategoryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, @Nullable HEB captionEntry
+	  ConfigFieldBuilder builder, ITextComponent name, @Nullable HEB captionEntry
 	) {
 		super(CaptionedSubCategoryListEntry.class, builder, name,
 		      captionEntry != null? captionEntry.value : null);

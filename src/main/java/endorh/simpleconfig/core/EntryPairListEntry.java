@@ -2,9 +2,14 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.entry.EntryPairListEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -26,32 +31,32 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class EntryPairListEntry<K, V, KC, C, KG, G,
-  E extends AbstractConfigEntry<V, C, G>,
-  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
-  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
-  extends AbstractListEntry<
-    Pair<K, V>, Pair<KC, C>, Pair<KG, G>, EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB>> {
+  B extends AbstractConfigEntryBuilder<V, C, G, ?, ?, B>,
+  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, ?, KB>
+> extends AbstractListEntry<
+    Pair<K, V>, Pair<KC, C>, Pair<KG, G>, EntryPairListEntry<K, V, KC, C, KG, G, B, KB>> {
 	protected final KB keyEntryBuilder;
-	protected final KE keyEntry;
+	protected final AbstractConfigEntry<K, KC, KG> keyEntry;
 	protected final B entryBuilder;
-	protected final E entry;
+	protected final AbstractConfigEntry<V, C, G> entry;
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
-	protected final FakeEntryHolder holder;
+	protected final CollectionEntryHolder holder;
 	
 	@Internal public EntryPairListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  List<Pair<K, V>> value, @NotNull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
-		holder = new FakeEntryHolder(parent.getRoot());
+		holder = new CollectionEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entryTypeClass = entryBuilder.typeClass;
 		this.keyEntryBuilder = keyEntryBuilder;
 		keyEntryTypeClass = keyEntryBuilder.typeClass;
 		entry = entryBuilder.build(holder, name + "$ v");
 		keyEntry = keyEntryBuilder.build(holder, name + "$ k");
+		if (!(keyEntry instanceof IKeyEntry)) throw new IllegalStateException(
+		  "KeyEntryBuilder created non-key entry: " + keyEntryBuilder.getClass().getCanonicalName());
 		if (!entry.canBeNested())
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
@@ -63,16 +68,24 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	}
 	
 	public static class Builder<K, V, KC, C, KG, G,
-	  E extends AbstractConfigEntry<V, C, G>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
-	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
-	  extends AbstractListEntry.Builder<
+	  S extends ConfigEntryBuilder<V, C, G, S>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>,
+	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & KeyEntryBuilder<KG>,
+	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & KeyEntryBuilder<KG>
+	> extends AbstractListEntry.Builder<
 	  Pair<K, V>, Pair<KC, C>, Pair<KG, G>,
-	  EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  Builder<K, V, KC, C, KG, G, E, B, KE, KB>> {
+	  EntryPairListEntry<K, V, KC, C, KG, G, B, KB>,
+	  EntryPairListEntryBuilder<K, V, KC, C, KG, G, S, KS>,
+	  Builder<K, V, KC, C, KG, G, S, B, KS, KB>
+	> implements EntryPairListEntryBuilder<K, V, KC, C, KG, G, S, KS> {
 		protected final KB keyEntryBuilder;
 		protected B entryBuilder;
+		
+		@SuppressWarnings("unchecked") public <KBB extends ConfigEntryBuilder<K, KC, KG, KBB> & KeyEntryBuilder<KG>> Builder(
+		  List<Pair<K, V>> value, KBB keyEntryBuilder, ConfigEntryBuilder<V, C, G, ?> entryBuilder
+		) {
+			this(value, (KB) keyEntryBuilder, (B) entryBuilder);
+		}
 		
 		public Builder(List<Pair<K, V>> value, KB keyEntryBuilder, B entryBuilder) {
 			super(value, Map.class);
@@ -80,13 +93,13 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 			this.keyEntryBuilder = keyEntryBuilder;
 		}
 		
-		@Override protected EntryPairListEntry<K, V, KC, C, KG, G, E, B, KE, KB> buildEntry(
+		@Override protected EntryPairListEntry<K, V, KC, C, KG, G, B, KB> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			return new EntryPairListEntry<>(parent, name, value, entryBuilder, keyEntryBuilder);
 		}
 		
-		@Override protected Builder<K, V, KC, C, KG, G, E, B, KE, KB> createCopy() {
+		@Override protected Builder<K, V, KC, C, KG, G, S, B, KS, KB> createCopy() {
 			return new Builder<>(value, keyEntryBuilder.copy(), entryBuilder.copy());
 		}
 	}
@@ -154,18 +167,19 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
-	Pair<KGE, AbstractConfigListEntry<G>> buildCell(ConfigEntryBuilder builder) {
-		final KE ke = keyEntryBuilder.build(holder, holder.nextName());
+	Pair<KGE, AbstractConfigListEntry<G>> buildCell(ConfigFieldBuilder builder) {
+		final AbstractConfigEntry<K, KC, KG> ke = keyEntryBuilder.build(holder, holder.nextName());
 		ke.setSaver((g, h) -> {});
 		ke.setDisplayName(new StringTextComponent(""));
 		ke.nonPersistent = true;
-		final E e = entryBuilder.build(holder, holder.nextName());
+		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
 		e.setDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
-		KGE kg = (KGE) ke.buildChildGUIEntry(builder).build();
+		//noinspection unchecked
+		KGE kg = (KGE) ((IKeyEntry<KG>) ke).buildChildGUIEntry(builder).build();
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));
@@ -202,7 +216,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final EntryPairListBuilder<KG, G, ? extends AbstractConfigListEntry<KG>, AbstractConfigListEntry<G>>
 		  entryBuilder = builder
 		  .startEntryPairList(getDisplayName(), forGui(get()), en -> buildCell(builder))

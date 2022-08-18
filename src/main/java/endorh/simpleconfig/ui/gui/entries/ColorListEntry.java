@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 public class ColorListEntry extends TextFieldListEntry<Integer> {
@@ -199,8 +198,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		ColorError error = colorValue.getError();
 		if (error != null) {
 			return Optional.of(new TranslationTextComponent(
-			  "text.cloth-config.error.color." +
-			  error.name().toLowerCase(Locale.ROOT)));
+			  "simpleconfig.config.error.invalid_color", getText()));
 		}
 		return super.getErrorMessage();
 	}

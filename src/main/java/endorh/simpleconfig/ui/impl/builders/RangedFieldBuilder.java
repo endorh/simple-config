@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.IRangedEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,7 +16,7 @@ public abstract class RangedFieldBuilder<V extends Comparable<V>,
 	V max;
 	
 	protected RangedFieldBuilder(
-	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, V value
+	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, V value
 	) {
 		super(entryClass, builder, name, value);
 	}

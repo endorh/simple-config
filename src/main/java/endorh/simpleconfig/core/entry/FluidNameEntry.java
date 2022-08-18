@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.FluidNameEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.fluid.FlowingFluid;
@@ -39,7 +40,8 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		return "Fluid";
 	}
 	
-	public static class Builder extends AbstractResourceEntry.Builder<FluidNameEntry, Builder> {
+	public static class Builder extends AbstractResourceEntry.Builder<FluidNameEntry, FluidNameEntryBuilder, Builder>
+	  implements FluidNameEntryBuilder {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier;
 		protected ITag<Fluid> tag = null;
 		
@@ -51,12 +53,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 			  .map(ForgeRegistryEntry::getRegistryName).collect(Collectors.toList());
 		}
 		
-		/**
-		 * Restrict the selectable items to those of a tag<br>
-		 * This can only be done on server configs, since tags
-		 * are server-dependant
-		 */
-		@Contract(pure=true) public Builder suggest(ITag<Fluid> tag) {
+		@Override @Contract(pure=true) public Builder suggest(ITag<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -64,7 +61,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		
 		@Override
 		protected FluidNameEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
@@ -86,7 +83,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 	
 	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<FieldBuilder<ResourceLocation, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofFluidName(), forGui(get()));

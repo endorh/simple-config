@@ -3,15 +3,13 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.*;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.entry.ListEntryBuilder;
+import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.config.CommonConfig.menu;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigBuilder.ConfigValueBuilder;
-import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
-import endorh.simpleconfig.core.entry.AbstractListEntry;
-import endorh.simpleconfig.core.entry.AbstractRangedEntry;
-import endorh.simpleconfig.core.entry.AbstractRangedEntry.Builder;
-import endorh.simpleconfig.core.entry.Builders;
-import endorh.simpleconfig.core.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.util.text.*;
@@ -45,9 +43,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static endorh.simpleconfig.core.SimpleConfig.group;
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.applyStyle;
-import static endorh.simpleconfig.core.entry.Builders.*;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.applyStyle;
 import static java.util.Collections.singletonList;
 
 @EventBusSubscriber(modid=SimpleConfigMod.MOD_ID, bus = Bus.MOD)
@@ -92,7 +89,7 @@ public class SimpleConfigWrapper {
 			if (!configs.isEmpty()) {
 				String displayName = container.getModInfo().getDisplayName();
 				String logName = displayName + " (" + modId + ")";
-				for (Type type: Type.values()) {
+				for (Type type: ISimpleConfig.Type.values()) {
 					ModConfig.Type configType = type.asConfigType();
 					String tt = type.getAlias();
 					try {
@@ -100,7 +97,7 @@ public class SimpleConfigWrapper {
 							ModConfig config = configs.get(configType);
 							if (!(config instanceof SimpleConfigModConfig) && menu.shouldWrapConfig(modId)) {
 								LOGGER.info("Wrapping " + tt + " config for mod {}", modId);
-								SimpleConfigBuilder builder = wrap(container, config);
+								SimpleConfigBuilder builder = (SimpleConfigBuilder) wrap(container, config);
 								if (builder != null) builder.buildAndRegister(
 								  null, new WrappingConfigValueBuilder(container, config));
 							}
@@ -116,10 +113,10 @@ public class SimpleConfigWrapper {
 		});
 	}
 	
-	private static SimpleConfigBuilder wrap(ModContainer container, ModConfig config) {
+	private static ISimpleConfigBuilder wrap(ModContainer container, ModConfig config) {
 		if (config instanceof SimpleConfigModConfig) return null;
-		Type type = Type.fromConfigType(config.getType());
-		SimpleConfigBuilder builder = SimpleConfig.builder(config.getModId(), type);
+		Type type = ISimpleConfig.Type.fromConfigType(config.getType());
+		ISimpleConfigBuilder builder = config(config.getModId(), type);
 		
 		ForgeConfigSpec forgeSpec = config.getSpec();
 		UnmodifiableConfig spec = forgeSpec.getSpec();
@@ -147,7 +144,7 @@ public class SimpleConfigWrapper {
 		@Override void build(AbstractConfigEntry<?, ?, ?> entry) {
 			Object o = getConfigValues().get(entry.name);
 			if (o instanceof ConfigValue) {
-				entry.setConfigValue(((ConfigValue<?>) o));
+				entry.setConfigValue((ConfigValue<?>) o);
 			} else throw new IllegalStateException("Cannot wrap entry: " + entry.name);
 		}
 		
@@ -193,7 +190,7 @@ public class SimpleConfigWrapper {
 	}
 	
 	private static void wrapConfig(
-	  AbstractSimpleConfigEntryHolderBuilder<?> builder, UnmodifiableConfig spec, String path
+	  ConfigEntryHolderBuilder<?> builder, UnmodifiableConfig spec, String path
 	) {
 		Map<String, Object> specMap = spec.valueMap();
 		for (Map.Entry<String, Object> specEntry: specMap.entrySet()) {
@@ -201,13 +198,14 @@ public class SimpleConfigWrapper {
 			String entryPath = path.isEmpty()? key : path + "." + key;
 			final Object specValue = specEntry.getValue();
 			if (specValue instanceof UnmodifiableConfig) {
-				GroupBuilder groupBuilder = group(key, true);
+				// TODO: Add config setting to load root groups as categories
+				IGroupBuilder groupBuilder = group(key, true);
 				UnmodifiableConfig subSpec = (UnmodifiableConfig) specValue;
 				wrapConfig(groupBuilder, subSpec, entryPath);
 				builder.n(groupBuilder);
 			} else if (specValue instanceof ValueSpec) {
 				ValueSpec valueSpec = (ValueSpec) specValue;
-				Optional<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> opt = wrapValue(valueSpec);
+				Optional<ConfigEntryBuilder<?, ?, ?, ?>> opt = wrapValue(valueSpec);
 				if (opt.isPresent()) {
 					builder.add(key, opt.get());
 				} else LOGGER.warn(
@@ -217,13 +215,11 @@ public class SimpleConfigWrapper {
 		}
 	}
 	
-	private static Optional<AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> wrapValue(ValueSpec spec) {
+	private static Optional<ConfigEntryBuilder<?, ?, ?, ?>> wrapValue(ValueSpec spec) {
 		Class<?> clazz = guessValueClass(spec);
 		for (ValueSpecAdapter<?, ?> adapter: ADAPTERS) {
 			if (adapter.getClazz().isAssignableFrom(clazz))
-				//noinspection RedundantCast
-				return Optional.ofNullable(
-				  (AbstractConfigEntryBuilder<?, ?, ?, ?, ?>) adapter.createBuilder(spec));
+				return Optional.ofNullable(adapter.createBuilder(spec));
 		}
 		return Optional.empty();
 	}
@@ -266,12 +262,13 @@ public class SimpleConfigWrapper {
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	private static final Pattern EXPERIMENTAL = Pattern.compile(
 	  "EXPERIMENTAL", Pattern.CASE_INSENSITIVE);
-	private static <B extends AbstractConfigEntryBuilder<?, ?, ?, ?, B>> B decorateBuilder(
-	  B builder, ValueSpec spec
+	private static <B extends ConfigEntryBuilder<?, ?, ?, B>> B decorateBuilder(
+	  ConfigEntryBuilder<?, ?, ?, ?> builder, ValueSpec spec
 	) {
 		builder = builder.restart(spec.needsWorldRestart());
 		String translation = spec.getTranslationKey();
-		if (translation != null) builder = builder.translation(translation);
+		if (translation != null) //noinspection unchecked
+			builder = (B) ((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) builder).translation(translation);
 		String comment = spec.getComment();
 		if (comment != null) {
 			List<ITextComponent> tooltip = new ArrayList<>();
@@ -297,12 +294,13 @@ public class SimpleConfigWrapper {
 		}
 		builder = builder.configError(t -> !spec.test(t)? Optional.of(new TranslationTextComponent(
 		  "simpleconfig.config.error.invalid_value_generic")) : Optional.empty());
-		return builder;
+		//noinspection unchecked
+		return (B) builder;
 	}
 	
 	@FunctionalInterface interface IValueSpecAdapter<V, C> {
-		AbstractConfigEntryBuilder<V, C, ?, ?, ?> createBuilder(ValueSpec spec, V defValue);
-		@SuppressWarnings("unchecked") default <B extends AbstractConfigEntryBuilder<V, C, ?, ?, B>> B
+		ConfigEntryBuilder<V, C, ?, ?> createBuilder(ValueSpec spec, V defValue);
+		@SuppressWarnings("unchecked") default <B extends ConfigEntryBuilder<?, ?, ?, B>> B
 		createCastBuilder(ValueSpec spec, V defValue) {
 			return (B) createBuilder(spec, defValue);
 		}
@@ -311,11 +309,7 @@ public class SimpleConfigWrapper {
 	@FunctionalInterface interface IRangedValueSpecAdapter<
 	  V extends Comparable<V>, C
 	> {
-		AbstractRangedEntry.Builder<V, C, ?, ?, ?> createBuilder(ValueSpec spec, V defValue);
-		@SuppressWarnings("unchecked") default <B extends AbstractRangedEntry.Builder<V, C, ?, ?, B>> B
-		createCastBuilder(ValueSpec spec, V defValue) {
-			return (B) createBuilder(spec, defValue);
-		}
+		RangedEntryBuilder<V, C, ?, ?> createBuilder(ValueSpec spec, V defValue);
 	}
 	
 	public static class ValueSpecAdapter<V, C> {
@@ -329,11 +323,11 @@ public class SimpleConfigWrapper {
 			this.adapter = adapter;
 		}
 		
-		public @Nullable <B extends AbstractConfigEntryBuilder<V, C, ?, ?, B>> B createBuilder(ValueSpec spec) {
+		public @Nullable ConfigEntryBuilder<?, ?, ?, ?> createBuilder(ValueSpec spec) {
 			Object defValue = spec.getDefault();
 			C def = clazz.cast(defValue);
 			V value = transform.apply(def);
-			return decorateBuilder(adapter.<B>createCastBuilder(spec, value), spec);
+			return decorateBuilder(adapter.createCastBuilder(spec, value), spec);
 		}
 		
 		public Class<? extends C> getClazz() {
@@ -341,7 +335,7 @@ public class SimpleConfigWrapper {
 		}
 	}
 	
-	private static <V, B extends AbstractConfigEntryBuilder<V, V, ?, ?, B>> void reg(
+	private static <V> void reg(
 	  Class<V> clazz, IValueSpecAdapter<V, V> adapter
 	) {
 		reg(clazz, Function.identity(), adapter);
@@ -351,10 +345,9 @@ public class SimpleConfigWrapper {
 	  Class<C> clazz, Function<CC, V> transform, IRangedValueSpecAdapter<V, CC> adapter
 	) {
 		reg(clazz, transform, (ValueSpec s, V v) -> {
-			Builder<V, CC, ?, ?, ?> builder = adapter.createBuilder(s, v);
+			RangedEntryBuilder<V, CC, ?, ?> builder = adapter.createBuilder(s, v);
 			Pair<? extends C, ? extends C> p = tryGetRange(s, clazz);
-			if (p != null)
-				builder = builder.range(transform.apply(p.getLeft()), transform.apply(p.getRight()));
+			if (p != null) builder = builder.range(transform.apply(p.getLeft()), transform.apply(p.getRight()));
 			return builder;
 		});
 	}
@@ -376,21 +369,21 @@ public class SimpleConfigWrapper {
 		regRanged(Double.class, Number::doubleValue, (s, v) -> number(v));
 		reg(String.class, (s, v) -> string(v));
 		//noinspection unchecked
-		reg(Enum.class, (s, v) -> Builders.option(v));
+		reg(Enum.class, (s, v) -> option(v));
 		//noinspection unchecked
 		reg((Class<List<?>>) (Class<?>) List.class, Function.identity(), (s, v) -> {
 			Object defValue = s.getDefault();
 			if (!(defValue instanceof List)) return null;
 			List<?> def = (List<?>) defValue;
-			AbstractListEntry.Builder<?, ?, ?, ?, ?> builder = guessListType(def, s::test);
-			if (!s.test(Lists.newArrayList())) builder = builder.minSize(1);
+			ListEntryBuilder<?, ?, ?, ?> builder = guessListType(def, s::test);
+			if (!s.test(Lists.newArrayList()))
+				builder = builder.minSize(1);
 			//noinspection unchecked
-			return (AbstractConfigEntryBuilder<List<?>, List<?>, ?, ?, ?>)
-			  (AbstractConfigEntryBuilder<?, ?, ?, ?, ?>) builder;
+			return (ConfigEntryBuilder<List<?>, List<?>, ?, ?>) (ConfigEntryBuilder<?, ?, ?, ?>) builder;
 		});
 	}
 	
-	private static AbstractListEntry.Builder<?, ?, ?, ?, ?> guessListType(
+	private static ListEntryBuilder<?, ?, ?, ?> guessListType(
 	  List<?> defValue, Predicate<Object> validator
 	) {
 		if (defValue.isEmpty()) {
@@ -414,14 +407,14 @@ public class SimpleConfigWrapper {
 				return list(string(""));
 			} else if (allInstance(defValue, Enum.class)) {
 				//noinspection unchecked,rawtypes
-				return list(option(((Enum) defValue.get(0))));
+				return list(option((Enum) defValue.get(0)));
 			} else if (allInstance(defValue, List.class)) {
 				Predicate<Object> subValidator = o -> validator.test(singletonList(o));
 				Optional<? extends List<?>> opt = defValue.stream()
-				  .map(e -> ((List<?>) e))
+				  .map(e -> (List<?>) e)
 				  .filter(e -> !e.isEmpty())
 				  .findFirst();
-				AbstractListEntry.Builder<?, ?, ?, ?, ?> sub;
+				ListEntryBuilder<?, ?, ?, ?> sub;
 				if (opt.isPresent()) {
 					sub = guessListType(opt.get(), subValidator);
 				} else sub = guessListTypeFromValidator(subValidator);
@@ -431,10 +424,9 @@ public class SimpleConfigWrapper {
 	}
 	
 	@SuppressWarnings("unchecked") private static <
-	  V, C, G, E extends AbstractListEntry<V, C, G, E>,
-	  B extends AbstractListEntry.Builder<V, C, G, E, B>
-	> AbstractListEntry.Builder<?, ?, ?, ?, ?> wrapSubList(
-	  AbstractListEntry.Builder<?, ?, ?, ?, ?> sub, List<?> subList
+	  V, C, G, B extends ListEntryBuilder<V, C, G, B>
+	> ListEntryBuilder<?, ?, ?, ?> wrapSubList(
+	  ListEntryBuilder<?, ?, ?, ?> sub, List<?> subList
 	) {
 		return list((B) sub, (List<List<V>>) subList);
 	}
@@ -443,8 +435,8 @@ public class SimpleConfigWrapper {
 		return list.stream().allMatch(clazz::isInstance);
 	}
 	
-	private static AbstractListEntry.Builder<?, ?, ?, ?, ?> guessListTypeFromValidator(Predicate<Object> validator) {
-		AbstractListEntry.Builder<?, ?, ?, ?, ?> b;
+	private static ListEntryBuilder<?, ?, ?, ?> guessListTypeFromValidator(Predicate<Object> validator) {
+		ListEntryBuilder<?, ?, ?, ?> b;
 		if (validator.test(singletonList("s"))) {
 			b = list(string(""));
 		} else if (validator.test(singletonList(true))) {

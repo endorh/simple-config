@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.IntegerEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, IntegerEntry>
+public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer>
   implements IKeyEntry<Integer> {
 	@Internal public IntegerEntry(
 	  ISimpleConfigEntryHolder parent, String name, int value
@@ -23,29 +24,21 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 	}
 	
 	public static class Builder
-	  extends AbstractRangedEntry.Builder<Integer, Number, Integer, IntegerEntry, Builder> {
+	  extends AbstractRangedEntry.Builder<Integer, Number, Integer, IntegerEntry, IntegerEntryBuilder, Builder>
+	  implements IntegerEntryBuilder {
 		public Builder(Integer value) {
 			super(value, Integer.class);
 		}
 		
-		/**
-		 * Set min (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(int min) {
+		@Override @Contract(pure=true) public IntegerEntryBuilder min(int min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set max (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(int max) {
+		@Override @Contract(pure=true) public IntegerEntryBuilder max(int max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set range (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(int min, int max) {
+		@Override @Contract(pure=true) public IntegerEntryBuilder range(int min, int max) {
 			return super.range(min, max);
 		}
 		
@@ -73,7 +66,7 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer, 
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Integer, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (!asSlider) {
 			final IntFieldBuilder valBuilder = builder

@@ -2,16 +2,16 @@ package endorh.simpleconfig.demo;
 
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.core.AbstractRange.DoubleRange;
-import endorh.simpleconfig.core.EntryTag;
-import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
-import endorh.simpleconfig.core.SimpleConfigCategory;
+import endorh.simpleconfig.api.AbstractRange.DoubleRange;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ICategoryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigCategory;
+import endorh.simpleconfig.api.annotation.Bind;
+import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.core.SimpleConfigGroup;
-import endorh.simpleconfig.core.annotation.Bind;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
-import endorh.simpleconfig.core.entry.IConfigEntrySerializer;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluids;
@@ -32,7 +32,7 @@ import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.awt.*;
+import java.awt.Color;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +42,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
-import static endorh.simpleconfig.core.SimpleConfig.category;
-import static endorh.simpleconfig.core.SimpleConfig.group;
-import static endorh.simpleconfig.core.entry.Builders.*;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.ui.hotkey.KeyBindMapping.parse;
 import static java.lang.Math.abs;
 import static java.util.Arrays.asList;
@@ -71,7 +69,7 @@ public class DemoConfigCategory {
 	//   default category for its config (Client / Server)
 	// Only server operators can access categories registered
 	//   in the server config
-	public static CategoryBuilder getDemoCategory() {
+	public static ICategoryBuilder getDemoCategory() {
 		// This value will be used below
 		CompoundNBT nbt = new CompoundNBT();
 		nbt.putString("name", "Steve");
@@ -380,6 +378,11 @@ public class DemoConfigCategory {
 						string("move").restrict("move", "rotate", "dig", "tower"),
 						number(1), asList(
 						  Pair.of("move", 2), Pair.of("tower", 1))))
+		          // Keybinds are also supported, but you should consider using regular
+		          //   Keybinds instead, as they would appear in the Controls screen,
+		          //   where the user can fix conflicts between mods
+		          // To actually use keybinds from configs, see ExtendedKeyBind and
+		          //   ExtendedKeyBindProvider
 		          .add("key_map", map(
 						key(), string("/execute ..."), ImmutableMap.of(
 			           parse("left.control+h"), "/tp 0 0 0",
@@ -600,7 +603,7 @@ public class DemoConfigCategory {
 	}
 	
 	// Sometimes baking isn't as simple as setting a few fields
-	public static void bakeDemoCategory(SimpleConfigCategory demo) {
+	public static void bakeDemoCategory(ISimpleConfigCategory demo) {
 		// The baker always runs after all backing fields have been baked
 		// So we may safely use them to create composite values, or transform them
 		

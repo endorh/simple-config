@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.ColorListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -12,7 +12,7 @@ public class ColorFieldBuilder
   extends FieldBuilder<Integer, ColorListEntry, ColorFieldBuilder> {
 	private boolean alpha = false;
 	
-	public ColorFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, int value) {
+	public ColorFieldBuilder(ConfigFieldBuilder builder, ITextComponent name, int value) {
 		super(ColorListEntry.class, builder, name, value);
 	}
 	

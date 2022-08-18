@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.LongListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class LongFieldBuilder
   extends RangedFieldBuilder<Long, LongListEntry, LongFieldBuilder> {
 	
-	public LongFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, long value) {
+	public LongFieldBuilder(ConfigFieldBuilder builder, ITextComponent name, long value) {
 		super(LongListEntry.class, builder, name, value);
 	}
 	

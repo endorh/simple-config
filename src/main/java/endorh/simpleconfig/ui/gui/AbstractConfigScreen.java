@@ -6,9 +6,10 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.config.ClientConfig.confirm;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
-import endorh.simpleconfig.core.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
@@ -23,6 +24,7 @@ import endorh.simpleconfig.ui.impl.EditHistory;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
+import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
@@ -56,7 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 
 public abstract class AbstractConfigScreen extends Screen
   implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler,
@@ -124,16 +126,16 @@ public abstract class AbstractConfigScreen extends Screen
 		List<ConfigCategory> sortedServerCategories = serverCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
 		categoryMap = Util.make(new HashMap<>(4), m -> {
-			m.put(EditType.CLIENT.getAlias(), clientCategoryMap);
-			m.put(EditType.COMMON.getAlias(), commonCategoryMap);
-			m.put(EditType.SERVER_COMMON.getAlias(), serverCommonCategoryMap);
-			m.put(EditType.SERVER.getAlias(), serverCategoryMap);
+			m.put(ISimpleConfig.EditType.CLIENT.getAlias(), clientCategoryMap);
+			m.put(ISimpleConfig.EditType.COMMON.getAlias(), commonCategoryMap);
+			m.put(ISimpleConfig.EditType.SERVER_COMMON.getAlias(), serverCommonCategoryMap);
+			m.put(ISimpleConfig.EditType.SERVER.getAlias(), serverCategoryMap);
 		});
 		sortedCategoriesMap = Util.make(new EnumMap<>(EditType.class), m -> {
-			m.put(EditType.CLIENT, sortedClientCategories);
-			m.put(EditType.COMMON, sortedCommonCategories);
-			m.put(EditType.SERVER_COMMON, sortedServerCommonCategories);
-			m.put(EditType.SERVER, sortedServerCategories);
+			m.put(ISimpleConfig.EditType.CLIENT, sortedClientCategories);
+			m.put(ISimpleConfig.EditType.COMMON, sortedCommonCategories);
+			m.put(ISimpleConfig.EditType.SERVER_COMMON, sortedServerCommonCategories);
+			m.put(ISimpleConfig.EditType.SERVER, sortedServerCategories);
 		});
 		sortedCategories = Stream.of(
 		  sortedClientCategories, sortedCommonCategories,
@@ -254,7 +256,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean isEditingServer() {
-		return getEditedType() == EditType.SERVER;
+		return getEditedType() == ISimpleConfig.EditType.SERVER;
 	}
 	
 	public boolean isShowingTabs() {
@@ -378,7 +380,7 @@ public abstract class AbstractConfigScreen extends Screen
 				  }, CheckboxButton.of(
 					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
 				  d.setBody(splitTtc("simpleconfig.ui.confirm_save.msg"));
-				  d.setConfirmText(new TranslationTextComponent("text.cloth-config.save_and_done"));
+				  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.save"));
 				  d.setConfirmButtonTint(0x8042BD42);
 			  }));
 		} else doSaveAll(openOtherScreens);
@@ -424,7 +426,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean hasConflictingExternalChanges() {
-		return Arrays.stream(EditType.values()).filter(t -> !t.isRemote())
+		return Arrays.stream(ISimpleConfig.EditType.values()).filter(t -> !t.isRemote())
 		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())
@@ -432,7 +434,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean hasConflictingRemoteChanges() {
-		return Arrays.stream(EditType.values()).filter(EditType::isRemote)
+		return Arrays.stream(ISimpleConfig.EditType.values()).filter(ISimpleConfig.EditType::isRemote)
 		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())
@@ -587,7 +589,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (minecraft == null) return false;
 		if (!skipConfirm && confirmUnsaved && isEdited()) {
 			addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("text.cloth-config.quit_config"), d -> {
+			  new TranslationTextComponent("simpleconfig.ui.discard.dialog"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -601,8 +603,8 @@ public abstract class AbstractConfigScreen extends Screen
 					  }
 				  }, CheckboxButton.of(
 					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
-				  d.setBody(splitTtc("text.cloth-config.quit_config_sure"));
-				  d.setConfirmText(new TranslationTextComponent("text.cloth-config.quit_discard"));
+				  d.setBody(splitTtc("simpleconfig.ui.discard.confirm"));
+				  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.discard"));
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else {
@@ -617,8 +619,8 @@ public abstract class AbstractConfigScreen extends Screen
 		tickDialogs();
 		boolean edited = isEdited();
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
-		  edited ? new TranslationTextComponent("text.cloth-config.cancel_discard")
-		         : new TranslationTextComponent("gui.cancel")));
+		  edited ? new TranslationTextComponent("simpleconfig.ui.discard")
+		         : DialogTexts.GUI_CANCEL));
 		for (IGuiEventListener child : getEventListeners()) {
 			if (!(child instanceof ITickableTileEntity)) continue;
 			((ITickableTileEntity) child).tick();

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.StringListListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,7 +14,7 @@ public class StringListBuilder
   extends ListFieldBuilder<String, StringListListEntry, StringListBuilder> {
 	
 	public StringListBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, List<String> value
+	  ConfigFieldBuilder builder, ITextComponent name, List<String> value
 	) {
 		super(StringListListEntry.class, builder, name, value);
 	}

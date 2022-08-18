@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui;
 
-import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -11,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.ExternalChangesDialog.ExternalChangeResponse.*;
 
 public class ExternalChangesDialog extends ConfirmDialog {
@@ -38,13 +39,13 @@ public class ExternalChangesDialog extends ConfirmDialog {
 	  EditType type, @NotNull Consumer<ExternalChangeResponse> action
 	) {
 		super(new TranslationTextComponent(
-		  type == EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
+		  type == ISimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		  "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;
 		this.responseAction = action;
 		setPersistent(true);
 		setBody(Stream.concat(
-		  splitTtc(type == EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
+		  splitTtc(type == ISimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
 		           "simpleconfig.ui.external_changes_detected.body"
 		  ).stream(), Stream.of(
 			 StringTextComponent.EMPTY, new TranslationTextComponent(

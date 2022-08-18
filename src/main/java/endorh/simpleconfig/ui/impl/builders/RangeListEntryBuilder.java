@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.core.AbstractRange;
+import endorh.simpleconfig.api.AbstractRange;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.entries.RangeListEntry;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,13 +23,13 @@ public class RangeListEntryBuilder<
 	protected @Nullable Icon middleIcon = null;
 	
 	public RangeListEntryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, R value, FieldBuilder<V, E, ?> entryBuilder
+	  ConfigFieldBuilder builder, ITextComponent name, R value, FieldBuilder<V, E, ?> entryBuilder
 	) {
 		this(builder, name, value, entryBuilder.build(), entryBuilder.build());
 	}
 	
 	public RangeListEntryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, R value, E minEntry, E maxEntry
+	  ConfigFieldBuilder builder, ITextComponent name, R value, E minEntry, E maxEntry
 	) {
 		super(RangeListEntry.class, builder, name, value);
 		this.minEntry = minEntry;

@@ -2,10 +2,16 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.Config.Entry;
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.entry.CaptionedMapEntryBuilder;
+import endorh.simpleconfig.api.entry.EntryMapEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
@@ -24,143 +30,125 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class CaptionedMapEntry<K, V, KC, C, KG, G,
-  E extends AbstractConfigEntry<V, C, G>,
-  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
-  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
-  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>>
-  extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>
-  > {
-	
-	protected final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry;
-	protected final CE captionEntry;
+public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
+  extends AbstractConfigEntry<Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>> {
+	protected final EntryMapEntry<K, V, KC, C, KG, G, ?, ?> mapEntry;
+	protected final AbstractConfigEntry<CV, CC, CG> captionEntry;
 	
 	protected CaptionedMapEntry(
 	  ISimpleConfigEntryHolder parent, String name,
-	  Pair<CV, Map<K, V>> value, EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> mapEntry, CE captionEntry
+	  Pair<CV, Map<K, V>> value,
+	  EntryMapEntry<K, V, KC, C, KG, G, ?, ?> mapEntry,
+	  AbstractConfigEntry<CV, CC, CG> captionEntry
 	) {
 		super(parent, name, value);
 		this.mapEntry = mapEntry;
 		this.captionEntry = captionEntry;
 	}
 	
+	@SuppressWarnings("unchecked") protected <E extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>> E getCaptionEntry() {
+		return (E) captionEntry;
+	}
+	
 	public static class Builder<K, V, KC, C, KG, G,
-	  E extends AbstractConfigEntry<V, C, G>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
-	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>,
-	  MB extends EntryMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>,
-	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>
+	  CV, CC, CG, CS extends ConfigEntryBuilder<CV, CC, CG, CS> & KeyEntryBuilder<CG>
 	> extends AbstractConfigEntryBuilder<
 	  Pair<CV, Map<K, V>>, Pair<CC, Map<KC, C>>, Pair<CG, List<Pair<KG, G>>>,
-	  CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE>,
-	  CaptionedMapEntry.Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB>
+	  CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>,
+	  CaptionedMapEntryBuilder<K, V, KC, C, KG, G,  EntryMapEntry.Builder<
+	    K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS>,
+	  CaptionedMapEntry.Builder<K, V, KC, C, KG, G, CV, CC, CG, CS>
+	> implements CaptionedMapEntryBuilder<
+	  K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>,
+	  CV, CC, CG, CS
 	> {
-		protected MB mapEntryBuilder;
-		protected CB captionEntryBuilder;
+		protected EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?> mapEntryBuilder;
+		protected AbstractConfigEntryBuilder<CV, CC, CG, ?, CS, ?> captionEntryBuilder;
 		
-		public Builder(Pair<CV, Map<K, V>> value, MB mapEntryBuilder, CB captionEntryBuilder) {
-			super(value, Pair.class);
-			this.mapEntryBuilder = mapEntryBuilder;
-			this.captionEntryBuilder = captionEntryBuilder;
+		@SuppressWarnings("unchecked") public Builder(
+		  Pair<CV, Map<K, V>> value,
+		  EntryMapEntryBuilder<K, V, KC, C, KG, G, ?, ?> mapEntryBuilder,
+		  CS captionEntryBuilder
+		) {
+			this(value, (EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>) mapEntryBuilder, captionEntryBuilder);
 		}
 		
-		/**
-		 * Bind a field to the caption entry.
-		 * @see #mapField(String)
-		 * @see #mapField()
-		 * @see #splitFields(String)
-		 */
-		@Contract(pure=true)
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> captionField(String name) {
+		public Builder(
+		  Pair<CV, Map<K, V>> value,
+		  EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?> mapEntryBuilder,
+		  CS captionEntryBuilder
+		) {
+			super(value, Pair.class);
+			this.mapEntryBuilder = mapEntryBuilder;
+			if (!(captionEntryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+			  "ConfigEntryBuilder is not subclass of AbstractConfigEntryBuilder");
+			//noinspection unchecked
+			this.captionEntryBuilder = (AbstractConfigEntryBuilder<CV, CC, CG, ?, CS, ?>) captionEntryBuilder;
+		}
+		
+		public Builder(
+		  Pair<CV, Map<K, V>> value,
+		  EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?> mapBuilder,
+		  AbstractConfigEntryBuilder<CV, CC, CG, ?, CS, ?> captionBuilder
+		) {
+			super(value, Pair.class);
+			mapEntryBuilder = mapBuilder;
+			captionEntryBuilder = captionBuilder;
+		}
+		
+		@Override @Contract(pure=true)
+		public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> captionField(
+		  String name
+		) {
 			return field(name, Pair::getKey, captionEntryBuilder.typeClass);
 		}
 		
-		/**
-		 * Bind a field to the map entry.<br>
-		 * You may also omit the name to replace the default field with a field for the map.
-		 * @see #captionField(String)
-		 * @see #mapField()
-		 * @see #splitFields(String)
-		 */
-		@Contract(pure=true)
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> mapField(String name) {
+		@Override @Contract(pure=true)
+		public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> mapField(String name) {
 			return field(name, Pair::getValue, mapEntryBuilder.typeClass);
 		}
 		
-		/**
-		 * Replace the default field with a field for the map value.
-		 * @see #captionField(String)
-		 * @see #mapField(String)
-		 * @see #splitFields(String)
-		 */
-		@Contract(pure=true)
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> mapField() {
+		@Override public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> mapField() {
 			return addField(BackingFieldBinding.sameName(BackingFieldBuilder.of(
 			  Pair::getValue, mapEntryBuilder.typeClass)));
 		}
 		
-		/**
-		 * Bind a field to the caption entry and replace the default field with a field
-		 * for the map value.
-		 * @see #captionField(String)
-		 * @see #mapField(String)
-		 * @see #mapField()
-		 */
-		@Contract(pure=true)
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> splitFields(String captionSuffix) {
+		@Override @Contract(pure=true)
+		public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> splitFields(
+		  String captionSuffix
+		) {
 			return addField(captionSuffix, Pair::getKey, captionEntryBuilder.typeClass).mapField();
 		}
 		
-		/**
-		 * Bind a field to the caption entry and replace the default field with a field
-		 * for the map value.
-		 * @param fullFieldName {@code true} if the caption field name should be treated
-		 *        as the full name of the field. {@code false} (default) if it should be
-		 *        treated as a camelCase suffix to this entry's name.
-		 * @see #captionField(String)
-		 * @see #mapField(String)
-		 * @see #mapField()
-		 */
-		@Contract(pure=true)
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> splitFields(
+		@Override @Contract(pure=true)
+		public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> splitFields(
 		  String captionField, boolean fullFieldName
 		) {
 			if (!fullFieldName) return splitFields(captionField);
 			return captionField(captionField).mapField();
 		}
 		
-		/**
-		 * Bind a field to the caption entry and replace the default field with a field
-		 * for the map value.
-		 *
-		 * @see #captionField(String)
-		 * @see #mapField(String)
-		 * @see #mapField()
-		 */
-		@Contract(pure=true)
-		public Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> split_fields(String caption_suffix) {
+		@Override @Contract(pure=true)
+		public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> split_fields(
+		  String caption_suffix
+		) {
 			return add_field(caption_suffix, Pair::getKey, captionEntryBuilder.typeClass).mapField();
 		}
 		
-		@Override protected CaptionedMapEntry<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE> buildEntry(
+		@Override protected CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> me = DummyEntryHolder.build(parent, mapEntryBuilder);
-			// final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> me =
-			//   mapEntryBuilder.buildEntry(parent, name + "$val");
-			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder);
-			// final CE ce = captionEntryBuilder.buildEntry(parent, name + "$key");
+			final EntryMapEntry<K, V, KC, C, KG, G, ?, ?> me = DummyEntryHolder.build(parent, mapEntryBuilder);
+			final AbstractConfigEntry<CV, CC, CG> ce = DummyEntryHolder.build(parent, captionEntryBuilder);
+			if (!(ce instanceof IKeyEntry)) throw new IllegalStateException(
+			  "KeyEntryBuilder created a non-key entry: " + captionEntryBuilder.getClass().getCanonicalName());
 			return new CaptionedMapEntry<>(parent, name, value, me, ce);
 		}
 		
-		@Override protected Builder<K, V, KC, C, KG, G, E, B, KE, KB, MB, CV, CC, CG, CE, CB> createCopy() {
-			//noinspection unchecked
-			return new CaptionedMapEntry.Builder<>(
-			  value, (MB) mapEntryBuilder.copy(), captionEntryBuilder.copy());
+		@Override protected Builder<K, V, KC, C, KG, G, CV, CC, CG, CS> createCopy() {
+			EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?> mb = mapEntryBuilder.copy();
+			AbstractConfigEntryBuilder<CV, CC, CG, ?, CS, ?> ceb = captionEntryBuilder.copy();
+			return new Builder<>(value, mb, ceb);
 		}
 	}
 	
@@ -235,24 +223,23 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G,
 	  MGE extends AbstractListListEntry<Pair<KG, G>, ?, MGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
 	CaptionedListEntryBuilder<Pair<KG, G>, MGE, ?, CG, CGE, ?> makeGUIEntry(
-	  ConfigEntryBuilder builder, ITextComponent name,
+	  ConfigFieldBuilder builder, ITextComponent name,
 	  FieldBuilder<List<Pair<KG, G>>, ?, ?> mapEntry, Pair<CG, List<Pair<KG, G>>> value
 	) {
-		final FieldBuilder<CG, CGE, ?> cge = captionEntry.buildChildGUIEntry(builder);
+		final FieldBuilder<CG, CGE, ?> cge = getCaptionEntry().buildChildGUIEntry(builder);
 		cge.setOriginal(value.getKey());
 		return new CaptionedListEntryBuilder<>(
 		  builder, name, value, (FieldBuilder<List<Pair<KG, G>>, MGE, ?>) mapEntry, cge);
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Pair<CG, List<Pair<KG, G>>>, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		mapEntry.setDisplayName(getDisplayName());
 		final Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> opt = mapEntry.buildGUIEntry(builder);
 		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
 		final FieldBuilder<List<Pair<KG, G>>, ?, ?> mapGUIEntry = opt.get();
 		mapGUIEntry.withoutTags(EntryTag.NON_PERSISTENT);
-		final Pair<CG, List<Pair<KG, G>>> gv = forGui(get());
 		final CaptionedListEntryBuilder<Pair<KG, G>, ?, ?, CG, ?, ?> entryBuilder =
 		  makeGUIEntry(builder, getDisplayName(), mapGUIEntry, forGui(get()));
 		return Optional.of(decorate(entryBuilder));

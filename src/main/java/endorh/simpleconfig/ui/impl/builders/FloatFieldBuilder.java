@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.FloatListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class FloatFieldBuilder
   extends RangedFieldBuilder<Float, FloatListEntry, FloatFieldBuilder> {
 	
-	public FloatFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, float value) {
+	public FloatFieldBuilder(ConfigFieldBuilder builder, ITextComponent name, float value) {
 		super(FloatListEntry.class, builder, name, value);
 	}
 	

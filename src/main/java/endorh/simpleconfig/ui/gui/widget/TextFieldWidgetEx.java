@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.subText;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.subText;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 

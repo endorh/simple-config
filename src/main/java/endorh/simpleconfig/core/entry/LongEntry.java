@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.LongEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongSliderBuilder;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry>
+public class LongEntry extends AbstractRangedEntry<Long, Number, Long>
   implements IKeyEntry<Long> {
 	@Internal public LongEntry(
 	  ISimpleConfigEntryHolder parent, String name, long value
@@ -25,30 +26,22 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	}
 	
 	public static class Builder
-	  extends AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, Builder> {
+	  extends AbstractRangedEntry.Builder<Long, Number, Long, LongEntry, LongEntryBuilder, Builder>
+	  implements LongEntryBuilder {
 		
 		public Builder(Long value) {
 			super(value, Long.class);
 		}
 		
-		/**
-		 * Set min (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(long min) {
+		@Override @Contract(pure=true) public LongEntryBuilder min(long min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set max (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(long max) {
+		@Override @Contract(pure=true) public LongEntryBuilder max(long max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set range (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(long min, long max) {
+		@Override @Contract(pure=true) public LongEntryBuilder range(long min, long max) {
 			return super.range(min, max);
 		}
 		
@@ -76,7 +69,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long, LongEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Long, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (!asSlider) {
 			final LongFieldBuilder valBuilder = builder

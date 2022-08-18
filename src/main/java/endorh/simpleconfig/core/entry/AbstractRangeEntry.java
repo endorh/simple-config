@@ -1,9 +1,15 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.*;
-import endorh.simpleconfig.core.AbstractRange.AbstractSizedRange;
+import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.AbstractRange.AbstractSizedRange;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.RangeEntryBuilder;
+import endorh.simpleconfig.api.entry.SizedRangeEntryBuilder;
+import endorh.simpleconfig.core.AbstractConfigEntry;
+import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
@@ -21,9 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class AbstractRangeEntry<
-  V extends Comparable<V>, R extends AbstractRange<V, R>,
-  E extends AbstractRangeEntry<V, R, E>
-> extends AbstractConfigEntry<R, String, R> implements IKeyEntry<R> {
+  V extends Comparable<V>, R extends AbstractRange<V, R>
+  > extends AbstractConfigEntry<R, String, R> implements IKeyEntry<R> {
 	protected @Nullable V min = null;
 	protected @Nullable V max = null;
 	protected boolean canEditMinExclusiveness = false;
@@ -39,11 +44,12 @@ public abstract class AbstractRangeEntry<
 	
 	public static abstract class Builder<
 	  V extends Comparable<V>, R extends AbstractRange<V, R>,
-	  E extends AbstractRangeEntry<V, R, E>,
-	  Self extends Builder<V, R, E, Self>
+	  E extends AbstractRangeEntry<V, R>,
+	  Self extends RangeEntryBuilder<V, R, Self>,
+	  SelfImpl extends Builder<V, R, E, Self, SelfImpl>
 	> extends AbstractConfigEntryBuilder<
-	  R, String, R, E, Self
-	> {
+	  R, String, R, E, Self, SelfImpl
+	> implements RangeEntryBuilder<V, R, Self> {
 		protected @Nullable V min;
 		protected @Nullable V max;
 		protected boolean canEditMinExclusiveness = false;
@@ -53,56 +59,56 @@ public abstract class AbstractRangeEntry<
 			super(value, typeClass);
 		}
 		
-		@Contract(pure=true) public Self min(V min) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self min(V min) {
+			SelfImpl copy = copy();
 			copy.min = min;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		@Contract(pure=true) public Self max(V max) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self max(V max) {
+			SelfImpl copy = copy();
 			copy.max = max;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		@Contract(pure=true) public Self withBounds(V min, V max) {
+		@Override @Contract(pure=true) public Self withBounds(V min, V max) {
 			return min(min).max(max);
 		}
 		
-		@Contract(pure=true) public Self canEditMinExclusive() {
+		@Override @Contract(pure=true) public Self canEditMinExclusive() {
 			return canEditMinExclusive(true);
 		}
 		
-		@Contract(pure=true) public Self canEditMinExclusive(boolean exclusive) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self canEditMinExclusive(boolean exclusive) {
+			SelfImpl copy = copy();
 			copy.canEditMinExclusiveness = exclusive;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		@Contract(pure=true) public Self canEditMaxExclusive() {
+		@Override @Contract(pure=true) public Self canEditMaxExclusive() {
 			return canEditMaxExclusive(true);
 		}
 		
-		@Contract(pure=true) public Self canEditMaxExclusive(boolean exclusive) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self canEditMaxExclusive(boolean exclusive) {
+			SelfImpl copy = copy();
 			copy.canEditMaxExclusiveness = exclusive;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		@Contract(pure=true) public Self canEditExclusiveness(boolean min, boolean max) {
+		@Override @Contract(pure=true) public Self canEditExclusiveness(boolean min, boolean max) {
 			return canEditMinExclusive(min).canEditMaxExclusive(max);
 		}
 		
-		@Contract(pure=true) public Self canEditExclusiveness() {
+		@Override @Contract(pure=true) public Self canEditExclusiveness() {
 			return canEditExclusiveness(true);
 		}
 		
-		@Contract(pure=true) public Self canEditExclusiveness(boolean canEdit) {
+		@Override @Contract(pure=true) public Self canEditExclusiveness(boolean canEdit) {
 			return canEditExclusiveness(canEdit, canEdit);
 		}
 		
-		@Override protected Self copy() {
-			Self copy = super.copy();
+		@Override public SelfImpl copy() {
+			SelfImpl copy = super.copy();
 			copy.min = min;
 			copy.max = max;
 			copy.canEditMinExclusiveness = canEditMinExclusiveness;
@@ -182,7 +188,7 @@ public abstract class AbstractRangeEntry<
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Optional<FieldBuilder<R, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	@Override public Optional<FieldBuilder<R, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		R guiValue = forGui(get());
 		RangeListEntryBuilder<V, R, ? extends AbstractConfigListEntry<V>> entryBuilder = builder.startRange(
 		  getDisplayName(), guiValue,
@@ -194,12 +200,12 @@ public abstract class AbstractRangeEntry<
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected abstract <EE extends AbstractConfigListEntry<V> & IChildListEntry>
-	EE buildLimitGUIEntry(ConfigEntryBuilder builder, String name, V value);
+	EE buildLimitGUIEntry(ConfigFieldBuilder builder, String name, V value);
 	
 	public static abstract class AbstractSizedRangeEntry<
 	  V extends Comparable<V>, R extends AbstractSizedRange<V, R>,
 	  E extends AbstractSizedRangeEntry<V, R, E>
-	> extends AbstractRangeEntry<V, R, E> {
+	> extends AbstractRangeEntry<V, R> {
 		protected double minSize = 0D;
 		protected double maxSize = Double.POSITIVE_INFINITY;
 		
@@ -209,8 +215,11 @@ public abstract class AbstractRangeEntry<
 		
 		public static abstract class Builder<
 		  V extends Comparable<V>, R extends AbstractSizedRange<V, R>,
-		  E extends AbstractSizedRangeEntry<V, R, E>, Self extends Builder<V, R, E, Self>
-		> extends AbstractRangeEntry.Builder<V, R, E, Self> {
+		  E extends AbstractSizedRangeEntry<V, R, E>,
+		  Self extends SizedRangeEntryBuilder<V, R, Self>,
+		  SelfImpl extends Builder<V, R, E, Self, SelfImpl>
+		> extends AbstractRangeEntry.Builder<V, R, E, Self, SelfImpl>
+		  implements SizedRangeEntryBuilder<V, R, Self> {
 			protected double minSize = 0D;
 			protected double maxSize = Double.POSITIVE_INFINITY;
 			
@@ -218,34 +227,20 @@ public abstract class AbstractRangeEntry<
 				super(value, typeClass);
 			}
 			
-			/**
-			 * Allow empty ranges.<br>
-			 * By default, empty ranges are not allowed.<br>
-			 * Equivalent to {@code minSize(empty? Double.NEGATIVE_INFINITY : 0)}.
-			 */
-			@Contract(pure=true) public Self allowEmpty(boolean empty) {
+			@Override @Contract(pure=true) public Self allowEmpty(boolean empty) {
 				return minSize(empty? Double.NEGATIVE_INFINITY : 0D);
 			}
 			
-			/**
-			 * Allow only range values with at least the given size.<br>
-			 * Empty ranges have negative sizes, so a minSize of 0 will
-			 * only prevent empty ranges.<br>
-			 * A range with only one value is not considered empty.
-			 */
-			@Contract(pure=true) public Self minSize(double size) {
-				Self copy = copy();
+			@Override @Contract(pure=true) public Self minSize(double size) {
+				SelfImpl copy = copy();
 				copy.minSize = size;
-				return copy;
+				return copy.castSelf();
 			}
 			
-			/**
-			 * Allow only range values with at most the given size.
-			 */
-			@Contract(pure=true) public Self maxSize(double size) {
-				Self copy = copy();
+			@Override @Contract(pure=true) public Self maxSize(double size) {
+				SelfImpl copy = copy();
 				copy.maxSize = size;
-				return copy;
+				return copy.castSelf();
 			}
 			
 			@Override protected E build(@NotNull ISimpleConfigEntryHolder parent, String name) {
@@ -255,8 +250,8 @@ public abstract class AbstractRangeEntry<
 				return entry;
 			}
 			
-			@Override protected Self copy() {
-				Self copy = super.copy();
+			@Override public SelfImpl copy() {
+				SelfImpl copy = super.copy();
 				copy.minSize = minSize;
 				copy.maxSize = maxSize;
 				return copy;

@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.impl;
 
-import endorh.simpleconfig.core.AbstractRange;
+import endorh.simpleconfig.api.AbstractRange;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
@@ -24,7 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
-public class ConfigEntryBuilderImpl implements ConfigEntryBuilder {
+public class ConfigEntryBuilderImpl implements ConfigFieldBuilder {
 	private ConfigEntryBuilderImpl() {}
 	
 	public static ConfigEntryBuilderImpl create() {

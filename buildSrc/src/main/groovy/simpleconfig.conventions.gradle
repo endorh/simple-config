@@ -1,0 +1,57 @@
+plugins {
+    id 'java-library'
+    id 'net.minecraftforge.gradle'
+}
+
+ext {
+    api_version = "0.1.4"
+    mod_version = "0.8.15"
+    mappings_channel = 'snapshot'  // 'official'
+    mappings_version = '20201028-1.16.3'  // '1.16.5'
+    mc_version = "1.16.5"
+    forge = "36.1.0"
+    forge_version = "$mc_version-$forge"
+
+    mod_group = "endorh.simpleconfig"
+    mod_id = "simpleconfig"
+    vendor = "Endor H"
+
+    api_archive_base_name = "$mod_id-api"
+    mod_archive_base_name = "$mod_id"
+
+    api_maven_artifact = "$mod_group:$mod_id-api:$api_version"
+    mod_maven_artifact = "$mod_group:$mod_id:$mod_version"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+
+minecraft {
+    mappings channel: mappings_channel, version: mappings_version
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+}
+
+repositories {
+    maven {
+        url 'https://repo.maven.apache.org/maven2'
+        name 'Maven Central'
+    }
+    maven {
+        name = "Curse Maven" // Curse Maven
+        url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains:annotations:23.0.0"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+
+    minecraft "net.minecraftforge:forge:${forge_version}"
+}

@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,7 +20,7 @@ public interface IKeyEntry<KG> {
 	  KGE extends AbstractConfigListEntry<KG> & IChildListEntry,
 	  KGEB extends FieldBuilder<KG, KGE, KGEB>
 	> KGEB buildChildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (this instanceof AbstractConfigEntry) {
 			//noinspection unchecked

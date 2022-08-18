@@ -5,19 +5,18 @@ import com.electronwill.nightconfig.core.ConfigSpec;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import endorh.simpleconfig.api.ConfigBuilderFactoryProxy;
+import endorh.simpleconfig.api.ISimpleConfig;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
-import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPacket;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigServerCommonConfigPacket;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigSyncPacket;
-import endorh.simpleconfig.core.entry.Builders;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.yaml.NodeComments;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.client.Minecraft;
@@ -55,19 +54,19 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
 import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
  * Simple config.<br>
- * Create and register your config with {@link SimpleConfig#builder(String, Type)}
- * or {@link SimpleConfig#builder(String, Type, Class)}
+ * Create and register your config with {@link ConfigBuilderFactoryProxy#config(String, Type)}
+ * or {@link ConfigBuilderFactoryProxy#config(String, Type, Class)}
  */
-public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
+public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISimpleConfig {
 	private static final Map<Pair<String, Type>, SimpleConfig> INSTANCES =
 	  synchronizedMap(new HashMap<>());
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
@@ -75,14 +74,12 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 
 	static {
 		SimpleConfigNetworkHandler.registerPackets();
-		// Trigger class loading
-		Builders.bool(true);
 	}
 
 	protected final String defaultTitle;
 	protected final String tooltip;
 	protected final @Nullable Consumer<SimpleConfig> saver;
-	protected final @Nullable Consumer<SimpleConfig> baker;
+	protected final @Nullable Consumer<ISimpleConfig> baker;
 	protected final @Nullable Object configClass;
 	private final Type type;
 	private final String modId;
@@ -101,7 +98,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	 */
 	protected List<IGUIEntry> order;
 	protected ForgeConfigSpec spec;
-	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
+	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<ISimpleConfig, ConfigScreenBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
@@ -115,7 +112,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal protected SimpleConfig(
 	  String modId, Type type, String defaultTitle,
-	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
+	  @Nullable Consumer<ISimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
 	  @Nullable Object configClass
 	) {
 		this.modId = modId;
@@ -164,77 +161,6 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 	}
 	
 	/**
-	 * Create a {@link SimpleConfig} builder<br>
-	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntryBuilder)}<br>
-	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
-	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
-	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
-	 *
-	 * @param modId Your mod id
-	 * @param type  A {@link Type}, usually either CLIENT or SERVER
-	 */
-	public static SimpleConfigBuilder builder(String modId, Type type) {
-		return new SimpleConfigBuilder(modId, type);
-	}
-	
-	/**
-	 * Create a {@link SimpleConfig} builder<br>
-	 * Add entries with {@link SimpleConfigBuilder#add(String, AbstractConfigEntryBuilder)}<br>
-	 * Add categories and groups with {@link SimpleConfigBuilder#n(CategoryBuilder)}
-	 * and {@link SimpleConfigBuilder#n(GroupBuilder)}<br>
-	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
-	 *
-	 * @param modId       Your mod id
-	 * @param type        A {@link Type}, usually either CLIENT or SERVER
-	 * @param configClass Backing class for the config. It will be parsed
-	 *                    for static backing fields and config annotations
-	 */
-	public static SimpleConfigBuilder builder(
-	  String modId, Type type, Class<?> configClass
-	) {
-		return new SimpleConfigBuilder(modId, type, configClass);
-	}
-	
-	/**
-	 * Create a config group
-	 *
-	 * @param name Group name, suitable for the config file (without spaces)
-	 */
-	public static GroupBuilder group(String name) {
-		return group(name, false);
-	}
-	
-	/**
-	 * Create a config group
-	 *
-	 * @param name   Group name, suitable for the config file (without spaces)
-	 * @param expand Whether to expand this group in the GUI automatically (default: no)
-	 */
-	public static GroupBuilder group(String name, boolean expand) {
-		return new GroupBuilder(name, expand);
-	}
-	
-	/**
-	 * Create a config category
-	 *
-	 * @param name Category name, suitable for the config file (without spaces)
-	 */
-	public static CategoryBuilder category(String name) {
-		return new CategoryBuilder(name);
-	}
-	
-	/**
-	 * Create a config category
-	 *
-	 * @param name        Category name, suitable for the config file (without spaces)
-	 * @param configClass Backing class for the category, which will be parsed
-	 *                    for static backing fields and config annotations
-	 */
-	public static CategoryBuilder category(String name, Class<?> configClass) {
-		return new CategoryBuilder(name, configClass);
-	}
-	
-	/**
 	 * Get the display name of the mod, or just its mod id if not found
 	 */
 	@Internal public static String getModNameOrId(String modId) {
@@ -253,14 +179,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		).forEach(c -> c.spec.save());
 	}
 	
-	public boolean isWrapper() {
+	@Override public boolean isWrapper() {
 		return !(modConfig instanceof SimpleConfigModConfig);
 	}
 	
-	/**
-	 * Retrieve the actual path of this file, if found
-	 */
-	public Optional<Path> getFilePath() {
+	@Override public Optional<Path> getFilePath() {
 		ModConfig modConfig = getModConfig();
 		return modConfig.getConfigData() instanceof CommentedFileConfig? Optional.of(
 		  modConfig.getFullPath()) : Optional.empty();
@@ -308,7 +231,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return "SimpleConfig[" + getModId() + ", " + getType().name() + "]";
 	}
 	
-	@Internal public String getFileName() {
+	@Override @Internal public String getFileName() {
 		return String.format("%s-%s.yaml", getModId(), getType().getAlias());
 	}
 	
@@ -505,25 +428,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		}
 	}
 	
-	/**
-	 * Get a config category
-	 *
-	 * @param name Name of the category
-	 * @throws NoSuchConfigCategoryError if the category is not found
-	 */
-	public SimpleConfigCategory getCategory(String name) {
+	@Override public SimpleConfigCategory getCategory(String name) {
 		if (!categories.containsKey(name))
 			throw new NoSuchConfigCategoryError(getPath() + "." + name);
 		return categories.get(name);
 	}
 	
-	/**
-	 * Get a config group
-	 *
-	 * @param path Name or dot-separated path to the group
-	 * @throws NoSuchConfigGroupError if the group is not found
-	 */
-	public SimpleConfigGroup getGroup(String path) {
+	@Override public SimpleConfigGroup getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
@@ -574,7 +485,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return spec;
 	}
 	
-	protected boolean canEdit() {
+	@Override public boolean canEdit() {
 		return getType() != Type.SERVER
 		       || FMLEnvironment.dist == Dist.DEDICATED_SERVER
 		       || permissions.permissionFor(modId).getLeft().canEdit();
@@ -585,7 +496,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		if (background != null)
 			configBuilder.setDefaultBackgroundTexture(background);
 		configBuilder.setTransparentBackground(transparent);
-		ConfigEntryBuilder entryBuilder = configBuilder.entryBuilder();
+		ConfigFieldBuilder entryBuilder = configBuilder.entryBuilder();
 		if (!order.isEmpty()) {
 			final ConfigCategoryBuilder category = configBuilder.getOrCreateCategory(
 			  "", type.asEditType(forRemote));
@@ -668,15 +579,15 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		return SimpleConfigNetworkHandler.requestRemotePreset(getModId(), type, name);
 	}
 	
-	public Type getType() {
+	@Override public Type getType() {
 		return type;
 	}
 	
-	public String getModId() {
+	@Override public String getModId() {
 		return modId;
 	}
 	
-	public String getModName() {
+	@Override public String getModName() {
 		return getModNameOrId(modId);
 	}
 	
@@ -700,181 +611,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder {
 		throw new NoSuchConfigGroupError(getGlobalPath());
 	}
 	
-	protected interface IGUIEntryBuilder {}
-	
-	protected interface IGUIEntry extends IGUIEntryBuilder {
-		@Internal void buildGUI(ConfigCategoryBuilder category, ConfigEntryBuilder entryBuilder, boolean forRemote);
-	}
-	
-	public static class NoSuchConfigEntryError extends RuntimeException {
-		public NoSuchConfigEntryError(String path) {
-			super("Cannot find config entry \"" + path + "\"");
-		}
-	}
-	
-	public static class NoSuchConfigCategoryError extends RuntimeException {
-		public NoSuchConfigCategoryError(String path) {
-			super("Cannot find config category \"" + path + "\"");
-		}
-	}
-	
-	public static class NoSuchConfigGroupError extends RuntimeException {
-		public NoSuchConfigGroupError(String path) {
-			super("Cannot find config group \"" + path + "\"");
-		}
-	}
-	
-	public static class InvalidConfigValueException extends RuntimeException {
-		public InvalidConfigValueException(String path, Object value) {
-			super("Invalid config value set for config entry \"" + path + "\": " + value);
-		}
-	}
-	
-	public static class InvalidDefaultConfigValueException extends RuntimeException {
-		public InvalidDefaultConfigValueException(String path, Object value) {
-			super("Invalid default config value set for config entry \"" + path + "\": " + value);
-		}
-	}
-	
-	public static class InvalidConfigValueTypeException extends RuntimeException {
-		public InvalidConfigValueTypeException(String path) {
-			super("Invalid type requested for config value \"" + path + "\"");
-		}
-		
-		public InvalidConfigValueTypeException(String path, Throwable cause) {
-			super("Invalid type requested for config value \"" + path + "\"", cause);
-		}
-		
-		public InvalidConfigValueTypeException(String path, Throwable cause, String extra) {
-			super("Invalid type requested for config value \"" + path + "\"\n  " + extra, cause);
-		}
-	}
-	
-	public static class ConfigReflectiveOperationException extends RuntimeException {
-		public ConfigReflectiveOperationException(String message, Exception cause) {
-			super(message, cause);
-		}
-	}
-	
-	public enum Type {
-		CLIENT(ModConfig.Type.CLIENT, true, false),
-		COMMON(ModConfig.Type.COMMON, true, true),
-		SERVER(ModConfig.Type.SERVER, false, true);
-		
-		private static final Map<String, Type> BY_ALIAS = Util.make(
-		  new HashMap<>(values().length), m -> {
-			  for (Type v: values()) m.put(v.getAlias(), v);
-		  });
-		private static final Map<ModConfig.Type, Type> BY_CONFIG_TYPE = Util.make(
-		  new HashMap<>(values().length), m -> {
-			  for (Type v: values()) m.put(v.asConfigType(), v);
-		  });
-		private static final Set<Type> LOCAL_TYPES = Util.make(
-		  Collections.newSetFromMap(new EnumMap<>(Type.class)),
-		  s -> Arrays.stream(values()).filter(Type::isLocal).forEach(s::add));
-		private static final Set<Type> REMOTE_TYPES = Util.make(
-		  Collections.newSetFromMap(new EnumMap<>(Type.class)),
-		  s -> Arrays.stream(values()).filter(Type::isRemote).forEach(s::add));
-		
-		public static Set<Type> localTypes() {
-			return LOCAL_TYPES;
-		}
-		public static Set<Type> remoteTypes() {
-			return REMOTE_TYPES;
-		}
-		
-		public static Type fromAlias(String alias) {
-			return BY_ALIAS.get(alias);
-		}
-		public static Type fromConfigType(ModConfig.Type type) {
-			return BY_CONFIG_TYPE.get(type);
-		}
-		
-		private final ModConfig.Type type;
-		private final boolean isLocal;
-		private final boolean isRemote;
-		private final String alias;
-		
-		Type(ModConfig.Type type, boolean isLocal, boolean isRemote) {
-			this.type = type;
-			this.isLocal = isLocal;
-			this.isRemote = isRemote;
-			alias = type.extension();
-		}
-		
-		public boolean isLocal() {
-			return isLocal;
-		}
-		
-		public boolean isRemote() {
-			return isRemote;
-		}
-		
-		public ModConfig.Type asConfigType() {
-			return type;
-		}
-		public EditType asEditType(boolean remote) {
-			return Arrays.stream(EditType.values()).filter(
-			  t -> t.getType() == this && t.isOnlyRemote() == remote
-			).findFirst().orElseGet(() -> Arrays.stream(EditType.values()).filter(
-			  t -> t.getType() == this
-			).findFirst().orElse(null));
-		}
-		public String getAlias() {
-			return alias;
-		}
-	}
-	
-	public enum EditType {
-		CLIENT(Type.CLIENT, false, false),
-		COMMON(Type.COMMON, false, false),
-		SERVER_COMMON(Type.COMMON, true, true),
-		SERVER(Type.SERVER, true, false);
-		
-		private final static Map<String, EditType> BY_ALIAS = Util.make(
-		  new HashMap<>(values().length), m -> {
-			  for (EditType v: values()) m.put(v.getAlias(), v);
-		  });
-		
-		private static final EditType[] LOCAL_TYPES = Arrays.stream(values())
-		  .filter(editType -> !editType.isRemote()).toArray(EditType[]::new);
-		private static final EditType[] REMOTE_TYPES = Arrays.stream(values())
-		  .filter(EditType::isRemote).toArray(EditType[]::new);
-		
-		public static EditType[] localTypes() {
-			return LOCAL_TYPES;
-		}
-		
-		public static EditType[] remoteTypes() {
-			return REMOTE_TYPES;
-		}
-		
-		public static EditType fromAlias(String extension) {
-			return BY_ALIAS.get(extension);
-		}
-		
-		private final Type type;
-		private final boolean isRemote;
-		private final boolean onlyRemote;
-		private final String alias;
-		EditType(Type type, boolean isRemote, boolean onlyRemote) {
-			this.type = type;
-			this.isRemote = isRemote;
-			this.onlyRemote = onlyRemote;
-			alias = name().toLowerCase().replace('_', '-');
-		}
-		
-		public Type getType() {
-			return type;
-		}
-		public boolean isRemote() {
-			return isRemote;
-		}
-		public boolean isOnlyRemote() {
-			return onlyRemote;
-		}
-		public String getAlias() {
-			return alias;
-		}
+	public interface IGUIEntry {
+		@Internal void buildGUI(ConfigCategoryBuilder category, ConfigFieldBuilder entryBuilder, boolean forRemote);
 	}
 }

@@ -3,10 +3,11 @@ package endorh.simpleconfig.core.entry;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.TextEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextDescriptionBuilder;
 import net.minecraft.client.resources.I18n;
@@ -40,7 +41,8 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		nonPersistent = true;
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Void, TextEntry, Builder> {
+	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Void, TextEntry, TextEntryBuilder, Builder>
+	  implements TextEntryBuilder {
 		protected Supplier<ITextComponent> translationSupplier = null;
 		
 		public Builder() {
@@ -52,30 +54,22 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 			translationSupplier = supplier;
 		}
 		
-		@Contract(pure=true) public Builder text(Supplier<ITextComponent> supplier) {
+		@Override @Contract(pure=true) public Builder text(Supplier<ITextComponent> supplier) {
 			Builder copy = copy();
 			copy.translationSupplier = supplier;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder text(ITextComponent text) {
+		@Override @Contract(pure=true) public Builder text(ITextComponent text) {
 			return text(() -> text);
 		}
 		
 		
-		/**
-		 * @deprecated Use {@link Builder#args(Object...)} instead
-		 */
-		@Contract(pure=true) @Override @Deprecated public Builder nameArgs(Object... args) {
+		@Contract(pure=true) @Override @Deprecated public TextEntryBuilder nameArgs(Object... args) {
 			return super.nameArgs(args);
 		}
 		
-		/**
-		 * Set the arguments that will be passed to the name translation key<br>
-		 * As a special case, {@code Supplier}s passed
-		 * will be invoked before being passed as arguments
-		 */
-		@Contract(pure=true) public Builder args(Object... args) {
+		@Override @Contract(pure=true) public TextEntryBuilder args(Object... args) {
 			return nameArgs(args);
 		}
 		
@@ -210,7 +204,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Void, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final TextDescriptionBuilder valBuilder = builder
 		  .startTextDescription(this::getDisplayName)

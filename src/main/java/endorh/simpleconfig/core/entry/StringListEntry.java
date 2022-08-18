@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.StringListEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.StringListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,7 +22,9 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 		return "Text";
 	}
 	
-	public static class Builder extends AbstractListEntry.Builder<String, String, String, StringListEntry, Builder> {
+	public static class Builder extends AbstractListEntry.Builder<
+	  String, String, String, StringListEntry, StringListEntryBuilder, Builder
+	> implements StringListEntryBuilder {
 		public Builder(List<String> value) {
 			super(value, String.class);
 		}
@@ -37,7 +40,7 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<List<String>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<String>, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final StringListBuilder valBuilder = builder
 		  .startStrList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder));

@@ -6,16 +6,15 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ISimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
-import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Types;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
@@ -24,6 +23,9 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Types;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -63,7 +65,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.min;
 import static net.minecraft.util.math.MathHelper.clamp;
@@ -154,10 +156,11 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		minecraft = Minecraft.getInstance();
 		listWidgets = new HashMap<>();
 		modeButtonMap = Util.make(new EnumMap<>(EditType.class), m -> {
-			m.put(EditType.CLIENT, clientButton = createModeButton(EditType.CLIENT));
-			m.put(EditType.COMMON, commonButton = createModeButton(EditType.COMMON));
-			m.put(EditType.SERVER_COMMON, remoteCommonButton = createModeButton(EditType.SERVER_COMMON));
-			m.put(EditType.SERVER, serverButton = createModeButton(EditType.SERVER));
+			m.put(ISimpleConfig.EditType.CLIENT, clientButton = createModeButton(ISimpleConfig.EditType.CLIENT));
+			m.put(ISimpleConfig.EditType.COMMON, commonButton = createModeButton(ISimpleConfig.EditType.COMMON));
+			m.put(ISimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(
+			  ISimpleConfig.EditType.SERVER_COMMON));
+			m.put(ISimpleConfig.EditType.SERVER, serverButton = createModeButton(ISimpleConfig.EditType.SERVER));
 		});
 		
 		editFileButton = MultiFunctionImageButton.of(20, 20, Buttons.EDIT_FILE, ButtonAction.of(
@@ -258,7 +261,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		if (hotkey != null) {
 			editedHotKeyButton.setMapping(hotkey.getKeyMapping());
 			editedHotKeyNameTextField.setText(hotkey.getName());
-			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, EditType.fromAlias(alias), map));
+			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, ISimpleConfig.EditType.fromAlias(alias), map));
 		}
 		getAllMainEntries().forEach(e -> e.setEditingHotKeyAction(isEditingConfigHotKey()));
 	}
@@ -310,11 +313,11 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		} else bx -= 44;
 		
 		EditType type = getEditedType();
-		clientButton.setTintColor(type == EditType.CLIENT? 0x80287734 : 0);
-		commonButton.setDefaultIcon(mayHaveType(EditType.SERVER_COMMON)? Types.COMMON_CLIENT : Types.COMMON);
-		commonButton.setTintColor(type == EditType.COMMON? 0x80906434 : 0);
-		remoteCommonButton.setTintColor(type == EditType.SERVER_COMMON? 0x80906434 : 0);
-		serverButton.setTintColor(type == EditType.SERVER? 0x800A426A : 0);
+		clientButton.setTintColor(type == ISimpleConfig.EditType.CLIENT? 0x80287734 : 0);
+		commonButton.setDefaultIcon(mayHaveType(ISimpleConfig.EditType.SERVER_COMMON)? Types.COMMON_CLIENT : Types.COMMON);
+		commonButton.setTintColor(type == ISimpleConfig.EditType.COMMON? 0x80906434 : 0);
+		remoteCommonButton.setTintColor(type == ISimpleConfig.EditType.SERVER_COMMON? 0x80906434 : 0);
+		serverButton.setTintColor(type == ISimpleConfig.EditType.SERVER? 0x800A426A : 0);
 		
 		clientButton.setWidthRange(20, 80);
 		commonButton.setWidthRange(20, 80);
@@ -322,12 +325,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		serverButton.setWidthRange(20, 80);
 		
 		modeButtons = new ArrayList<>();
-		if (hasType(EditType.CLIENT)) modeButtons.add(clientButton);
-		if (hasType(EditType.COMMON)) {
+		if (hasType(ISimpleConfig.EditType.CLIENT)) modeButtons.add(clientButton);
+		if (hasType(ISimpleConfig.EditType.COMMON)) {
 			modeButtons.add(commonButton);
-			if (mayHaveType(EditType.SERVER_COMMON)) modeButtons.add(remoteCommonButton);
+			if (mayHaveType(ISimpleConfig.EditType.SERVER_COMMON)) modeButtons.add(remoteCommonButton);
 		}
-		if (hasType(EditType.SERVER)) modeButtons.add(serverButton);
+		if (hasType(ISimpleConfig.EditType.SERVER)) modeButtons.add(serverButton);
 		
 		if (bx + modeButtons.stream().mapToInt(MultiFunctionIconButton::getWidth).sum() > 0.35 * width)
 			modeButtons.forEach(b -> b.setExactWidth(20));
@@ -343,7 +346,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		addListener(selectionToolbar);
 		
 		if (isEditingConfigHotKey()) {
-			int textFieldWidth = (int) clamp(width / 5, 100, 300);
+			int textFieldWidth = clamp(width / 5, 100, 300);
 			pos(editedHotKeyNameTextField, width / 2 - textFieldWidth / 2, 8, textFieldWidth, 12);
 			addButton(editedHotKeyNameTextField);
 		}
@@ -454,7 +457,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		// First add for the current type
 		updateErrors(errors, getSortedTypeCategories());
 		// Then for the other types
-		for (EditType t: EditType.values())
+		for (EditType t: ISimpleConfig.EditType.values())
 			if (t != type) updateErrors(errors, sortedCategoriesMap.get(t));
 		this.errors = errors;
 	}
@@ -493,15 +496,15 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	) {
 		super.setRemoteCommonConfigProvider(remoteConfigProvider);
 		if (getEditedType().isOnlyRemote()) {
-			showType(Arrays.stream(EditType.values()).filter(
+			showType(Arrays.stream(ISimpleConfig.EditType.values()).filter(
 			  t -> !t.isOnlyRemote() && hasType(t)
 			).findFirst().orElseThrow(
 			  () -> new IllegalStateException("Config screen cannot have only remote configs")));
 		}
 		remoteConfigs.clear();
 		loadedRemoteConfigs.clear();
-		if (remoteConfigProvider != null) Arrays.stream(EditType.values())
-		  .filter(EditType::isOnlyRemote)
+		if (remoteConfigProvider != null) Arrays.stream(ISimpleConfig.EditType.values())
+		  .filter(ISimpleConfig.EditType::isOnlyRemote)
 		  .forEach(t -> remoteConfigProvider.getRemoteConfig(t).thenAccept(c -> {
 			  if (c != null) {
 				  remoteConfigs.put(t, c);
@@ -970,7 +973,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	}
 	
 	public AbstractDialog getControlsDialog() {
-		final SimpleConfigGroup advanced = SimpleConfigMod.CLIENT_CONFIG.getGroup("advanced");
+		final ISimpleConfigGroup advanced = SimpleConfigMod.CLIENT_CONFIG.getGroup("advanced");
 		final String SHOW_UI_TIPS = "show_ui_tips";
 		return ControlsHelpDialog.of("simpleconfig.ui.controls")
 		  .category("general", c -> c
@@ -1025,7 +1028,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		private double currentY;
 		private double currentWidth;
 		private double currentHeight;
-		private ToggleAnimator tabSlideAnimator = new ToggleAnimator(100);
+		private final ToggleAnimator tabSlideAnimator = new ToggleAnimator(100);
 		private EntryDragAction<?> entryDragAction;
 		public Rectangle target;
 		public Rectangle thisTimeTarget;
@@ -1311,10 +1314,9 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	}
 	
 	public static class TooltipSearchBarWidget extends SearchBarWidget {
-		protected static ITextComponent[] TOOLTIP_SEARCH_TOOLTIP = new ITextComponent[]{
-		  new TranslationTextComponent("simpleconfig.ui.search.tooltip" ),
-		  new TranslationTextComponent("modifier.cloth-config.alt", "T" ).mergeStyle(
-			 TextFormatting.GRAY)};
+		protected static ITextComponent[] TOOLTIP_SEARCH_TOOLTIP = {
+		  new TranslationTextComponent("simpleconfig.ui.search.tooltip"),
+		  new TranslationTextComponent("key.modifier.alt").appendString(" + T").mergeStyle(TextFormatting.GRAY)};
 		
 		protected ToggleImageButton tooltipButton;
 		protected boolean searchTooltips = search.search_tooltips;

@@ -1,0 +1,15 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    maven {
+        url = 'https://files.minecraftforge.net/maven'
+    }
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+dependencies {
+    implementation group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+}

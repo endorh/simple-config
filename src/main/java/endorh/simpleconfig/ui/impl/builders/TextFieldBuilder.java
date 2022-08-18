@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.StringListEntry;
 import net.minecraft.util.text.ITextComponent;
@@ -16,7 +16,7 @@ public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, Text
 	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	public TextFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, String value
+	  ConfigFieldBuilder builder, ITextComponent name, String value
 	) {
 		super(StringListEntry.class, builder, name, Objects.requireNonNull(value));
 	}

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntryBuilder;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class SubCategoryBuilder extends CaptionedSubCategoryBuilder<Void, VoidEntry, VoidEntryBuilder> {
-	public SubCategoryBuilder(ConfigEntryBuilder builder, ITextComponent name) {
+	public SubCategoryBuilder(ConfigFieldBuilder builder, ITextComponent name) {
 		super(builder, name, null);
 	}
 	

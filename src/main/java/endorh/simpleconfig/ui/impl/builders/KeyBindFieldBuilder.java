@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.KeyBindListEntry;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import net.minecraft.util.text.ITextComponent;
@@ -15,11 +15,11 @@ import org.jetbrains.annotations.Nullable;
 public class KeyBindFieldBuilder
   extends FieldBuilder<KeyBindMapping, KeyBindListEntry, KeyBindFieldBuilder> {
 	private ExtendedKeyBindSettings defaultSettings;
-	private @Nullable ExtendedKeyBind keyBind;
+	private @Nullable ExtendedKeyBindImpl keyBind;
 	private boolean reportOverlaps;
 	
 	public KeyBindFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, KeyBindMapping value
+	  ConfigFieldBuilder builder, ITextComponent name, KeyBindMapping value
 	) {
 		super(KeyBindListEntry.class, builder, name, value.copy());
 	}
@@ -32,7 +32,7 @@ public class KeyBindFieldBuilder
 	/**
 	 * The associated keybind is used for overlap reporting.
 	 */
-	public KeyBindFieldBuilder setAssociatedKeyBind(ExtendedKeyBind keyBind) {
+	public KeyBindFieldBuilder setAssociatedKeyBind(ExtendedKeyBindImpl keyBind) {
 		this.keyBind = keyBind;
 		return this;
 	}

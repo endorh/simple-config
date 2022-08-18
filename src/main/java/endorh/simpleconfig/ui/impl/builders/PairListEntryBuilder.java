@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.PairListEntry;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +22,7 @@ public class PairListEntryBuilder<
 	protected float splitPos = 0.5F;
 	
 	public PairListEntryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, Pair<L, R> value,
+	  ConfigFieldBuilder builder, ITextComponent name, Pair<L, R> value,
 	  LEB leftEntry, REB rightEntry
 	) {
 		super(PairListEntry.class, builder, name, value);

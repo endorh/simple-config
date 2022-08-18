@@ -1,6 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.RangedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -32,8 +33,10 @@ public abstract class RangedListEntry<
 	public static abstract class Builder<V extends Comparable<V>, Config,
 	  Gui extends Comparable<Gui>,
 	  Entry extends RangedListEntry<V, Config, Gui, Entry>,
-	  Self extends Builder<V, Config, Gui, Entry, Self>>
-	  extends AbstractListEntry.Builder<V, Config, Gui, Entry, Self> {
+	  Self extends RangedListEntryBuilder<V, Config, Gui, Self>,
+	  SelfImpl extends Builder<V, Config, Gui, Entry, Self, SelfImpl>
+	> extends AbstractListEntry.Builder<V, Config, Gui, Entry, Self, SelfImpl>
+	  implements RangedListEntryBuilder<V, Config, Gui, Self> {
 		
 		protected V min = null;
 		protected V max = null;
@@ -42,35 +45,23 @@ public abstract class RangedListEntry<
 			super(value, innerType);
 		}
 		
-		/**
-		 * Set the minimum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Self min(@NotNull V min) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self min(@NotNull V min) {
+			SelfImpl copy = copy();
 			copy.min = min;
-			copy = copy.elemError(clamp(elemErrorSupplier));
-			return copy;
+			return copy.elemError(clamp(elemErrorSupplier));
 		}
 		
-		/**
-		 * Set the maximum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Self max(@NotNull V max) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self max(@NotNull V max) {
+			SelfImpl copy = copy();
 			copy.max = max;
-			copy = copy.elemError(clamp(elemErrorSupplier));
-			return copy;
+			return copy.elemError(clamp(elemErrorSupplier));
 		}
 		
-		/**
-		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Self range(V min, V max) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self range(V min, V max) {
+			SelfImpl copy = copy();
 			copy.min = min;
 			copy.max = max;
-			copy = copy.elemError(clamp(elemErrorSupplier));
-			return copy;
+			return copy.elemError(clamp(elemErrorSupplier));
 		}
 		
 		@Contract(pure=true)
@@ -111,8 +102,8 @@ public abstract class RangedListEntry<
 			return e;
 		}
 		
-		@Override protected Self copy() {
-			final Self copy = super.copy();
+		@Override public SelfImpl copy() {
+			final SelfImpl copy = super.copy();
 			copy.min = min;
 			copy.max = max;
 			return copy;

@@ -2,7 +2,8 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.INBTEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.JsonToNBT;
@@ -18,7 +19,8 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 		super(parent, name, value, INBT.class);
 	}
 	
-	public static class Builder extends AbstractSerializableEntry.Builder<INBT, INBTEntry, Builder> {
+	public static class Builder extends AbstractSerializableEntry.Builder<INBT, INBTEntry, INBTEntryBuilder, Builder>
+	  implements INBTEntryBuilder {
 		public Builder(INBT value) {
 			super(value, INBT.class);
 		}

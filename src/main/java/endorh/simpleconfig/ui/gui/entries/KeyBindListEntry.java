@@ -6,7 +6,7 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -26,7 +26,7 @@ public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implement
 	protected final List<IGuiEventListener> childWidgets;
 	
 	@Internal public KeyBindListEntry(
-	  ITextComponent fieldName, KeyBindMapping value, @Nullable ExtendedKeyBind keyBind
+	  ITextComponent fieldName, KeyBindMapping value, @Nullable ExtendedKeyBindImpl keyBind
 	) {
 		super(fieldName);
 		setOriginal(value.copy());

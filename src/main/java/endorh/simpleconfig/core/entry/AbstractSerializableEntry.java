@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.SerializableEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
@@ -22,22 +23,25 @@ public abstract class AbstractSerializableEntry
   extends AbstractConfigEntry<V, String, String>
   implements IKeyEntry<String> {
 	
-	public AbstractSerializableEntry(
+	protected AbstractSerializableEntry(
 	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
 	) {
 		super(parent, name, value);
 		this.typeClass = typeClass;
 	}
 	
-	public static abstract class Builder<V, Entry extends AbstractSerializableEntry<V, Entry>,
-	  Self extends Builder<V, Entry, Self>>
-	  extends AbstractConfigEntryBuilder<V, String, String, Entry, Self> {
+	public static abstract class Builder<
+	  V, Entry extends AbstractSerializableEntry<V, Entry>,
+	  Self extends SerializableEntryBuilder<V, Self>,
+	  SelfImpl extends Builder<V, Entry, Self, SelfImpl>
+	> extends AbstractConfigEntryBuilder<V, String, String, Entry, Self, SelfImpl>
+	  implements SerializableEntryBuilder<V, Self> {
 		
-		public Builder(V value) {
+		protected Builder(V value) {
 			super(value, value.getClass());
 		}
 		
-		public Builder(V value, Class<?> typeClass) {
+		protected Builder(V value, Class<?> typeClass) {
 			super(value, typeClass);
 		}
 	}
@@ -94,7 +98,7 @@ public abstract class AbstractSerializableEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<String, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final TextFieldBuilder valBuilder = builder
 		  .startTextField(getDisplayName(), forGui(get()))

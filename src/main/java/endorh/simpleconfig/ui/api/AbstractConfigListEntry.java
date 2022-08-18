@@ -2,15 +2,15 @@ package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.config.ClientConfig.advanced;
-import endorh.simpleconfig.core.EntryTag;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.SelectionDragAction;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;

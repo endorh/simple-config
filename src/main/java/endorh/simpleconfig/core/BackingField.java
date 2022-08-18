@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core;
 
 import com.google.gson.internal.Primitives;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfigClassParser.SimpleConfigClassParseException;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
@@ -78,15 +78,11 @@ public class BackingField<V, F> {
 			this.builder = builder;
 		}
 		
-		public boolean overwritesPrimaryField(String name) {
-			return suffix != null && suffix.isEmpty() || name.equals(this.name);
-		}
-		
-		public String buildName(String name) {
+		@Internal public String buildName(String name) {
 			return suffix != null? name + suffix : this.name != null? this.name : name;
 		}
 		
-		public BackingField<V, F> build(Field field) {
+		@Internal public BackingField<V, F> build(Field field) {
 			return builder.build(field);
 		}
 	}

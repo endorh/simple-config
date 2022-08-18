@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.BooleanListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,7 +16,7 @@ public class BooleanToggleBuilder
 	@Nullable private Function<Boolean, ITextComponent> yesNoTextSupplier = null;
 	
 	public BooleanToggleBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, boolean value
+	  ConfigFieldBuilder builder, ITextComponent name, boolean value
 	) {
 		super(BooleanListEntry.class, builder, name, value);
 	}

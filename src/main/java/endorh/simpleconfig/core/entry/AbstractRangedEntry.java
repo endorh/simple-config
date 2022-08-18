@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -13,17 +14,18 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public abstract class AbstractRangedEntry
-  <V extends Comparable<V>, Config, Gui, This extends AbstractRangedEntry<V, Config, Gui, This>>
+public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
   extends AbstractConfigEntry<V, Config, Gui> {
 	
 	protected double commentMin = Integer.MIN_VALUE;
 	protected double commentMax = Integer.MAX_VALUE;
 	
 	public static abstract class Builder<V extends Comparable<V>, Config, Gui,
-	  Entry extends AbstractRangedEntry<V, Config, Gui, Entry>,
-	  Self extends Builder<V, Config, Gui, Entry, Self>>
-	  extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self> {
+	  Entry extends AbstractRangedEntry<V, Config, Gui>,
+	  Self extends RangedEntryBuilder<V, Config, Gui, Self>,
+	  SelfImpl extends Builder<V, Config, Gui, Entry, Self, SelfImpl>
+	> extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self, SelfImpl>
+	  implements RangedEntryBuilder<V, Config, Gui, Self> {
 		
 		protected String sliderFormat;
 		
@@ -39,70 +41,51 @@ public abstract class AbstractRangedEntry
 			this.sliderFormat = sliderFormat;
 		}
 		
-		/**
-		 * Set min (inclusive)
-		 */
-		@Contract(pure=true) public Self min(V min) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self min(V min) {
+			SelfImpl copy = copy();
 			copy.min = min;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		/**
-		 * Set max (inclusive)
-		 */
-		@Contract(pure=true) public Self max(V max) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self max(V max) {
+			SelfImpl copy = copy();
 			copy.max = max;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		/**
-		 * Set range (inclusive)
-		 */
-		@Contract(pure=true) public Self range(V min, V max) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self range(V min, V max) {
+			SelfImpl copy = copy();
 			copy.min = min;
 			copy.max = max;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		/**
-		 * Display as slider
-		 */
-		@Contract(pure=true) public Self slider() {
+		@Override @Contract(pure=true) public Self slider() {
 			return slider(true);
 		}
 		
-		/**
-		 * Display or not as slider
-		 */
-		@Contract(pure=true) public Self slider(boolean asSlider) {
+		@Override @Contract(pure=true) public Self slider(boolean asSlider) {
 			if (asSlider) {
 				return slider("simpleconfig.format.slider");
 			} else {
-				Self copy = copy();
+				SelfImpl copy = copy();
 				copy.asSlider = false;
-				return copy;
+				return copy.castSelf();
 			}
 		}
 		
-		/**
-		 * Display as slider with given translation key as slider text.
-		 */
-		@Contract(pure=true) public Self slider(String sliderTextTranslation) {
+		@Override @Contract(pure=true) public Self slider(String sliderTextTranslation) {
 			return slider(v -> new TranslationTextComponent(
 			  sliderTextTranslation, String.format(sliderFormat, v)));
 		}
 		
-		/**
-		 * Display as slider with given text supplier.
-		 */
-		@Contract(pure=true) public Self slider(Function<V, ITextComponent> sliderTextSupplier) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self slider(
+		  Function<V, ITextComponent> sliderTextSupplier
+		) {
+			SelfImpl copy = copy();
 			copy.asSlider = true;
 			copy.sliderTextSupplier = sliderTextSupplier;
-			return copy;
+			return copy.castSelf();
 		}
 		
 		protected void checkBounds() {
@@ -122,8 +105,8 @@ public abstract class AbstractRangedEntry
 			return e;
 		}
 		
-		@Override protected Self copy() {
-			final Self copy = super.copy();
+		@Override public SelfImpl copy() {
+			final SelfImpl copy = super.copy();
 			copy.sliderFormat = sliderFormat;
 			copy.min = min;
 			copy.max = max;

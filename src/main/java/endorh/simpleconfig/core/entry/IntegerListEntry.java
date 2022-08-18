@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.IntegerListEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,30 +23,22 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends RangedListEntry.Builder<Integer, Number, Integer, IntegerListEntry, Builder> {
+	public static class Builder extends RangedListEntry.Builder<Integer, Number, Integer, IntegerListEntry, IntegerListEntryBuilder, Builder>
+	  implements IntegerListEntryBuilder {
 		
 		public Builder(List<Integer> value) {
 			super(value, Integer.class);
 		}
 		
-		/**
-		 * Set the minimum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(int min) {
+		@Override @Contract(pure=true) public IntegerListEntryBuilder min(int min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set the maximum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(int max) {
+		@Override @Contract(pure=true) public IntegerListEntryBuilder max(int max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(int min, int max) {
+		@Override @Contract(pure=true) public IntegerListEntryBuilder range(int min, int max) {
 			return super.range(min, max);
 		}
 		
@@ -71,7 +64,7 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<List<Integer>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Integer>, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final IntListBuilder valBuilder = builder
 		  .startIntList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder));

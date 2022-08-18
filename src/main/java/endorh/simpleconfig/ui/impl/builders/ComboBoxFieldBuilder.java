@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.ComboBoxListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.*;
@@ -24,7 +24,7 @@ public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T
 	protected int maxLength = Integer.MAX_VALUE;
 	
 	public ComboBoxFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, T value, ITypeWrapper<T> typeWrapper
+	  ConfigFieldBuilder builder, ITextComponent name, T value, ITypeWrapper<T> typeWrapper
 	) {
 		super(ComboBoxListEntry.class, builder, name, value);
 		this.typeWrapper = typeWrapper;

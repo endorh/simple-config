@@ -4,7 +4,8 @@ import com.google.gson.*;
 import endorh.simpleconfig.highlight.HighlighterManager.HighlightRule.RuleDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.HighlighterDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.StyleDeserializer;
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.ui.api.IHighlighterManager;
+import endorh.simpleconfig.ui.api.ILanguageHighlighter;
 import net.minecraft.client.resources.JsonReloadListener;
 import net.minecraft.loot.LootSerializers;
 import net.minecraft.profiler.IProfiler;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HighlighterManager extends JsonReloadListener {
+public class HighlighterManager extends JsonReloadListener implements IHighlighterManager {
 	private static final Gson GSON = LootSerializers.func_237386_a_()
 	  .registerTypeAdapter(HighlightRule.class, new RuleDeserializer())
 	  .registerTypeAdapter(LanguageHighlightingRules.class, new HighlighterDeserializer())
@@ -62,14 +63,14 @@ public class HighlighterManager extends JsonReloadListener {
 		highlighters.put(parser.getLanguage(), parser);
 	}
 	
-	public @Nullable HighlighterManager.LanguageHighlighter<?> getHighlighter(String language) {
+	@Override public @Nullable ILanguageHighlighter getHighlighter(String language) {
 		LanguageHighlighter<?> parser = highlighters.get(language);
 		if (parser != null) parser.setRules(
 		  rules.getOrDefault(language, LanguageHighlightingRules.EMPTY));
 		return parser;
 	}
 	
-	public static class LanguageHighlighter<P extends Parser> implements ITextFormatter {
+	public static class LanguageHighlighter<P extends Parser> implements ILanguageHighlighter {
 		private final String language;
 		private final Function<CharStream, Lexer> lexerFactory;
 		private final Function<CommonTokenStream, P> parserFactory;
@@ -175,7 +176,7 @@ public class HighlighterManager extends JsonReloadListener {
 			}
 		}
 		
-		public IFormattableTextComponent highlight(String text) {
+		@Override public IFormattableTextComponent highlight(String text) {
 			if (text.isEmpty()) return StringTextComponent.EMPTY.deepCopy();
 			Lexer lexer = lexerFactory.apply(CharStreams.fromString(text));
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -226,7 +227,7 @@ public class HighlighterManager extends JsonReloadListener {
 			return highlighter.getClosingPairs().contains(String.valueOf(typedChar));
 		}
 		
-		public String getLanguage() {
+		@Override public String getLanguage() {
 			return language;
 		}
 		

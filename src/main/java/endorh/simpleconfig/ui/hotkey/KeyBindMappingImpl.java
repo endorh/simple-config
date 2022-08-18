@@ -20,6 +20,15 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	private final @Nullable Int2ObjectMap<String> charMap;
 	private final ExtendedKeyBindSettings settings;
 	
+	public static KeyBindMappingImpl unset() {
+		return new KeyBindMappingImpl(
+		  new IntArrayList(), null, ExtendedKeyBindSettings.ingame().build());
+	}
+	
+	public static KeyBindMappingImpl unset(ExtendedKeyBindSettings settings) {
+		return new KeyBindMappingImpl(new IntArrayList(), null, settings);
+	}
+	
 	public KeyBindMappingImpl(
 	  IntList requiredKeys, @Nullable Int2ObjectMap<String> charMap,
 	  ExtendedKeyBindSettings settings

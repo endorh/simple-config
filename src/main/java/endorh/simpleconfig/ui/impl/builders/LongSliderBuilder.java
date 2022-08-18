@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.LongSliderEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class LongSliderBuilder extends SliderFieldBuilder<Long, LongSliderEntry, LongSliderBuilder> {
 	
 	public LongSliderBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, long value, long min, long max
+	  ConfigFieldBuilder builder, ITextComponent name, long value, long min, long max
 	) {
 		super(LongSliderEntry.class, builder, name, value, min, max);
 	}

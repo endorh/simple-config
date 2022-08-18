@@ -1,10 +1,17 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.*;
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.entry.EntryTripleEntryBuilder;
+import endorh.simpleconfig.core.AbstractConfigEntry;
+import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.DummyEntryHolder;
+import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
@@ -19,16 +26,13 @@ import java.util.List;
 import java.util.Optional;
 
 public class EntryTripleEntry<
-  L, M, R, LC, MC, RC, LG, MG, RG,
-  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
-  ME extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>,
-  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>
+  L, M, R, LC, MC, RC, LG, MG, RG
 > extends AbstractConfigEntry<
   Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>
   > implements IKeyEntry<Triple<LG, MG, RG>> {
-	protected final LE leftEntry;
-	protected final ME middleEntry;
-	protected final RE rightEntry;
+	protected final AbstractConfigEntry<L, LC, LG> leftEntry;
+	protected final AbstractConfigEntry<M, MC, MG> middleEntry;
+	protected final AbstractConfigEntry<R, RC, RG> rightEntry;
 	
 	protected @Nullable Icon leftIcon;
 	protected @Nullable Icon rightIcon;
@@ -37,7 +41,9 @@ public class EntryTripleEntry<
 	
 	protected EntryTripleEntry(
 	  ISimpleConfigEntryHolder parent, String name, Triple<L, M, R> value,
-	  LE leftEntry, ME middleEntry, RE rightEntry
+	  AbstractConfigEntry<L, LC, LG> leftEntry,
+	  AbstractConfigEntry<M, MC, MG> middleEntry,
+	  AbstractConfigEntry<R, RC, RG> rightEntry
 	) {
 		super(parent, name, value);
 		this.leftEntry = leftEntry;
@@ -45,19 +51,35 @@ public class EntryTripleEntry<
 		this.rightEntry = rightEntry;
 	}
 	
+	@SuppressWarnings("unchecked") protected
+	<E extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>> E getLeftEntry() {
+		return (E) leftEntry;
+	}
+	
+	@SuppressWarnings("unchecked") protected
+	<E extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>> E getMiddleEntry() {
+		return (E) middleEntry;
+	}
+	
+	@SuppressWarnings("unchecked") protected
+	<E extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>> E getRightEntry() {
+		return (E) rightEntry;
+	}
+	
 	public static class Builder<
 	  L, M, R, LC, MC, RC, LG, MG, RG,
-	  LE extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>,
-	  ME extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>,
-	  RE extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>,
-	  LB extends AbstractConfigEntryBuilder<L, LC, LG, LE, LB>,
-	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ME, MB>,
-	  RB extends AbstractConfigEntryBuilder<R, RC, RG, RE, RB>
+	  LS extends ConfigEntryBuilder<L, LC, LG, LS> & KeyEntryBuilder<LG>,
+	  MS extends ConfigEntryBuilder<M, MC, MG, MS> & KeyEntryBuilder<MG>,
+	  RS extends ConfigEntryBuilder<R, RC, RG, RS> & KeyEntryBuilder<RG>,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & KeyEntryBuilder<LG>,
+	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ?, MS, MB> & KeyEntryBuilder<MG>,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & KeyEntryBuilder<RG>
 	> extends AbstractConfigEntryBuilder<
 	  Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>,
-	  EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE>,
-	  EntryTripleEntry.Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB>
-	> {
+	  EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG>,
+	  EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>,
+	  Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB>
+	> implements EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> {
 		protected LB leftBuilder;
 		protected MB middleBuilder;
 		protected RB rightBuilder;
@@ -66,6 +88,21 @@ public class EntryTripleEntry<
 		protected @Nullable Icon rightIcon;
 		protected float leftWeight = 0.333F;
 		protected float rightWeight = 0.333F;
+		
+		@SuppressWarnings("unchecked") public Builder(
+		  Triple<L, M, R> value, LS leftBuilder, MS middleBuilder, RS rightBuilder
+		) {
+			super(value, Triple.class);
+			if (!(leftBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+			  "Mixed API use: builder not subclass of AbstractConfigEntryBuilder");
+			if (!(middleBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+			  "Mixed API use: builder not subclass of AbstractConfigEntryBuilder");
+			if (!(rightBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
+			  "Mixed API use: builder not subclass of AbstractConfigEntryBuilder");
+			this.leftBuilder = (LB) leftBuilder;
+			this.middleBuilder = (MB) middleBuilder;
+			this.rightBuilder = (RB) rightBuilder;
+		}
 		
 		public Builder(
 		  Triple<L, M, R> value, LB leftBuilder, MB middleBuilder, RB rightBuilder
@@ -76,55 +113,61 @@ public class EntryTripleEntry<
 			this.rightBuilder = rightBuilder;
 		}
 		
-		@Contract(pure=true)
-		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withLeftIcon(
+		@Override @Contract(pure=true)
+		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withLeftIcon(
 		  @Nullable Icon leftIcon
 		) {
-			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> copy = copy();
+			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = copy();
 			copy.leftIcon = leftIcon;
 			return copy;
 		}
 		
-		@Contract(pure=true)
-		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withRightIcon(
+		@Override @Contract(pure=true)
+		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withRightIcon(
 		  @Nullable Icon rightIcon
 		) {
-			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> copy = copy();
+			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = copy();
 			copy.rightIcon = rightIcon;
 			return copy;
 		}
 		
-		@Contract(pure=true)
-		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withIcons(
+		@Override @Contract(pure=true)
+		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withIcons(
 		  @Nullable Icon leftIcon, @Nullable Icon rightIcon
 		) {
-			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> copy = copy();
+			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = copy();
 			copy.leftIcon = leftIcon;
 			copy.rightIcon = rightIcon;
 			return copy;
 		}
 		
-		@Contract(pure=true)
-		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> withWeights(
-		  @Range(from = 0, to = 1) double leftWeight, @Range(from = 0, to = 1) double rightWeight
+		@Override @Contract(pure=true)
+		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withWeights(
+		  @Range(from=0, to=1) double leftWeight, @Range(from=0, to=1) double rightWeight
 		) {
 			if (leftWeight < 0 || rightWeight < 0) throw new IllegalArgumentException(
 			  "Weights can be negative. Specifically: " + leftWeight + ", " + rightWeight);
 			if (leftWeight + rightWeight > 1) throw new IllegalArgumentException(
 			  "Weights must add to less than 1. Specifically: " + leftWeight + ", " + rightWeight);
-			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> copy = copy();
+			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = copy();
 			copy.leftWeight = (float) leftWeight;
 			copy.rightWeight = (float) rightWeight;
 			return copy;
 		}
 		
-		@Override protected EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE> buildEntry(
+		@Override protected EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			LE leftEntry = DummyEntryHolder.build(parent, leftBuilder);
-			ME middleEntry = DummyEntryHolder.build(parent, middleBuilder);
-			RE rightEntry = DummyEntryHolder.build(parent, rightBuilder);
-			final EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE> entry =
+			AbstractConfigEntry<L, LC, LG> leftEntry = DummyEntryHolder.build(parent, leftBuilder);
+			AbstractConfigEntry<M, MC, MG> middleEntry = DummyEntryHolder.build(parent, middleBuilder);
+			AbstractConfigEntry<R, RC, RG> rightEntry = DummyEntryHolder.build(parent, rightBuilder);
+			if (!(leftEntry instanceof IKeyEntry)) throw new IllegalStateException(
+			  "KeyEntryBuilder produced a non-key entry, violating its contract: " + leftBuilder.getClass().getSimpleName());
+			if (!(middleEntry instanceof IKeyEntry)) throw new IllegalStateException(
+			  "KeyEntryBuilder produced a non-key entry, violating its contract: " + middleBuilder.getClass().getSimpleName());
+			if (!(rightEntry instanceof IKeyEntry)) throw new IllegalStateException(
+			  "KeyEntryBuilder produced a non-key entry, violating its contract: " + rightBuilder.getClass().getSimpleName());
+			final EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG> entry =
 			  new EntryTripleEntry<>(parent, name, value, leftEntry, middleEntry, rightEntry);
 			entry.leftIcon = leftIcon;
 			entry.rightIcon = rightIcon;
@@ -134,8 +177,8 @@ public class EntryTripleEntry<
 		}
 		
 		@Override
-		protected Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> createCopy() {
-			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LE, ME, RE, LB, MB, RB> copy =
+		protected Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> createCopy() {
+			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy =
 			  new Builder<>(value, leftBuilder, middleBuilder, rightBuilder);
 			copy.leftIcon = leftIcon;
 			copy.rightIcon = rightIcon;
@@ -231,7 +274,7 @@ public class EntryTripleEntry<
 	  MGEB extends FieldBuilder<MG, MGE, MGEB>,
 	  RGEB extends FieldBuilder<RG, RGE, RGEB>
 	  > TripleListEntryBuilder<LG, MG, RG, LGE, MGE, RGE, LGEB, MGEB, RGEB> makeGUIBuilder(
-	  ConfigEntryBuilder builder,
+	  ConfigFieldBuilder builder,
 	  FieldBuilder<LG, LGE, ?> leftBuilder,
 	  FieldBuilder<MG, MGE, ?> middleBuilder,
 	  FieldBuilder<RG, RGE, ?> rightBuilder
@@ -243,12 +286,12 @@ public class EntryTripleEntry<
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Triple<LG, MG, RG>, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		TripleListEntryBuilder<LG, MG, RG, ?, ?, ?, ?, ?, ?> entryBuilder = makeGUIBuilder(
-		  builder, leftEntry.buildChildGUIEntry(builder),
-		  middleEntry.buildChildGUIEntry(builder),
-		  rightEntry.buildChildGUIEntry(builder))
+		  builder, getLeftEntry().buildChildGUIEntry(builder),
+		  getMiddleEntry().buildChildGUIEntry(builder),
+		  getRightEntry().buildChildGUIEntry(builder))
 		  .withIcons(leftIcon, rightIcon)
 		  .withWeights(leftWeight, rightWeight);
 		return Optional.of(decorate(entryBuilder));

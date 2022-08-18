@@ -1,7 +1,10 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.entry.ISerializableConfigEntry;
+import endorh.simpleconfig.api.entry.ISerializableEntryBuilder;
 import endorh.simpleconfig.core.BackingField;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
@@ -30,7 +33,9 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 		this.deserializer = deserializer;
 	}
 	
-	public static class Builder<V> extends AbstractSerializableEntry.Builder<V, SerializableEntry<V>, Builder<V>> {
+	public static class Builder<V> extends AbstractSerializableEntry.Builder<
+	  V, SerializableEntry<V>, ISerializableEntryBuilder<V>, Builder<V>
+	> implements ISerializableEntryBuilder<V> {
 		protected Function<V, String> serializer;
 		protected Function<String, Optional<V>> deserializer;
 		protected ITextFormatter formatter = ITextFormatter.DEFAULT;
@@ -52,13 +57,13 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 			this.formatter = serializer.getConfigTextFormatter();
 		}
 		
-		@Contract(pure=true) public Builder<V> fieldClass(Class<?> fieldClass) {
+		@Override @Contract(pure=true) public Builder<V> fieldClass(Class<?> fieldClass) {
 			Builder<V> copy = copy();
 			copy.typeClass = fieldClass;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder<V> setTextFormatter(ITextFormatter formatter) {
+		@Override @Contract(pure=true) public Builder<V> setTextFormatter(ITextFormatter formatter) {
 			Builder<V> copy = copy();
 			copy.formatter = formatter;
 			return copy;

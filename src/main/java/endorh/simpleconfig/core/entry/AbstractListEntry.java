@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IErrorEntryBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -40,8 +40,10 @@ public abstract class AbstractListEntry
 	
 	public static abstract class Builder<V, Config, Gui,
 	  Entry extends AbstractListEntry<V, Config, Gui, Entry>,
-	  Self extends Builder<V, Config, Gui, Entry, Self>>
-	  extends AbstractConfigEntryBuilder<List<V>, List<Config>, List<Gui>, Entry, Self> {
+	  Self extends ListEntryBuilder<V, Config, Gui, Self>,
+	  SelfImpl extends Builder<V, Config, Gui, Entry, Self, SelfImpl>
+	> extends AbstractConfigEntryBuilder<List<V>, List<Config>, List<Gui>, Entry, Self, SelfImpl>
+	  implements ListEntryBuilder<V, Config, Gui, Self> {
 		protected Function<V, Optional<ITextComponent>> elemErrorSupplier = v -> Optional.empty();
 		protected boolean expand = false;
 		protected Class<?> innerType;
@@ -53,48 +55,34 @@ public abstract class AbstractListEntry
 			this.innerType = innerType;
 		}
 		
-		@Contract(pure=true) public Self expand() {
+		@Override @Contract(pure=true) public Self expand() {
 			return expand(true);
 		}
 		
-		@Contract(pure=true) public Self expand(boolean expand) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self expand(boolean expand) {
+			SelfImpl copy = copy();
 			copy.expand = expand;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		/**
-		 * Set the minimum (inclusive) allowed list size.
-		 * @param minSize Inclusive minimum size
-		 */
-		@Contract(pure=true) public Self minSize(int minSize) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self minSize(int minSize) {
+			SelfImpl copy = copy();
 			copy.minSize = minSize;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		/**
-		 * Set the maximum (inclusive) allowed list size.
-		 * @param maxSize Inclusive maximum size
-		 */
-		@Contract(pure=true) public Self maxSize(int maxSize) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self maxSize(int maxSize) {
+			SelfImpl copy = copy();
 			copy.maxSize = maxSize;
-			return copy;
+			return copy.castSelf();
 		}
 		
-		/**
-		 * Set an error message supplier for the elements of this list entry<br>
-		 * You may also use {@link IErrorEntryBuilder#error(Function)} to check
-		 * instead the whole list<br>
-		 * If a single element is deemed invalid, the whole list is considered invalid.
-		 * @param errorSupplier Error message supplier. Empty return values indicate
-		 *                      correct values
-		 */
-		@Contract(pure=true) public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
-			Self copy = copy();
+		@Override @Contract(pure=true) public Self elemError(
+		  Function<V, Optional<ITextComponent>> errorSupplier
+		) {
+			SelfImpl copy = copy();
 			copy.elemErrorSupplier = errorSupplier;
-			return copy;
+			return copy.castSelf();
 		}
 		
 		@Override protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
@@ -107,8 +95,8 @@ public abstract class AbstractListEntry
 			return e;
 		}
 		
-		@Override protected Self copy() {
-			final Self copy = super.copy();
+		@Override public SelfImpl copy() {
+			final SelfImpl copy = super.copy();
 			copy.elemErrorSupplier = elemErrorSupplier;
 			copy.expand = expand;
 			copy.innerType = innerType;

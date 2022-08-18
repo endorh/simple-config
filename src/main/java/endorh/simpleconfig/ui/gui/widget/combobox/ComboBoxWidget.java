@@ -10,9 +10,9 @@ import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.KeyboardListener;
 import net.minecraft.client.Minecraft;
@@ -47,7 +47,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.subText;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.subText;
 import static java.lang.Math.*;
 
 public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {

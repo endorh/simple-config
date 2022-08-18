@@ -48,12 +48,12 @@ public class FloatListEntry extends TextFieldListEntry<Float> implements IRanged
 		try {
 			float i = Float.parseFloat(getText());
 			if (i > this.maximum)
-				return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_large", this.maximum));
+				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_large", this.maximum));
 			if (i < this.minimum)
-				return Optional.of(new TranslationTextComponent("text.cloth-config.error.too_small", this.minimum));
+				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_small", this.minimum));
 		} catch (NumberFormatException ex) {
 			return Optional.of(
-			  new TranslationTextComponent("text.cloth-config.error.not_valid_number_float"));
+			  new TranslationTextComponent("simpleconfig.config.error.invalid_float", getText()));
 		}
 		return super.getErrorMessage();
 	}

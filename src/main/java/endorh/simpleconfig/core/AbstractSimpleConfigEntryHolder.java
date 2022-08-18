@@ -3,10 +3,11 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigEntryError;
-import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -214,7 +215,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	 * The clean state is propagated to all of the children<br>
 	 * Subclasses should propagate the dirty state to their parents
 	 */
-	@Override public void markDirty(boolean dirty) {
+	@Internal @Override public void markDirty(boolean dirty) {
 		this.dirty = dirty;
 		if (!dirty) {
 			children.values().forEach(c -> c.markDirty(false));
@@ -247,15 +248,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		return null;
 	}
 	
-	/**
-	 * Get a child entry holder<br>
-	 * @param path Name or dot-separated path to the child
-	 *             If null or empty, {@code this} will be returned
-	 * @throws NoSuchConfigGroupError if the child is not found
-	 * @return A child {@link AbstractSimpleConfigEntryHolder},
-	 *         or {@code this} if path is null or empty.
-	 */
-	public @NotNull AbstractSimpleConfigEntryHolder getChild(String path) {
+	@Override public @NotNull AbstractSimpleConfigEntryHolder getChild(String path) {
 		AbstractSimpleConfigEntryHolder child = getChildOrNull(path);
 		if (child == null) throw new NoSuchConfigGroupError(getPath() + "." + path);
 		return child;
@@ -428,15 +421,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		}
 	}
 	
-	/**
-	 * Set a config value in the GUI, translating it from its actual type<br>
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @param <V> Type of the value
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 */
-	public <V> void setForGUI(String path, V value) {
+	@Override public <V> void setForGUI(String path, V value) {
 		if (value instanceof Number) {
 			try {
 				setForGUI(path, (Number) value);
@@ -446,15 +431,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		doSetForGUI(path, value);
 	}
 	
-	/**
-	 * Set a config value in the GUI, translating it from its actual type<br>
-	 * Numeric types are upcast as needed
-	 * @param path Name or dot-separated path to the value
-	 * @param number Value to be set
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 */
-	public void setForGUI(String path, Number number) {
+	@Override public void setForGUI(String path, Number number) {
 		boolean pre;
 		//noinspection AssignmentUsedAsCondition
 		if (pre = number instanceof Byte) {
@@ -510,10 +487,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		}
 	}
 	
-	/**
-	 * Reset all entries to their default values.
-	 */
-	public void reset() {
+	@Override public void reset() {
 		for (AbstractConfigEntry<?, ?, ?> entry : this.entries.values()) {
 			//noinspection unchecked
 			AbstractConfigEntry<Object, ?, ?> e = (AbstractConfigEntry<Object, ?, ?>) entry;
@@ -523,12 +497,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 			child.reset();
 	}
 	
-	/**
-	 * Reset an entry or group of entries to its default value.
-	 * @param path Name or dot-separated path to the entry or group of entries
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 */
-	public void reset(String path) {
+	@Override public void reset(String path) {
 		AbstractSimpleConfigEntryHolder child = getChildOrNull(path);
 		if (child != null) {
 			child.reset();
@@ -538,13 +507,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		}
 	}
 	
-	/**
-	 * Reset an entry within the GUI, if it has one.
-	 * @param path Name or dot-separated path to the value
-	 * @return {@code true} if the entry has a GUI and was reset, {@code false} otherwise
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 */
-	@OnlyIn(Dist.CLIENT) public boolean resetInGUI(String path) {
+	@Override @OnlyIn(Dist.CLIENT) public boolean resetInGUI(String path) {
 		AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 		if (entry.hasGUI()) {
 			AbstractConfigListEntry<Object> guiEntry = entry.getGuiEntry();
@@ -553,13 +516,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 		} else return false;
 	}
 	
-	/**
-	 * Restore an entry within the GUI, if it has one.
-	 * @param path Name or dot-separated path to the value
-	 * @return {@code true} if the entry has a GUI and was restored, {@code false} otherwise
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 */
-	@OnlyIn(Dist.CLIENT) public boolean restoreInGUI(String path) {
+	@Override @OnlyIn(Dist.CLIENT) public boolean restoreInGUI(String path) {
 		AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 		if (entry.hasGUI()) {
 			AbstractConfigListEntry<Object> guiEntry = entry.getGuiEntry();

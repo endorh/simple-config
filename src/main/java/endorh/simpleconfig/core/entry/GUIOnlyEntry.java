@@ -3,9 +3,10 @@ package endorh.simpleconfig.core.entry;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.GUIOnlyEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -41,8 +42,10 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	
 	public static abstract class Builder<V, Gui,
 	  Entry extends GUIOnlyEntry<V, Gui, Entry>,
-	  Self extends Builder<V, Gui, Entry, Self>>
-	  extends AbstractConfigEntryBuilder<V, Void, Gui, Entry, Self> {
+	  Self extends GUIOnlyEntryBuilder<V, Gui, Self>,
+	  SelfImpl extends Builder<V, Gui, Entry, Self, SelfImpl>
+	> extends AbstractConfigEntryBuilder<V, Void, Gui, Entry, Self, SelfImpl>
+	  implements GUIOnlyEntryBuilder<V, Gui, Self> {
 		public Builder(V value, Class<?> typeClass) {
 			super(value, typeClass);
 		}

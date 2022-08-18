@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.AbstractRange.IntRange;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.AbstractRange.IntRange;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.IntegerRangeEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -24,20 +25,21 @@ public class IntegerRangeEntry
 	}
 	
 	public static class Builder
-	  extends AbstractSizedRangeEntry.Builder<Integer, IntRange, IntegerRangeEntry, Builder> {
+	  extends AbstractSizedRangeEntry.Builder<Integer, IntRange, IntegerRangeEntry, IntegerRangeEntryBuilder, Builder>
+	  implements IntegerRangeEntryBuilder {
 		public Builder(IntRange value) {
 			super(value, IntRange.class);
 		}
 		
-		@Contract(pure=true) public Builder min(int min) {
+		@Override @Contract(pure=true) public IntegerRangeEntryBuilder min(int min) {
 			return min((Integer) min);
 		}
 		
-		@Contract(pure=true) public Builder max(int max) {
+		@Override @Contract(pure=true) public IntegerRangeEntryBuilder max(int max) {
 			return max((Integer) max);
 		}
 		
-		@Contract(pure=true) public Builder withBounds(int min, int max) {
+		@Override @Contract(pure=true) public IntegerRangeEntryBuilder withBounds(int min, int max) {
 			return withBounds((Integer) min, (Integer) max);
 		}
 		
@@ -61,7 +63,7 @@ public class IntegerRangeEntry
 	
 	@OnlyIn(Dist.CLIENT) @Override
 	protected <EE extends AbstractConfigListEntry<Integer> & IChildListEntry> EE buildLimitGUIEntry(
-	  ConfigEntryBuilder builder, String name, Integer value
+	  ConfigFieldBuilder builder, String name, Integer value
 	) {
 		//noinspection unchecked
 		return (EE) builder.startIntField(new StringTextComponent(name), value)
@@ -74,7 +76,7 @@ public class IntegerRangeEntry
 	@Override public Optional<ITextComponent> getErrorFromGUI(IntRange value) {
 		if (value.getMin() == null || value.getMax() == null)
 			return Optional.of(new TranslationTextComponent(
-			  "text.cloth-config.error.not_valid_number_int"));
+			  "simpleconfig.config.error.invalid_integer"));
 		return super.getErrorFromGUI(value);
 	}
 }

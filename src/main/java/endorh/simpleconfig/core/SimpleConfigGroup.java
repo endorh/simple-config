@@ -1,13 +1,14 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.ISimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig;
-import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -21,9 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
 
-public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implements IGUIEntry {
+public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
+  implements ISimpleConfigGroup, IGUIEntry {
 	public final SimpleConfigCategory category;
 	public final @Nullable SimpleConfigGroup parentGroup;
 	public final String name;
@@ -32,12 +34,12 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	protected final String tooltip;
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
-	protected @Nullable Consumer<SimpleConfigGroup> baker;
+	protected @Nullable Consumer<ISimpleConfigGroup> baker;
 	protected AbstractConfigEntry<?, ?, ?> heldEntry;
 	
 	@Internal protected SimpleConfigGroup(
 	  SimpleConfigGroup parent, String name, String title,
-	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
+	  String tooltip, boolean expanded, @Nullable Consumer<ISimpleConfigGroup> baker
 	) {
 		this.category = parent.category;
 		this.parentGroup = parent;
@@ -51,7 +53,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@Internal protected SimpleConfigGroup(
 	  SimpleConfigCategory parent, String name, String title,
-	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
+	  String tooltip, boolean expanded, @Nullable Consumer<ISimpleConfigGroup> baker
 	) {
 		this.category = parent;
 		this.parentGroup = null;
@@ -112,21 +114,12 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 		return builder.toString();
 	}
 	
-	/**
-	 * Get the parent category of this group
-	 */
-	public SimpleConfigCategory getCategory() {
+	@Override public SimpleConfigCategory getCategory() {
 		return category;
 	}
 	
 	
-	/**
-	 * Get a config subgroup
-	 *
-	 * @param path Name or dot-separated path to the group
-	 * @throws NoSuchConfigGroupError if the group is not found
-	 */
-	public SimpleConfigGroup getGroup(String path) {
+	@Override public SimpleConfigGroup getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
@@ -224,7 +217,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	
 	@OnlyIn(Dist.CLIENT)
 	protected CaptionedSubCategoryBuilder<?, ?, ?> buildGUI(
-	  ConfigEntryBuilder entryBuilder, boolean forRemote
+	  ConfigFieldBuilder entryBuilder, boolean forRemote
 	) {
 		CaptionedSubCategoryBuilder<?, ?, ?> group =
 		  heldEntry != null ? createAndDecorateGUI(entryBuilder, heldEntry, forRemote) :
@@ -247,7 +240,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	@OnlyIn(Dist.CLIENT) private <
 	  T, CE extends AbstractConfigEntry<?, ?, T> & IKeyEntry<T>
 	> CaptionedSubCategoryBuilder<T, ?, ?> createAndDecorateGUI(
-	  ConfigEntryBuilder entryBuilder, AbstractConfigEntry<?, ?, T> heldEntry, boolean forRemote
+	  ConfigFieldBuilder entryBuilder, AbstractConfigEntry<?, ?, T> heldEntry, boolean forRemote
 	) {
 		//noinspection unchecked
 		final CE cast = (CE) heldEntry;
@@ -261,14 +254,14 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder implement
 	  T, HE extends AbstractConfigListEntry<T> & IChildListEntry,
 	  HEB extends FieldBuilder<T, HE, HEB>
 	> CaptionedSubCategoryBuilder<T, ?, ?> makeGUI(
-	  ConfigEntryBuilder entryBuilder, FieldBuilder<T, ?, ?> builder
+	  ConfigFieldBuilder entryBuilder, FieldBuilder<T, ?, ?> builder
 	) {
 		return entryBuilder.startCaptionedSubCategory(getTitle(), (HEB) builder);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override @Internal public void buildGUI(
-	  ConfigCategoryBuilder category, ConfigEntryBuilder entryBuilder,
+	  ConfigCategoryBuilder category, ConfigFieldBuilder entryBuilder,
 	  boolean forRemote
 	) {
 		category.addEntry(buildGUI(entryBuilder, forRemote));

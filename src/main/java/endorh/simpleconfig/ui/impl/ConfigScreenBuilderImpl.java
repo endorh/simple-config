@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
-import endorh.simpleconfig.core.SimpleConfig.EditType;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
@@ -31,14 +32,14 @@ import java.util.function.Consumer;
 	protected Screen parent;
 	protected ConfigHotKey editedConfigHotkey = null;
 	protected Consumer<Boolean> hotKeySaver = null;
-	protected ITextComponent title = new TranslationTextComponent("text.cloth-config.config");
+	protected ITextComponent title = new TranslationTextComponent("simpleconfig.config.title");
 	protected boolean editable = true;
 	protected boolean transparentBackground = false;
 	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
 	protected final EnumMap<EditType, Map<String, ConfigCategoryBuilder>> categories =
 	  Util.make(new EnumMap<>(EditType.class), m -> {
-		  for (EditType type: EditType.values()) m.put(type, new LinkedHashMap<>());
+		  for (EditType type: ISimpleConfig.EditType.values()) m.put(type, new LinkedHashMap<>());
 	  });
 	protected ConfigCategoryBuilder fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
@@ -223,8 +224,9 @@ import java.util.function.Consumer;
 			}
 		}
 		AbstractConfigScreen screen = new SimpleConfigScreen(
-		  parent, modId, title, builtMap.get(EditType.CLIENT), builtMap.get(EditType.COMMON),
-		  builtMap.get(EditType.SERVER_COMMON), builtMap.get(EditType.SERVER),
+		  parent, modId, title, builtMap.get(ISimpleConfig.EditType.CLIENT), builtMap.get(
+		  ISimpleConfig.EditType.COMMON),
+		  builtMap.get(ISimpleConfig.EditType.SERVER_COMMON), builtMap.get(ISimpleConfig.EditType.SERVER),
 		  defaultBackground);
 		screen.setEditedConfigHotKey(editedConfigHotkey, hotKeySaver);
 		screen.setSavingRunnable(savingRunnable);

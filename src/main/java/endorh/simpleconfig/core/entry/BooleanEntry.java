@@ -1,14 +1,14 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.BooleanEntryBuilder;
+import endorh.simpleconfig.api.entry.BooleanEntryBuilder.BooleanDisplayer;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.BooleanToggleBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -22,26 +22,22 @@ import java.util.regex.Pattern;
 
 public class BooleanEntry
   extends AbstractConfigEntry<Boolean, Boolean, Boolean> implements IKeyEntry<Boolean> {
-	protected BooleanDisplayer yesNoSupplier = BooleanDisplayer.TRUE_FALSE;
+	protected BooleanDisplayer yesNoSupplier = BooleanEntryBuilder.BooleanDisplayer.TRUE_FALSE;
 	
 	@Internal public BooleanEntry(ISimpleConfigEntryHolder parent, String name, boolean value) {
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<Boolean, Boolean, Boolean,
-	  BooleanEntry, Builder> {
+	public static class Builder extends AbstractConfigEntryBuilder<
+	  Boolean, Boolean, Boolean, BooleanEntry, BooleanEntryBuilder, Builder
+	> implements BooleanEntryBuilder {
 		protected BooleanDisplayer yesNoSupplier = BooleanDisplayer.TRUE_FALSE;
 		
 		public Builder(Boolean value) {
 			super(value, Boolean.class);
 		}
 		
-		/**
-		 * Change the text displayed in the entry's button<br>
-		 * You may also pass a translation key to which '.true' and '.false'
-		 * would be appended if you use {@link Builder#text(String)}
-		 */
-		@Contract(pure=true) public Builder text(BooleanDisplayer displayAdapter) {
+		@Override @Contract(pure=true) public Builder text(BooleanDisplayer displayAdapter) {
 			Builder copy = copy();
 			String trueS = displayAdapter.getSerializableName(true).trim().toLowerCase();
 			String falseS = displayAdapter.getSerializableName(false).trim().toLowerCase();
@@ -51,13 +47,7 @@ public class BooleanEntry
 			return copy;
 		}
 		
-		/**
-		 * Change the text displayed in the entry's button<br>
-		 * This method takes a translation key to which '.true' and '.false'
-		 * are appended to retrieve the actual text that will be used.
-		 * You may also provide your own logic using {@link Builder#text(BooleanDisplayer)}
-		 */
-		@Contract(pure=true) public Builder text(String translation) {
+		@Override @Contract(pure=true) public Builder text(String translation) {
 			Builder copy = copy();
 			final TranslationTextComponent yes =
 			  new TranslationTextComponent(translation + ".true");
@@ -131,7 +121,7 @@ public class BooleanEntry
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Boolean, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final BooleanToggleBuilder valBuilder = builder
 		  .startBooleanToggle(getDisplayName(), get())
@@ -141,51 +131,5 @@ public class BooleanEntry
 	
 	@Override public @Nullable String forCommand(Boolean value) {
 		return value == null? null : value? "true" : "false";
-	}
-	
-	/**
-	 * Determines how a boolean value is displayed, both in the interface and in the config file
-	 */
-	public interface BooleanDisplayer {
-		static BooleanDisplayer forTranslation(String translation) {
-			return forTranslation(translation, "true", "false");
-		}
-		
-		static BooleanDisplayer forTranslation(
-		  String translation, String serialTrue, String serialFalse
-		) {
-			return new BooleanDisplayer() {
-				@Override public ITextComponent getDisplayName(boolean value) {
-					return new TranslationTextComponent(translation + (value? ".true" : ".false"))
-					  .mergeStyle(value? TextFormatting.GREEN : TextFormatting.RED);
-				}
-				@Override public String getSerializableName(boolean value) {
-					return value? serialTrue : serialFalse;
-				}
-			};
-		}
-		
-		BooleanDisplayer TRUE_FALSE = forTranslation("simpleconfig.format.bool.true_false");
-		BooleanDisplayer YES_NO = forTranslation(
-		  "simpleconfig.format.bool.yes_no", "yes", "no");
-		BooleanDisplayer ENABLED_DISABLED = forTranslation(
-		  "simpleconfig.format.bool.enabled_disabled", "enabled", "disabled");
-		BooleanDisplayer ON_OFF = forTranslation(
-		  "simpleconfig.format.bool.on_off", "on", "off");
-		
-		/**
-		 * Get display name.<br>
-		 * Can be formatted.
-		 */
-		ITextComponent getDisplayName(boolean value);
-		
-		/**
-		 * Get serializable name for the config file.<br>
-		 * <b>Must be a static, non-translated value.</b><br>
-		 * Values for {@code true} and {@code false} must differ in lowercase after trimming.
-		 */
-		default String getSerializableName(boolean value) {
-			return String.valueOf(value);
-		}
 	}
 }

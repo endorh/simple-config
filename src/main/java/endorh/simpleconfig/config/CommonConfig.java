@@ -1,28 +1,25 @@
 package endorh.simpleconfig.config;
 
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.core.annotation.Bind;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.annotation.Bind;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.core.SimpleConfig.category;
-import static endorh.simpleconfig.core.SimpleConfig.group;
-import static endorh.simpleconfig.core.entry.Builders.*;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static java.util.Arrays.asList;
 
 public class CommonConfig {
-	public static SimpleConfig build() {
+	public static ISimpleConfig build() {
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
 		  .map(ModInfo::getModId).collect(Collectors.toList());
-		return SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.COMMON, CommonConfig.class)
+		return config(SimpleConfigMod.MOD_ID, ISimpleConfig.Type.COMMON, CommonConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.COMMON)
 		  .withColor(0x64FFA090)
 		  .withBackground("textures/block/warped_planks.png")

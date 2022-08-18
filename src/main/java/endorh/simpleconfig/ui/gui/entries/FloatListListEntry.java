@@ -58,13 +58,13 @@ public class FloatListListEntry
 				final FloatListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
 					return Optional.of(new TranslationTextComponent(
-					  "text.cloth-config.error.too_large", listEntry.maximum));
+					  "simpleconfig.config.error.too_large", listEntry.maximum));
 				if (i < listEntry.minimum)
 					return Optional.of(new TranslationTextComponent(
-					  "text.cloth-config.error.too_small", listEntry.minimum));
+					  "simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslationTextComponent("text.cloth-config.error.not_valid_number_float"));
+				  new TranslationTextComponent("simpleconfig.config.error.invalid_float", widget.getText()));
 			}
 			return Optional.empty();
 		}

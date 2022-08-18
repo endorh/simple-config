@@ -4,13 +4,11 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.core.SimpleConfig.Type;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Presets;
-import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
@@ -19,6 +17,9 @@ import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Presets;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
@@ -34,7 +35,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.forceUnFocus;
 
 public class PresetPickerWidget extends FocusableGui implements IRectanglePositionableRenderable {
@@ -64,7 +65,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	) {
 		this.screen = screen;
 		area.setBounds(x, y, w, 18);
-		for (Type type: Type.values()) {
+		for (Type type: ISimpleConfig.Type.values()) {
 			knownLocalPresets.put(type, Maps.newHashMap());
 			knownRemotePresets.put(type, Maps.newHashMap());
 			knownResourcePresets.put(type, Maps.newHashMap());
@@ -513,13 +514,13 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		}
 		
 		public boolean isClient() {
-			return type == Type.CLIENT;
+			return type == ISimpleConfig.Type.CLIENT;
 		}
 		public boolean isCommon() {
-			return type == Type.COMMON;
+			return type == ISimpleConfig.Type.COMMON;
 		}
 		public boolean isServer() {
-			return type == Type.SERVER;
+			return type == ISimpleConfig.Type.SERVER;
 		}
 		
 		public Location getLocation() {
@@ -605,11 +606,47 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 			) { // @formatter:off
 				if (element == null) {
 					return text.isEmpty()? Optional.empty() : Optional.ofNullable(
-					  Presets.saveIconFor(widget.screen.getEditedType().getType()));
+					  saveIconFor(widget.screen.getEditedType().getType()));
 				} else {
-					return Optional.ofNullable(Presets.iconFor(element.getType(), element.getLocation()));
+					return Optional.ofNullable(iconFor(element.getType(), element.getLocation()));
 				}
 			} // @formatter:on
+			
+			public static Icon saveIconFor(Type type) {
+				switch (type) {
+					case CLIENT: return Presets.CLIENT_SAVE;
+					case COMMON: return Presets.COMMON_SAVE;
+					case SERVER: return Presets.SERVER_SAVE;
+					default: return null;
+				}
+			}
+			
+			public static Icon iconFor(Type type, Location location) {
+				switch (type) {
+					case CLIENT:
+						switch (location) {
+							case LOCAL: return Presets.CLIENT_LOCAL;
+							case REMOTE: return Presets.CLIENT_REMOTE;
+							case RESOURCE: return Presets.CLIENT_RESOURCE;
+							default: return null;
+						}
+					case COMMON:
+						switch (location) {
+							case LOCAL: return Presets.COMMON_LOCAL;
+							case REMOTE: return Presets.COMMON_REMOTE;
+							case RESOURCE: return Presets.COMMON_RESOURCE;
+							default: return null;
+						}
+					case SERVER:
+						switch (location) {
+							case LOCAL: return Presets.SERVER_LOCAL;
+							case REMOTE: return Presets.SERVER_REMOTE;
+							case RESOURCE: return Presets.SERVER_RESOURCE;
+							default: return null;
+						}
+					default: return null;
+				}
+			}
 		}
 	}
 	

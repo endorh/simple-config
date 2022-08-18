@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.FloatListListEntry;
 import endorh.simpleconfig.ui.gui.entries.FloatListListEntry.FloatListCell;
 import net.minecraft.util.text.ITextComponent;
@@ -14,7 +14,7 @@ import java.util.List;
 public class FloatListBuilder
   extends RangedListFieldBuilder<Float, FloatListCell, FloatListListEntry, FloatListBuilder> {
 	
-	public FloatListBuilder(ConfigEntryBuilder builder, ITextComponent name, List<Float> value) {
+	public FloatListBuilder(ConfigFieldBuilder builder, ITextComponent name, List<Float> value) {
 		super(FloatListListEntry.class, builder, name, value);
 	}
 	

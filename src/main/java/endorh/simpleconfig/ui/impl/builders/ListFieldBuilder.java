@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -35,7 +35,7 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 	// protected @Nullable AbstractConfigListEntry<?> heldEntry = null;
 	
 	protected ListFieldBuilder(
-	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, List<V> value
+	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, List<V> value
 	) {
 		super(entryClass, builder, name, value);
 	}

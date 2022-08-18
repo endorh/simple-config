@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ItemNameEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.item.Item;
@@ -41,7 +42,8 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		return "Item";
 	}
 	
-	public static class Builder extends AbstractResourceEntry.Builder<ItemNameEntry, Builder> {
+	public static class Builder extends AbstractResourceEntry.Builder<ItemNameEntry, ItemNameEntryBuilder, Builder>
+	  implements ItemNameEntryBuilder {
 		protected ITag<Item> tag = null;
 		
 		public Builder(ResourceLocation value) {
@@ -51,7 +53,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 			  .collect(Collectors.toList());
 		}
 		
-		@Contract(pure=true) public Builder suggest(Ingredient ingredient) {
+		@Override @Contract(pure=true) public Builder suggest(Ingredient ingredient) {
 			Builder copy = copy();
 			copy.suggestionSupplier =
 			  () -> Arrays.stream(ingredient.getMatchingStacks()).map(
@@ -60,12 +62,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 			return copy;
 		}
 		
-		/**
-		 * Restrict the selectable items to those of a tag<br>
-		 * This can only be done on server configs, since tags
-		 * are server-dependant
-		 */
-		@Contract(pure=true) public Builder suggest(ITag<Item> tag) {
+		@Override @Contract(pure=true) public Builder suggest(ITag<Item> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -73,7 +70,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		
 		@Override
 		protected ItemNameEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException("Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;
@@ -94,7 +91,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 	
 	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<FieldBuilder<ResourceLocation, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofItemName(), forGui(get()));

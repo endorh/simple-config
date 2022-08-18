@@ -1,11 +1,12 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.BlockEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -46,7 +47,9 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 		this.filter = filter != null? filter : b -> true;
 	}
 	
-	public static class Builder extends AbstractConfigEntryBuilder<Block, String, Block, BlockEntry, Builder> {
+	public static class Builder extends AbstractConfigEntryBuilder<
+	  Block, String, Block, BlockEntry, BlockEntryBuilder, Builder
+	> implements BlockEntryBuilder {
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Block> filter = null;
 		protected @Nullable ITag<Block> tag = null;
@@ -56,45 +59,36 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			super(value, Block.class);
 		}
 		
-		/**
-		 * When true (the default), requires the block item to have a group.<br>
-		 * This excludes the AIR and BARRIER blocks, as well as other special blocks.
-		 */
-		@Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
+		@Override @Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder from(Predicate<Block> filter) {
+		@Override @Contract(pure=true) public Builder from(Predicate<Block> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder from(List<Block> choices) {
+		@Override @Contract(pure=true) public Builder from(List<Block> choices) {
 			List<Block> listCopy = new ArrayList<>(choices);
 			return from(listCopy::contains);
 		}
 		
-		@Contract(pure=true) public Builder from(Block... choices) {
+		@Override @Contract(pure=true) public Builder from(Block... choices) {
 			List<Block> listCopy = Arrays.asList(choices);
 			return from(listCopy::contains);
 		}
 		
-		/**
-		 * Restrict the selectable items to those of a tag<br>
-		 * This can only be done on server configs, since tags
-		 * are server-dependant
-		 */
-		@Contract(pure=true) public Builder from(ITag<Block> tag) {
+		@Override @Contract(pure=true) public Builder from(ITag<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
 		}
 		
 		@Override protected BlockEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != Type.SERVER && tag != null)
+			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null)
@@ -146,7 +140,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Block, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		final ComboBoxFieldBuilder<Block> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofBlock(), forGui(get()))

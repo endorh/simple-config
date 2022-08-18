@@ -1,25 +1,35 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.annotation.*;
+import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
-import endorh.simpleconfig.core.annotation.*;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
+import net.minecraft.block.Block;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.Color;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.core.ReflectionUtil.*;
 import static java.util.Collections.synchronizedMap;
 
@@ -32,10 +42,97 @@ public class SimpleConfigClassParser {
 	// Used to construct exception messages
 	protected static final Map<Class<?>, AbstractSimpleConfigEntryHolderBuilder<?>> builders = new ConcurrentHashMap<>();
 	
+	static {
+		registerFieldParsers();
+	}
+	
+	protected static void registerFieldParsers() {
+		registerFieldParser(Entry.class, Boolean.class, (a, field, value) ->
+		  bool(value != null ? value : false));
+		registerFieldParser(Entry.class, String.class, (a, field, value) ->
+		  string(value != null ? value : ""));
+		registerFieldParser(Entry.class, Enum.class, (a, field, value) -> {
+			if (value == null)
+				//noinspection rawtypes
+				value = (Enum) field.getType().getEnumConstants()[0];
+			return option(value);
+		});
+		registerFieldParser(Entry.class, Byte.class, (a, field, value) ->
+		  number(value, getMin(field).byteValue(), getMax(field).byteValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Short.class, (a, field, value) ->
+		  number(value, getMin(field).shortValue(), getMax(field).shortValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Integer.class, (a, field, value) ->
+		  number(value, getMin(field).intValue(), getMax(field).intValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Long.class, (a, field, value) ->
+		  number(value, getMin(field).longValue(), getMax(field).longValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Float.class, (a, field, value) ->
+		  number(value, getMin(field).floatValue(), getMax(field).floatValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Double.class, (a, field, value) ->
+		  number(value, getMin(field).doubleValue(), getMax(field).doubleValue())
+		    .slider(field.isAnnotationPresent(Slider.class)));
+		registerFieldParser(Entry.class, Color.class, (a, field, value) ->
+		  color(value).alpha(field.isAnnotationPresent(HasAlpha.class)));
+		
+		// Lists
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, String.class) ? null :
+		  decorateListEntry(stringList((List<String>) value), field));
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, Integer.class) ? null :
+		  decorateListEntry(
+		    intList((List<Integer>) value)
+		      .min(getMin(field).intValue()).max(getMax(field).intValue()), field));
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, Long.class) ? null :
+		  decorateListEntry(
+		    longList((List<Long>) value)
+		      .min(getMin(field).longValue()).max(getMax(field).longValue()), field));
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, Float.class) ? null :
+		  decorateListEntry(
+		    floatList((List<Float>) value)
+		      .min(getMin(field).floatValue()).max(getMax(field).floatValue()), field));
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, Double.class) ? null :
+		  decorateListEntry(
+		    doubleList((List<Double>) value)
+		      .min(getMin(field).doubleValue()).max(getMax(field).doubleValue()), field));
+		
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, Short.class) ? null :
+		  decorateListEntry(
+		    shortList((List<Short>) value)
+		      .min(getMin(field).shortValue()).max(getMax(field).shortValue()), field));
+		//noinspection unchecked
+		registerFieldParser(Entry.class, List.class, (a, field, value) ->
+		  !checkType(field, List.class, Byte.class) ? null :
+		  decorateListEntry(
+		    byteList((List<Byte>) value)
+		      .min(getMin(field).byteValue()).max(getMax(field).byteValue()), field));
+		
+		// Minecraft entry types
+		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));
+		registerFieldParser(Entry.class, Block.class, (a, field, value) -> block(value));
+		registerFieldParser(Entry.class, Fluid.class, (a, field, value) -> fluid(value));
+		registerFieldParser(Entry.class, CompoundNBT.class, (a, field, value) -> nbtTag(value));
+		registerFieldParser(Entry.class, INBT.class, (a, field, value) -> nbtValue(value));
+		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) -> resource(value));
+	}
+	
 	@FunctionalInterface
 	public interface FieldEntryParser<T extends Annotation, V> {
-		@Nullable
-		AbstractConfigEntryBuilder<?, ?, ?, ?, ?> tryParse(T annotation, Field field, V value);
+		@Nullable ConfigEntryBuilder<?, ?, ?, ?> tryParse(T annotation, Field field, V value);
 	}
 	
 	/**
@@ -53,8 +150,7 @@ public class SimpleConfigClassParser {
 	/**
 	 * Adds a validator from a sibling method to a {@link AbstractListEntry}
 	 */
-	@Internal public static @Nullable <V, E extends AbstractListEntry<V, ?, ?, E>,
-	  B extends AbstractListEntry.Builder<V, ?, ?, E, B>> B decorateListEntry(
+	@Internal public static @Nullable <V, B extends ListEntryBuilder<V, ?, ?, B>> B decorateListEntry(
 	  B builder, Field field
 	) {
 		final Class<?> cl = field.getDeclaringClass();
@@ -71,8 +167,8 @@ public class SimpleConfigClassParser {
 		return builder;
 	}
 	
-	protected static <V> AbstractConfigEntryBuilder<V, ?, ?, ?, ?> decorateEntry(
-	  AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder, Class<?> cl, Field field
+	protected static <V> ConfigEntryBuilder<V, ?, ?, ?> decorateEntry(
+	  ConfigEntryBuilder<V, ?, ?, ?> builder, Class<?> cl, Field field
 	) {
 		final Method m = tryGetMethod(cl, field.getName(), "error", field.getType());
 		if (m != null) {
@@ -91,8 +187,8 @@ public class SimpleConfigClassParser {
 		return builder;
 	}
 	
-	protected static <V> AbstractConfigEntryBuilder<V, ?, ?, ?, ?> addTooltip(
-	  AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder, Class<?> cl, Field field
+	protected static <V> ConfigEntryBuilder<V, ?, ?, ?> addTooltip(
+	  ConfigEntryBuilder<V, ?, ?, ?> builder, Class<?> cl, Field field
 	) {
 		boolean a = true;
 		Method m = tryGetMethod(cl, field.getName(), "tooltip", field.getType());
@@ -138,7 +234,6 @@ public class SimpleConfigClassParser {
 	 *
 	 * @param errorMsg Error message added to the exception on error<br>
 	 *   Will be formatted with the method name
-	 * @param clazz
 	 * @throws SimpleConfigClassParseException on error
 	 */
 	public static <T> T invoke(
@@ -265,14 +360,16 @@ public class SimpleConfigClassParser {
 								Annotation annotation = field.getAnnotation(annotationClass);
 								for (FieldEntryParser<?, ?> parser : parsers.get(clazz)) {
 									//noinspection unchecked
-									AbstractConfigEntryBuilder<?, ?, ?, ?, ?> entryBuilder =
+									ConfigEntryBuilder<?, ?, ?, ?> entryBuilder =
 									  ((FieldEntryParser<Annotation, Object>) parser).tryParse(annotation, field, value);
 									if (entryBuilder != null) {
 										if (builder.hasEntry(name) || builder.groups.containsKey(name))
 											throw new SimpleConfigClassParseException(
 											  builder, "Cannot create entry with name " + name + ". The name is already used.");
 										entryBuilder = decorateEntry(entryBuilder, configClass, field);
-										BackingFieldBuilder<?, ?> fieldBuilder = entryBuilder.backingFieldBuilder;
+										if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalStateException(
+										  "Entry builder " + entryBuilder.getClass().getCanonicalName() + " is not an AbstractConfigEntryBuilder");
+										BackingFieldBuilder<?, ?> fieldBuilder = ((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entryBuilder).backingFieldBuilder;
 										if (fieldBuilder == null) throw new SimpleConfigClassParseException(builder,
 										  "Config entry generated from field does not support backing fields");
 										if (!fieldBuilder.matchesType(field)) {
@@ -484,9 +581,9 @@ public class SimpleConfigClassParser {
 			StringBuilder r = new StringBuilder("\n");
 			r.append("  Parsing config ").append(builder).append("\n");
 			r.append("    Defined entries:\n");
-			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?>> entry :
+			for (Map.Entry<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>> entry :
 			  builder.entries.entrySet()) {
-				final AbstractConfigEntryBuilder<?, ?, ?, ?, ?> e = entry.getValue();
+				final AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> e = entry.getValue();
 				r.append("      ").append(entry.getKey()).append(": ")
 				  .append(e.getClass().getSimpleName());
 				if (e.typeClass != null)

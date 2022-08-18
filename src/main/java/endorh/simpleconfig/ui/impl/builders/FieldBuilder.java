@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.core.EntryTag;
+import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.TooltipListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, Self extends FieldBuilder<V, Entry, Self>> {
 	private final Class<?> entryClass;
-	private final ConfigEntryBuilder builder;
+	private final ConfigFieldBuilder builder;
 	@NotNull protected final ITextComponent fieldNameKey;
 	protected Consumer<Entry> onBuildListener;
 	protected boolean requireRestart = false;
@@ -35,7 +35,7 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 	protected boolean ignoreEdits = false;
 	
 	@Internal protected FieldBuilder(
-	  Class<?> entryClass, ConfigEntryBuilder builder, ITextComponent name, V value
+	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, V value
 	) {
 		this.entryClass = entryClass;
 		this.builder = builder;
@@ -48,7 +48,7 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		return entryClass;
 	}
 	
-	protected ConfigEntryBuilder getEntryBuilder() {
+	protected ConfigFieldBuilder getEntryBuilder() {
 		return builder;
 	}
 	

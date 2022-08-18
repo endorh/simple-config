@@ -2,12 +2,12 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.core.AbstractRange;
+import endorh.simpleconfig.api.AbstractRange;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
-import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.ToggleImageButton;
+import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;

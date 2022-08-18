@@ -1,6 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.PatternEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -24,7 +25,8 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		this.flags = value.flags();
 	}
 	
-	public static class Builder extends AbstractSerializableEntry.Builder<Pattern, PatternEntry, Builder> {
+	public static class Builder extends AbstractSerializableEntry.Builder<Pattern, PatternEntry, PatternEntryBuilder, Builder>
+	  implements PatternEntryBuilder {
 		public Builder(Pattern value) {
 			super(value, Pattern.class);
 		}
@@ -37,7 +39,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 			this(Pattern.compile(pattern, flags));
 		}
 		
-		@Contract(pure=true) public Builder flags(int flags) {
+		@Override @Contract(pure=true) public Builder flags(int flags) {
 			Builder copy = copy();
 			try {
 				copy.value = Pattern.compile(value.pattern(), flags);

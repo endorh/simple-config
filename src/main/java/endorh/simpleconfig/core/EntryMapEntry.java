@@ -3,8 +3,13 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.entry.EntryMapEntryBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -15,8 +20,6 @@ import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -42,21 +45,18 @@ import static java.util.Collections.singletonList;
  * Currently, serializes in the config file as a {@link CompoundNBT}
  */
 public class EntryMapEntry<K, V, KC, C, KG, G,
-  E extends AbstractConfigEntry<V, C, G>,
-  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
-  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
+  B extends AbstractConfigEntryBuilder<V, C, G, ?, ?, B>,
+  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, ?, KB>>
   extends AbstractConfigEntry<
   Map<K, V>, Map<KC, C>, List<Pair<KG, G>>> {
-	private static final Logger LOGGER = LogManager.getLogger();
 	protected final KB keyEntryBuilder;
-	protected final KE keyEntry;
+	protected final AbstractConfigEntry<K, KC, KG> keyEntry;
 	protected final B entryBuilder;
-	protected final E entry;
+	protected final AbstractConfigEntry<V, C, G> entry;
 	protected @Nullable List<Pair<KG, G>> guiCache;
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
-	protected final FakeEntryHolder holder;
+	protected final CollectionEntryHolder holder;
 	protected BiFunction<K, V, Optional<ITextComponent>> elemErrorSupplier = (k, v) -> Optional.empty();
 	protected int minSize = 0;
 	protected int maxSize = Integer.MAX_VALUE;
@@ -68,13 +68,15 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	  Map<K, V> value, @NotNull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
-		holder = new FakeEntryHolder(parent.getRoot());
+		holder = new CollectionEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entryTypeClass = entryBuilder.typeClass;
 		this.keyEntryBuilder = keyEntryBuilder;
 		keyEntryTypeClass = keyEntryBuilder.typeClass;
 		entry = entryBuilder.build(holder, name + "$ v");
 		keyEntry = keyEntryBuilder.build(holder, name + "$ k");
+		if (!(keyEntry instanceof IKeyEntry)) throw new IllegalStateException(
+		  "KeyEntryBuilder created a non-key entry: " + keyEntryBuilder.getClass().getCanonicalName());
 		if (!entry.canBeNested())
 			throw new IllegalArgumentException(
 			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
@@ -86,14 +88,18 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	}
 	
 	public static class Builder<K, V, KC, C, KG, G,
-	  E extends AbstractConfigEntry<V, C, G>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>,
-	  KE extends AbstractConfigEntry<K, KC, KG> & IKeyEntry<KG>,
-	  KB extends AbstractConfigEntryBuilder<K, KC, KG, KE, KB>>
-	  extends AbstractConfigEntryBuilder<
+	  S extends ConfigEntryBuilder<V, C, G, S>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>,
+	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & KeyEntryBuilder<KG>,
+	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & KeyEntryBuilder<KG>
+	> extends AbstractConfigEntryBuilder<
 	  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
-	  EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB>,
-	  Builder<K, V, KC, C, KG, G, E, B, KE, KB>> {
+	  EntryMapEntry<K, V, KC, C, KG, G, B, KB>,
+	  EntryMapEntryBuilder<K, V, KC, C, KG, G, S, KS>,
+	  Builder<K, V, KC, C, KG, G, S, B, KS, KB>
+	> implements EntryMapEntryBuilder<
+	  K, V, KC, C, KG, G, S, KS
+	> {
 		protected final KB keyEntryBuilder;
 		protected B entryBuilder;
 		protected boolean expand;
@@ -102,93 +108,71 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		protected int minSize = 0;
 		protected int maxSize = Integer.MAX_VALUE;
 		
+		@SuppressWarnings("unchecked") public <KBB extends ConfigEntryBuilder<K, KC, KG, KBB> & KeyEntryBuilder<KG>> Builder(
+		  Map<K, V> value, KBB keyEntryBuilder,
+		  ConfigEntryBuilder<V, C, G, ?> entryBuilder
+		) {
+			this(value, (KB) keyEntryBuilder, (B) entryBuilder);
+		}
+		
 		public Builder(Map<K, V> value, KB keyEntryBuilder, B entryBuilder) {
 			super(new LinkedHashMap<>(value), Map.class);
 			this.entryBuilder = entryBuilder.copy();
 			this.keyEntryBuilder = keyEntryBuilder.copy();
 		}
 		
-		/**
-		 * Display this entry expanded in the GUI by default.
-		 * @see #expand(boolean)
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand() {
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> expand() {
 			return expand(true);
 		}
 		
-		/**
-		 * Display this entry expanded in the GUI by default.
-		 * @param expand Whether to expand this entry by default.
-		 * @see #expand()
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> expand(boolean expand) {
-			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> expand(
+		  boolean expand
+		) {
+			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
 			copy.expand = expand;
 			return copy;
 		}
 		
-		/**
-		 * Use a linked map to preserve the order of the entries.<br>
-		 * In the config file it will be represented as a YAML ordered map.<br>
-		 * <i>Note that if you manually set the value of this entry to a non-linked map
-		 * the order will be lost.</i>
-		 * @see #linked(boolean)
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked() {
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> linked() {
 			return linked(true);
 		}
 		
-		/**
-		 * Use a linked map to preserve the order of the entries.<br>
-		 * In the config file it will be represented as a YAML ordered map.<br>
-		 * <i>Note that if you manually set the value of this entry to a non-linked map
-		 * the order will be lost.</i>
-		 * @param linked Whether to use a linked map.
-		 * @see #linked()
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> linked(boolean linked) {
-			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> linked(
+		  boolean linked
+		) {
+			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
 			copy.linked = linked;
 			return copy;
 		}
 		
-		/**
-		 * Set an error supplier for each entry instead of the whole map.<br>
-		 * The map will be deemed invalid if a single entry is invalid.
-		 * @param supplier The supplier for the error.
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> entryError(
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> entryError(
 		  BiFunction<K, V, Optional<ITextComponent>> supplier
 		) {
-			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
 			copy.elemErrorSupplier = supplier;
 			return copy;
 		}
 		
-		/**
-		 * Set the minimum (inclusive) size of the map.
-		 * @param minSize The inclusive minimum size of the map.
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> minSize(int minSize) {
-			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> minSize(
+		  int minSize
+		) {
+			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
 			copy.minSize = minSize;
 			return copy;
 		}
 		
-		/**
-		 * Set the maximum (inclusive) size of the map.
-		 * @param maxSize The inclusive maximum size of the map.
-		 */
-		@Contract(pure=true) public Builder<K, V, KC, C, KG, G, E, B, KE, KB> maxSize(int maxSize) {
-			Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy = copy();
+		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> maxSize(
+		  int maxSize
+		) {
+			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
 			copy.maxSize = maxSize;
 			return copy;
 		}
 		
-		@Override protected EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> buildEntry(
+		@Override protected EntryMapEntry<K, V, KC, C, KG, G, B, KB> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			final EntryMapEntry<K, V, KC, C, KG, G, E, B, KE, KB> e = new EntryMapEntry<>(
+			final EntryMapEntry<K, V, KC, C, KG, G, B, KB> e = new EntryMapEntry<>(
 			  parent, name, new LinkedHashMap<>(value), entryBuilder, keyEntryBuilder);
 			e.expand = expand;
 			e.linked = linked;
@@ -198,8 +182,8 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			return e;
 		}
 		
-		@Override protected Builder<K, V, KC, C, KG, G, E, B, KE, KB> createCopy() {
-			final Builder<K, V, KC, C, KG, G, E, B, KE, KB> copy =
+		@Override protected Builder<K, V, KC, C, KG, G, S, B, KS, KB> createCopy() {
+			final Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy =
 			  new Builder<>(new LinkedHashMap<>(value), keyEntryBuilder, entryBuilder);
 			copy.expand = expand;
 			copy.linked = linked;
@@ -325,19 +309,20 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	
 	@OnlyIn(Dist.CLIENT) protected <KGE extends AbstractConfigListEntry<KG> & IChildListEntry>
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
-		final KE ke = keyEntryBuilder.build(holder, holder.nextName());
+		final AbstractConfigEntry<K, KC, KG> ke = keyEntryBuilder.build(holder, holder.nextName());
 		ke.setSaver((g, h) -> {});
 		ke.setDisplayName(new StringTextComponent(""));
 		ke.nonPersistent = true;
-		final E e = entryBuilder.build(holder, holder.nextName());
+		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
 		e.setDisplayName(new StringTextComponent(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
-		KGE kg = (KGE) ke.buildChildGUIEntry(builder).build();
+		//noinspection unchecked
+		KGE kg = (KGE) ((IKeyEntry<KG>) ke).buildChildGUIEntry(builder).build();
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));
@@ -425,7 +410,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	
 	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		List<Pair<KG, G>> guiValue = forGui(get());
 		if (guiCache != null && Objects.equals(fromGui(guiValue), fromGui(guiCache)))

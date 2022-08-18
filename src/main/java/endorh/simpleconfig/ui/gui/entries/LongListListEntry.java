@@ -58,13 +58,13 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 				final LongListListEntry listEntry = getListEntry();
 				if (l > listEntry.maximum)
 					return Optional.of(new TranslationTextComponent(
-					  "text.cloth-config.error.too_large", listEntry.maximum));
+					  "simpleconfig.config.error.too_large", listEntry.maximum));
 				if (l < listEntry.minimum)
 					return Optional.of(new TranslationTextComponent(
-					  "text.cloth-config.error.too_small", listEntry.minimum));
+					  "simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslationTextComponent("text.cloth-config.error.not_valid_number_long"));
+				  new TranslationTextComponent("simpleconfig.config.error.invalid_integer", widget.getText()));
 			}
 			return Optional.empty();
 		}

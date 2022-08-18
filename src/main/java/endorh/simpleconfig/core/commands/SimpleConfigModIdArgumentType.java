@@ -8,9 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.command.arguments.IArgumentSerializer;
@@ -52,7 +53,7 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 		S src = context.getSource();
 		if (src instanceof ClientSuggestionProvider)
 			return listSuggestionsWithPermissions(builder);
-		Set<Type> types = isRemote? Type.remoteTypes() : Type.localTypes();
+		Set<Type> types = isRemote? ISimpleConfig.Type.remoteTypes() : ISimpleConfig.Type.localTypes();
 		SimpleConfig.getAllConfigs().stream()
 		  .filter(c -> types.contains(c.getType()))
 		  .map(SimpleConfig::getModId)
@@ -64,7 +65,7 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 	  SuggestionsBuilder builder
 	) {
 		PlayerEntity player = Minecraft.getInstance().player;
-		Set<Type> types = isRemote? Type.remoteTypes() : Type.localTypes();
+		Set<Type> types = isRemote? ISimpleConfig.Type.remoteTypes() : ISimpleConfig.Type.localTypes();
 		SimpleConfig.getAllConfigs().stream()
 		  .filter(c -> types.contains(c.getType()))
 		  .map(SimpleConfig::getModId)

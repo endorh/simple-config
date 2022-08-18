@@ -1,8 +1,10 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -31,9 +33,9 @@ import java.util.function.Supplier;
 public abstract class AbstractConfigEntryBuilder<
   V, Config, Gui,
   Entry extends AbstractConfigEntry<V, Config, Gui>,
-  Self extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self>
-> implements IGUIEntryBuilder, ITooltipEntryBuilder<V, Gui, Self>,
-             IErrorEntryBuilder<V, Config, Gui, Self> {
+  Self extends ConfigEntryBuilder<V, Config, Gui, Self>,
+  SelfImpl extends AbstractConfigEntryBuilder<V, Config, Gui, Entry, Self, SelfImpl>
+> implements ConfigEntryBuilder<V, Config, Gui, Self> {
 	protected V value;
 	
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
@@ -66,18 +68,26 @@ public abstract class AbstractConfigEntryBuilder<
 		return a.isPresent()? a : b.get();
 	}
 	
+	@SuppressWarnings("unchecked") protected Self castSelf() {
+		return (Self) this;
+	}
+	
+	@Override @Internal public V getValue() {
+		return value;
+	}
+	
 	@Contract(pure=true)
 	@Override public Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier) {
-		final Self copy = copy();
+		final SelfImpl copy = copy();
 		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
 		copy.errorSupplier = (e, g) -> or(prev.apply(e, g), () -> guiErrorSupplier.apply(g));
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
 	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
-		final Self copy = copy();
+		final SelfImpl copy = copy();
 		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
 		copy.errorSupplier = (e, g) -> or(
@@ -88,12 +98,12 @@ public abstract class AbstractConfigEntryBuilder<
 			    "simpleconfig.config.error.missing_value"));
 			  return errorSupplier.apply(v);
 		  });
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
 	@Override public Self configError(Function<Config, Optional<ITextComponent>> configErrorSupplier) {
-		final Self copy = copy();
+		final SelfImpl copy = copy();
 		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
 		copy.errorSupplier = (e, g) -> or(
@@ -104,270 +114,168 @@ public abstract class AbstractConfigEntryBuilder<
 			    "simpleconfig.config.error.missing_value"));
 			  return configErrorSupplier.apply(e.forConfig(v));
 		  });
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
 	@Override public Self withoutError() {
-		final Self copy = copy();
+		final SelfImpl copy = copy();
 		copy.errorSupplier = null;
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
 	@Override public Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier) {
-		final Self copy = copy();
+		final SelfImpl copy = copy();
 		copy.tooltipSupplier = (e, g) -> tooltipSupplier.apply(g);
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
 	@Override public Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier) {
-		final Self copy = copy();
+		final SelfImpl copy = copy();
 		copy.tooltipSupplier = (e, g) -> {
 			V v = e.fromGui(g);
 			if (v == null) return Collections.emptyList();
 			return tooltipSupplier.apply(v);
 		};
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true) @Override public Self withoutTooltip() {
-		final Self copy = copy();
+		SelfImpl copy = copy();
 		copy.tooltipSupplier = null;
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Set the arguments that will be passed to the tooltip translation key<br>
-	 * As a special case, {@code Supplier}s passed will be invoked before being
-	 * passed as arguments.<br>
-	 */
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	public Self tooltipArgs(Object... args) {
-		final Self copy = copy();
+		SelfImpl copy = copy();
 		copy.tooltipArgs.clear();
 		copy.tooltipArgs.addAll(Arrays.asList(args));
-		return copy;
+		return copy.castSelf();
 	}
 	
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	@SafeVarargs public final Self tooltipArgs(Supplier<Object>... args) {
 		return tooltipArgs((Object[]) args);
 	}
 	
-	/**
-	 * Set the arguments that will be passed to the name translation key<br>
-	 * As a special case, {@code Supplier}s passed will be invoked before being passed as
-	 * arguments.<br><br>
-	 * Since names aren't refreshed, the suppliers are only invoked once, and
-	 * can't be used to animate the title.
-	 */
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	public Self nameArgs(Object... args) {
-		Self copy = copy();
+		SelfImpl copy = copy();
 		copy.nameArgs.clear();
 		copy.nameArgs.addAll(Arrays.asList(args));
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Add a secondary field with the given suffix to the entry<br>
-	 * To instead use a snake_case suffix, use {@link #add_field(String, Function, Class)}<br>
-	 * To instead specify the full field name, use {@link #field(String, Function, Class)}
-	 * @param suffix Suffix for the field name
-	 * @param mapper Transformation to apply for this field
-	 * @param type   Type of the field
-	 */
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	public <F> Self addField(String suffix, Function<V, F> mapper, Class<?> type) {
 		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, type)));
 	}
 	
-	/**
-	 * Add a secondary field with the given snake_case suffix to the entry<br>
-	 * To instead use a camelCase suffix, use {@link #addField(String, Function, Class)}<br>
-	 * To instead specify the full field name, use {@link #field(String, Function, Class)}
-	 * @param suffix Suffix for the field name (will be prepended with '_')
-	 * @param mapper Transformation to apply for this field
-	 * @param type   Type of the field
-	 */
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	public <F> Self add_field(String suffix, Function<V, F> mapper, Class<?> type) {
 		return addField("_" + suffix, mapper, type);
 	}
 	
-	/**
-	 * Apply a field mapper to the main backing field of the entry.<br>
-	 * @param mapper The transformation to apply to the main backing field
-	 * @param reader Optional reading function to use when committing this field.
-	 * @param type   The type of the field, used for checking
-	 */
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	public <F> Self field(Function<V, F> mapper, Function<F, V> reader, Class<?> type) {
-		Self copy = copy();
+		SelfImpl copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type).withCommitter(reader);
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Add a secondary field with the given name to the entry.<br>
-	 * To instead provide a suffix, use {@link #addField(String, Function, Class)}<br>
-	 * To instead replace the default field, use {@link #field(Function, Function, Class)}<br>
-	 */
-	public <F> Self field(String name, Function<V, F> mapper, Class<?> type) {
+	@Override public <F> Self field(String name, Function<V, F> mapper, Class<?> type) {
 		return addField(BackingFieldBinding.withName(name, BackingFieldBuilder.of(mapper, type)));
 	}
 	
-	/**
-	 * Apply a field mapper to the main backing field of the entry.<br>
-	 * <b>This entry won't be committable from this field</b> unless a reader
-	 * function is also passed.
-	 * @param mapper The transformation to apply to the main backing field
-	 * @param type   The type of the field, used for checking
-	 */
-	@Contract(pure=true)
+	@Override @Contract(pure=true)
 	public <F> Self field(Function<V, F> mapper, Class<?> type) {
-		Self copy = copy();
+		SelfImpl copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type);
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
 	@Internal public <F> Self addField(BackingFieldBinding<V, F> binding) {
-		Self copy = copy();
+		SelfImpl copy = copy();
 		copy.backingFieldBindings.add(binding);
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Flag this entry as requiring a restart to be effective
-	 */
-	@Contract(pure=true) public Self restart() {
+	@Override @Contract(pure=true) public Self restart() {
 		return restart(true);
 	}
 	
-	/**
-	 * Flag this entry as requiring a restart to be effective
-	 */
-	@Contract(pure=true) public Self restart(boolean requireRestart) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self restart(boolean requireRestart) {
+		SelfImpl copy = copy();
 		copy.requireRestart = requireRestart;
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Flag this entry as experimental.<br>
-	 */
-	@Contract(pure=true) public Self experimental() {
+	@Override @Contract(pure=true) public Self experimental() {
 		return experimental(true);
 	}
 	
-	/**
-	 * Flag this entry as experimental.<br>
-	 */
-	@Contract(pure=true) public Self experimental(boolean experimental) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self experimental(boolean experimental) {
+		SelfImpl copy = copy();
 		copy.experimental = experimental;
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Makes this entry conditionally editable in the config menu.<br>
-	 * <b>This should only be used as a visual cue</b> to express that the value of this entry is
-	 * contextually irrelevant.<br>
-	 * Avoid overusing it, since users may find it frustrating.<br>
-	 * <b>Users may be able to edit this entry through other means.</b><br>
-	 * You may alse use {@link #editable(Function)} to receive the parent entry holder
-	 * of this entry as an argument.
-	 */
-	@Contract(pure=true) public Self editable(Supplier<Boolean> editable) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self editable(Supplier<Boolean> editable) {
+		SelfImpl copy = copy();
 		copy.editableSupplier = h -> editable.get();
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Makes this entry conditionally editable in the config menu.<br>
-	 * <b>This should only be used as a visual cue</b> to express that the value of this entry is
-	 * contextually irrelevant.<br>
-	 * Avoid overusing it, since users may find it frustrating.<br>
-	 * <b>Users may be able to edit this entry through other means.</b>
-	 */
-	@Contract(pure=true) public Self editable(Function<ISimpleConfigEntryHolder, Boolean> editable) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self editable(Function<ISimpleConfigEntryHolder, Boolean> editable) {
+		SelfImpl copy = copy();
 		copy.editableSupplier = editable;
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Makes this entry non-persistent.<br>
-	 * Non-persistent entries only appear in the GUI, not in the config file,
-	 * and they're reset on restart
-	 */
-	@Contract(pure=true) public Self temp() {
+	@Override @Contract(pure=true) public Self temp() {
 		return temp(true);
 	}
 	
-	/**
-	 * Makes this entry non-persistent.<br>
-	 * Non-persistent entries only appear in the GUI, not in the config file,
-	 * and they're reset on restart
-	 */
-	@Contract(pure=true) public Self temp(boolean nonPersistent) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self temp(boolean nonPersistent) {
+		SelfImpl copy = copy();
 		copy.nonPersistent = nonPersistent;
 		if (!nonPersistent)
 			copy.ignored = false;
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Ignore changes to this entry in the GUI.<br>
-	 * Ignored entries automatically become non-persistent.<br>
-	 * Useful for entries used to provide interaction in the config GUI,
-	 * without actually storing any value
-	 */
-	@Contract(pure=true) public Self ignored() {
+	@Override @Contract(pure=true) public Self ignored() {
 		return ignored(true);
 	}
 	
-	/**
-	 * Ignore changes to this entry in the GUI.<br>
-	 * Ignored entries automatically become non-persistent.<br>
-	 * Useful for entries used to provide interaction in the config GUI,
-	 * without actually storing any value
-	 */
-	@Contract(pure=true) public Self ignored(boolean ignored) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self ignored(boolean ignored) {
+		SelfImpl copy = copy();
 		copy.ignored = ignored;
 		if (ignored) copy.nonPersistent = true;
-		return copy;
+		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
-	@Internal protected Self translation(@Nullable String translation) {
-		Self copy = copy();
+	@Internal protected SelfImpl translation(@Nullable String translation) {
+		SelfImpl copy = copy();
 		copy.translation = translation;
 		return copy;
 	}
 	
-	/**
-	 * Add {@link EntryTag}s to this entry.
-	 */
-	@Contract(pure=true) public Self withTags(EntryTag... tags) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self withTags(EntryTag... tags) {
+		SelfImpl copy = copy();
 		copy.tags.addAll(Arrays.asList(tags));
-		return copy;
+		return copy.castSelf();
 	}
 	
-	/**
-	 * Remove {@link EntryTag}s from this entry.
-	 */
-	@Contract(pure=true) public Self withoutTags(EntryTag... tags) {
-		Self copy = copy();
+	@Override @Contract(pure=true) public Self withoutTags(EntryTag... tags) {
+		SelfImpl copy = copy();
 		Arrays.stream(tags).forEach(copy.tags::remove);
-		return copy;
+		return copy.castSelf();
 	}
 	
 	/**
@@ -399,23 +307,19 @@ public abstract class AbstractConfigEntryBuilder<
 		return e;
 	}
 	
-	@Internal @Deprecated public static <V> V getValue(AbstractConfigEntryBuilder<V, ?, ?, ?, ?> builder) {
-		return builder.value;
-	}
-	
 	/**
 	 * Create a copy of this builder<br>
 	 * Do not call directly, instead use {@link AbstractConfigEntryBuilder#copy()}<br>
 	 * Subclasses should implement this method copying all of their fields.
 	 */
-	@Contract(value="-> new", pure=true) protected abstract Self createCopy();
+	@Contract(value="-> new", pure=true) protected abstract SelfImpl createCopy();
 	
 	/**
 	 * Creates a copy of this builder
 	 */
 	@Contract(value="-> new", pure=true) @MustBeInvokedByOverriders
-	protected Self copy() {
-		final Self copy = createCopy();
+	@Internal public SelfImpl copy() {
+		final SelfImpl copy = createCopy();
 		copy.value = value;
 		copy.translation = translation;
 		copy.errorSupplier = errorSupplier;
@@ -436,7 +340,8 @@ public abstract class AbstractConfigEntryBuilder<
 	// Accessor
 	protected static <
 	  V, C, G, E extends AbstractConfigEntry<V, C, G>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>
+	  S extends ConfigEntryBuilder<V, C, G, S>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, E, S, B>
 	> B copyBuilder(B builder) {
 		return builder.copy();
 	}

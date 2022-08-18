@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.PresetSwitcherEntryBuilder;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.DummyEntryHolder;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.impl.builders.EntryButtonFieldBuilder;
@@ -21,6 +22,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.string;
 
 public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwitcherEntry> {
 	private static final Logger LOGGER = LogManager.getLogger();
@@ -40,12 +43,13 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		this.presets = presets;
 		this.path = path;
 		this.global = global;
-		inner = DummyEntryHolder.build(parent, Builders.string(firstKey(presets))
+		inner = DummyEntryHolder.build(parent, string(firstKey(presets))
 		  .restrict(new ArrayList<>(presets.keySet())
 		));
 	}
 	
-	public static class Builder extends GUIOnlyEntry.Builder<String, String, PresetSwitcherEntry, Builder> {
+	public static class Builder extends GUIOnlyEntry.Builder<String, String, PresetSwitcherEntry, PresetSwitcherEntryBuilder, Builder>
+	  implements PresetSwitcherEntryBuilder {
 		
 		protected Map<String, Map<String, Object>> presets;
 		protected String path;
@@ -76,7 +80,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		if (!presets.containsKey(name))
 			throw new IllegalArgumentException("Unknown preset: \"" + name + "\"");
 		final Map<String, Object> preset = presets.get(name);
-		final AbstractSimpleConfigEntryHolder h =
+		final ISimpleConfigEntryHolder h =
 		  (global ? parent.getRoot() : (AbstractSimpleConfigEntryHolder) parent).getChild(path);
 		AbstractConfigListEntry<String> guiEntry = getGuiEntry();
 		if (guiEntry != null) {
@@ -98,13 +102,13 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 	@SuppressWarnings("unchecked") public <E extends AbstractConfigListEntry<String> & IChildListEntry,
 	  B extends FieldBuilder<String, E, B>
 	> EntryButtonFieldBuilder<String, E, B> makeGUIEntry(
-	  ConfigEntryBuilder builder, FieldBuilder<String, ?, ?> entryBuilder, Consumer<String> action
+	  ConfigFieldBuilder builder, FieldBuilder<String, ?, ?> entryBuilder, Consumer<String> action
 	) {
 		return builder.startButton(getDisplayName(), (B) entryBuilder, action);
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<String, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		EntryButtonFieldBuilder<String, ?, ?> entryBuilder = makeGUIEntry(
 			 builder, inner.buildChildGUIEntry(builder), this::applyPreset)

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry.DoubleListCell;
 import net.minecraft.util.text.ITextComponent;
@@ -15,7 +15,7 @@ public class DoubleListBuilder extends RangedListFieldBuilder<
   Double, DoubleListCell, DoubleListListEntry, DoubleListBuilder> {
 	
 	public DoubleListBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, List<Double> value
+	  ConfigFieldBuilder builder, ITextComponent name, List<Double> value
 	) {
 		super(DoubleListListEntry.class, builder, name, value);
 	}

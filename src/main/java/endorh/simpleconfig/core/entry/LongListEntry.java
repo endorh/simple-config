@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.LongListEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,29 +22,22 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends RangedListEntry.Builder<Long, Number, Long, LongListEntry, Builder> {
+	public static class Builder extends RangedListEntry.Builder<Long, Number, Long, LongListEntry,
+	  LongListEntryBuilder, Builder>
+	  implements LongListEntryBuilder {
 		public Builder(List<Long> value) {
 			super(value, Long.class);
 		}
 		
-		/**
-		 * Set the minimum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(long min) {
+		@Override @Contract(pure=true) public LongListEntryBuilder min(long min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set the maximum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(long max) {
+		@Override @Contract(pure=true) public LongListEntryBuilder max(long max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(long min, long max) {
+		@Override @Contract(pure=true) public LongListEntryBuilder range(long min, long max) {
 			return super.range(min, max);
 		}
 		
@@ -69,7 +63,7 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<List<Long>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Long>, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final LongListBuilder valBuilder = builder
 		  .startLongList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder));

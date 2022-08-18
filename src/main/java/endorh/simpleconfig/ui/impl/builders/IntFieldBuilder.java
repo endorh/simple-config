@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.IntegerListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class IntFieldBuilder
   extends RangedFieldBuilder<Integer, IntegerListEntry, IntFieldBuilder> {
 	
-	public IntFieldBuilder(ConfigEntryBuilder builder, ITextComponent name, int value) {
+	public IntFieldBuilder(ConfigFieldBuilder builder, ITextComponent name, int value) {
 		super(IntegerListEntry.class, builder, name, value);
 	}
 	

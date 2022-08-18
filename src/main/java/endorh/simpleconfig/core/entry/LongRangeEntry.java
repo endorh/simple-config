@@ -1,10 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.AbstractRange.LongRange;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.AbstractRange.LongRange;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.LongRangeEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -24,20 +25,21 @@ public class LongRangeEntry
 	}
 	
 	public static class Builder
-	  extends AbstractSizedRangeEntry.Builder<Long, LongRange, LongRangeEntry, Builder> {
+	  extends AbstractSizedRangeEntry.Builder<Long, LongRange, LongRangeEntry, LongRangeEntryBuilder, Builder>
+	  implements LongRangeEntryBuilder {
 		public Builder(LongRange value) {
 			super(value, LongRange.class);
 		}
 		
-		@Contract(pure=true) public Builder min(long min) {
+		@Override @Contract(pure=true) public LongRangeEntryBuilder min(long min) {
 			return min((Long) min);
 		}
 		
-		@Contract(pure=true) public Builder max(long max) {
+		@Override @Contract(pure=true) public LongRangeEntryBuilder max(long max) {
 			return max((Long) max);
 		}
 		
-		@Contract(pure=true) public Builder withBounds(long min, long max) {
+		@Override @Contract(pure=true) public LongRangeEntryBuilder withBounds(long min, long max) {
 			return withBounds((Long) min, (Long) max);
 		}
 		
@@ -61,7 +63,7 @@ public class LongRangeEntry
 	
 	@OnlyIn(Dist.CLIENT) @Override
 	protected <EE extends AbstractConfigListEntry<Long> & IChildListEntry> EE buildLimitGUIEntry(
-	  ConfigEntryBuilder builder, String name, Long value
+	  ConfigFieldBuilder builder, String name, Long value
 	) {
 		//noinspection unchecked
 		return (EE) builder.startLongField(new StringTextComponent(name), value)
@@ -74,7 +76,7 @@ public class LongRangeEntry
 	@Override public Optional<ITextComponent> getErrorFromGUI(LongRange value) {
 		if (value.getMin() == null || value.getMax() == null)
 			return Optional.of(new TranslationTextComponent(
-			  "text.cloth-config.error.not_valid_number_long"));
+			  "simpleconfig.config.error.invalid_integer"));
 		return super.getErrorFromGUI(value);
 	}
 }

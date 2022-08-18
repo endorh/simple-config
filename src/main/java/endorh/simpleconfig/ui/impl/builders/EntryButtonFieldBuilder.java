@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
 import net.minecraft.util.text.ITextComponent;
@@ -19,7 +19,7 @@ public class EntryButtonFieldBuilder<
 	private Supplier<ITextComponent> buttonLabelSupplier = () -> new StringTextComponent("");
 	
 	public EntryButtonFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, B entryBuilder, Consumer<V> action
+	  ConfigFieldBuilder builder, ITextComponent name, B entryBuilder, Consumer<V> action
 	) {
 		super(EntryButtonListEntry.class, builder, name, entryBuilder.value);
 		this.entryBuilder = entryBuilder;

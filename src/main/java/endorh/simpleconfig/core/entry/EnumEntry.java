@@ -2,12 +2,13 @@ package endorh.simpleconfig.core.entry;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.EnumEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
@@ -46,7 +47,8 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	public static class Builder<E extends Enum<E>> extends AbstractConfigEntryBuilder<
-	  E, E, E, EnumEntry<E>, Builder<E>> {
+	  E, E, E, EnumEntry<E>, EnumEntryBuilder<E>, Builder<E>>
+	  implements EnumEntryBuilder<E> {
 		protected final Class<E> enumClass;
 		protected @Nullable Boolean useComboBox = null;
 		
@@ -60,9 +62,9 @@ public class EnumEntry<E extends Enum<E>>
 			this.enumClass = enumClass;
 		}
 		
-		@Contract(pure=true) public Builder<E> useComboBox() { return useComboBox(true); }
+		@Override @Contract(pure=true) public Builder<E> useComboBox() { return useComboBox(true); }
 		
-		@Contract(pure=true) public Builder<E> useComboBox(Boolean useComboBox) {
+		@Override @Contract(pure=true) public Builder<E> useComboBox(Boolean useComboBox) {
 			Builder<E> copy = copy();
 			copy.useComboBox = useComboBox;
 			return copy;
@@ -180,7 +182,7 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<E, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (useComboBox != null? useComboBox : advanced.prefer_combo_box < enumClass.getEnumConstants().length) {
 			final List<E> choices = Lists.newArrayList(enumClass.getEnumConstants());

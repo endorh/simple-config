@@ -1,8 +1,12 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.EntryListEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EntryListFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.text.ITextComponent;
@@ -24,24 +28,22 @@ import java.util.stream.Collectors;
  * @param <V> The type of the elements of the list
  * @param <C> The type of the elements of the list facing the config
  * @param <G> The type of the elements of the list facing the GUI
- * @param <E> The type of the entry nested within the list
  */
 public class EntryListEntry
-  <V, C, G, E extends AbstractConfigEntry<V, C, G>,
-    B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-  extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, E, B>> {
+  <V, C, G, B extends AbstractConfigEntryBuilder<V, C, G, ?, ?, B>>
+  extends AbstractListEntry<V, C, G, EntryListEntry<V, C, G, B>> {
 	protected static final String TOOLTIP_KEY_SUFFIX = ":help";
 	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ":sub";
 	
 	protected final AbstractConfigEntry<V, C, G> entry;
 	protected final B entryBuilder;
-	protected FakeEntryHolder holder;
+	protected CollectionEntryHolder holder;
 	
 	@Internal public EntryListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
 	  @Nullable List<V> value, B entryBuilder) {
 		super(parent, name, value);
-		holder = new FakeEntryHolder(parent.getRoot());
+		holder = new CollectionEntryHolder(parent.getRoot());
 		this.entryBuilder = entryBuilder;
 		entry = entryBuilder.build(holder, name);
 		if (!entry.canBeNested())
@@ -54,22 +56,33 @@ public class EntryListEntry
 			setTooltipKey(tooltip);
 	}
 	
-	public static class Builder<V, C, G, E extends AbstractConfigEntry<V, C, G>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, B>>
-	  extends AbstractListEntry.Builder<V, C, G, EntryListEntry<V, C, G, E, B>, Builder<V, C, G, E, B>> {
+	public static class Builder<
+	  V, C, G,
+	  S extends ConfigEntryBuilder<V, C, G, S>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>
+	> extends AbstractListEntry.Builder<
+	  V, C, G, EntryListEntry<V, C, G, B>,
+	  EntryListEntryBuilder<V, C, G, S>,
+	  Builder<V, C, G, S, B>
+	> implements EntryListEntryBuilder<V, C, G, S> {
 		protected B builder;
+		
+		@SuppressWarnings("unchecked") public Builder(List<V> value, ConfigEntryBuilder<V, C, G, ?> builder) {
+			this(value, (B) builder);
+		}
 		
 		public Builder(List<V> value, B builder) {
 			super(new ArrayList<>(value), builder.typeClass);
 			this.builder = builder.copy();
 		}
-		@Override protected EntryListEntry<V, C, G, E, B> buildEntry(
+		
+		@Override protected EntryListEntry<V, C, G, B> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
 			return new EntryListEntry<>(parent, name, value, builder);
 		}
 		
-		@Override protected Builder<V, C, G, E, B> createCopy() {
+		@Override protected Builder<V, C, G, S, B> createCopy() {
 			return new Builder<>(value, builder);
 		}
 	}
@@ -131,9 +144,9 @@ public class EntryListEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
-		final E e = entryBuilder.build(holder, holder.nextName());
+		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
 		e.setDisplayName(new StringTextComponent("•"));
 		e.nonPersistent = true;
@@ -152,7 +165,7 @@ public class EntryListEntry
 	
 	@OnlyIn(Dist.CLIENT) @Override
 	public Optional<FieldBuilder<List<G>, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		holder.clear();
 		final EntryListFieldBuilder<G, AbstractConfigListEntry<G>> valBuilder =

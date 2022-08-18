@@ -6,14 +6,14 @@ import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Entries;
-import endorh.simpleconfig.ui.gui.icon.AnimatedIcon;
-import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.KeyBindSettingsButton.KeyBindSettingsOverlay;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.*;
+import endorh.simpleconfig.ui.icon.AnimatedIcon;
+import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Entries;
 import endorh.simpleconfig.ui.math.Rectangle;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -55,9 +55,9 @@ public class KeyBindButton extends FocusableGui
 	private IntList startedKeys;
 	private Int2ObjectMap<String> startedChars;
 	private KeyBindMapping startedMapping;
-	private @Nullable ExtendedKeyBind keyBind;
+	private @Nullable ExtendedKeyBindImpl keyBind;
 	private boolean reportOverlaps = true;
-	private final List<ExtendedKeyBind> overlaps = new ArrayList<>();
+	private final List<ExtendedKeyBindImpl> overlaps = new ArrayList<>();
 	private int overlapTicks = 0;
 	
 	private boolean capturingInput = false;
@@ -79,7 +79,7 @@ public class KeyBindButton extends FocusableGui
 	public static KeyBindButton of(
 	  Supplier<IModalInputCapableScreen> screen,
 	  Supplier<IOverlayCapableContainer> container,
-	  @Nullable ExtendedKeyBind keyBind
+	  @Nullable ExtendedKeyBindImpl keyBind
 	) {
 		return new KeyBindButton(screen, container, keyBind);
 	}
@@ -87,7 +87,7 @@ public class KeyBindButton extends FocusableGui
 	public KeyBindButton(
 	  Supplier<IModalInputCapableScreen> screenSupplier,
 	  Supplier<IOverlayCapableContainer> container,
-	  @Nullable ExtendedKeyBind keyBind
+	  @Nullable ExtendedKeyBindImpl keyBind
 	) {
 		// super(0, 0, width, width, Icon.EMPTY, ButtonAction.of(() -> {}));
 		this.container = container;
@@ -120,7 +120,7 @@ public class KeyBindButton extends FocusableGui
 	public @Nullable ExtendedKeyBind getKeyBind() {
 		return keyBind;
 	}
-	public void setKeyBind(@Nullable ExtendedKeyBind keyBind) {
+	public void setKeyBind(@Nullable ExtendedKeyBindImpl keyBind) {
 		this.keyBind = keyBind;
 		updateKeyBind();
 		updateOverlaps();

@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.DoubleListEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,29 +22,22 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends RangedListEntry.Builder<Double, Number, Double, DoubleListEntry, Builder> {
+	public static class Builder extends RangedListEntry.Builder<Double, Number, Double,
+	  DoubleListEntry, DoubleListEntryBuilder, Builder>
+	  implements DoubleListEntryBuilder {
 		public Builder(List<Double> value) {
 			super(value, Double.class);
 		}
 		
-		/**
-		 * Set the minimum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(double min) {
+		@Override @Contract(pure=true) public DoubleListEntryBuilder min(double min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set the maximum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(double max) {
+		@Override @Contract(pure=true) public DoubleListEntryBuilder max(double max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(double min, double max) {
+		@Override @Contract(pure=true) public DoubleListEntryBuilder range(double min, double max) {
 			return super.range(min, max);
 		}
 		
@@ -69,7 +63,7 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<List<Double>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Double>, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final DoubleListBuilder valBuilder = builder
 		  .startDoubleList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder));

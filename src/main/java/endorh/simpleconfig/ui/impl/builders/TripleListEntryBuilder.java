@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.TripleListEntry;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +29,7 @@ public class TripleListEntryBuilder<
 	protected float rightWeight = 0.333F;
 	
 	public TripleListEntryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, Triple<L, M, R> value,
+	  ConfigFieldBuilder builder, ITextComponent name, Triple<L, M, R> value,
 	  LEB leftEntry, MEB middleEntry, REB rightEntry
 	) {
 		super(TripleListEntry.class, builder, name, value);

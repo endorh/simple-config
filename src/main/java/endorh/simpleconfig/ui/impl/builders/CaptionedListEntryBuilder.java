@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.CaptionedListListEntry;
@@ -24,7 +24,7 @@ public class CaptionedListEntryBuilder<
 	protected CEB captionEntry;
 	
 	public CaptionedListEntryBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, Pair<C, List<V>> value,
+	  ConfigFieldBuilder builder, ITextComponent name, Pair<C, List<V>> value,
 	  EB listEntry, CEB captionEntry
 	) {
 		super(CaptionedListListEntry.class, builder, name, value);

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core;
 
 import com.google.gson.internal.Primitives;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 

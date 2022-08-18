@@ -26,7 +26,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	protected final List<IGuiEventListener> widgets;
 	protected final List<IGuiEventListener> childWidgets;
 	protected @NotNull Function<Boolean, ITextComponent> yesNoSupplier = bool ->
-	  new TranslationTextComponent("text.cloth-config.boolean.value." + bool);
+	  new TranslationTextComponent("simpleconfig.format.bool.yes_no." + bool);
 	
 	@Deprecated
 	@ApiStatus.Internal

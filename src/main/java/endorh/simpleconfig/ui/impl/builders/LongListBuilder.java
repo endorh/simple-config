@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.LongListListEntry;
 import endorh.simpleconfig.ui.gui.entries.LongListListEntry.LongListCell;
 import net.minecraft.util.text.ITextComponent;
@@ -14,7 +14,7 @@ import java.util.List;
 public class LongListBuilder
   extends RangedListFieldBuilder<Long, LongListCell, LongListListEntry, LongListBuilder> {
 	
-	public LongListBuilder(ConfigEntryBuilder builder, ITextComponent name, List<Long> value) {
+	public LongListBuilder(ConfigFieldBuilder builder, ITextComponent name, List<Long> value) {
 		super(LongListListEntry.class, builder, name, value);
 	}
 	

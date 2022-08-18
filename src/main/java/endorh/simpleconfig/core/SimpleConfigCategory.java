@@ -1,14 +1,16 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.ISimpleConfigCategory;
+import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.config.ClientConfig;
-import endorh.simpleconfig.core.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
-import endorh.simpleconfig.core.SimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.core.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.gui.icon.Icon;
+import endorh.simpleconfig.ui.icon.Icon;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -25,7 +27,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
 
 /**
  * A Config category<br>
@@ -35,15 +37,16 @@ import static endorh.simpleconfig.core.SimpleConfigTextUtil.stripFormattingCodes
  * You may access any config entry under a category with {@link SimpleConfigCategory#get(String)},
  * which accepts dot-separated paths to entries, taking into account their group structure
  */
-public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
+public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
+  implements ISimpleConfigCategory {
 	public final SimpleConfig parent;
 	public final String name;
 	protected final String title;
 	protected final String tooltip;
-	protected final @Nullable Consumer<SimpleConfigCategory> baker;
+	protected final @Nullable Consumer<ISimpleConfigCategory> baker;
 	protected Map<String, SimpleConfigGroup> groups;
 	protected List<IGUIEntry> order;
-	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator;
+	protected @Nullable BiConsumer<ISimpleConfigCategory, ConfigCategoryBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
@@ -51,7 +54,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@Internal protected SimpleConfigCategory(
 	  SimpleConfig parent, String name, String title, boolean isRoot,
-	  @Nullable Consumer<SimpleConfigCategory> baker
+	  @Nullable Consumer<ISimpleConfigCategory> baker
 	) {
 		this.parent = parent;
 		this.name = name;
@@ -112,13 +115,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 		if (dirty) parent.markDirty(true);
 	}
 	
-	/**
-	 * Get a config group
-	 *
-	 * @param path Name or dot-separated path to the group
-	 * @throws NoSuchConfigGroupError if the group is not found
-	 */
-	@SuppressWarnings("unused")
+	@Override @SuppressWarnings("unused")
 	public SimpleConfigGroup getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
@@ -131,7 +128,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected void buildGUI(
-	  ConfigScreenBuilder builder, ConfigEntryBuilder entryBuilder,
+	  ConfigScreenBuilder builder, ConfigFieldBuilder entryBuilder,
 	  boolean forRemote
 	) {
 		ConfigCategoryBuilder category = builder.getOrCreateCategory(

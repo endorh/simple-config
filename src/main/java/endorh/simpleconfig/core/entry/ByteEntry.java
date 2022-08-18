@@ -1,8 +1,9 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.ByteEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @Deprecated
-public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEntry>
+public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
   implements IKeyEntry<Byte> {
 	@Internal public ByteEntry(
 	  ISimpleConfigEntryHolder parent, String name, byte value
@@ -24,29 +25,21 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 	}
 	
 	public static class Builder
-	  extends AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, Builder> {
+	  extends AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, ByteEntryBuilder, Builder>
+	  implements ByteEntryBuilder {
 		public Builder(Byte value) {
 			super(value, Byte.class);
 		}
 		
-		/**
-		 * Set min (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(byte min) {
+		@Override @Contract(pure=true) public ByteEntryBuilder min(byte min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set max (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(byte max) {
+		@Override @Contract(pure=true) public ByteEntryBuilder max(byte max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set range (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(byte min, byte max) {
+		@Override @Contract(pure=true) public ByteEntryBuilder range(byte min, byte max) {
 			return super.range(min, max);
 		}
 		
@@ -74,7 +67,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer, ByteEn
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<Integer, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (!asSlider) {
 			final IntFieldBuilder valBuilder = builder

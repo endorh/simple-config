@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.SelectionListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -18,7 +18,7 @@ public class SelectorBuilder<V>
 	protected Function<V, ITextComponent> nameProvider = null;
 	
 	public SelectorBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, V[] valuesArray, V value
+	  ConfigFieldBuilder builder, ITextComponent name, V[] valuesArray, V value
 	) {
 		super(SelectionListEntry.class, builder, name, value);
 		Objects.requireNonNull(value);

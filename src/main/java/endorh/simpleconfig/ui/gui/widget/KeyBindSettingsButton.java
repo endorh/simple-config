@@ -5,14 +5,13 @@ import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Hotkeys;
-import endorh.simpleconfig.ui.gui.icon.KeyBindSettingsIcon;
 import endorh.simpleconfig.ui.gui.widget.SelectorButton.BooleanButton;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettingsBuilder;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettingsImpl;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindContext;
+import endorh.simpleconfig.ui.icon.KeyBindSettingsIcon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Hotkeys;
 import endorh.simpleconfig.ui.math.Point;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -31,7 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 
@@ -39,7 +38,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 	public static @Nullable ExtendedKeyBindSettings CLIPBOARD = null;
 	private long copyTimestamp = 0;
 	private final Supplier<IOverlayCapableContainer> container;
-	private ExtendedKeyBindSettings defaultSettings = new ExtendedKeyBindSettingsImpl();
+	private ExtendedKeyBindSettings defaultSettings = ExtendedKeyBindSettings.ingame().build();
 	private ExtendedKeyBindSettings settings = defaultSettings;
 	private boolean overlayShown;
 	private final KeyBindSettingsIcon icon;

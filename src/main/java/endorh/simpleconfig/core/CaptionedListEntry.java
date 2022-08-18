@@ -2,14 +2,19 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.Config.Entry;
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.entry.CaptionedListEntryBuilder;
+import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
-import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.util.Util;
@@ -25,33 +30,46 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>,
-  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>>
-  extends AbstractConfigEntry<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>
-  > {
+public class CaptionedListEntry<
+  V, C, G, CV, CC, CG
+> extends AbstractConfigEntry<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>> {
 	
-	protected final E listEntry;
-	protected final CE captionEntry;
+	protected final AbstractListEntry<V, C, G, ?> listEntry;
+	protected final AbstractConfigEntry<CV, CC, CG> captionEntry;
 	
 	protected CaptionedListEntry(
 	  ISimpleConfigEntryHolder parent, String name,
-	  Pair<CV, List<V>> value, E listEntry, CE captionEntry
+	  Pair<CV, List<V>> value, AbstractListEntry<V, C, G, ?> listEntry, AbstractConfigEntry<CV, CC, CG> captionEntry
 	) {
 		super(parent, name, value);
 		this.listEntry = listEntry;
 		this.captionEntry = captionEntry;
 	}
 	
-	public static class Builder<V, C, G, E extends AbstractListEntry<V, C, G, E>,
-	  B extends AbstractListEntry.Builder<V, C, G, E, B>,
-	  CV, CC, CG, CE extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>,
-	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, CE, CB>>
-	  extends AbstractConfigEntryBuilder<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
-	  CaptionedListEntry<V, C, G, E, CV, CC, CG, CE>, Builder<
-	  V, C, G, E, B, CV, CC, CG, CE, CB>>
-	{
+	@SuppressWarnings("unchecked") protected <E extends AbstractConfigEntry<CV, CC, CG> & IKeyEntry<CG>> E getCaptionEntry() {
+		return (E) captionEntry;
+	}
+	
+	public static class Builder<
+	  V, C, G,
+	  S extends ListEntryBuilder<V, C, G, S>,
+	  B extends AbstractListEntry.Builder<V, C, G, ?, S, B>,
+	  CV, CC, CG,
+	  CS extends ConfigEntryBuilder<CV, CC, CG, CS> & KeyEntryBuilder<CG>,
+	  CB extends AbstractConfigEntryBuilder<CV, CC, CG, ?, CS, CB> & KeyEntryBuilder<CG>
+	> extends AbstractConfigEntryBuilder<Pair<CV, List<V>>, Pair<CC, List<C>>, Pair<CG, List<G>>,
+	  CaptionedListEntry<V, C, G, CV, CC, CG>,
+	  CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS>,
+	  Builder<V, C, G, S, B, CV, CC, CG, CS, CB>
+	> implements CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> {
 		protected B listEntryBuilder;
 		protected CB captionEntryBuilder;
+		
+		@SuppressWarnings("unchecked") public <CBB extends ConfigEntryBuilder<CV, CC, CG, CBB> & KeyEntryBuilder<CG>> Builder(
+		  Pair<CV, List<V>> value, ListEntryBuilder<V, C, G, ?> listEntryBuilder, CBB captionEntryBuilder
+		) {
+			this(value, (B) listEntryBuilder, (CB) captionEntryBuilder);
+		}
 		
 		public Builder(Pair<CV, List<V>> value, B listEntryBuilder, CB captionEntryBuilder) {
 			super(value, Pair.class);
@@ -59,94 +77,52 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 			this.captionEntryBuilder = captionEntryBuilder;
 		}
 		
-		/**
-		 * Bind a field to the caption entry.
-		 * @see #listField(String)
-		 * @see #listField()
-		 * @see #splitFields(String)
-		 */
-		@Contract(pure=true)
-		public Builder<V, C, G, E, B, CV, CC, CG, CE, CB> captionField(String name) {
+		@Override @Contract(pure=true)
+		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> captionField(String name) {
 			return field(name, Pair::getKey, captionEntryBuilder.typeClass);
 		}
 		
-		/**
-		 * Bind a field to the list entry.<br>
-		 * You may also omit the name to replace the default field with a field for the list.
-		 * @see #captionField(String)
-		 * @see #listField()
-		 * @see #splitFields(String)
-		 */
-		@Contract(pure=true)
-		public Builder<V, C, G, E, B, CV, CC, CG, CE, CB> listField(String name) {
+		@Override @Contract(pure=true)
+		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> listField(String name) {
 			return field(name, Pair::getValue, listEntryBuilder.typeClass);
 		}
 		
-		/**
-		 * Replace the default field with a field for the list value.
-		 * @see #captionField(String)
-		 * @see #listField(String)
-		 * @see #splitFields(String)
-		 */
-		@Contract(pure=true)
-		public Builder<V, C, G, E, B, CV, CC, CG, CE, CB> listField() {
+		@Override @Contract(pure=true)
+		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> listField() {
 			return addField(BackingFieldBinding.sameName(BackingFieldBuilder.of(
 			  Pair::getValue, listEntryBuilder.typeClass)));
 		}
 		
-		/**
-		 * Bind a field to the caption entry and replace the default field with a field
-		 * for the list value.
-		 * @see #captionField(String)
-		 * @see #listField(String)
-		 * @see #listField()
-		 */
-		@Contract(pure=true)
-		public Builder<V, C, G, E, B, CV, CC, CG, CE, CB> splitFields(String captionSuffix) {
+		@Override @Contract(pure=true)
+		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> splitFields(String captionSuffix) {
 			return addField(captionSuffix, Pair::getKey, captionEntryBuilder.typeClass).listField();
 		}
 		
-		/**
-		 * Bind a field to the caption entry and replace the default field with a field
-		 * for the list value.
-		 * @param fullFieldName {@code true} if the caption field name should be treated
-		 *        as the full name of the field. {@code false} (default) if it should be
-		 *        treated as a camelCase suffix to this entry's name.
-		 * @see #captionField(String)
-		 * @see #listField(String)
-		 * @see #listField()
-		 */
-		@Contract(pure=true)
-		public Builder<V, C, G, E, B, CV, CC, CG, CE, CB> splitFields(String captionField, boolean fullFieldName) {
+		@Override @Contract(pure=true)
+		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> splitFields(
+		  String captionField, boolean fullFieldName
+		) {
 			if (!fullFieldName) return splitFields(captionField);
 			return captionField(captionField).listField();
 		}
 		
-		/**
-		 * Bind a field to the caption entry and replace the default field with a field
-		 * for the list value.
-		 *
-		 * @see #captionField(String)
-		 * @see #listField(String)
-		 * @see #listField()
-		 */
-		@Contract(pure=true)
-		public Builder<V, C, G, E, B, CV, CC, CG, CE, CB> split_fields(String caption_suffix) {
+		@Override @Contract(pure=true)
+		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> split_fields(String caption_suffix) {
 			return add_field(caption_suffix, Pair::getKey, captionEntryBuilder.typeClass).listField();
 		}
 		
-		@Override protected CaptionedListEntry<V, C, G, E, CV, CC, CG, CE> buildEntry(
+		@Override protected CaptionedListEntry<V, C, G, CV, CC, CG> buildEntry(
 		  ISimpleConfigEntryHolder parent, String name
 		) {
-			final E le = DummyEntryHolder.build(parent, listEntryBuilder);
-			final CE ce = DummyEntryHolder.build(parent, captionEntryBuilder);
+			final AbstractListEntry<V, C, G, ?> le = DummyEntryHolder.build(parent, listEntryBuilder);
+			final AbstractConfigEntry<CV, CC, CG> ce = DummyEntryHolder.build(parent, captionEntryBuilder);
+			if (!(ce instanceof IKeyEntry)) throw new IllegalStateException(
+			  "KeyEntryBuilder created non-key entry: " + captionEntryBuilder.getClass().getCanonicalName());
 			return new CaptionedListEntry<>(parent, name, value, le, ce);
 		}
 		
-		@Override protected Builder<V, C, G, E, B, CV, CC, CG, CE, CB> createCopy() {
-			return new Builder<>(
-			  value, ((AbstractConfigEntryBuilder<List<V>, List<C>, List<G>, E, B>) listEntryBuilder).copy(),
-			  captionEntryBuilder.copy());
+		@Override protected Builder<V, C, G, S, B, CV, CC, CG, CS, CB> createCopy() {
+			return new Builder<>(value, listEntryBuilder.copy(), captionEntryBuilder.copy());
 		}
 	}
 	
@@ -221,25 +197,26 @@ public class CaptionedListEntry<V, C, G, E extends AbstractListEntry<V, C, G, E>
 	@OnlyIn(Dist.CLIENT) @SuppressWarnings("unchecked") protected <
 	  LGE extends AbstractListListEntry<G, ?, LGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
-	CaptionedListEntryBuilder<G, LGE, ?, CG, CGE, ?> makeGUIEntry(
-	  ConfigEntryBuilder builder, ITextComponent name,
+	endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder<G, LGE, ?, CG, CGE, ?> makeGUIEntry(
+	  ConfigFieldBuilder builder, ITextComponent name,
 	  FieldBuilder<List<G>, ?, ?> listEntry, Pair<CG, List<G>> value
 	) {
-		final FieldBuilder<CG, CGE, ?> cge = captionEntry.buildChildGUIEntry(builder);
+		final FieldBuilder<CG, CGE, ?> cge = getCaptionEntry().buildChildGUIEntry(builder);
 		cge.setOriginal(value.getKey());
-		return new CaptionedListEntryBuilder<>(
+		return new endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder<>(
 		  builder, name, value, (FieldBuilder<List<G>, LGE, ?>) listEntry, cge);
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<Pair<CG, List<G>>, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		listEntry.setDisplayName(getDisplayName());
 		final Optional<FieldBuilder<List<G>, ?, ?>> opt = listEntry.buildGUIEntry(builder);
 		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
 		final FieldBuilder<List<G>, ?, ?> listGUIEntry = opt.get();
 		listGUIEntry.withoutTags(EntryTag.NON_PERSISTENT);
-		final CaptionedListEntryBuilder<G, ?, ?, CG, ?, ?> entryBuilder =
+		final endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder<G, ?, ?, CG, ?, ?>
+		  entryBuilder =
 		  makeGUIEntry(builder, getDisplayName(), listEntry.buildGUIEntry(builder).map(
 			 l -> l.withoutTags(EntryTag.NON_PERSISTENT)).orElseThrow(() -> new IllegalStateException(
 				"List entry has no GUI entry")), forGui(get()));

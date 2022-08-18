@@ -7,9 +7,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.ISimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
-import endorh.simpleconfig.core.SimpleConfig.Type;
 import net.minecraft.command.arguments.IArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,7 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 	}
 	
 	private final @Nullable String modId;
-	private final @Nullable EditType type;
+	private final @Nullable ISimpleConfig.EditType type;
 	private final boolean includeGroups;
 	
 	private SimpleConfigKeyArgumentType(@Nullable String modId, @Nullable EditType type, boolean includeGroups) {

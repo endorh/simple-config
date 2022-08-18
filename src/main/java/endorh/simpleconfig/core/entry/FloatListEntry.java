@@ -1,7 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.FloatListEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatListBuilder;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,29 +22,22 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 		super(parent, name, value);
 	}
 	
-	public static class Builder extends RangedListEntry.Builder<Float, Number, Float, FloatListEntry, Builder> {
+	public static class Builder extends RangedListEntry.Builder<Float, Number, Float,
+	  FloatListEntry, FloatListEntryBuilder, Builder>
+	  implements FloatListEntryBuilder {
 		public Builder(List<Float> value) {
 			super(value, Float.class);
 		}
 		
-		/**
-		 * Set the minimum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder min(float min) {
+		@Override @Contract(pure=true) public FloatListEntryBuilder min(float min) {
 			return super.min(min);
 		}
 		
-		/**
-		 * Set the maximum allowed value for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder max(float max) {
+		@Override @Contract(pure=true) public FloatListEntryBuilder max(float max) {
 			return super.max(max);
 		}
 		
-		/**
-		 * Set the minimum and the maximum allowed for the elements of this list entry (inclusive)
-		 */
-		@Contract(pure=true) public Builder range(float min, float max) {
+		@Override @Contract(pure=true) public FloatListEntryBuilder range(float min, float max) {
 			return super.range(min, max);
 		}
 		
@@ -69,7 +63,7 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override
-	public Optional<FieldBuilder<List<Float>, ?, ?>> buildGUIEntry(ConfigEntryBuilder builder) {
+	public Optional<FieldBuilder<List<Float>, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		final FloatListBuilder valBuilder = builder
 		  .startFloatList(getDisplayName(), get());
 		return Optional.of(decorate(valBuilder));

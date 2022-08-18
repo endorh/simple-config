@@ -2,12 +2,11 @@ package endorh.simpleconfig.config;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.Type;
-import endorh.simpleconfig.core.annotation.Bind;
-import endorh.simpleconfig.core.entry.StringEntry;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.annotation.Bind;
+import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.demo.DemoServerCategory;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -32,17 +31,16 @@ import java.util.Map.Entry;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.core.SimpleConfig.group;
-import static endorh.simpleconfig.core.entry.Builders.*;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 
 /**
  * Server config backing class
  */
 public class ServerConfig {
-	public static SimpleConfig build() {
+	public static ISimpleConfig build() {
 		// Entry builders are immutable, so they can be cached, reused and modified
 		//   freely without any concern. All their methods return modified copies
-		final StringEntry.Builder playerName = string("").suggest(() -> {
+		final StringEntryBuilder playerName = string("").suggest(() -> {
 			MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
 			final List<String> names = Lists.newArrayList();
 			if (server != null) {
@@ -63,8 +61,8 @@ public class ServerConfig {
 		  SimpleConfigMod.SERVER_CONFIG.<Map<String, List<String>>>getFromGUI("permissions.roles").keySet());
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
 		  .map(ModInfo::getModId).collect(Collectors.toList());
-		StringEntry.Builder modName = string("").suggest(modNameSupplier);
-		StringEntry.Builder roleName = string("").suggest(() -> {
+		StringEntryBuilder modName = string("").suggest(modNameSupplier);
+		StringEntryBuilder roleName = string("").suggest(() -> {
 			List<String> roles = roleNameSupplier.get();
 			roles.add(0, "[all]");
 			roles.add(1, "[op]");
@@ -72,14 +70,14 @@ public class ServerConfig {
 		}).error(s -> roleNameSupplier.get().contains(s) || "[op]".equals(s) || "[all]".equals(s)
 		              ? Optional.empty() : Optional.of(new TranslationTextComponent(
 		  "simpleconfig.error.unknown_role")));
-		StringEntry.Builder modGroupOrName = string("").suggest(() -> {
+		StringEntryBuilder modGroupOrName = string("").suggest(() -> {
 			List<Pair<String, ?>> modGroups = SimpleConfigMod.SERVER_CONFIG.getGUI("permissions.mod_groups");
 			List<String> names = modGroups.stream().map(Pair::getKey).collect(Collectors.toList());
 			ModList.get().getMods().stream().map(ModInfo::getModId).forEachOrdered(names::add);
 			names.add(0, "[all]");
 			return names;
 		});
-		return SimpleConfig.builder(SimpleConfigMod.MOD_ID, Type.SERVER, ServerConfig.class)
+		return config(SimpleConfigMod.MOD_ID, ISimpleConfig.Type.SERVER, ServerConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.SERVER)
 		  .withColor(0x648090FF)
 		  .withBackground("textures/block/blackstone_bricks.png")

@@ -3,9 +3,9 @@ package endorh.simpleconfig.ui.hotkey;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
+import endorh.simpleconfig.api.ISimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
-import endorh.simpleconfig.core.SimpleConfigGroup;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractButtonDialog;
 import endorh.simpleconfig.ui.gui.AbstractDialog;
@@ -21,7 +21,7 @@ import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.Nullable;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static net.minecraft.util.math.MathHelper.clamp;
@@ -88,7 +88,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public void cancel(boolean success) {
-		SimpleConfigGroup CONFIRM = SimpleConfigMod.CLIENT_CONFIG.getGroup("confirm");
+		ISimpleConfigGroup CONFIRM = SimpleConfigMod.CLIENT_CONFIG.getGroup("confirm");
 		String SAVE_HOTKEYS = "save_hotkeys";
 		String DISCARD_HOTKEYS = "discard_hotkeys";
 		if (success) {

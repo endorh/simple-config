@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.EnumListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,7 +16,7 @@ public class EnumSelectorBuilder<V extends Enum<?>> extends FieldBuilder<V, Enum
 	protected Function<Enum<?>, ITextComponent> enumNameProvider = EnumListEntry.DEFAULT_NAME_PROVIDER;
 	
 	public EnumSelectorBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, V value
+	  ConfigFieldBuilder builder, ITextComponent name, V value
 	) {
 		super(EnumListEntry.class, builder, name, value);
 		Objects.requireNonNull(value);

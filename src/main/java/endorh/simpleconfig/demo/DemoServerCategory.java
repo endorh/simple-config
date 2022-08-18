@@ -1,11 +1,11 @@
 package endorh.simpleconfig.demo;
 
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ICategoryBuilder;
+import endorh.simpleconfig.api.annotation.*;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfigBuilder;
-import endorh.simpleconfig.core.annotation.*;
 import endorh.simpleconfig.demo.DemoServerCategory.demo.demo_group;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.IntNBT;
 import net.minecraft.nbt.StringNBT;
@@ -17,12 +17,12 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static endorh.simpleconfig.core.SimpleConfig.category;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.category;
 import static java.util.Arrays.asList;
 
 public class DemoServerCategory {
@@ -37,7 +37,7 @@ public class DemoServerCategory {
 		return new TranslationTextComponent(key, args);
 	}
 	
-	public static SimpleConfigBuilder.CategoryBuilder getDemoServerCategory() {
+	public static ICategoryBuilder getDemoServerCategory() {
 		// In this example, we generate all config entries
 		//   directly in the config class through the use of annotations
 		// This is discouraged, since it's more restrictive than the
@@ -79,7 +79,8 @@ public class DemoServerCategory {
 	//   config.{mod-id}.category.server.demo.help (Tooltip, if defined)
 	// Categories may be generated with @Category, though in this case, the category
 	//   is actually generated in the builder, so we use @Bind
-	@Bind public static class demo {
+	@Bind
+	public static class demo {
 		// You may also add text entries using the @Text annotation.
 		// The field may be either:
 		//    - A String, which value is ignored

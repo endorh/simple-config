@@ -1,12 +1,13 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
-import endorh.simpleconfig.core.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -47,7 +48,8 @@ public class StringEntry
 	}
 	
 	public static class Builder
-	  extends AbstractConfigEntryBuilder<String, String, String, StringEntry, Builder> {
+	  extends AbstractConfigEntryBuilder<String, String, String, StringEntry, StringEntryBuilder, Builder>
+	  implements StringEntryBuilder {
 		protected Supplier<List<String>> choiceSupplier = null;
 		protected boolean restrict = false;
 		protected int maxLength = Integer.MAX_VALUE;
@@ -56,23 +58,11 @@ public class StringEntry
 			super(value, String.class);
 		}
 		
-		/**
-		 * Suggest possible values in a combo-box.<br>
-		 * To restrict values to the suggestions, use {@link Builder#restrict} instead.<br>
-		 * For suggestions, it's possible to provide instead a suggestion supplier,
-		 * to provide dynamic suggestions instead. This is not possible with restrictions.
-		 */
-		@Contract(pure=true) public Builder suggest(String... suggestions) {
+		@Override @Contract(pure=true) public Builder suggest(String... suggestions) {
 			return suggest(Arrays.stream(suggestions).collect(Collectors.toList()));
 		}
 		
-		/**
-		 * Suggest possible values in a combo-box.<br>
-		 * To restrict values to the suggestions, use {@link Builder#restrict} instead.<br>
-		 * For suggestions, it's possible to provide instead a suggestion supplier,
-		 * to provide dynamic suggestions instead. This is not possible with restrictions.
-		 */
-		@Contract(pure=true)public Builder suggest(@NotNull List<String> suggestions) {
+		@Override @Contract(pure=true)public Builder suggest(@NotNull List<String> suggestions) {
 			Builder copy = copy();
 			Objects.requireNonNull(suggestions);
 			copy.choiceSupplier = () -> suggestions;
@@ -80,43 +70,20 @@ public class StringEntry
 			return copy;
 		}
 		
-		/**
-		 * Suggest possible values in a combo-box dynamically.<br>
-		 * To restrict values to the suggestions, use {@link Builder#restrict},
-		 * although this method can only supply a fixed set of choices.
-		 */
-		@Contract(pure=true) public Builder suggest(Supplier<List<String>> suggestionSupplier) {
+		@Override @Contract(pure=true) public Builder suggest(
+		  Supplier<List<String>> suggestionSupplier
+		) {
 			Builder copy = copy();
 			copy.choiceSupplier = suggestionSupplier;
 			copy.restrict = false;
 			return copy;
 		}
 		
-		/**
-		 * Restrict the values of this entry to a finite set
-		 * of options, displayed in a combo box.<br>
-		 * Unlike {@link Builder#suggest}, this method does not accept
-		 * a {@link Supplier} of choices, since delayed choice
-		 * computation would result in the entry's value being reset
-		 * before the choices can be determined. Consider using
-		 * suggestions instead when they cannot be determined at
-		 * start-up time
-		 */
-		@Contract(pure=true) public Builder restrict(String first, String... choices) {
+		@Override @Contract(pure=true) public Builder restrict(String first, String... choices) {
 			return restrict(Lists.newArrayList(ArrayUtils.insert(0, choices, first)));
 		}
 		
-		/**
-		 * Restrict the values of this entry to a finite set
-		 * of options, displayed in a combo box.<br>
-		 * Unlike {@link Builder#suggest}, this method does not accept
-		 * a {@link Supplier} of choices, since delayed choice
-		 * computation would result in the entry's value being reset
-		 * before the choices can be determined. Consider using
-		 * suggestions instead when they cannot be determined at
-		 * start-up time
-		 */
-		@Contract(pure=true) public Builder restrict(@NotNull List<String> choices) {
+		@Override @Contract(pure=true) public Builder restrict(@NotNull List<String> choices) {
 			Builder copy = copy();
 			if (choices.isEmpty())
 				throw new IllegalArgumentException("At least one choice must be specified");
@@ -126,19 +93,23 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder maxLength(@Range(from = 0, to = Integer.MAX_VALUE) int maxLength) {
+		@Override @Contract(pure=true) public Builder maxLength(
+		  @Range(from=0, to=Integer.MAX_VALUE) int maxLength
+		) {
 			Builder copy = copy();
 			copy.maxLength = maxLength;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder minLength(@Range(from = 0, to = Integer.MAX_VALUE) int minLength) {
+		@Override @Contract(pure=true) public Builder minLength(
+		  @Range(from=0, to=Integer.MAX_VALUE) int minLength
+		) {
 			Builder copy = copy();
 			copy.minLength = minLength;
 			return copy;
 		}
 		
-		@Contract(pure=true) public Builder notEmpty() {
+		@Override @Contract(pure=true) public Builder notEmpty() {
 			return minLength(1);
 		}
 		
@@ -222,7 +193,7 @@ public class StringEntry
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override public Optional<FieldBuilder<String, ?, ?>> buildGUIEntry(
-	  ConfigEntryBuilder builder
+	  ConfigFieldBuilder builder
 	) {
 		if (choiceSupplier == null) {
 			final TextFieldBuilder valBuilder = builder

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.TextListEntry;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -16,7 +16,7 @@ public class TextDescriptionBuilder
 	protected Supplier<ITextComponent> textSupplier;
 	
 	public TextDescriptionBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, Supplier<ITextComponent> value
+	  ConfigFieldBuilder builder, ITextComponent name, Supplier<ITextComponent> value
 	) {
 		super(TextListEntry.class, builder, name, null);
 		this.textSupplier = value;

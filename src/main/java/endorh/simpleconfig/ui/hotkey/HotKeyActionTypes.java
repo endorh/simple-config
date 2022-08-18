@@ -2,11 +2,11 @@ package endorh.simpleconfig.ui.hotkey;
 
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.entry.AbstractRangedEntry;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons.Actions;
-import endorh.simpleconfig.ui.gui.icon.Icon;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyAction;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
+import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Actions;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -186,7 +186,7 @@ public class HotKeyActionTypes {
 		return (entry, value, serialized) -> {
 			if (entry instanceof AbstractRangedEntry) {
 				//noinspection unchecked
-				AbstractRangedEntry<?, ?, V, ?> ranged = (AbstractRangedEntry<?, ?, V, ?>) entry;
+				AbstractRangedEntry<?, ?, V> ranged = (AbstractRangedEntry<?, ?, V>) entry;
 				Comparable<?> min = ranged.getMin();
 				Comparable<?> max = ranged.getMax();
 				if (min instanceof Number && max instanceof Number)

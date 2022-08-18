@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
-import endorh.simpleconfig.ui.api.ConfigEntryBuilder;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
 import net.minecraft.util.text.ITextComponent;
 
@@ -14,7 +14,7 @@ public class EntryListFieldBuilder<V, E extends AbstractConfigListEntry<V>>
 	protected Function<NestedListListEntry<V, E>, E> cellFactory;
 	
 	public EntryListFieldBuilder(
-	  ConfigEntryBuilder builder, ITextComponent name, List<V> value,
+	  ConfigFieldBuilder builder, ITextComponent name, List<V> value,
 	  Function<NestedListListEntry<V, E>, E> cellFactory
 	) {
 		super(NestedListListEntry.class, builder, name, value);

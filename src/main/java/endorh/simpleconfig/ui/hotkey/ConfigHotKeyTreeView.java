@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.ISimpleConfig.EditType;
 import endorh.simpleconfig.core.SimpleConfig;
-import endorh.simpleconfig.core.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.ArrangeableTreeView;
@@ -18,7 +18,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewHotKeyEntry;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher.ExtendedKeyBindProvider;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.core.SimpleConfigTextUtil.splitTtc;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.renderAll;
 import static java.lang.Math.min;
@@ -195,7 +195,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			private final KeyBindButton hotKeyButton;
 			private final DragBroadcastableWidget<CheckboxButton> enabledCheckbox;
 			private final Map<String, ConfigHotKeyTreeViewModEntry> entries = new HashMap<>();
-			private final ExtendedKeyBind keyBind;
+			private final ExtendedKeyBindImpl keyBind;
 			private final Comparator<String> modOrder = (l, r) -> {
 				ConfigHotKeyTreeView tree = getTree();
 				String contextModId = tree.getContextModId();
@@ -357,7 +357,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			protected List<ITextComponent> getResumeTooltip() {
 				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
 				List<ITextComponent> tt = new ArrayList<>();
-				for (EditType type: EditType.values()) {
+				for (EditType type: ISimpleConfig.EditType.values()) {
 					SimpleConfig config = SimpleConfig.getConfigOrNull(modId, type.getType());
 					if (config != null) {
 						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
@@ -386,7 +386,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			protected int getCount() {
 				int size = 0;
 				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
-				for (EditType type: EditType.values()) {
+				for (EditType type: ISimpleConfig.EditType.values()) {
 					SimpleConfig config = SimpleConfig.getConfigOrNull(modId, type.getType());
 					if (config != null) {
 						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
@@ -401,7 +401,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			private final TextFieldWidgetEx textField;
 			private final KeyBindButton hotKeyButton;
 			private final DragBroadcastableWidget<CheckboxButton> enabledCheckbox;
-			private final ExtendedKeyBind keyBind;
+			private final ExtendedKeyBindImpl keyBind;
 			
 			public ConfigHotKeyTreeViewGroupEntry(
 			  Supplier<IDialogCapableScreen> screenSupplier,
