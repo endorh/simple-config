@@ -3,8 +3,8 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.Config.Entry;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.CaptionedMapEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryMapEntryBuilder;
@@ -36,7 +36,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 	protected final AbstractConfigEntry<CV, CC, CG> captionEntry;
 	
 	protected CaptionedMapEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  Pair<CV, Map<K, V>> value,
 	  EntryMapEntry<K, V, KC, C, KG, G, ?, ?> mapEntry,
 	  AbstractConfigEntry<CV, CC, CG> captionEntry
@@ -136,7 +136,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 		}
 		
 		@Override protected CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			final EntryMapEntry<K, V, KC, C, KG, G, ?, ?> me = DummyEntryHolder.build(parent, mapEntryBuilder);
 			final AbstractConfigEntry<CV, CC, CG> ce = DummyEntryHolder.build(parent, captionEntryBuilder);

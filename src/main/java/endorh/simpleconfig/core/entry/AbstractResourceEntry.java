@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ResourceEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -23,7 +23,7 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 	protected SimpleComboBoxModel<ResourceLocation> suggestionProvider;
 	
 	public AbstractResourceEntry(
-	  ISimpleConfigEntryHolder parent, String name, @Nullable ResourceLocation value
+	  ConfigEntryHolder parent, String name, @Nullable ResourceLocation value
 	) {
 		super(parent, name, value != null? value : new ResourceLocation(""));
 	}
@@ -55,7 +55,7 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			return copy.castSelf();
 		}
 		
-		@Override protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+		@Override protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			final Entry entry = super.build(parent, name);
 			entry.suggestionProvider = new SimpleComboBoxModel<>(suggestionSupplier);
 			return entry;

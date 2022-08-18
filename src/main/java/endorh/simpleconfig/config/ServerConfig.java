@@ -2,7 +2,7 @@ package endorh.simpleconfig.config;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.demo.DemoServerCategory;
@@ -37,7 +37,7 @@ import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
  * Server config backing class
  */
 public class ServerConfig {
-	public static ISimpleConfig build() {
+	public static SimpleConfig build() {
 		// Entry builders are immutable, so they can be cached, reused and modified
 		//   freely without any concern. All their methods return modified copies
 		final StringEntryBuilder playerName = string("").suggest(() -> {
@@ -77,7 +77,7 @@ public class ServerConfig {
 			names.add(0, "[all]");
 			return names;
 		});
-		return config(SimpleConfigMod.MOD_ID, ISimpleConfig.Type.SERVER, ServerConfig.class)
+		return config(SimpleConfigMod.MOD_ID, SimpleConfig.Type.SERVER, ServerConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.SERVER)
 		  .withColor(0x648090FF)
 		  .withBackground("textures/block/blackstone_bricks.png")

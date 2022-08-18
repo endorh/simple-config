@@ -7,10 +7,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.command.arguments.IArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +27,7 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 	}
 	
 	private final @Nullable String modId;
-	private final @Nullable ISimpleConfig.EditType type;
+	private final @Nullable SimpleConfig.EditType type;
 	private final boolean includeGroups;
 	
 	private SimpleConfigKeyArgumentType(@Nullable String modId, @Nullable EditType type, boolean includeGroups) {
@@ -36,14 +36,14 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 		this.includeGroups = includeGroups;
 	}
 	
-	public @Nullable SimpleConfig getConfig(CommandContext<?> ctx) {
+	public @Nullable SimpleConfigImpl getConfig(CommandContext<?> ctx) {
 		String modId = this.modId;
 		EditType type = this.type;
 		if (modId == null) modId = ctx.getArgument("modId", String.class);
 		if (type == null) type = ctx.getArgument("type", EditType.class);
 		Type configType = type.getType();
-		if (SimpleConfig.hasConfig(modId, configType))
-			return SimpleConfig.getConfig(modId, configType);
+		if (SimpleConfigImpl.hasConfig(modId, configType))
+			return SimpleConfigImpl.getConfig(modId, configType);
 		return null;
 	}
 	
@@ -54,7 +54,7 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 	@Override public <S> CompletableFuture<Suggestions> listSuggestions(
 	  CommandContext<S> context, SuggestionsBuilder builder
 	) {
-		SimpleConfig config = getConfig(context);
+		SimpleConfigImpl config = getConfig(context);
 		if (config == null) return Suggestions.empty();
 		Collection<String> paths = config.getPaths(includeGroups);
 		for (String path: paths) builder.suggest(path);

@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EnumEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -37,7 +37,7 @@ public class EnumEntry<E extends Enum<E>>
 	protected final Map<String, E> lowerCaseNameMap;
 	protected @Nullable Boolean useComboBox;
 	
-	@Internal public EnumEntry(ISimpleConfigEntryHolder parent, String name, E value) {
+	@Internal public EnumEntry(ConfigEntryHolder parent, String name, E value) {
 		super(parent, name, value);
 		enumClass = value.getDeclaringClass();
 		nameMap = Arrays.stream(enumClass.getEnumConstants())
@@ -70,7 +70,7 @@ public class EnumEntry<E extends Enum<E>>
 			return copy;
 		}
 		
-		@Override protected EnumEntry<E> buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected EnumEntry<E> buildEntry(ConfigEntryHolder parent, String name) {
 			final EnumEntry<E> entry = new EnumEntry<>(parent, name, value);
 			entry.useComboBox = useComboBox;
 			return entry;

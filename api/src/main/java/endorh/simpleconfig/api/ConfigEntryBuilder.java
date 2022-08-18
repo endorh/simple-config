@@ -10,8 +10,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuilder<V, Config, Gui, Self>>
-  extends ITooltipEntryBuilder<V, Gui, Self>,
-          IErrorEntryBuilder<V, Config, Gui, Self> {
+  extends TooltipEntryBuilder<V, Gui, Self>,
+          ErrorEntryBuilder<V, Config, Gui, Self> {
 	@Internal V getValue();
 	
 	@Contract(pure=true)
@@ -139,7 +139,7 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	 * Avoid overusing it, since users may find it frustrating.<br>
 	 * <b>Users may be able to edit this entry through other means.</b>
 	 */
-	@Contract(pure=true) Self editable(Function<ISimpleConfigEntryHolder, Boolean> editable);
+	@Contract(pure=true) Self editable(Function<ConfigEntryHolder, Boolean> editable);
 	
 	/**
 	 * Makes this entry non-persistent.<br>

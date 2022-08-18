@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -33,7 +33,7 @@ public abstract class AbstractListEntry
 	protected int maxSize = Integer.MAX_VALUE;
 	
 	public AbstractListEntry(
-	  ISimpleConfigEntryHolder parent, String name, @Nullable List<V> value
+	  ConfigEntryHolder parent, String name, @Nullable List<V> value
 	) {
 		super(parent, name, value != null ? value : new ArrayList<>());
 	}
@@ -85,7 +85,7 @@ public abstract class AbstractListEntry
 			return copy.castSelf();
 		}
 		
-		@Override protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+		@Override protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			final Entry e = super.build(parent, name);
 			e.elemErrorSupplier = elemErrorSupplier;
 			e.expand = expand;

@@ -157,6 +157,8 @@
   "simpleconfig.config.common.menu.replace_config_menus:help": "Reemplaza los menús de configuración de mods que ya tienen uno.\n§7Solo se aplica a mods que reciben comandos de acuerdo a los ajustes anteriores.",
   "simpleconfig.config.common.menu.replace_menu_exceptions": "Excepciones de Reemplazar Menús",
   "simpleconfig.config.common.menu.replace_menu_exceptions:help": "Excepciones al ajuste anterior.\n§7En el caso de estar activado, los mods en esta lista conservarán sus menús (si los tienen)\n§7En caso contrario, los mods de esta lista serán los únicos con menús reemplazados.\n§7Solo se aplica a los mods que reciben comandos de acuerdo a los ajustes anteriores.",
+  "simpleconfig.config.common.menu.wrap_top_level_groups_as_categories": "Grupos Principales como Pestañas",
+  "simpleconfig.config.common.menu.wrap_top_level_groups_as_categories:help": "Traduce los grupos de primer nivel de otros mods en pestañas en vez de grupos.",
 
   "simpleconfig.config.server.desc": "Por defecto, solo los operadores de un servidor pueden modificar la configuración de servidor de un mod. Sin embargo, aquí puedes configurar permisos más específicos para cada mod/jugador",
   "simpleconfig.config.server.permissions": "Permisos",

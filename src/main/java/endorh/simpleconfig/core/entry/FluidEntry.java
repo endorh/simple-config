@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.FluidEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -41,7 +41,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 	protected @NotNull Predicate<Fluid> filter;
 	
 	@Internal public FluidEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable Fluid value, Predicate<Fluid> filter
 	) {
 		super(parent, name, value != null ? value : Fluids.WATER);
@@ -94,8 +94,8 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			return copy;
 		}
 		
-		@Override protected FluidEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
+		@Override protected FluidEntry buildEntry(ConfigEntryHolder parent, String name) {
+			if (parent.getRoot().getType() != SimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null)

@@ -16,7 +16,7 @@ import java.util.function.Predicate;
  * @param <Gui> The GUI type of the entry
  * @param <Self> The actual entry subtype to be returned by builder-like methods
  */
-public interface IErrorEntryBuilder<V, Config, Gui, Self extends ITooltipEntryBuilder<V, Gui, Self>> {
+public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuilder<V, Gui, Self>> {
 	
 	/**
 	 * Provide error messages for invalid values<br>

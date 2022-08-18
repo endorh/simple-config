@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.LongEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -18,7 +18,7 @@ import java.util.Optional;
 public class LongEntry extends AbstractRangedEntry<Long, Number, Long>
   implements IKeyEntry<Long> {
 	@Internal public LongEntry(
-	  ISimpleConfigEntryHolder parent, String name, long value
+	  ConfigEntryHolder parent, String name, long value
 	) {
 		super(parent, name, value);
 		commentMin = Long.MIN_VALUE;
@@ -53,7 +53,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long>
 		}
 		
 		@Override
-		protected LongEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected LongEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new LongEntry(parent, name, value);
 		}
 		

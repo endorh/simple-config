@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.icon;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.ui.icon.Icon.IconBuilder;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.ResourceLocation;
@@ -10,7 +10,7 @@ import net.minecraft.util.text.TextFormatting;
 
 @SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
 	public static final ResourceLocation TEXTURE = new ResourceLocation(
-	  ISimpleConfig.MOD_ID, "textures/gui/simpleconfig/config_menu.png");
+	  SimpleConfig.MOD_ID, "textures/gui/simpleconfig/config_menu.png");
 	
 	public static class Types {
 		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
@@ -307,9 +307,9 @@ import net.minecraft.util.text.TextFormatting;
 	}
 	
 	public static final AnimatedIcon SPINNING_CUBE = AnimatedIcon.ofStripe(
-	  new ResourceLocation(ISimpleConfig.MOD_ID, "textures/gui/simpleconfig/cube.png"),
+	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/cube.png"),
 	  20, 20, 8, 40);
 	public static final AnimatedIcon HOTKEY_RECORDING = AnimatedIcon.ofStripe(
-	  new ResourceLocation(ISimpleConfig.MOD_ID, "textures/gui/simpleconfig/hotkey_recording.png"),
+	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/hotkey_recording.png"),
 	  18, 18, 16, 50);
 }

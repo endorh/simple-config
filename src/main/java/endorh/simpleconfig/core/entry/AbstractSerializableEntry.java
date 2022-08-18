@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.SerializableEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -24,7 +24,7 @@ public abstract class AbstractSerializableEntry
   implements IKeyEntry<String> {
 	
 	protected AbstractSerializableEntry(
-	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
+	  ConfigEntryHolder parent, String name, V value, Class<?> typeClass
 	) {
 		super(parent, name, value);
 		this.typeClass = typeClass;

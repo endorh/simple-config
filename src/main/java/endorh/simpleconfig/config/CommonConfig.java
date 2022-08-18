@@ -1,7 +1,7 @@
 package endorh.simpleconfig.config;
 
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraftforge.fml.ModList;
@@ -16,10 +16,10 @@ import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static java.util.Arrays.asList;
 
 public class CommonConfig {
-	public static ISimpleConfig build() {
+	public static SimpleConfig build() {
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
 		  .map(ModInfo::getModId).collect(Collectors.toList());
-		return config(SimpleConfigMod.MOD_ID, ISimpleConfig.Type.COMMON, CommonConfig.class)
+		return config(SimpleConfigMod.MOD_ID, SimpleConfig.Type.COMMON, CommonConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.COMMON)
 		  .withColor(0x64FFA090)
 		  .withBackground("textures/block/warped_planks.png")
@@ -37,6 +37,9 @@ public class CommonConfig {
 				  string("").suggest(modNameSupplier)
 				).restart().editable(g -> g.getGUIBoolean("wrap_configs")
 				                          || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
+			   .add("wrap_top_level_groups_as_categories", yesNo(true).restart()
+			     .editable(g -> g.getGUIBoolean("wrap_configs")
+			                    || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
 		  ).n(
 			 category("demo")
 				.withIcon(SimpleConfigIcons.Status.INFO)
@@ -60,6 +63,7 @@ public class CommonConfig {
 		@Bind public static List<String> wrap_config_exceptions;
 		@Bind public static boolean replace_config_menus;
 		@Bind public static List<String> replace_menu_exceptions;
+		@Bind public static boolean wrap_top_level_groups_as_categories;
 		
 		public static boolean shouldWrapConfig(String modId) {
 			return wrap_configs != wrap_config_exceptions.contains(modId);

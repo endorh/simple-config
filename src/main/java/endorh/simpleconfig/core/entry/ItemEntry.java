@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.ItemEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -41,7 +41,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 	protected @NotNull Predicate<Item> filter;
 	
 	@Internal public ItemEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable Item value, Predicate<Item> filter
 	) {
 		super(parent, name, value != null ? value : Items.AIR);
@@ -90,8 +90,8 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			return copy;
 		}
 		
-		@Override protected ItemEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
+		@Override protected ItemEntry buildEntry(ConfigEntryHolder parent, String name) {
+			if (parent.getRoot().getType() != SimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null)

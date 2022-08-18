@@ -8,10 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.config.ServerConfig.permissions;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.command.arguments.IArgumentSerializer;
@@ -53,10 +53,10 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 		S src = context.getSource();
 		if (src instanceof ClientSuggestionProvider)
 			return listSuggestionsWithPermissions(builder);
-		Set<Type> types = isRemote? ISimpleConfig.Type.remoteTypes() : ISimpleConfig.Type.localTypes();
-		SimpleConfig.getAllConfigs().stream()
+		Set<Type> types = isRemote? SimpleConfig.Type.remoteTypes() : SimpleConfig.Type.localTypes();
+		SimpleConfigImpl.getAllConfigs().stream()
 		  .filter(c -> types.contains(c.getType()))
-		  .map(SimpleConfig::getModId)
+		  .map(SimpleConfigImpl::getModId)
 		  .forEach(builder::suggest);
 		return builder.buildFuture();
 	}
@@ -65,10 +65,10 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 	  SuggestionsBuilder builder
 	) {
 		PlayerEntity player = Minecraft.getInstance().player;
-		Set<Type> types = isRemote? ISimpleConfig.Type.remoteTypes() : ISimpleConfig.Type.localTypes();
-		SimpleConfig.getAllConfigs().stream()
+		Set<Type> types = isRemote? SimpleConfig.Type.remoteTypes() : SimpleConfig.Type.localTypes();
+		SimpleConfigImpl.getAllConfigs().stream()
 		  .filter(c -> types.contains(c.getType()))
-		  .map(SimpleConfig::getModId)
+		  .map(SimpleConfigImpl::getModId)
 		  .filter(id -> player == null || permissions.permissionFor(player, id).getLeft().canView())
 		  .forEach(builder::suggest);
 		return builder.buildFuture();

@@ -4,8 +4,8 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.ui.api.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
@@ -65,7 +65,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	) {
 		this.screen = screen;
 		area.setBounds(x, y, w, 18);
-		for (Type type: ISimpleConfig.Type.values()) {
+		for (Type type: SimpleConfig.Type.values()) {
 			knownLocalPresets.put(type, Maps.newHashMap());
 			knownRemotePresets.put(type, Maps.newHashMap());
 			knownResourcePresets.put(type, Maps.newHashMap());
@@ -514,13 +514,13 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		}
 		
 		public boolean isClient() {
-			return type == ISimpleConfig.Type.CLIENT;
+			return type == SimpleConfig.Type.CLIENT;
 		}
 		public boolean isCommon() {
-			return type == ISimpleConfig.Type.COMMON;
+			return type == SimpleConfig.Type.COMMON;
 		}
 		public boolean isServer() {
-			return type == ISimpleConfig.Type.SERVER;
+			return type == SimpleConfig.Type.SERVER;
 		}
 		
 		public Location getLocation() {

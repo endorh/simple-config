@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.CompoundNBTEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.nbt.CompoundNBT;
@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, CompoundNBTEntry> {
 	protected static final Pattern STYLE_COMPONENT = Pattern.compile("§[\\da-f]");
 	
-	@Internal public CompoundNBTEntry(ISimpleConfigEntryHolder parent, String name, CompoundNBT value) {
+	@Internal public CompoundNBTEntry(ConfigEntryHolder parent, String name, CompoundNBT value) {
 		super(parent, name, value, CompoundNBT.class);
 	}
 	
@@ -30,7 +30,7 @@ public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, Com
 		}
 		
 		@Override
-		protected CompoundNBTEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected CompoundNBTEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new CompoundNBTEntry(parent, name, value);
 		}
 		

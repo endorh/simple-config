@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.FloatEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
   implements IKeyEntry<Float> {
 	@Internal public FloatEntry(
-	  ISimpleConfigEntryHolder parent, String name, float value
+	  ConfigEntryHolder parent, String name, float value
 	) {
 		super(parent, name, value);
 		commentMin = -Float.MAX_VALUE;
@@ -77,7 +77,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 		}
 		
 		@Override
-		protected FloatEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected FloatEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new FloatEntry(parent, name, value);
 		}
 		

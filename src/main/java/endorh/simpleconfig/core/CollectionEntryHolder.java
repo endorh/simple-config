@@ -1,19 +1,19 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Internal public class CollectionEntryHolder implements ISimpleConfigEntryHolder {
-	protected final ISimpleConfig root;
+@Internal public class CollectionEntryHolder implements ConfigEntryHolder {
+	protected final SimpleConfig root;
 	protected int id_gen = 0;
 	
 	@Internal public CollectionEntryHolder(
-	  ISimpleConfig root
+	  SimpleConfig root
 	) {
 		this.root = root;
 	}
@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 	}
 	
 	@Override
-	public ISimpleConfig getRoot() {
+	public SimpleConfig getRoot() {
 		return root;
 	}
 	
@@ -57,7 +57,7 @@ import org.jetbrains.annotations.Nullable;
 		throw new UnsupportedOperationException();
 	}
 	
-	@Override public @NotNull ISimpleConfigEntryHolder getChild(String path) {
+	@Override public @NotNull ConfigEntryHolder getChild(String path) {
 		throw new NoSuchConfigEntryError(path);
 	}
 	

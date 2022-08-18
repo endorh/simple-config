@@ -1,12 +1,12 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.api.ISimpleConfigCategory;
+import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.config.ClientConfig;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
+import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
@@ -34,27 +34,27 @@ import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
  * Has its own tab in the GUI, and it's no different to a top-level group in the config<br>
  * Each type of config (Client/Server (and Common)) has its default category too,
  * containing all the root entries/groups<br>
- * You may access any config entry under a category with {@link SimpleConfigCategory#get(String)},
+ * You may access any config entry under a category with {@link SimpleConfigCategoryImpl#get(String)},
  * which accepts dot-separated paths to entries, taking into account their group structure
  */
-public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
-  implements ISimpleConfigCategory {
-	public final SimpleConfig parent;
+public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
+  implements SimpleConfigCategory {
+	public final SimpleConfigImpl parent;
 	public final String name;
 	protected final String title;
 	protected final String tooltip;
-	protected final @Nullable Consumer<ISimpleConfigCategory> baker;
-	protected Map<String, SimpleConfigGroup> groups;
+	protected final @Nullable Consumer<SimpleConfigCategory> baker;
+	protected Map<String, SimpleConfigGroupImpl> groups;
 	protected List<IGUIEntry> order;
-	protected @Nullable BiConsumer<ISimpleConfigCategory, ConfigCategoryBuilder> decorator;
+	protected @Nullable BiConsumer<SimpleConfigCategory, ConfigCategoryBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
 	protected boolean isRoot;
 	
-	@Internal protected SimpleConfigCategory(
-	  SimpleConfig parent, String name, String title, boolean isRoot,
-	  @Nullable Consumer<ISimpleConfigCategory> baker
+	@Internal protected SimpleConfigCategoryImpl(
+	  SimpleConfigImpl parent, String name, String title, boolean isRoot,
+	  @Nullable Consumer<SimpleConfigCategory> baker
 	) {
 		this.parent = parent;
 		this.name = name;
@@ -67,7 +67,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
 	
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
-	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> order,
+	  Map<String, SimpleConfigGroupImpl> groups, List<IGUIEntry> order,
 	  Icon icon, int color
 	) {
 		if (this.entries != null)
@@ -116,7 +116,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
 	}
 	
 	@Override @SuppressWarnings("unused")
-	public SimpleConfigGroup getGroup(String path) {
+	public SimpleConfigGroupImpl getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
@@ -155,7 +155,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
 	}
 	
 	@Override protected void bake() {
-		for (SimpleConfigGroup group : groups.values())
+		for (SimpleConfigGroupImpl group : groups.values())
 			group.bake();
 		if (baker != null)
 			baker.accept(this);
@@ -165,7 +165,7 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
 	 * Bakes all the backing fields<br>
 	 */
 	protected void bakeFields() {
-		for (SimpleConfigGroup group : groups.values())
+		for (SimpleConfigGroupImpl group : groups.values())
 			group.bakeFields();
 		for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 			entry.bakeField();
@@ -173,12 +173,12 @@ public class SimpleConfigCategory extends AbstractSimpleConfigEntryHolder
 	
 	/**
 	 * Commits any changes in the backing fields to the actual config file<br>
-	 * You may also call this method on the root {@link SimpleConfig}
+	 * You may also call this method on the root {@link SimpleConfigImpl}
 	 * @throws InvalidConfigValueException if the current value of a field is invalid.
 	 */
 	@Override public void commitFields() {
 		try {
-			for (SimpleConfigGroup group : groups.values())
+			for (SimpleConfigGroupImpl group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 				entry.commitField();

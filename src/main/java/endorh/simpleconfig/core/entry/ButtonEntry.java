@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ButtonEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ButtonFieldBuilder;
@@ -17,22 +17,22 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ButtonEntry extends GUIOnlyEntry<
-  Consumer<ISimpleConfigEntryHolder>, Runnable, ButtonEntry> {
+  Consumer<ConfigEntryHolder>, Runnable, ButtonEntry> {
 	protected Supplier<ITextComponent> buttonLabelSupplier = () -> new StringTextComponent("");
 	
 	public ButtonEntry(
-	  ISimpleConfigEntryHolder parent, String name, Consumer<ISimpleConfigEntryHolder> value
+	  ConfigEntryHolder parent, String name, Consumer<ConfigEntryHolder> value
 	) {
 		super(parent, name, value, false, Consumer.class);
 	}
 	
 	public static class Builder extends GUIOnlyEntry.Builder<
-	  Consumer<ISimpleConfigEntryHolder>, Runnable, ButtonEntry, ButtonEntryBuilder, Builder
+	  Consumer<ConfigEntryHolder>, Runnable, ButtonEntry, ButtonEntryBuilder, Builder
 	> implements ButtonEntryBuilder {
 		protected Supplier<ITextComponent> buttonLabelSupplier =
 		  () -> new TranslationTextComponent("simpleconfig.label.run");
 		
-		public Builder(Consumer<ISimpleConfigEntryHolder> value) {
+		public Builder(Consumer<ConfigEntryHolder> value) {
 			super(value, Void.class);
 		}
 		
@@ -55,7 +55,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 			return copy;
 		}
 		
-		@Override protected ButtonEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected ButtonEntry buildEntry(ConfigEntryHolder parent, String name) {
 			final ButtonEntry entry = new ButtonEntry(parent, name, value);
 			entry.buttonLabelSupplier = buttonLabelSupplier;
 			return entry;
@@ -69,7 +69,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 	}
 	
 	@Override public Runnable forGui(
-	  Consumer<ISimpleConfigEntryHolder> value
+	  Consumer<ConfigEntryHolder> value
 	) {
 		return () -> value.accept(parent);
 	}

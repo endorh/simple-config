@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -41,7 +41,7 @@ public class StringEntry
 	protected int maxLength;
 	protected int minLength;
 	
-	@Internal public StringEntry(ISimpleConfigEntryHolder parent, String name, String value) {
+	@Internal public StringEntry(ConfigEntryHolder parent, String name, String value) {
 		super(parent, name, value);
 		suggestionProvider = new SimpleComboBoxModel<>(
 		  () -> choiceSupplier != null? choiceSupplier.get() : Lists.newArrayList());
@@ -113,7 +113,7 @@ public class StringEntry
 			return minLength(1);
 		}
 		
-		@Override protected StringEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected StringEntry buildEntry(ConfigEntryHolder parent, String name) {
 			final StringEntry entry = new StringEntry(parent, name, value);
 			if (value.length() > maxLength)
 				throw new IllegalArgumentException(

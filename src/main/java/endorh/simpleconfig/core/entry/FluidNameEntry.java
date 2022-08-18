@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.FluidNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -30,7 +30,7 @@ import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofFluidN
 public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 	
 	@Internal public FluidNameEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable ResourceLocation value
 	) {
 		super(parent, name, value != null ? value : new ResourceLocation(""));
@@ -60,8 +60,8 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		}
 		
 		@Override
-		protected FluidNameEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
+		protected FluidNameEntry buildEntry(ConfigEntryHolder parent, String name) {
+			if (parent.getRoot().getType() != SimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {

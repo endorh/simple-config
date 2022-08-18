@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ColorEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -24,7 +24,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
   implements IKeyEntry<Integer> {
 	protected final boolean alpha;
 	@Internal public ColorEntry(
-	  ISimpleConfigEntryHolder parent, String name, Color value, boolean alpha
+	  ConfigEntryHolder parent, String name, Color value, boolean alpha
 	) {
 		super(parent, name, value);
 		this.alpha = alpha;
@@ -49,7 +49,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
 		}
 		
 		@Override
-		protected ColorEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ColorEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new ColorEntry(parent, name, value, alpha);
 		}
 		

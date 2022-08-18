@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EntryListEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -40,7 +40,7 @@ public class EntryListEntry
 	protected CollectionEntryHolder holder;
 	
 	@Internal public EntryListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable List<V> value, B entryBuilder) {
 		super(parent, name, value);
 		holder = new CollectionEntryHolder(parent.getRoot());
@@ -77,7 +77,7 @@ public class EntryListEntry
 		}
 		
 		@Override protected EntryListEntry<V, C, G, B> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			return new EntryListEntry<>(parent, name, value, builder);
 		}

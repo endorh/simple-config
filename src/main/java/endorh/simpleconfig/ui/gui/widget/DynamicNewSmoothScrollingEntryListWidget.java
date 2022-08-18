@@ -41,7 +41,9 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	}
 	
 	@Override public void resize(int width, int height, int top, int bottom) {
-		final double prevTarget = target + (this.bottom - this.top) / 2D;
+		double center = (this.bottom - this.top) / 2D;
+		if (center < 0) center = (bottom - top) / 2D;
+		final double prevTarget = target + center;
 		super.resize(width, height, top, bottom);
 		scrollTo(prevTarget - (this.bottom - this.top) / 2D, false);
 	}

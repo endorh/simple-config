@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import net.minecraft.util.text.*;
@@ -25,7 +25,7 @@ public abstract class RangedListEntry<
 	protected double commentMax = Integer.MAX_VALUE;
 	
 	public RangedListEntry(
-	  ISimpleConfigEntryHolder parent, String name, @Nullable List<V> value
+	  ConfigEntryHolder parent, String name, @Nullable List<V> value
 	) {
 		super(parent, name, value);
 	}
@@ -94,7 +94,7 @@ public abstract class RangedListEntry<
 		protected void checkBounds() {}
 		
 		@Override
-		protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+		protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			checkBounds();
 			final Entry e = super.build(parent, name);
 			e.min = min;

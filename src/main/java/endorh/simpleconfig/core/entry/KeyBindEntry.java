@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.KeyBindEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -63,7 +63,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	protected boolean reportOverlaps = true;
 	private ExtendedKeyBind pendingKeyBind = null;
 	
-	public KeyBindEntry(ISimpleConfigEntryHolder parent, String name, KeyBindMapping value) {
+	public KeyBindEntry(ConfigEntryHolder parent, String name, KeyBindMapping value) {
 		super(parent, name, value);
 	}
 	
@@ -117,7 +117,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			return copy;
 		}
 		
-		@Override protected KeyBindEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected KeyBindEntry buildEntry(ConfigEntryHolder parent, String name) {
 			final KeyBindEntry entry = new KeyBindEntry(parent, name, value);
 			entry.defaultSettings = defaultSettings;
 			entry.keyBind = keyBind;

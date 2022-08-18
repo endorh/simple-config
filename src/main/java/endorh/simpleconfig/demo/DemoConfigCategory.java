@@ -3,12 +3,12 @@ package endorh.simpleconfig.demo;
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.AbstractRange.DoubleRange;
+import endorh.simpleconfig.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ICategoryBuilder;
-import endorh.simpleconfig.api.ISimpleConfigCategory;
+import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
-import endorh.simpleconfig.core.SimpleConfigGroup;
+import endorh.simpleconfig.core.SimpleConfigGroupImpl;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
@@ -69,7 +69,7 @@ public class DemoConfigCategory {
 	//   default category for its config (Client / Server)
 	// Only server operators can access categories registered
 	//   in the server config
-	public static ICategoryBuilder getDemoCategory() {
+	public static ConfigCategoryBuilder getDemoCategory() {
 		// This value will be used below
 		CompoundNBT nbt = new CompoundNBT();
 		nbt.putString("name", "Steve");
@@ -603,7 +603,7 @@ public class DemoConfigCategory {
 	}
 	
 	// Sometimes baking isn't as simple as setting a few fields
-	public static void bakeDemoCategory(ISimpleConfigCategory demo) {
+	public static void bakeDemoCategory(SimpleConfigCategory demo) {
 		// The baker always runs after all backing fields have been baked
 		// So we may safely use them to create composite values, or transform them
 		
@@ -711,7 +711,7 @@ public class DemoConfigCategory {
 			// The bake method must receive either a SimpleConfig, a
 			//   SimpleConfigCategory or a SimpleConfigGroup depending
 			//   on where it is defined
-			static void bake(SimpleConfigGroup g) {
+			static void bake(SimpleConfigGroupImpl g) {
 				// Since int_value has been already updated, we may
 				//   use its value for other computations
 				// It's sometimes useful to precompute certain values

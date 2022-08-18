@@ -6,10 +6,10 @@ import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.AbstractRange.IntRange;
 import endorh.simpleconfig.api.AbstractRange.LongRange;
 import endorh.simpleconfig.api.*;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.*;
-import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
-import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
+import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;
+import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.*;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
@@ -36,24 +36,24 @@ import java.util.regex.Pattern;
 @Internal public class ConfigBuilderFactoryImpl implements ConfigBuilderFactory {
 	@Internal public ConfigBuilderFactoryImpl() {}
 	
-	@Override public ISimpleConfigBuilder builder(String modId, Type type) {
-		return new SimpleConfigBuilder(modId, type);
+	@Override public SimpleConfigBuilder builder(String modId, Type type) {
+		return new SimpleConfigBuilderImpl(modId, type);
 	}
-	@Override public ISimpleConfigBuilder builder(String modId, Type type, Class<?> configClass) {
-		return new SimpleConfigBuilder(modId, type, configClass);
+	@Override public SimpleConfigBuilder builder(String modId, Type type, Class<?> configClass) {
+		return new SimpleConfigBuilderImpl(modId, type, configClass);
 	}
 	
-	@Override public IGroupBuilder group(String name) {
+	@Override public ConfigGroupBuilder group(String name) {
 		return group(name, false);
 	}
-	@Override public IGroupBuilder group(String name, boolean expand) {
+	@Override public ConfigGroupBuilder group(String name, boolean expand) {
 		return new GroupBuilder(name, expand);
 	}
 	
-	@Override public ICategoryBuilder category(String name) {
+	@Override public ConfigCategoryBuilder category(String name) {
 		return new CategoryBuilder(name);
 	}
-	@Override public ICategoryBuilder category(String name, Class<?> configClass) {
+	@Override public ConfigCategoryBuilder category(String name, Class<?> configClass) {
 		return new CategoryBuilder(name, configClass);
 	}
 	
@@ -93,7 +93,7 @@ import java.util.regex.Pattern;
 		return new ButtonEntry.Builder(h -> action.run());
 	}
 	
-	@Override public ButtonEntry.Builder button(Consumer<ISimpleConfigEntryHolder> action) {
+	@Override public ButtonEntry.Builder button(Consumer<ConfigEntryHolder> action) {
 		return new ButtonEntry.Builder(action);
 	}
 	
@@ -106,7 +106,7 @@ import java.util.regex.Pattern;
 	
 	@Override
 	public <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>> EntryButtonEntryBuilder<V, Gui, B> button(
-	  B inner, BiConsumer<V, ISimpleConfigEntryHolder> action
+	  B inner, BiConsumer<V, ConfigEntryHolder> action
 	) {
 		return new EntryButtonEntry.Builder<>(inner, action);
 	}

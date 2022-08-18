@@ -167,6 +167,8 @@
   "simpleconfig.config.common.menu.replace_config_menus:help": "Replace configuration menus of mods that already had one.\n§7Only applies to mods that receive menus according to the above settings.",
   "simpleconfig.config.common.menu.replace_menu_exceptions": "Replace Menu Exceptions",
   "simpleconfig.config.common.menu.replace_menu_exceptions:help": "Exceptions to the above setting\n§7If enabled, mods in this list won't have their menus replaced\n§7Otherwise, the mods in this list will be the only replaced ones.",
+  "simpleconfig.config.common.menu.wrap_top_level_groups_as_categories": "Wrap Top Groups as Tabs",
+  "simpleconfig.config.common.menu.wrap_top_level_groups_as_categories:help": "Wraps top level groups in other mods' configs as tabs rather than normal groups.",
   "simpleconfig.config.common.demo": "Demo",
   "simpleconfig.config.common.demo.bool": "Yes/No",
   "simpleconfig.config.common.demo.number": "Number",

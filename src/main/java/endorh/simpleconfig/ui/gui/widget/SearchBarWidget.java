@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
@@ -175,7 +175,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 				final int size = search.regex_search_history_size;
 				final Pair<Integer, List<Pattern>> newHistory = Pair.of(
 				  size, new ArrayList<>(sh.subList(0, min(sh.size(), size))));
-				ISimpleConfigEntryHolder c = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+				ConfigEntryHolder c = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
 				String REGEX_SEARCH_HISTORY = "regex_search_history";
 				if (c.hasGUI()) {
 					Pair<Integer, List<String>> newGUIHistory = Pair.of(
@@ -198,7 +198,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 				final Pair<Integer, List<String>> newHistory = Pair.of(
 				  size, new ArrayList<>(sh.subList(0, min(sh.size(), size))));
 				String SEARCH_HISTORY = "search_history";
-				ISimpleConfigEntryHolder c = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+				ConfigEntryHolder c = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
 				if (c.hasGUI()) {
 					c.setGUI(SEARCH_HISTORY, newHistory);
 					search.search_history = newHistory.getValue();
@@ -219,7 +219,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		caseSensitive = caseButton.getValue();
 		regex = regexButton.getValue();
 		filter = filterButton.getValue();
-		ISimpleConfigEntryHolder g = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+		ConfigEntryHolder g = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
 		String SEARCH_FILTER = "search_filter";
 		String SEARCH_CASE_SENSITIVE = "search_case_sensitive";
 		String SEARCH_REGEX = "search_regex";

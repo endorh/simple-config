@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleListBuilder;
@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public class DoubleListEntry extends RangedListEntry<Double, Number, Double, DoubleListEntry> {
 	@Internal public DoubleListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable List<Double> value
 	) {
 		super(parent, name, value);
@@ -48,7 +48,7 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 		}
 		
 		@Override
-		protected DoubleListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected DoubleListEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new DoubleListEntry(parent, name, value);
 		}
 		

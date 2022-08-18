@@ -30,11 +30,11 @@ public class SimpleConfigModConfig extends ModConfig {
 	  Objects.requireNonNull(ObfuscationReflectionHelper.getPrivateValue(
 		 ConfigTracker.class, ConfigTracker.INSTANCE, "fileMap"));
 	private final ConfigFileTypeHandler handler = SimpleConfigFileTypeHandler.YAML;
-	private final SimpleConfig config;
+	private final SimpleConfigImpl config;
 	private final SimpleConfigCommentedYamlFormat configFormat;
 	
 	public SimpleConfigModConfig(
-	  SimpleConfig config, ModContainer container
+	  SimpleConfigImpl config, ModContainer container
 	) {
 		super(config.getType().asConfigType(), config.spec, container, config.getFileName());
 		this.config = config;
@@ -43,7 +43,7 @@ public class SimpleConfigModConfig extends ModConfig {
 		FILE_MAP.remove(getFileName());
 	}
 	
-	public SimpleConfig getSimpleConfig() {
+	public SimpleConfigImpl getSimpleConfig() {
 		return config;
 	}
 	
@@ -68,8 +68,8 @@ public class SimpleConfigModConfig extends ModConfig {
 		) {
 			return stage.markCompleteAwaitingOthers(Unit.INSTANCE)
 			  .thenRunAsync(
-				 SelectiveReloadStateHandler.INSTANCE.get().test(VanillaResourceType.LANGUAGES)
-				 ? SimpleConfig::updateAllFileTranslations
+			    SelectiveReloadStateHandler.INSTANCE.get().test(VanillaResourceType.LANGUAGES)
+				 ? SimpleConfigImpl::updateAllFileTranslations
 				 : () -> {}
 			  );
 		}
@@ -81,7 +81,7 @@ public class SimpleConfigModConfig extends ModConfig {
 		 * FMLServerStartingEvent is posted after server translations have been loaded.
 		 */
 		@SubscribeEvent public static void onServerLanguageReloaded(FMLServerStartingEvent event) {
-			SimpleConfig.updateAllFileTranslations();
+			SimpleConfigImpl.updateAllFileTranslations();
 		}
 	}
 }

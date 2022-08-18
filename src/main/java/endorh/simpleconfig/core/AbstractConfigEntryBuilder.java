@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import net.minecraft.util.text.ITextComponent;
@@ -40,7 +40,7 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> tooltipSupplier = null;
-	protected @Nullable Function<ISimpleConfigEntryHolder, Boolean> editableSupplier = null;
+	protected @Nullable Function<ConfigEntryHolder, Boolean> editableSupplier = null;
 	protected @Nullable String translation = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
@@ -61,7 +61,7 @@ public abstract class AbstractConfigEntryBuilder<
 		).withCommitter(Function.identity()) : null;
 	}
 	
-	@Contract(pure=true) protected abstract Entry buildEntry(ISimpleConfigEntryHolder parent, String name);
+	@Contract(pure=true) protected abstract Entry buildEntry(ConfigEntryHolder parent, String name);
 	
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	private static <T> Optional<T> or(Optional<T> a, Supplier<Optional<T>> b) {
@@ -230,7 +230,7 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self editable(Function<ISimpleConfigEntryHolder, Boolean> editable) {
+	@Override @Contract(pure=true) public Self editable(Function<ConfigEntryHolder, Boolean> editable) {
 		SelfImpl copy = copy();
 		copy.editableSupplier = editable;
 		return copy.castSelf();
@@ -280,12 +280,12 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	/**
 	 * Subclasses should instead override
-	 * {@link AbstractConfigEntryBuilder#buildEntry(ISimpleConfigEntryHolder, String)}
+	 * {@link AbstractConfigEntryBuilder#buildEntry(ConfigEntryHolder, String)}
 	 * in most cases<br>
 	 * Overrides should call super
 	 */
 	@Contract(value="_, _ -> new", pure=true) @MustBeInvokedByOverriders
-	protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+	protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 		final Entry e = buildEntry(parent, name);
 		e.requireRestart = requireRestart;
 		e.experimental = experimental;

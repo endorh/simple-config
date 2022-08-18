@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.ISerializableConfigEntry;
 import endorh.simpleconfig.api.entry.ISerializableEntryBuilder;
@@ -23,7 +23,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 	public ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	@Internal public SerializableEntry(
-	  ISimpleConfigEntryHolder parent, String name, V value,
+	  ConfigEntryHolder parent, String name, V value,
 	  Function<V, String> serializer,
 	  Function<String, Optional<V>> deserializer,
 	  Class<?> typeClass
@@ -70,7 +70,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 		}
 		
 		@Override
-		protected SerializableEntry<V> buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected SerializableEntry<V> buildEntry(ConfigEntryHolder parent, String name) {
 			return new SerializableEntry<>(parent, name, value, serializer, deserializer, typeClass);
 		}
 		

@@ -113,7 +113,7 @@ public class EntryPairListListEntry<
 	}
 	
 	@Override public String providePath(AbstractConfigEntry<?> child) {
-		String prefix = getRelPath() + ".";
+		String prefix = getCatPath() + ".";
 		int i = 0;
 		for (EntryPairCell<K, V, KE, E> cell : cells) {
 			if (cell.keyEntry == child) return prefix + "key." + i;

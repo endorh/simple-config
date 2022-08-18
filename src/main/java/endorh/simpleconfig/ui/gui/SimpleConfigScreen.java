@@ -6,15 +6,16 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
-import endorh.simpleconfig.api.ISimpleConfigGroup;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState.IConfigCategoryGUIState;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
@@ -26,6 +27,8 @@ import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Types;
+import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState;
+import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState.ConfigCategoryGUIState;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
@@ -121,6 +124,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	protected boolean isSelecting = false;
 	
 	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
+	protected IConfigScreenGUIState prevState;
 	
 	// Tick caches
 	private List<EntryError> errors = new ArrayList<>();
@@ -156,11 +160,11 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		minecraft = Minecraft.getInstance();
 		listWidgets = new HashMap<>();
 		modeButtonMap = Util.make(new EnumMap<>(EditType.class), m -> {
-			m.put(ISimpleConfig.EditType.CLIENT, clientButton = createModeButton(ISimpleConfig.EditType.CLIENT));
-			m.put(ISimpleConfig.EditType.COMMON, commonButton = createModeButton(ISimpleConfig.EditType.COMMON));
-			m.put(ISimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(
-			  ISimpleConfig.EditType.SERVER_COMMON));
-			m.put(ISimpleConfig.EditType.SERVER, serverButton = createModeButton(ISimpleConfig.EditType.SERVER));
+			m.put(SimpleConfig.EditType.CLIENT, clientButton = createModeButton(SimpleConfig.EditType.CLIENT));
+			m.put(SimpleConfig.EditType.COMMON, commonButton = createModeButton(SimpleConfig.EditType.COMMON));
+			m.put(SimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(
+			  SimpleConfig.EditType.SERVER_COMMON));
+			m.put(SimpleConfig.EditType.SERVER, serverButton = createModeButton(SimpleConfig.EditType.SERVER));
 		});
 		
 		editFileButton = MultiFunctionImageButton.of(20, 20, Buttons.EDIT_FILE, ButtonAction.of(
@@ -261,7 +265,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		if (hotkey != null) {
 			editedHotKeyButton.setMapping(hotkey.getKeyMapping());
 			editedHotKeyNameTextField.setText(hotkey.getName());
-			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, ISimpleConfig.EditType.fromAlias(alias), map));
+			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, SimpleConfig.EditType.fromAlias(alias), map));
 		}
 		getAllMainEntries().forEach(e -> e.setEditingHotKeyAction(isEditingConfigHotKey()));
 	}
@@ -313,11 +317,11 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		} else bx -= 44;
 		
 		EditType type = getEditedType();
-		clientButton.setTintColor(type == ISimpleConfig.EditType.CLIENT? 0x80287734 : 0);
-		commonButton.setDefaultIcon(mayHaveType(ISimpleConfig.EditType.SERVER_COMMON)? Types.COMMON_CLIENT : Types.COMMON);
-		commonButton.setTintColor(type == ISimpleConfig.EditType.COMMON? 0x80906434 : 0);
-		remoteCommonButton.setTintColor(type == ISimpleConfig.EditType.SERVER_COMMON? 0x80906434 : 0);
-		serverButton.setTintColor(type == ISimpleConfig.EditType.SERVER? 0x800A426A : 0);
+		clientButton.setTintColor(type == SimpleConfig.EditType.CLIENT? 0x80287734 : 0);
+		commonButton.setDefaultIcon(mayHaveType(SimpleConfig.EditType.SERVER_COMMON)? Types.COMMON_CLIENT : Types.COMMON);
+		commonButton.setTintColor(type == SimpleConfig.EditType.COMMON? 0x80906434 : 0);
+		remoteCommonButton.setTintColor(type == SimpleConfig.EditType.SERVER_COMMON? 0x80906434 : 0);
+		serverButton.setTintColor(type == SimpleConfig.EditType.SERVER? 0x800A426A : 0);
 		
 		clientButton.setWidthRange(20, 80);
 		commonButton.setWidthRange(20, 80);
@@ -325,12 +329,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		serverButton.setWidthRange(20, 80);
 		
 		modeButtons = new ArrayList<>();
-		if (hasType(ISimpleConfig.EditType.CLIENT)) modeButtons.add(clientButton);
-		if (hasType(ISimpleConfig.EditType.COMMON)) {
+		if (hasType(SimpleConfig.EditType.CLIENT)) modeButtons.add(clientButton);
+		if (hasType(SimpleConfig.EditType.COMMON)) {
 			modeButtons.add(commonButton);
-			if (mayHaveType(ISimpleConfig.EditType.SERVER_COMMON)) modeButtons.add(remoteCommonButton);
+			if (mayHaveType(SimpleConfig.EditType.SERVER_COMMON)) modeButtons.add(remoteCommonButton);
 		}
-		if (hasType(ISimpleConfig.EditType.SERVER)) modeButtons.add(serverButton);
+		if (hasType(SimpleConfig.EditType.SERVER)) modeButtons.add(serverButton);
 		
 		if (bx + modeButtons.stream().mapToInt(MultiFunctionIconButton::getWidth).sum() > 0.35 * width)
 			modeButtons.forEach(b -> b.setExactWidth(20));
@@ -435,6 +439,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		
 		// Post init
 		if (afterInitConsumer != null) afterInitConsumer.accept(this);
+		
+		if (prevState != null) {
+			IConfigScreenGUIState state = prevState;
+			prevState = null;
+			loadConfigScreenGUIState(state);
+		}
 	}
 	
 	public ListWidget<AbstractConfigEntry<?>> getListWidget(ConfigCategory category) {
@@ -457,7 +467,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		// First add for the current type
 		updateErrors(errors, getSortedTypeCategories());
 		// Then for the other types
-		for (EditType t: ISimpleConfig.EditType.values())
+		for (EditType t: SimpleConfig.EditType.values())
 			if (t != type) updateErrors(errors, sortedCategoriesMap.get(t));
 		this.errors = errors;
 	}
@@ -496,15 +506,15 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	) {
 		super.setRemoteCommonConfigProvider(remoteConfigProvider);
 		if (getEditedType().isOnlyRemote()) {
-			showType(Arrays.stream(ISimpleConfig.EditType.values()).filter(
+			showType(Arrays.stream(SimpleConfig.EditType.values()).filter(
 			  t -> !t.isOnlyRemote() && hasType(t)
 			).findFirst().orElseThrow(
 			  () -> new IllegalStateException("Config screen cannot have only remote configs")));
 		}
 		remoteConfigs.clear();
 		loadedRemoteConfigs.clear();
-		if (remoteConfigProvider != null) Arrays.stream(ISimpleConfig.EditType.values())
-		  .filter(ISimpleConfig.EditType::isOnlyRemote)
+		if (remoteConfigProvider != null) Arrays.stream(SimpleConfig.EditType.values())
+		  .filter(SimpleConfig.EditType::isOnlyRemote)
 		  .forEach(t -> remoteConfigProvider.getRemoteConfig(t).thenAccept(c -> {
 			  if (c != null) {
 				  remoteConfigs.put(t, c);
@@ -531,22 +541,24 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			lastCategories.put(selectedCategory.getType(), selectedCategory);
 			super.setSelectedCategory(category);
 			ListWidget<AbstractConfigEntry<?>> prevListWidget = listWidget;
-			init(Minecraft.getInstance(), width, height);
-			prevListWidget.onReplaced(listWidget);
-			if (typeChange) presetPickerWidget.refresh();
-			listWidget.playTabSlideAnimation(prevIndex > index);
-			if (isShowingTabs()) {
-				final int innerIndex = getSortedTypeCategories().indexOf(category);
-				int x = 0;
-				for (int i = 0; i < innerIndex; i++)
-					x += tabButtons.get(i).getWidth() + 2;
-				x += tabButtons.get(innerIndex).getWidth() / 2;
-				x -= tabsScroller.getBounds().width / 2;
-				tabsScroller.scrollTo(x, true, 250L);
-			}
-			searchBar.refresh();
-			if (searchBar.isExpanded()) {
-				setListener(searchBar);
+			if (width > 0) {
+				init(Minecraft.getInstance(), width, height);
+				if (prevListWidget != null) prevListWidget.onReplaced(listWidget);
+				if (typeChange) presetPickerWidget.refresh();
+				listWidget.playTabSlideAnimation(prevIndex > index);
+				if (isShowingTabs()) {
+					final int innerIndex = getSortedTypeCategories().indexOf(category);
+					int x = 0;
+					for (int i = 0; i < innerIndex; i++)
+						x += tabButtons.get(i).getWidth() + 2;
+					x += tabButtons.get(innerIndex).getWidth() / 2;
+					x -= tabsScroller.getBounds().width / 2;
+					tabsScroller.scrollTo(x, true, 250L);
+				}
+				searchBar.refresh();
+				if (searchBar.isExpanded()) {
+					setListener(searchBar);
+				}
 			}
 		}
 	}
@@ -590,21 +602,81 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		return true;
 	}
 	
-	@Override public void loadConfigScreenGUIState(IConfigScreenGUIState state) {
+	@Override public void loadConfigScreenGUIState(@Nullable IConfigScreenGUIState state) {
 		if (state != null) {
-			// TODO
+			if (width == 0) {
+				prevState = state;
+				return;
+			}
+			showType(state.getEditedType());
+			state.getSelectedCategories().forEach((t, n) -> {
+				ConfigCategory c = getTypeCategories(t).get(n);
+				if (c != null) {
+					lastCategories.put(t, c);
+					if (t == getEditedType()) setSelectedCategory(c);
+				}
+			});
+			state.getCategoryStates().forEach((t, m) -> {
+				Map<String, ConfigCategory> typeCategories = getTypeCategories(t);
+				m.forEach((n, s) -> {
+					ConfigCategory c = typeCategories.get(n);
+					if (c != null) loadConfigCategoryGUIState(c, s);
+				});
+			});
 		}
 	}
+	
+	protected void loadConfigCategoryGUIState(ConfigCategory category, IConfigCategoryGUIState state) {
+		state.getExpandStates().forEach((p, e) -> {
+			AbstractConfigEntry<?> entry = category.getEntry(p);
+			if (entry instanceof IExpandable) ((IExpandable) entry).setExpanded(e);
+		});
+		ListWidget<AbstractConfigEntry<?>> widget = getListWidget(category);
+		widget.setScroll(state.getScrollOffset());
+		String selected = state.getSelectedEntry();
+		if (selected != null) {
+			AbstractConfigEntry<?> entry = category.getEntry(selected);
+			if (entry != null) {
+				widget.setSelectedTarget(entry);
+				if (getSelectedCategory() == category) entry.navigate();
+			}
+		}
+	}
+	
 	@Override public IConfigScreenGUIState saveConfigScreenGUIState() {
-		return super.saveConfigScreenGUIState();
+		ConfigScreenGUIState state = new ConfigScreenGUIState();
+		state.setEditedType(getEditedType());
+		Map<EditType, String> selectedCategories = state.getSelectedCategories();
+		Map<EditType, Map<String, IConfigCategoryGUIState>> categoryStates = state.getCategoryStates();
+		lastCategories.forEach((t, c) -> selectedCategories.put(t, c.getName()));
+		selectedCategories.put(getEditedType(), getSelectedCategory().getName());
+		sortedCategoriesMap.forEach((t, l) -> {
+			Map<String, IConfigCategoryGUIState> states = new HashMap<>();
+			categoryStates.put(t, states);
+			l.forEach(c -> states.put(c.getName(), saveConfigCategoryGUIState(c)));
+		});
+		return state;
+	}
+	
+	protected IConfigCategoryGUIState saveConfigCategoryGUIState(ConfigCategory category) {
+		ConfigCategoryGUIState state = new ConfigCategoryGUIState();
+		ListWidget<AbstractConfigEntry<?>> widget = listWidgets.get(category);
+		Map<String, Boolean> states = state.getExpandStates();
+		category.getAllEntries(e -> e instanceof IExpandable)
+		  .forEach(e -> states.put(e.getCatPath(), ((IExpandable) e).isExpanded()));
+		if (widget != null) {
+			AbstractConfigEntry<?> selected = widget.getSelectedEntry();
+			if (selected != null) state.setSelectedEntry(selected.getCatPath());
+			state.setScrollOffset((int) widget.getScroll());
+		}
+		return state;
 	}
 	
 	@Override protected void saveHotkey() {
 		ConfigHotKey hotkey = editedConfigHotKey;
 		if (!isEditingConfigHotKey() || hotkey == null) return;
-		sortedCategoriesMap.forEach((type, categories) -> {
-			addHotKeyActions(hotkey, type, categories);
-		});
+		sortedCategoriesMap.forEach(
+		  (type, categories) -> addHotKeyActions(hotkey, type, categories));
 		hotkey.setName(editedHotKeyNameTextField.getText());
 		hotkey.setKeyMapping(editedHotKeyButton.getMapping());
 		super.saveHotkey();
@@ -973,7 +1045,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	}
 	
 	public AbstractDialog getControlsDialog() {
-		final ISimpleConfigGroup advanced = SimpleConfigMod.CLIENT_CONFIG.getGroup("advanced");
+		final SimpleConfigGroup advanced = SimpleConfigMod.CLIENT_CONFIG.getGroup("advanced");
 		final String SHOW_UI_TIPS = "show_ui_tips";
 		return ControlsHelpDialog.of("simpleconfig.ui.controls")
 		  .category("general", c -> c
@@ -1337,7 +1409,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		
 		@Override protected void updateModifiers() {
 			searchTooltips = tooltipButton.getValue();
-			ISimpleConfigEntryHolder g = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
+			ConfigEntryHolder g = SimpleConfigMod.CLIENT_CONFIG.getChild("advanced.search");
 			String SEARCH_TOOLTIPS = "search_tooltips";
 			if (g.hasGUI()) {
 				g.setGUI(SEARCH_TOOLTIPS, searchTooltips);

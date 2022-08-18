@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -39,13 +39,13 @@ public class ExternalChangesDialog extends ConfirmDialog {
 	  EditType type, @NotNull Consumer<ExternalChangeResponse> action
 	) {
 		super(new TranslationTextComponent(
-		  type == ISimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
+		  type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		  "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;
 		this.responseAction = action;
 		setPersistent(true);
 		setBody(Stream.concat(
-		  splitTtc(type == ISimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
+		  splitTtc(type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
 		           "simpleconfig.ui.external_changes_detected.body"
 		  ).stream(), Stream.of(
 			 StringTextComponent.EMPTY, new TranslationTextComponent(

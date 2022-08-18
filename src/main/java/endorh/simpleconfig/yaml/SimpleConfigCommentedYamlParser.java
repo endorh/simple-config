@@ -7,7 +7,7 @@ import com.electronwill.nightconfig.core.io.ConfigParser;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.ParsingMode;
 import com.electronwill.nightconfig.core.utils.TransformingMap;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import org.apache.commons.io.IOUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.MappingNode;
@@ -26,7 +26,7 @@ import static com.electronwill.nightconfig.core.NullObject.NULL_OBJECT;
 public class SimpleConfigCommentedYamlParser implements ConfigParser<CommentedConfig> {
 	private final Yaml yaml;
 	private final ConfigFormat<CommentedConfig> configFormat;
-	private final SimpleConfig config;
+	private final SimpleConfigImpl config;
 	private boolean parseComments = true;
 	
 	public SimpleConfigCommentedYamlParser(SimpleConfigCommentedYamlFormat format) {

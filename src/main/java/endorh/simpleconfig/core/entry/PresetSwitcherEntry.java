@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.PresetSwitcherEntryBuilder;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.DummyEntryHolder;
@@ -34,7 +34,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 	protected String path;
 	
 	public PresetSwitcherEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  Map<String, Map<String, Object>> presets, String path, boolean global
 	) {
 		super(parent, name, firstKey(presets), false, String.class);
@@ -62,7 +62,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 			this.global = global;
 		}
 		
-		@Override protected PresetSwitcherEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		@Override protected PresetSwitcherEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new PresetSwitcherEntry(parent, name, presets, path, global);
 		}
 		
@@ -80,7 +80,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		if (!presets.containsKey(name))
 			throw new IllegalArgumentException("Unknown preset: \"" + name + "\"");
 		final Map<String, Object> preset = presets.get(name);
-		final ISimpleConfigEntryHolder h =
+		final ConfigEntryHolder h =
 		  (global ? parent.getRoot() : (AbstractSimpleConfigEntryHolder) parent).getChild(path);
 		AbstractConfigListEntry<String> guiEntry = getGuiEntry();
 		if (guiEntry != null) {

@@ -8,10 +8,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.command.arguments.IArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
@@ -41,14 +41,14 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		this.type = type;
 	}
 	
-	public @Nullable SimpleConfig getConfig(CommandContext<?> ctx) {
+	public @Nullable SimpleConfigImpl getConfig(CommandContext<?> ctx) {
 		String modId = this.modId;
 		EditType type = this.type;
 		if (modId == null) modId = ctx.getArgument("modId", String.class);
 		if (type == null) type = ctx.getArgument("type", EditType.class);
 		Type configType = type.getType();
-		if (SimpleConfig.hasConfig(modId, configType))
-			return SimpleConfig.getConfig(modId, configType);
+		if (SimpleConfigImpl.hasConfig(modId, configType))
+			return SimpleConfigImpl.getConfig(modId, configType);
 		return null;
 	}
 	
@@ -72,7 +72,7 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 	  CommandContext<S> context, SuggestionsBuilder builder
 	) {
 		String key = context.getArgument("key", String.class);
-		SimpleConfig config = getConfig(context);
+		SimpleConfigImpl config = getConfig(context);
 		if (config == null) return Suggestions.empty();
 		AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 		String serialized = entry.getForCommand();

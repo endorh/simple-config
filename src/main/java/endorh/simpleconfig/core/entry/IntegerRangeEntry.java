@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.AbstractRange.IntRange;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IntegerRangeEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class IntegerRangeEntry
   extends AbstractSizedRangeEntry<Integer, IntRange, IntegerRangeEntry> {
 	protected IntegerRangeEntry(
-	  ISimpleConfigEntryHolder parent, String name, IntRange value
+	  ConfigEntryHolder parent, String name, IntRange value
 	) {
 		super(parent, name, value);
 	}
@@ -44,7 +44,7 @@ public class IntegerRangeEntry
 		}
 		
 		@Override
-		protected IntegerRangeEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected IntegerRangeEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new IntegerRangeEntry(parent, name, value);
 		}
 		

@@ -2,12 +2,12 @@ package endorh.simpleconfig.config;
 
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.KeyBindEntryBuilder;
 import endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation;
-import endorh.simpleconfig.core.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.demo.DemoConfigCategory;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProvider;
@@ -40,11 +40,11 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
  * Client config backing class
  */
 @OnlyIn(Dist.CLIENT) public class ClientConfig {
-	@Internal public static ISimpleConfig build() {
+	@Internal public static SimpleConfig build() {
 		KeyBindings.register();
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
 		  .map(ModInfo::getModId).collect(Collectors.toList());
-		return config(SimpleConfigMod.MOD_ID, ISimpleConfig.Type.CLIENT, ClientConfig.class)
+		return config(SimpleConfigMod.MOD_ID, SimpleConfig.Type.CLIENT, ClientConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.CLIENT)
 		  .withColor(0x6490FF80)
 		  .withBackground("textures/block/bookshelf.png")
@@ -211,11 +211,11 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				KeyBindMapping mapping = e.getKey();
 				String modId = e.getValue();
 				if (mapping.getSettings().getContext() != VanillaKeyBindContext.GAME) return null;
-				if (!SimpleConfig.getConfigModIds().contains(modId)) return null;
+				if (!SimpleConfigImpl.getConfigModIds().contains(modId)) return null;
 				return ExtendedKeyBind.of(SimpleConfigMod.MOD_ID,
 				  new TranslationTextComponent(
-					 "simpleconfig.keybind.open_mod_config",
-					 SimpleConfig.getModNameOrId(modId)),
+				    "simpleconfig.keybind.open_mod_config",
+				    SimpleConfigImpl.getModNameOrId(modId)),
 				  mapping, () -> SimpleConfigGUIManager.showConfigGUI(modId));
 			}).filter(Objects::nonNull).collect(Collectors.toList());
 		}

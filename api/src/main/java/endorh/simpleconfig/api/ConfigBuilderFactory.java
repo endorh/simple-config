@@ -4,7 +4,7 @@ import endorh.simpleconfig.api.AbstractRange.DoubleRange;
 import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.AbstractRange.IntRange;
 import endorh.simpleconfig.api.AbstractRange.LongRange;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
@@ -32,17 +32,17 @@ import java.util.regex.Pattern;
  */
 public interface ConfigBuilderFactory {
 	
-	ISimpleConfigBuilder builder(String modId, Type type);
+	SimpleConfigBuilder builder(String modId, Type type);
 	
-	ISimpleConfigBuilder builder(String modId, Type type, Class<?> configClass);
+	SimpleConfigBuilder builder(String modId, Type type, Class<?> configClass);
 	
-	IGroupBuilder group(String name);
+	ConfigGroupBuilder group(String name);
 	
-	IGroupBuilder group(String name, boolean expand);
+	ConfigGroupBuilder group(String name, boolean expand);
 	
-	ICategoryBuilder category(String name);
+	ConfigCategoryBuilder category(String name);
 	
-	ICategoryBuilder category(String name, Class<?> configClass);
+	ConfigCategoryBuilder category(String name, Class<?> configClass);
 	
 	// Entries
 	
@@ -62,14 +62,14 @@ public interface ConfigBuilderFactory {
 	
 	ButtonEntryBuilder button(Runnable action);
 	
-	ButtonEntryBuilder button(Consumer<ISimpleConfigEntryHolder> action);
+	ButtonEntryBuilder button(Consumer<ConfigEntryHolder> action);
 	
 	<V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
 	EntryButtonEntryBuilder<V, Gui, B> button(B inner, Consumer<V> action);
 	
 	<V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
 	EntryButtonEntryBuilder<V, Gui, B> button(
-	  B inner, BiConsumer<V, ISimpleConfigEntryHolder> action
+	  B inner, BiConsumer<V, ConfigEntryHolder> action
 	);
 	
 	PresetSwitcherEntryBuilder globalPresetSwitcher(

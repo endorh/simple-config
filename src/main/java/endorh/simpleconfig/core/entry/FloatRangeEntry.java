@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.AbstractRange.FloatRange;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.FloatRangeEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
@@ -22,7 +22,7 @@ import java.util.function.Function;
 public class FloatRangeEntry
   extends AbstractSizedRangeEntry<Float, FloatRange, FloatRangeEntry> {
 	protected FloatRangeEntry(
-	  ISimpleConfigEntryHolder parent, String name, FloatRange value
+	  ConfigEntryHolder parent, String name, FloatRange value
 	) {
 		super(parent, name, value);
 	}
@@ -72,7 +72,7 @@ public class FloatRangeEntry
 		}
 		
 		@Override
-		protected FloatRangeEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected FloatRangeEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new FloatRangeEntry(parent, name, value);
 		}
 		

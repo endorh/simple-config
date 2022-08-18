@@ -1,6 +1,6 @@
 package endorh.simpleconfig;
 
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
@@ -43,14 +43,14 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 @Mod(SimpleConfigMod.MOD_ID)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
 @Internal public class SimpleConfigMod {
-	public static final String MOD_ID = ISimpleConfig.MOD_ID;
+	public static final String MOD_ID = SimpleConfig.MOD_ID;
 	public static SoundEvent UI_TAP;
 	public static SoundEvent UI_DOUBLE_TAP;
 	
 	// Storing the config instances is optional
-	@OnlyIn(Dist.CLIENT) public static ISimpleConfig CLIENT_CONFIG;
-	public static ISimpleConfig COMMON_CONFIG;
-	public static ISimpleConfig SERVER_CONFIG;
+	@OnlyIn(Dist.CLIENT) public static SimpleConfig CLIENT_CONFIG;
+	public static SimpleConfig COMMON_CONFIG;
+	public static SimpleConfig SERVER_CONFIG;
 	
 	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
 	public static final SimpleConfigResourcePresetHandler RESOURCE_PRESET_HANDLER = SimpleConfigResourcePresetHandler.INSTANCE;

@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.AbstractRange;
 import endorh.simpleconfig.api.AbstractRange.AbstractSizedRange;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangeEntryBuilder;
 import endorh.simpleconfig.api.entry.SizedRangeEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -37,7 +37,7 @@ public abstract class AbstractRangeEntry<
 	protected double commentMax = Double.MAX_VALUE;
 	
 	protected AbstractRangeEntry(
-	  ISimpleConfigEntryHolder parent, String name, R value
+	  ConfigEntryHolder parent, String name, R value
 	) {
 		super(parent, name, value);
 	}
@@ -116,7 +116,7 @@ public abstract class AbstractRangeEntry<
 			return copy;
 		}
 		
-		@Override protected E build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+		@Override protected E build(@NotNull ConfigEntryHolder parent, String name) {
 			E built = super.build(parent, name);
 			built.min = min;
 			built.max = max;
@@ -209,7 +209,7 @@ public abstract class AbstractRangeEntry<
 		protected double minSize = 0D;
 		protected double maxSize = Double.POSITIVE_INFINITY;
 		
-		protected AbstractSizedRangeEntry(ISimpleConfigEntryHolder parent, String name, R value) {
+		protected AbstractSizedRangeEntry(ConfigEntryHolder parent, String name, R value) {
 			super(parent, name, value);
 		}
 		
@@ -243,7 +243,7 @@ public abstract class AbstractRangeEntry<
 				return copy.castSelf();
 			}
 			
-			@Override protected E build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+			@Override protected E build(@NotNull ConfigEntryHolder parent, String name) {
 				E entry = super.build(parent, name);
 				entry.minSize = minSize;
 				entry.maxSize = maxSize;

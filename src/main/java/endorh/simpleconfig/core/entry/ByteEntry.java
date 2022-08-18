@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ByteEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
   implements IKeyEntry<Byte> {
 	@Internal public ByteEntry(
-	  ISimpleConfigEntryHolder parent, String name, byte value
+	  ConfigEntryHolder parent, String name, byte value
 	) {
 		super(parent, name, value);
 	}
@@ -51,7 +51,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
 		}
 		
 		@Override
-		protected ByteEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ByteEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new ByteEntry(parent, name, value);
 		}
 		

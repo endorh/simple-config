@@ -3,7 +3,7 @@ package endorh.simpleconfig.core.entry;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.GUIOnlyEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -25,11 +25,11 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 	protected boolean addNonPersistentTooltip;
 	
 	public GUIOnlyEntry(
-	  ISimpleConfigEntryHolder parent, String name, V value, Class<?> typeClass
+	  ConfigEntryHolder parent, String name, V value, Class<?> typeClass
 	) { this(parent, name, value, true, typeClass); }
 	
 	public GUIOnlyEntry(
-	  ISimpleConfigEntryHolder parent, String name, V value,
+	  ConfigEntryHolder parent, String name, V value,
 	  boolean addNonPersistentTooltip, Class<?> typeClass
 	) {
 		super(parent, name, value);
@@ -51,7 +51,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		}
 		
 		@Override
-		protected Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+		protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			nonPersistent = true;
 			/*if (parent.getRoot().type != Type.CLIENT)
 				throw new IllegalArgumentException(

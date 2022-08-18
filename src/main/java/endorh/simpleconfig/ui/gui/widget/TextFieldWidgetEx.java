@@ -394,6 +394,10 @@ public class TextFieldWidgetEx extends Widget {
 		}
 	}
 	
+	@Override public void setFocused(boolean focused) {
+		super.setFocused(focused);
+	}
+	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		draggingText = false;
 		if (isVisible()) {

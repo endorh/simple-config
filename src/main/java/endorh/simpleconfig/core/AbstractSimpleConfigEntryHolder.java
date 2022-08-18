@@ -3,11 +3,11 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -28,11 +28,11 @@ import java.util.regex.Pattern;
 
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
 
-public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEntryHolder {
+public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHolder {
 	protected static final Pattern DOT = Pattern.compile("\\.");
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected SimpleConfig root;
+	protected SimpleConfigImpl root;
 	protected Map<String, AbstractConfigEntry<?, ?, ?>> entries;
 	protected Map<String, ? extends AbstractSimpleConfigEntryHolder> children;
 	protected boolean dirty = false;
@@ -40,7 +40,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ISimpleConfigEn
 	/**
 	 * Get the root config of this entry holder
 	 */
-	@Override public SimpleConfig getRoot() {
+	@Override public SimpleConfigImpl getRoot() {
 		return root;
 	}
 	

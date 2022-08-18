@@ -10,22 +10,22 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
-public interface ISimpleConfigBuilder extends ConfigEntryHolderBuilder<ISimpleConfigBuilder> {
+public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConfigBuilder> {
 	/**
 	 * Set the baker method for this config<br>
 	 * You may also define a '{@code bake}' static method
-	 * in the config class accepting a {@link ISimpleConfig}
+	 * in the config class accepting a {@link SimpleConfig}
 	 * and it will be set automatically as the baker (but you
 	 * may not define it and also call this method)
 	 */
-	@Contract("_ -> this") ISimpleConfigBuilder withBaker(Consumer<ISimpleConfig> baker);
+	@Contract("_ -> this") SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker);
 	
 	/**
 	 * Set the default background for all categories
 	 *
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ISimpleConfigBuilder withBackground(String resourceName);
+	@Contract("_ -> this") SimpleConfigBuilder withBackground(String resourceName);
 	
 	/**
 	 * Set the default background for all categories
@@ -34,7 +34,7 @@ public interface ISimpleConfigBuilder extends ConfigEntryHolderBuilder<ISimpleCo
 	 * @see #withIcon(Icon)
 	 * @see #withColor(int)
 	 */
-	@Contract("_ -> this") ISimpleConfigBuilder withBackground(ResourceLocation background);
+	@Contract("_ -> this") SimpleConfigBuilder withBackground(ResourceLocation background);
 	
 	/**
 	 * Set the icon for the default category.<br>
@@ -46,7 +46,7 @@ public interface ISimpleConfigBuilder extends ConfigEntryHolderBuilder<ISimpleCo
 	 * @see #withColor(int)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ISimpleConfigBuilder withIcon(Icon icon);
+	@Contract("_ -> this") SimpleConfigBuilder withIcon(Icon icon);
 	
 	/**
 	 * Set the color for the default category.<br>
@@ -60,29 +60,29 @@ public interface ISimpleConfigBuilder extends ConfigEntryHolderBuilder<ISimpleCo
 	 * @see #withColor(int)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ISimpleConfigBuilder withColor(int tint);
+	@Contract("_ -> this") SimpleConfigBuilder withColor(int tint);
 	
 	/**
 	 * Use the solid background too when ingame<br>
 	 * By default, config GUIs are transparent when ingame
 	 */
-	@Contract("-> this") ISimpleConfigBuilder withSolidInGameBackground();
+	@Contract("-> this") SimpleConfigBuilder withSolidInGameBackground();
 	
 	/**
 	 * Register the config command at the given command root<br>
 	 * The config command will still be accessible at {@code /config ⟨sub⟩ ⟨modid⟩}<br>
 	 */
-	@Contract("_ -> this") ISimpleConfigBuilder withCommandRoot(
+	@Contract("_ -> this") SimpleConfigBuilder withCommandRoot(
 	  LiteralArgumentBuilder<CommandSource> root
 	);
 	
-	@Contract("-> this") @Override ISimpleConfigBuilder restart();
+	@Contract("-> this") @Override SimpleConfigBuilder restart();
 	
-	@Contract("_ -> this") ISimpleConfigBuilder n(ICategoryBuilder cat);
+	@Contract("_ -> this") SimpleConfigBuilder n(ConfigCategoryBuilder cat);
 	
-	@Contract("_, _ -> this") ISimpleConfigBuilder n(ICategoryBuilder cat, int index);
+	@Contract("_, _ -> this") SimpleConfigBuilder n(ConfigCategoryBuilder cat, int index);
 	
-	@Contract("_, _ -> this") ISimpleConfigBuilder n(IGroupBuilder group, int index);
+	@Contract("_, _ -> this") SimpleConfigBuilder n(ConfigGroupBuilder group, int index);
 	
 	/**
 	 * Build the actual config and register it within the Forge system<br><br>
@@ -92,7 +92,7 @@ public interface ISimpleConfigBuilder extends ConfigEntryHolderBuilder<ISimpleCo
 	 *
 	 * @return The built config, which is also received by the baker
 	 */
-	ISimpleConfig buildAndRegister();
+	SimpleConfig buildAndRegister();
 	
 	/**
 	 * Build the actual config and register it within the Forge system<br><br>
@@ -102,5 +102,5 @@ public interface ISimpleConfigBuilder extends ConfigEntryHolderBuilder<ISimpleCo
 	 * @param modEventBus Your mod's language provider's mod event bus
 	 * @return The built config, which is also received by the baker
 	 */
-	ISimpleConfig buildAndRegister(@NotNull IEventBus modEventBus);
+	SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus);
 }

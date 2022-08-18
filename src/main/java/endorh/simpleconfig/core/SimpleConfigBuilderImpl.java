@@ -2,9 +2,8 @@ package endorh.simpleconfig.core;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.api.*;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
-import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
+import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.icon.Icon;
 import net.minecraft.command.CommandSource;
@@ -32,12 +31,12 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * Create a {@link SimpleConfig} using a chained method call<br>
- * Use {@link ISimpleConfigBuilder#add(String, ConfigEntryBuilder)}
+ * Create a {@link SimpleConfigImpl} using a chained method call<br>
+ * Use {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}
  * to add entries to the config (in order)<br>
- * Use {@link ISimpleConfigBuilder#n(ICategoryBuilder)} to add
+ * Use {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)} to add
  * subcategories to the config, each with its own tab<br>
- * Use {@link ISimpleConfigBuilder#n(IGroupBuilder)} to add
+ * Use {@link SimpleConfigBuilder#n(ConfigGroupBuilder)} to add
  * subgroups to the config, each under a dropdown entry in the GUI.
  * Groups may contain other groups.<br><br>
  * You may create categories and groups with the
@@ -47,9 +46,9 @@ import static java.util.Collections.unmodifiableMap;
  * {@link ConfigBuilderFactoryProxy}<br>
  * Entries can be further configured with their own builder methods
  */
-public class SimpleConfigBuilder
-  extends AbstractSimpleConfigEntryHolderBuilder<ISimpleConfigBuilder>
-  implements ISimpleConfigBuilder {
+public class SimpleConfigBuilderImpl
+  extends AbstractSimpleConfigEntryHolderBuilder<SimpleConfigBuilder>
+  implements SimpleConfigBuilder {
 	protected final String modId;
 	protected final Type type;
 	protected @Nullable LiteralArgumentBuilder<CommandSource> commandRoot = null;
@@ -63,15 +62,15 @@ public class SimpleConfigBuilder
 	protected String path;
 	
 	protected final @Nullable Class<?> configClass;
-	protected @Nullable Consumer<ISimpleConfig> baker = null;
-	protected @Nullable Consumer<SimpleConfig> saver = null;
-	protected @Nullable BiConsumer<ISimpleConfig, ConfigScreenBuilder> decorator = null;
+	protected @Nullable Consumer<SimpleConfig> baker = null;
+	protected @Nullable Consumer<SimpleConfigImpl> saver = null;
+	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator = null;
 	protected @Nullable ResourceLocation background = null;
 	protected boolean transparent = true;
 	
-	protected SimpleConfigBuilder(String modId, Type type) { this(modId, type, null); }
+	protected SimpleConfigBuilderImpl(String modId, Type type) { this(modId, type, null); }
 	
-	protected SimpleConfigBuilder(String modId, Type type, @Nullable Class<?> configClass) {
+	protected SimpleConfigBuilderImpl(String modId, Type type, @Nullable Class<?> configClass) {
 		this.modId = modId;
 		this.type = type;
 		this.configClass = configClass;
@@ -85,48 +84,48 @@ public class SimpleConfigBuilder
 		defaultCategory.title = modId + ".config.category." + path;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder withBaker(
-	  Consumer<ISimpleConfig> baker
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withBaker(
+	  Consumer<SimpleConfig> baker
 	) {
 		this.baker = baker;
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder withBackground(String resourceName) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withBackground(String resourceName) {
 		return withBackground(new ResourceLocation(resourceName));
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder withBackground(
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withBackground(
 	  ResourceLocation background
 	) {
 		this.background = background;
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder withIcon(Icon icon) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withIcon(Icon icon) {
 		defaultCategory.withIcon(icon);
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder withColor(int tint) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withColor(int tint) {
 		defaultCategory.withColor(tint);
 		return this;
 	}
 	
-	@Override @Contract("-> this") public SimpleConfigBuilder withSolidInGameBackground() {
+	@Override @Contract("-> this") public SimpleConfigBuilderImpl withSolidInGameBackground() {
 		transparent = false;
 		return this;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Contract("_ -> this") public SimpleConfigBuilder withGUIDecorator(
-	  BiConsumer<ISimpleConfig, ConfigScreenBuilder> decorator
+	@Contract("_ -> this") public SimpleConfigBuilderImpl withGUIDecorator(
+	  BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator
 	) {
 		this.decorator = decorator;
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder withCommandRoot(
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withCommandRoot(
 	  LiteralArgumentBuilder<CommandSource> root
 	) {
 		commandRoot = root;
@@ -139,7 +138,7 @@ public class SimpleConfigBuilder
 		  "Duplicate config entry name: " + name);
 	}
 	
-	@Contract("-> this") @Override public SimpleConfigBuilder restart() {
+	@Contract("-> this") @Override public SimpleConfigBuilderImpl restart() {
 		super.restart();
 		categories.values().forEach(CategoryBuilder::restart);
 		return this;
@@ -179,11 +178,11 @@ public class SimpleConfigBuilder
 			entry.setTooltipKey(tooltip(entry.name));
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilder n(ICategoryBuilder cat) {
+	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat) {
 		return n(cat, 0);
 	}
 	
-	@Override @Contract("_, _ -> this") public SimpleConfigBuilder n(ICategoryBuilder cat, int index) {
+	@Override @Contract("_, _ -> this") public SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat, int index) {
 		if (!(cat instanceof CategoryBuilder)) throw new IllegalArgumentException(
 		  "Category must be a CategoryBuilder");
 		CategoryBuilder c = (CategoryBuilder) cat;
@@ -196,7 +195,7 @@ public class SimpleConfigBuilder
 	}
 	
 	@Contract("_, _ -> this")
-	@Override public SimpleConfigBuilder n(IGroupBuilder group, int index) {
+	@Override public SimpleConfigBuilderImpl n(ConfigGroupBuilder group, int index) {
 		if (!(group instanceof GroupBuilder)) throw new IllegalArgumentException(
 		  "Group must be a GroupBuilder");
 		GroupBuilder g = (GroupBuilder) group;
@@ -212,29 +211,29 @@ public class SimpleConfigBuilder
 	
 	
 	/**
-	 * Builder for a {@link SimpleConfigCategory}<br>
-	 * Use {@link ICategoryBuilder#add(String, ConfigEntryBuilder)}
+	 * Builder for a {@link SimpleConfigCategoryImpl}<br>
+	 * Use {@link ConfigCategoryBuilder#add(String, ConfigEntryBuilder)}
 	 * to add new entries to the category<br>
-	 * Use {@link ICategoryBuilder#n(IGroupBuilder)} to add
+	 * Use {@link ConfigCategoryBuilder#n(ConfigGroupBuilder)} to add
 	 * subgroups to the category, which may contain further groups<br><br>
 	 * Create subgroups using {@link ConfigBuilderFactoryProxy#group(String, boolean)},
 	 * and entries with the methods under {@link ConfigBuilderFactoryProxy}
 	 */
 	public static class CategoryBuilder
-	  extends AbstractSimpleConfigEntryHolderBuilder<ICategoryBuilder>
-	  implements ICategoryBuilder {
-		protected SimpleConfigBuilder parent;
+	  extends AbstractSimpleConfigEntryHolderBuilder<ConfigCategoryBuilder>
+	  implements ConfigCategoryBuilder {
+		protected SimpleConfigBuilderImpl parent;
 		protected final String name;
 		protected String title;
 		protected Icon icon = Icon.EMPTY;
 		protected int tint = 0;
 		protected Class<?> configClass;
 		
-		protected @Nullable Consumer<ISimpleConfigCategory> baker = null;
+		protected @Nullable Consumer<SimpleConfigCategory> baker = null;
 		
 		protected String path;
 		
-		protected @Nullable BiConsumer<ISimpleConfigCategory, ConfigCategoryBuilder> decorator;
+		protected @Nullable BiConsumer<SimpleConfigCategory, endorh.simpleconfig.ui.api.ConfigCategoryBuilder> decorator;
 		protected @Nullable ResourceLocation background;
 		
 		protected CategoryBuilder(String name) {
@@ -247,7 +246,7 @@ public class SimpleConfigBuilder
 			this.configClass = configClass;
 		}
 		
-		protected void setParent(SimpleConfigBuilder parent) {
+		protected void setParent(SimpleConfigBuilderImpl parent) {
 			this.parent = parent;
 			path = parent.path + "." + name;
 			title = parent.modId + ".config." + path;
@@ -257,7 +256,7 @@ public class SimpleConfigBuilder
 		}
 		
 		@Override @Contract("_ -> this") public CategoryBuilder withBaker(
-		  Consumer<ISimpleConfigCategory> baker
+		  Consumer<SimpleConfigCategory> baker
 		) {
 			this.baker = baker;
 			return this;
@@ -286,7 +285,7 @@ public class SimpleConfigBuilder
 		
 		@OnlyIn(Dist.CLIENT)
 		@Contract("_ -> this") public CategoryBuilder withGUIDecorator(
-		  BiConsumer<ISimpleConfigCategory, ConfigCategoryBuilder> decorator
+		  BiConsumer<SimpleConfigCategory, endorh.simpleconfig.ui.api.ConfigCategoryBuilder> decorator
 		) {
 			this.decorator = decorator;
 			return this;
@@ -327,7 +326,7 @@ public class SimpleConfigBuilder
 		}
 		
 		@Contract("_, _ -> this")
-		@Override public CategoryBuilder n(IGroupBuilder group, int index) {
+		@Override public CategoryBuilder n(ConfigGroupBuilder group, int index) {
 			if (!(group instanceof GroupBuilder)) throw new IllegalArgumentException(
 			  "Group must be a GroupBuilder");
 			GroupBuilder g = (GroupBuilder) group;
@@ -342,12 +341,13 @@ public class SimpleConfigBuilder
 			return this;
 		}
 		
-		protected SimpleConfigCategory build(
-		  SimpleConfig parent, ConfigValueBuilder builder, boolean isRoot
+		protected SimpleConfigCategoryImpl build(
+		  SimpleConfigImpl parent, ConfigValueBuilder builder, boolean isRoot
 		) {
 			if (!isRoot) builder.enterSection(name);
-			final SimpleConfigCategory cat = new SimpleConfigCategory(parent, name, title, isRoot, baker);
-			final Map<String, SimpleConfigGroup> groups = new LinkedHashMap<>();
+			final SimpleConfigCategoryImpl
+			  cat = new SimpleConfigCategoryImpl(parent, name, title, isRoot, baker);
+			final Map<String, SimpleConfigGroupImpl> groups = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			entries.forEach((name, value) -> {
 				if (builder.canBuildEntry(name)) {
@@ -360,7 +360,7 @@ public class SimpleConfigBuilder
 				}
 			});
 			for (GroupBuilder group : this.groups.values()) {
-				final SimpleConfigGroup g = group.build(cat, builder);
+				final SimpleConfigGroupImpl g = group.build(cat, builder);
 				groups.put(group.name, g);
 			}
 			final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
@@ -386,25 +386,25 @@ public class SimpleConfigBuilder
 	}
 	
 	/**
-	 * Builder for a {@link SimpleConfigGroup}<br>
-	 * Use {@link IGroupBuilder#add(String, ConfigEntryBuilder)}
+	 * Builder for a {@link SimpleConfigGroupImpl}<br>
+	 * Use {@link ConfigGroupBuilder#add(String, ConfigEntryBuilder)}
 	 * to add new entries to the group<br>
-	 * Use {@link IGroupBuilder#n(IGroupBuilder)} to add
+	 * Use {@link ConfigGroupBuilder#n(ConfigGroupBuilder)} to add
 	 * subgroups to this group<br><br>
 	 *
 	 * You may create new entries with the methods under
 	 * {@link ConfigBuilderFactoryProxy}
 	 */
 	public static class GroupBuilder
-	  extends AbstractSimpleConfigEntryHolderBuilder<IGroupBuilder>
-	  implements IGroupBuilder {
+	  extends AbstractSimpleConfigEntryHolderBuilder<ConfigGroupBuilder>
+	  implements ConfigGroupBuilder {
 		protected CategoryBuilder category;
 		protected final String name;
 		
 		protected String title;
 		protected String tooltip;
 		protected final boolean expanded;
-		protected @Nullable Consumer<ISimpleConfigGroup> baker = null;
+		protected @Nullable Consumer<SimpleConfigGroup> baker = null;
 		
 		protected String path;
 		protected String heldEntryName;
@@ -439,7 +439,7 @@ public class SimpleConfigBuilder
 		}
 		
 		@Contract("_, _ -> this")
-		@Override public GroupBuilder n(IGroupBuilder nested, int index) {
+		@Override public GroupBuilder n(ConfigGroupBuilder nested, int index) {
 			if (!(nested instanceof GroupBuilder)) throw new IllegalArgumentException(
 			  "Group must be a GroupBuilder");
 			GroupBuilder n = (GroupBuilder) nested;
@@ -455,7 +455,7 @@ public class SimpleConfigBuilder
 		}
 		
 		@Override @Contract("_ -> this") public GroupBuilder withBaker(
-		  Consumer<ISimpleConfigGroup> baker
+		  Consumer<SimpleConfigGroup> baker
 		) {
 			this.baker = baker;
 			return this;
@@ -511,25 +511,25 @@ public class SimpleConfigBuilder
 				entry.setTooltipKey(tooltip(entry.name));
 		}
 		
-		protected SimpleConfigGroup build(SimpleConfigGroup parent, ConfigValueBuilder builder) {
+		protected SimpleConfigGroupImpl build(SimpleConfigGroupImpl parent, ConfigValueBuilder builder) {
 			return build(null, parent, builder);
 		}
 		
-		protected SimpleConfigGroup build(SimpleConfigCategory parent, ConfigValueBuilder builder) {
+		protected SimpleConfigGroupImpl build(SimpleConfigCategoryImpl parent, ConfigValueBuilder builder) {
 			return build(parent, null, builder);
 		}
 		
-		private SimpleConfigGroup build(
-		  @Nullable SimpleConfigCategory parent, @Nullable SimpleConfigGroup groupParent,
+		private SimpleConfigGroupImpl build(
+		  @Nullable SimpleConfigCategoryImpl parent, @Nullable SimpleConfigGroupImpl groupParent,
 		  ConfigValueBuilder builder
 		) {
 			assert parent != null || groupParent != null;
 			builder.enterSection(name);
-			final SimpleConfigGroup group;
+			final SimpleConfigGroupImpl group;
 			if (parent != null)
-				group = new SimpleConfigGroup(parent, name, title, tooltip, expanded, baker);
-			else group = new SimpleConfigGroup(groupParent, name, title, tooltip, expanded, baker);
-			final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
+				group = new SimpleConfigGroupImpl(parent, name, title, tooltip, expanded, baker);
+			else group = new SimpleConfigGroupImpl(groupParent, name, title, tooltip, expanded, baker);
+			final Map<String, SimpleConfigGroupImpl> groupMap = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			final AbstractConfigEntry<?, ?, ?> heldEntry =
 			  heldEntryBuilder != null ? heldEntryBuilder.build(group, heldEntryName) : null;
@@ -552,7 +552,7 @@ public class SimpleConfigBuilder
 			for (String name : groups.keySet()) {
 				GroupBuilder b = groups.get(name);
 				if (builder.canBuildSection(name)) {
-					SimpleConfigGroup subGroup = b.build(group, builder);
+					SimpleConfigGroupImpl subGroup = b.build(group, builder);
 					groupMap.put(name, subGroup);
 				}
 			}
@@ -582,7 +582,7 @@ public class SimpleConfigBuilder
 		SimpleConfigClassParser.decorateBuilder(this);
 	}
 	
-	@Override public SimpleConfig buildAndRegister() {
+	@Override public SimpleConfigImpl buildAndRegister() {
 		try {
 			return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus());
 		} catch (ClassCastException e) {
@@ -592,26 +592,27 @@ public class SimpleConfigBuilder
 		}
 	}
 	
-	@Override public SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus) {
+	@Override public SimpleConfigImpl buildAndRegister(@NotNull IEventBus modEventBus) {
 		return buildAndRegister(modEventBus, new ForgeConfigSpecConfigValueBuilder());
 	}
 	
-	@Internal protected SimpleConfig buildAndRegister(IEventBus modEventBus, ConfigValueBuilder builder) {
+	@Internal protected SimpleConfigImpl buildAndRegister(IEventBus modEventBus, ConfigValueBuilder builder) {
 		preBuildHook();
-		if (type == ISimpleConfig.Type.SERVER) {
+		if (type == SimpleConfig.Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
-			        ? SimpleConfig::syncToClients
-			        : SimpleConfig::syncToServer;
-		} else if (type == ISimpleConfig.Type.COMMON) {
+			        ? SimpleConfigImpl::syncToClients
+			        : SimpleConfigImpl::syncToServer;
+		} else if (type == SimpleConfig.Type.COMMON) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
-			        ? SimpleConfig::syncToClients
-			        : SimpleConfig::checkRestart;
+			        ? SimpleConfigImpl::syncToClients
+			        : SimpleConfigImpl::checkRestart;
 		} else if (FMLEnvironment.dist != Dist.DEDICATED_SERVER)
-			saver = SimpleConfig::checkRestart;
-		final SimpleConfig config = new SimpleConfig(modId, type, title, baker, saver, configClass);
+			saver = SimpleConfigImpl::checkRestart;
+		final SimpleConfigImpl
+		  config = new SimpleConfigImpl(modId, type, title, baker, saver, configClass);
 		final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
-		final Map<String, SimpleConfigCategory> categoryMap = new LinkedHashMap<>();
-		final Map<String, SimpleConfigGroup> groupMap = new LinkedHashMap<>();
+		final Map<String, SimpleConfigCategoryImpl> categoryMap = new LinkedHashMap<>();
+		final Map<String, SimpleConfigGroupImpl> groupMap = new LinkedHashMap<>();
 		entries.forEach((name, value) -> {
 			if (builder.canBuildEntry(name)) {
 				final AbstractConfigEntry<?, ?, ?> entry = value.build(config, name);
@@ -622,10 +623,10 @@ public class SimpleConfigBuilder
 				builder.build(entry);
 			}
 		});
-		SimpleConfigCategory defaultCategory = this.defaultCategory.build(config, builder, true);
+		SimpleConfigCategoryImpl defaultCategory = this.defaultCategory.build(config, builder, true);
 		for (GroupBuilder group : groups.values()) {
 			if (builder.canBuildSection(group.name)) {
-				final SimpleConfigGroup g = group.build(defaultCategory, builder);
+				final SimpleConfigGroupImpl g = group.build(defaultCategory, builder);
 				groupMap.put(group.name, g);
 			}
 		}
@@ -656,7 +657,7 @@ public class SimpleConfigBuilder
 	}
 	
 	protected static abstract class ConfigValueBuilder {
-		abstract void buildModConfig(SimpleConfig config);
+		abstract void buildModConfig(SimpleConfigImpl config);
 		boolean canBuildEntry(String name) {
 			return true;
 		}
@@ -672,7 +673,7 @@ public class SimpleConfigBuilder
 	protected static class ForgeConfigSpecConfigValueBuilder extends ConfigValueBuilder {
 		private final ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 		
-		@Override void buildModConfig(SimpleConfig config) {
+		@Override void buildModConfig(SimpleConfigImpl config) {
 			ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
 			SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
 			config.build(modContainer, modConfig);

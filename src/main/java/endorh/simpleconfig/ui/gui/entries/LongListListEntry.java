@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
+import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.LongListListEntry.LongListCell;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -34,6 +35,7 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<Long, LongListCell, LongListListEntry> {
 		public LongListCell(LongListListEntry listListEntry) {
 			super(listListEntry);
+			widget.setFormatter(ITextFormatter.numeric(true));
 		}
 		
 		@Override protected boolean isValidText(@NotNull String text) {

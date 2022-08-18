@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ShortEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer>
   implements IKeyEntry<Short> {
 	@Internal public ShortEntry(
-	  ISimpleConfigEntryHolder parent, String name, short value
+	  ConfigEntryHolder parent, String name, short value
 	) {
 		super(parent, name, value);
 	}
@@ -49,7 +49,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer>
 		}
 		
 		@Override
-		protected ShortEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ShortEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new ShortEntry(parent, name, value);
 		}
 		

@@ -6,8 +6,8 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.ui.api.*;
@@ -126,16 +126,16 @@ public abstract class AbstractConfigScreen extends Screen
 		List<ConfigCategory> sortedServerCategories = serverCategories.stream()
 		  .sorted(Comparator.comparingInt(ConfigCategory::getSortingOrder)).collect(Collectors.toList());
 		categoryMap = Util.make(new HashMap<>(4), m -> {
-			m.put(ISimpleConfig.EditType.CLIENT.getAlias(), clientCategoryMap);
-			m.put(ISimpleConfig.EditType.COMMON.getAlias(), commonCategoryMap);
-			m.put(ISimpleConfig.EditType.SERVER_COMMON.getAlias(), serverCommonCategoryMap);
-			m.put(ISimpleConfig.EditType.SERVER.getAlias(), serverCategoryMap);
+			m.put(SimpleConfig.EditType.CLIENT.getAlias(), clientCategoryMap);
+			m.put(SimpleConfig.EditType.COMMON.getAlias(), commonCategoryMap);
+			m.put(SimpleConfig.EditType.SERVER_COMMON.getAlias(), serverCommonCategoryMap);
+			m.put(SimpleConfig.EditType.SERVER.getAlias(), serverCategoryMap);
 		});
 		sortedCategoriesMap = Util.make(new EnumMap<>(EditType.class), m -> {
-			m.put(ISimpleConfig.EditType.CLIENT, sortedClientCategories);
-			m.put(ISimpleConfig.EditType.COMMON, sortedCommonCategories);
-			m.put(ISimpleConfig.EditType.SERVER_COMMON, sortedServerCommonCategories);
-			m.put(ISimpleConfig.EditType.SERVER, sortedServerCategories);
+			m.put(SimpleConfig.EditType.CLIENT, sortedClientCategories);
+			m.put(SimpleConfig.EditType.COMMON, sortedCommonCategories);
+			m.put(SimpleConfig.EditType.SERVER_COMMON, sortedServerCommonCategories);
+			m.put(SimpleConfig.EditType.SERVER, sortedServerCategories);
 		});
 		sortedCategories = Stream.of(
 		  sortedClientCategories, sortedCommonCategories,
@@ -251,12 +251,16 @@ public abstract class AbstractConfigScreen extends Screen
 		return sortedCategoriesMap.get(getEditedType());
 	}
 	
+	public Map<String, ConfigCategory> getTypeCategories(EditType type) {
+		return categoryMap.get(type.getAlias());
+	}
+	
 	public Map<String, ConfigCategory> getTypeCategories() {
-		return categoryMap.get(getEditedType().getAlias());
+		return getTypeCategories(getEditedType());
 	}
 	
 	public boolean isEditingServer() {
-		return getEditedType() == ISimpleConfig.EditType.SERVER;
+		return getEditedType() == SimpleConfig.EditType.SERVER;
 	}
 	
 	public boolean isShowingTabs() {
@@ -308,7 +312,7 @@ public abstract class AbstractConfigScreen extends Screen
 		this.transparentBackground = transparentBackground;
 	}
 	
-	public void loadConfigScreenGUIState(IConfigScreenGUIState state) {}
+	public void loadConfigScreenGUIState(@Nullable IConfigScreenGUIState state) {}
 	public IConfigScreenGUIState saveConfigScreenGUIState() {
 		return null;
 	}
@@ -426,7 +430,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean hasConflictingExternalChanges() {
-		return Arrays.stream(ISimpleConfig.EditType.values()).filter(t -> !t.isRemote())
+		return Arrays.stream(SimpleConfig.EditType.values()).filter(t -> !t.isRemote())
 		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())
@@ -434,7 +438,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean hasConflictingRemoteChanges() {
-		return Arrays.stream(ISimpleConfig.EditType.values()).filter(ISimpleConfig.EditType::isRemote)
+		return Arrays.stream(SimpleConfig.EditType.values()).filter(SimpleConfig.EditType::isRemote)
 		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())

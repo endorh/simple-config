@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.StringListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public class StringListEntry extends AbstractListEntry<String, String, String, StringListEntry> {
 	public StringListEntry(
-	  ISimpleConfigEntryHolder parent, String name, List<String> value) {
+	  ConfigEntryHolder parent, String name, List<String> value) {
 		super(parent, name, value);
 	}
 	
@@ -30,7 +30,7 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 		}
 		
 		@Override
-		protected StringListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected StringListEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new StringListEntry(parent, name, value);
 		}
 		

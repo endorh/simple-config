@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryTripleEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -40,7 +40,7 @@ public class EntryTripleEntry<
 	protected float rightWeight = 0.333F;
 	
 	protected EntryTripleEntry(
-	  ISimpleConfigEntryHolder parent, String name, Triple<L, M, R> value,
+	  ConfigEntryHolder parent, String name, Triple<L, M, R> value,
 	  AbstractConfigEntry<L, LC, LG> leftEntry,
 	  AbstractConfigEntry<M, MC, MG> middleEntry,
 	  AbstractConfigEntry<R, RC, RG> rightEntry
@@ -156,7 +156,7 @@ public class EntryTripleEntry<
 		}
 		
 		@Override protected EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			AbstractConfigEntry<L, LC, LG> leftEntry = DummyEntryHolder.build(parent, leftBuilder);
 			AbstractConfigEntry<M, MC, MG> middleEntry = DummyEntryHolder.build(parent, middleBuilder);

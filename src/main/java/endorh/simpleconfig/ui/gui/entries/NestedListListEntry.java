@@ -58,7 +58,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	}
 	
 	@Override public String providePath(AbstractConfigEntry<?> child) {
-		final String prefix = getRelPath() + ".";
+		final String prefix = getCatPath() + ".";
 		int i = 0;
 		for (NestedListCell<T, Inner> cell : cells) {
 			if (cell.nestedEntry == child) return prefix + i;

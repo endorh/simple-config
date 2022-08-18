@@ -3,7 +3,7 @@ package endorh.simpleconfig.core.entry;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.TextEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -36,7 +36,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	protected boolean own = false;
 	protected boolean logged = false;
 	
-	public TextEntry(ISimpleConfigEntryHolder parent, String name) {
+	public TextEntry(ConfigEntryHolder parent, String name) {
 		super(parent, name, null);
 		nonPersistent = true;
 	}
@@ -74,7 +74,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		}
 		
 		@Override
-		protected TextEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected TextEntry buildEntry(ConfigEntryHolder parent, String name) {
 			nonPersistent = true;
 			final TextEntry e = new TextEntry(parent, name);
 			e.translationSupplier = translationSupplier;

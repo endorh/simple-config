@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.IConfigHotKeyGroupEntry;
 import net.minecraft.util.Util;
@@ -42,7 +42,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = getActions();
 		Map<Pair<String, EditType>, HotKeyExecutionContext> contexts = new HashMap<>();
 		actions.forEach((pair, configActions) -> {
-			SimpleConfig config = getConfig(pair);
+			SimpleConfigImpl config = getConfig(pair);
 			if (config != null) {
 				HotKeyExecutionContext context = contexts.computeIfAbsent(
 				  pair, k -> new HotKeyExecutionContext(config));
@@ -73,10 +73,10 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	}
 	
 	private static class HotKeyExecutionContext {
-		public final SimpleConfig config;
+		public final SimpleConfigImpl config;
 		public final CommentedConfig result = CommentedConfig.inMemory();
 		public final List<ITextComponent> report = new ArrayList<>();
-		private HotKeyExecutionContext(SimpleConfig config) {
+		private HotKeyExecutionContext(SimpleConfigImpl config) {
 			this.config = config;
 		}
 	}
@@ -141,10 +141,10 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		});
 	}
 	
-	private static SimpleConfig getConfig(Pair<String, EditType> pair) {
+	private static SimpleConfigImpl getConfig(Pair<String, EditType> pair) {
 		if (pair.getRight().isRemote() && !permissions.permissionFor(pair.getLeft()).getLeft().canEdit())
 			return null;
-		return SimpleConfig.getConfigOrNull(pair.getLeft(), pair.getRight().getType());
+		return SimpleConfigImpl.getConfigOrNull(pair.getLeft(), pair.getRight().getType());
 	}
 	
 	protected Map<String, Map<String, Map<String, Object>>> serializeActions() {
@@ -153,7 +153,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 				Map<String, Object> mm =
 				  m.computeIfAbsent(pair.getLeft(), k -> new LinkedHashMap<>())
 					 .computeIfAbsent(pair.getRight().getAlias(), t -> new LinkedHashMap<>());
-				SimpleConfig config = getConfig(pair);
+				SimpleConfigImpl config = getConfig(pair);
 				if (config != null) actions.forEach((path, action) -> {
 					if (config.hasEntry(path)) {
 						try {
@@ -188,9 +188,9 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 				final String modId = (String) id;
 				((Map<?, ?>) s).forEach((t, ss) -> {
 					if (t instanceof String && ss instanceof Map) {
-						EditType type = ISimpleConfig.EditType.fromAlias((String) t);
-						if (type != null && SimpleConfig.hasConfig(modId, type.getType())) {
-							SimpleConfig config = SimpleConfig.getConfig(modId, type.getType());
+						EditType type = SimpleConfig.EditType.fromAlias((String) t);
+						if (type != null && SimpleConfigImpl.hasConfig(modId, type.getType())) {
+							SimpleConfigImpl config = SimpleConfigImpl.getConfig(modId, type.getType());
 							Pair<String, EditType> pair = Pair.of(modId, type);
 							Map<String, HotKeyAction<?>> aa = actions
 							  .computeIfAbsent(pair, cc -> new LinkedHashMap<>());

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.ItemNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -32,7 +32,7 @@ import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofItemNa
 public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 	
 	@Internal public ItemNameEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable ResourceLocation value
 	) {
 		super(parent, name, value != null ? value : new ResourceLocation(""));
@@ -69,8 +69,8 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		}
 		
 		@Override
-		protected ItemNameEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
-			if (parent.getRoot().getType() != ISimpleConfig.Type.SERVER && tag != null)
+		protected ItemNameEntry buildEntry(ConfigEntryHolder parent, String name) {
+			if (parent.getRoot().getType() != SimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException("Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;

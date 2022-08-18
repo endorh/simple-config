@@ -41,5 +41,5 @@ public interface ConfigEntryHolderBuilder<Builder extends ConfigEntryHolderBuild
 	/**
 	 * Add a config group
 	 */
-	@Contract("_ -> this") Builder n(IGroupBuilder group);
+	@Contract("_ -> this") Builder n(ConfigGroupBuilder group);
 }

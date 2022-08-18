@@ -1,13 +1,14 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.config.ClientConfig.menu;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigReleaseServerCommonConfigPacket;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.DialogScreen;
@@ -46,18 +47,18 @@ import static java.util.Collections.synchronizedMap;
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
 public class SimpleConfigGUIManager {
 	// Mod loading is asynchronous
-	protected static final Map<String, Map<Type, SimpleConfig>> modConfigs = synchronizedMap(new HashMap<>());
+	protected static final Map<String, Map<Type, SimpleConfigImpl>> modConfigs = synchronizedMap(new HashMap<>());
 	private static final Map<String, AbstractConfigScreen> activeScreens = new HashMap<>();
 	
 	protected static boolean addButton = false;
 	protected static boolean autoAddedButton = false;
-	protected static Comparator<SimpleConfig> typeOrder = Comparator.comparing(SimpleConfig::getType);
-	protected static ResourceLocation defaultBackground = new ResourceLocation(
-	  "textures/block/oak_planks.png");
+	protected static Comparator<SimpleConfigImpl> typeOrder = Comparator.comparing(SimpleConfigImpl::getType);
+	protected static ResourceLocation defaultBackground = new ResourceLocation("textures/block/oak_planks.png");
 	
 	// Used to evict unbound `ExtendedKeyBind`s for overlap checks to work properly
 	private static int guiSession;
 	private static final Map<String, Integer> guiSessions = new HashMap<>();
+	private static final Map<String, IConfigScreenGUIState> guiStates = new HashMap<>();
 	
 	@Internal public static int getGuiSession() {
 		return guiSession;
@@ -80,7 +81,7 @@ public class SimpleConfigGUIManager {
 	/**
 	 * Register a config in the GUI system
 	 */
-	protected static void registerConfig(SimpleConfig config) {
+	protected static void registerConfig(SimpleConfigImpl config) {
 		String modId = config.getModId();
 		ModContainer container = config.getModContainer();
 		Optional<BiFunction<Minecraft, Screen, Screen>> ext = container.getCustomExtension(ExtensionPoint.CONFIGGUIFACTORY);
@@ -132,15 +133,15 @@ public class SimpleConfigGUIManager {
 			});
 			return screen;
 		}
-		Map<Type, SimpleConfig> configs = modConfigs.get(modId);
+		Map<Type, SimpleConfigImpl> configs = modConfigs.get(modId);
 		if (configs == null || configs.isEmpty())
 			throw new IllegalArgumentException(
 			  "No Simple Config GUI registered for mod id: \"" + modId + "\"");
 		final Minecraft mc = Minecraft.getInstance();
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
-		final List<SimpleConfig> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.getType() != ISimpleConfig.Type.SERVER || hasPermission)
+		final List<SimpleConfigImpl> orderedConfigs = configs.values().stream()
+		  .filter(c -> c.getType() != SimpleConfig.Type.SERVER || hasPermission)
 		  .sorted(typeOrder)
 		  .collect(Collectors.toList());
 		// final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
@@ -148,25 +149,27 @@ public class SimpleConfigGUIManager {
 		  .setParentScreen(parentScreen)
 		  .setSavingRunnable(() -> {})
 		  .setTitle(new TranslationTextComponent(
-			 "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
+		    "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
+		  .setPreviousGUIState(guiStates.get(modId))
 		  // .setSnapshotHandler(handler)
 		  .setEditedConfigHotKey(hotkey, r -> {
-			  activeScreens.remove(modId);
+			  AbstractConfigScreen removed = activeScreens.remove(modId);
+			  guiStates.put(modId, removed.saveConfigScreenGUIState());
 			  guiSessions.remove(modId);
-			  if (configs.containsKey(ISimpleConfig.Type.COMMON)
+			  if (configs.containsKey(SimpleConfig.Type.COMMON)
 			      && !Minecraft.getInstance().isIntegratedServerRunning()
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
-			  for (SimpleConfig c: orderedConfigs) c.removeGUI();
+			  for (SimpleConfigImpl c: orderedConfigs) c.removeGUI();
 			  Minecraft.getInstance().displayGuiScreen(parentScreen);
 			  if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
 		  }); //.setClosingRunnable(() -> activeScreens.remove(modId));
-		for (SimpleConfig config : orderedConfigs) config.buildGUI(builder, false);
+		for (SimpleConfigImpl config : orderedConfigs) config.buildGUI(builder, false);
 		guiSessions.put(modId, ++guiSession);
 		final AbstractConfigScreen gui = builder.build();
 		activeScreens.put(modId, gui);
-		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, null);
+		for (SimpleConfigImpl config : orderedConfigs) config.setGUI(gui, null);
 		return gui;
 	}
 	
@@ -175,38 +178,40 @@ public class SimpleConfigGUIManager {
 	 * @param parent Parent screen to return to
 	 */
 	public static Screen getConfigGUI(String modId, Screen parent) {
-		Map<Type, SimpleConfig> configs = modConfigs.get(modId);
+		Map<Type, SimpleConfigImpl> configs = modConfigs.get(modId);
 		if (configs == null || configs.isEmpty())
 			throw new IllegalArgumentException(
 			  "No Simple Config GUI registered for mod id: \"" + modId + "\"");
 		final Minecraft mc = Minecraft.getInstance();
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
-		final List<SimpleConfig> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.getType() != ISimpleConfig.Type.SERVER || hasPermission)
+		final List<SimpleConfigImpl> orderedConfigs = configs.values().stream()
+		  .filter(c -> c.getType() != SimpleConfig.Type.SERVER || hasPermission)
 		  .sorted(typeOrder)
 		  .collect(Collectors.toList());
 		final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parent)
 		  .setSavingRunnable(() -> {
-			  for (SimpleConfig c: orderedConfigs)
+			  for (SimpleConfigImpl c: orderedConfigs)
 				  if (c.isDirty()) c.save();
-		  }).setClosingRunnable(() -> {
-			  activeScreens.remove(modId);
-			  if (configs.containsKey(ISimpleConfig.Type.COMMON)
+		  }).setPreviousGUIState(guiStates.get(modId))
+		  .setClosingRunnable(() -> {
+			  AbstractConfigScreen removed = activeScreens.remove(modId);
+			  guiStates.put(modId, removed.saveConfigScreenGUIState());
+			  if (configs.containsKey(SimpleConfig.Type.COMMON)
 			      && !Minecraft.getInstance().isIntegratedServerRunning()
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
-			  for (SimpleConfig c: orderedConfigs) c.removeGUI();
+			  for (SimpleConfigImpl c: orderedConfigs) c.removeGUI();
 		  }).setTitle(new TranslationTextComponent(
-		    "simpleconfig.config.title", SimpleConfig.getModNameOrId(modId)))
+			 "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setSnapshotHandler(handler)
 		  .setRemoteCommonConfigProvider(handler);
-		for (SimpleConfig config : orderedConfigs) {
+		for (SimpleConfigImpl config : orderedConfigs) {
 			config.buildGUI(builder, false);
-			if (config.getType() == ISimpleConfig.Type.COMMON
+			if (config.getType() == SimpleConfig.Type.COMMON
 			    && !Minecraft.getInstance().isIntegratedServerRunning()
 			    && hasPermission
 			) config.buildGUI(builder, true);
@@ -214,7 +219,7 @@ public class SimpleConfigGUIManager {
 		guiSessions.put(modId, ++guiSession);
 		final AbstractConfigScreen gui = builder.build();
 		activeScreens.put(modId, gui);
-		for (SimpleConfig config : orderedConfigs) config.setGUI(gui, handler);
+		for (SimpleConfigImpl config : orderedConfigs) config.setGUI(gui, handler);
 		return gui;
 	}
 	

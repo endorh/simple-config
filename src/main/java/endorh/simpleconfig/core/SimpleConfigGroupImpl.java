@@ -1,11 +1,11 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.api.ISimpleConfigGroup;
+import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
+import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -24,22 +24,22 @@ import java.util.function.Consumer;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
 
-public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
-  implements ISimpleConfigGroup, IGUIEntry {
-	public final SimpleConfigCategory category;
-	public final @Nullable SimpleConfigGroup parentGroup;
+public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
+  implements SimpleConfigGroup, IGUIEntry {
+	public final SimpleConfigCategoryImpl category;
+	public final @Nullable SimpleConfigGroupImpl parentGroup;
 	public final String name;
 	public boolean expanded;
 	protected final String title;
 	protected final String tooltip;
-	protected Map<String, SimpleConfigGroup> groups;
+	protected Map<String, SimpleConfigGroupImpl> groups;
 	protected List<IGUIEntry> order;
-	protected @Nullable Consumer<ISimpleConfigGroup> baker;
+	protected @Nullable Consumer<SimpleConfigGroup> baker;
 	protected AbstractConfigEntry<?, ?, ?> heldEntry;
 	
-	@Internal protected SimpleConfigGroup(
-	  SimpleConfigGroup parent, String name, String title,
-	  String tooltip, boolean expanded, @Nullable Consumer<ISimpleConfigGroup> baker
+	@Internal protected SimpleConfigGroupImpl(
+	  SimpleConfigGroupImpl parent, String name, String title,
+	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
 	) {
 		this.category = parent.category;
 		this.parentGroup = parent;
@@ -51,9 +51,9 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 		root = category.root;
 	}
 	
-	@Internal protected SimpleConfigGroup(
-	  SimpleConfigCategory parent, String name, String title,
-	  String tooltip, boolean expanded, @Nullable Consumer<ISimpleConfigGroup> baker
+	@Internal protected SimpleConfigGroupImpl(
+	  SimpleConfigCategoryImpl parent, String name, String title,
+	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
 	) {
 		this.category = parent;
 		this.parentGroup = null;
@@ -67,7 +67,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 	
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
-	  Map<String, SimpleConfigGroup> groups, List<IGUIEntry> guiOrder,
+	  Map<String, SimpleConfigGroupImpl> groups, List<IGUIEntry> guiOrder,
 	  @Nullable AbstractConfigEntry<?, ?, ?> heldEntry
 	) {
 		if (this.entries != null)
@@ -114,12 +114,12 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 		return builder.toString();
 	}
 	
-	@Override public SimpleConfigCategory getCategory() {
+	@Override public SimpleConfigCategoryImpl getCategory() {
 		return category;
 	}
 	
 	
-	@Override public SimpleConfigGroup getGroup(String path) {
+	@Override public SimpleConfigGroupImpl getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
@@ -229,8 +229,8 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 			for (IGUIEntry entry : order) {
 				if (entry instanceof AbstractConfigEntry) {
 					((AbstractConfigEntry<?, ?, ?>) entry).buildGUI(group, entryBuilder, forRemote);
-				} else if (entry instanceof SimpleConfigGroup) {
-					group.add(((SimpleConfigGroup) entry).buildGUI(entryBuilder, forRemote));
+				} else if (entry instanceof SimpleConfigGroupImpl) {
+					group.add(((SimpleConfigGroupImpl) entry).buildGUI(entryBuilder, forRemote));
 				}
 			}
 		}
@@ -269,7 +269,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 	
 	@Override
 	protected void bake() {
-		for (SimpleConfigGroup group : groups.values())
+		for (SimpleConfigGroupImpl group : groups.values())
 			group.bake();
 		if (baker != null)
 			baker.accept(this);
@@ -279,7 +279,7 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 	 * Bakes all the backing fields<br>
 	 */
 	protected void bakeFields() {
-		for (SimpleConfigGroup group : groups.values())
+		for (SimpleConfigGroupImpl group : groups.values())
 			group.bakeFields();
 		for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 			entry.bakeField();
@@ -287,13 +287,13 @@ public class SimpleConfigGroup extends AbstractSimpleConfigEntryHolder
 	
 	/**
 	 * Commits any changes in the backing fields to the actual config file<br>
-	 * You may also call this method on the root {@link SimpleConfig}
-	 * or on the parent {@link SimpleConfigCategory} of this group
+	 * You may also call this method on the root {@link SimpleConfigImpl}
+	 * or on the parent {@link SimpleConfigCategoryImpl} of this group
 	 * @throws InvalidConfigValueException if the current value of a field is invalid.
 	 */
 	@Override public void commitFields() {
 		try {
-			for (SimpleConfigGroup group : groups.values())
+			for (SimpleConfigGroupImpl group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 				entry.commitField();

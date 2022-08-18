@@ -6,15 +6,15 @@ import org.jetbrains.annotations.Contract;
 
 import java.util.function.Consumer;
 
-public interface ICategoryBuilder extends ConfigEntryHolderBuilder<ICategoryBuilder> {
+public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCategoryBuilder> {
 	/**
 	 * Set the baker method for this config category<br>
 	 * You may also define a '{@code bake}' static method
-	 * in the backing class accepting a {@link ISimpleConfig}
+	 * in the backing class accepting a {@link SimpleConfig}
 	 * and it will be set automatically as the baker (but you
 	 * may not define it and also call this method)
 	 */
-	@Contract("_ -> this") ICategoryBuilder withBaker(Consumer<ISimpleConfigCategory> baker);
+	@Contract("_ -> this") ConfigCategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker);
 	
 	/**
 	 * Set the background texture to be used
@@ -23,7 +23,7 @@ public interface ICategoryBuilder extends ConfigEntryHolderBuilder<ICategoryBuil
 	 * @see #withIcon(Icon)
 	 * @see #withColor(int)
 	 */
-	@Contract("_ -> this") ICategoryBuilder withBackground(String resourceName);
+	@Contract("_ -> this") ConfigCategoryBuilder withBackground(String resourceName);
 	
 	/**
 	 * Set the background texture to be used
@@ -32,7 +32,7 @@ public interface ICategoryBuilder extends ConfigEntryHolderBuilder<ICategoryBuil
 	 * @see #withIcon(Icon)
 	 * @see #withColor(int)
 	 */
-	@Contract("_ -> this") ICategoryBuilder withBackground(ResourceLocation background);
+	@Contract("_ -> this") ConfigCategoryBuilder withBackground(ResourceLocation background);
 	
 	/**
 	 * Set the icon of this category.<br>
@@ -42,7 +42,7 @@ public interface ICategoryBuilder extends ConfigEntryHolderBuilder<ICategoryBuil
 	 * @see #withColor(int)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ICategoryBuilder withIcon(Icon icon);
+	@Contract("_ -> this") ConfigCategoryBuilder withIcon(Icon icon);
 	
 	/**
 	 * Set the color of this category.<br>
@@ -55,7 +55,7 @@ public interface ICategoryBuilder extends ConfigEntryHolderBuilder<ICategoryBuil
 	 * @see #withIcon(Icon)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ICategoryBuilder withColor(int tint);
+	@Contract("_ -> this") ConfigCategoryBuilder withColor(int tint);
 	
-	@Contract("_, _ -> this") ICategoryBuilder n(IGroupBuilder group, int index);
+	@Contract("_, _ -> this") ConfigCategoryBuilder n(ConfigGroupBuilder group, int index);
 }

@@ -1,12 +1,12 @@
 package endorh.simpleconfig.api;
 
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
 
-public interface ISimpleConfigGroup extends ISimpleConfigEntryHolder {
+public interface SimpleConfigGroup extends ConfigEntryHolder {
 	/**
 	 * Get the parent category of this group
 	 */
-	ISimpleConfigCategory getCategory();
+	SimpleConfigCategory getCategory();
 	
 	/**
 	 * Get a config subgroup
@@ -14,5 +14,5 @@ public interface ISimpleConfigGroup extends ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the group
 	 * @throws NoSuchConfigGroupError if the group is not found
 	 */
-	ISimpleConfigGroup getGroup(String path);
+	SimpleConfigGroup getGroup(String path);
 }

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.IErrorEntryBuilder;
+import endorh.simpleconfig.api.ErrorEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.Contract;
 
@@ -31,7 +31,7 @@ public interface ListEntryBuilder<V, Config, Gui, Self extends ListEntryBuilder<
 	
 	/**
 	 * Set an error message supplier for the elements of this list entry<br>
-	 * You may also use {@link IErrorEntryBuilder#error(Function)} to check
+	 * You may also use {@link ErrorEntryBuilder#error(Function)} to check
 	 * instead the whole list<br>
 	 * If a single element is deemed invalid, the whole list is considered invalid.
 	 *

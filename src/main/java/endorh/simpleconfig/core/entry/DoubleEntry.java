@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
   implements IKeyEntry<Double> {
 	@Internal public DoubleEntry(
-	  ISimpleConfigEntryHolder parent, String name, double value
+	  ConfigEntryHolder parent, String name, double value
 	) {
 		super(parent, name, value);
 		commentMin = -Double.MAX_VALUE;
@@ -83,7 +83,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 		}
 		
 		@Override
-		protected DoubleEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected DoubleEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new DoubleEntry(parent, name, value);
 		}
 		

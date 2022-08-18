@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
@@ -342,7 +342,7 @@ public class KeyBindButton extends FocusableGui
 		overlaps.stream().map(o -> {
 			IFormattableTextComponent title = o.getCandidateName().deepCopy();
 			if (o.getModId() != null) title.appendString(" ").append(new StringTextComponent(
-			  "(" + SimpleConfig.getModNameOrId(o.getModId()) + ")"
+			  "(" + SimpleConfigImpl.getModNameOrId(o.getModId()) + ")"
 			).mergeStyle(TextFormatting.GRAY));
 			return title
 			  .append(new StringTextComponent(": ").mergeStyle(TextFormatting.DARK_GRAY))

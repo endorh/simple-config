@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ShortListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -18,7 +18,7 @@ import java.util.Optional;
 public class ShortListEntry extends RangedListEntry<Short, Number, Integer, ShortListEntry> {
 	@Internal
 	public ShortListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable List<Short> value
 	) {
 		super(parent, name, value);
@@ -51,7 +51,7 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 		}
 		
 		@Override
-		protected ShortListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ShortListEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new ShortListEntry(parent, name, value);
 		}
 		

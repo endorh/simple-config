@@ -6,7 +6,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.api.ConfigBuilderFactoryProxy;
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPacket;
@@ -66,8 +66,8 @@ import static java.util.Collections.unmodifiableMap;
  * Create and register your config with {@link ConfigBuilderFactoryProxy#config(String, Type)}
  * or {@link ConfigBuilderFactoryProxy#config(String, Type, Class)}
  */
-public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISimpleConfig {
-	private static final Map<Pair<String, Type>, SimpleConfig> INSTANCES =
+public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements SimpleConfig {
+	private static final Map<Pair<String, Type>, SimpleConfigImpl> INSTANCES =
 	  synchronizedMap(new HashMap<>());
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 	private static int TEXT_ENTRY_ID_GEN = 0;
@@ -78,8 +78,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 
 	protected final String defaultTitle;
 	protected final String tooltip;
-	protected final @Nullable Consumer<SimpleConfig> saver;
-	protected final @Nullable Consumer<ISimpleConfig> baker;
+	protected final @Nullable Consumer<SimpleConfigImpl> saver;
+	protected final @Nullable Consumer<SimpleConfig> baker;
 	protected final @Nullable Object configClass;
 	private final Type type;
 	private final String modId;
@@ -88,17 +88,17 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 	/**
 	 * Should not be modified
 	 */
-	protected Map<String, SimpleConfigCategory> categories = null;
+	protected Map<String, SimpleConfigCategoryImpl> categories = null;
 	/**
 	 * Should not be modified
 	 */
-	protected Map<String, SimpleConfigGroup> groups = null;
+	protected Map<String, SimpleConfigGroupImpl> groups = null;
 	/**
 	 * Order used in the config screen
 	 */
 	protected List<IGUIEntry> order;
 	protected ForgeConfigSpec spec;
-	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<ISimpleConfig, ConfigScreenBuilder> decorator;
+	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
@@ -110,9 +110,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 	private Map<String, NodeComments> comments = new HashMap<>();
 	private final SimpleConfigCommentedYamlFormat configFormat = SimpleConfigCommentedYamlFormat.forConfig(this);
 	
-	@Internal protected SimpleConfig(
+	@Internal protected SimpleConfigImpl(
 	  String modId, Type type, String defaultTitle,
-	  @Nullable Consumer<ISimpleConfig> baker, @Nullable Consumer<SimpleConfig> saver,
+	  @Nullable Consumer<SimpleConfig> baker, @Nullable Consumer<SimpleConfigImpl> saver,
 	  @Nullable Object configClass
 	) {
 		this.modId = modId;
@@ -133,11 +133,11 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 		}
 	}
 	
-	@Internal public static SimpleConfig getConfigOrNull(String modId, Type type) {
+	@Internal public static SimpleConfigImpl getConfigOrNull(String modId, Type type) {
 		return INSTANCES.get(Pair.of(modId, type));
 	}
 	
-	@Internal public static SimpleConfig getConfig(String modId, Type type) {
+	@Internal public static SimpleConfigImpl getConfig(String modId, Type type) {
 		Pair<String, Type> key = Pair.of(modId, type);
 		if (!INSTANCES.containsKey(key)) throw new IllegalStateException(
 		  "Attempted to get unregistered config for mod id \"" + modId + "\" of type " + type);
@@ -152,7 +152,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 		return INSTANCES.keySet().stream().map(Pair::getLeft).collect(Collectors.toSet());
 	}
 	
-	@Internal public static Collection<SimpleConfig> getAllConfigs() {
+	@Internal public static Collection<SimpleConfigImpl> getAllConfigs() {
 		return INSTANCES.values();
 	}
 	
@@ -194,8 +194,8 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 	 */
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
-	  Map<String, SimpleConfigCategory> categories,
-	  Map<String, SimpleConfigGroup> groups,
+	  Map<String, SimpleConfigCategoryImpl> categories,
+	  Map<String, SimpleConfigGroupImpl> groups,
 	  List<IGUIEntry> order, ForgeConfigSpec spec,
 	  Icon icon, int color, @Nullable LiteralArgumentBuilder<CommandSource> commandRoot
 	) {
@@ -265,9 +265,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 	 * Bakes all the backing fields<br>
 	 */
 	protected void bakeFields() {
-		for (SimpleConfigCategory cat : categories.values())
+		for (SimpleConfigCategoryImpl cat : categories.values())
 			cat.bakeFields();
-		for (SimpleConfigGroup group : groups.values())
+		for (SimpleConfigGroupImpl group : groups.values())
 			group.bakeFields();
 		for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 			entry.bakeField();
@@ -281,9 +281,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 	 */
 	@Override public void commitFields() {
 		try {
-			for (SimpleConfigCategory cat : categories.values())
+			for (SimpleConfigCategoryImpl cat : categories.values())
 				cat.commitFields();
-			for (SimpleConfigGroup group : groups.values())
+			for (SimpleConfigGroupImpl group : groups.values())
 				group.commitFields();
 			for (AbstractConfigEntry<?, ?, ?> entry : entries.values())
 				entry.commitField();
@@ -298,9 +298,9 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 	 */
 	@Override public void bake() {
 		bakeFields();
-		for (SimpleConfigCategory cat : categories.values())
+		for (SimpleConfigCategoryImpl cat : categories.values())
 			cat.bake();
-		for (SimpleConfigGroup group : groups.values())
+		for (SimpleConfigGroupImpl group : groups.values())
 			group.bake();
 		if (baker != null)
 			baker.accept(this);
@@ -428,13 +428,13 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 		}
 	}
 	
-	@Override public SimpleConfigCategory getCategory(String name) {
+	@Override public SimpleConfigCategoryImpl getCategory(String name) {
 		if (!categories.containsKey(name))
 			throw new NoSuchConfigCategoryError(getPath() + "." + name);
 		return categories.get(name);
 	}
 	
-	@Override public SimpleConfigGroup getGroup(String path) {
+	@Override public SimpleConfigGroupImpl getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
@@ -514,7 +514,7 @@ public class SimpleConfig extends AbstractSimpleConfigEntryHolder implements ISi
 			for (IGUIEntry entry : order)
 				entry.buildGUI(category, entryBuilder, forRemote);
 		}
-		for (SimpleConfigCategory cat : categories.values())
+		for (SimpleConfigCategoryImpl cat : categories.values())
 			cat.buildGUI(configBuilder, entryBuilder, forRemote);
 		if (decorator != null)
 			decorator.accept(this, configBuilder);

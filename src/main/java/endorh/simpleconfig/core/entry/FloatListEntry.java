@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.FloatListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatListEntry> {
 	@Internal public FloatListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable List<Float> value
 	) {
 		super(parent, name, value);
@@ -48,7 +48,7 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 		}
 		
 		@Override
-		protected FloatListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected FloatListEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new FloatListEntry(parent, name, value);
 		}
 		

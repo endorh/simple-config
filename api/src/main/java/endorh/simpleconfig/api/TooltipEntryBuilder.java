@@ -14,11 +14,11 @@ import java.util.function.Supplier;
  * @param <Gui> The GUI type of the entry
  * @param <Self> The actual entry subtype to be returned by builder-like methods
  */
-public interface ITooltipEntryBuilder<V, Gui, Self extends ITooltipEntryBuilder<V, Gui, Self>> {
+public interface TooltipEntryBuilder<V, Gui, Self extends TooltipEntryBuilder<V, Gui, Self>> {
 	
 	/**
 	 * Set a tooltip supplier for this entry<br>
-	 * Unlike {@link ITooltipEntryBuilder#tooltip(Function)}, this method
+	 * Unlike {@link TooltipEntryBuilder#tooltip(Function)}, this method
 	 * takes the value used in the GUI directly, which might
 	 * be of a different type than the entry itself<br><br>
 	 * <b>Remember that all entries get automatically mapped optional tooltip
@@ -32,7 +32,7 @@ public interface ITooltipEntryBuilder<V, Gui, Self extends ITooltipEntryBuilder<
 	
 	/**
 	 * Set a tooltip supplier for this entry<br>
-	 * Unlike {@link ITooltipEntryBuilder#guiTooltip(Function)}, this method takes the
+	 * Unlike {@link TooltipEntryBuilder#guiTooltip(Function)}, this method takes the
 	 * value used in the config entry, once parsed from the GUI, since these
 	 * types may be different. If the GUI value is invalid, this supplier won't be called.<br>
 	 * <b>Replaces</b> any tooltip supplier previously set.<br><br>

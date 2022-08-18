@@ -5,7 +5,7 @@ import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.AbstractRange.IntRange;
 import endorh.simpleconfig.api.AbstractRange.LongRange;
 import endorh.simpleconfig.api.ConfigBuilderFactory.PresetBuilder;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProvider;
@@ -57,32 +57,32 @@ public abstract class ConfigBuilderFactoryProxy {
 	}
 	
 	/**
-	 * Create a {@link ISimpleConfig} builder<br>
-	 * Add entries with {@link ISimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
-	 * Add categories and groups with {@link ISimpleConfigBuilder#n(ICategoryBuilder)}
-	 * and {@link ISimpleConfigBuilder#n(IGroupBuilder)}<br>
-	 * Complete the config by calling {@link ISimpleConfigBuilder#buildAndRegister()}<br>
+	 * Create a {@link SimpleConfig} builder<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
+	 * Add categories and groups with {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)}
+	 * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
+	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
 	 *
 	 * @param modId Your mod id
 	 * @param type A {@link Type}, usually either CLIENT or SERVER
 	 */
-	public static ISimpleConfigBuilder config(String modId, Type type) {
+	public static SimpleConfigBuilder config(String modId, Type type) {
 		return getFactory().builder(modId, type);
 	}
 	
 	/**
-	 * Create a {@link ISimpleConfig} builder<br>
-	 * Add entries with {@link ISimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
-	 * Add categories and groups with {@link ISimpleConfigBuilder#n(ICategoryBuilder)}
-	 * and {@link ISimpleConfigBuilder#n(IGroupBuilder)}<br>
-	 * Complete the config by calling {@link ISimpleConfigBuilder#buildAndRegister()}<br>
+	 * Create a {@link SimpleConfig} builder<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
+	 * Add categories and groups with {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)}
+	 * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
+	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
 	 *
 	 * @param modId Your mod id
 	 * @param type A {@link Type}, usually either CLIENT or SERVER
 	 * @param configClass Backing class for the config. It will be parsed
 	 *   for static backing fields and config annotations
 	 */
-	public static ISimpleConfigBuilder config(String modId, Type type, Class<?> configClass) {
+	public static SimpleConfigBuilder config(String modId, Type type, Class<?> configClass) {
 		return getFactory().builder(modId, type, configClass);
 	}
 	
@@ -91,7 +91,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @param name Group name, suitable for the config file (without spaces)
 	 */
-	public static IGroupBuilder group(String name) {
+	public static ConfigGroupBuilder group(String name) {
 		return getFactory().group(name);
 	}
 	
@@ -101,7 +101,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param name Group name, suitable for the config file (without spaces)
 	 * @param expand Whether to expand this group in the GUI automatically (default: no)
 	 */
-	public static IGroupBuilder group(String name, boolean expand) {
+	public static ConfigGroupBuilder group(String name, boolean expand) {
 		return getFactory().group(name, expand);
 	}
 	
@@ -110,7 +110,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @param name Category name, suitable for the config file (without spaces)
 	 */
-	public static ICategoryBuilder category(String name) {
+	public static ConfigCategoryBuilder category(String name) {
 		return getFactory().category(name);
 	}
 	
@@ -121,7 +121,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param configClass Backing class for the category, which will be parsed
 	 *   for static backing fields and config annotations
 	 */
-	public static ICategoryBuilder category(String name, Class<?> configClass) {
+	public static ConfigCategoryBuilder category(String name, Class<?> configClass) {
 		return getFactory().category(name, configClass);
 	}
 	
@@ -200,7 +200,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Displays a button in the GUI that can trigger an arbitrary action.<br>
 	 * The action may receive the immediate parent of the entry as parameter.
 	 */
-	public static ButtonEntryBuilder button(Consumer<ISimpleConfigEntryHolder> action) {
+	public static ButtonEntryBuilder button(Consumer<ConfigEntryHolder> action) {
 		return getFactory().button(action);
 	}
 	
@@ -219,7 +219,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 */
 	public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
 	EntryButtonEntryBuilder<V, Gui, B> button(
-	  B inner, BiConsumer<V, ISimpleConfigEntryHolder> action
+	  B inner, BiConsumer<V, ConfigEntryHolder> action
 	) {
 		return getFactory().button(inner, action);
 	}

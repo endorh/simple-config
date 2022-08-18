@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import java.nio.file.Path;
 import java.util.*;
 
-public interface ISimpleConfig extends ISimpleConfigEntryHolder {
+public interface SimpleConfig extends ConfigEntryHolder {
 	@Internal String MOD_ID = "simpleconfig";
 	
 	boolean isWrapper();
@@ -25,7 +25,7 @@ public interface ISimpleConfig extends ISimpleConfigEntryHolder {
 	 * @param name Name of the category
 	 * @throws NoSuchConfigCategoryError if the category is not found
 	 */
-	ISimpleConfigCategory getCategory(String name);
+	SimpleConfigCategory getCategory(String name);
 	
 	/**
 	 * Get a config group
@@ -33,7 +33,7 @@ public interface ISimpleConfig extends ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the group
 	 * @throws NoSuchConfigGroupError if the group is not found
 	 */
-	ISimpleConfigGroup getGroup(String path);
+	SimpleConfigGroup getGroup(String path);
 	
 	boolean canEdit();
 	

@@ -3,8 +3,8 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.Config.Entry;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.CaptionedListEntryBuilder;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
@@ -38,7 +38,7 @@ public class CaptionedListEntry<
 	protected final AbstractConfigEntry<CV, CC, CG> captionEntry;
 	
 	protected CaptionedListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  Pair<CV, List<V>> value, AbstractListEntry<V, C, G, ?> listEntry, AbstractConfigEntry<CV, CC, CG> captionEntry
 	) {
 		super(parent, name, value);
@@ -112,7 +112,7 @@ public class CaptionedListEntry<
 		}
 		
 		@Override protected CaptionedListEntry<V, C, G, CV, CC, CG> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			final AbstractListEntry<V, C, G, ?> le = DummyEntryHolder.build(parent, listEntryBuilder);
 			final AbstractConfigEntry<CV, CC, CG> ce = DummyEntryHolder.build(parent, captionEntryBuilder);

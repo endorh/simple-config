@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -95,7 +95,7 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		}
 		
 		@Override
-		protected final Entry build(@NotNull ISimpleConfigEntryHolder parent, String name) {
+		protected final Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			checkBounds();
 			final Entry e = super.build(parent, name);
 			e.min = min;
@@ -122,7 +122,7 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 	protected Function<V, ITextComponent> sliderTextSupplier;
 	
 	public AbstractRangedEntry(
-	  ISimpleConfigEntryHolder parent, String name, V value
+	  ConfigEntryHolder parent, String name, V value
 	) {
 		super(parent, name, value);
 	}

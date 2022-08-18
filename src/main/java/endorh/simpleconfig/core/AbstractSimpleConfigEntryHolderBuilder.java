@@ -2,9 +2,9 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolderBuilder;
-import endorh.simpleconfig.api.IGroupBuilder;
+import endorh.simpleconfig.api.ConfigGroupBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
-import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
+import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.TextEntry;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -101,11 +101,11 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	}
 	
 	@Override @Contract("_ -> this") public Builder text(ITextComponent text) {
-		add(SimpleConfig.nextTextID(), new TextEntry.Builder(() -> text));
+		add(SimpleConfigImpl.nextTextID(), new TextEntry.Builder(() -> text));
 		return self();
 	}
 	@Override @Contract("_ -> this") public Builder text(Supplier<ITextComponent> textSupplier) {
-		add(SimpleConfig.nextTextID(), new TextEntry.Builder(textSupplier));
+		add(SimpleConfigImpl.nextTextID(), new TextEntry.Builder(textSupplier));
 		return self();
 	}
 	
@@ -114,9 +114,9 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	/**
 	 * Add a config group
 	 */
-	@Contract("_, _ -> this") protected abstract Builder n(IGroupBuilder group, int index);
+	@Contract("_, _ -> this") protected abstract Builder n(ConfigGroupBuilder group, int index);
 	
-	@Override @Contract("_ -> this") public Builder n(IGroupBuilder group) {
+	@Override @Contract("_ -> this") public Builder n(ConfigGroupBuilder group) {
 		return n(group, 0);
 	}
 }

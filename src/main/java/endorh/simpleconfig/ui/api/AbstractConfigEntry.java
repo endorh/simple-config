@@ -5,8 +5,8 @@ import com.ibm.icu.impl.Pair;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry;
@@ -118,12 +118,17 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 	 * Path relative to the category type
 	 */
 	public String getRelPath() {
-		if (parentEntry != null) return parentEntry.providePath(this);
+		if (parentEntry != null) return getCategory().getName() + "." + parentEntry.providePath(this);
 		return getCategory().getName() + "." + getName();
 	}
 	
+	public String getCatPath() {
+		if (parentEntry != null) return parentEntry.providePath(this);
+		return getName();
+	}
+	
 	public String providePath(AbstractConfigEntry<?> child) {
-		return getRelPath() + "." + child.getName();
+		return getCatPath() + "." + child.getName();
 	}
 	
 	public ConfigCategory getCategory() {
@@ -888,8 +893,8 @@ public abstract class AbstractConfigEntry<T> extends DynamicElementListWidget.El
 		ConfigCategory category = getCategory();
 		if (category == null) return null;
 		Type type = category.getType().getType();
-		if (SimpleConfig.hasConfig(modId, type)) {
-			SimpleConfig config = SimpleConfig.getConfig(modId, type);
+		if (SimpleConfigImpl.hasConfig(modId, type)) {
+			SimpleConfigImpl config = SimpleConfigImpl.getConfig(modId, type);
 			String path = getRelPath();
 			if (config.hasEntry(path)) return configEntry = config.getEntry(path);
 		}

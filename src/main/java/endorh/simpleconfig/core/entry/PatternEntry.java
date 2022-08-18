@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.PatternEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.util.text.ITextComponent;
@@ -20,7 +20,7 @@ import java.util.regex.PatternSyntaxException;
 public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntry> {
 	protected final int flags;
 	
-	@Internal public PatternEntry(ISimpleConfigEntryHolder parent, String name, Pattern value) {
+	@Internal public PatternEntry(ConfigEntryHolder parent, String name, Pattern value) {
 		super(parent, name, value, Pattern.class);
 		this.flags = value.flags();
 	}
@@ -51,7 +51,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		}
 		
 		@Override
-		protected PatternEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected PatternEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new PatternEntry(parent, name, value);
 		}
 		

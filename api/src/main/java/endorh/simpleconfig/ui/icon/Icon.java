@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.icon;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
@@ -48,7 +48,7 @@ public class Icon {
 	 * The empty icon. Draws nothing.
 	 */
 	public static final Icon EMPTY = new Icon(
-	  new ResourceLocation(ISimpleConfig.MOD_ID, "textures/gui/simpleconfig/empty"),
+	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/empty"),
 	  0, 0, 0, 0, 0, 0
 	) { // @formatter:off
 		@Override public void renderCentered(MatrixStack m, int x, int y, int w, int h, int level) {}

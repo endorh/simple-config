@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.BooleanEntryBuilder;
 import endorh.simpleconfig.api.entry.BooleanEntryBuilder.BooleanDisplayer;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -24,7 +24,7 @@ public class BooleanEntry
   extends AbstractConfigEntry<Boolean, Boolean, Boolean> implements IKeyEntry<Boolean> {
 	protected BooleanDisplayer yesNoSupplier = BooleanEntryBuilder.BooleanDisplayer.TRUE_FALSE;
 	
-	@Internal public BooleanEntry(ISimpleConfigEntryHolder parent, String name, boolean value) {
+	@Internal public BooleanEntry(ConfigEntryHolder parent, String name, boolean value) {
 		super(parent, name, value);
 	}
 	
@@ -58,7 +58,7 @@ public class BooleanEntry
 		}
 		
 		@Override
-		protected BooleanEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected BooleanEntry buildEntry(ConfigEntryHolder parent, String name) {
 			final BooleanEntry e = new BooleanEntry(parent, name, value);
 			e.yesNoSupplier = yesNoSupplier;
 			return e;

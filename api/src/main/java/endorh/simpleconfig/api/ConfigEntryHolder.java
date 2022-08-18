@@ -1,9 +1,9 @@
 package endorh.simpleconfig.api;
 
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigGroupError;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.ui.api.ConfigScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -14,21 +14,21 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Abstract container for config entries<br>
- * Has a {@link ISimpleConfig} as root, and can retrieve/set config values
+ * Has a {@link SimpleConfig} as root, and can retrieve/set config values
  * and be marked as dirty
  */
-public interface ISimpleConfigEntryHolder {
+public interface ConfigEntryHolder {
 	
 	/**
 	 * Get the root config of this entry holder
 	 */
-	ISimpleConfig getRoot();
+	SimpleConfig getRoot();
 	
 	/**
 	 * Get the parent of this entry holder.
 	 * Will throw {@link NoSuchConfigGroupError} if it has no parent.
 	 */
-	default ISimpleConfigEntryHolder getParent() {
+	default ConfigEntryHolder getParent() {
 		throw new NoSuchConfigGroupError("");
 	}
 	
@@ -51,10 +51,10 @@ public interface ISimpleConfigEntryHolder {
 	 * @param path Name or dot-separated path to the child
 	 *             If null or empty, {@code this} will be returned
 	 * @throws NoSuchConfigGroupError if the child is not found
-	 * @return A child {@link ISimpleConfigEntryHolder},
+	 * @return A child {@link ConfigEntryHolder},
 	 *         or {@code this} if path is null or empty.
 	 */
-	@NotNull ISimpleConfigEntryHolder getChild(String path);
+	@NotNull ConfigEntryHolder getChild(String path);
 	
 	/**
 	 * Get a config value<br>
@@ -142,12 +142,12 @@ public interface ISimpleConfigEntryHolder {
 	
 	/**
 	 * Internal generic setter<br>
-	 * Use {@link ISimpleConfigEntryHolder#set(String, Object)} instead
+	 * Use {@link ConfigEntryHolder#set(String, Object)} instead
 	 * to benefit from a layer of primitive generics type safety
 	 * @param path Name or dot-separated path to the value
 	 * @param value Value to be set
 	 * @param <V> The type of the value
-	 * @deprecated Use {@link ISimpleConfigEntryHolder#set(String, Object)} instead
+	 * @deprecated Use {@link ConfigEntryHolder#set(String, Object)} instead
 	 * to benefit from an extra layer of primitive generics type safety
 	 */
 	@SuppressWarnings("DeprecatedIsStillUsed") @Internal @Deprecated <V> void doSet(String path, V value);
@@ -222,7 +222,7 @@ public interface ISimpleConfigEntryHolder {
 	 * When the config screen is saved, only config files containing dirty entries are updated
 	 * @see #isDirty
 	 */
-	default ISimpleConfigEntryHolder markDirty() {
+	default ConfigEntryHolder markDirty() {
 		markDirty(true);
 		return this;
 	}
@@ -524,12 +524,12 @@ public interface ISimpleConfigEntryHolder {
 	
 	/**
 	 * Internal generic GUI setter<br>
-	 * Use {@link ISimpleConfigEntryHolder#setGUI(String, Object)} instead
+	 * Use {@link ConfigEntryHolder#setGUI(String, Object)} instead
 	 * to benefit from a layer of primitive generics type safety
 	 * @param path Name or dot-separated path to the value
 	 * @param value Value to be set
 	 * @param <G> The type of the value
-	 * @deprecated Use {@link ISimpleConfigEntryHolder#setGUI(String, Object)} instead
+	 * @deprecated Use {@link ConfigEntryHolder#setGUI(String, Object)} instead
 	 * to benefit from an extra layer of primitive generics type safety
 	 */
 	@SuppressWarnings("DeprecatedIsStillUsed") @Internal @Deprecated <G> void doSetGUI(String path, G value);

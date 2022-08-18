@@ -1,9 +1,9 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,15 +11,15 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Dummy entry holder containing a single entry
  */
-public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
-	protected ISimpleConfig root;
+public class DummyEntryHolder<V> implements ConfigEntryHolder {
+	protected SimpleConfig root;
 	
-	public DummyEntryHolder(ISimpleConfig root) {
+	public DummyEntryHolder(SimpleConfig root) {
 		this.root = root;
 	}
 	
 	public static <V, E extends AbstractConfigEntry<V, ?, ?>> E build(
-	  ISimpleConfigEntryHolder parent, ConfigEntryBuilder<V, ?, ?, ?> builder
+	  ConfigEntryHolder parent, ConfigEntryBuilder<V, ?, ?, ?> builder
 	) {
 		if (!(builder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
 		  "ConfigEntryBuilder is not instance of AbstractConfigEntryBuilder");
@@ -32,7 +32,7 @@ public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
 		return e;
 	}
 	
-	@Override public ISimpleConfig getRoot() {
+	@Override public SimpleConfig getRoot() {
 		return root;
 	}
 	
@@ -52,7 +52,7 @@ public class DummyEntryHolder<V> implements ISimpleConfigEntryHolder {
 		throw new UnsupportedOperationException();
 	}
 	
-	@Override public @NotNull ISimpleConfigEntryHolder getChild(String path) {
+	@Override public @NotNull ConfigEntryHolder getChild(String path) {
 		throw new NoSuchConfigEntryError(path);
 	}
 	

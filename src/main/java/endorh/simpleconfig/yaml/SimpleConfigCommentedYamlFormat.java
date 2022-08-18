@@ -3,7 +3,7 @@ package endorh.simpleconfig.yaml;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigFormat;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.yaml.snakeyaml.DumperOptions;
@@ -45,7 +45,7 @@ public class SimpleConfigCommentedYamlFormat implements ConfigFormat<CommentedCo
 	public static final ThreadLocal<SimpleConfigCommentedYamlFormat> WITHOUT_COMMENTS = ThreadLocal.withInitial(
 	  () -> new SimpleConfigCommentedYamlFormat(DEFAULT_YAML.get(), null));
 	
-	public static SimpleConfigCommentedYamlFormat forConfig(SimpleConfig config) {
+	public static SimpleConfigCommentedYamlFormat forConfig(SimpleConfigImpl config) {
 		return new SimpleConfigCommentedYamlFormat(DEFAULT_YAML.get(), config);
 	}
 	
@@ -64,14 +64,14 @@ public class SimpleConfigCommentedYamlFormat implements ConfigFormat<CommentedCo
 	}
 	
 	private final Yaml yaml;
-	private final SimpleConfig config;
+	private final SimpleConfigImpl config;
 	
-	private SimpleConfigCommentedYamlFormat(Yaml yaml, SimpleConfig config) {
+	private SimpleConfigCommentedYamlFormat(Yaml yaml, SimpleConfigImpl config) {
 		this.yaml = yaml;
 		this.config = config;
 	}
 	
-	public SimpleConfig getSimpleConfig() {
+	public SimpleConfigImpl getSimpleConfig() {
 		return config;
 	}
 	

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
@@ -39,14 +39,14 @@ import java.util.function.Consumer;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
 	protected final EnumMap<EditType, Map<String, ConfigCategoryBuilder>> categories =
 	  Util.make(new EnumMap<>(EditType.class), m -> {
-		  for (EditType type: ISimpleConfig.EditType.values()) m.put(type, new LinkedHashMap<>());
+		  for (EditType type: SimpleConfig.EditType.values()) m.put(type, new LinkedHashMap<>());
 	  });
 	protected ConfigCategoryBuilder fallbackCategory = null;
 	protected boolean alwaysShowTabs = false;
 	protected @Nullable IConfigSnapshotHandler snapshotHandler;
 	protected @Nullable ConfigScreenBuilder.IRemoteConfigProvider remoteConfigProvider;
 	private ConfigCategoryBuilder selectedCategory;
-	private IConfigScreenGUIState previousGUIState;
+	private @Nullable IConfigScreenGUIState previousGUIState = null;
 	
 	@Internal public ConfigScreenBuilderImpl(String modId) {
 		this.modId = modId;
@@ -131,11 +131,11 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public IConfigScreenGUIState getPreviousGUIState() {
+	@Override public @Nullable IConfigScreenGUIState getPreviousGUIState() {
 		return previousGUIState;
 	}
 	
-	@Override public ConfigScreenBuilder setPreviousGUIState(IConfigScreenGUIState state) {
+	@Override public ConfigScreenBuilder setPreviousGUIState(@Nullable IConfigScreenGUIState state) {
 		previousGUIState = state;
 		return this;
 	}
@@ -224,9 +224,9 @@ import java.util.function.Consumer;
 			}
 		}
 		AbstractConfigScreen screen = new SimpleConfigScreen(
-		  parent, modId, title, builtMap.get(ISimpleConfig.EditType.CLIENT), builtMap.get(
-		  ISimpleConfig.EditType.COMMON),
-		  builtMap.get(ISimpleConfig.EditType.SERVER_COMMON), builtMap.get(ISimpleConfig.EditType.SERVER),
+		  parent, modId, title, builtMap.get(SimpleConfig.EditType.CLIENT), builtMap.get(
+		  SimpleConfig.EditType.COMMON),
+		  builtMap.get(SimpleConfig.EditType.SERVER_COMMON), builtMap.get(SimpleConfig.EditType.SERVER),
 		  defaultBackground);
 		screen.setEditedConfigHotKey(editedConfigHotkey, hotKeySaver);
 		screen.setSavingRunnable(savingRunnable);
@@ -240,5 +240,50 @@ import java.util.function.Consumer;
 		screen.setRemoteCommonConfigProvider(remoteConfigProvider);
 		screen.loadConfigScreenGUIState(previousGUIState);
 		return screen;
+	}
+	
+	public static class ConfigScreenGUIState implements IConfigScreenGUIState {
+		private EditType editedType;
+		private final Map<EditType, String> selectedCategories = new EnumMap<>(EditType.class);
+		private final Map<EditType, Map<String, IConfigCategoryGUIState>> categoryStates = new EnumMap<>(EditType.class);
+		
+		@Override public EditType getEditedType() {
+			return editedType;
+		}
+		public void setEditedType(EditType editedType) {
+			this.editedType = editedType;
+		}
+		
+		@Override public Map<EditType, String> getSelectedCategories() {
+			return selectedCategories;
+		}
+		
+		@Override public Map<EditType, Map<String, IConfigCategoryGUIState>> getCategoryStates() {
+			return categoryStates;
+		}
+		
+		public static class ConfigCategoryGUIState implements IConfigCategoryGUIState {
+			private final Map<String, Boolean> expandStates = new HashMap<>();
+			private String selectedEntry;
+			private int scrollOffset;
+			
+			@Override public Map<String, Boolean> getExpandStates() {
+				return expandStates;
+			}
+			
+			@Override public String getSelectedEntry() {
+				return selectedEntry;
+			}
+			public void setSelectedEntry(String selectedEntry) {
+				this.selectedEntry = selectedEntry;
+			}
+			
+			@Override public int getScrollOffset() {
+				return scrollOffset;
+			}
+			public void setScrollOffset(int scrollOffset) {
+				this.scrollOffset = scrollOffset;
+			}
+		}
 	}
 }

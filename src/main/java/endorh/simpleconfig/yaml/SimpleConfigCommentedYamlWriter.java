@@ -4,7 +4,7 @@ import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.electronwill.nightconfig.core.io.ConfigWriter;
 import com.electronwill.nightconfig.core.io.WritingException;
 import com.electronwill.nightconfig.core.utils.TransformingMap;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.comments.CommentLine;
 import org.yaml.snakeyaml.comments.CommentType;
@@ -23,7 +23,7 @@ public class SimpleConfigCommentedYamlWriter implements ConfigWriter {
 	
 	private final SimpleConfigCommentedYamlFormat format;
 	private final Yaml yaml;
-	private final SimpleConfig config;
+	private final SimpleConfigImpl config;
 	private boolean generateComments = true;
 	
 	public SimpleConfigCommentedYamlWriter(SimpleConfigCommentedYamlFormat format) {

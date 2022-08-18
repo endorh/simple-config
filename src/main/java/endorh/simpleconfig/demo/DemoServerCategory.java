@@ -1,9 +1,9 @@
 package endorh.simpleconfig.demo;
 
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ICategoryBuilder;
+import endorh.simpleconfig.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.api.annotation.*;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.demo.DemoServerCategory.demo.demo_group;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.nbt.CompoundNBT;
@@ -37,7 +37,7 @@ public class DemoServerCategory {
 		return new TranslationTextComponent(key, args);
 	}
 	
-	public static ICategoryBuilder getDemoServerCategory() {
+	public static ConfigCategoryBuilder getDemoServerCategory() {
 		// In this example, we generate all config entries
 		//   directly in the config class through the use of annotations
 		// This is discouraged, since it's more restrictive than the
@@ -62,7 +62,7 @@ public class DemoServerCategory {
 	// A bake method is automatically recognized in the backing class
 	//   Within categories or groups, the bake method must receive
 	//   the proper type, either SimpleConfigCategory or SimpleConfigGroup
-	protected static void bake(SimpleConfig config) {
+	protected static void bake(SimpleConfigImpl config) {
 		// The baker method may be used to translate units
 		//   or precompute frequently used values each time
 		//   the config changes

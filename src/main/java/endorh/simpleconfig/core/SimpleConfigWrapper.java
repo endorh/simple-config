@@ -4,12 +4,12 @@ import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.*;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.config.CommonConfig.menu;
-import endorh.simpleconfig.core.SimpleConfigBuilder.ConfigValueBuilder;
+import endorh.simpleconfig.core.SimpleConfigBuilderImpl.ConfigValueBuilder;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.util.text.*;
@@ -89,7 +89,7 @@ public class SimpleConfigWrapper {
 			if (!configs.isEmpty()) {
 				String displayName = container.getModInfo().getDisplayName();
 				String logName = displayName + " (" + modId + ")";
-				for (Type type: ISimpleConfig.Type.values()) {
+				for (Type type: SimpleConfig.Type.values()) {
 					ModConfig.Type configType = type.asConfigType();
 					String tt = type.getAlias();
 					try {
@@ -97,7 +97,8 @@ public class SimpleConfigWrapper {
 							ModConfig config = configs.get(configType);
 							if (!(config instanceof SimpleConfigModConfig) && menu.shouldWrapConfig(modId)) {
 								LOGGER.info("Wrapping " + tt + " config for mod {}", modId);
-								SimpleConfigBuilder builder = (SimpleConfigBuilder) wrap(container, config);
+								SimpleConfigBuilderImpl
+								  builder = (SimpleConfigBuilderImpl) wrap(container, config);
 								if (builder != null) builder.buildAndRegister(
 								  null, new WrappingConfigValueBuilder(container, config));
 							}
@@ -113,10 +114,10 @@ public class SimpleConfigWrapper {
 		});
 	}
 	
-	private static ISimpleConfigBuilder wrap(ModContainer container, ModConfig config) {
+	private static SimpleConfigBuilder wrap(ModContainer container, ModConfig config) {
 		if (config instanceof SimpleConfigModConfig) return null;
-		Type type = ISimpleConfig.Type.fromConfigType(config.getType());
-		ISimpleConfigBuilder builder = config(config.getModId(), type);
+		Type type = SimpleConfig.Type.fromConfigType(config.getType());
+		SimpleConfigBuilder builder = config(config.getModId(), type);
 		
 		ForgeConfigSpec forgeSpec = config.getSpec();
 		UnmodifiableConfig spec = forgeSpec.getSpec();
@@ -137,7 +138,7 @@ public class SimpleConfigWrapper {
 			stack.push(spec.getValues());
 		}
 		
-		@Override void buildModConfig(SimpleConfig config) {
+		@Override void buildModConfig(SimpleConfigImpl config) {
 			config.build(container, modConfig);
 		}
 		
@@ -198,11 +199,17 @@ public class SimpleConfigWrapper {
 			String entryPath = path.isEmpty()? key : path + "." + key;
 			final Object specValue = specEntry.getValue();
 			if (specValue instanceof UnmodifiableConfig) {
-				// TODO: Add config setting to load root groups as categories
-				IGroupBuilder groupBuilder = group(key, true);
 				UnmodifiableConfig subSpec = (UnmodifiableConfig) specValue;
-				wrapConfig(groupBuilder, subSpec, entryPath);
-				builder.n(groupBuilder);
+				if (builder instanceof SimpleConfigBuilder && menu.wrap_top_level_groups_as_categories) {
+					SimpleConfigBuilder configBuilder = (SimpleConfigBuilder) builder;
+					ConfigCategoryBuilder categoryBuilder = category(key);
+					wrapConfig(categoryBuilder, subSpec, entryPath);
+					configBuilder.n(categoryBuilder);
+				} else {
+					ConfigGroupBuilder groupBuilder = group(key, true);
+					wrapConfig(groupBuilder, subSpec, entryPath);
+					builder.n(groupBuilder);
+				}
 			} else if (specValue instanceof ValueSpec) {
 				ValueSpec valueSpec = (ValueSpec) specValue;
 				Optional<ConfigEntryBuilder<?, ?, ?, ?>> opt = wrapValue(valueSpec);

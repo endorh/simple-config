@@ -9,12 +9,12 @@ import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ISimpleConfig.*;
+import endorh.simpleconfig.api.SimpleConfig.*;
 import endorh.simpleconfig.config.ServerConfig.ConfigPermission;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.core.SimpleConfigModConfig;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -139,17 +139,17 @@ public class SimpleConfigCommand {
 		return ctx.getArgument("type", EditType.class).getType();
 	}
 	
-	private SimpleConfig requireConfig(
+	private SimpleConfigImpl requireConfig(
 	  CommandContext<CommandSource> ctx, String modId, Type type, boolean forWrite
 	) throws CommandSyntaxException {
 		PlayerEntity player = ctx.getSource().asPlayer();
-		if (!SimpleConfig.hasConfig(modId, type)) {
+		if (!SimpleConfigImpl.hasConfig(modId, type)) {
 			throw UNSUPPORTED_CONFIG.create(modId);
 		} else if (
 		  forWrite? !permissions.permissionFor(player, modId).getLeft().canEdit()
 		          : !permissions.permissionFor(player, modId).getLeft().canView()
 		) throw NO_PERMISSION.create(modId);
-		return SimpleConfig.getConfig(modId, type);
+		return SimpleConfigImpl.getConfig(modId, type);
 	}
 	
 	// Commands -------------------------------------------------------
@@ -165,7 +165,7 @@ public class SimpleConfigCommand {
 	  throws CommandSyntaxException {
 		if (modId == null) modId = getModId(ctx);
 		Type type = getType(ctx);
-		SimpleConfig config = requireConfig(ctx, modId, type, false);
+		SimpleConfigImpl config = requireConfig(ctx, modId, type, false);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		try {
@@ -193,7 +193,7 @@ public class SimpleConfigCommand {
 	) throws CommandSyntaxException {
 		if (modId == null) modId = getModId(ctx);
 		Type type = getType(ctx);
-		SimpleConfig config = requireConfig(ctx, modId, type, true);
+		SimpleConfigImpl config = requireConfig(ctx, modId, type, true);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		String value = ctx.getArgument("value", String.class);
@@ -258,7 +258,7 @@ public class SimpleConfigCommand {
 	) throws CommandSyntaxException {
 		if (modId == null) modId = getModId(ctx);
 		Type type = getType(ctx);
-		SimpleConfig config = requireConfig(ctx, modId, type, true);
+		SimpleConfigImpl config = requireConfig(ctx, modId, type, true);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		PlayerEntity player = src.asPlayer();

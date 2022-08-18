@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.INBTEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.nbt.INBT;
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
-	@Internal public INBTEntry(ISimpleConfigEntryHolder parent, String name, INBT value) {
+	@Internal public INBTEntry(ConfigEntryHolder parent, String name, INBT value) {
 		super(parent, name, value, INBT.class);
 	}
 	
@@ -26,7 +26,7 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 		}
 		
 		@Override
-		protected INBTEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected INBTEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new INBTEntry(parent, name, value);
 		}
 		

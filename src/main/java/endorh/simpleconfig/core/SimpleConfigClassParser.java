@@ -1,13 +1,13 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.api.annotation.*;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.core.SimpleConfigBuilder.CategoryBuilder;
-import endorh.simpleconfig.core.SimpleConfigBuilder.GroupBuilder;
+import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;
+import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
 import net.minecraft.block.Block;
@@ -249,7 +249,7 @@ public class SimpleConfigClassParser {
 		}
 	}
 	
-	protected static void decorateBuilder(SimpleConfigBuilder root) {
+	protected static void decorateBuilder(SimpleConfigBuilderImpl root) {
 		if (root.configClass != null)
 			decorateAbstractBuilder(root, root.configClass, root);
 		for (CategoryBuilder catBuilder : root.categories.values())
@@ -258,7 +258,7 @@ public class SimpleConfigClassParser {
 	}
 	
 	protected static void decorateAbstractBuilder(
-	  SimpleConfigBuilder root, Class<?> configClass,
+	  SimpleConfigBuilderImpl root, Class<?> configClass,
 	  AbstractSimpleConfigEntryHolderBuilder<?> builder
 	) {
 		builders.put(configClass, builder);
@@ -441,9 +441,9 @@ public class SimpleConfigClassParser {
 				  "Config inner class " + clazz.getName() + " was annotated with @Bind " +
 				  "but no matching config category/group was found defined");
 		}
-		if (builder instanceof SimpleConfigBuilder) {
-			final SimpleConfigBuilder b = (SimpleConfigBuilder) builder;
-			final Method baker = tryGetMethod(configClass, "bake", SimpleConfig.class);
+		if (builder instanceof SimpleConfigBuilderImpl) {
+			final SimpleConfigBuilderImpl b = (SimpleConfigBuilderImpl) builder;
+			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigImpl.class);
 			if (baker != null) {
 				final String errorMsg = "Reflective error invoking config baker method %s";
 				if (b.baker == null) {
@@ -462,7 +462,7 @@ public class SimpleConfigClassParser {
 		} else if (builder instanceof CategoryBuilder) {
 			final CategoryBuilder b = (CategoryBuilder) builder;
 			boolean useArg = true;
-			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategory.class);
+			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategoryImpl.class);
 			if (m == null) {
 				useArg = false;
 				m = tryGetMethod(configClass, "bake");
@@ -494,7 +494,7 @@ public class SimpleConfigClassParser {
 		} else if (builder instanceof GroupBuilder) {
 			final GroupBuilder b = (GroupBuilder) builder;
 			boolean useArg = true;
-			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroup.class);
+			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroupImpl.class);
 			if (m == null) {
 				useArg = false;
 				m = tryGetMethod(configClass, "bake");

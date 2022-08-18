@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ResourceLocationEntryBuilder;
 import endorh.simpleconfig.ui.api.ITextFormatter;
 import net.minecraft.util.ResourceLocation;
@@ -16,7 +16,7 @@ public class ResourceLocationEntry
   extends AbstractSerializableEntry<ResourceLocation, ResourceLocationEntry> {
 	
 	@Internal public ResourceLocationEntry(
-	  ISimpleConfigEntryHolder parent, String name, ResourceLocation value
+	  ConfigEntryHolder parent, String name, ResourceLocation value
 	) {
 		super(parent, name, value, ResourceLocation.class);
 	}
@@ -29,7 +29,7 @@ public class ResourceLocationEntry
 		}
 		
 		@Override
-		protected ResourceLocationEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ResourceLocationEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new ResourceLocationEntry(parent, name, value);
 		}
 		

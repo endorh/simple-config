@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.api.ISimpleConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
-import endorh.simpleconfig.core.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.Tooltip;
@@ -224,7 +224,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				enabledCheckbox = draggable(
 				  ENABLE_ACTION, CheckboxButton.of(hotKey.isEnabled(), StringTextComponent.EMPTY));
 				Stream.of(hotKeyButton, textField, enabledCheckbox).forEach(listeners::add);
-				for (String id: SimpleConfig.getConfigModIds())
+				for (String id: SimpleConfigImpl.getConfigModIds())
 					entries.put(id, new ConfigHotKeyTreeViewModEntry(hotKey, id));
 			}
 			
@@ -357,8 +357,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			protected List<ITextComponent> getResumeTooltip() {
 				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
 				List<ITextComponent> tt = new ArrayList<>();
-				for (EditType type: ISimpleConfig.EditType.values()) {
-					SimpleConfig config = SimpleConfig.getConfigOrNull(modId, type.getType());
+				for (EditType type: SimpleConfig.EditType.values()) {
+					SimpleConfigImpl config = SimpleConfigImpl.getConfigOrNull(modId, type.getType());
 					if (config != null) {
 						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
 						if (a != null && !a.isEmpty()) {
@@ -386,8 +386,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			protected int getCount() {
 				int size = 0;
 				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
-				for (EditType type: ISimpleConfig.EditType.values()) {
-					SimpleConfig config = SimpleConfig.getConfigOrNull(modId, type.getType());
+				for (EditType type: SimpleConfig.EditType.values()) {
+					SimpleConfigImpl config = SimpleConfigImpl.getConfigOrNull(modId, type.getType());
 					if (config != null) {
 						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
 						if (a != null) size += a.size();

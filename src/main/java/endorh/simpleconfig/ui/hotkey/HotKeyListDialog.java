@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.hotkey;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
-import endorh.simpleconfig.api.ISimpleConfigGroup;
+import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
@@ -88,7 +88,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public void cancel(boolean success) {
-		ISimpleConfigGroup CONFIRM = SimpleConfigMod.CLIENT_CONFIG.getGroup("confirm");
+		SimpleConfigGroup CONFIRM = SimpleConfigMod.CLIENT_CONFIG.getGroup("confirm");
 		String SAVE_HOTKEYS = "save_hotkeys";
 		String DISCARD_HOTKEYS = "discard_hotkeys";
 		if (success) {

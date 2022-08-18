@@ -4,8 +4,8 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryMapEntryBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -64,7 +64,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	protected boolean linked;
 	
 	@Internal public EntryMapEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  Map<K, V> value, @NotNull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
@@ -170,7 +170,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		}
 		
 		@Override protected EntryMapEntry<K, V, KC, C, KG, G, B, KB> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			final EntryMapEntry<K, V, KC, C, KG, G, B, KB> e = new EntryMapEntry<>(
 			  parent, name, new LinkedHashMap<>(value), entryBuilder, keyEntryBuilder);

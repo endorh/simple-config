@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryPairEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -36,7 +36,7 @@ public class EntryPairEntry<
 	protected @Nullable Icon middleIcon;
 	
 	protected EntryPairEntry(
-	  ISimpleConfigEntryHolder parent, String name, Pair<L, R> value,
+	  ConfigEntryHolder parent, String name, Pair<L, R> value,
 	  AbstractConfigEntry<L, LC, LG> leftEntry, AbstractConfigEntry<R, RC, RG> rightEntry
 	) {
 		super(parent, name, value);
@@ -105,7 +105,7 @@ public class EntryPairEntry<
 		}
 		
 		@Override protected EntryPairEntry<L, R, LC, RC, LG, RG> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			AbstractConfigEntry<L, LC, LG> leftEntry = DummyEntryHolder.build(parent, leftBuilder);
 			AbstractConfigEntry<R, RC, RG> rightEntry = DummyEntryHolder.build(parent, rightBuilder);

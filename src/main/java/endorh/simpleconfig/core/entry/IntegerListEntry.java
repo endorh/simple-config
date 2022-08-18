@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IntegerListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -17,7 +17,7 @@ import java.util.Optional;
 public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, IntegerListEntry> {
 	@Internal
 	public IntegerListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable List<Integer> value
 	) {
 		super(parent, name, value);
@@ -49,7 +49,7 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 		}
 		
 		@Override
-		protected IntegerListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected IntegerListEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new IntegerListEntry(parent, name, value);
 		}
 		

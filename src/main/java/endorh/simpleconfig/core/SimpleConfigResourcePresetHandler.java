@@ -4,7 +4,7 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Maps;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import endorh.simpleconfig.api.ISimpleConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler.Loader;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
@@ -80,10 +80,12 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 		l.getPresetMap().forEach((modId, m) -> {
 			Map<Preset, CommentedConfig> mm = presetRegistry.computeIfAbsent(modId, i -> Maps.newHashMap());
 			SimpleConfigCommentedYamlFormat format;
-			if (SimpleConfig.hasConfig(modId, ISimpleConfig.Type.CLIENT))
-				format = SimpleConfigCommentedYamlFormat.forConfig(SimpleConfig.getConfig(modId, ISimpleConfig.Type.CLIENT));
-			else if (SimpleConfig.hasConfig(modId, ISimpleConfig.Type.SERVER))
-				format = SimpleConfigCommentedYamlFormat.forConfig(SimpleConfig.getConfig(modId, ISimpleConfig.Type.SERVER));
+			if (SimpleConfigImpl.hasConfig(modId, SimpleConfig.Type.CLIENT))
+				format = SimpleConfigCommentedYamlFormat.forConfig(
+				  SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.CLIENT));
+			else if (SimpleConfigImpl.hasConfig(modId, SimpleConfig.Type.SERVER))
+				format = SimpleConfigCommentedYamlFormat.forConfig(
+				  SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER));
 			else return;
 			m.forEach((preset, location) -> {
 				try {
@@ -107,19 +109,19 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			for (String name: descriptor.clientPresets) {
 				String fileName = modId + "-client-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, ISimpleConfig.Type.CLIENT);
+				Preset preset = Preset.resource(name, SimpleConfig.Type.CLIENT);
 				map.put(preset, r);
 			}
 			for (String name: descriptor.commonPresets) {
 				String fileName = modId + "-common-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, ISimpleConfig.Type.COMMON);
+				Preset preset = Preset.resource(name, SimpleConfig.Type.COMMON);
 				map.put(preset, r);
 			}
 			for (String name: descriptor.serverPresets) {
 				String fileName = modId + "-server-" + name + ".yaml";
 				ResourceLocation r = new ResourceLocation(namespace, fileName);
-				Preset preset = Preset.resource(name, ISimpleConfig.Type.SERVER);
+				Preset preset = Preset.resource(name, SimpleConfig.Type.SERVER);
 				map.put(preset, r);
 			}
 			if (map.isEmpty()) presetMap.remove(modId);

@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
-import endorh.simpleconfig.api.ISimpleConfig.EditType;
-import endorh.simpleconfig.api.ISimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
@@ -49,8 +49,8 @@ public interface ConfigScreenBuilder {
 		return setSelectedCategory(getOrCreateCategory(name, type));
 	}
 	
-	IConfigScreenGUIState getPreviousGUIState();
-	ConfigScreenBuilder setPreviousGUIState(IConfigScreenGUIState state);
+	@Nullable IConfigScreenGUIState getPreviousGUIState();
+	ConfigScreenBuilder setPreviousGUIState(@Nullable IConfigScreenGUIState state);
 	
 	boolean isEditable();
 	ConfigScreenBuilder setEditable(boolean editable);
@@ -132,12 +132,14 @@ public interface ConfigScreenBuilder {
 	}
 	
 	interface IConfigScreenGUIState {
-		boolean isServerSelected();
-		String getClientCategory();
-		String getServerCategory();
-		Map<String, Boolean> getClientExpandedStates();
-		Map<String, Boolean> getServerExpandedStates();
-		Map<String, String> getClientSelectedEntries();
-		Map<String, String> getServerSelectedEntries();
+		EditType getEditedType();
+		Map<EditType, String> getSelectedCategories();
+		Map<EditType, Map<String, IConfigCategoryGUIState>> getCategoryStates();
+		
+		interface IConfigCategoryGUIState {
+			Map<String, Boolean> getExpandStates();
+			String getSelectedEntry();
+			int getScrollOffset();
+		}
 	}
 }

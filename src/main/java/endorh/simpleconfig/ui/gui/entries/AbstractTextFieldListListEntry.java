@@ -6,11 +6,11 @@ import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
+import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -37,12 +37,12 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 	    T, Self extends AbstractTextFieldListCell<T, Self, ListEntry>,
 	    ListEntry extends AbstractTextFieldListListEntry<T, Self, ListEntry>
 	  > extends AbstractListListEntry.AbstractListCell<T, Self, ListEntry> {
-		protected TextFieldWidget widget;
+		protected TextFieldWidgetEx widget;
 		
 		public AbstractTextFieldListCell(ListEntry listListEntry) {
 			super(listListEntry);
 			// T finalValue = this.substituteDefault(value);
-			widget = new TextFieldWidget(
+			widget = new TextFieldWidgetEx(
 			  Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
 			  NarratorChatListener.EMPTY
 			) {
@@ -52,11 +52,11 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 					super.render(matrices, mouseX, mouseY, delta);
 				}
 			};
-			widget.setValidator(this::isValidText);
-			widget.setMaxStringLength(Integer.MAX_VALUE);
-			widget.setEnableBackgroundDrawing(false);
+			widget.setFilter(this::isValidText);
+			widget.setMaxLength(Integer.MAX_VALUE);
+			widget.setBordered(false);
 			// this.widget.setText(Objects.toString(finalValue));
-			widget.setCursorPositionZero();
+			widget.moveCaretToStart();
 			widget.setResponder(s -> widget.setTextColor(getPreferredTextColor()));
 		}
 		
@@ -93,7 +93,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			widget.setWidth(fieldWidth);
 			widget.x = fieldX;
 			widget.y = y + 1;
-			widget.setEnabled(editable);
+			widget.setEditable(editable);
 			
 			widget.render(mStack, mouseX, mouseY, delta);
 			if (isSelected && editable) {
@@ -122,7 +122,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 				listEntry.claimFocus();
 				scrollToSelf();
 				listEntry.setListener(this);
-				widget.setFocused2(true);
+				widget.setFocused(true);
 			}
 		}
 		
@@ -137,7 +137,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			listEntry.setExpanded(true);
 			listEntry.setListener(this);
 			setListener(widget);
-			widget.setFocused2(true);
+			widget.setFocused(true);
 			scrollToSelf();
 			listEntry.getEntryList().setSelectedTarget(this);
 		}

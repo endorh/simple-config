@@ -4,14 +4,14 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfig.ConfigReflectiveOperationException;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.api.ISimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.api.ISimpleConfig.NoSuchConfigEntryError;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
+import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
+import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.config.ClientConfig;
-import endorh.simpleconfig.core.SimpleConfig.IGUIEntry;
+import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -69,7 +69,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	private static final ITextComponent[] EMPTY_TEXT_ARRAY = new ITextComponent[0];
 	
 	public final V defValue;
-	protected final ISimpleConfigEntryHolder parent;
+	protected final ConfigEntryHolder parent;
 	protected String name;
 	protected Class<?> typeClass;
 	protected @Nullable String translation = null;
@@ -79,8 +79,8 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> tooltipSupplier = null;
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> warningSupplier = null;
-	protected @Nullable BiConsumer<Gui, ISimpleConfigEntryHolder> saver = null;
-	protected @Nullable Function<ISimpleConfigEntryHolder, Boolean> editableSupplier = null;
+	protected @Nullable BiConsumer<Gui, ConfigEntryHolder> saver = null;
+	protected @Nullable Function<ConfigEntryHolder, Boolean> editableSupplier = null;
 	protected @Nullable BackingField<V, ?> backingField;
 	protected @Nullable List<BackingField<V, ?>> secondaryBackingFields;
 	protected boolean dirty = false;
@@ -99,7 +99,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	protected boolean ignored = false;
 	
 	protected AbstractConfigEntry(
-	  ISimpleConfigEntryHolder parent, String name, V defValue
+	  ConfigEntryHolder parent, String name, V defValue
 	) {
 		this.parent = parent;
 		this.defValue = defValue;
@@ -113,7 +113,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 	
 	public String getPath() {
-		if (parent instanceof SimpleConfig) {
+		if (parent instanceof SimpleConfigImpl) {
 			return name;
 		} else if (parent instanceof AbstractSimpleConfigEntryHolder) {
 			return ((AbstractSimpleConfigEntryHolder) parent).getPathPart() + name;
@@ -159,7 +159,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		}).toArray();
 	}
 	
-	@Internal public void setSaver(BiConsumer<Gui, ISimpleConfigEntryHolder> saver) {
+	@Internal public void setSaver(BiConsumer<Gui, ConfigEntryHolder> saver) {
 		this.saver = saver;
 	}
 	

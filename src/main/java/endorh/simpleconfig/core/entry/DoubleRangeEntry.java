@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.AbstractRange.DoubleRange;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleRangeEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
@@ -22,7 +22,7 @@ import java.util.function.Function;
 public class DoubleRangeEntry
   extends AbstractSizedRangeEntry<Double, DoubleRange, DoubleRangeEntry> {
 	protected DoubleRangeEntry(
-	  ISimpleConfigEntryHolder parent, String name, DoubleRange value
+	  ConfigEntryHolder parent, String name, DoubleRange value
 	) {
 		super(parent, name, value);
 	}
@@ -72,7 +72,7 @@ public class DoubleRangeEntry
 		}
 		
 		@Override
-		protected DoubleRangeEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected DoubleRangeEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new DoubleRangeEntry(parent, name, value);
 		}
 		

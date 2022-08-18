@@ -3,8 +3,8 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryPairListEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
@@ -44,7 +44,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	protected final CollectionEntryHolder holder;
 	
 	@Internal public EntryPairListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  List<Pair<K, V>> value, @NotNull B entryBuilder, KB keyEntryBuilder
 	) {
 		super(parent, name, value);
@@ -94,7 +94,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		}
 		
 		@Override protected EntryPairListEntry<K, V, KC, C, KG, G, B, KB> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			return new EntryPairListEntry<>(parent, name, value, entryBuilder, keyEntryBuilder);
 		}

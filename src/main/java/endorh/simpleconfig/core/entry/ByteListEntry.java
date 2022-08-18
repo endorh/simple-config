@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ByteListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -18,7 +18,7 @@ import java.util.Optional;
 public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteListEntry> {
 	
 	@Internal public ByteListEntry(
-	  ISimpleConfigEntryHolder parent, String name,
+	  ConfigEntryHolder parent, String name,
 	  @Nullable List<Byte> value
 	) {
 		super(parent, name, value);
@@ -49,7 +49,7 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 		}
 		
 		@Override
-		protected ByteListEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected ByteListEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new ByteListEntry(parent, name, value);
 		}
 		

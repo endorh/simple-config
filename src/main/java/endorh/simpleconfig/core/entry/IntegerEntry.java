@@ -1,6 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IntegerEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -18,7 +18,7 @@ import java.util.Optional;
 public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer>
   implements IKeyEntry<Integer> {
 	@Internal public IntegerEntry(
-	  ISimpleConfigEntryHolder parent, String name, int value
+	  ConfigEntryHolder parent, String name, int value
 	) {
 		super(parent, name, value);
 	}
@@ -50,7 +50,7 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer>
 		}
 		
 		@Override
-		protected IntegerEntry buildEntry(ISimpleConfigEntryHolder parent, String name) {
+		protected IntegerEntry buildEntry(ConfigEntryHolder parent, String name) {
 			return new IntegerEntry(parent, name, value);
 		}
 		

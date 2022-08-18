@@ -1,7 +1,7 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.ISimpleConfigEntryHolder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryButtonEntryBuilder;
 import endorh.simpleconfig.core.entry.GUIOnlyEntry;
@@ -27,12 +27,12 @@ public class EntryButtonEntry<V, Gui>
   extends GUIOnlyEntry<V, Gui, EntryButtonEntry<V, Gui>> {
 	
 	protected AbstractConfigEntry<V, ?, Gui> inner;
-	protected BiConsumer<V, ISimpleConfigEntryHolder> action;
+	protected BiConsumer<V, ConfigEntryHolder> action;
 	protected Supplier<ITextComponent> buttonLabelSupplier;
 	
 	public EntryButtonEntry(
-	  ISimpleConfigEntryHolder parent, String name,
-	  AbstractConfigEntry<V, ?, Gui> inner, V value, BiConsumer<V, ISimpleConfigEntryHolder> action,
+	  ConfigEntryHolder parent, String name,
+	  AbstractConfigEntry<V, ?, Gui> inner, V value, BiConsumer<V, ConfigEntryHolder> action,
 	  Class<?> typeClass
 	) {
 		super(parent, name, value, false, typeClass);
@@ -55,17 +55,17 @@ public class EntryButtonEntry<V, Gui>
 	> implements EntryButtonEntryBuilder<V, Gui, S> {
 		
 		protected B inner;
-		protected BiConsumer<V, ISimpleConfigEntryHolder> action;
+		protected BiConsumer<V, ConfigEntryHolder> action;
 		protected Supplier<ITextComponent> buttonLabelSupplier = () -> new StringTextComponent("✓");
 		
 		@SuppressWarnings("unchecked") public Builder(
-		  S inner, BiConsumer<V, ISimpleConfigEntryHolder> action
+		  S inner, BiConsumer<V, ConfigEntryHolder> action
 		) {
 			this((B) inner, action);
 		}
 		
 		public Builder(
-		  B inner, BiConsumer<V, ISimpleConfigEntryHolder> action
+		  B inner, BiConsumer<V, ConfigEntryHolder> action
 		) {
 			super(inner.value, inner.typeClass);
 			this.inner = inner;
@@ -94,7 +94,7 @@ public class EntryButtonEntry<V, Gui>
 		}
 		
 		@Override protected final EntryButtonEntry<V, Gui> buildEntry(
-		  ISimpleConfigEntryHolder parent, String name
+		  ConfigEntryHolder parent, String name
 		) {
 			final EntryButtonEntry<V, Gui> entry = new EntryButtonEntry<>(
 			  parent, name, DummyEntryHolder.build(parent, inner), value, action, typeClass);
