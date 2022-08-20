@@ -96,6 +96,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		  ).n(
 			 group("advanced")
 				.add("show_ui_tips", yesNo(true))
+			   .add("allow_over_scroll", yesNo(false))
 				.add("tooltip_max_width", percent(60F))
 				.add("prefer_combo_box", number(8))
 				.add("max_options_in_config_comment", number(16).min(5).restart())
@@ -185,6 +186,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	
 	@Bind public static class advanced {
 		@Bind public static boolean show_ui_tips;
+		@Bind public static boolean allow_over_scroll;
 		@Bind public static float tooltip_max_width;
 		@Bind public static int prefer_combo_box;
 		@Bind public static int max_options_in_config_comment = 4;

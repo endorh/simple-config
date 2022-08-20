@@ -125,6 +125,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
 	protected IConfigScreenGUIState prevState;
+	protected boolean showingHelp = false;
 	
 	// Tick caches
 	private List<EntryError> errors = new ArrayList<>();
@@ -531,6 +532,10 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		return isEdited() && !hasErrors();
 	}
 	
+	@Override public boolean isShowingHelp() {
+		return showingHelp;
+	}
+	
 	@Override public void setSelectedCategory(ConfigCategory category) {
 		if (selectedCategory != category) {
 			// Switching sides is prevented while selecting
@@ -822,6 +827,10 @@ import static net.minecraft.util.math.MathHelper.clamp;
 				playFeedbackTap(0.4F);
 				return true;
 			}
+		} else if (KeyBindings.HELP.isActiveAndMatches(key)) {
+			showingHelp = !showingHelp;
+			playFeedbackTap(0.4F);
+			return true;
 		}
 		return false;
 	}
@@ -1055,6 +1064,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		    .key("redo", KeyBindings.REDO)
 		    .key("reset_restore", KeyBindings.RESET_RESTORE)
 		    .key("hotkey", KeyBindings.HOTKEY)
+		    .key("help", KeyBindings.HELP)
 		  ).category("search", c -> c
 			 .key("open", KeyBindings.SEARCH)
 			 .key("next_prev", "up/down, enter/left.shift+enter")

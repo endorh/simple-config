@@ -102,7 +102,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		  PREV_PAGE, NEXT_PAGE,
 		  UNDO, REDO,
 		  PREV_ERROR, NEXT_ERROR,
-		  SAVE, RESET_RESTORE, HOTKEY;
+		  SAVE, RESET_RESTORE, HOTKEY, HELP;
 		
 		@SubscribeEvent public static void register(FMLClientSetupEvent event) {
 			event.enqueueWork(() -> {
@@ -118,6 +118,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 				SAVE = reg("save", CONTROL, GLFW.GLFW_KEY_S);
 				RESET_RESTORE = reg("reset_restore", CONTROL, GLFW.GLFW_KEY_R);
 				HOTKEY = reg("hotkey", CONTROL, GLFW.GLFW_KEY_H);
+				HELP = reg("help", CONTROL, GLFW.GLFW_KEY_Q);
 				
 				MinecraftForge.EVENT_BUS.register(ExtendedKeyBindDispatcher.INSTANCE);
 			});

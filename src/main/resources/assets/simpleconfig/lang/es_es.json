@@ -119,6 +119,8 @@
   "simpleconfig.config.client.advanced:help": "Opciones avanzadas",
   "simpleconfig.config.client.advanced.show_ui_tips": "Mostrar consejos de interfaz",
   "simpleconfig.config.client.advanced.show_ui_tips:help": "Display UI tips (description for list controls)\n§7Can be toggled from the controls dialog.",
+  "simpleconfig.config.client.advanced.allow_over_scroll": "No Ajustar Desplazamiento",
+  "simpleconfig.config.client.advanced.allow_over_scroll:help": "No ajustar el desplazamiento cuando la altura máxima disminuye,\npor ejemplo, al colapsar un grupo.",
   "simpleconfig.config.client.advanced.tooltip_max_width": "Anchura máx. de ayuda",
   "simpleconfig.config.client.advanced.tooltip_max_width:help": "Anchura máxima del cuadro de ayuda",
   "simpleconfig.config.client.advanced.prefer_combo_box": "Máx. opciones en botones",

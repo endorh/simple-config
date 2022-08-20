@@ -24,22 +24,22 @@ public class Point implements Cloneable {
 	}
 	
 	public int getX() {
-		return this.x;
+		return x;
 	}
 	
 	public int getY() {
-		return this.y;
+		return y;
 	}
 	
-	public Point getLocation() {
-		return Point.of(this.x, this.y);
+	public Point getPos() {
+		return Point.of(x, y);
 	}
 	
 	@Override @SuppressWarnings("MethodDoesntCallSuperMethod") public Point clone() {
-		return this.getLocation();
+		return getPos();
 	}
 	
-	public void setLocation(double x, double y) {
+	public void setPos(double x, double y) {
 		this.x = (int) Math.floor(x + 0.5);
 		this.y = (int) Math.floor(y + 0.5);
 	}
@@ -50,27 +50,27 @@ public class Point implements Cloneable {
 	}
 	
 	public void translate(int dx, int dy) {
-		this.x += dx;
-		this.y += dy;
+		x += dx;
+		y += dy;
 	}
 	
 	@Override public boolean equals(Object obj) {
 		if (obj instanceof Point) {
 			Point pt = (Point) obj;
-			return this.x == pt.x && this.y == pt.y;
+			return x == pt.x && y == pt.y;
 		}
 		return super.equals(obj);
 	}
 	
 	@Override public int hashCode() {
 		int result = 1;
-		result = 31 * result + this.x;
-		result = 31 * result + this.y;
+		result = 31 * result + x;
+		result = 31 * result + y;
 		return result;
 	}
 	
 	@Override public String toString() {
-		return this.getClass().getName() + "[x=" + this.x + ",y=" + this.y + "]";
+		return getClass().getName() + "[x=" + x + ",y=" + y + "]";
 	}
 	
 	public float distance(float x, float y) {

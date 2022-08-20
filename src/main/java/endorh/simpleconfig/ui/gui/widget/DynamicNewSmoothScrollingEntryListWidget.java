@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget.ListEntry;
 import endorh.simpleconfig.ui.impl.EasingMethod;
@@ -172,9 +173,9 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	@Override
 	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		long time = System.currentTimeMillis();
-		double[] target = new double[]{this.target};
+		double[] target = {this.target};
 		double prev = scroll;
-		userOverScroll = min(getActualMaxScrollPosition(), (int) scroll);
+		userOverScroll = advanced.allow_over_scroll? min(getActualMaxScrollPosition(), (int) scroll) : 0;
 		int maxScroll = getMaxScroll();
 		scroll = ScrollingHandler.handleScrollingPosition(
 		  target, scroll, Double.POSITIVE_INFINITY, delta, start, duration);

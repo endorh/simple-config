@@ -212,6 +212,10 @@ public abstract class AbstractConfigScreen extends Screen
 		  e -> e.isRequiresRestart() && e.isEdited());
 	}
 	
+	public boolean isShowingHelp() {
+		return false;
+	}
+	
 	public void selectNextCategory(boolean forward) {
 		int i = sortedCategories.indexOf(selectedCategory);
 		if (i == -1) throw new IllegalStateException("Unknown selected category: " + selectedCategory);

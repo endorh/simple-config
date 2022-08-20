@@ -86,7 +86,10 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		Optional<ITextComponent[]> tooltip;
-		if (getEntryList().isMouseOver(mouseX, mouseY)
+		if (getScreen().isShowingHelp() && getEntryList().getSelectedEntry() == this) {
+			getTooltip().ifPresent(
+			  t -> addTooltip(Tooltip.of(Point.of(rowArea.x - 12, rowArea.getMaxY() + 12), t)));
+		} else if (getEntryList().isMouseOver(mouseX, mouseY)
 		    && shouldProvideTooltip(mouseX, mouseY, x, y, entryWidth, entryHeight)
 		    && (tooltip = getTooltip(mouseX, mouseY)).isPresent() && tooltip.get().length > 0) {
 			addTooltip(Tooltip.of(Point.of(mouseX, mouseY), postProcessTooltip(tooltip.get())));
