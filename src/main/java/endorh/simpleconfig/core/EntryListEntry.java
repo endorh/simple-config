@@ -87,19 +87,19 @@ public class EntryListEntry
 		}
 	}
 	
-	@Override protected void setTranslation(String translation) {
+	@Override public void setTranslation(String translation) {
 		super.setTranslation(translation);
 		if (translation != null)
 			entry.setTranslation(translation + SUB_ELEMENTS_KEY_SUFFIX);
 	}
 	
-	@Override protected void setTooltipKey(String translation) {
+	@Override public void setTooltipKey(String translation) {
 		super.setTooltipKey(translation);
 		if (tooltip != null)
-			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX))
+			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX)) {
 				entry.setTooltipKey(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
 				                    + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
-			else entry.setTooltipKey(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
+			} else entry.setTooltipKey(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
 	}
 	
 	@Override public Object forActualConfig(@Nullable List<C> value) {

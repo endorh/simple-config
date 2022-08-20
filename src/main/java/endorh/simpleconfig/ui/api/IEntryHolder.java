@@ -10,14 +10,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface IEntryHolder {
-	List<AbstractConfigEntry<?>> getHeldEntries();
+	List<AbstractConfigField<?>> getHeldEntries();
 	
 	Pattern DOT = Pattern.compile("\\.");
-	default @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	default @Nullable AbstractConfigField<?> getEntry(String path) {
 		final String[] sp = DOT.split(path, 2);
-		final List<AbstractConfigEntry<?>> entries = getHeldEntries();
+		final List<AbstractConfigField<?>> entries = getHeldEntries();
 		
-		AbstractConfigEntry<?> entry = entries.stream()
+		AbstractConfigField<?> entry = entries.stream()
 		  .filter(e -> e.getName().equals(sp[0]))
 		  .findFirst().orElse(null);
 		if (sp.length < 2) return entry;
@@ -29,15 +29,15 @@ public interface IEntryHolder {
 	/**
 	 * Get all the entries recursively
 	 */
-	default List<AbstractConfigEntry<?>> getAllMainEntries() {
+	default List<AbstractConfigField<?>> getAllMainEntries() {
 		return getAllEntries(e -> !e.isSubEntry());
 	}
 	
 	/**
 	 * Get all the entries recursively
 	 */
-	default List<AbstractConfigEntry<?>> getAllEntries(Predicate<AbstractConfigEntry<?>> filter) {
-		final List<AbstractConfigEntry<?>> list = Lists.newArrayList();
+	default List<AbstractConfigField<?>> getAllEntries(Predicate<AbstractConfigField<?>> filter) {
+		final List<AbstractConfigField<?>> list = Lists.newArrayList();
 		getHeldEntries().stream()
 		  .filter(filter)
 		  .flatMap(
@@ -58,37 +58,37 @@ public interface IEntryHolder {
 		return !getErrors().isEmpty();
 	}
 	
-	default List<AbstractConfigEntry<?>> getAllExternalConflicts() {
+	default List<AbstractConfigField<?>> getAllExternalConflicts() {
 		return getAllMainEntries().stream()
-		  .filter(AbstractConfigEntry::hasConflictingExternalDiff)
+		  .filter(AbstractConfigField::hasConflictingExternalDiff)
 		  .collect(Collectors.toList());
 	}
 	
 	default boolean hasExternalConflicts() {
 		return getAllMainEntries().stream()
-		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
+		  .anyMatch(AbstractConfigField::hasConflictingExternalDiff);
 	}
 	
 	/**
 	 * Implementers should also implement {@link IEntryHolder#resetSingleEntry}
 	 */
-	default @Nullable AbstractConfigEntry<?> getSingleResettableEntry() {
+	default @Nullable AbstractConfigField<?> getSingleResettableEntry() {
 		return null;
 	}
 	
 	/**
 	 * Implementers should also implement {@link IEntryHolder#restoreSingleEntry}
 	 */
-	default @Nullable AbstractConfigEntry<?> getSingleRestorableEntry() {
+	default @Nullable AbstractConfigField<?> getSingleRestorableEntry() {
 		return null;
 	}
 	
 	/**
 	 * Implement if you return non-null values from {@link IEntryHolder#getSingleResettableEntry()}
 	 */
-	default void resetSingleEntry(AbstractConfigEntry<?> entry) {}
+	default void resetSingleEntry(AbstractConfigField<?> entry) {}
 	/**
 	 * Implement if you return non-null values from {@link IEntryHolder#getSingleRestorableEntry()}
 	 */
-	default void restoreSingleEntry(AbstractConfigEntry<?> entry) {}
+	default void restoreSingleEntry(AbstractConfigField<?> entry) {}
 }

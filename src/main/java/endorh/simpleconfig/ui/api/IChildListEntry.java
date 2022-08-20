@@ -8,9 +8,9 @@ import static net.minecraft.client.gui.AbstractGui.fill;
 
 /**
  * Marker interface for {@link AbstractConfigListEntry} which support being
- * rendered as a child entry.
- *
- * Must only be implemented by subclasses of {@link AbstractConfigListEntry}
+ * rendered as a child entry.<br>
+ * Must only be implemented by subclasses of {@link AbstractConfigListEntry}.<br>
+ * Owners should call {@code tick()} on child entries every tick.
  */
 public interface IChildListEntry {
 	default void renderChild(
@@ -18,7 +18,6 @@ public interface IChildListEntry {
 	) {
 		if (this instanceof AbstractConfigListEntry<?> && isChildSubEntry()) {
 			final AbstractConfigListEntry<?> self = (AbstractConfigListEntry<?>) this;
-			self.updateValue();
 			self.entryArea.setBounds(x, y, w, h);
 			self.fieldArea.setBounds(x, y, w, h);
 			DynamicEntryListWidget<?> entryList = self.getEntryList();

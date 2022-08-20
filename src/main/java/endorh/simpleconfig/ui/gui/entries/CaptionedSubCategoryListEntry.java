@@ -32,36 +32,36 @@ import static java.lang.Math.round;
 
 @OnlyIn(value = Dist.CLIENT)
 public class CaptionedSubCategoryListEntry<
-  T, HE extends AbstractConfigEntry<T> & IChildListEntry
+  T, CE extends AbstractConfigField<T> & IChildListEntry
 > extends TooltipListEntry<T> implements IExpandable, IEntryHolder {
 	
-	protected final CaptionWidget<CaptionedSubCategoryListEntry<T, HE>> label;
-	protected final List<AbstractConfigEntry<?>> heldEntries;
+	protected final CaptionWidget<CaptionedSubCategoryListEntry<T, CE>> label;
+	protected final List<AbstractConfigField<?>> heldEntries;
 	protected final List<AbstractConfigListEntry<?>> entries;
 	protected final List<IGuiEventListener> children;
 	protected final List<IGuiEventListener> expandedChildren;
-	protected final Rectangle heldEntryArea = new Rectangle();
-	protected @Nullable HE captionEntry;
+	protected final Rectangle captionEntryArea = new Rectangle();
+	protected @Nullable CE captionEntry;
 	protected boolean expanded;
 	protected ToggleAnimator expandAnimator = new ToggleAnimator();
 	
 	@Internal public CaptionedSubCategoryListEntry(
-	  ITextComponent title, List<AbstractConfigListEntry<?>> entries, @Nullable HE heldEntry
+	  ITextComponent title, List<AbstractConfigListEntry<?>> entries, @Nullable CE captionEntry
 	) {
 		super(title);
 		this.entries = Lists.newArrayList(entries);
 		heldEntries = Lists.newArrayList(entries);
-		captionEntry = heldEntry;
+		this.captionEntry = captionEntry;
 		entries.forEach(e -> e.setParentEntry(this));
 		label = new CaptionWidget<>(this);
-		if (heldEntry != null) {
-			heldEntry.setChildSubEntry(true);
-			heldEntry.setName("$caption");
-			heldEntry.setParentEntry(this);
-			setValue(heldEntry.getValue());
-			heldEntries.add(0, heldEntry);
-			children = Lists.newArrayList(label, heldEntry, sideButtonReference);
-			expandedChildren = Lists.newArrayList(label, heldEntry, sideButtonReference);
+		if (captionEntry != null) {
+			captionEntry.setChildSubEntry(true);
+			captionEntry.setName("$caption");
+			captionEntry.setParentEntry(this);
+			setValue(captionEntry.getValue());
+			heldEntries.add(0, captionEntry);
+			children = Lists.newArrayList(label, captionEntry, sideButtonReference);
+			expandedChildren = Lists.newArrayList(label, captionEntry, sideButtonReference);
 			expandedChildren.addAll(entries);
 		} else {
 			children = Lists.newArrayList(label, sideButtonReference);
@@ -81,9 +81,8 @@ public class CaptionedSubCategoryListEntry<
 			expandAnimator.setEaseOutTarget(expanded);
 		}
 		this.expanded = expanded;
-		if (recursive)
-			entries.stream().filter(e -> e instanceof IExpandable)
-			  .forEach(e -> ((IExpandable) e).setExpanded(expanded, true));
+		if (recursive) entries.stream().filter(e -> e instanceof IExpandable)
+		  .forEach(e -> ((IExpandable) e).setExpanded(expanded, true));
 	}
 	
 	@Override public T getDisplayedValue() {
@@ -98,7 +97,7 @@ public class CaptionedSubCategoryListEntry<
 		return super.isShown() || entries.stream().anyMatch(AbstractConfigListEntry::isShown);
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	
@@ -113,16 +112,16 @@ public class CaptionedSubCategoryListEntry<
 	
 	@Override public void resetValue() {
 		getScreen().runAtomicTransparentAction(this, () ->
-		  entries.forEach(AbstractConfigEntry::resetValue));
+		  entries.forEach(AbstractConfigField::resetValue));
 	}
 	
 	@Override public void restoreValue() {
 		getScreen().runAtomicTransparentAction(this, () ->
-		  entries.forEach(AbstractConfigEntry::restoreValue));
+		  entries.forEach(AbstractConfigField::restoreValue));
 	}
 	
-	@Override public List<EntryError> getErrors() {
-		List<EntryError> errors = super.getErrors();
+	@Override protected List<EntryError> computeErrors() {
+		List<EntryError> errors = super.computeErrors();
 		errors.addAll(IEntryHolder.super.getErrors());
 		return errors;
 	}
@@ -173,14 +172,14 @@ public class CaptionedSubCategoryListEntry<
 		if (captionEntry != null) {
 			captionEntry.renderChild(
 			  mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
-			heldEntryArea.setBounds(fieldX, fieldY, fieldWidth, fieldHeight);
-		} else heldEntryArea.setBounds(0, 0, 0, 0);
+			captionEntryArea.setBounds(fieldX, fieldY, fieldWidth, fieldHeight);
+		} else captionEntryArea.setBounds(0, 0, 0, 0);
 	}
 	
 	@Override public boolean isSelected() {
 		return isSelectable() && isShown() && entries.stream()
 		  .filter(e -> e.isSelectable() && e.isShown())
-		  .allMatch(AbstractConfigEntry::isSelected)
+		  .allMatch(AbstractConfigField::isSelected)
 		  && entries.stream()
 		         .filter(e -> e.isSelectable() && e.isShown())
 		         .anyMatch(e -> true);
@@ -193,27 +192,27 @@ public class CaptionedSubCategoryListEntry<
 		  .forEach(e -> e.setSelected(isSelected));
 	}
 	
-	@Override protected void doExpandParents(AbstractConfigEntry<?> entry) {
+	@Override protected void doExpandParents(AbstractConfigField<?> entry) {
 		boolean expanded = isExpanded();
 		super.doExpandParents(entry);
 		if (entry == captionEntry) setExpanded(expanded);
 	}
 	
 	@Override public boolean isSelectable() {
-		return super.isSelectable() && entries.stream().anyMatch(AbstractConfigEntry::isSelectable);
+		return super.isSelectable() && entries.stream().anyMatch(AbstractConfigField::isSelectable);
 	}
 	
 	public boolean isHeldEntryHovered(int mouseX, int mouseY) {
-		return captionEntry != null && heldEntryArea.contains(mouseX, mouseY);
+		return captionEntry != null && captionEntryArea.contains(mouseX, mouseY);
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (captionEntry != null) {
-			final boolean heldEntrySelected = isFocused && getListener() == captionEntry;
+			final boolean captionEntrySelected = isFocused && getListener() == captionEntry;
 			final boolean prevSelected = captionEntry.isFocused();
-			captionEntry.updateFocused(heldEntrySelected);
-			if (!prevSelected && heldEntrySelected) getScreen().getHistory().preserveState(
+			captionEntry.updateFocused(captionEntrySelected);
+			if (!prevSelected && captionEntrySelected) getScreen().getHistory().preserveState(
 			  captionEntry);
 		}
 		for (AbstractConfigListEntry<?> entry : entries)
@@ -226,48 +225,48 @@ public class CaptionedSubCategoryListEntry<
 		return super.isEditable();
 	}
 	
-	@Override public boolean isEdited() {
-		return super.isEdited()
+	@Override protected boolean computeIsEdited() {
+		return super.computeIsEdited()
 		       || !isIgnoreEdits() && !isSubEntry() && isEditable()
-		          && entries.stream().anyMatch(AbstractConfigEntry::isEdited);
+		          && entries.stream().anyMatch(AbstractConfigField::isEdited);
 	}
 	
 	@Override public boolean areEqual(T value, T other) {
 		return captionEntry != null? captionEntry.areEqual(value, other) : super.areEqual(value, other);
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getSingleResettableEntry() {
+	@Override public @Nullable AbstractConfigField<?> getSingleResettableEntry() {
 		return super.isResettable()? captionEntry : null;
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getSingleRestorableEntry() {
+	@Override public @Nullable AbstractConfigField<?> getSingleRestorableEntry() {
 		return super.isRestorable()? captionEntry : null;
 	}
 	
-	@Override public void resetSingleEntry(AbstractConfigEntry<?> entry) {
+	@Override public void resetSingleEntry(AbstractConfigField<?> entry) {
 		super.resetValue();
 	}
 	
-	@Override public void restoreSingleEntry(AbstractConfigEntry<?> entry) {
+	@Override public void restoreSingleEntry(AbstractConfigField<?> entry) {
 		super.restoreValue();
 	}
 	
 	@Override public boolean isResettable() {
 		if (!isEditable() || isSubEntry()) return false;
-		return entries.stream().anyMatch(AbstractConfigEntry::isResettable);
+		return captionEntry != null && captionEntry.isResettable();
 	}
 	
 	@Override public boolean isRestorable() {
 		if (!isEditable() || isSubEntry()) return false;
-		return entries.stream().anyMatch(AbstractConfigEntry::isRestorable);
+		return captionEntry != null && captionEntry.isRestorable();
 	}
 	
 	@Override public boolean canResetGroup() {
-		return entries.stream().anyMatch(AbstractConfigEntry::isResettable);
+		return entries.stream().anyMatch(AbstractConfigField::isResettable);
 	}
 	
 	@Override public boolean canRestoreGroup() {
-		return entries.stream().anyMatch(AbstractConfigEntry::isRestorable);
+		return entries.stream().anyMatch(AbstractConfigField::isRestorable);
 	}
 	
 	@Override public int getExtraScrollHeight() {
@@ -303,12 +302,12 @@ public class CaptionedSubCategoryListEntry<
 	
 	@Override public void tick() {
 		super.tick();
-		entries.forEach(AbstractConfigEntry::tick);
+		entries.forEach(AbstractConfigField::tick);
 	}
 	
 	@Override public void save() {
 		super.save();
-		entries.forEach(AbstractConfigEntry::save);
+		entries.forEach(AbstractConfigField::save);
 	}
 	
 	@Override protected int getPreviewCaptionOffset() {
@@ -349,7 +348,7 @@ public class CaptionedSubCategoryListEntry<
 		return 20;
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	@Override public @Nullable AbstractConfigField<?> getEntry(String path) {
 		if (path.startsWith("$caption")) {
 			String[] split = DOT.split(path, 2);
 			if ("$caption".equals(split[0])) {
@@ -363,7 +362,7 @@ public class CaptionedSubCategoryListEntry<
 	
 	@Override protected List<ISeekableComponent> seekableChildren() {
 		final List<ISeekableComponent> children =
-		  entries.stream().map(e -> ((ISeekableComponent) e)).collect(Collectors.toList());
+		  entries.stream().map(e -> (ISeekableComponent) e).collect(Collectors.toList());
 		if (captionEntry != null)
 			children.add(0, captionEntry);
 		return children;
@@ -386,29 +385,18 @@ public class CaptionedSubCategoryListEntry<
 		return super.handleNavigationKey(keyCode, scanCode, modifiers);
 	}
 	
-	public @Nullable AbstractConfigEntry<?> getCaptionEntry() {
+	public @Nullable AbstractConfigField<?> getCaptionEntry() {
 		return captionEntry;
 	}
 	
 	@Override public List<INavigableTarget> getNavigableChildren(boolean onlyVisible) {
 		return onlyVisible ? isExpanded() ? entries.stream()
-		  .filter(AbstractConfigEntry::isNavigable)
+		  .filter(AbstractConfigField::isNavigable)
 		  .collect(Collectors.toList()) : Collections.emptyList() : Lists.newArrayList(entries);
 	}
 	
-	@Override public List<INavigableTarget> getNavigableChildren() {
-		if (isExpanded()) {
-			final List<INavigableTarget> targets =
-			  entries.stream().flatMap(e -> e.getNavigableChildren().stream())
-				 .collect(Collectors.toList());
-			targets.add(0, this);
-			return targets;
-		}
-		return super.getNavigableChildren();
-	}
-	
 	// Handles the caption clicks and key-presses, but not the rendering
-	public static class CaptionWidget<E extends AbstractConfigEntry<?> & IExpandable> implements IGuiEventListener {
+	public static class CaptionWidget<E extends AbstractConfigField<?> & IExpandable> implements IGuiEventListener {
 		protected final Rectangle area = new Rectangle();
 		protected boolean focused = false;
 		protected E expandable;

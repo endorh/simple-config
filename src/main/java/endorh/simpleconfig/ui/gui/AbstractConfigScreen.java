@@ -231,7 +231,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	@Override public boolean isEdited() {
 		for (ConfigCategory cat : sortedCategories) {
-			for (AbstractConfigEntry<?> entry : cat.getHeldEntries()) {
+			for (AbstractConfigField<?> entry : cat.getHeldEntries()) {
 				if (!entry.isEdited()) continue;
 				return true;
 			}
@@ -239,7 +239,7 @@ public abstract class AbstractConfigScreen extends Screen
 		return false;
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	@Override public @Nullable AbstractConfigField<?> getEntry(String path) {
 		return null;
 	}
 	
@@ -284,11 +284,11 @@ public abstract class AbstractConfigScreen extends Screen
 	 * @param focus Focus entry of the action, or {@code null}
 	 * @param action Action to run
 	 */
-	public void runAtomicTransparentAction(@Nullable AbstractConfigEntry<?> focus, Runnable action) {
+	public void runAtomicTransparentAction(@Nullable AbstractConfigField<?> focus, Runnable action) {
 		getHistory().runAtomicTransparentAction(focus, action);
 	}
 	
-	public Set<AbstractConfigEntry<?>> getSelectedEntries() {
+	public Set<AbstractConfigField<?>> getSelectedEntries() {
 		return Collections.emptySet();
 	}
 	
@@ -393,7 +393,7 @@ public abstract class AbstractConfigScreen extends Screen
 	protected void doSaveAll(boolean openOtherScreens) {
 		if (hasErrors()) return;
 		for (ConfigCategory cat : sortedCategories)
-			for (AbstractConfigEntry<?> entry : cat.getHeldEntries())
+			for (AbstractConfigField<?> entry : cat.getHeldEntries())
 				entry.save();
 		if (remoteConfigProvider != null) for (EditType type: loadedRemoteConfigs) {
 			boolean requiresRestart = sortedCategoriesMap.get(type).stream()
@@ -434,7 +434,7 @@ public abstract class AbstractConfigScreen extends Screen
 		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())
-		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
+		  .anyMatch(AbstractConfigField::hasConflictingExternalDiff);
 	}
 	
 	public boolean hasConflictingRemoteChanges() {
@@ -442,7 +442,7 @@ public abstract class AbstractConfigScreen extends Screen
 		  .map(sortedCategoriesMap::get)
 		  .flatMap(Collection::stream)
 		  .flatMap(c -> c.getAllMainEntries().stream())
-		  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
+		  .anyMatch(AbstractConfigField::hasConflictingExternalDiff);
 	}
 	
 	public boolean isEditable() {
@@ -760,7 +760,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public void commitHistory() {
 		history.saveState();
-		final AbstractConfigEntry<?> entry = getFocusedEntry();
+		final AbstractConfigField<?> entry = getFocusedEntry();
 		if (entry != null) entry.preserveState();
 	}
 	
@@ -793,7 +793,7 @@ public abstract class AbstractConfigScreen extends Screen
 		this.remoteConfigProvider = remoteConfigProvider;
 	}
 	
-	public @Nullable AbstractConfigEntry<?> getFocusedEntry() {
+	public @Nullable AbstractConfigField<?> getFocusedEntry() {
 		return null;
 	}
 	
@@ -825,11 +825,11 @@ public abstract class AbstractConfigScreen extends Screen
 	public void handleExternalChangeResponse(ExternalChangeResponse response) {
 		if (response == ExternalChangeResponse.ACCEPT_ALL) {
 			runAtomicTransparentAction(() -> getAllMainEntries()
-			  .forEach(AbstractConfigEntry::acceptExternalValue));
+			  .forEach(AbstractConfigField::acceptExternalValue));
 		} else if (response == ExternalChangeResponse.ACCEPT_NON_CONFLICTING) {
 			runAtomicTransparentAction(() -> getAllMainEntries().stream()
 			  .filter(e -> !e.isEdited())
-			  .forEach(AbstractConfigEntry::acceptExternalValue));
+			  .forEach(AbstractConfigField::acceptExternalValue));
 		} // else do nothing
 	}
 	

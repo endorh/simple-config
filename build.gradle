@@ -22,9 +22,10 @@ apply from: 'antlr.gradle'
 
 def mod_id = ext.mod_id,
     api_project = project(":api"),
-    mod_version = ext.mod_version
+    mod_version = ext.mod_version,
+    mc_version = ext.mc_version
 group = ext.mod_group
-version = "$ext.mc_version-$mod_version"
+version = "$mc_version-$mod_version"
 println "mod_version: $version"
 def group_slashed = group.replaceAll("\\.", "/"),
     classname = "SimpleConfigMod",
@@ -54,7 +55,8 @@ def license = "LGPL"
 // Dependencies
 def antlr_version = "4.9.1",
     // FIXME: Update to 1.31 when available (bitbucket.org/snakeyaml/snakeyaml/issues/518)
-    yaml_version = "1.30"
+    yaml_version = "1.30",
+    jei_version = "7.6.1.75"
 
 // Jar attributes
 archivesBaseName = ext.mod_archive_base_name
@@ -145,6 +147,13 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 // Project dependencies -----------------------------------------------------------
 
+repositories {
+    maven {
+        name = "ModMaven" // JEI fallback
+        url = "https://modmaven.k-4u.nl"
+    }
+}
+
 dependencies {
     compileOnly project(":api")
     // Forge doesn't pick the FMLModType manifest attribute for runs, unless we
@@ -162,6 +171,12 @@ dependencies {
     // Testing dependencies
     // Catalogue
     runtimeOnly fg.deobf("curse.maven:catalogue-459701:3529457")
+
+    // Configured
+    runtimeOnly fg.deobf("curse.maven:configured-457570:3780620")
+
+    // JEI
+    runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}")
 }
 
 test {
@@ -193,7 +208,7 @@ shadowJar {
     classifier '' // Replace default jar
 
     // Preferred method to reobfuscate the jar file
-    finalizedBy 'reobfJar'
+    finalizedBy 'reobfShadowJar'
 }
 
 reobf {

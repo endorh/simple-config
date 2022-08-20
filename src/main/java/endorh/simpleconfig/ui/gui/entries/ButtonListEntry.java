@@ -60,7 +60,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 		return false;
 	}
 	
-	@Override public boolean isEdited() {
+	@Override protected boolean computeIsEdited() {
 		return false;
 	}
 	

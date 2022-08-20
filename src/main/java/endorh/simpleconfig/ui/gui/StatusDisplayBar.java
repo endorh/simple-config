@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
@@ -189,11 +189,11 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
-				final List<AbstractConfigEntry<?>> entries = screen.getAllMainEntries().stream()
+				final List<AbstractConfigField<?>> entries = screen.getAllMainEntries().stream()
 				  .filter(e -> e.isRequiresRestart() && e.isEdited())
 				  .collect(Collectors.toList());
 				final List<ITextComponent> lines = IntStream.range(0, entries.size()).mapToObj(i -> {
-					AbstractConfigEntry<?> entry = entries.get(i);
+					AbstractConfigField<?> entry = entries.get(i);
 					IFormattableTextComponent title = entry.getTitle().deepCopy();
 					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
 					               .mergeStyle(TextFormatting.GRAY));
@@ -226,7 +226,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 							"simpleconfig.ui.action.restore.all"), 0x806480FF, b -> {
 							 d.cancel(true);
 							 screen.runAtomicTransparentAction(
-								() -> entries.forEach(AbstractConfigEntry::restoreValue));
+								() -> entries.forEach(AbstractConfigField::restoreValue));
 						 }
 					  ));
 				  });
@@ -240,7 +240,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		public static final StatusState EXTERNAL_CHANGES = new StatusState(10) {
 			@Override public boolean isActive(SimpleConfigScreen screen) {
 				return screen.getAllMainEntries().stream()
-				  .anyMatch(AbstractConfigEntry::hasConflictingExternalDiff);
+				  .anyMatch(AbstractConfigField::hasConflictingExternalDiff);
 			}
 			
 			@Override
@@ -272,9 +272,9 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			}
 			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
-				final List<AbstractConfigEntry<?>> conflicts = screen.getAllExternalConflicts();
+				final List<AbstractConfigField<?>> conflicts = screen.getAllExternalConflicts();
 				final List<ITextComponent> lines = IntStream.range(0, conflicts.size()).mapToObj(i -> {
-					AbstractConfigEntry<?> entry = conflicts.get(i);
+					AbstractConfigField<?> entry = conflicts.get(i);
 					IFormattableTextComponent title = entry.getTitle().deepCopy();
 					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
 					               .mergeStyle(TextFormatting.GRAY));
@@ -356,7 +356,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 					HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, goToError);
 					ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i);
 					EntryError error = errors.get(i);
-					AbstractConfigEntry<?> entry = error.getEntry();
+					AbstractConfigField<?> entry = error.getEntry();
 					IFormattableTextComponent title = entry.getTitle().deepCopy();
 					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
 					               .mergeStyle(TextFormatting.DARK_RED));

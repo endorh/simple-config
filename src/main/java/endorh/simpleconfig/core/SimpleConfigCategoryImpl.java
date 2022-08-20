@@ -18,6 +18,7 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.text.WordUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,11 +81,11 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		this.color = color;
 	}
 	
-	@Override protected String getPath() {
+	@Override public String getPath() {
 		return isRoot? "" : name;
 	}
 	
-	@Override protected String getPathPart() {
+	@Override public String getPathPart() {
 		return isRoot? "" : name + ".";
 	}
 	
@@ -191,6 +192,8 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 	protected ITextComponent getTitle() {
 		if (ClientConfig.advanced.translation_debug_mode)
 			return new StringTextComponent(title);
-		return new TranslationTextComponent(title);
+		return I18n.hasKey(title)
+		       ? new TranslationTextComponent(title)
+		       : new StringTextComponent(WordUtils.capitalize(name));
 	}
 }

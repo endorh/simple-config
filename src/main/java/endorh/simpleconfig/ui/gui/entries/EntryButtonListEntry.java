@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.IEntryHolder;
@@ -32,7 +32,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	public final Entry entry;
 	protected final Button button;
 	protected final Supplier<ITextComponent> buttonLabelSupplier;
-	protected final List<AbstractConfigEntry<?>> heldEntries;
+	protected final List<AbstractConfigField<?>> heldEntries;
 	protected List<IGuiEventListener> listeners;
 	protected List<IGuiEventListener> childListeners;
 	
@@ -64,8 +64,8 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		if (!isFocused) WidgetUtils.forceUnFocus(button);
 	}
 	
-	@Override public boolean isEdited() {
-		return getSaveConsumer() != null && super.isEdited();
+	@Override protected boolean computeIsEdited() {
+		return getSaveConsumer() != null && super.computeIsEdited();
 	}
 	
 	@Override public boolean isResettable() {
@@ -155,7 +155,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		return super.getTooltip(mouseX, mouseY);
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	

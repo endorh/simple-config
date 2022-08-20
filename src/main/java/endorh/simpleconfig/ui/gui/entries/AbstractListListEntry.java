@@ -64,8 +64,9 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	}
 	
 	@Override public void tick() {
-		super.tick();
+		updateValue(false);
 		multiCellErrors = multiCellErrorSupplier.apply(getValue());
+		super.tick();
 	}
 	
 	@Override protected C createCellWithValue(T value) {
@@ -153,8 +154,8 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 			lastSelectedSubTarget = target;
 		}
 		
-		@Override public List<EntryError> getErrors() {
-			List<EntryError> errors = super.getErrors();
+		@Override protected List<EntryError> computeErrors() {
+			List<EntryError> errors = super.computeErrors();
 			List<Optional<ITextComponent>> multi = listEntry.multiCellErrors;
 			if (multi != null && index >= 0 && index < multi.size())
 				multi.get(index).ifPresent(e -> errors.add(EntryError.of(e, this)));

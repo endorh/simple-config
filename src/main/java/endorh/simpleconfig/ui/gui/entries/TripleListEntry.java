@@ -18,9 +18,9 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class TripleListEntry<
-  L, M, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
-  ME extends AbstractConfigEntry<M> & IChildListEntry,
-  RE extends AbstractConfigEntry<R> & IChildListEntry
+  L, M, R, LE extends AbstractConfigField<L> & IChildListEntry,
+  ME extends AbstractConfigField<M> & IChildListEntry,
+  RE extends AbstractConfigField<R> & IChildListEntry
 > extends TooltipListEntry<Triple<L, M, R>> implements IChildListEntry, IEntryHolder {
 	private final LE leftEntry;
 	private final ME middleEntry;
@@ -31,7 +31,7 @@ public class TripleListEntry<
 	protected float rightWeight = 0.333F;
 	
 	protected List<IGuiEventListener> listeners;
-	protected List<AbstractConfigEntry<?>> heldEntries;
+	protected List<AbstractConfigField<?>> heldEntries;
 	protected List<ISeekableComponent> seekableChildren;
 	
 	public TripleListEntry(
@@ -145,7 +145,7 @@ public class TripleListEntry<
 		return listeners;
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	

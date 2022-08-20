@@ -156,7 +156,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		return INSTANCES.values();
 	}
 	
-	protected static String nextTextID() {
+	@Internal public static String nextTextID() {
 		return "_text$" + TEXT_ENTRY_ID_GEN++;
 	}
 	
@@ -223,7 +223,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	/**
 	 * Config relative path, for error reporting.
 	 */
-	@Override protected String getPath() {
+	@Override public String getPath() {
 		return getName();
 	}
 	

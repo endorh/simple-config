@@ -138,11 +138,11 @@ public class SimpleConfigWrapper {
 			stack.push(spec.getValues());
 		}
 		
-		@Override void buildModConfig(SimpleConfigImpl config) {
+		@Override public void buildModConfig(SimpleConfigImpl config) {
 			config.build(container, modConfig);
 		}
 		
-		@Override void build(AbstractConfigEntry<?, ?, ?> entry) {
+		@Override public void build(AbstractConfigEntry<?, ?, ?> entry) {
 			Object o = getConfigValues().get(entry.name);
 			if (o instanceof ConfigValue) {
 				entry.setConfigValue((ConfigValue<?>) o);
@@ -162,30 +162,30 @@ public class SimpleConfigWrapper {
 			return path.isEmpty()? name : path + "." + name;
 		}
 		
-		@Override boolean canBuildEntry(String name) {
+		@Override public boolean canBuildEntry(String name) {
 			boolean r = getConfigValues().get(name) instanceof ConfigValue;
 			if (!r) LOGGER.warn("Unexpected entry in wrapped config: " + getPath(name));
 			return r;
 		}
 		
-		@Override boolean canBuildSection(String name) {
+		@Override public boolean canBuildSection(String name) {
 			boolean r = getConfigValues().get(name) instanceof UnmodifiableConfig;
 			if (!r) LOGGER.warn("Unexpected section in wrapped config: " + getPath(name));
 			return r;
 		}
 		
-		@Override void enterSection(String name) {
+		@Override public void enterSection(String name) {
 			Object o = getConfigValues().get(name);
 			if (o instanceof UnmodifiableConfig) {
 				stack.push((UnmodifiableConfig) o);
 			} else throw new IllegalStateException("Cannot wrap config section: " + name);
 		}
 		
-		@Override void exitSection() {
+		@Override public void exitSection() {
 			stack.pop();
 		}
 		
-		@Override ForgeConfigSpec build() {
+		@Override public ForgeConfigSpec build() {
 			return spec;
 		}
 	}

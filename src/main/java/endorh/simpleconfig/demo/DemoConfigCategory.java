@@ -3,6 +3,7 @@ package endorh.simpleconfig.demo;
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.AbstractRange.DoubleRange;
+import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
@@ -11,7 +12,9 @@ import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.core.SimpleConfigGroupImpl;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Entries;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluids;
@@ -33,10 +36,10 @@ import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.Color;
+import java.beans.Transient;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -115,9 +118,9 @@ public class DemoConfigCategory {
 		  // Tooltip translation keys can contain newline characters to
 		  //   produce multiline tooltips, and they automatically wrap as well.
 		  // For example, the following entry is mapped under
-		  //   config.{mod-id}.demo.some_bool
+		  //   {mod-id}.config.demo.some_bool
 		  // and its tooltip is mapped to (if the translation exists)
-		  //   config.{mod-id}.demo.some_bool:help
+		  //   {mod-id}.config.demo.some_bool:help
 		  // There's a translation debug mode which can be enabled in the
 		  //   SimpleConfig mod config, which will display translation
 		  //   keys, and highlight missing ones in red.
@@ -187,9 +190,9 @@ public class DemoConfigCategory {
 		            //   may clash
 		            // For instance, the enum RockPaperScissors would be
 		            //   mapped to the translation keys
-		            //     config.{mod-id}.enum.rock_paper_scissors.rock
-		            //     config.{mod-id}.enum.rock_paper_scissors.paper
-		            //     config.{mod-id}.enum.rock_paper_scissors.scissors
+		            //     {mod-id}.config.enum.rock_paper_scissors.rock
+		            //     {mod-id}.config.enum.rock_paper_scissors.paper
+		            //     {mod-id}.config.enum.rock_paper_scissors.scissors
 		            .add("enum_value", option(RockPaperScissors.SCISSORS))
 		            // Enums may define their own translations implementing
 		            //   ITranslatedEnum (see the Placement enum)
@@ -257,9 +260,17 @@ public class DemoConfigCategory {
 		              caption(color(Color.GRAY), list(color(Color.BLACK), asList(Color.GRAY))),
 		              asList(
 							 Pair.of(Color.CYAN, asList(Color.YELLOW, Color.BLUE)),
-							 Pair.of(Color.PINK, asList(Color.RED, Color.GREEN)))))))
+							 Pair.of(Color.PINK, asList(Color.RED, Color.GREEN))))))
+		            // You may also create Java Bean lists, using bean entries.
+		            .add("bean_list", list(
+						  bean(new BeanDemo())
+						    .caption("name", string("<unnamed>"))
+						    .add("range", range(FloatRange.inclusive(0F, 1F)))
+						    .add("color", color(Color.WHITE))
+						    .add("pattern", pattern("(\\d+):(\\w+)"))
+						    .withIcon(BeanDemo::getIcon), asList(new BeanDemo()))))
 		            // If you find yourself needing multiple nested lists or maps
-		            //   in your config, you probably instead want a custom
+		            //   in your config, you may instead want a custom
 		            //   JsonReloadListener to extend your mod through datapacks
 		       // A few string-serializable types come built-in as well
 		       .n(group("serializable")
@@ -298,7 +309,13 @@ public class DemoConfigCategory {
 		            //   can't modify the Pair class, and using lambdas directly
 		            //   isn't reusable
 		            .add("pair", entry(
-		              Pair.of("string", 2), new StringIntPairSerializer())))
+		              Pair.of("string", 2), new StringIntPairSerializer()))
+		            .add("bean", bean(new BeanDemo())
+		              .caption("name", string(""))
+		              .add("range", range(FloatRange.inclusive(0F, 1F)))
+		              .add("color", color(Color.WHITE))
+		              .add("pattern", pattern("(\\d+):(\\w+)"))
+		              .withIcon(BeanDemo::getIcon)))
 		     .n(group("maps")
 		          // Map entries are also supported
 		          // Map values may be any other entry that serializes
@@ -386,7 +403,24 @@ public class DemoConfigCategory {
 		          .add("key_map", map(
 						key(), string("/execute ..."), ImmutableMap.of(
 			           parse("left.control+h"), "/tp 0 0 0",
-						  parse("left.ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true"))))
+						  parse("left.ctrl+i"), "/effect give @s minecraft:invisibility 999999 255 true")))
+		          // Of course, maps also support bean entries, which are mostly intended to be
+		          //   used this way (or in lists).
+		          // In this case, our bean doesn't allow users to edit their name property,
+		          //   since it's inferred by the map key (not an encouraged idea, just for demo)
+		          // By default, bean entries fail at load time if you don't define entries for
+		          //   all their properties, since it's an easy mistake. You may suppress this error
+		          //   by calling .allowUneditableProperties() on them.
+		          //   Uneditable properties will default to their value within the default value
+		          //   of the bean entry.
+		          .add("bean_map", map(
+						string("<unnamed>"), bean(new BeanDemo())
+			           .caption("range", range(FloatRange.inclusive(0F, 1F)))
+			           .add("color", color(Color.WHITE))
+			           .add("pattern", pattern("(\\d++):(\\w+)"))
+			           .withIcon(BeanDemo::getIcon)
+			           .allowUneditableProperties(), Util.make(
+							 new HashMap<>(), m -> m.put("<unnamed>", new BeanDemo())))))
 		     .n(group("pairs_n_triples", false)
 		          .add("int_pair", pair(number(0, 0, 10), number(10, 0, 10)))
 		          .add("slider_pair", pair(number(0.5F, 0F, 1F).slider(), volume(0.5F)))
@@ -634,6 +668,64 @@ public class DemoConfigCategory {
 		// Although in this case it doesn't make much difference
 		@Override public ITextComponent getDisplayName() {
 			return ttc(prefix("enum.placement." + name().toLowerCase()));
+		}
+	}
+	
+	public static class BeanDemo {
+		private static final Map<Color, Icon> ICON_CACHE = new LinkedHashMap<Color, Icon>(51) {
+			@Override protected boolean removeEldestEntry(Entry eldest) {
+				return size() > 50;
+			}
+		};
+		
+		private String name = "<unnamed>";
+		private FloatRange range = FloatRange.inclusive(0F, 1F);
+		private Color color = Color.WHITE;
+		private Pattern pattern = Pattern.compile("(\\d+):(\\w+)");
+		
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+		public FloatRange getRange() {
+			return range;
+		}
+		public void setRange(FloatRange range) {
+			this.range = range;
+		}
+		
+		public Color getColor() {
+			return color;
+		}
+		public void setColor(Color color) {
+			this.color = color;
+		}
+		
+		public Pattern getPattern() {
+			return pattern;
+		}
+		public void setPattern(Pattern pattern) {
+			this.pattern = pattern;
+		}
+		
+		public @Transient Icon getIcon() {
+			return ICON_CACHE.computeIfAbsent(color, c -> Entries.WRENCH.withTint(getColor().getRGB()));
+		}
+		
+		@Override public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			BeanDemo beanDemo = (BeanDemo) o;
+			return name.equals(beanDemo.name) && range.equals(beanDemo.range)
+			       && color.equals(beanDemo.color)
+			       && pattern.pattern().equals(beanDemo.pattern.pattern());
+		}
+		
+		@Override public int hashCode() {
+			return Objects.hash(name, range, color, pattern.pattern());
 		}
 	}
 	

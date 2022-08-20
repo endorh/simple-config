@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.icon.Icon;
@@ -118,7 +118,7 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 	}
 	
 	@Override public ConfigCategoryImpl build() {
-		List<AbstractConfigEntry<?>> builtEntries =
+		List<AbstractConfigField<?>> builtEntries =
 		  entries.stream().map(FieldBuilder::build).collect(Collectors.toList());
 		return new ConfigCategoryImpl(
 		  name, type, builtEntries, getTitle(), getSortingOrder(),

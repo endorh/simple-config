@@ -5,7 +5,7 @@ import net.minecraft.util.text.ITextComponent;
 public class EntryError {
 	protected ITextComponent error;
 	protected INavigableTarget source;
-	protected AbstractConfigEntry<?> entry;
+	protected AbstractConfigField<?> entry;
 	
 	protected EntryError(
 	  ITextComponent error, INavigableTarget source
@@ -31,7 +31,7 @@ public class EntryError {
 		return source;
 	}
 	
-	public AbstractConfigEntry<?> getEntry() {
+	public AbstractConfigField<?> getEntry() {
 		return entry;
 	}
 }

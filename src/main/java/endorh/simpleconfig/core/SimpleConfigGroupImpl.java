@@ -17,6 +17,7 @@ import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -26,7 +27,7 @@ import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
 
 public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
   implements SimpleConfigGroup, IGUIEntry {
-	public final SimpleConfigCategoryImpl category;
+	public final @Nullable SimpleConfigCategoryImpl category;
 	public final @Nullable SimpleConfigGroupImpl parentGroup;
 	public final String name;
 	public boolean expanded;
@@ -38,31 +39,45 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	protected AbstractConfigEntry<?, ?, ?> heldEntry;
 	
 	@Internal protected SimpleConfigGroupImpl(
-	  SimpleConfigGroupImpl parent, String name, String title,
-	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
+	  SimpleConfigImpl config, String name, String title, String tooltip, boolean expanded,
+	  @Nullable Consumer<SimpleConfigGroup> baker
 	) {
-		this.category = parent.category;
-		this.parentGroup = parent;
+		root = config;
+		category = null;
+		parentGroup = null;
 		this.name = name;
 		this.title = title;
 		this.tooltip = tooltip;
 		this.expanded = expanded;
 		this.baker = baker;
-		root = category.root;
 	}
 	
 	@Internal protected SimpleConfigGroupImpl(
-	  SimpleConfigCategoryImpl parent, String name, String title,
+	  SimpleConfigGroupImpl parent, String name, String title,
 	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
 	) {
-		this.category = parent;
-		this.parentGroup = null;
+		root = parent.root;
+		category = parent.category;
+		parentGroup = parent;
 		this.name = name;
 		this.title = title;
 		this.tooltip = tooltip;
 		this.expanded = expanded;
 		this.baker = baker;
-		root = category.root;
+	}
+	
+	@Internal protected SimpleConfigGroupImpl(
+	  @NotNull SimpleConfigCategoryImpl parent, String name, String title,
+	  String tooltip, boolean expanded, @Nullable Consumer<SimpleConfigGroup> baker
+	) {
+		root = parent.root;
+		category = parent;
+		parentGroup = null;
+		this.name = name;
+		this.title = title;
+		this.tooltip = tooltip;
+		this.expanded = expanded;
+		this.baker = baker;
 	}
 	
 	@Internal protected void build(
@@ -78,21 +93,20 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 		this.entries = entries;
 		this.groups = groups;
 		children = groups;
-		this.order = guiOrder;
+		order = guiOrder;
 		this.heldEntry = heldEntry;
 	}
 	
-	@Override
-	protected String getPath() {
+	@Override public String getPath() {
 		return parentGroup != null
 		       ? parentGroup.getPathPart() + name
-		       : category.getPathPart() + name;
+		       : category != null
+		         ? category.getPathPart() + name
+		         : root.getPathPart() + name;
 	}
 	
-	@Override public @Nullable AbstractSimpleConfigEntryHolder getParent() {
-		return parentGroup != null
-		       ? parentGroup
-		       : category.isRoot? root : category;
+	@Override public @NotNull AbstractSimpleConfigEntryHolder getParent() {
+		return parentGroup != null? parentGroup : category != null? category.isRoot? root : category : root;
 	}
 	
 	@Override protected String getName() {
@@ -114,7 +128,7 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 		return builder.toString();
 	}
 	
-	@Override public SimpleConfigCategoryImpl getCategory() {
+	@Override public @Nullable SimpleConfigCategoryImpl getCategory() {
 		return category;
 	}
 	
@@ -131,7 +145,7 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	
 	@Override public void markDirty(boolean dirty) {
 		super.markDirty(dirty);
-		if (dirty) (parentGroup != null ? parentGroup : category).markDirty(true);
+		if (dirty) (parentGroup != null ? parentGroup : category != null? category : root).markDirty(true);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -156,25 +170,7 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
 				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
 			}
-			TextFormatting format =
-			  I18n.hasKey(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			// status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
-			//   .setFormatting(TextFormatting.WHITE)
-			//   .setHoverEvent(new HoverEvent(
-			// 	 HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-			// 	 "simpleconfig.debug.copy").mergeStyle(TextFormatting.GRAY)))
-			//   .setClickEvent(new ClickEvent(
-			// 	 ClickEvent.Action.COPY_TO_CLIPBOARD, title)))
-			// ).appendString(" ");
-			// if (tooltip != null)
-			// 	status = status.append(new StringTextComponent("⧉").modifyStyle(s -> s
-			// 	  .setFormatting(TextFormatting.GRAY)
-			// 	  .setHoverEvent(new HoverEvent(
-			// 	    HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-			// 	      "simpleconfig.debug.copy.help").mergeStyle(TextFormatting.GRAY)))
-			// 	  .setClickEvent(new ClickEvent(
-			// 		 ClickEvent.Action.COPY_TO_CLIPBOARD, tooltip)))
-			// 	).appendString(" ");
+			TextFormatting format = I18n.hasKey(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
 			return new StringTextComponent("").append(status.append(new StringTextComponent(title)).mergeStyle(format));
 		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
 	}

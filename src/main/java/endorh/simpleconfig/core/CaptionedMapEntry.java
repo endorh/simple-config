@@ -17,7 +17,6 @@ import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
-import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -154,9 +153,9 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 	
 	@Override public Map<Object, Object> forActualConfig(@Nullable Pair<CC, Map<KC, C>> value) {
 		if (value == null) return null;
-		return Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
+		return NonConfigMap.singleton(
 		  captionEntry.forActualConfig(value.getKey()),
-		  mapEntry.forActualConfig(value.getValue())));
+		  mapEntry.forActualConfig(value.getValue()));
 	}
 	
 	@Override public @Nullable Pair<CC, Map<KC, C>> fromActualConfig(@Nullable Object value) {

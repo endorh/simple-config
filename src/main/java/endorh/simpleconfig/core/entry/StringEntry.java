@@ -15,17 +15,13 @@ import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -80,7 +76,10 @@ public class StringEntry
 		}
 		
 		@Override @Contract(pure=true) public Builder restrict(String first, String... choices) {
-			return restrict(Lists.newArrayList(ArrayUtils.insert(0, choices, first)));
+			List<String> list = new ArrayList<>(choices.length + 1);
+			list.add(first);
+			list.addAll(Arrays.asList(choices));
+			return restrict(list);
 		}
 		
 		@Override @Contract(pure=true) public Builder restrict(@NotNull List<String> choices) {

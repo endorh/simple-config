@@ -21,7 +21,7 @@ import static java.lang.Math.max;
 
 public class RangeListEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>,
-  E extends AbstractConfigEntry<V> & IChildListEntry
+  E extends AbstractConfigField<V> & IChildListEntry
 > extends TooltipListEntry<R> implements IChildListEntry, IEntryHolder {
 	private final E minEntry;
 	private final E maxEntry;
@@ -30,7 +30,7 @@ public class RangeListEntry<
 	protected ToggleImageButton minExclusivenessButton;
 	protected ToggleImageButton maxExclusivenessButton;
 	protected List<IGuiEventListener> listeners;
-	protected List<AbstractConfigEntry<?>> heldEntries;
+	protected List<AbstractConfigField<?>> heldEntries;
 	protected List<ISeekableComponent> seekableChildren;
 	
 	public RangeListEntry(
@@ -162,7 +162,7 @@ public class RangeListEntry<
 		return listeners;
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	

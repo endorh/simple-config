@@ -96,9 +96,9 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		if (isExpandable()) {
 			SimpleConfigIcons.Entries.TEXT_EXPAND.renderCentered(
 			  mStack, x - 15, y + 5, 9, 9,
-			  (isExpanded()? 1 : 0) + ((
+			  (isExpanded()? 1 : 0) + (
 			    isMouseOverLabel(mouseX, mouseY) && !textFieldWidget.isMouseOver(mouseX, mouseY)
-			    && !sideButtonReference.isMouseOver(mouseX, mouseY))? 2 : 0));
+			    && !sideButtonReference.isMouseOver(mouseX, mouseY)? 2 : 0));
 		}
 	}
 	

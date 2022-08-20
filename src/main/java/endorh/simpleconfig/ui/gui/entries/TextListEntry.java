@@ -1,10 +1,8 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.EntryError;
-import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
@@ -149,7 +147,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		  index, index + matchedText.length());
 	}
 	
-	@Override public List<EntryError> getErrors() {
+	@Override protected List<EntryError> computeErrors() {
 		return Collections.emptyList();
 	}
 	
@@ -171,10 +169,6 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	
 	@Override public boolean isNavigable() {
 		return false;
-	}
-	
-	@Override public List<INavigableTarget> getNavigableChildren() {
-		return Lists.newArrayList();
 	}
 }
 

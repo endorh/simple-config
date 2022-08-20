@@ -189,6 +189,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		}
 	}
 	
+	@Override public void tick() {
+		super.tick();
+		if (isTextFieldShown()) textFieldEntry.tick();
+	}
+	
 	@Override public void renderChildEntry(
 	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {

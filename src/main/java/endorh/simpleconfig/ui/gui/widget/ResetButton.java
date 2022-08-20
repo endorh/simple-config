@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.config.ClientConfig.confirm;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.IEntryHolder;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
@@ -22,6 +22,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,16 +46,18 @@ public class ResetButton extends MultiFunctionImageButton
 	protected static List<ITextComponent> restoreTooltipGroup = asList(
 	  new TranslationTextComponent("simpleconfig.ui.restore.group"));
 	
-	protected AbstractConfigEntry<?> entry;
+	protected AbstractConfigField<?> entry;
 	protected boolean shift = false;
 	protected boolean alt = false;
+	protected boolean isGroup = false;
+	protected boolean isActive = false;
 	protected boolean confirming = false;
 	protected boolean dragging = false;
 	protected int dragOffset = 0;
 	protected double dragAnchor = 0;
 	protected Rectangle overlay = new Rectangle();
 	
-	public ResetButton(AbstractConfigEntry<?> entry) {
+	public ResetButton(AbstractConfigField<?> entry) {
 		super(
 		  0, 0, 20, 20, Buttons.RESET, ButtonAction.of(b -> {}),
 		  NarratorChatListener.EMPTY);
@@ -78,11 +81,6 @@ public class ResetButton extends MultiFunctionImageButton
 		overlay.setBounds(ScissorsHandler.INSTANCE.getScissorsAreas().stream().reduce(overlay, Rectangle::intersection));
 		if (overlay.isEmpty())
 			overlay.setBounds(0, 0, 0, 0);
-		if (!confirming && !dragging && !getScreen().hasDialogs()) {
-			shift = Screen.hasShiftDown();
-			alt = Screen.hasAltDown();
-			defaultIcon = getIcon();
-		}
 		super.render(mStack, mouseX, mouseY, delta);
 		if (isFocused() && !active && entry != null) {
 			entry.changeFocus(false);
@@ -95,12 +93,19 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected boolean isGroup() {
+		return isGroup;
+	}
+	
+	protected boolean computeIsGroup() {
 		if (!entry.isGroup()) return false;
 		if (!(entry instanceof IEntryHolder)) return true;
 		final IEntryHolder entryHolder = (IEntryHolder) entry;
-		return shift ||
-		       (isRestore() ? entryHolder.getSingleRestorableEntry()
-		                    : entryHolder.getSingleResettableEntry()) == null;
+		boolean restore = isRestore();
+		return shift
+		       || (restore? entryHolder.getSingleRestorableEntry()
+		                  : entryHolder.getSingleResettableEntry()) == null
+		       || (restore? entry.canRestoreGroup() : entry.canResetGroup())
+		          && !(restore? entry.isRestorable() : entry.isResettable());
 	}
 	
 	protected Icon getIcon() {
@@ -110,12 +115,9 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (this.active && this.visible) {
-			if (keyCode != 257 && keyCode != 32 && keyCode != 335) { // !(Enter | Space | NumPadEnter)
-				return false;
-			} else {
-				return activate(Screen.hasControlDown() ? 2 : Screen.hasShiftDown() ? 1 : 0);
-			}
+		if (active && visible) {
+			if (keyCode != GLFW.GLFW_KEY_ENTER && keyCode != GLFW.GLFW_KEY_SPACE && keyCode != GLFW.GLFW_KEY_KP_ENTER) return false;
+			return activate(Screen.hasControlDown() ? 2 : Screen.hasShiftDown() ? 1 : 0);
 		}
 		return false;
 	}
@@ -144,18 +146,33 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	protected boolean shouldBeActive() {
+		return isActive;
+	}
+	
+	protected boolean computeActive() {
 		if (entry == null) return false;
 		if (entry.isSubEntry()) return false;
 		return isGroup()? isRestore()? entry.canRestoreGroup() : entry.canResetGroup()
 		                : isRestore()? entry.isRestorable() : entry.isResettable();
 	}
 	
-	protected boolean reset(AbstractConfigEntry<?> entry, int button) {
+	public void tick() {
+		if (!confirming && !dragging && !getScreen().hasDialogs()) {
+			shift = Screen.hasShiftDown();
+			alt = Screen.hasAltDown();
+			defaultIcon = getIcon();
+		}
+		isGroup = computeIsGroup();
+		isActive = computeActive();
+	}
+	
+	protected boolean reset(AbstractConfigField<?> entry, int button) {
+		tick();
 		if (button == 0) {
 			if (entry instanceof IEntryHolder) {
 				final IEntryHolder entryHolder = (IEntryHolder) entry;
-				final AbstractConfigEntry<?> singleEntry = entryHolder.getSingleResettableEntry();
-				if (singleEntry != null && !shift) {
+				final AbstractConfigField<?> singleEntry = entryHolder.getSingleResettableEntry();
+				if (singleEntry != null && isGroup()) {
 					if (isRestore() && entry.isRestorable()) {
 						entryHolder.restoreSingleEntry(singleEntry);
 						return true;
@@ -166,10 +183,10 @@ public class ResetButton extends MultiFunctionImageButton
 					return false;
 				}
 			}
-			if (isRestore() && entry.isRestorable()) {
+			if (isRestore() && isGroup()? entry.canRestoreGroup() : entry.isRestorable()) {
 				entry.restoreValue();
 				return true;
-			} else if (!isRestore() && entry.isResettable()) {
+			} else if (!isRestore() && isGroup()? entry.canResetGroup() : entry.isResettable()) {
 				entry.resetValue();
 				return true;
 			}
@@ -191,6 +208,7 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		tick();
 		if (isMouseOver(mouseX, mouseY)) {
 			if (!shouldSafeGuard())
 				return onPress(this, button);

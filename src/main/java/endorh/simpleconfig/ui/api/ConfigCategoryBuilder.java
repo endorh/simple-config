@@ -30,8 +30,7 @@ public interface ConfigCategoryBuilder {
 	
 	@Nullable Supplier<Optional<ITextComponent[]>> getDescription();
 	void setDescription(
-	  @Nullable Supplier<Optional<ITextComponent[]>> description
-	);
+	  @Nullable Supplier<Optional<ITextComponent[]>> description);
 	
 	@Nullable Path getContainingFile();
 	void setContainingFile(@Nullable Path containingFile);

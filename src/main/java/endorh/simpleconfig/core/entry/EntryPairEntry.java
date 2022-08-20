@@ -18,6 +18,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -30,8 +31,8 @@ public class EntryPairEntry<
   > extends AbstractConfigEntry<
   Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>
   > implements IKeyEntry<Pair<LG, RG>> {
-	protected final AbstractConfigEntry<L, LC, LG> leftEntry;
-	protected final AbstractConfigEntry<R, RC, RG> rightEntry;
+	@Internal public final AbstractConfigEntry<L, LC, LG> leftEntry;
+	@Internal public final AbstractConfigEntry<R, RC, RG> rightEntry;
 	protected float splitPos = 0.5F;
 	protected @Nullable Icon middleIcon;
 	
@@ -44,11 +45,10 @@ public class EntryPairEntry<
 		this.rightEntry = rightEntry;
 	}
 	
-	@SuppressWarnings("unchecked") protected <E extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>> E getLeftEntry() {
+	@SuppressWarnings("unchecked") @Internal public <E extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>> E getLeftEntry() {
 		return (E) leftEntry;
 	}
-	
-	@SuppressWarnings("unchecked") protected <E extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>> E getRightEntry() {
+	@SuppressWarnings("unchecked") @Internal public <E extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>> E getRightEntry() {
 		return (E) rightEntry;
 	}
 	

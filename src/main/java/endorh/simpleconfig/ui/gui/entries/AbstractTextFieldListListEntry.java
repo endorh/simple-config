@@ -1,8 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
@@ -18,7 +16,6 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -126,10 +123,6 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			}
 		}
 		
-		@Override public List<INavigableTarget> getNavigableChildren() {
-			return Lists.newArrayList(this);
-		}
-		
 		@Override public void navigate() {
 			final ListEntry listEntry = getListEntry();
 			listEntry.expandParents();
@@ -155,15 +148,6 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			double target = parent.scrollFor(listY + y, getCellHeight());
 			parent.scrollTo(target);
 		}
-	}
-	
-	@Override public List<INavigableTarget> getNavigableChildren() {
-		if (expanded) {
-			final List<INavigableTarget> targets = new LinkedList<>(cells);
-			targets.add(0, this);
-			return targets;
-		}
-		return super.getNavigableChildren();
 	}
 }
 

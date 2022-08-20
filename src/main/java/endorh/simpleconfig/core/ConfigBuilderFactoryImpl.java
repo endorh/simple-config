@@ -333,8 +333,13 @@ import java.util.regex.Pattern;
 		return new SerializableEntry.Builder<>(value, value.getConfigSerializer());
 	}
 	
-	// Convenience Minecraft entries
+	// Java Beans
 	
+	@Override public <B> BeanEntryBuilder<B> bean(B value) {
+		return new BeanEntry.Builder<>(value);
+	}
+	
+	// Convenience Minecraft entries
 	
 	@Override public INBTEntry.Builder nbtValue(INBT value) {
 		return new INBTEntry.Builder(value);

@@ -10,7 +10,6 @@ import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
-import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.yaml.NodeComments;
 import net.minecraftforge.api.distmarker.Dist;
@@ -49,13 +48,13 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 		return root.gui;
 	}
 	
-	protected abstract String getPath();
+	public abstract String getPath();
 	
-	protected String getPathPart() {
+	@Internal public String getPathPart() {
 		return getPath() + ".";
 	}
 	
-	protected String getGlobalPath() {
+	public String getGlobalPath() {
 		return getRoot().getName() + "." + getPath();
 	}
 	
@@ -510,8 +509,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 	@Override @OnlyIn(Dist.CLIENT) public boolean resetInGUI(String path) {
 		AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 		if (entry.hasGUI()) {
-			AbstractConfigListEntry<Object> guiEntry = entry.getGuiEntry();
-			if (guiEntry != null) guiEntry.resetValue();
+			entry.resetGuiEntry();
 			return true;
 		} else return false;
 	}
@@ -519,8 +517,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 	@Override @OnlyIn(Dist.CLIENT) public boolean restoreInGUI(String path) {
 		AbstractConfigEntry<Object, Object, Object> entry = getEntry(path);
 		if (entry.hasGUI()) {
-			AbstractConfigListEntry<Object> guiEntry = entry.getGuiEntry();
-			if (guiEntry != null) guiEntry.restoreValue();
+			entry.restoreGuiEntry();
 			return true;
 		} else return false;
 	}

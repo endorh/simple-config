@@ -5,7 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.config.ClientConfig.advanced;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.TooltipSearchBarWidget;
@@ -58,8 +58,8 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	
 	@Override public void tick() {
 		super.tick();
-		if (this.tooltipSupplier != null) {
-			lastTooltip = this.tooltipSupplier.get().map(this::decorateTooltip).orElse(null);
+		if (tooltipSupplier != null) {
+			lastTooltip = tooltipSupplier.get().map(this::decorateTooltip).orElse(null);
 		} else lastTooltip = null;
 		NavigableSet<EntryTag> flags = getEntryTags();
 		if (lastTooltip != null) {
@@ -88,7 +88,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		Optional<ITextComponent[]> tooltip;
 		if (getEntryList().isMouseOver(mouseX, mouseY)
 		    && shouldProvideTooltip(mouseX, mouseY, x, y, entryWidth, entryHeight)
-		    && (tooltip = this.getTooltip(mouseX, mouseY)).isPresent() && tooltip.get().length > 0) {
+		    && (tooltip = getTooltip(mouseX, mouseY)).isPresent() && tooltip.get().length > 0) {
 			addTooltip(Tooltip.of(Point.of(mouseX, mouseY), postProcessTooltip(tooltip.get())));
 		}
 	}
@@ -115,8 +115,8 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	}
 	
 	protected Optional<ITextComponent[]> updateTooltip() {
-		if (this.tooltipSupplier != null)
-			return this.tooltipSupplier.get().map(this::decorateTooltip);
+		if (tooltipSupplier != null)
+			return tooltipSupplier.get().map(this::decorateTooltip);
 		return Optional.empty();
 	}
 	
@@ -147,11 +147,11 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 				return Optional.of(tooltip.toArray(new ITextComponent[0]));
 			}
 		}
-		return this.getTooltip();
+		return getTooltip();
 	}
 	
 	@Nullable public Supplier<Optional<ITextComponent[]>> getTooltipSupplier() {
-		return this.tooltipSupplier;
+		return tooltipSupplier;
 	}
 	
 	public void setTooltipSupplier(@Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
@@ -172,7 +172,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	protected ITextComponent[] decorateTooltip(ITextComponent[] tooltip) {
 		if (matchedTooltipText != null && !matchedTooltipText.isEmpty()) {
 			final String tooltipText = Arrays.stream(tooltip)
-			  .map(AbstractConfigEntry::getUnformattedString)
+			  .map(AbstractConfigField::getUnformattedString)
 			  .collect(Collectors.joining("\n"));
 			int i = tooltipText.indexOf(matchedTooltipText);
 			if (i != -1) {
@@ -223,7 +223,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	protected String seekableTooltipString() {
 		if (isChildSubEntry()) return "";
 		return getTooltip().map(t -> Arrays.stream(t).map(
-		  AbstractConfigEntry::getUnformattedString
+		  AbstractConfigField::getUnformattedString
 		  ).collect(Collectors.joining("\n"))).orElse("");
 	}
 }

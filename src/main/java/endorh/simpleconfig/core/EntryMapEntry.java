@@ -15,7 +15,6 @@ import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -194,13 +193,18 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
-	@Override public Object forActualConfig(Map<KC, C> value) {
+	@Override public Object forActualConfig(@Nullable Map<KC, C> value) {
+		if (value == null) return null;
 		if (linked) {
-			return value.entrySet().stream()
-			  .map(e -> Util.make(NonConfigMap.ofHashMap(1), m -> m.put(
-				 keyEntry.forActualConfig(e.getKey()), entry.forActualConfig(e.getValue())))
-			  ).collect(Collectors.toList());
-		} else return NonConfigMap.wrap(value);
+			List<Map<Object, Object>> list = new ArrayList<>();
+			value.forEach((k, v) -> list.add(NonConfigMap.singleton(
+			  keyEntry.forActualConfig(k), entry.forActualConfig(v))));
+			return list;
+		} else {
+			NonConfigMap<Object, Object> map = NonConfigMap.ofHashMap(value.size());
+			value.forEach((k, v) -> map.put(keyEntry.forActualConfig(k), entry.forActualConfig(v)));
+			return map;
+		}
 	}
 	
 	@Override public @Nullable Map<KC, C> fromActualConfig(@Nullable Object value) {

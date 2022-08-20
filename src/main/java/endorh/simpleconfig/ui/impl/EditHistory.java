@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.IEntryHolder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.entries.BaseListCell;
@@ -78,7 +78,7 @@ public class EditHistory {
 		runAtomicTransparentAction(null, action);
 	}
 	
-	public void runAtomicTransparentAction(@Nullable AbstractConfigEntry<?> focus, Runnable action) {
+	public void runAtomicTransparentAction(@Nullable AbstractConfigField<?> focus, Runnable action) {
 		final boolean insideAction = insideAtomicAction;
 		if (!insideAction) {
 			startBatch(focus);
@@ -96,7 +96,7 @@ public class EditHistory {
 	 * Consider using {@link EditHistory#runAtomicTransparentAction} instead,
 	 * which supports nested batches.
 	 */
-	public void startBatch(@Nullable AbstractConfigEntry<?> focus) {
+	public void startBatch(@Nullable AbstractConfigField<?> focus) {
 		if (preservedState != null) saveState();
 		if (collector != null) saveBatch();
 		collector = new EditRecord(focus != null? focus.getPath() : null, new HashMap<>(), null);
@@ -121,7 +121,7 @@ public class EditHistory {
 		preservedState = record;
 	}
 	
-	public void preserveState(AbstractConfigEntry<?> entry) {
+	public void preserveState(AbstractConfigField<?> entry) {
 		if (preservedState != null) saveState();
 		preservedState = EditRecord.of(entry);
 	}
@@ -224,20 +224,20 @@ public class EditHistory {
 			focusEntry = focus;
 		}
 		
-		public static EditRecord of(AbstractConfigEntry<?> entry) {
+		public static EditRecord of(AbstractConfigField<?> entry) {
 			return new EditRecord(entry.getPath(), Util.make(
 			  new HashMap<>(), m -> m.put(entry.getPath(), entry.getValue())), null);
 		}
 		
-		public static EditRecord of(AbstractConfigEntry<?> focus, Iterable<AbstractConfigEntry<?>> entries) {
+		public static EditRecord of(AbstractConfigField<?> focus, Iterable<AbstractConfigField<?>> entries) {
 			return new EditRecord(focus.getPath(), Util.make(
 			  new HashMap<>(), m -> entries.forEach(e -> m.put(e.getPath(), e.getValue()))), null);
 		}
 		
 		public static EditRecord of(IEntryHolder holder) {
 			return new EditRecord(
-			  holder instanceof AbstractConfigEntry? ((AbstractConfigEntry<?>) holder).getPath() : null,
-			  holder.getAllMainEntries().stream().collect(Collectors.toMap(AbstractConfigEntry::getPath, e -> e, (a, b) -> b)),
+			  holder instanceof AbstractConfigField? ((AbstractConfigField<?>) holder).getPath() : null,
+			  holder.getAllMainEntries().stream().collect(Collectors.toMap(AbstractConfigField::getPath, e -> e, (a, b) -> b)),
 			  null);
 		}
 		
@@ -245,7 +245,7 @@ public class EditHistory {
 			final HashMap<String, Object> map = new HashMap<>();
 			List<ListEditRecord> lr = null;
 			for (Entry<String, Object> e : values.entrySet()) {
-				final AbstractConfigEntry<?> entry = holder.getEntry(e.getKey());
+				final AbstractConfigField<?> entry = holder.getEntry(e.getKey());
 				if (entry != null) {
 					final Object v = e.getValue();
 					map.put(e.getKey(), entry.getValue());
@@ -260,7 +260,7 @@ public class EditHistory {
 				}
 			}
 			if (focusEntry != null) {
-				final AbstractConfigEntry<?> focus = holder.getEntry(focusEntry);
+				final AbstractConfigField<?> focus = holder.getEntry(focusEntry);
 				if (focus != null) {
 					focus.claimFocus();
 					focus.preserveState();
@@ -269,7 +269,7 @@ public class EditHistory {
 			return new EditRecord(focusEntry, map, lr);
 		}
 		
-		private static <E> boolean tryCheckEqualValue(AbstractConfigEntry<E> entry, Object value) {
+		private static <E> boolean tryCheckEqualValue(AbstractConfigField<E> entry, Object value) {
 			try {
 				//noinspection unchecked
 				return entry.areEqual(entry.getValue(), (E) value);
@@ -281,7 +281,7 @@ public class EditHistory {
 		public void flatten(IEntryHolder holder) {
 			final Set<String> removed = new HashSet<>();
 			for (Entry<String, Object> e : values.entrySet()) {
-				final AbstractConfigEntry<?> entry = holder.getEntry(e.getKey());
+				final AbstractConfigField<?> entry = holder.getEntry(e.getKey());
 				if (entry == null || tryCheckEqualValue(entry, e.getValue()))
 					removed.add(e.getKey());
 			}
@@ -309,7 +309,7 @@ public class EditHistory {
 		
 		public boolean peek(AbstractConfigScreen holder) {
 			for (Entry<String, Object> e : values.entrySet()) {
-				final AbstractConfigEntry<?> entry = holder.getEntry(e.getKey());
+				final AbstractConfigField<?> entry = holder.getEntry(e.getKey());
 				if (entry != null && !tryCheckEqualValue(entry, e.getValue()))
 					return true;
 			}
@@ -353,7 +353,7 @@ public class EditHistory {
 			
 			public ListEditRecord apply(IEntryHolder holder, boolean claimFocus) {
 				if (listEntry == null) return EMPTY;
-				AbstractConfigEntry<?> entry = holder.getEntry(listEntry);
+				AbstractConfigField<?> entry = holder.getEntry(listEntry);
 				if (!(entry instanceof BaseListEntry)) {
 					LOGGER.warn("Expected a list entry at path " + listEntry);
 					return EMPTY;
@@ -424,7 +424,7 @@ public class EditHistory {
 			}
 			
 			@Override public void flatten(IEntryHolder holder) {
-				AbstractConfigEntry<?> entry = holder.getEntry(listEntry);
+				AbstractConfigField<?> entry = holder.getEntry(listEntry);
 				if (entry instanceof BaseListEntry<?, ?, ?>) {
 					//noinspection unchecked
 					BaseListEntry<Object, ?, ?> list = (BaseListEntry<Object, ?, ?>) entry;
@@ -444,7 +444,7 @@ public class EditHistory {
 			}
 			
 			@Override public boolean peek(AbstractConfigScreen holder) {
-				AbstractConfigEntry<?> entry = holder.getEntry(listEntry);
+				AbstractConfigField<?> entry = holder.getEntry(listEntry);
 				if (entry instanceof BaseListEntry<?, ?, ?>) {
 					//noinspection unchecked
 					BaseListEntry<Object, ?, ?> list = (BaseListEntry<Object, ?, ?>) entry;

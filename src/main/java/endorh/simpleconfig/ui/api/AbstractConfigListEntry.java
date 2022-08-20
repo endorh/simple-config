@@ -8,6 +8,7 @@ import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.SelectionDragAction;
+import endorh.simpleconfig.ui.gui.entries.BeanListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
@@ -30,7 +31,8 @@ import java.util.*;
 import static java.lang.Math.*;
 
 @OnlyIn(value = Dist.CLIENT)
-public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> implements IOverlayRenderer {
+public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
+  implements IOverlayRenderer {
 	protected final Rectangle entryArea = new Rectangle();
 	protected final Rectangle fieldArea = new Rectangle();
 	protected final Rectangle rowArea = new Rectangle();
@@ -114,7 +116,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 	
 	@Override public boolean isShown() {
 		SearchBarWidget bar = getScreen().getSearchBar();
-		AbstractConfigEntry<?> parent = getParentEntry();
+		AbstractConfigField<?> parent = getParentEntry();
 		return isSubEntry()? parent != null && parent.isShown()
 		                   : !bar.isExpanded() || !bar.isFilter() || matchesSearch()
 		                     || parent != null && parent.shouldShowChildren() || bar.isEmpty();
@@ -178,6 +180,10 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		return 20;
 	}
 	
+	protected boolean shouldRenderTitle() {
+		return !isSubEntry() || getParentEntry() instanceof BeanListEntry;
+	}
+	
 	@Override public void renderEntry(
 	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
 	  int mouseX, int mouseY, boolean isHovered, float delta
@@ -200,7 +206,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigEntry<T> 
 		int fieldWidth = getFieldWidth();
 		int fieldHeight = getFieldHeight();
 		int fieldX = font.getBidiFlag()? x : x + entryWidth - fieldWidth;
-		if (!isSubEntry()) {
+		if (shouldRenderTitle()) {
 			ITextComponent title = getDisplayedTitle();
 			float textX = (float) (font.getBidiFlag() ? x + entryWidth - font.getStringPropertyWidth(title) : x);
 			renderTitle(

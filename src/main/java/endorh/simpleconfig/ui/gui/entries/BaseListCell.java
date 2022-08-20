@@ -18,10 +18,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static java.lang.Math.min;
@@ -33,6 +30,9 @@ public abstract class BaseListCell<T> extends FocusableGui
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	protected final Rectangle cellArea = new Rectangle();
 	protected boolean isSelected = false;
+	
+	private boolean isEdited = false;
+	private List<EntryError> errors = Collections.emptyList();
 	
 	protected ToggleAnimator offsetAnimator = new ToggleAnimator();
 	protected int lastListY = -1;
@@ -50,7 +50,16 @@ public abstract class BaseListCell<T> extends FocusableGui
 		return hasError() ? 0xFF5555 : 0xE0E0E0;
 	}
 	
+	public void tick() {
+		errors = computeErrors();
+		isEdited = computeIsEdited();
+	}
+	
 	public List<EntryError> getErrors() {
+		return errors;
+	}
+	
+	protected List<EntryError> computeErrors() {
 		List<EntryError> errors = new ArrayList<>();
 		if (errorSupplier != null)
 			errorSupplier.get().ifPresent(e -> errors.add(EntryError.of(e, this)));
@@ -159,6 +168,10 @@ public abstract class BaseListCell<T> extends FocusableGui
 	}
 	
 	public boolean isEdited() {
+		return isEdited;
+	}
+	
+	protected boolean computeIsEdited() {
 		return hasError();
 	}
 	

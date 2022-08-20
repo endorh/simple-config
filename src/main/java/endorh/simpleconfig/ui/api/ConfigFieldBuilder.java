@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.core.entry.BeanProxy;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
@@ -39,6 +40,8 @@ public interface ConfigFieldBuilder {
 	<T, HE extends AbstractConfigListEntry<T> & IChildListEntry,
 	  HEB extends FieldBuilder<T, HE, HEB>
 	> CaptionedSubCategoryBuilder<T, HE, HEB> startCaptionedSubCategory(ITextComponent name, HEB captionEntry);
+	
+	<B> BeanFieldBuilder<B> startBeanField(ITextComponent name, B value, BeanProxy<B> proxy);
 	
 	BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value);
 	ColorFieldBuilder startColorField(ITextComponent name, int value);

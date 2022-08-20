@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
@@ -17,9 +17,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class HotKeyActionButton<T> extends MultiFunctionIconButton {
-	private final AbstractConfigEntry<T> entry;
+	private final AbstractConfigField<T> entry;
 	
-	public HotKeyActionButton(AbstractConfigEntry<T> entry) {
+	public HotKeyActionButton(AbstractConfigField<T> entry) {
 		super(0, 0, 20, 20, Actions.NONE, ButtonAction.of(b -> {}));
 		actions.clear();
 		defaultAction = ButtonAction.of(i -> {

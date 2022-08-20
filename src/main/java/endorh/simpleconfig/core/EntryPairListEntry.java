@@ -14,7 +14,6 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
-import net.minecraft.util.Util;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -107,10 +106,9 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	@Override public List<Map<Object, Object>> forActualConfig(@Nullable List<Pair<KC, C>> value) {
 		if (value == null) return null;
 		return value.stream()
-		  .map(p -> Util.make(
-		    NonConfigMap.ofHashMap(1),
-			 m -> m.put(keyEntry.forActualConfig(p.getKey()), entry.forActualConfig(p.getValue())))
-		  ).collect(Collectors.toList());
+		  .map(p -> NonConfigMap.singleton(
+			 keyEntry.forActualConfig(p.getKey()), entry.forActualConfig(p.getValue())))
+		  .collect(Collectors.toList());
 	}
 	
 	@Override @Nullable public List<Pair<KC, C>> fromActualConfig(@Nullable Object value) {

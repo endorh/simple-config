@@ -6,7 +6,7 @@ import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
@@ -236,7 +236,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
 		Set<String> s = screen.getSelectedEntries().stream()
-		  .map(AbstractConfigEntry::getRelPath)
+		  .map(AbstractConfigField::getRelPath)
 		  .collect(Collectors.toSet());
 		final Set<String> selection = s.isEmpty()? null : s;
 		if (preset.isRemote()) {
@@ -308,7 +308,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
 		Set<String> s = screen.getSelectedEntries().stream()
-		  .map(AbstractConfigEntry::getRelPath)
+		  .map(AbstractConfigField::getRelPath)
 		  .collect(Collectors.toSet());
 		int selected = s.size();
 		Set<String> selection = selected > 0? s : null;

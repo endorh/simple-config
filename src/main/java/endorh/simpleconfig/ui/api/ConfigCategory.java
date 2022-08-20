@@ -20,7 +20,7 @@ public interface ConfigCategory extends IEntryHolder {
 	
 	void setTitle(ITextComponent name);
 	
-	@Override @Internal List<AbstractConfigEntry<?>> getHeldEntries();
+	@Override @Internal List<AbstractConfigField<?>> getHeldEntries();
 	
 	String getName();
 	ConfigCategory addEntry(AbstractConfigListEntry<?> var1);

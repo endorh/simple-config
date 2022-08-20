@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
 import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
@@ -93,7 +94,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	protected final Set<EntryTag> tags = new HashSet<>();
 	protected final Set<EntryTag> builtInTags = new HashSet<>();
 	protected final Set<EntryTag> allTags = Sets.union(tags, builtInTags);
-	protected EntryTag copyTag;
+	@Internal public EntryTag copyTag;
 	protected V actualValue = null;
 	protected @Nullable ConfigValue<?> configValue = null;
 	protected boolean ignored = false;
@@ -104,6 +105,14 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		this.parent = parent;
 		this.defValue = defValue;
 		this.name = name;
+	}
+	
+	@Internal public ConfigEntryHolder getParent() {
+		return parent;
+	}
+	
+	@Internal public SimpleConfig getRoot() {
+		return getParent().getRoot();
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -126,20 +135,25 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		} else return name;
 	}
 	
-	protected @Nullable String getTranslation() {
+	@Internal public @Nullable String getTranslation() {
 		return translation;
 	}
-	
-	protected void setTranslation(@Nullable String translation) {
+	@Internal public void setTranslation(@Nullable String translation) {
 		this.translation = translation;
 	}
 	
-	protected @Nullable String getTooltipKey() {
+	@Internal public @Nullable String getTooltipKey() {
 		return tooltip;
 	}
-	
-	protected void setTooltipKey(@Nullable String translation) {
+	@Internal public void setTooltipKey(@Nullable String translation) {
 		tooltip = translation;
+	}
+	
+	@Internal public String getName() {
+		return name;
+	}
+	@Internal public void setName(String name) {
+		this.name = name;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -578,6 +592,24 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		remoteGuiEntry = guiEntry;
 	}
 	
+	@Internal protected void resetGuiEntry() {
+		resetGuiEntry(false);
+	}
+	
+	@Internal protected void resetGuiEntry(boolean remote) {
+		AbstractConfigListEntry<Gui> entry = getGuiEntry(remote);
+		if (entry != null) entry.resetValue();
+	}
+	
+	@Internal protected void restoreGuiEntry() {
+		restoreGuiEntry(false);
+	}
+	
+	@Internal protected void restoreGuiEntry(boolean remote) {
+		AbstractConfigListEntry<Gui> entry = getGuiEntry(remote);
+		if (entry != null) entry.restoreValue();
+	}
+	
 	protected void removeGUI() {
 		guiEntry = null;
 		remoteGuiEntry = null;
@@ -617,10 +649,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		} else {
 			set(configValue, value);
 		}
-		if (FMLEnvironment.dist == Dist.CLIENT) {
-			AbstractConfigListEntry<Gui> guiEntry = getGuiEntry();
-			if (guiEntry != null) guiEntry.setExternalValue(forGui(value));
-		}
+		if (hasGUI()) setGUIAsExternal(forGui(value), false);
 	}
 	
 	@Internal public boolean trySet(V value) {
@@ -657,8 +686,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 
 	protected boolean hasGUI() {
-		if (FMLEnvironment.dist != Dist.CLIENT) return false;
-		return getGuiEntry() != null;
+		return hasGUI(false);
 	}
 	
 	protected boolean hasGUI(boolean remote) {
@@ -667,9 +695,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 
 	protected Gui getGUI() {
-		if (FMLEnvironment.dist != Dist.CLIENT) return forGui(get());
-		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry();
-		return guiEntry != null? guiEntry.getValue() : forGui(get());
+		return getGUI(false);
 	}
 	
 	protected Gui getGUI(boolean remote) {
@@ -679,10 +705,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 
 	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value) {
-		AbstractConfigListEntry<Gui> guiEntry = getGuiEntry();
-		if (guiEntry != null) {
-			guiEntry.setValueTransparently(value);
-		} else throw new IllegalStateException("Cannot set GUI value without GUI");
+		setGUI(value, false);
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected void setGUI(Gui value, boolean remote) {

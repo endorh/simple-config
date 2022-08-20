@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.icon.Icon;
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class ConfigCategoryImpl implements ConfigCategory {
-	protected final List<AbstractConfigEntry<?>> entries;
+	protected final List<AbstractConfigField<?>> entries;
 	protected final String name;
 	protected ITextComponent title;
 	protected int sortingOrder = 0;
@@ -32,7 +32,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected int color = 0;
 	
 	@Internal public ConfigCategoryImpl(
-	  String name, EditType type, List<AbstractConfigEntry<?>> entries,
+	  String name, EditType type, List<AbstractConfigField<?>> entries,
 	  ITextComponent title, int sortingOrder, @Nullable ResourceLocation background,
 	  @Nullable Supplier<Optional<ITextComponent[]>> description, @Nullable Path containingFile,
 	  boolean isEditable, Icon icon, int color
@@ -57,7 +57,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		title = name;
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return entries;
 	}
 	

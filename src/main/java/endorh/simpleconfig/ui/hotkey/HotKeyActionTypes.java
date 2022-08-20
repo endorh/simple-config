@@ -1,7 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.electronwill.nightconfig.core.CommentedConfig.Entry;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.entry.AbstractRangedEntry;
+import endorh.simpleconfig.core.entry.BeanEntry;
+import endorh.simpleconfig.core.entry.BeanEntry.ConfigBeanAccessException;
+import endorh.simpleconfig.core.entry.BeanProxy;
+import endorh.simpleconfig.core.entry.EntryPairEntry;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyAction;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
@@ -11,9 +16,12 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static net.minecraft.util.math.MathHelper.clamp;
@@ -149,7 +157,80 @@ public class HotKeyActionTypes {
 	
 	public static final StorageLessHotKeyActionType<Boolean> BOOLEAN_TOGGLE = type(
 	  "bool:toggle", Actions.CYCLE, (entry, b) -> !b);
-	// public static final SimpleHotKeyActionType<List<?>, Map<Integer, SimpleHotKeyAction<?, ?>>> LIST_NEST
+	// public static final NestedHotKeyActionType<List<?>, Map<Integer, SimpleHotKeyAction<?, ?>>> LIST_NEST;
+	
+	// public static final BeanHotKeyActionType<Object> BEAN = type(new BeanHotKeyActionType<>());
+	public static class BeanHotKeyActionType<B> extends NestedHotKeyActionType<B> {
+		public BeanHotKeyActionType() {
+			super("bean:sub", Actions.NONE, INestedHotKeyAction.of(
+			  (entry, names) -> {
+				  if (!(entry instanceof BeanEntry)) return null;
+				  //noinspection unchecked
+				  BeanEntry<B> e = (BeanEntry<B>) entry;
+				  Map<String, AbstractConfigEntry<?, ?, ?>> map = new LinkedHashMap<>();
+				  names.forEach(n -> {
+					  AbstractConfigEntry<?, ?, ?> ee = e.getEntry(n);
+					  if (ee != null) map.put(n, ee);
+				  });
+				  return map;
+			  }, (entry, values) -> {
+				 if (!(entry instanceof BeanEntry)) return null;
+				  //noinspection unchecked
+				  BeanEntry<B> e = (BeanEntry<B>) entry;
+				  BeanProxy<B> proxy = e.getProxy();
+				  B bean = proxy.createFrom(e.get());
+				  for (Entry ee: values.entrySet()) {
+					  try {
+						  proxy.set(bean, ee.getKey(), ee.getValue());
+					  } catch (ConfigBeanAccessException ignored) {}
+				  }
+				  return e.forActualConfig(e.forConfig(bean));
+			  }
+			));
+		}
+		
+		@SuppressWarnings("unchecked") public <BB> BeanHotKeyActionType<BB> cast() {
+			return (BeanHotKeyActionType<BB>) this;
+		}
+	}
+	
+	// public static final PairNestedHotKeyActionType<Object, Object> PAIR = type(new PairNestedHotKeyActionType<>());
+	public static class PairNestedHotKeyActionType<L, R> extends NestedHotKeyActionType<Pair<L, R>> {
+		public PairNestedHotKeyActionType() {
+			super("pair:sub", Actions.NONE, INestedHotKeyAction.of(
+			  (entry, names) -> {
+				  if (!(entry instanceof EntryPairEntry)) return null;
+				  //noinspection unchecked
+				  EntryPairEntry<?, ?, ?, ?, L, R> e = (EntryPairEntry<?, ?, ?, ?, L, R>) entry;
+				  Map<String, AbstractConfigEntry<?, ?, ?>> map = new LinkedHashMap<>();
+				  if (names.contains("left")) map.put("left", e.leftEntry);
+				  if (names.contains("right")) map.put("right", e.rightEntry);
+				  return map;
+			  }, (entry, values) -> {
+				  if (!(entry instanceof EntryPairEntry)) return null;
+				  //noinspection unchecked
+				  EntryPairEntry<?, ?, ?, ?, L, R> e = (EntryPairEntry<?, ?, ?, ?, L, R>) entry;
+				  Pair<L, R> value = e.apply(ee -> ee.forGui(ee.get()));
+				  try {
+					  return e.apply(ee -> ee.forActualConfig(ee.forConfig(ee.fromGuiOrDefault(Pair.of(
+					    values.getOrElse("left", value.getLeft()),
+					    values.getOrElse("right", value.getRight()))))));
+				  } catch (ClassCastException ignored) {
+					  return null;
+				  }
+			  }
+			));
+		}
+		
+		@SuppressWarnings("unchecked") public <L, R> PairNestedHotKeyActionType<L, R> cast() {
+			return (PairNestedHotKeyActionType<L, R>) this;
+		}
+	}
+	
+	public static <T extends HotKeyActionType<?, ?>> T type(T type) {
+		HotKeyActionTypeManager.INSTANCE.register(type);
+		return type;
+	}
 	
 	public static <V, S, T extends SimpleHotKeyActionType<V, S>> T reg(T type) {
 		HotKeyActionTypeManager.INSTANCE.register(type);

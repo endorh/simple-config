@@ -599,6 +599,16 @@ public abstract class ConfigBuilderFactoryProxy {
 	}
 	
 	/**
+	 * Java Bean entry.<br>
+	 * Use the builder's methods to define entries to edit the bean's properties.<br>
+	 * Most useful for bean lists or maps, rather than as singleton entries.
+	 * @param <B> Class of the bean. Must conform to the {@code JavaBean} specification.
+	 */
+	public static <B> BeanEntryBuilder<B> bean(B value) {
+		return getFactory().bean(value);
+	}
+	
+	/**
 	 * NBT entry that accepts any kind of NBT, either values or compounds
 	 */
 	public static INBTEntryBuilder nbtValue(INBT value) {

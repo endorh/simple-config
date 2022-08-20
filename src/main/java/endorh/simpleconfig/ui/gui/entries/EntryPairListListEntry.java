@@ -68,8 +68,8 @@ public class EntryPairListListEntry<
 	@Override public boolean areEqual(List<Pair<K, V>> value, List<Pair<K, V>> other) {
 		if (value.isEmpty() && other.isEmpty()) return true;
 		if (value.size() != other.size()) return false;
-		EntryPairCell<K, V, KE, E> dummy = !cells.isEmpty() ? cells.get(0)
-		                                                    : createCellWithValue(value.get(0));
+		EntryPairCell<K, V, KE, E> dummy =
+		  !cells.isEmpty()? cells.get(0) : createCellWithValue(value.get(0));
 		if (ignoreOrder) {
 			// Keys are actually compared using Object::equals, but keys can only be String
 			//   serializable objects anyway
@@ -87,32 +87,17 @@ public class EntryPairListListEntry<
 		return true;
 	}
 	
-	@Override public boolean isEdited() {
-		return super.isEdited();
-	}
-	
-	@Override public boolean isResettable() {
-		return super.isResettable();
-	}
-	
-	// @Override public boolean preserveState() {
-	// 	if (cells.isEmpty() || !(cells.get(0).valueEntry instanceof BaseListEntry<?, ?, ?>))
-	// 		return super.preserveState();
-	// 	else if (preservedState != null) savePreservedState();
-	// 	return false;
-	// }
-	
 	@Internal public List<Pair<K, E>> getEntries() {
 		return cells.stream().map(c -> Pair.of(c.keyEntry.getDisplayedValue(), c.valueEntry)).collect(Collectors.toList());
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return cells.stream()
 		  .flatMap(c -> Stream.of(c.keyEntry, c.valueEntry))
 		  .collect(Collectors.toList());
 	}
 	
-	@Override public String providePath(AbstractConfigEntry<?> child) {
+	@Override public String providePath(AbstractConfigField<?> child) {
 		String prefix = getCatPath() + ".";
 		int i = 0;
 		for (EntryPairCell<K, V, KE, E> cell : cells) {
@@ -123,7 +108,7 @@ public class EntryPairListListEntry<
 		return prefix + "?";
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	@Override public @Nullable AbstractConfigField<?> getEntry(String path) {
 		String[] split = DOT.split(path, 3);
 		boolean isKey = "key".equals(split[0]);
 		if (!isKey && !"val".equals(split[0]) || split.length < 2) return null;
@@ -131,7 +116,7 @@ public class EntryPairListListEntry<
 			int i = Integer.parseInt(split[1]);
 			if (i >= 0 && i < cells.size()) {
 				EntryPairCell<K, V, KE, E> cell = cells.get(i);
-				AbstractConfigEntry<?> entry = isKey? cell.keyEntry : cell.valueEntry;
+				AbstractConfigField<?> entry = isKey? cell.keyEntry : cell.valueEntry;
 				if (entry instanceof IEntryHolder && split.length == 3)
 					return ((IEntryHolder) entry).getEntry(split[2]);
 				return entry;
@@ -145,7 +130,7 @@ public class EntryPairListListEntry<
 	    E extends AbstractConfigListEntry<V>
 	  > extends AbstractListListEntry.AbstractListCell<
 	    Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
-	  > /*implements IExpandable*/ {
+	  > {
 		protected final KE keyEntry;
 		protected final E valueEntry;
 		protected final List<IGuiEventListener> widgets;
@@ -176,6 +161,12 @@ public class EntryPairListListEntry<
 			widgets = Lists.newArrayList(keyEntry, valueEntry);
 		}
 		
+		@Override public void tick() {
+			keyEntry.tick();
+			valueEntry.tick();
+			super.tick();
+		}
+		
 		@Override public Pair<K, V> getValue() {
 			return Pair.of(keyEntry.getDisplayedValue(), valueEntry.getDisplayedValue());
 		}
@@ -195,8 +186,8 @@ public class EntryPairListListEntry<
 			if (isSelected) getListEntry().selectKey = getListener() == keyEntry;
 		}
 		
-		@Override public List<EntryError> getErrors() {
-			List<EntryError> errors = super.getErrors();
+		@Override protected List<EntryError> computeErrors() {
+			List<EntryError> errors = super.computeErrors();
 			errors.addAll(
 			  Stream.concat(keyEntry.getEntryErrors().stream(), valueEntry.getEntryErrors().stream())
 			    .filter(e -> !errors.contains(e))
@@ -224,23 +215,6 @@ public class EntryPairListListEntry<
 			return keyEntry.areEqual(left.getKey(), right.getKey())
 			  && valueEntry.areEqual(left.getValue(), right.getValue());
 		}
-		
-		// @Override public boolean isExpanded() {
-		// 	return isExpandable && ((IExpandable) valueEntry).isExpanded();
-		// }
-		//
-		// @Override public void setExpanded(boolean expanded, boolean recursive) {
-		// 	if (isExpandable)
-		// 		((IExpandable) valueEntry).setExpanded(expanded, recursive);
-		// }
-		//
-		// @Override public int getFocusedScroll() {
-		// 	return isExpandable ? ((IExpandable) valueEntry).getFocusedScroll() : 0;
-		// }
-		//
-		// @Override public int getFocusedHeight() {
-		// 	return isExpandable ? ((IExpandable) valueEntry).getFocusedHeight() : getCellHeight();
-		// }
 		
 		@Override
 		public void renderCell(
@@ -282,18 +256,11 @@ public class EntryPairListListEntry<
 			return "";
 		}
 		
-		@Override public List<INavigableTarget> getNavigableChildren() {
-			final List<INavigableTarget> children = valueEntry.getNavigableChildren();
-			children.remove(valueEntry);
-			children.add(0, this);
-			return children;
-		}
-		
 		@Override public List<INavigableTarget> getNavigableSubTargets() {
 			List<INavigableTarget> subTargets = new ArrayList<>();
-			AbstractConfigEntry<?>[] arr = {isExpandable? valueEntry : keyEntry,
+			AbstractConfigField<?>[] arr = {isExpandable? valueEntry : keyEntry,
 			                                isExpandable? keyEntry : valueEntry};
-			for (AbstractConfigEntry<?> entry : arr) {
+			for (AbstractConfigField<?> entry : arr) {
 				List<INavigableTarget> entryTargets = entry.getNavigableSubTargets();
 				if (entryTargets.isEmpty()) subTargets.add(entry);
 				else subTargets.addAll(entryTargets);
@@ -317,7 +284,7 @@ public class EntryPairListListEntry<
 		
 		@Override public List<INavigableTarget> getNavigableChildren(boolean onlyVisible) {
 			if (!onlyVisible) return Stream.concat(
-			  Stream.of(keyEntry, valueEntry), valueEntry.getNavigableChildren().stream()
+			  Stream.of(keyEntry, valueEntry), valueEntry.getNavigableChildren(false).stream()
 			).collect(Collectors.toList());
 			return valueEntry.getNavigableChildren(true);
 		}
@@ -386,16 +353,6 @@ public class EntryPairListListEntry<
 			setListener(null);
 			return false;
 		}
-	}
-	
-	@Override public List<INavigableTarget> getNavigableChildren() {
-		if (expanded) {
-			final List<INavigableTarget> targets = cells.stream()
-			  .flatMap(c -> c.getNavigableChildren().stream()).collect(Collectors.toList());
-			targets.add(0, this);
-			return targets;
-		}
-		return super.getNavigableChildren();
 	}
 	
 	@Override public void setListener(IGuiEventListener listener) {

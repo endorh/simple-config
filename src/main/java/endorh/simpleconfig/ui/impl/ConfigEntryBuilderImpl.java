@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
 import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.core.entry.BeanProxy;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -70,6 +71,12 @@ public class ConfigEntryBuilderImpl implements ConfigFieldBuilder {
 	  ITextComponent name, HEB captionEntry
 	) {
 		return new CaptionedSubCategoryBuilder<>(this, name, captionEntry);
+	}
+	
+	@Override public <B> BeanFieldBuilder<B> startBeanField(
+	  ITextComponent name, B value, BeanProxy<B> proxy
+	) {
+		return new BeanFieldBuilder<>(proxy, this, name, value);
 	}
 	
 	@Override public BooleanToggleBuilder startBooleanToggle(ITextComponent name, boolean value) {

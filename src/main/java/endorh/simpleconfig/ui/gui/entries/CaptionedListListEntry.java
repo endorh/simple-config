@@ -28,7 +28,7 @@ public class CaptionedListListEntry<
 	protected final ListCaptionWidget label;
 	private final E listEntry;
 	private final CE captionEntry;
-	private final List<AbstractConfigEntry<?>> heldEntries;
+	private final List<AbstractConfigField<?>> heldEntries;
 	private final List<ISeekableComponent> seekableChildren;
 	protected List<IGuiEventListener> children;
 	
@@ -73,7 +73,7 @@ public class CaptionedListListEntry<
 		if (resetButton != null) resetButton.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	@Override protected void doExpandParents(AbstractConfigEntry<?> entry) {
+	@Override protected void doExpandParents(AbstractConfigField<?> entry) {
 		boolean expanded = isExpanded();
 		super.doExpandParents(entry);
 		if (entry == captionEntry || captionEntry.getNavigableSubTargets().contains(entry))
@@ -102,6 +102,14 @@ public class CaptionedListListEntry<
 		       && listEntry.areEqual(value.getRight(), other.getRight());
 	}
 	
+	@Override public boolean isResettable() {
+		return super.isResettable();
+	}
+	
+	@Override public boolean isRestorable() {
+		return super.isRestorable();
+	}
+	
 	@Override public boolean canResetGroup() {
 		Pair<C, List<V>> defValue = getDefaultValue(), value = getDisplayedValue();
 		return !listEntry.areEqual(value.getValue(), defValue != null ? defValue.getValue() : null);
@@ -112,26 +120,26 @@ public class CaptionedListListEntry<
 		return !listEntry.areEqual(value.getValue(), original != null ? original.getValue() : null);
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getSingleResettableEntry() {
+	@Override public @Nullable AbstractConfigField<?> getSingleResettableEntry() {
 		final Pair<C, List<V>> defValue = getDefaultValue();
 		if (!captionEntry.areEqual(getDisplayedValue().getKey(), defValue != null ? defValue.getKey() : null))
 			return captionEntry;
 		return null;
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getSingleRestorableEntry() {
+	@Override public @Nullable AbstractConfigField<?> getSingleRestorableEntry() {
 		final Pair<C, List<V>> original = getOriginal();
 		if (!captionEntry.areEqual(getDisplayedValue().getKey(), original != null ? original.getKey() : null))
 			return captionEntry;
 		return null;
 	}
 	
-	@Override public void resetSingleEntry(AbstractConfigEntry<?> entry) {
+	@Override public void resetSingleEntry(AbstractConfigField<?> entry) {
 		Pair<C, List<V>> defValue = getDefaultValue(), value = getDisplayedValue();
 		setValueTransparently(Pair.of(defValue != null? defValue.getLeft() : null, value.getRight()));
 	}
 	
-	@Override public void restoreSingleEntry(AbstractConfigEntry<?> entry) {
+	@Override public void restoreSingleEntry(AbstractConfigField<?> entry) {
 		Pair<C, List<V>> original = getOriginal(), value = getDisplayedValue();
 		setValueTransparently(Pair.of(original != null? original.getLeft() : null, value.getRight()));
 	}
@@ -188,7 +196,7 @@ public class CaptionedListListEntry<
 		return "";
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	
@@ -203,13 +211,6 @@ public class CaptionedListListEntry<
 			return true;
 		}
 		return super.handleNavigationKey(keyCode, scanCode, modifiers);
-	}
-	
-	@Override public List<INavigableTarget> getNavigableChildren() {
-		final List<INavigableTarget> targets = listEntry.getNavigableChildren();
-		targets.remove(listEntry);
-		targets.add(0, this);
-		return targets;
 	}
 	
 	@Override public Rectangle getNavigableArea() {

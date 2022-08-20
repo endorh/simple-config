@@ -434,6 +434,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public void tick() {
+		updateValue(false);
+		cells.forEach(BaseListCell::tick);
 		super.tick();
 		label.setFocused(
 		  !isHeadless() && isFocused() && getListener() == labelReference && dragCursor == -1
@@ -599,7 +601,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public boolean preserveState() {
-		updateValue();
+		updateValue(true);
 		final List<T> value = getValue();
 		int i = getSelectedIndex();
 		if (i < 0 || i > value.size()) return false;
@@ -742,12 +744,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	// The rest are caught by AbstractListCell
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 		if (!isSubEntry() && isEditable() && Screen.hasAltDown() && getSelectedIndex() == -1) {
-			if (keyCode == 257 || keyCode == 260) { // Enter || Insert
+			if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_INSERT) {
 				addTransparently(0);
 				cells.get(0).navigate();
 				playFeedbackTap(1F);
 				return true;
-			} else if (!cells.isEmpty() && (keyCode == 259 || keyCode == 261)) { // Backspace || Delete
+			} else if (!cells.isEmpty() && (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE)) {
 				removeTransparently(0);
 				playFeedbackTap(1F);
 				return true;

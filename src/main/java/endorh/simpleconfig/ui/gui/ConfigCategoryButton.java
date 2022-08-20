@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.AbstractConfigEntry;
+import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
@@ -46,7 +46,8 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		})/*.tint(category.getColor())*/
 		  .icon(category.getIcon())
 		  .title(() -> screen.isSelecting() ? title.deepCopy().append(new StringTextComponent(
-		    " [" + category.getAllMainEntries().stream().filter(AbstractConfigEntry::isSelected).count() + "]"
+		    " [" + category.getAllMainEntries().stream().filter(
+			   AbstractConfigField::isSelected).count() + "]"
 		  ).mergeStyle(TextFormatting.AQUA)) : title));
 		this.descriptionSupplier = descriptionSupplier;
 		this.category = category;

@@ -17,15 +17,15 @@ import java.util.List;
 import static java.lang.Math.max;
 
 public class PairListEntry<
-  L, R, LE extends AbstractConfigEntry<L> & IChildListEntry,
-  RE extends AbstractConfigEntry<R> & IChildListEntry
+  L, R, LE extends AbstractConfigField<L> & IChildListEntry,
+  RE extends AbstractConfigField<R> & IChildListEntry
 > extends TooltipListEntry<Pair<L, R>> implements IChildListEntry, IEntryHolder {
 	private final LE leftEntry;
 	private final RE rightEntry;
 	protected @Nullable Icon middleIcon = null;
 	protected float splitPos = 0.5F;
 	protected List<IGuiEventListener> listeners;
-	protected List<AbstractConfigEntry<?>> heldEntries;
+	protected List<AbstractConfigField<?>> heldEntries;
 	protected List<ISeekableComponent> seekableChildren;
 	
 	public PairListEntry(
@@ -117,14 +117,13 @@ public class PairListEntry<
 		return listeners;
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return heldEntries;
 	}
 	
 	public LE getLeftEntry() {
 		return leftEntry;
 	}
-	
 	public RE getRightEntry() {
 		return rightEntry;
 	}
@@ -132,7 +131,6 @@ public class PairListEntry<
 	public @Nullable Icon getMiddleIcon() {
 		return middleIcon;
 	}
-	
 	public void setMiddleIcon(@Nullable Icon middleIcon) {
 		this.middleIcon = middleIcon;
 	}
@@ -140,7 +138,6 @@ public class PairListEntry<
 	public float getSplitPos() {
 		return splitPos;
 	}
-	
 	public void setSplitPos(float splitPos) {
 		this.splitPos = splitPos;
 	}

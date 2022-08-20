@@ -51,13 +51,13 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return cells.stream().map(c -> c.nestedEntry).collect(Collectors.toList());
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return cells.stream()
 		  .map(c -> c.nestedEntry)
 		  .collect(Collectors.toList());
 	}
 	
-	@Override public String providePath(AbstractConfigEntry<?> child) {
+	@Override public String providePath(AbstractConfigField<?> child) {
 		final String prefix = getCatPath() + ".";
 		int i = 0;
 		for (NestedListCell<T, Inner> cell : cells) {
@@ -67,7 +67,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return prefix + "?";
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	@Override public @Nullable AbstractConfigField<?> getEntry(String path) {
 		String[] split = DOT.split(path, 2);
 		if ("?".equals(split[0])) return null;
 		try {
@@ -102,12 +102,17 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			nestedEntry.setNavigableParent(this);
 		}
 		
+		@Override public void tick() {
+			nestedEntry.tick();
+			super.tick();
+		}
+		
 		@Override public T getValue() {
 			return nestedEntry.getDisplayedValue();
 		}
 		
-		@Override public List<EntryError> getErrors() {
-			List<EntryError> errors = super.getErrors();
+		@Override protected List<EntryError> computeErrors() {
+			List<EntryError> errors = super.computeErrors();
 			errors.addAll(
 			  nestedEntry.getEntryErrors().stream()
 			    .filter(e -> !errors.contains(e))
@@ -164,8 +169,8 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			nestedEntry.updateFocused(isSelected);
 		}
 		
-		@Override public boolean isEdited() {
-			return super.isEdited() || nestedEntry.isEdited();
+		@Override protected boolean computeIsEdited() {
+			return super.computeIsEdited() || nestedEntry.isEdited();
 		}
 		
 		public Inner getNestedEntry() {
@@ -193,13 +198,6 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			return Lists.newArrayList(nestedEntry);
 		}
 		
-		@Override public List<INavigableTarget> getNavigableChildren() {
-			final List<INavigableTarget> children = nestedEntry.getNavigableChildren();
-			children.remove(nestedEntry);
-			children.add(0, this);
-			return children;
-		}
-		
 		@Override public List<INavigableTarget> getNavigableSubTargets() {
 			List<INavigableTarget> subTargets = nestedEntry.getNavigableSubTargets();
 			return subTargets.isEmpty()? Lists.newArrayList(nestedEntry) : subTargets;
@@ -211,8 +209,9 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		
 		@Override public List<INavigableTarget> getNavigableChildren(boolean onlyVisible) {
 			if (!onlyVisible) {
-				return Stream.concat(Stream.of(nestedEntry), nestedEntry.getNavigableChildren().stream())
-				  .collect(Collectors.toList());
+				return Stream.concat(
+				  Stream.of(nestedEntry), nestedEntry.getNavigableChildren(false).stream()
+				).collect(Collectors.toList());
 			}
 			return nestedEntry.getNavigableChildren(true);
 		}
@@ -224,16 +223,6 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		@Override public Rectangle getRowArea() {
 			return nestedEntry.getRowArea();
 		}
-	}
-	
-	@Override public List<INavigableTarget> getNavigableChildren() {
-		if (expanded) {
-			final List<INavigableTarget> targets = cells.stream()
-			  .flatMap(c -> c.getNavigableChildren().stream()).collect(Collectors.toList());
-			targets.add(0, this);
-			return targets;
-		}
-		return super.getNavigableChildren();
 	}
 	
 	@Override public boolean preserveState() {

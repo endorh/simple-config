@@ -359,7 +359,9 @@ public class SimpleConfigBuilderImpl
 					builder.build(entry);
 				}
 			});
+			boolean forceExpanded = this.groups.size() == 1 && entries.isEmpty();
 			for (GroupBuilder group : this.groups.values()) {
+				if (forceExpanded) group.expanded = true;
 				final SimpleConfigGroupImpl g = group.build(cat, builder);
 				groups.put(group.name, g);
 			}
@@ -403,7 +405,7 @@ public class SimpleConfigBuilderImpl
 		
 		protected String title;
 		protected String tooltip;
-		protected final boolean expanded;
+		protected boolean expanded;
 		protected @Nullable Consumer<SimpleConfigGroup> baker = null;
 		
 		protected String path;
@@ -511,24 +513,38 @@ public class SimpleConfigBuilderImpl
 				entry.setTooltipKey(tooltip(entry.name));
 		}
 		
-		protected SimpleConfigGroupImpl build(SimpleConfigGroupImpl parent, ConfigValueBuilder builder) {
-			return build(null, parent, builder);
+		@Internal public SimpleConfigGroupImpl build(SimpleConfigGroupImpl parent, ConfigValueBuilder builder) {
+			return build(null, null, parent, builder);
 		}
 		
-		protected SimpleConfigGroupImpl build(SimpleConfigCategoryImpl parent, ConfigValueBuilder builder) {
-			return build(parent, null, builder);
+		@Internal public SimpleConfigGroupImpl build(SimpleConfigCategoryImpl parent, ConfigValueBuilder builder) {
+			return build(null, parent, null, builder);
+		}
+		
+		@Internal public SimpleConfigGroupImpl build(SimpleConfigImpl root, ConfigValueBuilder builder) {
+			return build(root, null, null, builder);
+		}
+		
+		@Internal public SimpleConfigGroupImpl build(ConfigEntryHolder holder, ConfigValueBuilder builder) {
+			if (holder instanceof SimpleConfigImpl) return build((SimpleConfigImpl) holder, builder);
+			if (holder instanceof SimpleConfigCategoryImpl) return build((SimpleConfigCategoryImpl) holder, builder);
+			if (holder instanceof SimpleConfigGroupImpl) return build((SimpleConfigGroupImpl) holder, builder);
+			throw new IllegalArgumentException(
+			  "ConfigEntryHolder is not instance of SimpleConfigImpl, SimpleConfigCategoryImpl, or SimpleConfigGroupImpl");
 		}
 		
 		private SimpleConfigGroupImpl build(
-		  @Nullable SimpleConfigCategoryImpl parent, @Nullable SimpleConfigGroupImpl groupParent,
-		  ConfigValueBuilder builder
+		  @Nullable SimpleConfigImpl root, @Nullable SimpleConfigCategoryImpl category,
+		  @Nullable SimpleConfigGroupImpl groupParent, ConfigValueBuilder builder
 		) {
-			assert parent != null || groupParent != null;
+			assert root != null || category != null || groupParent != null;
 			builder.enterSection(name);
 			final SimpleConfigGroupImpl group;
-			if (parent != null)
-				group = new SimpleConfigGroupImpl(parent, name, title, tooltip, expanded, baker);
-			else group = new SimpleConfigGroupImpl(groupParent, name, title, tooltip, expanded, baker);
+			if (category != null) {
+				group = new SimpleConfigGroupImpl(category, name, title, tooltip, expanded, baker);
+			} else if (groupParent != null) {
+				group = new SimpleConfigGroupImpl(groupParent, name, title, tooltip, expanded, baker);
+			} else group = new SimpleConfigGroupImpl(root, name, title, tooltip, expanded, baker);
 			final Map<String, SimpleConfigGroupImpl> groupMap = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			final AbstractConfigEntry<?, ?, ?> heldEntry =
@@ -549,8 +565,10 @@ public class SimpleConfigBuilderImpl
 				entry.secondaryBackingFields = getSecondaryBackingFields(name);
 				builder.build(entry);
 			});
+			boolean forceExpanded = groups.size() == 1 && entries.isEmpty();
 			for (String name : groups.keySet()) {
 				GroupBuilder b = groups.get(name);
+				if (forceExpanded) b.expanded = true;
 				if (builder.canBuildSection(name)) {
 					SimpleConfigGroupImpl subGroup = b.build(group, builder);
 					groupMap.put(name, subGroup);
@@ -656,43 +674,39 @@ public class SimpleConfigBuilderImpl
 		return config;
 	}
 	
-	protected static abstract class ConfigValueBuilder {
-		abstract void buildModConfig(SimpleConfigImpl config);
-		boolean canBuildEntry(String name) {
+	@Internal public static abstract class ConfigValueBuilder {
+		public abstract void buildModConfig(SimpleConfigImpl config);
+		public boolean canBuildEntry(String name) {
 			return true;
 		}
-		boolean canBuildSection(String name) {
+		public boolean canBuildSection(String name) {
 			return true;
 		}
-		abstract void build(AbstractConfigEntry<?, ?, ?> entry);
-		void enterSection(String name) {}
-		void exitSection() {}
-		abstract ForgeConfigSpec build();
+		public abstract void build(AbstractConfigEntry<?, ?, ?> entry);
+		public void enterSection(String name) {}
+		public void exitSection() {}
+		public abstract ForgeConfigSpec build();
 	}
 	
 	protected static class ForgeConfigSpecConfigValueBuilder extends ConfigValueBuilder {
 		private final ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 		
-		@Override void buildModConfig(SimpleConfigImpl config) {
+		@Override public void buildModConfig(SimpleConfigImpl config) {
 			ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
 			SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
 			config.build(modContainer, modConfig);
 			modContainer.addConfig(modConfig);
 		}
-		
-		@Override void build(AbstractConfigEntry<?, ?, ?> entry) {
+		@Override public void build(AbstractConfigEntry<?, ?, ?> entry) {
 			entry.buildConfig(builder);
 		}
-		
-		@Override void enterSection(String name) {
+		@Override public void enterSection(String name) {
 			builder.push(name);
 		}
-		
-		@Override void exitSection() {
+		@Override public void exitSection() {
 			builder.pop();
 		}
-		
-		@Override ForgeConfigSpec build() {
+		@Override public ForgeConfigSpec build() {
 			return builder.build();
 		}
 	}

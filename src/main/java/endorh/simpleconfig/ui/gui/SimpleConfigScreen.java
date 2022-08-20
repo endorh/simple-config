@@ -87,8 +87,8 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			scrollAmount = clamp(scrollAmount, 0.0);
 		}
 	};
-	protected Map<ConfigCategory, ListWidget<AbstractConfigEntry<?>>> listWidgets;
-	protected ListWidget<AbstractConfigEntry<?>> listWidget;
+	protected Map<ConfigCategory, ListWidget<AbstractConfigField<?>>> listWidgets;
+	protected ListWidget<AbstractConfigField<?>> listWidget;
 	protected ITextComponent displayTitle;
 	protected TintedButton quitButton;
 	protected SaveButton saveButton;
@@ -120,7 +120,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	protected TooltipSearchBarWidget searchBar;
 	protected StatusDisplayBar statusDisplayBar;
 	
-	protected final Set<AbstractConfigEntry<?>> selectedEntries = new HashSet<>();
+	protected final Set<AbstractConfigField<?>> selectedEntries = new HashSet<>();
 	protected boolean isSelecting = false;
 	
 	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
@@ -140,7 +140,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		      clientCategories, commonCategories, serverCommonCategories, serverCategories);
 		displayTitle = new StringTextComponent(getModNameOrId(modId));
 		for (ConfigCategory category : sortedCategories) {
-			for (AbstractConfigEntry<?> entry : category.getHeldEntries()) {
+			for (AbstractConfigField<?> entry : category.getHeldEntries()) {
 				entry.setCategory(category);
 				entry.setScreen(this);
 			}
@@ -234,7 +234,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	}
 	
 	protected static final Pattern DOT = Pattern.compile("\\.");
-	@Override public @Nullable AbstractConfigEntry<?> getEntry(String path) {
+	@Override public @Nullable AbstractConfigField<?> getEntry(String path) {
 		final String[] split = DOT.split(path, 3);
 		if (split.length < 3) return null;
 		Map<String, ConfigCategory> map = categoryMap.get(split[0]);
@@ -248,7 +248,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		return super.isEditingServer() || getEditedType().isOnlyRemote();
 	}
 	
-	@Override public List<AbstractConfigEntry<?>> getHeldEntries() {
+	@Override public List<AbstractConfigField<?>> getHeldEntries() {
 		return sortedCategories.stream()
 		  .flatMap(c -> c.getHeldEntries().stream())
 		  .collect(Collectors.toList());
@@ -279,13 +279,13 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			String[] path = DOT.split(k, 2);
 			ConfigCategory cat = categoryMap.get(path[0]);
 			if (cat != null) {
-				AbstractConfigEntry<?> entry = cat.getEntry(path[1]);
+				AbstractConfigField<?> entry = cat.getEntry(path[1]);
 				if (entry != null) loadHotKeyAction(entry, a);
 			}
 		});
 	}
 	protected <T, V, A extends HotKeyAction<V>> void loadHotKeyAction(
-	  AbstractConfigEntry<T> entry, A action
+	  AbstractConfigField<T> entry, A action
 	) {
 		HotKeyActionType<V, ?> type = action.getType();
 		List<HotKeyActionType<T, ?>> types = entry.getHotKeyActionTypes();
@@ -447,9 +447,9 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		}
 	}
 	
-	public ListWidget<AbstractConfigEntry<?>> getListWidget(ConfigCategory category) {
+	public ListWidget<AbstractConfigField<?>> getListWidget(ConfigCategory category) {
 		return listWidgets.computeIfAbsent(category, c -> {
-			final ListWidget<AbstractConfigEntry<?>> w = new ListWidget<>(
+			final ListWidget<AbstractConfigField<?>> w = new ListWidget<>(
 			  this, minecraft, width, height, isShowingTabs()? 50 : 24,
 			  height - 28, c.getBackground() != null? c.getBackground() : backgroundLocation);
 			w.getEntries().addAll(c.getHeldEntries());
@@ -497,7 +497,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		loadedRemoteConfigs.add(type);
 	}
 	
-	private static <T> void resetOriginal(AbstractConfigEntry<T> entry) {
+	private static <T> void resetOriginal(AbstractConfigField<T> entry) {
 		entry.setOriginal(entry.getValue());
 	}
 	
@@ -540,7 +540,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			if (isSelecting() && typeChange) return;
 			lastCategories.put(selectedCategory.getType(), selectedCategory);
 			super.setSelectedCategory(category);
-			ListWidget<AbstractConfigEntry<?>> prevListWidget = listWidget;
+			ListWidget<AbstractConfigField<?>> prevListWidget = listWidget;
 			if (width > 0) {
 				init(Minecraft.getInstance(), width, height);
 				if (prevListWidget != null) prevListWidget.onReplaced(listWidget);
@@ -580,7 +580,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		return super.mouseScrolled(mouseX, mouseY, amount);
 	}
 	
-	@Override public @Nullable AbstractConfigEntry<?> getFocusedEntry() {
+	@Override public @Nullable AbstractConfigField<?> getFocusedEntry() {
 		return listWidget.getSelectedEntry();
 	}
 	
@@ -594,7 +594,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		  .forEach(e -> e.setSelected(!e.isSelected()));
 	}
 	
-	@Override public Set<AbstractConfigEntry<?>> getSelectedEntries() {
+	@Override public Set<AbstractConfigField<?>> getSelectedEntries() {
 		return selectedEntries;
 	}
 	
@@ -628,14 +628,14 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	protected void loadConfigCategoryGUIState(ConfigCategory category, IConfigCategoryGUIState state) {
 		state.getExpandStates().forEach((p, e) -> {
-			AbstractConfigEntry<?> entry = category.getEntry(p);
+			AbstractConfigField<?> entry = category.getEntry(p);
 			if (entry instanceof IExpandable) ((IExpandable) entry).setExpanded(e);
 		});
-		ListWidget<AbstractConfigEntry<?>> widget = getListWidget(category);
+		ListWidget<AbstractConfigField<?>> widget = getListWidget(category);
 		widget.setScroll(state.getScrollOffset());
 		String selected = state.getSelectedEntry();
 		if (selected != null) {
-			AbstractConfigEntry<?> entry = category.getEntry(selected);
+			AbstractConfigField<?> entry = category.getEntry(selected);
 			if (entry != null) {
 				widget.setSelectedTarget(entry);
 				if (getSelectedCategory() == category) entry.navigate();
@@ -660,12 +660,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	protected IConfigCategoryGUIState saveConfigCategoryGUIState(ConfigCategory category) {
 		ConfigCategoryGUIState state = new ConfigCategoryGUIState();
-		ListWidget<AbstractConfigEntry<?>> widget = listWidgets.get(category);
+		ListWidget<AbstractConfigField<?>> widget = listWidgets.get(category);
 		Map<String, Boolean> states = state.getExpandStates();
 		category.getAllEntries(e -> e instanceof IExpandable)
 		  .forEach(e -> states.put(e.getCatPath(), ((IExpandable) e).isExpanded()));
 		if (widget != null) {
-			AbstractConfigEntry<?> selected = widget.getSelectedEntry();
+			AbstractConfigField<?> selected = widget.getSelectedEntry();
 			if (selected != null) state.setSelectedEntry(selected.getCatPath());
 			state.setScrollOffset((int) widget.getScroll());
 		}
@@ -769,20 +769,20 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			// Modification key bindings last
 		} else if (KeyBindings.RESET_RESTORE.isActiveAndMatches(key)) {
 			if (isSelecting()) {
-				final Set<AbstractConfigEntry<?>> selected = getSelectedEntries();
+				final Set<AbstractConfigField<?>> selected = getSelectedEntries();
 				if (Screen.hasAltDown()) {
-					if (selected.stream().anyMatch(AbstractConfigEntry::isRestorable)) {
-						selected.forEach(AbstractConfigEntry::restoreValue);
+					if (selected.stream().anyMatch(AbstractConfigField::isRestorable)) {
+						selected.forEach(AbstractConfigField::restoreValue);
 						playFeedbackTap(1F);
 						return true;
 					}
-				} else if (selected.stream().anyMatch(AbstractConfigEntry::isResettable)) {
-					selected.forEach(AbstractConfigEntry::resetValue);
+				} else if (selected.stream().anyMatch(AbstractConfigField::isResettable)) {
+					selected.forEach(AbstractConfigField::resetValue);
 					playFeedbackTap(1F);
 					return true;
 				}
 			} else {
-				AbstractConfigEntry<?> entry = listWidget.getSelectedEntry();
+				AbstractConfigField<?> entry = listWidget.getSelectedEntry();
 				while (entry != null && entry.isSubEntry()) entry = entry.getParentEntry();
 				if (entry != null) {
 					ResetButton resetButton = entry.getResetButton();
@@ -803,7 +803,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			return true;
 		} else if (KeyBindings.HOTKEY.isActiveAndMatches(key)) {
 			if (!isSelecting()) {
-				AbstractConfigEntry<?> entry = listWidget.getSelectedEntry();
+				AbstractConfigField<?> entry = listWidget.getSelectedEntry();
 				while (entry != null && entry.isSubEntry()) entry = entry.getParentEntry();
 				if (entry != null) {
 					HotKeyActionButton<?> button = entry.getHotKeyActionTypeButton();
@@ -830,7 +830,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		selectedEntries.clear();
 		getSortedTypeCategories().stream()
 		  .flatMap(c -> c.getAllMainEntries().stream())
-		  .filter(AbstractConfigEntry::isSelected)
+		  .filter(AbstractConfigField::isSelected)
 		  .forEach(selectedEntries::add);
 		final boolean selecting = !selectedEntries.isEmpty();
 		if (selecting != isSelecting) {
@@ -965,8 +965,8 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	public void focusNextExternalConflict(boolean forwards) {
 		Predicate<INavigableTarget> predicate = t -> {
-			if (!(t instanceof AbstractConfigEntry<?>)) return false;
-			final AbstractConfigEntry<?> entry = (AbstractConfigEntry<?>) t;
+			if (!(t instanceof AbstractConfigField<?>)) return false;
+			final AbstractConfigField<?> entry = (AbstractConfigField<?>) t;
 			return !entry.isSubEntry() && entry.hasExternalDiff()
 			       && !entry.hasAcceptedExternalDiff();
 		};
@@ -982,8 +982,8 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	public void focusNextRequiresRestart(boolean forwards) {
 		Predicate<INavigableTarget> predicate = t -> {
-			if (!(t instanceof AbstractConfigEntry<?>)) return false;
-			final AbstractConfigEntry<?> entry = (AbstractConfigEntry<?>) t;
+			if (!(t instanceof AbstractConfigField<?>)) return false;
+			final AbstractConfigField<?> entry = (AbstractConfigField<?>) t;
 			return !entry.isSubEntry() && entry.isRequiresRestart() && entry.isEdited();
 		};
 		INavigableTarget next = getNext(predicate.and(INavigableTarget::isNavigable), forwards);
@@ -1093,7 +1093,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		  .build();
 	}
 	
-	public static class ListWidget<R extends AbstractConfigEntry<?>> extends DynamicElementListWidget<R> {
+	public static class ListWidget<R extends AbstractConfigField<?>> extends DynamicElementListWidget<R> {
 		private final AbstractConfigScreen screen;
 		private boolean hasCurrent;
 		private double currentX;

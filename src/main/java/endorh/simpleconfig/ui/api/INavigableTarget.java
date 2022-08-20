@@ -55,10 +55,6 @@ public interface INavigableTarget extends INestedGuiEventHandler {
 		return false;
 	}
 	
-	default List<INavigableTarget> getNavigableChildren() {
-		return Lists.newArrayList(this);
-	}
-	
 	default List<INavigableTarget> getNavigableSubTargets() {
 		return Lists.newArrayList();
 	}
@@ -101,10 +97,10 @@ public interface INavigableTarget extends INestedGuiEventHandler {
 		applyFocusHighlight(color, 0);
 	}
 	
-	default @Nullable AbstractConfigEntry<?> findParentEntry() {
+	default @Nullable AbstractConfigField<?> findParentEntry() {
 		INavigableTarget target = this;
-		while (!(target instanceof AbstractConfigEntry) && target != null)
+		while (!(target instanceof AbstractConfigField) && target != null)
 			target = target.getNavigableParent();
-		return (AbstractConfigEntry<?>) target;
+		return (AbstractConfigField<?>) target;
 	}
 }
