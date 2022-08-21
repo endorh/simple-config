@@ -6,6 +6,7 @@ import endorh.simpleconfig.config.ClientConfig.hotkey_log.overlay;
 import endorh.simpleconfig.config.ClientConfig.hotkey_log.toast;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
@@ -23,8 +24,6 @@ import java.util.ListIterator;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static net.minecraft.client.gui.AbstractGui.drawString;
-import static net.minecraft.client.gui.AbstractGui.fill;
 
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
@@ -97,9 +96,9 @@ public class ConfigHotKeyOverlay {
 		int opacity = (int) (0xFF * (toast.background_opacity * 0.9F + 0.1F));
 		int backgroundColor = alpha(opacity << 24, alpha);
 		int textColor = alpha(0xE0E0E0E0, alpha);
-		fill(mStack, textX - 2, textY - 1, textX + width + 4,
+		AbstractGui.fill(mStack, textX - 2, textY - 1, textX + width + 4,
 		     textY + font.FONT_HEIGHT + 2, backgroundColor);
-		drawString(mStack, font, message, textX, textY, textColor);
+		AbstractGui.drawString(mStack, font, message, textX, textY, textColor);
 	}
 	
 	public static class QueuedHotKeyMessage {
@@ -149,7 +148,7 @@ public class ConfigHotKeyOverlay {
 			int opacity = (int) (0xFF * (overlay.background_opacity * 0.9F + 0.1F));
 			int backgroundColor = alpha(opacity << 24, alpha);
 			int textColor = alpha(0xE0E0E0E0, alpha);
-			fill(mStack, x, y, r, y + h, backgroundColor);
+			AbstractGui.fill(mStack, x, y, r, y + h, backgroundColor);
 			drawStringTrimmed(mStack, title, width - 2, x + 1, y + 1, textColor);
 			y += lH;
 			x += 12;

@@ -71,7 +71,6 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 @OnlyIn(Dist.CLIENT) public class SimpleConfigScreen
   extends AbstractConfigScreen implements ISearchHandler {
@@ -351,20 +350,20 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		addListener(selectionToolbar);
 		
 		if (isEditingConfigHotKey()) {
-			int textFieldWidth = clamp(width / 5, 100, 300);
+			int textFieldWidth = MathHelper.clamp(width / 5, 100, 300);
 			pos(editedHotKeyNameTextField, width / 2 - textFieldWidth / 2, 8, textFieldWidth, 12);
 			addButton(editedHotKeyNameTextField);
 		}
 		
 		// Right toolbar
 		if (!isEditingConfigHotKey()) {
-			int presetPickerWidth = clamp(width / 3, 80, 250);
+			int presetPickerWidth = MathHelper.clamp(width / 3, 80, 250);
 			presetPickerWidget.setPosition(width - presetPickerWidth - 24, 2, presetPickerWidth);
 			pos(hotKeyButton, width - 22, 2);
 			addListener(presetPickerWidget);
 			addButton(hotKeyButton);
 		} else {
-			int hotKeyButtonWidth = clamp(width / 3, 80, 250);
+			int hotKeyButtonWidth = MathHelper.clamp(width / 3, 80, 250);
 			editedHotKeyButton.setPosition(width - hotKeyButtonWidth - 2, 2, hotKeyButtonWidth);
 			addListener(editedHotKeyButton);
 		}
@@ -1198,11 +1197,11 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		}
 		
 		@Override public int getFieldWidth() {
-			return (int) clamp((right - left) * 0.3F, 80, 250);
+			return (int) MathHelper.clamp((right - left) * 0.3F, 80, 250);
 		}
 		
 		@Override public int getKeyFieldWidth() {
-			return (int) clamp((right - left) * 0.25F, 80, 250);
+			return (int) MathHelper.clamp((right - left) * 0.25F, 80, 250);
 		}
 		
 		@Override protected int getScrollBarPosition() {

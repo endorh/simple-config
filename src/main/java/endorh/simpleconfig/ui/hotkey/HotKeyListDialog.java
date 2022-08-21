@@ -18,13 +18,13 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEn
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.util.InputMappings;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.Nullable;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 public class HotKeyListDialog extends AbstractButtonDialog {
 	private final ConfigHotKeyTreeView treeView;
@@ -148,10 +148,10 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void layout() {
-		int w = clamp((int) (getScreen().width * 0.7), 120, 800);
+		int w = MathHelper.clamp((int) (getScreen().width * 0.7), 120, 800);
 		final int titleWidth = font.getStringPropertyWidth(title);
 		w = max(w, titleWidth + 16);
-		int h = clamp(60 + getInnerHeight(), 68, (int) (getScreen().height * 0.9));
+		int h = MathHelper.clamp(60 + getInnerHeight(), 68, (int) (getScreen().height * 0.9));
 		w = max(w, buttons.size() * 80);
 		w = min(w, getScreen().width - 16);
 		setWidth(w);
@@ -171,7 +171,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public int getInnerHeight() {
-		return clamp(getTreeView().getPreferredHeight() + 4, 64, (int) (getScreen().height * 0.9) - 60);
+		return MathHelper.clamp(getTreeView().getPreferredHeight() + 4, 64, (int) (getScreen().height * 0.9) - 60);
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {

@@ -1,8 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import endorh.simpleconfig.ui.math.Rectangle;
-
-import static net.minecraft.util.math.MathHelper.lerp;
+import net.minecraft.util.math.MathHelper;
 
 public class RectangleAnimator {
 	protected ToggleAnimator animator;
@@ -43,10 +42,10 @@ public class RectangleAnimator {
 	
 	protected void updateCurrent(float progress) {
 		if (lastUpdate != progress) {
-			int l = (int) lerp(progress, origin.x, target.x);
-			int t = (int) lerp(progress, origin.y, target.y);
-			int w = ((int) lerp(progress, origin.getMaxX(), target.getMaxX())) - l;
-			int h = ((int) lerp(progress, origin.getMaxY(), target.getMaxY())) - t;
+			int l = (int) MathHelper.lerp(progress, origin.x, target.x);
+			int t = (int) MathHelper.lerp(progress, origin.y, target.y);
+			int w = ((int) MathHelper.lerp(progress, origin.getMaxX(), target.getMaxX())) - l;
+			int h = ((int) MathHelper.lerp(progress, origin.getMaxY(), target.getMaxY())) - t;
 			current.setBounds(l, t, w, h);
 			lastUpdate = progress;
 		}

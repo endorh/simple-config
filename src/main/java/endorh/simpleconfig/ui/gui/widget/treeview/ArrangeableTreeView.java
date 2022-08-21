@@ -12,6 +12,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView;
 import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 /**
  * Arrangeable Tree View widget.<br>
@@ -348,8 +348,8 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		if (draggedOverParent == null) draggedOver = null;
 		int draggedWidth = (int) (this.area.getWidth() * 0.8);
 		int draggedHeight = 48;
-		int dragX = clamp(mouseX + getDragOffsetX(), overlayArea.x, overlayArea.getMaxX() - draggedWidth);
-		int dragY = clamp(mouseY + getDragOffsetY(), overlayArea.y, overlayArea.getMaxY() - draggedHeight);
+		int dragX = MathHelper.clamp(mouseX + getDragOffsetX(), overlayArea.x, overlayArea.getMaxX() - draggedWidth);
+		int dragY = MathHelper.clamp(mouseY + getDragOffsetY(), overlayArea.y, overlayArea.getMaxY() - draggedHeight);
 		renderDragged(mStack, dragX, dragY, draggedWidth, mouseX, mouseY, delta);
 		
 		double autoScroll = 0.0;

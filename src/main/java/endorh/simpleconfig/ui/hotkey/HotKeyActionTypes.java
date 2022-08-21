@@ -12,6 +12,7 @@ import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
 import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Actions;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -23,8 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import static net.minecraft.util.math.MathHelper.clamp;
 
 public class HotKeyActionTypes {
 	public static final AssignHotKeyActionType ASSIGN = reg(new AssignHotKeyActionType());
@@ -78,7 +77,7 @@ public class HotKeyActionTypes {
 	}
 	
 	public static final SimpleHotKeyActionType<Integer, Number> INT_ADD = type(
-	  "int:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
+	  "int:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
 		 a + b.intValue(), min.intValue(), max.intValue())), notNull());
 	public static final SimpleHotKeyActionType<Integer, Number> INT_ADD_CYCLE = type(
 	  "int:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -88,7 +87,7 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.intValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD = type(
-	  "long:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
+	  "long:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
 		 a + b.longValue(), min.longValue(), max.longValue())), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD_CYCLE = type(
 	  "long:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -98,7 +97,7 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.longValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_ADD = type(
-	  "float:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
+	  "float:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
 		 a + b.floatValue(), min.floatValue(), max.floatValue())), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_ADD_CYCLE = type(
 	  "float:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -108,14 +107,14 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.floatValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_MULTIPLY = type(
-	  "float:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
+	  "float:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> MathHelper.clamp(
 		 a * b.floatValue(), min.floatValue(), max.floatValue())), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_DIVIDE = type(
 	  "float:div", Actions.DIVIDE, ranged(
-		 (entry, a, b, min, max) -> b.floatValue() == 0F? null : clamp(
+		 (entry, a, b, min, max) -> b.floatValue() == 0F? null : MathHelper.clamp(
 			a / b.floatValue(), min.floatValue(), max.floatValue())), divError());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_ADD = type(
-	  "double:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
+	  "double:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
 		 a + b.doubleValue(), min.doubleValue(), max.doubleValue())), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_ADD_CYCLE = type(
 	  "double:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -125,11 +124,11 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.doubleValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_MULTIPLY = type(
-	  "double:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
+	  "double:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> MathHelper.clamp(
 		 a * b.doubleValue(), min.doubleValue(), max.doubleValue())), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_DIVIDE = type(
 	  "double:div", Actions.DIVIDE, ranged(
-		 (entry, a, b, min, max) -> b.doubleValue() == 0D? null : clamp(
+		 (entry, a, b, min, max) -> b.doubleValue() == 0D? null : MathHelper.clamp(
 			a / b.doubleValue(), min.doubleValue(), max.doubleValue())), divError());
 	public static final EnumAddSimpleHotKeyActionType<Enum<?>> ENUM_ADD = reg(new EnumAddSimpleHotKeyActionType<>());
 	public static class EnumAddSimpleHotKeyActionType<E extends Enum<?>> extends SimpleHotKeyActionType<E, Integer> {

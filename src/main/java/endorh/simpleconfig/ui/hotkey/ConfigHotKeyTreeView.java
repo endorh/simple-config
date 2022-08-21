@@ -23,6 +23,7 @@ import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.*;
 import net.minecraftforge.fml.ModList;
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -40,7 +41,6 @@ import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.renderAll;
 import static java.lang.Math.min;
-import static net.minecraft.util.math.MathHelper.clamp;
 
 public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeViewEntry> {
 	private final Supplier<IDialogCapableScreen> dialogScreenSupplier;
@@ -151,7 +151,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		
 		@Override public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 			int width = getTree().getWidth();
-			savedHotKeyGroupPickerWidget.setWidth(clamp((int) (width * 0.45), 90, 300));
+			savedHotKeyGroupPickerWidget.setWidth(MathHelper.clamp((int) (width * 0.45), 90, 300));
 			super.render(mStack, mouseX, mouseY, delta);
 		}
 	}

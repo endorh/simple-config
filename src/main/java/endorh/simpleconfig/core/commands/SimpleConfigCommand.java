@@ -17,6 +17,7 @@ import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.core.SimpleConfigModConfig;
 import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
@@ -46,8 +47,6 @@ import static endorh.simpleconfig.core.commands.SimpleConfigModIdArgumentType.mo
 import static endorh.simpleconfig.core.commands.SimpleConfigTypeArgumentType.type;
 import static endorh.simpleconfig.core.commands.SimpleConfigValueArgumentType.entryValue;
 import static java.lang.Math.min;
-import static net.minecraft.command.Commands.argument;
-import static net.minecraft.command.Commands.literal;
 
 // Client commands aren't implemented until 1.18
 @EventBusSubscriber(modid = SimpleConfigMod.MOD_ID)
@@ -89,15 +88,15 @@ public class SimpleConfigCommand {
 		// Register under global /config command
 		// For the global command, the mod id is passed instead as "parameter" to the action
 		LiteralArgumentBuilder<CommandSource> command =
-		  literal("config").then(
-			 literal("get").then(
-				argument("modId", modId(isRemote())).then(getGetBuilder(null)))
+		  Commands.literal("config").then(
+		    Commands.literal("get").then(
+			   Commands.argument("modId", modId(isRemote())).then(getGetBuilder(null)))
 		  ).then(
-			 literal("set").then(
-			   argument("modId", modId(isRemote())).then(getSetBuilder(null)))
+		    Commands.literal("set").then(
+			   Commands.argument("modId", modId(isRemote())).then(getSetBuilder(null)))
 		  ).then(
-			 literal("reset").then(
-			   argument("modId", modId(isRemote())).then(getResetBuilder(null))));
+		    Commands.literal("reset").then(
+			   Commands.argument("modId", modId(isRemote())).then(getResetBuilder(null))));
 		dispatcher.register(command);
 	}
 	
@@ -106,28 +105,29 @@ public class SimpleConfigCommand {
 	) {
 		// The open command is client only, so it's still unimplemented
 		LiteralArgumentBuilder<CommandSource> command = root
-		  .then(literal("get").requires(permission(modId, false)).then(getGetBuilder(modId))
-		  ).then(literal("set").requires(permission(modId, true)).then(getSetBuilder(modId))
-		  ).then(literal("reset").requires(permission(modId, true)).then(getResetBuilder(modId)));
+		  .then(Commands.literal("get").requires(permission(modId, false)).then(getGetBuilder(modId))
+		  ).then(Commands.literal("set").requires(permission(modId, true)).then(getSetBuilder(modId))
+		  ).then(
+			 Commands.literal("reset").requires(permission(modId, true)).then(getResetBuilder(modId)));
 		dispatcher.register(command);
 	}
 	
 	private RequiredArgumentBuilder<CommandSource, EditType> getGetBuilder(@Nullable String modId) {
-		return argument("type", type(modId, isRemote())).then(
-		  argument("key", entryPath(modId, null, false))
+		return Commands.argument("type", type(modId, isRemote())).then(
+		  Commands.argument("key", entryPath(modId, null, false))
 			 .executes(s -> getEntryValue(s, modId)));
 	}
 	
 	private RequiredArgumentBuilder<CommandSource, EditType> getSetBuilder(@Nullable String modId) {
-		return argument("type", type(modId, isRemote())).then(
-		  argument("key", entryPath(modId, null, false)).then(
-			 argument("value", entryValue(modId, null))
+		return Commands.argument("type", type(modId, isRemote())).then(
+		  Commands.argument("key", entryPath(modId, null, false)).then(
+			 Commands.argument("value", entryValue(modId, null))
 				.executes(s -> setEntryValue(s, modId))));
 	}
 	
 	private RequiredArgumentBuilder<CommandSource, EditType> getResetBuilder(@Nullable String modId) {
-		return argument("type", type(modId, isRemote())).then(
-		  argument("key", entryPath(modId, null, true))
+		return Commands.argument("type", type(modId, isRemote())).then(
+		  Commands.argument("key", entryPath(modId, null, true))
 			 .executes(s -> resetPath(s, modId)));
 	}
 	
