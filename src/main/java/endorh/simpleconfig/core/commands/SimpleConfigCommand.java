@@ -58,12 +58,12 @@ public class SimpleConfigCommand {
 	  m -> new TranslationTextComponent("simpleconfig.command.error.no_permission", m));
 	
 	// Styles
-	private Style keyStyle = Style.EMPTY.setColor(Color.fromInt(0xA080C0)).setItalic(true);
-	private Style modNameStyle = Style.EMPTY.applyFormatting(TextFormatting.AQUA).setBold(false);
-	private Style typeStyle = Style.EMPTY.applyFormatting(TextFormatting.LIGHT_PURPLE);
-	private Style valueStyle = Style.EMPTY.applyFormatting(TextFormatting.DARK_AQUA);
-	private Style undoStyle = Style.EMPTY.applyFormatting(TextFormatting.BLUE);
-	private Style copyStyle = Style.EMPTY.setColor(Color.fromInt(0x808080));
+	private Style keyStyle = Style.EMPTY.withColor(Color.fromRgb(0xA080C0)).withItalic(true);
+	private Style modNameStyle = Style.EMPTY.applyFormat(TextFormatting.AQUA).withBold(false);
+	private Style typeStyle = Style.EMPTY.applyFormat(TextFormatting.LIGHT_PURPLE);
+	private Style valueStyle = Style.EMPTY.applyFormat(TextFormatting.DARK_AQUA);
+	private Style undoStyle = Style.EMPTY.applyFormat(TextFormatting.BLUE);
+	private Style copyStyle = Style.EMPTY.withColor(Color.fromRgb(0x808080));
 	
 	protected boolean isRemote() {
 		return true;
@@ -142,7 +142,7 @@ public class SimpleConfigCommand {
 	private SimpleConfigImpl requireConfig(
 	  CommandContext<CommandSource> ctx, String modId, Type type, boolean forWrite
 	) throws CommandSyntaxException {
-		PlayerEntity player = ctx.getSource().asPlayer();
+		PlayerEntity player = ctx.getSource().getPlayerOrException();
 		if (!SimpleConfigImpl.hasConfig(modId, type)) {
 			throw UNSUPPORTED_CONFIG.create(modId);
 		} else if (
@@ -172,17 +172,17 @@ public class SimpleConfigCommand {
 			AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 			BaseCommand base = getBase(ctx, modId, 3);
 			String serialized = entry.getForCommand();
-			if (serialized == null) src.sendErrorMessage(new TranslationTextComponent(
+			if (serialized == null) src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.get.unexpected"));
-			src.sendFeedback(new TranslationTextComponent(
+			src.sendSuccess(new TranslationTextComponent(
 			  "simpleconfig.command.msg.get",
 			  formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
 		}
 		return 1;
@@ -197,9 +197,9 @@ public class SimpleConfigCommand {
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		String value = ctx.getArgument("value", String.class);
-		PlayerEntity player = src.asPlayer();
+		PlayerEntity player = src.getPlayerOrException();
 		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
 		}
@@ -207,7 +207,7 @@ public class SimpleConfigCommand {
 		try {
 			entry = config.getEntry(key);
 		} catch (NoSuchConfigEntryError e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 45)));
 			return 1;
 		}
@@ -218,7 +218,7 @@ public class SimpleConfigCommand {
 			
 			Optional<ITextComponent> error = entry.getErrorFromCommand(value);
 			if (error.isPresent()) {
-				src.sendErrorMessage(new TranslationTextComponent(
+				src.sendFailure(new TranslationTextComponent(
 				  "simpleconfig.command.error.set.invalid_value", error.get()));
 				return -1;
 			}
@@ -231,7 +231,7 @@ public class SimpleConfigCommand {
 			IFormattableTextComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
-			src.sendFeedback(new TranslationTextComponent(
+			src.sendSuccess(new TranslationTextComponent(
 			  "simpleconfig.command.msg.set",
 			  formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
 			broadcastToOtherOperators(player, new TranslationTextComponent(
@@ -241,13 +241,13 @@ public class SimpleConfigCommand {
 			config.sync();
 			return 0;
 		} catch (InvalidConfigValueTypeException e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.set.invalid_type", entry.getConfigCommentTooltip()));
 		} catch (InvalidConfigValueException e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
 		}
 		return 1;
@@ -261,9 +261,9 @@ public class SimpleConfigCommand {
 		SimpleConfigImpl config = requireConfig(ctx, modId, type, true);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
-		PlayerEntity player = src.asPlayer();
+		PlayerEntity player = src.getPlayerOrException();
 		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
 		}
@@ -282,7 +282,7 @@ public class SimpleConfigCommand {
 				  formatValue(base, type, key, prev, prevWidth);
 				IFormattableTextComponent formatValue =
 				  formatValue(base, type, key, value, valueWidth);
-				src.sendFeedback(new TranslationTextComponent(
+				src.sendSuccess(new TranslationTextComponent(
 				  "simpleconfig.command.msg.reset",
 				  formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
 				broadcastToOtherOperators(player, new TranslationTextComponent(
@@ -295,8 +295,8 @@ public class SimpleConfigCommand {
 				group.reset();
 				IFormattableTextComponent count = new StringTextComponent(
 				  String.valueOf(group.getPaths(false).size())
-				).mergeStyle(TextFormatting.DARK_AQUA);
-				src.sendFeedback(new TranslationTextComponent(
+				).withStyle(TextFormatting.DARK_AQUA);
+				src.sendSuccess(new TranslationTextComponent(
 				  "simpleconfig.command.msg.reset_group",
 				  formatKey(modId, key, type, 45), count), false);
 				broadcastToOtherOperators(player, new TranslationTextComponent(
@@ -307,10 +307,10 @@ public class SimpleConfigCommand {
 			} else throw new NoSuchConfigEntryError(key);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
-			src.sendErrorMessage(new TranslationTextComponent(
+			src.sendFailure(new TranslationTextComponent(
 			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
 		}
 		return 1;
@@ -320,20 +320,20 @@ public class SimpleConfigCommand {
 	
 	public static void broadcastToOtherOperators(PlayerEntity player, ITextComponent message) {
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
-		  .filter(p -> p.hasPermissionLevel(2) && p != player)
-		  .forEach(p -> p.sendMessage(message, Util.DUMMY_UUID));
+		  .filter(p -> p.hasPermissions(2) && p != player)
+		  .forEach(p -> p.sendMessage(message, Util.NIL_UUID));
 	}
 	
 	public static IFormattableTextComponent playerName(PlayerEntity player) {
 		return new StringTextComponent(player.getName().getString())
-		  .mergeStyle(TextFormatting.DARK_GREEN).modifyStyle(style -> style
-			 .setClickEvent(new ClickEvent(
+		  .withStyle(TextFormatting.DARK_GREEN).withStyle(style -> style
+			 .withClickEvent(new ClickEvent(
 				ClickEvent.Action.SUGGEST_COMMAND, "/msg " + player.getScoreboardName() + " "))
-			 .setHoverEvent(new HoverEvent(
-				HoverEvent.Action.SHOW_TEXT, player.getName().deepCopy()
-			   .appendString("\n").append(new StringTextComponent(
-				  player.getUniqueID().toString()).mergeStyle(TextFormatting.GRAY))))
-			 .setInsertion(player.getScoreboardName()));
+			 .withHoverEvent(new HoverEvent(
+				HoverEvent.Action.SHOW_TEXT, player.getName().copy()
+			   .append("\n").append(new StringTextComponent(
+				  player.getUUID().toString()).withStyle(TextFormatting.GRAY))))
+			 .withInsertion(player.getScoreboardName()));
 	}
 	
 	protected IFormattableTextComponent wrap(
@@ -346,7 +346,7 @@ public class SimpleConfigCommand {
 			clickEvent = new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, text);
 			if (tooltipSubtitle == null) tooltipSubtitle =
 			  new StringTextComponent("(").append(new TranslationTextComponent("chat.copy"))
-				 .appendString(")").mergeStyle(TextFormatting.GRAY);
+				 .append(")").withStyle(TextFormatting.GRAY);
 		}
 		final ClickEvent ce = clickEvent;
 		IFormattableTextComponent wrapped;
@@ -356,23 +356,23 @@ public class SimpleConfigCommand {
 			int cut = width < 23? width - 10 : 10;
 			int rightCut = cut <= 0? 3 : length - width + cut + 3;
 			IFormattableTextComponent ellipsis = new StringTextComponent("...")
-			  .mergeStyle(style).mergeStyle(TextFormatting.GRAY);
+			  .withStyle(style).withStyle(TextFormatting.GRAY);
 			wrapped =
 			  width <= 3
 			  ? ellipsis : (cut <= 0? ellipsis : new StringTextComponent(
 				 text.substring(0, cut)
-			  ).mergeStyle(style).append(ellipsis)).append(
-				 new StringTextComponent(text.substring(rightCut)).mergeStyle(style));
-		} else wrapped = new StringTextComponent(text).mergeStyle(style);
+			  ).withStyle(style).append(ellipsis)).append(
+				 new StringTextComponent(text.substring(rightCut)).withStyle(style));
+		} else wrapped = new StringTextComponent(text).withStyle(style);
 		
 		IFormattableTextComponent tooltip = new StringTextComponent("");
-		if (tooltipTitle != null) tooltip.append(tooltipTitle).appendString("\n");
-		tooltip.append(new StringTextComponent(text).mergeStyle(style));
-		if (tooltipSubtitle != null) tooltip.appendString("\n").append(tooltipSubtitle);
+		if (tooltipTitle != null) tooltip.append(tooltipTitle).append("\n");
+		tooltip.append(new StringTextComponent(text).withStyle(style));
+		if (tooltipSubtitle != null) tooltip.append("\n").append(tooltipSubtitle);
 		
-		wrapped.modifyStyle(s -> s.setHoverEvent(
+		wrapped.withStyle(s -> s.withHoverEvent(
 		  new HoverEvent(Action.SHOW_TEXT, tooltip)
-		).setClickEvent(ce));
+		).withClickEvent(ce));
 		
 		return wrapped;
 	}
@@ -380,9 +380,9 @@ public class SimpleConfigCommand {
 	protected IFormattableTextComponent formatKey(String modId, String key, Type type, int width) {
 		return wrap(key, width, keyStyle, new StringTextComponent(
 		  getModNameOrId(modId)
-		).mergeStyle(modNameStyle).appendString(" ").append(
-		  new StringTextComponent(type.getAlias()).mergeStyle(typeStyle)
-		), null, null).modifyStyle(s -> s.setInsertion(key));
+		).withStyle(modNameStyle).append(" ").append(
+		  new StringTextComponent(type.getAlias()).withStyle(typeStyle)
+		), null, null).withStyle(s -> s.withInsertion(key));
 	}
 	
 	private static String getModNameOrId(String modId) {
@@ -394,11 +394,11 @@ public class SimpleConfigCommand {
 	}
 	
 	protected IFormattableTextComponent createCopyButton(String text) {
-		return new StringTextComponent("⧉").modifyStyle(s -> s
-		  .applyFormatting(TextFormatting.DARK_GRAY)
-		  .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
+		return new StringTextComponent("⧉").withStyle(s -> s
+		  .applyFormat(TextFormatting.DARK_GRAY)
+		  .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
 			 "chat.copy"
-		  ).mergeStyle(copyStyle))).setClickEvent(
+		  ).withStyle(copyStyle))).withClickEvent(
 			 new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, text)));
 	}
 	
@@ -406,24 +406,24 @@ public class SimpleConfigCommand {
 	  BaseCommand baseCommand, Type type, String key, String value, int width
 	) {
 		return wrap(
-		  value, width, valueStyle, new StringTextComponent(key).mergeStyle(keyStyle),
+		  value, width, valueStyle, new StringTextComponent(key).withStyle(keyStyle),
 		  new StringTextComponent("(").append(new TranslationTextComponent(
 			 "simpleconfig.command.help.set"
-		  )).appendString(")").mergeStyle(TextFormatting.GRAY), new ClickEvent(
+		  )).append(")").withStyle(TextFormatting.GRAY), new ClickEvent(
 			 ClickEvent.Action.SUGGEST_COMMAND,
 			 baseCommand.resolve("set", type.asEditType(isRemote()).getAlias(), key, value))
-		).appendString(" ").append(createCopyButton(value)).modifyStyle(s -> s.setInsertion(value));
+		).append(" ").append(createCopyButton(value)).withStyle(s -> s.withInsertion(value));
 	}
 	
 	protected IFormattableTextComponent genUndoLink(String undoCommand) {
 		return new StringTextComponent("(").append(
-		  new TranslationTextComponent("simpleconfig.command.action.undo").modifyStyle(
-			 s -> s.mergeStyle(undoStyle)
-				.setHoverEvent(new HoverEvent(
+		  new TranslationTextComponent("simpleconfig.command.action.undo").withStyle(
+			 s -> s.applyTo(undoStyle)
+				.withHoverEvent(new HoverEvent(
 				  HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent(
-				  "simpleconfig.command.help.undo").mergeStyle(TextFormatting.GRAY))
-				).setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, undoCommand)))
-		).appendString(")").mergeStyle(TextFormatting.GRAY);
+				  "simpleconfig.command.help.undo").withStyle(TextFormatting.GRAY))
+				).withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, undoCommand)))
+		).append(")").withStyle(TextFormatting.GRAY);
 	}
 	
 	protected BaseCommand getBase(CommandContext<CommandSource> ctx, String modId, int args) {
@@ -455,7 +455,7 @@ public class SimpleConfigCommand {
 	private Predicate<CommandSource> permission(String modId, boolean forWrite) {
 		return s -> {
 			try {
-				ConfigPermission p = permissions.permissionFor(s.asPlayer(), modId).getLeft();
+				ConfigPermission p = permissions.permissionFor(s.getPlayerOrException(), modId).getLeft();
 				return forWrite? p.canEdit() : p.canView();
 			} catch (CommandSyntaxException e) {
 				return false;

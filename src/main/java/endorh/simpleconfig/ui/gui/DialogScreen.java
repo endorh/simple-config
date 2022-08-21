@@ -18,6 +18,6 @@ public class DialogScreen extends AbstractDialogScreen {
 	}
 	
 	@Override public void screenTick() {
-		if (dialog.isCancelled()) Minecraft.getInstance().displayGuiScreen(parent);
+		if (dialog.isCancelled()) Minecraft.getInstance().setScreen(parent);
 	}
 }

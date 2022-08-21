@@ -34,7 +34,7 @@ public class ItemTypeWrapper extends RegistryObjectTypeWrapper<Item> {
 	) {
 		if (element != null) {
 			Minecraft.getInstance().getItemRenderer()
-			  .renderItemIntoGUI(new ItemStack(element), x + 2, y + 2);
+			  .renderGuiItem(new ItemStack(element), x + 2, y + 2);
 		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 	}
 }

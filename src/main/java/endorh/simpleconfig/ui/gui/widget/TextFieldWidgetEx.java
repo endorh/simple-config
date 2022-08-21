@@ -66,7 +66,7 @@ public class TextFieldWidgetEx extends Widget {
 	
 	public static TextFieldWidgetEx of(String text) {
 		TextFieldWidgetEx tf = new TextFieldWidgetEx(
-		  Minecraft.getInstance().fontRenderer, 0, 0, 0, 0, StringTextComponent.EMPTY);
+		  Minecraft.getInstance().font, 0, 0, 0, 0, StringTextComponent.EMPTY);
 		tf.setText(text);
 		return tf;
 	}
@@ -101,7 +101,7 @@ public class TextFieldWidgetEx extends Widget {
 	
 	public void tick() {}
 	
-	@Override protected @NotNull IFormattableTextComponent getNarrationMessage() {
+	@Override protected @NotNull IFormattableTextComponent createNarrationMessage() {
 		ITextComponent itextcomponent = getMessage();
 		return new TranslationTextComponent("gui.narrate.editBox", itextcomponent, text);
 	}
@@ -146,7 +146,7 @@ public class TextFieldWidgetEx extends Widget {
 		int start = min(caretPos, anchorPos);
 		int end = max(caretPos, anchorPos);
 		int allowed = maxLength - text.length() - (start - end);
-		String txt = SharedConstants.filterAllowedCharacters(inserted);
+		String txt = SharedConstants.filterText(inserted);
 		int length = txt.length();
 		if (allowed < length) {
 			txt = txt.substring(0, allowed);
@@ -164,7 +164,7 @@ public class TextFieldWidgetEx extends Widget {
 	
 	private void onTextChange(String newText) {
 		if (responder != null) responder.accept(newText);
-		nextNarration = Util.milliTime() + 500L;
+		nextNarration = Util.getMillis() + 500L;
 	}
 	
 	private void delete(int words) {
@@ -271,7 +271,7 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	private int expandLigaturesFromCaret(int relativePos) {
-		return Util.func_240980_a_(text, caretPos, relativePos);
+		return Util.offsetByCodepoints(text, caretPos, relativePos);
 	}
 	
 	public void moveCaret(int pos) {
@@ -308,15 +308,15 @@ public class TextFieldWidgetEx extends Widget {
 				setAnchorPos(0);
 				return true;
 			} else {
-				KeyboardListener kl = Minecraft.getInstance().keyboardListener;
+				KeyboardListener kl = Minecraft.getInstance().keyboardHandler;
 				if (Screen.isCopy(keyCode)) {
-					kl.setClipboardString(getSelectedText());
+					kl.setClipboard(getSelectedText());
 					return true;
 				} else if (Screen.isPaste(keyCode)) {
-					if (isEditable()) insertText(kl.getClipboardString());
+					if (isEditable()) insertText(kl.getClipboard());
 					return true;
 				} else if (Screen.isCut(keyCode)) {
-					kl.setClipboardString(getSelectedText());
+					kl.setClipboard(getSelectedText());
 					if (isEditable()) insertText("");
 					return true;
 				} else {
@@ -368,7 +368,7 @@ public class TextFieldWidgetEx extends Widget {
 	@Override public boolean charTyped(char codePoint, int modifiers) {
 		if (!canConsumeInput()) {
 			return false;
-		} else if (SharedConstants.isAllowedCharacter(codePoint)) {
+		} else if (SharedConstants.isAllowedChatCharacter(codePoint)) {
 			if (isEditable()) {
 				String closingPair = null;
 				if (formatter != null) {
@@ -467,10 +467,10 @@ public class TextFieldWidgetEx extends Widget {
 	
 	protected int getClickedCaretPos(IFormattableTextComponent line, double relX) {
 		int lineLength = line.getString().length();
-		int floor = font.func_238417_a_(line, (int) relX).getString().length();
+		int floor = font.substrByWidth(line, (int) relX).getString().length();
 		if (floor >= lineLength) return lineLength;
-		int left = font.getStringPropertyWidth(subText(line, 0, floor));
-		int right = font.getStringPropertyWidth(subText(line, 0, floor + 1));
+		int left = font.width(subText(line, 0, floor));
+		int right = font.width(subText(line, 0, floor + 1));
 		return relX < (left + right) * 0.5? floor: floor + 1;
 	}
 	
@@ -490,7 +490,7 @@ public class TextFieldWidgetEx extends Widget {
 			int innerWidth = getInnerWidth();
 			
 			IFormattableTextComponent displayedText = subText(getDisplayedText(), hScroll);
-			String shown = font.func_238417_a_(displayedText, innerWidth).getString();
+			String shown = font.substrByWidth(displayedText, innerWidth).getString();
 			int fitLength = shown.length();
 			displayedText = subText(displayedText, 0, fitLength);
 			
@@ -499,17 +499,17 @@ public class TextFieldWidgetEx extends Widget {
 			                    && (System.currentTimeMillis() - lastInteraction) % 1000 < 500;
 			int textX = bordered ? x + 4 : x;
 			int textY = bordered ? y + (height - 8) / 2 : y;
-			int caretX = fitCaret? textX + font.getStringPropertyWidth(subText(displayedText, 0, relCaret)) - 1
+			int caretX = fitCaret? textX + font.width(subText(displayedText, 0, relCaret)) - 1
 			             : relCaret > 0? textX + innerWidth - 1 : textX;
 			
 			// Render text
 			if (!shown.isEmpty())
-				font.func_243246_a(mStack, displayedText, textX, textY, color);
+				font.drawShadow(mStack, displayedText, textX, textY, color);
 			
 			// Render hint
 			ITextComponent hint = hintProvider != null? hintProvider.apply(text).orElse(null) : null;
 			if (relCaret == shown.length() && hint != null)
-				font.func_243246_a(mStack, hint, caretX, textY, 0xFF808080);
+				font.drawShadow(mStack, hint, caretX, textY, 0xFF808080);
 			
 			// Render caret
 			if (showCaret) {
@@ -520,7 +520,7 @@ public class TextFieldWidgetEx extends Widget {
 			if (relAnchor != relCaret && isFocused()) {
 				if (relAnchor > fitLength) relAnchor = fitLength;
 				if (relAnchor < 0) relAnchor = 0;
-				int aX = textX + font.getStringPropertyWidth(subText(displayedText, 0, relAnchor)) - 1;
+				int aX = textX + font.width(subText(displayedText, 0, relAnchor)) - 1;
 				renderSelection(mStack, caretX, textY - 3, aX, textY + 2 + 9);
 			}
 		}
@@ -528,18 +528,18 @@ public class TextFieldWidgetEx extends Widget {
 	
 	protected void renderCaret(MatrixStack mStack, int x, int y, int w, int h) {
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bb = tessellator.getBuffer();
+		BufferBuilder bb = tessellator.getBuilder();
 		RenderSystem.color4f(1F, 1F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
-		Matrix4f m = mStack.getLast().getMatrix();
+		Matrix4f m = mStack.last().pose();
 		bb.begin(7, DefaultVertexFormats.POSITION);
-		bb.pos(m,     x, y + h, 0F).endVertex();
-		bb.pos(m, x + w, y + h, 0F).endVertex();
-		bb.pos(m, x + w,     y, 0F).endVertex();
-		bb.pos(m,     x,     y, 0F).endVertex();
-		tessellator.draw();
+		bb.vertex(m,     x, y + h, 0F).endVertex();
+		bb.vertex(m, x + w, y + h, 0F).endVertex();
+		bb.vertex(m, x + w,     y, 0F).endVertex();
+		bb.vertex(m,     x,     y, 0F).endVertex();
+		tessellator.end();
 		RenderSystem.disableColorLogicOp();
 		RenderSystem.enableTexture();
 	}
@@ -560,18 +560,18 @@ public class TextFieldWidgetEx extends Widget {
 		if (sX > x + width) sX = x + width;
 		
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bb = tessellator.getBuffer();
-		Matrix4f m = mStack.getLast().getMatrix();
+		BufferBuilder bb = tessellator.getBuilder();
+		Matrix4f m = mStack.last().pose();
 		RenderSystem.color4f(0F, 0F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
 		bb.begin(7, DefaultVertexFormats.POSITION);
-		bb.pos(m, sX, eY, 0F).endVertex();
-		bb.pos(m, eX, eY, 0F).endVertex();
-		bb.pos(m, eX, sY, 0F).endVertex();
-		bb.pos(m, sX, sY, 0F).endVertex();
-		tessellator.draw();
+		bb.vertex(m, sX, eY, 0F).endVertex();
+		bb.vertex(m, eX, eY, 0F).endVertex();
+		bb.vertex(m, eX, sY, 0F).endVertex();
+		bb.vertex(m, sX, sY, 0F).endVertex();
+		tessellator.end();
 		RenderSystem.disableColorLogicOp();
 		RenderSystem.enableTexture();
 		// Do not leak the blue filter
@@ -642,7 +642,7 @@ public class TextFieldWidgetEx extends Widget {
 	public int getMaxHScroll() {
 		String text = this.text;
 		String reversed = new StringBuilder(text).reverse().toString();
-		return text.length() - font.func_238412_a_(reversed, getInnerWidth()).length();
+		return text.length() - font.plainSubstrByWidth(reversed, getInnerWidth()).length();
 	}
 	
 	public void scrollToFit(int pos) {
@@ -651,7 +651,7 @@ public class TextFieldWidgetEx extends Widget {
 			if (hScroll > maxHScroll) hScroll = maxHScroll;
 			
 			int w = getInnerWidth();
-			String shown = font.func_238412_a_(text.substring(hScroll), w);
+			String shown = font.plainSubstrByWidth(text.substring(hScroll), w);
 			int lastShown = shown.length() + hScroll;
 			
 			if (pos > lastShown) {
@@ -714,6 +714,6 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public int getTextXForPos(int pos) {
-		return pos > text.length() ? x : x + font.getStringWidth(text.substring(0, pos));
+		return pos > text.length() ? x : x + font.width(text.substring(0, pos));
 	}
 }

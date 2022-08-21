@@ -205,7 +205,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteConf
 		if (type != SimpleConfig.EditType.SERVER_COMMON) return false;
 		SimpleConfigImpl config = configMap.get(SimpleConfig.Type.COMMON);
 		return config != null
-		       && !Minecraft.getInstance().isIntegratedServerRunning()
+		       && !Minecraft.getInstance().isLocalServer()
 		       && permissions.permissionFor(modId).getLeft().canView();
 	}
 	

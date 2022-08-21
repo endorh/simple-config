@@ -290,7 +290,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 				if (p.getParent() == null) return p.handleArrowKeys(false, this);
 				p.focusAndSelect(clear, select, this);
 			} else if (index >= siblings.size()) {
-				p.setListener(null);
+				p.setFocused(null);
 				p.handleArrowKeys(true, this);
 			} else {
 				E entry = siblings.get(index);
@@ -307,8 +307,8 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		}
 	}
 	
-	@Override public void setListener(@Nullable IGuiEventListener listener) {
-		super.setListener(listener);
+	@Override public void setFocused(@Nullable IGuiEventListener listener) {
+		super.setFocused(listener);
 		if (focusedSubEntry != null && focusedSubEntry != listener)
 			focusedSubEntry.unFocus();
 		// noinspection SuspiciousMethodCalls
@@ -355,12 +355,12 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		E parent = getParent();
 		if (parent != null) {
 			parent.focus(false);
-			parent.setListener(this);
+			parent.setFocused(this);
 		}
-		List<IGuiEventListener> listeners = getEventListeners();
+		List<IGuiEventListener> listeners = children();
 		IGuiEventListener first = listeners.stream()
 		  .findFirst().filter(l -> !(l instanceof ArrangeableTreeViewEntry)).orElse(null);
-		setListener(first);
+		setFocused(first);
 		if (scroll) ensureVisible();
 	}
 	
@@ -370,8 +370,8 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	protected void unFocus() {
-		IGuiEventListener listener = getListener();
-		setListener(null);
+		IGuiEventListener listener = getFocused();
+		setFocused(null);
 		if (listener instanceof ArrangeableTreeViewEntry) {
 			((ArrangeableTreeViewEntry<?>) listener).unFocus();
 		} else if (listener != null) WidgetUtils.forceUnFocus(listener);
@@ -568,7 +568,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			tree.startExpandDrag(isExpanded());
 			return true;
 		}
-		setListener(null);
+		setFocused(null);
 		return area.contains(mouseX, mouseY);
 	}
 	
@@ -597,7 +597,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		return false;
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<IGuiEventListener> children() {
 		return isExpanded()? Stream.concat(
 		  listeners.stream(), subEntries.stream()
 		).collect(Collectors.toList()) : listeners;

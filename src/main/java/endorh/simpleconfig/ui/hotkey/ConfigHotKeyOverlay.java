@@ -59,8 +59,8 @@ public class ConfigHotKeyOverlay {
 				renderToastMessage(mStack, msg);
 			}
 			MainWindow window = event.getWindow();
-			int w = window.getScaledWidth();
-			int h = window.getScaledHeight();
+			int w = window.getGuiScaledWidth();
+			int h = window.getGuiScaledHeight();
 			int b = (int) (h * 0.9);
 			int minY = (int) (h * 0.5);
 			int maxWidth = (int) (w * 0.35);
@@ -86,18 +86,18 @@ public class ConfigHotKeyOverlay {
 		if (time >= duration + FADE_OUT) return;
 		float alpha = time > duration? 1F - (time - duration) / (float) FADE_OUT : 1F;
 		if (alpha < 0.05F) return; // Small alpha values render as opaque?
-		FontRenderer font = Minecraft.getInstance().fontRenderer;
-		int width = font.getStringPropertyWidth(message);
-		MainWindow window = Minecraft.getInstance().getMainWindow();
-		int screenWidth = window.getScaledWidth();
-		int screenHeight = window.getScaledHeight();
+		FontRenderer font = Minecraft.getInstance().font;
+		int width = font.width(message);
+		MainWindow window = Minecraft.getInstance().getWindow();
+		int screenWidth = window.getGuiScaledWidth();
+		int screenHeight = window.getGuiScaledHeight();
 		int textX = screenWidth / 2 - width / 2;
-		int textY = (int) ((screenHeight - font.FONT_HEIGHT - 2) * (1F - toast.relative_height));
+		int textY = (int) ((screenHeight - font.lineHeight - 2) * (1F - toast.relative_height));
 		int opacity = (int) (0xFF * (toast.background_opacity * 0.9F + 0.1F));
 		int backgroundColor = alpha(opacity << 24, alpha);
 		int textColor = alpha(0xE0E0E0E0, alpha);
 		AbstractGui.fill(mStack, textX - 2, textY - 1, textX + width + 4,
-		     textY + font.FONT_HEIGHT + 2, backgroundColor);
+		     textY + font.lineHeight + 2, backgroundColor);
 		AbstractGui.drawString(mStack, font, message, textX, textY, textColor);
 	}
 	
@@ -136,13 +136,13 @@ public class ConfigHotKeyOverlay {
 			if (time >= duration + FADE_OUT) return;
 			float alpha = time > duration? 1F - (time - duration) / (float) FADE_OUT : 1F;
 			if (alpha < 0.05F) return; // Small alpha values render as opaque?
-			FontRenderer font = Minecraft.getInstance().fontRenderer;
+			FontRenderer font = Minecraft.getInstance().font;
 			List<ITextComponent> messages = getMessage();
 			ITextComponent title = getTitle();
-			int width = messages.stream().mapToInt(font::getStringPropertyWidth).max().orElse(0) + 14;
-			width = max(width, font.getStringPropertyWidth(title) + 2);
+			int width = messages.stream().mapToInt(font::width).max().orElse(0) + 14;
+			width = max(width, font.width(title) + 2);
 			width = min(width, maxWidth);
-			int lH = font.FONT_HEIGHT + 2;
+			int lH = font.lineHeight + 2;
 			int h = lH * (messages.size() + 1);
 			int x = r - width - 2;
 			int opacity = (int) (0xFF * (overlay.background_opacity * 0.9F + 0.1F));
@@ -162,13 +162,13 @@ public class ConfigHotKeyOverlay {
 		private void drawStringTrimmed(
 		  MatrixStack mStack, ITextComponent text, int width, float x, float y, int color
 		) {
-			FontRenderer font = Minecraft.getInstance().fontRenderer;
-			IReorderingProcessor line = font.trimStringToWidth(text, width).get(0);
-			font.func_238422_b_(mStack, line, x, y, color);
+			FontRenderer font = Minecraft.getInstance().font;
+			IReorderingProcessor line = font.split(text, width).get(0);
+			font.draw(mStack, line, x, y, color);
 		}
 		
 		private int getHeight() {
-			int lineHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 2;
+			int lineHeight = Minecraft.getInstance().font.lineHeight + 2;
 			return lineHeight * (getMessage().size() + 1);
 		}
 		

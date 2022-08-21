@@ -44,7 +44,7 @@ public interface KeyBindMapping {
 		return getDisplayName(Style.EMPTY);
 	}
 	default ITextComponent getDisplayName(TextFormatting style) {
-		return getDisplayName(Style.EMPTY.applyFormatting(style));
+		return getDisplayName(Style.EMPTY.applyFormat(style));
 	}
 	ITextComponent getDisplayName(Style style);
 	KeyBindMapping copy();
@@ -123,7 +123,7 @@ public interface KeyBindMapping {
 		}
 		
 		@Override public boolean isActive() {
-			return this == ALL || (Minecraft.getInstance().currentScreen == null) == (this == GAME);
+			return this == ALL || (Minecraft.getInstance().screen == null) == (this == GAME);
 		}
 		
 		@Override public boolean conflictsWith(KeyBindContext other) {

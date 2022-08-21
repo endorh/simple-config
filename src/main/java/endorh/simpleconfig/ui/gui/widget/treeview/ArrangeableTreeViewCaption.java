@@ -94,9 +94,9 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		int x = tree.getX() + pad, y = tree.getY() + pad;
 		int height = getHeight();
 		boolean focused = tree.isFocusedCaption();
-		FontRenderer font = Minecraft.getInstance().fontRenderer;
+		FontRenderer font = Minecraft.getInstance().font;
 		for (IPositionableRenderable control: controls) {
-			if (!focused || control != getListener()) control.setFocused(false);
+			if (!focused || control != getFocused()) control.setFocused(false);
 			control.setPosition(x, y);
 			control.render(mStack, mouseX, mouseY, delta);
 			x += control.getWidth() + 2;
@@ -107,7 +107,7 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		for (IPositionableRenderable control: Lists.reverse(rightControls)) {
 			x = max(x - control.getWidth() - 2, minX);
 			if (!skip) {
-				if (!focused || control != getListener()) control.setFocused(false);
+				if (!focused || control != getFocused()) control.setFocused(false);
 				control.setPosition(x, y);
 				control.render(mStack, mouseX, mouseY, delta);
 				if (x <= minX) skip = true;
@@ -118,13 +118,13 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		}
 		int maxX = x;
 		if (maxX - minX > 16) {
-			font.func_238418_a_(
-			  getTitle(), minX + 4, y + (height - font.FONT_HEIGHT) / 2,
+			font.drawWordWrap(
+			  getTitle(), minX + 4, y + (height - font.lineHeight) / 2,
 			  maxX - minX - 8, getTitleColor());
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 }

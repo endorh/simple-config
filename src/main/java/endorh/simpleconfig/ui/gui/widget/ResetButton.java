@@ -60,7 +60,7 @@ public class ResetButton extends MultiFunctionImageButton
 	public ResetButton(AbstractConfigField<?> entry) {
 		super(
 		  0, 0, 20, 20, Buttons.RESET, ButtonAction.of(b -> {}),
-		  NarratorChatListener.EMPTY);
+		  NarratorChatListener.NO_TITLE);
 		this.entry = entry;
 		defaultActivePredicate = this::shouldBeActive;
 	}
@@ -72,7 +72,7 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		if (dragging) {
-			if (Minecraft.getInstance().fontRenderer.getBidiFlag())
+			if (Minecraft.getInstance().font.isBidirectional())
 				overlay.setBounds(x - 4, y - 4, 2 * width + 48, height + 8);
 			else overlay.setBounds(x - width - 44, y - 4, 2 * width + 48, height + 8);
 		} else if (confirming) {
@@ -130,15 +130,15 @@ public class ResetButton extends MultiFunctionImageButton
 		if (!shouldSafeGuard() || confirming) {
 			confirming = false;
 			if (onPress(this, button)) {
-				playDownSound(Minecraft.getInstance().getSoundHandler());
+				playDownSound(Minecraft.getInstance().getSoundManager());
 				return true;
 			} else if (button != 0 && onPress(this, 0)) {
-				playDownSound(Minecraft.getInstance().getSoundHandler());
+				playDownSound(Minecraft.getInstance().getSoundManager());
 				return true;
 			}
 			return false;
 		}
-		playDownSound(Minecraft.getInstance().getSoundHandler());
+		playDownSound(Minecraft.getInstance().getSoundManager());
 		confirming = true;
 		dragging = false;
 		getScreen().addOverlay(overlay, this, 20);
@@ -199,8 +199,8 @@ public class ResetButton extends MultiFunctionImageButton
 		if (entry != null) {
 			final boolean result = reset(entry, button);
 			if (result) {
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
 			}
 			return result;
 		}
@@ -241,7 +241,7 @@ public class ResetButton extends MultiFunctionImageButton
 	) {
 		if (!dragging) return false;
 		dragOffset = (int) round(mouseX - x - dragAnchor);
-		if (Minecraft.getInstance().fontRenderer.getBidiFlag())
+		if (Minecraft.getInstance().font.isBidirectional())
 			dragOffset = MathHelper.clamp(dragOffset, 0, 40 + width);
 		else dragOffset = MathHelper.clamp(dragOffset, -40 - width, 0);
 		return true;
@@ -265,7 +265,7 @@ public class ResetButton extends MultiFunctionImageButton
 		fill(mStack, area.x + 2, area.y + 2, area.getMaxX() - 2, area.getMaxY() - 2, 0xFFFF6464);
 		if (dragging) {
 			defaultIcon.renderStretch(mStack, x, y, width, height, 0);
-			if (Minecraft.getInstance().fontRenderer.getBidiFlag()) {
+			if (Minecraft.getInstance().font.isBidirectional()) {
 				Buttons.CONFIRM_DRAG_RIGHT.renderStretch(mStack, x + width, y, 40, 20);
 				defaultIcon.renderStretch(mStack, x + width + 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)

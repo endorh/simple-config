@@ -5,9 +5,9 @@ import net.minecraft.util.text.*;
 import org.jetbrains.annotations.Nullable;
 
 public class NumberTextFormatter implements ITextFormatter {
-	private Style numberStyle = Style.EMPTY.setColor(Color.fromInt(0xA0BDFF));
-	private Style punctuationStyle = Style.EMPTY.setColor(Color.fromInt(0xBDA0FF));
-	private Style errorStyle = Style.EMPTY.setColor(Color.fromInt(0xFF8080));
+	private Style numberStyle = Style.EMPTY.withColor(Color.fromRgb(0xA0BDFF));
+	private Style punctuationStyle = Style.EMPTY.withColor(Color.fromRgb(0xBDA0FF));
+	private Style errorStyle = Style.EMPTY.withColor(Color.fromRgb(0xFF8080));
 	private boolean integer;
 	
 	public NumberTextFormatter(boolean integer) {
@@ -26,26 +26,26 @@ public class NumberTextFormatter implements ITextFormatter {
 				res = append(res, new StringTextComponent(String.valueOf(c)));
 			} else if ((c == '-' || c == '+') && !seenSign) {
 				res =
-				  append(res, new StringTextComponent(String.valueOf(c)).mergeStyle(punctuationStyle));
+				  append(res, new StringTextComponent(String.valueOf(c)).withStyle(punctuationStyle));
 				seenSign = true;
 			} else if (Character.isDigit(c)) {
-				res = append(res, new StringTextComponent(String.valueOf(c))).mergeStyle(numberStyle);
+				res = append(res, new StringTextComponent(String.valueOf(c))).withStyle(numberStyle);
 				seenSign = true;
 			} else if (c == '.' && !seenDot) {
-				res = append(res, new StringTextComponent(".").mergeStyle(punctuationStyle));
+				res = append(res, new StringTextComponent(".").withStyle(punctuationStyle));
 				seenDot = true;
 			} else if (!seenExp && c == 'e' || c == 'E') {
-				res = append(res, new StringTextComponent(String.valueOf(c)).mergeStyle(punctuationStyle));
+				res = append(res, new StringTextComponent(String.valueOf(c)).withStyle(punctuationStyle));
 				seenExp = true;
 				seenSign = false;
 				seenDot = true;
 			} else {
-				res = append(res, new StringTextComponent(text.substring(i)).mergeStyle(errorStyle));
+				res = append(res, new StringTextComponent(text.substring(i)).withStyle(errorStyle));
 				break;
 			}
 			i++;
 		}
-		return res != null ? res : StringTextComponent.EMPTY.deepCopy();
+		return res != null ? res : StringTextComponent.EMPTY.copy();
 	}
 	
 	public boolean isInteger() {
@@ -83,7 +83,7 @@ public class NumberTextFormatter implements ITextFormatter {
 	private IFormattableTextComponent append(
 	  @Nullable IFormattableTextComponent tc, ITextComponent fragment
 	) {
-		if (tc == null) return fragment.deepCopy();
+		if (tc == null) return fragment.copy();
 		return tc.append(fragment);
 	}
 	

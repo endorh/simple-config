@@ -33,7 +33,7 @@ public class MultiFunctionButton extends TintedButton {
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (active && visible && clicked(mouseX, mouseY) && onPress(button)) {
-			playDownSound(Minecraft.getInstance().getSoundHandler());
+			playDownSound(Minecraft.getInstance().getSoundManager());
 			return true;
 		}
 		return false;
@@ -46,10 +46,10 @@ public class MultiFunctionButton extends TintedButton {
 			} else {
 				int button = Screen.hasControlDown()? 2 : Screen.hasShiftDown()? 1 : 0;
 				if (onPress(button)) {
-					playDownSound(Minecraft.getInstance().getSoundHandler());
+					playDownSound(Minecraft.getInstance().getSoundManager());
 					return true;
 				} else if (button != 0 && onPress(0)) {
-					playDownSound(Minecraft.getInstance().getSoundHandler());
+					playDownSound(Minecraft.getInstance().getSoundManager());
 					return true;
 				}
 			}

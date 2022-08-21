@@ -156,7 +156,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			  cellWidth, nestedEntry.getCaptionHeight(), mouseX, mouseY, isSelected, delta);
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> children() {
 			return Collections.singletonList(nestedEntry);
 		}
 		
@@ -229,14 +229,14 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return false;
 	}
 	
-	@Override public void setListener(IGuiEventListener listener) {
-		if (getEventListeners().contains(listener)) {
-			super.setListener(listener);
+	@Override public void setFocused(IGuiEventListener listener) {
+		if (children().contains(listener)) {
+			super.setFocused(listener);
 		} else {
 			for (NestedListCell<T, Inner> cell : cells) {
 				if (cell.nestedEntry == listener) {
-					super.setListener(cell);
-					cell.setListener(listener);
+					super.setFocused(cell);
+					cell.setFocused(listener);
 					break;
 				}
 			}

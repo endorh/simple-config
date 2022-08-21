@@ -58,8 +58,8 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override public boolean escapeKeyPressed() {
-		if (getListener() != cancelButton) {
-			setListener(cancelButton);
+		if (getFocused() != cancelButton) {
+			setFocused(cancelButton);
 		} else cancel(false);
 		return true;
 	}
@@ -104,12 +104,12 @@ public class ProgressDialog extends ConfirmDialog {
 		final StackTraceElement[] trace = e.getStackTrace();
 		final List<ITextComponent> l = Lists.newArrayList(
 		  new StringTextComponent(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage())
-			 .mergeStyle(TextFormatting.RED));
+			 .withStyle(TextFormatting.RED));
 		if (trace.length > 0)
-			l.add(new StringTextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).mergeStyle(TextFormatting.RED));
+			l.add(new StringTextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).withStyle(TextFormatting.RED));
 		if (e.getCause() != null) {
 			final List<ITextComponent> c = renderException(e.getCause());
-			c.set(0, new StringTextComponent("caused by: ").mergeStyle(TextFormatting.RED)
+			c.set(0, new StringTextComponent("caused by: ").withStyle(TextFormatting.RED)
 			  .append(c.get(0)));
 			l.addAll(c);
 		}
@@ -129,7 +129,7 @@ public class ProgressDialog extends ConfirmDialog {
 		int ty = y + 4;
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
-				font.func_238407_a_(mStack, l, tx, ty, bodyColor);
+				font.drawShadow(mStack, l, tx, ty, bodyColor);
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;
@@ -213,7 +213,7 @@ public class ProgressDialog extends ConfirmDialog {
 	
 	protected List<ITextComponent> decorateError(List<ITextComponent> error) {
 		return error.stream()
-		  .map(t -> t.deepCopy().mergeStyle(TextFormatting.RED))
+		  .map(t -> t.copy().withStyle(TextFormatting.RED))
 		  .collect(Collectors.toList());
 	}
 	

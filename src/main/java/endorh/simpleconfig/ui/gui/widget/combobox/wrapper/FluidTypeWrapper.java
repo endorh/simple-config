@@ -33,8 +33,8 @@ public class FluidTypeWrapper extends RegistryObjectTypeWrapper<Fluid> {
 	  int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (element != null) {
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(
-			  new ItemStack(element.getFilledBucket()), x + 2, y + 2);
+			Minecraft.getInstance().getItemRenderer().renderGuiItem(
+			  new ItemStack(element.getBucket()), x + 2, y + 2);
 		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 	}
 }

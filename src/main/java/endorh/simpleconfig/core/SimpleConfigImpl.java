@@ -351,7 +351,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 			if (player != null) {
 				player.sendMessage(new TranslationTextComponent(
 				  "simpleconfig.config.msg.client_changes_require_restart"
-				).mergeStyle(TextFormatting.GOLD), Util.DUMMY_UUID);
+				).withStyle(TextFormatting.GOLD), Util.NIL_UUID);
 			}
 		}
 	}
@@ -445,7 +445,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	}
 	
 	protected ITextComponent getTitle() {
-		if (I18n.hasKey(defaultTitle))
+		if (I18n.exists(defaultTitle))
 			return new TranslationTextComponent(defaultTitle);
 		return new TranslationTextComponent(
 		  "simpleconfig.config.category." + getType().name().toLowerCase());
@@ -504,7 +504,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 			category.setTitle(getTitle());
 			getFilePath().ifPresent(category::setContainingFile);
 			category.setDescription(
-			  () -> I18n.hasKey(tooltip)
+			  () -> I18n.exists(tooltip)
 			        ? Optional.of(splitTtc(tooltip).toArray(new ITextComponent[0]))
 			        : Optional.empty());
 			if (background != null)

@@ -458,7 +458,7 @@ public class DemoConfigCategory {
 		            .suggest("Groups", "can", "hold", "entries", "in", "their", "captions"))
 		          // Text entries can also receive format arguments if they
 		          //   are defined by name instead of passing an ITextComponent
-		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).mergeStyle(TextFormatting.GRAY))
+		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).withStyle(TextFormatting.GRAY))
 		          // Any entry can be made non-persistent, by calling .temp()
 		          //   Non-persistent entries do not appear in the config file
 		          //   and are reset on every restart
@@ -472,8 +472,8 @@ public class DemoConfigCategory {
 		          .add("ignored_bool", bool(false).ignored())
 		          // Button entries can execute any arbitrary action
 		          .add("action_button", button(
-		            () -> Util.getOSType().openFile(
-		              Minecraft.getInstance().gameDir.toPath().resolve("options.txt").toFile())
+		            () -> Util.getPlatform().openFile(
+		              Minecraft.getInstance().gameDirectory.toPath().resolve("options.txt").toFile())
 		          ).label("chat.file.open"))
 		          // A button may be added to any entry type
 		          //   However, this makes the entry not persistent
@@ -542,12 +542,12 @@ public class DemoConfigCategory {
 		       // Format arguments may be suppliers, which will be evaluated before
 		       //   being filled in.
 		       .text("open_file", (Supplier<ITextComponent>) () ->
-			      ttc(prefix("text.mod_config_file")).modifyStyle(style -> style
-				     .setFormatting(TextFormatting.DARK_AQUA)
-				     .setClickEvent(new ClickEvent(
+			      ttc(prefix("text.mod_config_file")).withStyle(style -> style
+				     .withColor(TextFormatting.DARK_AQUA)
+				     .withClickEvent(new ClickEvent(
 				       ClickEvent.Action.OPEN_FILE,
 				       CLIENT_CONFIG.getFilePath().map(Path::toString).orElse("")))
-				     .setHoverEvent(new HoverEvent(
+				     .withHoverEvent(new HoverEvent(
 				       // "chat.file.open" does not actually exist in minecraft (yet),
 				       // I add it in my translations because I feel it's a fair common
 				       // translation key to have. Feel free to use it or translate it.
@@ -599,7 +599,7 @@ public class DemoConfigCategory {
 		       //   into separate lines, so think if it's really necessary
 		       .add("dynamic_tooltip", string("Steve")
 			      .tooltip(s -> asList(
-				     ttc(prefix("text.hello"), stc(s).mergeStyle(TextFormatting.DARK_AQUA)))))
+				     ttc(prefix("text.hello"), stc(s).withStyle(TextFormatting.DARK_AQUA)))))
 		       // Any value can be marked as requiring a restart to be effective
 		       //   Entire groups and categories can be marked as well
 		       .add("restart_bool", bool(false).restart())
@@ -621,8 +621,8 @@ public class DemoConfigCategory {
 		       .add("enable_switch", bool(false))
 		       .add("enable_test", string("text").editable(g -> g.getGUIBoolean("enable_switch"))))
 		  .text("end", new TranslationTextComponent("simpleconfig.text.wiki")
-		    .modifyStyle(style -> style.setFormatting(TextFormatting.AQUA)
-		      .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
+		    .withStyle(style -> style.withColor(TextFormatting.AQUA)
+		      .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
 		  // Finally, we may manually set a baker method
 		  //   for this config/category/group
 		  // The baker method will receive the built config/category/group

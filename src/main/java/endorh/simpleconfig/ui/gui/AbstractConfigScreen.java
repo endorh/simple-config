@@ -162,16 +162,16 @@ public abstract class AbstractConfigScreen extends Screen
 		float tg = (float) (to >> 8 & 0xFF) / 255F;
 		float tb = (float) (to & 0xFF) / 255F;
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bb = tessellator.getBuffer();
+		BufferBuilder bb = tessellator.getBuilder();
 		bb.begin(7, DefaultVertexFormats.POSITION_COLOR);
 		// @formatter:off
-		final Matrix4f m = mStack.getLast().getMatrix();
-		bb.pos(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
-		bb.pos(m, (float) xStart, (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
-		bb.pos(m, (float) xStart, (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
-		bb.pos(m, (float) xEnd,   (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
+		final Matrix4f m = mStack.last().pose();
+		bb.vertex(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
+		bb.vertex(m, (float) xStart, (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
+		bb.vertex(m, (float) xStart, (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
+		bb.vertex(m, (float) xEnd,   (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
 		// @formatter:on
-		tessellator.draw();
+		tessellator.end();
 	}
 	
 	public static void drawBorderRect(
@@ -309,7 +309,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public boolean isTransparentBackground() {
-		return transparentBackground && Minecraft.getInstance().world != null;
+		return transparentBackground && Minecraft.getInstance().level != null;
 	}
 	
 	@Internal public void setTransparentBackground(boolean transparentBackground) {
@@ -408,7 +408,7 @@ public abstract class AbstractConfigScreen extends Screen
 		save();
 		if (openOtherScreens && minecraft != null) {
 			if (closingRunnable != null) closingRunnable.run();
-			minecraft.displayGuiScreen(parent);
+			minecraft.setScreen(parent);
 		}
 	}
 	
@@ -521,7 +521,7 @@ public abstract class AbstractConfigScreen extends Screen
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (handleModalMouseClicked(mouseX, mouseY, button)) return true;
 		SearchBarWidget searchBar = getSearchBar();
-		if (searchBar.isMouseOver(mouseX, mouseY)) setListener(searchBar);
+		if (searchBar.isMouseOver(mouseX, mouseY)) setFocused(searchBar);
 		if (handleDialogsMouseClicked(mouseX, mouseY, button)
 		    || handleOverlaysMouseClicked(mouseX, mouseY, button)
 		    || getDragged() != null)
@@ -563,12 +563,12 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void playFeedbackTap(float volume) {
-		Minecraft.getInstance().getSoundHandler().play(
-		  SimpleSound.master(SimpleConfigMod.UI_TAP, volume));
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
-		Input key = InputMappings.getInputByCode(keyCode, scanCode);
+		Input key = InputMappings.getKey(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(true);
 			recomputeFocus();
@@ -617,7 +617,7 @@ public abstract class AbstractConfigScreen extends Screen
 			  }));
 		} else {
 			if (closingRunnable != null) closingRunnable.run();
-			minecraft.displayGuiScreen(parent);
+			minecraft.setScreen(parent);
 		}
 		return true;
 	}
@@ -629,7 +629,7 @@ public abstract class AbstractConfigScreen extends Screen
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
 		  edited ? new TranslationTextComponent("simpleconfig.ui.discard")
 		         : DialogTexts.GUI_CANCEL));
-		for (IGuiEventListener child : getEventListeners()) {
+		for (IGuiEventListener child : children()) {
 			if (!(child instanceof ITickableTileEntity)) continue;
 			((ITickableTileEntity) child).tick();
 		}
@@ -679,18 +679,18 @@ public abstract class AbstractConfigScreen extends Screen
 	) {
 		if (minecraft == null || isTransparentBackground()) return;
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
-		minecraft.getTextureManager().bindTexture(getBackgroundLocation());
+		BufferBuilder buffer = tessellator.getBuilder();
+		minecraft.getTextureManager().bind(getBackgroundLocation());
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-		final Matrix4f m = mStack.getLast().getMatrix();
+		final Matrix4f m = mStack.last().pose();
 		// @formatter:off
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).tex((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
-		buffer.pos(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).tex((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
-		buffer.pos(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).tex((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
-		buffer.pos(m, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f).tex((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
+		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
 		// @formatter:on
-		tessellator.draw();
+		tessellator.end();
 	}
 	
 	@Override public void renderComponentHoverEffect(
@@ -842,18 +842,18 @@ public abstract class AbstractConfigScreen extends Screen
 	  float x, float y, float w, float h, int tint
 	) {
 		float r = tint >> 16 & 0xFF, g = tint >> 8 & 0xFF, b = tint & 0xFF, a = tint >> 24;
-		Minecraft.getInstance().getTextureManager().bindTexture(texture);
+		Minecraft.getInstance().getTextureManager().bind(texture);
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
-		Matrix4f m = mStack.getLast().getMatrix();
+		BufferBuilder buffer = tessellator.getBuilder();
+		Matrix4f m = mStack.last().pose();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		// @formatter:off
-		buffer.pos(m,     x,     y, 0F).tex(     x  / tw,      y  / th).color(r, g, b, a).endVertex();
-		buffer.pos(m, x + w,     y, 0F).tex((x + w) / tw,      y  / th).color(r, g, b, a).endVertex();
-		buffer.pos(m, x + w, y + h, 0F).tex((x + w) / tw, (y + h) / th).color(r, g, b, a).endVertex();
-		buffer.pos(m,     x, y + h, 0F).tex(     x  / tw, (y + h) / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m,     x,     y, 0F).uv(     x  / tw,      y  / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m, x + w,     y, 0F).uv((x + w) / tw,      y  / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m, x + w, y + h, 0F).uv((x + w) / tw, (y + h) / th).color(r, g, b, a).endVertex();
+		buffer.vertex(m,     x, y + h, 0F).uv(     x  / tw, (y + h) / th).color(r, g, b, a).endVertex();
 		// @formatter:on
-		tessellator.draw();
+		tessellator.end();
 	}
 }

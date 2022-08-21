@@ -49,27 +49,27 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 	@Override protected @NotNull Loader prepare(@NotNull IResourceManager manager, @NotNull IProfiler profiler) {
 		Loader l = new Loader();
 		profiler.startTick();
-		for (String namespace: manager.getResourceNamespaces()) {
-			profiler.startSection(namespace);
+		for (String namespace: manager.getNamespaces()) {
+			profiler.push(namespace);
 			try {
-				for (IResource index: manager.getAllResources(new ResourceLocation(namespace, "config-presets.json"))) {
-					profiler.startSection(index.getPackName());
+				for (IResource index: manager.getResources(new ResourceLocation(namespace, "config-presets.json"))) {
+					profiler.push(index.getSourceName());
 					try (
 					  InputStream is = index.getInputStream();
 					  Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)
 					) {
-						profiler.startSection("parse");
-						Map<String, PresetsDescriptor> map = JSONUtils.fromJSONUnlenient(GSON, r, TYPE);
-						profiler.endStartSection("register");
+						profiler.push("parse");
+						Map<String, PresetsDescriptor> map = JSONUtils.fromJson(GSON, r, TYPE);
+						profiler.popPush("register");
 						map.forEach((k, v) -> l.registerPresets(namespace, k, v));
-						profiler.endSection();
+						profiler.pop();
 					} catch (RuntimeException e) {
-						LOGGER.warn("Invalid config-presets.json in resourcepack: '{}'", index.getPackName(), e);
+						LOGGER.warn("Invalid config-presets.json in resourcepack: '{}'", index.getSourceName(), e);
 					}
-					profiler.endSection();
+					profiler.pop();
 				}
 			} catch (IOException ignored) {}
-			profiler.endSection();
+			profiler.pop();
 		}
 		profiler.endTick();
 		return l;
@@ -147,23 +147,23 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			@Override public PresetsDescriptor deserialize(
 			  JsonElement json, java.lang.reflect.Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
-				JsonObject obj = JSONUtils.getJsonObject(json, "mod config presets");
+				JsonObject obj = JSONUtils.convertToJsonObject(json, "mod config presets");
 				Optional<String> first = obj.entrySet().stream().map(Entry::getKey)
 				  .filter(k -> !"client".equals(k) && !"server".equals(k) && !"common".equals(k)).findFirst();
 				if (first.isPresent())
 					throw new JsonSyntaxException("Unknown preset type: " + first.get());
-				JsonArray client = JSONUtils.getJsonArray(obj, "client", new JsonArray());
-				JsonArray common = JSONUtils.getJsonArray(obj, "common", new JsonArray());
-				JsonArray server = JSONUtils.getJsonArray(obj, "server", new JsonArray());
+				JsonArray client = JSONUtils.getAsJsonArray(obj, "client", new JsonArray());
+				JsonArray common = JSONUtils.getAsJsonArray(obj, "common", new JsonArray());
+				JsonArray server = JSONUtils.getAsJsonArray(obj, "server", new JsonArray());
 				Set<String> clientPresets = new HashSet<>();
 				Set<String> commonPresets = new HashSet<>();
 				Set<String> serverPresets = new HashSet<>();
 				if (client != null) for (JsonElement item: client)
-					clientPresets.add(JSONUtils.getString(item, "preset name"));
+					clientPresets.add(JSONUtils.convertToString(item, "preset name"));
 				if (common != null) for (JsonElement item: common)
-					commonPresets.add(JSONUtils.getString(item, "preset name"));
+					commonPresets.add(JSONUtils.convertToString(item, "preset name"));
 				if (server != null) for (JsonElement item: server)
-					serverPresets.add(JSONUtils.getString(item, "preset name"));
+					serverPresets.add(JSONUtils.convertToString(item, "preset name"));
 				return new PresetsDescriptor(clientPresets, commonPresets, serverPresets);
 			}
 			

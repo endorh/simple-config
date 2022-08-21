@@ -62,22 +62,22 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 	}
 	
 	public static class Serializer implements IArgumentSerializer<SimpleConfigKeyArgumentType> {
-		@Override public void write(@NotNull SimpleConfigKeyArgumentType arg, @NotNull PacketBuffer buf) {
+		@Override public void serializeToNetwork(@NotNull SimpleConfigKeyArgumentType arg, @NotNull PacketBuffer buf) {
 			buf.writeBoolean(arg.modId != null);
-			if (arg.modId != null) buf.writeString(arg.modId);
+			if (arg.modId != null) buf.writeUtf(arg.modId);
 			buf.writeBoolean(arg.type != null);
-			if (arg.type != null) buf.writeEnumValue(arg.type);
+			if (arg.type != null) buf.writeEnum(arg.type);
 			buf.writeBoolean(arg.includeGroups);
 		}
 		
-		@Override public @NotNull SimpleConfigKeyArgumentType read(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigKeyArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
 			return new SimpleConfigKeyArgumentType(
-			  buf.readBoolean()? buf.readString(32767) : null,
-			  buf.readBoolean()? buf.readEnumValue(EditType.class) : null,
+			  buf.readBoolean()? buf.readUtf(32767) : null,
+			  buf.readBoolean()? buf.readEnum(EditType.class) : null,
 			  buf.readBoolean());
 		}
 		
-		@Override public void write(@NotNull SimpleConfigKeyArgumentType arg, @NotNull JsonObject obj) {
+		@Override public void serializeToJson(@NotNull SimpleConfigKeyArgumentType arg, @NotNull JsonObject obj) {
 			obj.addProperty("modId", arg.modId);
 			obj.addProperty("type", arg.type != null? arg.type.getAlias() : null);
 			obj.addProperty("includeGroups", arg.includeGroups);

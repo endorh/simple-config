@@ -66,7 +66,7 @@ public class SimpleConfigModConfig extends ModConfig {
 		  @NotNull IStage stage, @NotNull IResourceManager resourceManager, @NotNull IProfiler preparationsProfiler,
 		  @NotNull IProfiler reloadProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor
 		) {
-			return stage.markCompleteAwaitingOthers(Unit.INSTANCE)
+			return stage.wait(Unit.INSTANCE)
 			  .thenRunAsync(
 			    SelectiveReloadStateHandler.INSTANCE.get().test(VanillaResourceType.LANGUAGES)
 				 ? SimpleConfigImpl::updateAllFileTranslations

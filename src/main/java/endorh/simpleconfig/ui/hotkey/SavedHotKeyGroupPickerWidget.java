@@ -132,7 +132,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 	@Override public void setFocused(boolean focused) {
 		if (focused == isFocused()) return;
 		if (focused) {
-			setListener(selector);
+			setFocused(selector);
 			selector.setFocused(true);
 		} else WidgetUtils.forceUnFocus(this);
 	}
@@ -159,7 +159,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			String rr = group instanceof ResourceSavedHotKeyGroup? "resource" :
 			            group instanceof RemoteSavedHotKeyGroup? "remote" : "local";
 			IFormattableTextComponent displayName = new StringTextComponent(group.getName())
-			  .mergeStyle(TextFormatting.LIGHT_PURPLE);
+			  .withStyle(TextFormatting.LIGHT_PURPLE);
 			getScreen().addDialog(ProgressDialog.create(
 			  new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.loading"),
 			  group.load().thenAccept(g -> {
@@ -230,7 +230,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		LocalSavedHotKeyGroup group = SavedHotKeyGroup.local(selector.getText());
 		String name = group.getName();
 		IFormattableTextComponent displayName = new StringTextComponent(name)
-		  .mergeStyle(TextFormatting.LIGHT_PURPLE);
+		  .withStyle(TextFormatting.LIGHT_PURPLE);
 		if (!overwrite) {
 			String oo = null;
 			if (existsGroup(name, localGroups)) oo = "local";
@@ -255,9 +255,9 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 					  "simpleconfig.ui.saved_hotkeys.saved.file",
 					  new StringTextComponent(
 					    SimpleConfigPaths.relativize(file.toPath()).toString()
-					  ).modifyStyle(s -> s.setUnderlined(true).applyFormatting(TextFormatting.BLUE)
-					    .setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("chat.copy")))
-					    .setClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, file.getAbsolutePath()))))
+					  ).withStyle(s -> s.setUnderlined(true).applyFormat(TextFormatting.BLUE)
+					    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("chat.copy")))
+					    .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, file.getAbsolutePath()))))
 				 ));
 		    }));
 	}
@@ -268,7 +268,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		RemoteSavedHotKeyGroup group = SavedHotKeyGroup.remote(selector.getText());
 		String name = group.getName();
 		IFormattableTextComponent displayName = new StringTextComponent(name)
-		  .mergeStyle(TextFormatting.LIGHT_PURPLE);
+		  .withStyle(TextFormatting.LIGHT_PURPLE);
 		if (!overwrite) {
 			String oo = null;
 			if (existsGroup(name, remoteGroups)) oo = "remote";
@@ -301,7 +301,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			WritableSavedHotKeyGroup writable = (WritableSavedHotKeyGroup) value;
 			if (writable.canWrite()) {
 				IFormattableTextComponent displayName = new StringTextComponent(writable.getName())
-				  .mergeStyle(TextFormatting.LIGHT_PURPLE);
+				  .withStyle(TextFormatting.LIGHT_PURPLE);
 				String rr = writable instanceof RemoteSavedHotKeyGroup? "remote" : "local";
 				if (confirm) {
 					getScreen().addDialog(ConfirmDialog.create(
@@ -368,7 +368,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		selector.setText(selector.getText());
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 	
@@ -427,14 +427,14 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			String name = getName();
 			if (name.contains(":")) {
 				String[] split = HYPHEN.split(name, 2);
-				return new StringTextComponent(split[0]).mergeStyle(TextFormatting.GRAY)
-				  .append(new StringTextComponent(":").mergeStyle(TextFormatting.DARK_GRAY).mergeStyle(TextFormatting.BOLD))
-				  .append(new StringTextComponent(split[1]).mergeStyle(getStyle()));
+				return new StringTextComponent(split[0]).withStyle(TextFormatting.GRAY)
+				  .append(new StringTextComponent(":").withStyle(TextFormatting.DARK_GRAY).withStyle(TextFormatting.BOLD))
+				  .append(new StringTextComponent(split[1]).withStyle(getStyle()));
 			}
-			return new StringTextComponent(name).mergeStyle(getStyle());
+			return new StringTextComponent(name).withStyle(getStyle());
 		}
 		public Style getStyle() {
-			return Style.EMPTY.applyFormatting(TextFormatting.WHITE);
+			return Style.EMPTY.applyFormat(TextFormatting.WHITE);
 		}
 		public Icon getIcon() {
 			return Icon.EMPTY;
@@ -502,7 +502,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@Override public Style getStyle() {
-			return Style.EMPTY.applyFormatting(TextFormatting.GREEN);
+			return Style.EMPTY.applyFormat(TextFormatting.GREEN);
 		}
 		@Override public Icon getIcon() {
 			return Hotkeys.LOCAL_HOTKEY;
@@ -531,7 +531,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@Override public Style getStyle() {
-			return Style.EMPTY.applyFormatting(TextFormatting.AQUA);
+			return Style.EMPTY.applyFormat(TextFormatting.AQUA);
 		}
 		@Override public Icon getIcon() {
 			return Hotkeys.REMOTE_HOTKEY;
@@ -564,7 +564,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@Override public Style getStyle() {
-			return Style.EMPTY.applyFormatting(TextFormatting.DARK_GREEN);
+			return Style.EMPTY.applyFormat(TextFormatting.DARK_GREEN);
 		}
 		@Override public Icon getIcon() {
 			return Hotkeys.RESOURCE_HOTKEY;

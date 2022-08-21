@@ -50,7 +50,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 		boolean started = false;
 		final List<ITextComponent> siblings = text.getSiblings();
 		IFormattableTextComponent res = new StringTextComponent("");
-		String str = text.getUnformattedComponentText();
+		String str = text.getContents();
 		if (start < str.length()) {
 			started = true;
 			res = res.append(new StringTextComponent(
@@ -59,7 +59,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 		}
 		int o = str.length();
 		for (ITextComponent sibling : siblings) {
-			str = sibling.getUnformattedComponentText();
+			str = sibling.getContents();
 			if (started || start - o < str.length()) {
 				res = res.append(new StringTextComponent(
 				  str.substring(started ? 0 : start - o, Math.min(str.length(), end - o))
@@ -179,7 +179,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 			  if (set.add(value)) {
 				  final String name = p.getRight();
 				  final int i = name.indexOf(query);
-				  names.add(getNonMatch(typeWrapper, value, name, 0, name.substring(0, i)).deepCopy()
+				  names.add(getNonMatch(typeWrapper, value, name, 0, name.substring(0, i)).copy()
 					           .append(getMatch(typeWrapper, value, name, 0, name, i, query))
 					           .append(getNonMatch(typeWrapper, value, name, i + query.length(),
 					                               name.substring(i + query.length()))));
@@ -189,7 +189,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	}
 	
 	protected Style getMatchStyle() {
-		return Style.EMPTY.createStyleFromFormattings(TextFormatting.BLUE);
+		return Style.EMPTY.applyFormats(TextFormatting.BLUE);
 	}
 	
 	protected ITextComponent getMatch(

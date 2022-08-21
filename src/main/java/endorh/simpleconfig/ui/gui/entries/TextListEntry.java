@@ -40,7 +40,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	  ITextComponent fieldName, Supplier<ITextComponent> textSupplier, int color
 	) {
 		super(fieldName);
-		font = Minecraft.getInstance().fontRenderer;
+		font = Minecraft.getInstance().font;
 		savedWidth = -1;
 		savedX = -1;
 		savedY = -1;
@@ -71,7 +71,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		    || !Objects.equals(text, savedText)) {
 			savedText = text;
 			wrappedLines =
-			  font.trimStringToWidth(text, entryWidth);
+			  font.split(text, entryWidth);
 			savedWidth = entryWidth;
 			savedX = x;
 			savedY = y;
@@ -79,9 +79,9 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		int yy = y + 4;
 		int lineHeight = getLineHeightWithMargin();
 		for (IReorderingProcessor string : wrappedLines) {
-			Minecraft.getInstance().fontRenderer.func_238407_a_(
+			Minecraft.getInstance().font.drawShadow(
 			  mStack, string, (float) x, (float) yy, color);
-			Objects.requireNonNull(Minecraft.getInstance().fontRenderer);
+			Objects.requireNonNull(Minecraft.getInstance().font);
 			yy += lineHeight;
 		}
 		Style style = getTextAt(mouseX, mouseY);
@@ -91,7 +91,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	}
 	
 	public int getLineHeight() {
-		return Minecraft.getInstance().fontRenderer.FONT_HEIGHT;
+		return Minecraft.getInstance().font.lineHeight;
 	}
 	
 	public int getLineHeightWithMargin() {
@@ -129,7 +129,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 			if (textX >= 0 && textY >= 0 && textX <= savedWidth &&
 			    textY < lineHeight * lineCount + lineCount && (line = textY / lineHeight) < wrappedLines.size()) {
 				IReorderingProcessor orderedText = wrappedLines.get(line);
-				return font.getCharacterManager().func_243239_a(orderedText, textX);
+				return font.getSplitter().componentStyleAtWidth(orderedText, textX);
 			}
 		}
 		return null;
@@ -143,7 +143,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		int index = str.indexOf(matchedText);
 		if (index == -1) return text;
 		return SimpleConfigTextUtil.applyStyle(
-		  text.deepCopy(), isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW,
+		  text.copy(), isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW,
 		  index, index + matchedText.length());
 	}
 	

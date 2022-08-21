@@ -40,7 +40,7 @@ public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, Com
 	}
 	
 	@Override protected String serialize(CompoundNBT value) {
-		return STYLE_COMPONENT.matcher(value.toFormattedComponent().getString()).replaceAll("");
+		return STYLE_COMPONENT.matcher(value.getPrettyDisplay().getString()).replaceAll("");
 	}
 	
 	@Override protected @Nullable CompoundNBT deserialize(String value) {

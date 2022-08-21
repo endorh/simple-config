@@ -45,7 +45,7 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 			try {
 				configData.load();
 			} catch (ParsingException ex) {
-				throw new ReportedException(CrashReport.makeCrashReport(
+				throw new ReportedException(CrashReport.forThrowable(
 				  ex, "Error reading config file " + c.getFileName()));
 			}
 			LOGGER.debug(CONFIG, "Loaded YAML config file {}", configPath.toString());

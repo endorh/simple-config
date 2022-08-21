@@ -59,7 +59,7 @@ public interface ConfigFieldBuilder {
 	default ColorFieldBuilder startColorField(
 	  ITextComponent fieldNameKey, net.minecraft.util.text.Color color
 	) {
-		return this.startColorField(fieldNameKey, color.getColor());
+		return this.startColorField(fieldNameKey, color.getValue());
 	}
 	default ColorFieldBuilder startColorField(ITextComponent fieldNameKey, Color color) {
 		return this.startColorField(fieldNameKey, color.getColor() & 0xFFFFFF);

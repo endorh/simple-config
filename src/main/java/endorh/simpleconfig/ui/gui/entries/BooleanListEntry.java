@@ -38,7 +38,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		setOriginal(value);
 		displayedValue = value;
 		buttonWidget = new Button(
-		  0, 0, 150, 20, NarratorChatListener.EMPTY, widget -> {
+		  0, 0, 150, 20, NarratorChatListener.NO_TITLE, widget -> {
 			  if (!isFocused()) {
 				  preserveState();
 				  setFocused(true);

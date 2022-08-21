@@ -134,7 +134,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		IOverlayCapableContainer container = getContainer();
 		Rectangle area = overlay.getArea();
 		Rectangle parent = parentRectangle.isEmpty()
-		                   ? new Rectangle(x, y, getWidth(), getHeightRealms())
+		                   ? new Rectangle(x, y, getWidth(), getHeight())
 		                   : parentRectangle;
 		int w = container.getScreenWidth();
 		int h = container.getScreenHeight();
@@ -267,8 +267,8 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 			Rectangle area = getArea();
 			drawBorderRect(mStack, area, 1, 0xEEEEEEEE, 0xEE242424);
-			FontRenderer font = Minecraft.getInstance().fontRenderer;
-			int to = 10 - (font.FONT_HEIGHT + 1) / 2;
+			FontRenderer font = Minecraft.getInstance().font;
+			int to = 10 - (font.lineHeight + 1) / 2;
 			int xx = area.x + 4;
 			int yy = area.y + 4;
 			int bw = 70;
@@ -325,7 +325,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		}
 		
 		protected void renderTooltip(List<ITextComponent> tooltip, int mouseX, int mouseY) {
-			Screen screen = Minecraft.getInstance().currentScreen;
+			Screen screen = Minecraft.getInstance().screen;
 			if (screen instanceof IMultiTooltipScreen)
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
 				  Point.of(mouseX, mouseY), tooltip));

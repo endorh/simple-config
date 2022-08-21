@@ -123,7 +123,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		label.setFocused(isFocused() && getListener() == label);
+		label.setFocused(isFocused() && getFocused() == label);
 		super.renderEntry(
 		  mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		RenderSystem.color4f(1F, 1F, 1F, 1F);
@@ -143,7 +143,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 				if (entry.isShown() && entry != captionEntry) {
 					entry.render(
 					  mStack, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
-					  mouseX, mouseY, isHovered && getListener() == entry, delta);
+					  mouseX, mouseY, isHovered && getFocused() == entry, delta);
 					yy += entry.getItemHeight();
 				}
 			}
@@ -193,7 +193,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 		for (AbstractConfigField<?> entry: heldEntries)
 			entry.updateFocused(
 			  (isExpanded() || entry == captionEntry)
-			  && isFocused && getListener() == entry);
+			  && isFocused && getFocused() == entry);
 	}
 	
 	@Override public boolean isExpanded() {
@@ -217,7 +217,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!heldEntries.contains(listener))
 			return 0;
@@ -234,7 +234,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		if (listener instanceof AbstractConfigListEntry<?>)
@@ -346,7 +346,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getListener() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
+		if (getFocused() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
 			setExpanded(false, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;
@@ -424,7 +424,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 			entry.applyFocusHighlight(color, length);
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> children() {
 			return listeners;
 		}
 		
@@ -435,10 +435,10 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 			entry.setDragging(dragging);
 		}
 		
-		@Nullable @Override public IGuiEventListener getListener() {
+		@Nullable @Override public IGuiEventListener getFocused() {
 			return entry;
 		}
-		@Override public void setListener(@Nullable IGuiEventListener listener) {}
+		@Override public void setFocused(@Nullable IGuiEventListener listener) {}
 	}
 	
 	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {

@@ -75,20 +75,20 @@ public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 	
 	public static class Serializer implements IArgumentSerializer<SimpleConfigTypeArgumentType> {
 		@Override
-		public void write(@NotNull SimpleConfigTypeArgumentType arg, @NotNull PacketBuffer buf) {
+		public void serializeToNetwork(@NotNull SimpleConfigTypeArgumentType arg, @NotNull PacketBuffer buf) {
 			buf.writeBoolean(arg.modId != null);
-			if (arg.modId != null) buf.writeString(arg.modId);
+			if (arg.modId != null) buf.writeUtf(arg.modId);
 			buf.writeBoolean(arg.isRemote);
 		}
 		
-		@Override public @NotNull SimpleConfigTypeArgumentType read(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigTypeArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
 			return new SimpleConfigTypeArgumentType(
-			  buf.readBoolean()? buf.readString(32767) : null,
+			  buf.readBoolean()? buf.readUtf(32767) : null,
 			  buf.readBoolean());
 		}
 		
 		@Override
-		public void write(@NotNull SimpleConfigTypeArgumentType arg, @NotNull JsonObject obj) {
+		public void serializeToJson(@NotNull SimpleConfigTypeArgumentType arg, @NotNull JsonObject obj) {
 			obj.addProperty("modId", arg.modId);
 			obj.addProperty("isRemote", arg.isRemote);
 		}

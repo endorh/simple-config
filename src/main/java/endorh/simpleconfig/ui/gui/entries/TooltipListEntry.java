@@ -108,7 +108,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
 		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
-			 component -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
+			 component -> Minecraft.getInstance().font.split(
             component, (int) (getScreen().width * advanced.tooltip_max_width)).stream())
 		  .toArray(IReorderingProcessor[]::new);
 	}
@@ -182,9 +182,9 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 				int j = i + matchedTooltipText.length();
 				List<ITextComponent> tt = Lists.newArrayList();
 				Style style = Style.EMPTY
-				  .applyFormatting(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
+				  .applyFormat(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
 				  // .applyFormatting(TextFormatting.BOLD)
-				  .applyFormatting(TextFormatting.UNDERLINE);
+				  .applyFormat(TextFormatting.UNDERLINE);
 				for (ITextComponent line: tooltip) {
 					final int l = getUnformattedString(line).length();
 					int a = MathHelper.clamp(i, 0, l);
@@ -192,7 +192,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 					IFormattableTextComponent ln;
 					if (a != b) {
 						ln = SimpleConfigTextUtil.applyStyle(line, style, a, b);
-					} else ln = line.deepCopy();
+					} else ln = line.copy();
 					tt.add(ln);
 					i -= l + 1;
 					j -= l + 1;

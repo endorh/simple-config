@@ -126,17 +126,17 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		ExtendedKeyBindSettings settings = getSettings();
 		IFormattableTextComponent joiner = new StringTextComponent(
 		  settings.isOrderSensitive()? ">" : "+"
-		).mergeStyle(TextFormatting.GRAY);
+		).withStyle(TextFormatting.GRAY);
 		if (requiredKeys.isEmpty()) return StringTextComponent.EMPTY;
 		IFormattableTextComponent r = new StringTextComponent("");
 		int first = requiredKeys.getInt(0);
 		boolean matchByChar = settings.isMatchByChar();
 		String firstChar = charMap != null? charMap.get(first) : null;
-		r.append((matchByChar && firstChar != null? formatKey(firstChar) : formatKey(first)).mergeStyle(style));
+		r.append((matchByChar && firstChar != null? formatKey(firstChar) : formatKey(first)).withStyle(style));
 		for (int i = 1; i < requiredKeys.size(); i++) {
 			int k = requiredKeys.getInt(i);
 			String ch = charMap != null? charMap.get(k) : null;
-			r.append(joiner).append((matchByChar && ch != null? formatKey(ch) : formatKey(k)).mergeStyle(style));
+			r.append(joiner).append((matchByChar && ch != null? formatKey(ch) : formatKey(k)).withStyle(style));
 		}
 		return r;
 	}
@@ -258,14 +258,14 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	protected IFormattableTextComponent formatKey(int key) {
 		return new StringTextComponent(WordUtils.capitalize(
 		  Keys.getDisplayNameForKey(key).getString()
-		)).modifyStyle(s -> s.setColor(Color.fromInt(
+		)).withStyle(s -> s.withColor(Color.fromRgb(
 		  Keys.isMouseKey(key) || Keys.isScrollKey(key)
 		  ? 0xAAAAFF : Keys.isScanCode(key)? 0xAAFFFF : Keys.isModifier(key)? 0xEEEEEE : 0xFFFFFF)));
 	}
 	
 	protected IFormattableTextComponent formatKey(String key) {
 		return new StringTextComponent(WordUtils.capitalize(key))
-		  .mergeStyle(TextFormatting.ITALIC);
+		  .withStyle(TextFormatting.ITALIC);
 	}
 	
 	@Override public boolean equals(Object o) {

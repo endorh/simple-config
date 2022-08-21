@@ -22,7 +22,7 @@ public class QueuedTooltip implements Tooltip {
 	
 	public static QueuedTooltip create(Point location, List<ITextComponent> text) {
 		//noinspection unchecked
-		return new QueuedTooltip(location, LanguageMap.getInstance().func_244260_a(
+		return new QueuedTooltip(location, LanguageMap.getInstance().getVisualOrder(
 		  (List<ITextProperties>) (List<?>) text));
 	}
 	
@@ -35,7 +35,7 @@ public class QueuedTooltip implements Tooltip {
 	}
 	
 	public static QueuedTooltip create(Point location, ITextProperties... text) {
-		return new QueuedTooltip(location, LanguageMap.getInstance().func_244260_a(Arrays.asList(text)));
+		return new QueuedTooltip(location, LanguageMap.getInstance().getVisualOrder(Arrays.asList(text)));
 	}
 	
 	@Override

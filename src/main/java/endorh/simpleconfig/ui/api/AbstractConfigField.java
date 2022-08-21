@@ -265,25 +265,25 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	public ITextComponent getDisplayedTitle() {
 		boolean hasError = hasError();
 		boolean isEdited = isEdited();
-		IFormattableTextComponent text = getTitle().deepCopy();
+		IFormattableTextComponent text = getTitle().copy();
 		if (matchedText != null && !matchedText.isEmpty()) {
 			final String title = getUnformattedString(getTitle());
 			final int i = title.indexOf(matchedText);
 			if (i != -1) {
 				text = new StringTextComponent(title.substring(0, i))
 				  .append(new StringTextComponent(title.substring(i, i + matchedText.length()))
-				            .mergeStyle(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
+				            .withStyle(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
 				            // .mergeStyle(TextFormatting.BOLD)
-				            .mergeStyle(TextFormatting.UNDERLINE))
-				  .appendString(title.substring(i + matchedText.length()));
+				            .withStyle(TextFormatting.UNDERLINE))
+				  .append(title.substring(i + matchedText.length()));
 			}
 		}
-		if (hasError) text.mergeStyle(TextFormatting.RED);
+		if (hasError) text.withStyle(TextFormatting.RED);
 		if (isEditingHotKeyAction()) {
-			if (getHotKeyActionType() == null) text.mergeStyle(TextFormatting.GRAY);
+			if (getHotKeyActionType() == null) text.withStyle(TextFormatting.GRAY);
 		} else {
-			if (isEdited) text.mergeStyle(TextFormatting.ITALIC);
-			if (!hasError && !isEdited) text.mergeStyle(TextFormatting.GRAY);
+			if (isEdited) text.withStyle(TextFormatting.ITALIC);
+			if (!hasError && !isEdited) text.withStyle(TextFormatting.GRAY);
 		}
 		return text;
 	}
@@ -362,7 +362,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 			previewingExternal = true;
 			setDisplayedValue(external);
 			if (this instanceof IExpandable) ((IExpandable) this).setExpanded(true, true);
-			setListener(null);
+			setFocused(null);
 		} else {
 			setDisplayedValue(value);
 			previewingExternal = false;
@@ -536,15 +536,15 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		if (isFocused && !isFocused()) {
 			//noinspection SuspiciousMethodCalls
 			if (!(this instanceof IEntryHolder)
-			    || !((IEntryHolder) this).getHeldEntries().contains(getListener())
+			    || !((IEntryHolder) this).getHeldEntries().contains(getFocused())
 			) preserveState();
 		}
 		setFocused(isFocused);
 		if (!isFocused) {
-			final IGuiEventListener listener = getListener();
+			final IGuiEventListener listener = getFocused();
 			if (listener instanceof Widget && ((Widget) listener).isFocused())
 				WidgetUtils.forceUnFocus(listener);
-			setListener(null);
+			setFocused(null);
 		}
 	}
 	
@@ -740,10 +740,10 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		}
 		
 		AbstractConfigField<?> p = parents.get(parents.size() - 1);
-		getEntryList().setListener(p);
+		getEntryList().setFocused(p);
 		for (int i = parents.size() - 2; i >= 0; i--) {
 			AbstractConfigField<?> n = parents.get(i);
-			p.setListener(n);
+			p.setFocused(n);
 			p = n;
 		}
 		getEntryList().scrollTo(this);
@@ -752,13 +752,13 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	protected static void playFeedbackTap(float volume) {
-		Minecraft.getInstance().getSoundHandler().play(
-		  SimpleSound.master(SimpleConfigMod.UI_TAP, volume));
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	protected static void playFeedbackClick(float volume) {
-		Minecraft.getInstance().getSoundHandler().play(
-		  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, volume));
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
 	}
 	
 	// Search
@@ -855,10 +855,10 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	protected void acquireFocus() {
-		final List<? extends IGuiEventListener> listeners = getEventListeners();
+		final List<? extends IGuiEventListener> listeners = children();
 		if (!listeners.isEmpty()) {
 			final IGuiEventListener listener = listeners.get(0);
-			setListener(listener);
+			setFocused(listener);
 			WidgetUtils.forceFocus(listener);
 		}
 	}

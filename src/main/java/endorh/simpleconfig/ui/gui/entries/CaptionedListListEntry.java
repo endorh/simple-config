@@ -67,7 +67,7 @@ public class CaptionedListListEntry<
 	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		captionEntry.renderChild(mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
-		label.setFocused(isFocused() && getListener() == label);
+		label.setFocused(isFocused() && getFocused() == label);
 		label.area.setBounds(x - 24, y, entryWidth - fieldWidth - 5, 20);
 		label.render(mStack, mouseX, mouseY, delta);
 		final ResetButton resetButton = getResetButton();
@@ -155,8 +155,8 @@ public class CaptionedListListEntry<
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		listEntry.updateFocused(isFocused && getListener() == listEntry);
-		captionEntry.updateFocused(isFocused && getListener() == captionEntry);
+		listEntry.updateFocused(isFocused && getFocused() == listEntry);
+		captionEntry.updateFocused(isFocused && getFocused() == captionEntry);
 	}
 	
 	@Override public int getExtraScrollHeight() {
@@ -188,10 +188,10 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override public int getFocusedScroll() {
-		return getListener() == listEntry? listEntry.getFocusedScroll() : 0;
+		return getFocused() == listEntry? listEntry.getFocusedScroll() : 0;
 	}
 	@Override public int getFocusedHeight() {
-		return getListener() == listEntry? listEntry.getFocusedHeight() : getCaptionHeight();
+		return getFocused() == listEntry? listEntry.getFocusedHeight() : getCaptionHeight();
 	}
 	@Override protected String seekableTooltipString() {
 		return "";
@@ -202,7 +202,7 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getListener() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
+		if (getFocused() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
 			setExpanded(false, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;

@@ -94,7 +94,7 @@ public abstract class FocusableOverlayRenderer extends FocusableGui
 		this.dragged = dragged;
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<IGuiEventListener> children() {
 		return listeners;
 	}
 	
@@ -106,10 +106,10 @@ public abstract class FocusableOverlayRenderer extends FocusableGui
 	}
 	
 	@Override public boolean isFocused() {
-		return getListener() != null;
+		return getFocused() != null;
 	}
 	@Override public void setFocused(boolean focused) {
-		setListener(focused && !listeners.isEmpty()? listeners.get(0) : null);
+		setFocused(focused && !listeners.isEmpty()? listeners.get(0) : null);
 	}
 	
 	@Override public boolean isActive() {

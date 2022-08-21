@@ -69,14 +69,14 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	@SubscribeEvent
 	public static void registerReloadListener(ParticleFactoryRegisterEvent event) {
 		IReloadableResourceManager manager = (IReloadableResourceManager) Minecraft.getInstance().getResourceManager();
-		manager.addReloadListener(JSON_HIGHLIGHTER_MANAGER);
-		manager.addReloadListener(RESOURCE_PRESET_HANDLER);
-		manager.addReloadListener(RESOURCE_HOT_KEY_GROUP_HANDLER);
+		manager.registerReloadListener(JSON_HIGHLIGHTER_MANAGER);
+		manager.registerReloadListener(RESOURCE_PRESET_HANDLER);
+		manager.registerReloadListener(RESOURCE_HOT_KEY_GROUP_HANDLER);
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
 		  "regex", RegexLexer::new, RegexParser::new, RegexParser::root));
 		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
 		  "snbt", SNBTLexer::new, SNBTParser::new, SNBTParser::root));
-		manager.addReloadListener(LANGUAGE_RELOAD_MANAGER);
+		manager.registerReloadListener(LANGUAGE_RELOAD_MANAGER);
 	}
 	
 	@SubscribeEvent
@@ -125,13 +125,13 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		}
 		
 		@OnlyIn(Dist.CLIENT) private static KeyBinding reg(String name, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrMakeInput(keyCode), CATEGORY);
+			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
 		
 		@OnlyIn(Dist.CLIENT) private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrMakeInput(keyCode), CATEGORY);
+			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}

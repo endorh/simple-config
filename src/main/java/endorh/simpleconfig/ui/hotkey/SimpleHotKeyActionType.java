@@ -56,7 +56,7 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 		} else {
 			value = String.valueOf(storage);
 		}
-		return new StringTextComponent(value).mergeStyle(TextFormatting.DARK_AQUA);
+		return new StringTextComponent(value).withStyle(TextFormatting.DARK_AQUA);
 	}
 	
 	@SuppressWarnings("unchecked") @Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> SimpleHotKeyAction<V, S> deserialize(
@@ -127,20 +127,20 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 			ITextComponent set = formatValue(entry.forCommand(v));
 			boolean change = success && !Objects.equals(prevValue, v);
 			if (success) result.set(path, entry.apply(e -> e.forActualConfig(e.forConfig(v))));
-			IFormattableTextComponent report = formatPath(entry.getPath()).appendString(" ")
+			IFormattableTextComponent report = formatPath(entry.getPath()).append(" ")
 			  .append(new TranslationTextComponent(
 				 "simpleconfig.hotkey.type.report." + getType().getTranslationKey(),
 				 getType().formatStorage(getStorage()), prev, set)
-				         .mergeStyle(change? TextFormatting.WHITE : TextFormatting.GRAY));
-			if (!success) report.appendString(" ").append(new TranslationTextComponent(
-			  "simpleconfig.hotkey.report.failure").mergeStyle(TextFormatting.RED));
+				         .withStyle(change? TextFormatting.WHITE : TextFormatting.GRAY));
+			if (!success) report.append(" ").append(new TranslationTextComponent(
+			  "simpleconfig.hotkey.report.failure").withStyle(TextFormatting.RED));
 			return report;
 		}
 		
 		private IFormattableTextComponent formatPath(String path) {
 			if (path.length() > 60)
 				path = path.substring(0, 10) + "..." + path.substring(path.length() - 47);
-			return new StringTextComponent("[" + path + "]").mergeStyle(TextFormatting.LIGHT_PURPLE);
+			return new StringTextComponent("[" + path + "]").withStyle(TextFormatting.LIGHT_PURPLE);
 		}
 		
 		private static final Pattern FLOATING_NUMBER = Pattern.compile(
@@ -150,7 +150,7 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 				double v = Double.parseDouble(value);
 				value = String.format("%.3f", v);
 			}
-			return new StringTextComponent(value).mergeStyle(TextFormatting.DARK_AQUA);
+			return new StringTextComponent(value).withStyle(TextFormatting.DARK_AQUA);
 		}
 		
 		public @Nullable V applyValue(V value) {

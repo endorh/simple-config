@@ -39,7 +39,7 @@ public interface IDragBroadcastableControlContainer
 			IGuiEventListener listener = this;
 			while (listener instanceof INestedGuiEventHandler)
 				listener = ((INestedGuiEventHandler) listener)
-				  .getEventListenerForPos(mouseX, mouseY).orElse(null);
+				  .getChildAt(mouseX, mouseY).orElse(null);
 			if (listener instanceof DragBroadcastableControl)
 				applyDragBroadcastAction(((DragBroadcastableControl<?>) listener));
 			return true;

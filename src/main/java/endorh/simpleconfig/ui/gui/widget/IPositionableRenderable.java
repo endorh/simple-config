@@ -130,7 +130,7 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		}
 		
 		@Override public int getHeight() {
-			return widget.getHeightRealms();
+			return widget.getHeight();
 		}
 		@Override public void setHeight(int h) {
 			widget.setHeight(h);

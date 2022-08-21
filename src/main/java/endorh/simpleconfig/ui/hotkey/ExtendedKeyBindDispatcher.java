@@ -164,7 +164,7 @@ public class ExtendedKeyBindDispatcher {
 		}
 		// Since the event is not cancellable, we have to play dirty
 		if (preventFurther && action != GLFW.GLFW_RELEASE)
-			KeyBinding.unPressAllKeys();
+			KeyBinding.releaseAll();
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)

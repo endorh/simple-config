@@ -70,7 +70,7 @@ import static java.lang.Math.min;
 		int length = component.getString().length();
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
 		SubTextVisitor visitor = new SubTextVisitor(start, Integer.MAX_VALUE);
-		component.getComponentWithStyle(visitor, Style.EMPTY);
+		component.visit(visitor, Style.EMPTY);
 		return visitor.getResult();
 	}
 	
@@ -90,7 +90,7 @@ import static java.lang.Math.min;
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
 		if (end < 0 || end > length) throw new StringIndexOutOfBoundsException(end);
 		SubTextVisitor visitor = new SubTextVisitor(start, end);
-		component.getComponentWithStyle(visitor, Style.EMPTY);
+		component.visit(visitor, Style.EMPTY);
 		return visitor.getResult();
 	}
 	
@@ -108,8 +108,8 @@ import static java.lang.Math.min;
 		
 		private void appendFragment(String fragment, Style style) {
 			if (result == null) {
-				result = new StringTextComponent(fragment).mergeStyle(style);
-			} else result.append(new StringTextComponent(fragment).mergeStyle(style));
+				result = new StringTextComponent(fragment).withStyle(style);
+			} else result.append(new StringTextComponent(fragment).withStyle(style));
 		}
 		
 		@Override public @NotNull Optional<Boolean> accept(
@@ -127,7 +127,7 @@ import static java.lang.Math.min;
 		}
 		
 		public IFormattableTextComponent getResult() {
-			return result != null? result : StringTextComponent.EMPTY.deepCopy();
+			return result != null? result : StringTextComponent.EMPTY.copy();
 		}
 	}
 	
@@ -145,7 +145,7 @@ import static java.lang.Math.min;
 	@OnlyIn(Dist.CLIENT) public static IFormattableTextComponent applyStyle(
 	  ITextComponent component, TextFormatting style, int start, int end
 	) {
-		return applyStyle(component, Style.EMPTY.applyFormatting(style), start, end);
+		return applyStyle(component, Style.EMPTY.applyFormat(style), start, end);
 	}
 	
 	/**
@@ -165,9 +165,9 @@ import static java.lang.Math.min;
 		int length = component.getString().length();
 		checkBounds(start, length);
 		checkBounds(end, length);
-		if (start == end) return component.deepCopy();
+		if (start == end) return component.copy();
 		ApplyStyleVisitor visitor = new ApplyStyleVisitor(style, start, end);
-		component.getComponentWithStyle(visitor, Style.EMPTY);
+		component.visit(visitor, Style.EMPTY);
 		return visitor.getResult();
 	}
 	
@@ -200,7 +200,7 @@ import static java.lang.Math.min;
 				if (relStart > 0)
 					appendFragment(text.substring(0, relStart), style);
 				if (relEnd > relStart)
-					appendFragment(text.substring(relStart, relEnd), this.style.mergeStyle(style));
+					appendFragment(text.substring(relStart, relEnd), this.style.applyTo(style));
 				if (relEnd < l)
 					appendFragment(text.substring(relEnd), style);
 			}
@@ -209,7 +209,7 @@ import static java.lang.Math.min;
 		}
 		
 		public IFormattableTextComponent getResult() {
-			return result != null? result : StringTextComponent.EMPTY.copyRaw();
+			return result != null? result : StringTextComponent.EMPTY.plainCopy();
 		}
 		
 		private void appendFragment(String fragment, Style style) {
@@ -227,10 +227,10 @@ import static java.lang.Math.min;
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Internal public static List<ITextComponent> splitTtc(String key, Object... args) {
-		if (I18n.hasKey(key)) {
+		if (I18n.exists(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting
-			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().func_230503_a_(key));
+			final String f = addExplicitFormatIndexes(LanguageMap.getInstance().getOrDefault(key));
 			final String[] lines = NEW_LINE.split(f);
 			final List<ITextComponent> components = new ArrayList<>();
 			for (String line : lines) {
@@ -239,12 +239,12 @@ import static java.lang.Math.min;
 				int cursor = 0;
 				while (m.find()) {
 					if (m.group("conversion").equals("%")) {
-						built.appendString("%");
+						built.append("%");
 						continue;
 					}
 					final int s = m.start();
 					if (s > cursor)
-						built.appendString(line.substring(cursor, s));
+						built.append(line.substring(cursor, s));
 					// Since we've called addExplicitFormatIndexes,
 					//   the following line must not fail
 					final int i = Integer.parseInt(m.group("index")) - 1;
@@ -252,12 +252,12 @@ import static java.lang.Math.min;
 						// Format options are ignored when the argument is an ITextComponent
 						if (args[i] instanceof ITextComponent)
 							built.append((ITextComponent) args[i]);
-						else built.appendString(String.format(m.group(), args));
+						else built.append(String.format(m.group(), args));
 					} // else ignore error
 					cursor = m.end();
 				}
 				if (line.length() > cursor)
-					built.appendString(line.substring(cursor));
+					built.append(line.substring(cursor));
 				components.add(built);
 			}
 			return components;

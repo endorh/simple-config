@@ -38,9 +38,9 @@ public class ConfigHotKeyLogger {
 			case CHAT:
 				ClientPlayerEntity player = Minecraft.getInstance().player;
 				if (player != null) {
-					IFormattableTextComponent msg = title.deepCopy();
-					message.forEach(l -> msg.appendString("\n").append(l));
-					player.sendMessage(msg, Util.DUMMY_UUID);
+					IFormattableTextComponent msg = title.copy();
+					message.forEach(l -> msg.append("\n").append(l));
+					player.sendMessage(msg, Util.NIL_UUID);
 				}
 				break;
 			case RIGHT_OVERLAY:

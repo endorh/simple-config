@@ -55,8 +55,8 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	protected Map<Type, Map<String, Preset>> knownRemotePresets = Maps.newHashMap();
 	protected Map<Type, Map<String, Preset>> knownResourcePresets = Maps.newHashMap();
 	
-	protected Style selectedCountStyle = Style.EMPTY.applyFormatting(TextFormatting.DARK_AQUA);
-	protected Style nameStyle = Style.EMPTY.applyFormatting(TextFormatting.LIGHT_PURPLE);
+	protected Style selectedCountStyle = Style.EMPTY.applyFormat(TextFormatting.DARK_AQUA);
+	protected Style nameStyle = Style.EMPTY.applyFormat(TextFormatting.LIGHT_PURPLE);
 	
 	protected ComboBoxWidget<Preset> selector;
 	
@@ -151,7 +151,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	}
 	
 	protected void position() {
-		if (screen.getListener() != this) forceUnFocus(listeners);
+		if (screen.getFocused() != this) forceUnFocus(listeners);
 		
 		selector.x = area.x + 1;
 		selector.y = area.y + 2;
@@ -451,11 +451,11 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	}
 	
 	protected IFormattableTextComponent selectedCount(int count) {
-		return new StringTextComponent(String.valueOf(count)).mergeStyle(selectedCountStyle);
+		return new StringTextComponent(String.valueOf(count)).withStyle(selectedCountStyle);
 	}
 	
 	protected IFormattableTextComponent presetName(String name) {
-		return new StringTextComponent(name).mergeStyle(nameStyle);
+		return new StringTextComponent(name).withStyle(nameStyle);
 	}
 	
 	public boolean isKnownPreset(String name) {
@@ -590,7 +590,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 				return element.getName();
 			}
 			@Override public ITextComponent getDisplayName(@NotNull Preset element) {
-				return new StringTextComponent(element.getName()).mergeStyle(
+				return new StringTextComponent(element.getName()).withStyle(
 				  element.isRemote()? TextFormatting.AQUA : TextFormatting.GREEN);
 			}
 			
@@ -650,7 +650,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 }

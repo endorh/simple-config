@@ -49,27 +49,27 @@ public class Keys {
 		Input input;
 		try {
 			if (name.startsWith("mouse.") || name.startsWith("keyboard.")) {
-				input = InputMappings.getInputByName("key." + name);
+				input = InputMappings.getKey("key." + name);
 			} else if (!name.contains(".")) {
-				input = InputMappings.getInputByName("key.keyboard." + name);
+				input = InputMappings.getKey("key.keyboard." + name);
 			} else try {
-				input = InputMappings.getInputByName(name);
+				input = InputMappings.getKey(name);
 			} catch (IllegalArgumentException ignored) {
-				input = InputMappings.getInputByName("key.keyboard." + name);
+				input = InputMappings.getKey("key.keyboard." + name);
 			}
 			return input;
 		} catch (IllegalArgumentException e) {
-			return InputMappings.INPUT_INVALID;
+			return InputMappings.UNKNOWN;
 		}
 	}
 	
 	public static Input getInputFromKey(int key) {
 		if (key >= -100 && key < -1) {
-			return Type.MOUSE.getOrMakeInput(key + 100);
+			return Type.MOUSE.getOrCreate(key + 100);
 		} else if (key <= -300) {
-			return InputMappings.getInputByCode(-1, -300 - key);
-		} else if (key >= 0) return InputMappings.getInputByCode(key, -1);
-		return InputMappings.INPUT_INVALID;
+			return InputMappings.getKey(-1, -300 - key);
+		} else if (key >= 0) return InputMappings.getKey(key, -1);
+		return InputMappings.UNKNOWN;
 	}
 	
 	public static int getKeyFromName(String name) {
@@ -78,11 +78,11 @@ public class Keys {
 		Input input = getInputFromName(name);
 		switch (input.getType()) {
 			case MOUSE:
-				return input.getKeyCode() - 100;
+				return input.getValue() - 100;
 			case SCANCODE:
-				return -300 - input.getKeyCode();
+				return -300 - input.getValue();
 			default:
-				return input.getKeyCode();
+				return input.getValue();
 		}
 	}
 	
@@ -90,7 +90,7 @@ public class Keys {
 		String name = IDS_TO_NAMES.get(key);
 		if (name != null) return name;
 		Input input = getInputFromKey(key);
-		String keyName = input.getTranslationKey();
+		String keyName = input.getName();
 		if (keyName.startsWith("key.keyboard.")) {
 			keyName = keyName.substring("key.keyboard.".length());
 		} else if (keyName.startsWith("key.mouse.")) {
@@ -100,8 +100,8 @@ public class Keys {
 	}
 	
 	public static int getKeyFromInput(int keyCode, int scanCode) {
-		Input input = InputMappings.getInputByCode(keyCode, scanCode);
-		return input.getType() == Type.SCANCODE? -300 - input.getKeyCode() : input.getKeyCode();
+		Input input = InputMappings.getKey(keyCode, scanCode);
+		return input.getType() == Type.SCANCODE? -300 - input.getValue() : input.getValue();
 	}
 	
 	public static int getKeyFromMouseInput(int button) {
@@ -146,12 +146,12 @@ public class Keys {
 			translationKey = "key.mouse.scroll.up";
 		} else {
 			input = getInputFromKey(key);
-			translationKey = input.getTranslationKey();
+			translationKey = input.getName();
 		}
 		if (TRANSLATION_OVERRIDES.containsKey(translationKey))
 			return new TranslationTextComponent(TRANSLATION_OVERRIDES.get(translationKey));
 		return input != null
-		       ? input.func_237520_d_().deepCopy()
+		       ? input.getDisplayName().copy()
 		       : new TranslationTextComponent(translationKey);
 	}
 	
@@ -159,24 +159,24 @@ public class Keys {
 		Input input = getInputFromKey(key);
 		if (input.getType() == Type.MOUSE) return null;
 		if (input.getType() == Type.KEYSYM)
-			return GLFW.glfwGetKeyName(input.getKeyCode(), -1);
-		return GLFW.glfwGetKeyName(-1, input.getKeyCode());
+			return GLFW.glfwGetKeyName(input.getValue(), -1);
+		return GLFW.glfwGetKeyName(-1, input.getValue());
 	}
 	
 	public static int getKeyFromChar(String ch) {
 		Optional<Input> opt = getInputMap(Type.KEYSYM).values().stream()
-		  .filter(i -> ch.equals(GLFW.glfwGetKeyName(i.getKeyCode(), -1)))
+		  .filter(i -> ch.equals(GLFW.glfwGetKeyName(i.getValue(), -1)))
 		  .findFirst();
-		if (opt.isPresent()) return opt.get().getKeyCode();
+		if (opt.isPresent()) return opt.get().getValue();
 		opt = getInputMap(Type.SCANCODE).values().stream()
-		  .filter(i -> ch.equals(GLFW.glfwGetKeyName(-1, i.getKeyCode())))
+		  .filter(i -> ch.equals(GLFW.glfwGetKeyName(-1, i.getValue())))
 		  .findFirst();
-		return opt.map(input -> -300 - input.getKeyCode()).orElse(-1);
+		return opt.map(input -> -300 - input.getValue()).orElse(-1);
 	}
 	
 	protected static Int2ObjectMap<Input> getInputMap(Type type) {
 		return ObfuscationReflectionHelper.getPrivateValue(
-		  Type.class, type, "field_197951_e");
+		  Type.class, type, "map");
 	}
 	
 	static {

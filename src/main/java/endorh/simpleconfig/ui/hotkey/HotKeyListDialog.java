@@ -149,7 +149,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	
 	@Override protected void layout() {
 		int w = MathHelper.clamp((int) (getScreen().width * 0.7), 120, 800);
-		final int titleWidth = font.getStringPropertyWidth(title);
+		final int titleWidth = font.width(title);
 		w = max(w, titleWidth + 16);
 		int h = MathHelper.clamp(60 + getInnerHeight(), 68, (int) (getScreen().height * 0.9));
 		w = max(w, buttons.size() * 80);
@@ -175,7 +175,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (KeyBindings.SAVE.isActiveAndMatches(InputMappings.getInputByCode(keyCode, scanCode))) {
+		if (KeyBindings.SAVE.isActiveAndMatches(InputMappings.getKey(keyCode, scanCode))) {
 			cancel(true);
 			return true;
 		}

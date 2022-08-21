@@ -103,8 +103,8 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Fluid entry's default value doesn't match its filter");
 			Predicate<Fluid> filter = this.filter != null ? this.filter : f -> true;
-			if (requireGroup) filter = filter.and(f -> f.getFilledBucket().getGroup() != null);
-			if (excludeFlowing) filter = filter.and(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getStillFluid() == f);
+			if (requireGroup) filter = filter.and(f -> f.getBucket().getItemCategory() != null);
+			if (excludeFlowing) filter = filter.and(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getSource() == f);
 			return new FluidEntry(parent, name, value, filter);
 		}
 		
@@ -127,7 +127,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			final ResourceLocation registryName = new ResourceLocation(value);
 			//noinspection deprecation
 			final Fluid item = Registry.FLUID.keySet().contains(registryName) ?
-			                   Registry.FLUID.getOrDefault(registryName) : null;
+			                   Registry.FLUID.get(registryName) : null;
 			// Prevent unnecessary config resets adding an exception for the default value
 			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {
@@ -136,7 +136,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 	}
 	
 	protected List<Fluid> supplyOptions() {
-		return Registry.FLUID.getEntries().stream().map(Entry::getValue).filter(filter)
+		return Registry.FLUID.entrySet().stream().map(Entry::getValue).filter(filter)
 		  .collect(Collectors.toList());
 	}
 	

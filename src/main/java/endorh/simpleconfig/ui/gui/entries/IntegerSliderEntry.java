@@ -46,11 +46,11 @@ public class IntegerSliderEntry extends SliderListEntry<Integer> {
 		}
 		
 		@Override public Integer getValue() {
-			return (int) round(min + ((max - min) * sliderValue));
+			return (int) round(min + ((max - min) * value));
 		}
 		
 		@Override public void setValue(Integer v) {
-			sliderValue = (double) (v - min) / (double) (max - min);
+			value = (double) (v - min) / (double) (max - min);
 		}
 	}
 }

@@ -106,7 +106,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		for (E entry : getEventListeners()) {
+		for (E entry : children()) {
 			if (!entry.mouseScrolled(mouseX, mouseY, delta)) continue;
 			return true;
 		}
@@ -223,25 +223,25 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 			);
 			int bottomc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 168 : 128;
 			int topc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 222 : 172;
-			Matrix4f matrix = matrices.getLast().getMatrix();
+			Matrix4f matrix = matrices.last().pose();
 			buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			buffer.pos(matrix, (float) sbMinX, (float) bottom, 0.0f).tex(0.0f, 1.0f).color(0, 0, 0, 255).endVertex();
-			buffer.pos(matrix, (float) sbMaxX, (float) bottom, 0.0f).tex(1.0f, 1.0f).color(0, 0, 0, 255).endVertex();
-			buffer.pos(matrix, (float) sbMaxX, (float) top, 0.0f).tex(1.0f, 0.0f).color(0, 0, 0, 255).endVertex();
-			buffer.pos(matrix, (float) sbMinX, (float) top, 0.0f).tex(0.0f, 0.0f).color(0, 0, 0, 255).endVertex();
-			tessellator.draw();
+			buffer.vertex(matrix, (float) sbMinX, (float) bottom, 0.0f).uv(0.0f, 1.0f).color(0, 0, 0, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) bottom, 0.0f).uv(1.0f, 1.0f).color(0, 0, 0, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) top, 0.0f).uv(1.0f, 0.0f).color(0, 0, 0, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMinX, (float) top, 0.0f).uv(0.0f, 0.0f).color(0, 0, 0, 255).endVertex();
+			tessellator.end();
 			buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			buffer.pos(matrix, (float) sbMinX, (float) (minY + height), 0.0f).tex(0.0f, 1.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			buffer.pos(matrix, (float) sbMaxX, (float) (minY + height), 0.0f).tex(1.0f, 1.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			buffer.pos(matrix, (float) sbMaxX, (float) minY, 0.0f).tex(1.0f, 0.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			buffer.pos(matrix, (float) sbMinX, (float) minY, 0.0f).tex(0.0f, 0.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			tessellator.draw();
+			buffer.vertex(matrix, (float) sbMinX, (float) (minY + height), 0.0f).uv(0.0f, 1.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) (minY + height), 0.0f).uv(1.0f, 1.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) minY, 0.0f).uv(1.0f, 0.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMinX, (float) minY, 0.0f).uv(0.0f, 0.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
+			tessellator.end();
 			buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			buffer.pos(matrix, (float) sbMinX, (float) (minY + height - 1), 0.0f).tex(0.0f, 1.0f).color(topc, topc, topc, 255).endVertex();
-			buffer.pos(matrix, (float) (sbMaxX - 1), (float) (minY + height - 1), 0.0f).tex(1.0f, 1.0f).color(topc, topc, topc, 255).endVertex();
-			buffer.pos(matrix, (float) (sbMaxX - 1), (float) minY, 0.0f).tex(1.0f, 0.0f).color(topc, topc, topc, 255).endVertex();
-			buffer.pos(matrix, (float) sbMinX, (float) minY, 0.0f).tex(0.0f, 0.0f).color(topc, topc, topc, 255).endVertex();
-			tessellator.draw();
+			buffer.vertex(matrix, (float) sbMinX, (float) (minY + height - 1), 0.0f).uv(0.0f, 1.0f).color(topc, topc, topc, 255).endVertex();
+			buffer.vertex(matrix, (float) (sbMaxX - 1), (float) (minY + height - 1), 0.0f).uv(1.0f, 1.0f).color(topc, topc, topc, 255).endVertex();
+			buffer.vertex(matrix, (float) (sbMaxX - 1), (float) minY, 0.0f).uv(1.0f, 0.0f).color(topc, topc, topc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMinX, (float) minY, 0.0f).uv(0.0f, 0.0f).color(topc, topc, topc, 255).endVertex();
+			tessellator.end();
 		}
 	}
 	

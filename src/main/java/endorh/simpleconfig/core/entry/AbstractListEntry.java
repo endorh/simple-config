@@ -158,9 +158,9 @@ public abstract class AbstractListEntry
 	
 	protected static ITextComponent addIndex(ITextComponent message, int index) {
 		if (index < 0) return message;
-		return message.copyRaw().appendString(", ").append(new TranslationTextComponent(
+		return message.plainCopy().append(", ").append(new TranslationTextComponent(
 		  "simpleconfig.config.error.at_index",
-		  new StringTextComponent(String.format("%d", index + 1)).mergeStyle(TextFormatting.DARK_AQUA)));
+		  new StringTextComponent(String.format("%d", index + 1)).withStyle(TextFormatting.DARK_AQUA)));
 	}
 	
 	@Override public List<ITextComponent> getErrorsFromGUI(List<Gui> value) {
@@ -176,11 +176,11 @@ public abstract class AbstractListEntry
 		if (size < minSize) {
 			return Optional.of(new TranslationTextComponent(
 			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_small"),
-			  new StringTextComponent(String.valueOf(minSize)).mergeStyle(TextFormatting.DARK_AQUA)));
+			  new StringTextComponent(String.valueOf(minSize)).withStyle(TextFormatting.DARK_AQUA)));
 		} else if (size > maxSize) {
 			return Optional.of(new TranslationTextComponent(
 			  "simpleconfig.config.error.list.too_large",
-			  new StringTextComponent(String.valueOf(maxSize)).mergeStyle(TextFormatting.DARK_AQUA)));
+			  new StringTextComponent(String.valueOf(maxSize)).withStyle(TextFormatting.DARK_AQUA)));
 		}
 		return super.getErrorFromGUI(value);
 	}

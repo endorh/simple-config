@@ -137,7 +137,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		category.setEditable(getRoot().canEdit());
 		category.setTitle(getTitle());
 		category.setDescription(
-		  () -> I18n.hasKey(tooltip)
+		  () -> I18n.exists(tooltip)
 		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
 		        : Optional.empty());
 		root.getFilePath().ifPresent(category::setContainingFile);
@@ -192,7 +192,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 	protected ITextComponent getTitle() {
 		if (ClientConfig.advanced.translation_debug_mode)
 			return new StringTextComponent(title);
-		return I18n.hasKey(title)
+		return I18n.exists(title)
 		       ? new TranslationTextComponent(title)
 		       : new StringTextComponent(WordUtils.capitalize(name));
 	}

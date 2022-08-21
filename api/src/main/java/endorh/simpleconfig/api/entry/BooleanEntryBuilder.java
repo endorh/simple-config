@@ -38,7 +38,7 @@ public interface BooleanEntryBuilder
 			return new BooleanDisplayer() {
 				@Override public ITextComponent getDisplayName(boolean value) {
 					return new TranslationTextComponent(translation + (value? ".true" : ".false"))
-					  .mergeStyle(value? TextFormatting.GREEN : TextFormatting.RED);
+					  .withStyle(value? TextFormatting.GREEN : TextFormatting.RED);
 				}
 				@Override public String getSerializableName(boolean value) {
 					return value? serialTrue : serialFalse;

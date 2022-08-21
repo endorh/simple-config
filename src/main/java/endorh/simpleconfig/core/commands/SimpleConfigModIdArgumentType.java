@@ -75,15 +75,15 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 	}
 	
 	public static class Serializer implements IArgumentSerializer<SimpleConfigModIdArgumentType> {
-		@Override public void write(@NotNull SimpleConfigModIdArgumentType arg, @NotNull PacketBuffer buf) {
+		@Override public void serializeToNetwork(@NotNull SimpleConfigModIdArgumentType arg, @NotNull PacketBuffer buf) {
 			buf.writeBoolean(arg.isRemote);
 		}
 		
-		@Override public @NotNull SimpleConfigModIdArgumentType read(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigModIdArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
 			return new SimpleConfigModIdArgumentType(buf.readBoolean());
 		}
 		
-		@Override public void write(@NotNull SimpleConfigModIdArgumentType arg, @NotNull JsonObject obj) {
+		@Override public void serializeToJson(@NotNull SimpleConfigModIdArgumentType arg, @NotNull JsonObject obj) {
 			obj.addProperty("isRemote", arg.isRemote);
 		}
 	}

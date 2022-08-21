@@ -69,11 +69,11 @@ public final class ScissorsHandlerImpl
 			if (r.isEmpty()) {
 				GL11.glScissor(0, 0, 0, 0);
 			} else {
-				MainWindow window = Minecraft.getInstance().getMainWindow();
-				double scaleFactor = window.getGuiScaleFactor();
+				MainWindow window = Minecraft.getInstance().getWindow();
+				double scaleFactor = window.getGuiScale();
 				GL11.glScissor(
               (int) ((double) r.x * scaleFactor),
-              (int) ((double) (window.getScaledHeight() - r.height - r.y) * scaleFactor),
+              (int) ((double) (window.getGuiScaledHeight() - r.height - r.y) * scaleFactor),
               (int) ((double) r.width * scaleFactor),
               (int) ((double) r.height * scaleFactor));
 			}

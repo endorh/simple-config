@@ -156,7 +156,7 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		  BooleanConsumer action
 		) {
 			return of(
-			  Style.EMPTY.applyFormatting(trueStyle), Style.EMPTY.applyFormatting(falseStyle),
+			  Style.EMPTY.applyFormat(trueStyle), Style.EMPTY.applyFormat(falseStyle),
 			  trueIcon, falseIcon, action);
 		}
 		
@@ -164,9 +164,9 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		  Style trueStyle, Style falseStyle, Icon trueIcon, Icon falseIcon, BooleanConsumer action
 		) {
 			return of(
-			  b -> new StringTextComponent(SimpleConfigTextUtil.stripFormattingCodes(I18n.format(
+			  b -> new StringTextComponent(SimpleConfigTextUtil.stripFormattingCodes(I18n.get(
 				 "simpleconfig.format.bool.yes_no." + b.toString()
-			  ))).mergeStyle(b? trueStyle : falseStyle),
+			  ))).withStyle(b? trueStyle : falseStyle),
 			  trueIcon, falseIcon, action);
 		}
 		

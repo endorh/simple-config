@@ -96,7 +96,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Block entry's default value doesn't match its filter");
 			Predicate<Block> filter = this.filter != null ? this.filter : b -> true;
-			if (requireGroup) filter = filter.and(b -> b.asItem().getGroup() != null);
+			if (requireGroup) filter = filter.and(b -> b.asItem().getItemCategory() != null);
 			return new BlockEntry(parent, name, value, filter);
 		}
 		
@@ -120,7 +120,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			final ResourceLocation registryName = new ResourceLocation(value);
 			//noinspection deprecation
 			final Block item = Registry.BLOCK.keySet().contains(registryName) ?
-			                   Registry.BLOCK.getOrDefault(registryName) : null;
+			                   Registry.BLOCK.get(registryName) : null;
 			// Prevent unnecessary config resets adding an exception for the default value
 			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {
@@ -129,7 +129,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 	}
 	
 	protected List<Block> supplyOptions() {
-		return Registry.BLOCK.getEntries().stream().map(Entry::getValue).filter(filter)
+		return Registry.BLOCK.entrySet().stream().map(Entry::getValue).filter(filter)
 		  .collect(Collectors.toList());
 	}
 	

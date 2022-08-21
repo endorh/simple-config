@@ -25,15 +25,15 @@ public class ArrangeableTreeViewScroller extends ScrollingContainerWidget {
 		if (root.getSubEntries().isEmpty()) {
 			ITextComponent placeHolder = tree.getPlaceHolder();
 			if (placeHolder != null) {
-				FontRenderer font = Minecraft.getInstance().fontRenderer;
+				FontRenderer font = Minecraft.getInstance().font;
 				ArrangeableTreeViewCaption<?> caption = tree.getCaption();
 				int maxWidth = tree.getWidth() - 8;
-				int width = font.getStringPropertyWidth(placeHolder);
+				int width = font.width(placeHolder);
 				int textX = tree.area.getCenterX() - width / 2;
 				if (textX < tree.getX() + 4) textX = tree.getX() + 4;
-				int textY = tree.area.getCenterY() - font.FONT_HEIGHT / 2;
+				int textY = tree.area.getCenterY() - font.lineHeight / 2;
 				if (caption != null) textY += caption.getHeight() / 2;
-				font.func_238418_a_(placeHolder, textX, textY, maxWidth, 0xE0E0E0E0);
+				font.drawWordWrap(placeHolder, textX, textY, maxWidth, 0xE0E0E0E0);
 			}
 		} else root.render(mStack, x, y, w, mouseX, mouseY, delta);
 	}

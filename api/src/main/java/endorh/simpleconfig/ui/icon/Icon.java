@@ -125,7 +125,7 @@ public class Icon {
 		Color color = style.getColor();
 		int c;
 		if (color != null) {
-			c = color.getColor();
+			c = color.getValue();
 		} else c = Objects.requireNonNull(TextFormatting.WHITE.getColor());
 		if ((c & 0xFF000000) == 0) c |= 0xFF000000;
 		return withTint(c);
@@ -251,7 +251,7 @@ public class Icon {
 	}
 	
 	public void bindTexture() {
-		Minecraft.getInstance().getTextureManager().bindTexture(getTexture());
+		Minecraft.getInstance().getTextureManager().bind(getTexture());
 	}
 	
 	public ResourceLocation getTexture() {

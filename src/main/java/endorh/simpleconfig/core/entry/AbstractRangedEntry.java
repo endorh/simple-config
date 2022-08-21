@@ -181,7 +181,7 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 	
 	protected static IFormattableTextComponent coloredBound(Object bound) {
 		return new StringTextComponent(String.valueOf(bound))
-		  .mergeStyle(TextFormatting.DARK_AQUA);
+		  .withStyle(TextFormatting.DARK_AQUA);
 	}
 	
 	@Override

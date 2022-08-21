@@ -74,13 +74,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
  */
 @Internal public class SimpleConfigNetworkHandler {
 	public static Style ALLOWED_UPDATE_STYLE = Style.EMPTY
-	  .applyFormatting(TextFormatting.GRAY).setItalic(true);
+	  .applyFormat(TextFormatting.GRAY).withItalic(true);
 	public static Style DENIED_UPDATE_STYLE = Style.EMPTY
-	  .applyFormatting(TextFormatting.GOLD).setItalic(true);
+	  .applyFormat(TextFormatting.GOLD).withItalic(true);
 	public static Style ERROR_UPDATE_STYLE = Style.EMPTY
-	  .applyFormatting(TextFormatting.DARK_RED).setItalic(true);
+	  .applyFormat(TextFormatting.DARK_RED).withItalic(true);
 	public static Style REQUIRES_RESTART_STYLE = Style.EMPTY
-	  .applyFormatting(TextFormatting.DARK_PURPLE).setItalic(true);
+	  .applyFormat(TextFormatting.DARK_PURPLE).withItalic(true);
 	public static Style ALLOWED_SNAPSHOT_UPDATE_STYLE = ALLOWED_UPDATE_STYLE;
 	public static Style DENIED_SNAPSHOT_UPDATE_STYLE = DENIED_UPDATE_STYLE;
 	
@@ -125,8 +125,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	
 	private static void broadcastToOperators(ITextComponent message) {
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
-		  .filter(p -> p.hasPermissionLevel(2))
-		  .forEach(p -> p.sendMessage(message, Util.DUMMY_UUID));
+		  .filter(p -> p.hasPermissions(2))
+		  .forEach(p -> p.sendMessage(message, Util.NIL_UUID));
 	}
 	
 	public static class ConfigUpdateReflectionError extends RuntimeException {
@@ -236,7 +236,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	public static boolean isConnectedToSimpleConfigServer() {
 		ClientPlayNetHandler connection = Minecraft.getInstance().getConnection();
 		if (connection == null) return false;
-		return getChannel().isRemotePresent(connection.getNetworkManager());
+		return getChannel().isRemotePresent(connection.getConnection());
 	}
 	
 	// Registering ----------------------------------------------------
@@ -361,20 +361,20 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		private static final PacketDistributor<ServerPlayerEntity> EXCEPT = new PacketDistributor<>(
 		  (distributor, supplier) -> packet -> {
 			  final ServerPlayerEntity exception = supplier.get();
-			  final MinecraftServer server = exception.world.getServer();
+			  final MinecraftServer server = exception.level.getServer();
 			  if (server == null) return;
 			  server.getPlayerList().getPlayers()
 				 .stream().filter(p -> exception != p)
-				 .forEach(p -> p.connection.sendPacket(packet));
+				 .forEach(p -> p.connection.send(packet));
 		  }, NetworkDirection.PLAY_TO_CLIENT);
 		private static final PacketDistributor<ServerPlayerEntity> OPS_EXCEPT = new PacketDistributor<>(
 		  (distributor, supplier) -> packet -> {
 			  final ServerPlayerEntity exception = supplier.get();
-			  final MinecraftServer server = exception.world.getServer();
+			  final MinecraftServer server = exception.level.getServer();
 			  if (server == null) return;
 			  server.getPlayerList().getPlayers()
-			    .stream().filter(p -> exception != p && p.hasPermissionLevel(2))
-			    .forEach(p -> p.connection.sendPacket(packet));
+			    .stream().filter(p -> exception != p && p.hasPermissions(2))
+			    .forEach(p -> p.connection.send(packet));
 		  }, NetworkDirection.PLAY_TO_CLIENT);
 		private static final PacketDistributor<Collection<? extends PlayerEntity>> LIST =
 		  new PacketDistributor<>(
@@ -382,14 +382,14 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			    final Collection<? extends PlayerEntity> players = supplier.get();
 			    players.stream()
 			      .filter(p -> p instanceof ServerPlayerEntity)
-			      .forEach(p -> ((ServerPlayerEntity) p).connection.sendPacket(packet));
+			      .forEach(p -> ((ServerPlayerEntity) p).connection.send(packet));
 		    }, NetworkDirection.PLAY_TO_CLIENT);
 		
 		public static void sendMessage(ITextComponent message) {
 			final ClientPlayerEntity player = Minecraft.getInstance().player;
 			if (player == null)
 				return;
-			player.sendMessage(message, Util.DUMMY_UUID);
+			player.sendMessage(message, Util.NIL_UUID);
 		}
 		
 		protected void handleWithReply(Supplier<Context> ctxSupplier) {
@@ -407,7 +407,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		public void onClient(Context ctx) {}
 		
 		public void sendTo(ServerPlayerEntity player) {
-			CHANNEL.sendTo(this, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+			CHANNEL.sendTo(this, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
 		}
 		
 		public void sendTo(Collection<? extends PlayerEntity> players) {
@@ -516,19 +516,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onClient(Context ctx) {
-			if (!Minecraft.getInstance().isIntegratedServerRunning()) {
+			if (!Minecraft.getInstance().isLocalServer()) {
 				SimpleConfigImpl config = SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER);
 				tryUpdateConfig(config, fileData, true);
 			}
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeByteArray(fileData);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			fileData = buf.readByteArray();
 		}
 	}
@@ -558,7 +558,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				            "the server config for mod \"" + modName + "\" without privileges");
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
-				).mergeStyle(DENIED_UPDATE_STYLE));
+				).withStyle(DENIED_UPDATE_STYLE));
 				// Send back a re-sync packet
 				new SSimpleConfigSyncPacket(modId, snapshot).sendTo(sender);
 				return;
@@ -573,7 +573,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.error_updating_by",
 				  modName, senderName, e.getMessage()
-				).mergeStyle(ERROR_UPDATE_STYLE));
+				).withStyle(ERROR_UPDATE_STYLE));
 			}
 			
 			LOGGER.info(
@@ -581,23 +581,23 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			  "has been updated by authorized player \"" + senderName + "\"");
 			IFormattableTextComponent msg = new TranslationTextComponent(
 			  "simpleconfig.config.msg.updated_by",
-			  modName, senderName).mergeStyle(ALLOWED_UPDATE_STYLE);
+			  modName, senderName).withStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
-				msg = msg.appendString("\n").append(new TranslationTextComponent(
+				msg = msg.append("\n").append(new TranslationTextComponent(
 				  "simpleconfig.config.msg.server_changes_require_restart"
-				).mergeStyle(REQUIRES_RESTART_STYLE));
+				).withStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
 			new SSimpleConfigSyncPacket(modId, snapshot).sendExcept(sender);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeByteArray(snapshot);
 			buf.writeBoolean(requireRestart);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			snapshot = buf.readByteArray();
 			requireRestart = buf.readBoolean();
 		}
@@ -621,7 +621,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onClient(Context ctx) {
-			if (!Minecraft.getInstance().isIntegratedServerRunning()) {
+			if (!Minecraft.getInstance().isLocalServer()) {
 				try {
 					tryUpdateConfig(SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER), snapshot, false);
 				} catch (ConfigUpdateReflectionError e) {
@@ -634,12 +634,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeByteArray(snapshot);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			snapshot = buf.readByteArray();
 		}
 	}
@@ -676,10 +676,10 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 		}
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 		}
 	}
 	
@@ -731,12 +731,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeBoolean(snapshot != null);
 			if (snapshot != null) buf.writeByteArray(snapshot);
 		}
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
 		}
 	}
@@ -785,7 +785,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				            "for mod \"" + modName + "\"");
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
-				).mergeStyle(DENIED_UPDATE_STYLE));
+				).withStyle(DENIED_UPDATE_STYLE));
 				return;
 			}
 			try {
@@ -797,7 +797,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.error_updating_by",
 				  modName, senderName, e.getMessage()
-				).mergeStyle(ERROR_UPDATE_STYLE));
+				).withStyle(ERROR_UPDATE_STYLE));
 				return;
 			}
 			LOGGER.info(
@@ -806,23 +806,23 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			IFormattableTextComponent msg = new TranslationTextComponent(
 			  "simpleconfig.config.msg.updated_by",
 			  modName, senderName
-			).mergeStyle(ALLOWED_UPDATE_STYLE);
+			).withStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
-				msg = msg.appendString("\n").append(new TranslationTextComponent(
+				msg = msg.append("\n").append(new TranslationTextComponent(
 				  "simpleconfig.config.msg.server_changes_require_restart"
-				).mergeStyle(REQUIRES_RESTART_STYLE));
+				).withStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeBoolean(requireRestart);
 			buf.writeBoolean(snapshot != null);
 			if (snapshot != null) buf.writeByteArray(snapshot);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			requireRestart = buf.readBoolean();
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
 		}
@@ -854,11 +854,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 		}
 	}
 	
@@ -900,14 +900,14 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.error_updating_by",
 				  modName, senderName, e.getMessage()
-				).mergeStyle(ERROR_UPDATE_STYLE));
+				).withStyle(ERROR_UPDATE_STYLE));
 				return;
 			}
 			LOGGER.info("Snapshot applied to config for mod \"" + modName + "\" by player " + sender);
 			if (report.isEmpty()) {
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.patched_by", modName, senderName
-				).mergeStyle(ALLOWED_UPDATE_STYLE));
+				).withStyle(ALLOWED_UPDATE_STYLE));
 			} else {
 				new SSimpleConfigPatchReportPacket(new TranslationTextComponent(
 				  "simpleconfig.hotkey.remote", sender.getName()), report
@@ -916,21 +916,21 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeEnumValue(type);
+			buf.writeUtf(modId);
+			buf.writeEnum(type);
 			buf.writeBoolean(snapshot != null);
 			if (snapshot != null) buf.writeByteArray(snapshot);
 			buf.writeVarInt(report.size());
-			report.forEach(buf::writeTextComponent);
+			report.forEach(buf::writeComponent);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			type = buf.readEnumValue(Type.class);
+			modId = buf.readUtf(32767);
+			type = buf.readEnum(Type.class);
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
 			int size = buf.readVarInt();
 			List<ITextComponent> report = new ArrayList<>(size);
-			for (int i = 0; i < size; i++) report.add(buf.readTextComponent());
+			for (int i = 0; i < size; i++) report.add(buf.readComponent());
 			this.report = report;
 		}
 	}
@@ -952,15 +952,15 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeTextComponent(title);
+			buf.writeComponent(title);
 			buf.writeVarInt(report.size());
-			report.forEach(buf::writeTextComponent);
+			report.forEach(buf::writeComponent);
 		}
 		@Override public void read(PacketBuffer buf) {
-			title = buf.readTextComponent();
+			title = buf.readComponent();
 			int size = buf.readVarInt();
 			List<ITextComponent> report = new ArrayList<>(size);
-			for (int i = 0; i < size; i++) report.add(buf.readTextComponent());
+			for (int i = 0; i < size; i++) report.add(buf.readComponent());
 			this.report = report;
 		}
 	}
@@ -1038,7 +1038,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.snapshot." + tt + "." + action + "d_by",
-				  this.presetName, modName, senderName).mergeStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
+				  this.presetName, modName, senderName).withStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
 				LOGGER.info(
 				  "Server config preset \"" + presetName + "\" for mod \"" + modName + "\" " +
 				  "has been " + action + "d by player \"" + senderName + "\"");
@@ -1047,7 +1047,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.snapshot.error_updating_by",
 				  this.presetName, modName, senderName, e.getMessage()
-				).mergeStyle(ERROR_UPDATE_STYLE));
+				).withStyle(ERROR_UPDATE_STYLE));
 				LOGGER.error("Error " + (fileData != null? "saving" : "deleting") + " server config " +
 				             "preset for mod \"" + modName + "\"");
 				new SSimpleConfigSavedPresetPacket(
@@ -1057,7 +1057,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				broadcastToOperators(new TranslationTextComponent(
 				  "simpleconfig.config.msg.snapshot." + tt + ".tried_to_" + action,
 				  senderName, this.presetName, modName
-				).mergeStyle(DENIED_SNAPSHOT_UPDATE_STYLE));
+				).withStyle(DENIED_SNAPSHOT_UPDATE_STYLE));
 				LOGGER.warn("Player \"" + senderName + "\" tried to " +
 				            action + " a preset for the server " +
 				            "config for mod \"" + modName + "\" without privileges");
@@ -1068,18 +1068,18 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeEnumValue(type);
-			buf.writeString(presetName);
+			buf.writeUtf(modId);
+			buf.writeEnum(type);
+			buf.writeUtf(presetName);
 			buf.writeBoolean(fileData != null);
 			if (fileData != null)
 				buf.writeByteArray(fileData);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			type = buf.readEnumValue(Type.class);
-			presetName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			type = buf.readEnum(Type.class);
+			presetName = buf.readUtf(32767);
 			fileData = buf.readBoolean() ? buf.readByteArray() : null;
 		}
 	}
@@ -1110,18 +1110,18 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeEnumValue(type);
-			buf.writeString(presetName);
+			buf.writeUtf(modId);
+			buf.writeEnum(type);
+			buf.writeUtf(presetName);
 			buf.writeBoolean(errorMsg != null);
-			if (errorMsg != null) buf.writeString(errorMsg);
+			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			type = buf.readEnumValue(Type.class);
-			presetName = buf.readString(32767);
-			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+			modId = buf.readUtf(32767);
+			type = buf.readEnum(Type.class);
+			presetName = buf.readUtf(32767);
+			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}
 	}
 	
@@ -1159,11 +1159,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 		}
 	}
 	
@@ -1186,19 +1186,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
+			buf.writeUtf(modId);
 			buf.writeVarInt(presets.size());
 			for (Preset preset : presets) {
-				buf.writeString(preset.getName());
-				buf.writeEnumValue(preset.getType());
+				buf.writeUtf(preset.getName());
+				buf.writeEnum(preset.getType());
 			}
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
+			modId = buf.readUtf(32767);
 			presets = new ArrayList<>();
 			for (int i = buf.readVarInt(); i > 0; i--)
-				presets.add(Preset.remote(buf.readString(32767), buf.readEnumValue(Type.class)));
+				presets.add(Preset.remote(buf.readUtf(32767), buf.readEnum(Type.class)));
 		}
 	}
 	
@@ -1237,15 +1237,15 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeEnumValue(type);
-			buf.writeString(presetName);
+			buf.writeUtf(modId);
+			buf.writeEnum(type);
+			buf.writeUtf(presetName);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			type = buf.readEnumValue(Type.class);
-			presetName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			type = buf.readEnum(Type.class);
+			presetName = buf.readUtf(32767);
 		}
 	}
 	
@@ -1293,21 +1293,21 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(modId);
-			buf.writeEnumValue(type);
-			buf.writeString(presetName);
+			buf.writeUtf(modId);
+			buf.writeEnum(type);
+			buf.writeUtf(presetName);
 			buf.writeBoolean(fileData != null);
 			if (fileData != null) buf.writeByteArray(fileData);
 			buf.writeBoolean(errorMsg != null);
-			if (errorMsg != null) buf.writeString(errorMsg);
+			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			modId = buf.readString(32767);
-			type = buf.readEnumValue(Type.class);
-			presetName = buf.readString(32767);
+			modId = buf.readUtf(32767);
+			type = buf.readEnum(Type.class);
+			presetName = buf.readUtf(32767);
 			fileData = buf.readBoolean()? buf.readByteArray() : null;
-			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}
 	}
 	
@@ -1393,13 +1393,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		@Override public void write(PacketBuffer buf) {
 			buf.writeVarInt(groups.size());
 			for (RemoteSavedHotKeyGroup group : groups)
-				buf.writeString(group.getName());
+				buf.writeUtf(group.getName());
 		}
 		
 		@Override public void read(PacketBuffer buf) {
 			List<RemoteSavedHotKeyGroup> groups = new ArrayList<>();
 			for (int i = buf.readVarInt(); i > 0; i--)
-				groups.add(SavedHotKeyGroup.remote(buf.readString(32767)));
+				groups.add(SavedHotKeyGroup.remote(buf.readUtf(32767)));
 			this.groups = groups;
 		}
 	}
@@ -1429,11 +1429,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(name);
+			buf.writeUtf(name);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			name = buf.readString(32767);
+			name = buf.readUtf(32767);
 		}
 	}
 	
@@ -1465,17 +1465,17 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(name);
+			buf.writeUtf(name);
 			buf.writeBoolean(data != null);
 			if (data != null) buf.writeByteArray(data);
 			buf.writeBoolean(errorMsg != null);
-			if (errorMsg != null) buf.writeString(errorMsg);
+			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			name = buf.readString(32767);
+			name = buf.readUtf(32767);
 			data = buf.readBoolean()? buf.readByteArray() : null;
-			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}
 	}
 	
@@ -1525,13 +1525,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(name);
+			buf.writeUtf(name);
 			buf.writeBoolean(data != null);
 			if (data != null) buf.writeByteArray(data);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			name = buf.readString(32767);
+			name = buf.readUtf(32767);
 			data = buf.readBoolean()? buf.readByteArray() : null;
 		}
 	}
@@ -1559,14 +1559,14 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void write(PacketBuffer buf) {
-			buf.writeString(name);
+			buf.writeUtf(name);
 			buf.writeBoolean(errorMsg != null);
-			if (errorMsg != null) buf.writeString(errorMsg);
+			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
 		@Override public void read(PacketBuffer buf) {
-			name = buf.readString(32767);
-			errorMsg = buf.readBoolean()? buf.readString(32767) : null;
+			name = buf.readUtf(32767);
+			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}
 	}
 	

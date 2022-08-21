@@ -121,44 +121,44 @@ public class EnumEntry<E extends Enum<E>>
 	@Override protected ITextComponent getDebugDisplayName() {
 		if (translation != null) {
 			IFormattableTextComponent status =
-			  I18n.hasKey(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			  I18n.exists(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
-				  I18n.hasKey(tooltip)
-				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+				  I18n.exists(tooltip)
+				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
 			}
 			boolean correct = defValue instanceof ITranslatedEnum
 			                  || Arrays.stream(enumClass.getEnumConstants())
-			                    .allMatch(e -> I18n.hasKey(getEnumTranslationKey(e)));
+			                    .allMatch(e -> I18n.exists(getEnumTranslationKey(e)));
 			status = status.append(
-			  correct ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.LIGHT_PURPLE)
-			          : new StringTextComponent("✘ ").mergeStyle(TextFormatting.LIGHT_PURPLE));
+			  correct ? new StringTextComponent("✔ ").withStyle(TextFormatting.LIGHT_PURPLE)
+			          : new StringTextComponent("✘ ").withStyle(TextFormatting.LIGHT_PURPLE));
 			TextFormatting format =
-			  I18n.hasKey(translation)? correct? TextFormatting.DARK_GREEN : TextFormatting.GOLD : TextFormatting.RED;
-			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).mergeStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
+			  I18n.exists(translation)? correct? TextFormatting.DARK_GREEN : TextFormatting.GOLD : TextFormatting.RED;
+			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).withStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
 		super.addTranslationsDebugInfo(tooltip);
 		if (parent != null) {
 			if (defValue instanceof ITranslatedEnum)
-				tooltip.add(new StringTextComponent(" + Enum provides its own translations").mergeStyle(
+				tooltip.add(new StringTextComponent(" + Enum provides its own translations").withStyle(
 				  TextFormatting.GRAY));
 			tooltip.add(
-			  new StringTextComponent(" + Enum translation keys:").mergeStyle(TextFormatting.GRAY));
+			  new StringTextComponent(" + Enum translation keys:").withStyle(TextFormatting.GRAY));
 			for (E elem : enumClass.getEnumConstants()) {
 				final String key = getEnumTranslationKey(elem);
 				final IFormattableTextComponent status =
-				  I18n.hasKey(key)
-				  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
+				  I18n.exists(key)
+				  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
 				  : (defValue instanceof ITranslatedEnum)
-				    ? new StringTextComponent("(not present)").mergeStyle(TextFormatting.DARK_GRAY)
-				    : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
-				tooltip.add(new StringTextComponent("   > ").mergeStyle(TextFormatting.GRAY)
-				              .append(new StringTextComponent(key).mergeStyle(TextFormatting.DARK_AQUA))
-				              .appendString(" ").append(status));
+				    ? new StringTextComponent("(not present)").withStyle(TextFormatting.DARK_GRAY)
+				    : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
+				tooltip.add(new StringTextComponent("   > ").withStyle(TextFormatting.GRAY)
+				              .append(new StringTextComponent(key).withStyle(TextFormatting.DARK_AQUA))
+				              .append(" ").append(status));
 			}
 		}
 	}
@@ -175,7 +175,7 @@ public class EnumEntry<E extends Enum<E>>
 			return ((ITranslatedEnum) item).getDisplayName();
 		final String key = getEnumTranslationKey(item);
 		// if (debugTranslations()) return new StringTextComponent(key);
-		if (I18n.hasKey(key))
+		if (I18n.exists(key))
 			return new TranslationTextComponent(key);
 		return new StringTextComponent(item.name());
 	}

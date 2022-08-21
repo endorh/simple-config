@@ -14,7 +14,7 @@ import java.util.Map;
 @Internal public class ServerI18n {
 	public static String format(String translateKey, Object... parameters) {
 		if (FMLEnvironment.dist == Dist.CLIENT)
-			return I18n.format(translateKey, parameters);
+			return I18n.get(translateKey, parameters);
 		String s = ForgeI18n.getPattern(translateKey);
 		
 		try {
@@ -26,7 +26,7 @@ import java.util.Map;
 	
 	public static boolean hasKey(String key) {
 		if (FMLEnvironment.dist == Dist.CLIENT)
-			return I18n.hasKey(key);
+			return I18n.exists(key);
 		Map<String, String> i18n = ObfuscationReflectionHelper.getPrivateValue(
 		  ForgeI18n.class, null, "i18n");
 		if (i18n == null) return false;
@@ -37,9 +37,9 @@ import java.util.Map;
 		String KEY = "language.code";
 		String lang = KEY;
 		if (FMLEnvironment.dist == Dist.CLIENT) {
-			lang = I18n.format(KEY);
+			lang = I18n.get(KEY);
 		} else if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-			lang = LanguageMap.getInstance().func_230503_a_(KEY);
+			lang = LanguageMap.getInstance().getOrDefault(KEY);
 		}
 		return KEY.equals(lang)? "<not loaded>" : lang;
 	}

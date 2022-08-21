@@ -81,7 +81,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 		}
 		
 		@Override @Contract(pure=true) public Builder from(Item... items) {
-			return from(Ingredient.fromItems(items));
+			return from(Ingredient.of(items));
 		}
 		
 		@Override @Contract(pure=true) public Builder from(ITag<Item> tag) {
@@ -99,7 +99,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Item entry's default value doesn't match its filter");
 			Predicate<Item> filter = this.filter != null ? this.filter : i -> true;
-			if (requireGroup) filter = filter.and(i -> i.getGroup() != null);
+			if (requireGroup) filter = filter.and(i -> i.getItemCategory() != null);
 			return new ItemEntry(parent, name, value, filter);
 		}
 		
@@ -113,7 +113,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 	}
 	
 	protected List<Item> supplyOptions() {
-		return Registry.ITEM.getEntries().stream().map(Entry::getValue).filter(filter)
+		return Registry.ITEM.entrySet().stream().map(Entry::getValue).filter(filter)
 		  .collect(Collectors.toList());
 	}
 	
@@ -128,7 +128,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			final ResourceLocation name = new ResourceLocation(value);
 			//noinspection deprecation
 			final Item item = Registry.ITEM.keySet().contains(name) ?
-			                  Registry.ITEM.getOrDefault(name) : null;
+			                  Registry.ITEM.get(name) : null;
 			// Prevent unnecessary config resets adding the default value as exception
 			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {

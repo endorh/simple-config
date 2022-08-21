@@ -100,6 +100,6 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 	}
 	
 	public int getHeight() {
-		return target instanceof Widget? ((Widget) target).getHeightRealms() : 0;
+		return target instanceof Widget? ((Widget) target).getHeight() : 0;
 	}
 }

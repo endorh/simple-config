@@ -52,19 +52,19 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		int size = current.size();
 		int count = 1;
 		for (AbstractDialog dialog : current) {
-			mStack.push(); {
+			mStack.pushPose(); {
 				mStack.translate(0D, 0D, count * 100D);
 				int mX = count == size? mouseX : -1;
 				int mY = count == size? mouseY : -1;
 				if (!dialog.render(mStack, mX, mY, delta))
 					dialogs.remove(dialog);
 				count++;
-			} mStack.pop();
+			} mStack.popPose();
 		}
 		dialogs.update();
 		current = dialogs.getDialogs();
 		if (!current.isEmpty() && this instanceof INestedGuiEventHandler)
-			((INestedGuiEventHandler) this).setListener(current.get(current.size() - 1));
+			((INestedGuiEventHandler) this).setFocused(current.get(current.size() - 1));
 	}
 	
 	default void tickDialogs() {

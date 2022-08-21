@@ -17,6 +17,6 @@ public interface IComboBoxModel<T> {
 	
 	default Optional<ITextComponent> getPlaceHolder(ITypeWrapper<T> typeWrapper, String query) {
 		return Optional.of(new TranslationTextComponent(
-		  "simpleconfig.ui.no_suggestions").mergeStyle(TextFormatting.GRAY));
+		  "simpleconfig.ui.no_suggestions").withStyle(TextFormatting.GRAY));
 	}
 }

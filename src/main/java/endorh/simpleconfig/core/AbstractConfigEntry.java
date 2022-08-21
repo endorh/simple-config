@@ -118,7 +118,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	@OnlyIn(Dist.CLIENT)
 	protected static void addTranslationsDebugSuffix(List<ITextComponent> tooltip) {
 		tooltip.add(new StringTextComponent(" "));
-		tooltip.add(new StringTextComponent(" ⚠ Simple Config translation debug mode active").mergeStyle(TextFormatting.GOLD));
+		tooltip.add(new StringTextComponent(" ⚠ Simple Config translation debug mode active").withStyle(TextFormatting.GOLD));
 	}
 	
 	public String getPath() {
@@ -158,7 +158,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected String fillArgs(String translation, V value, List<Object> args) {
-		return I18n.format(translation, formatArgs(value, args));
+		return I18n.get(translation, formatArgs(value, args));
 	}
 	
 	protected Object[] formatArgs(V value, List<Object> args) {
@@ -167,7 +167,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 				try {
 					return ((Supplier<?>) a).get();
 				} catch (RuntimeException e){
-					return new StringTextComponent("<null>").mergeStyle(TextFormatting.RED);
+					return new StringTextComponent("<null>").withStyle(TextFormatting.RED);
 				}
 			} else return a;
 		}).toArray();
@@ -196,7 +196,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 			String path = getPath();
 			builtInTags.remove(copyTag);
 			List<ITextComponent> tooltip = splitTtc("simpleconfig.config.tag.copy_path", path)
-			  .stream().map(l -> l.deepCopy().mergeStyle(TextFormatting.GRAY))
+			  .stream().map(l -> l.copy().withStyle(TextFormatting.GRAY))
 			  .collect(Collectors.toList());
 			builtInTags.add(copyTag = EntryTag.copyTag(-1000, path, () -> tooltip));
 		});
@@ -213,7 +213,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 			return displayName;
 		if (debugTranslations())
 			return getDebugDisplayName();
-		if (translation != null && I18n.hasKey(translation))
+		if (translation != null && I18n.exists(translation))
 			return new TranslationTextComponent(translation, formatArgs(null, nameArgs));
 		return new StringTextComponent(name);
 	}
@@ -222,17 +222,17 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	protected ITextComponent getDebugDisplayName() {
 		if (translation != null) {
 			IFormattableTextComponent status =
-			  I18n.hasKey(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			  I18n.exists(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
-				  I18n.hasKey(tooltip)
-				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+				  I18n.exists(tooltip)
+				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
 			}
 			TextFormatting format =
-			  I18n.hasKey(translation)? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).mergeStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
+			  I18n.exists(translation)? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).withStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
 	}
 	
 	/**
@@ -354,7 +354,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 			if (!l.isEmpty()) return Optional.of(addExtraTooltip(l.toArray(EMPTY_TEXT_ARRAY), value));
 		}
 		final V v = fromGui(value);
-		if (tooltip != null && I18n.hasKey(tooltip)) {
+		if (tooltip != null && I18n.exists(tooltip)) {
 			return Optional.of(splitTtc(tooltip, formatArgs(v, tooltipArgs)).toArray(EMPTY_TEXT_ARRAY))
 			  .map(t -> addExtraTooltip(t, value));
 		}
@@ -793,32 +793,32 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	@OnlyIn(Dist.CLIENT)
 	protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
 		if (tooltipSupplier != null)
-			tooltip.add(new StringTextComponent(" + Has tooltip supplier").mergeStyle(TextFormatting.GRAY));
+			tooltip.add(new StringTextComponent(" + Has tooltip supplier").withStyle(TextFormatting.GRAY));
 		if (errorSupplier != null)
-			tooltip.add(new StringTextComponent(" + Has error supplier").mergeStyle(TextFormatting.GRAY));
+			tooltip.add(new StringTextComponent(" + Has error supplier").withStyle(TextFormatting.GRAY));
 	}
 
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> supplyDebugTooltip(Gui value) {
 		List<ITextComponent> lines = new ArrayList<>();
-		lines.add(new StringTextComponent("Translation key:").mergeStyle(TextFormatting.GRAY));
+		lines.add(new StringTextComponent("Translation key:").withStyle(TextFormatting.GRAY));
 		if (translation != null) {
 			final IFormattableTextComponent status =
-			  I18n.hasKey(translation)
-			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
+			  I18n.exists(translation)
+			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
 			lines.add(new StringTextComponent("   " + translation + " ")
-			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
-		} else lines.add(new StringTextComponent("   Error: couldn't map translation key").mergeStyle(TextFormatting.RED));
-		lines.add(new StringTextComponent("Tooltip key:").mergeStyle(TextFormatting.GRAY));
+			            .withStyle(TextFormatting.DARK_AQUA).append(status));
+		} else lines.add(new StringTextComponent("   Error: couldn't map translation key").withStyle(TextFormatting.RED));
+		lines.add(new StringTextComponent("Tooltip key:").withStyle(TextFormatting.GRAY));
 		if (tooltip != null) {
 			final IFormattableTextComponent status =
-			  I18n.hasKey(tooltip)
-			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(not present)").mergeStyle(TextFormatting.GOLD);
+			  I18n.exists(tooltip)
+			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(not present)").withStyle(TextFormatting.GOLD);
 			lines.add(new StringTextComponent("   " + tooltip + " ")
-			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
-		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").mergeStyle(TextFormatting.RED));
+			            .withStyle(TextFormatting.DARK_AQUA).append(status));
+		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").withStyle(TextFormatting.RED));
 		addTranslationsDebugInfo(lines);
 		addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new ITextComponent[0]));

@@ -41,11 +41,11 @@ public class FloatSliderEntry extends SliderListEntry<Float> {
 		}
 		
 		@Override public Float getValue() {
-			return min + (float) ((max - min) * sliderValue);
+			return min + (float) ((max - min) * value);
 		}
 		
 		@Override public void setValue(final Float v) {
-			sliderValue = (v - min) / (max - min);
+			value = (v - min) / (max - min);
 		}
 	}
 }

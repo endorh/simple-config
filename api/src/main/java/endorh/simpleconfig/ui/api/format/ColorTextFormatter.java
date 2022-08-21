@@ -12,20 +12,20 @@ public class ColorTextFormatter implements ITextFormatter {
 	
 	@Override public IFormattableTextComponent formatText(String text) {
 		Matcher m = COLOR_PATTERN.matcher(text.toUpperCase());
-		Color color = Color.fromHex(text.length() == 9? "#" + text.substring(3) : text);
+		Color color = Color.parseColor(text.length() == 9? "#" + text.substring(3) : text);
 		if (color == null || !m.matches()) return new StringTextComponent(text)
-		  .mergeStyle(TextFormatting.RED).mergeStyle(TextFormatting.UNDERLINE);
+		  .withStyle(TextFormatting.RED).withStyle(TextFormatting.UNDERLINE);
 		String a = m.group("a");
 		String r = m.group("r");
 		String g = m.group("g");
 		String b = m.group("b");
 		IFormattableTextComponent res = new StringTextComponent("#")
-		  .mergeStyle(Style.EMPTY.setColor(color));
+		  .withStyle(Style.EMPTY.withColor(color));
 		if (a != null) res.append(
-		  new StringTextComponent(a).mergeStyle(Style.EMPTY.setColor(Color.fromInt(0xA0A0A0))));
-		res.append(new StringTextComponent(r).mergeStyle(Style.EMPTY.setColor(Color.fromInt(0xFFBDBD))));
-		res.append(new StringTextComponent(g).mergeStyle(Style.EMPTY.setColor(Color.fromInt(0xBDFFBD))));
-		res.append(new StringTextComponent(b).mergeStyle(Style.EMPTY.setColor(Color.fromInt(0xBDBDFF))));
+		  new StringTextComponent(a).withStyle(Style.EMPTY.withColor(Color.fromRgb(0xA0A0A0))));
+		res.append(new StringTextComponent(r).withStyle(Style.EMPTY.withColor(Color.fromRgb(0xFFBDBD))));
+		res.append(new StringTextComponent(g).withStyle(Style.EMPTY.withColor(Color.fromRgb(0xBDFFBD))));
+		res.append(new StringTextComponent(b).withStyle(Style.EMPTY.withColor(Color.fromRgb(0xBDBDFF))));
 		return res;
 	}
 	

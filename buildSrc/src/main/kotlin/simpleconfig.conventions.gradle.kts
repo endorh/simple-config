@@ -5,8 +5,8 @@ plugins {
 
 val apiVersion by extra("0.1.5")
 val modVersion by extra("0.8.17")
-val mappingsChannel by extra("snapshot")  // "official"
-val mappingsVersion by extra("20201028-1.16.3")  // "1.16.5"
+val mappingsChannel by extra("official")
+val mappingsVersion by extra("1.16.5")
 val mcVersion by extra("1.16.5")
 val forge by extra("36.1.0")
 val forgeVersion by extra("$mcVersion-$forge")

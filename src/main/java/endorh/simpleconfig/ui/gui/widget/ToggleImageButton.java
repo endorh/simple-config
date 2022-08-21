@@ -67,13 +67,13 @@ public class ToggleImageButton extends ImageButton {
 		if (isMouseOver(mouseX, mouseY)) {
 			if (button == 0) {
 				setValue(!isToggle());
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (button == 1) {
 				setValue(Screen.hasShiftDown());
-				Minecraft.getInstance().getSoundHandler().play(
-				  SimpleSound.master(SimpleConfigMod.UI_TAP, 1F));
+				Minecraft.getInstance().getSoundManager().play(
+				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}

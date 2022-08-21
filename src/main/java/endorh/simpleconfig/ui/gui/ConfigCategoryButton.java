@@ -45,10 +45,10 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 			if (category != null) screen.setSelectedCategory(category);
 		})/*.tint(category.getColor())*/
 		  .icon(category.getIcon())
-		  .title(() -> screen.isSelecting() ? title.deepCopy().append(new StringTextComponent(
+		  .title(() -> screen.isSelecting() ? title.copy().append(new StringTextComponent(
 		    " [" + category.getAllMainEntries().stream().filter(
 			   AbstractConfigField::isSelected).count() + "]"
-		  ).mergeStyle(TextFormatting.AQUA)) : title));
+		  ).withStyle(TextFormatting.AQUA)) : title));
 		this.descriptionSupplier = descriptionSupplier;
 		this.category = category;
 		this.screen = screen;
@@ -72,7 +72,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	
 	@Override public ITextComponent getTitle() {
 		ITextComponent title = super.getTitle();
-		if (!isSelected()) title = title.deepCopy().modifyStyle(s -> s.setColor(Color.fromInt(0xAADBDBDB)));
+		if (!isSelected()) title = title.copy().withStyle(s -> s.withColor(Color.fromRgb(0xAADBDBDB)));
 		return title;
 	}
 	

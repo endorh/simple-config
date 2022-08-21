@@ -77,10 +77,10 @@ public class RangeListEntry<
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		minEntry.updateFocused(isFocused && getListener() == minEntry);
-		maxEntry.updateFocused(isFocused && getListener() == maxEntry);
-		WidgetUtils.forceSetFocus(minExclusivenessButton, isFocused && getListener() == minExclusivenessButton);
-		WidgetUtils.forceSetFocus(maxExclusivenessButton, isFocused && getListener() == maxExclusivenessButton);
+		minEntry.updateFocused(isFocused && getFocused() == minEntry);
+		maxEntry.updateFocused(isFocused && getFocused() == maxEntry);
+		WidgetUtils.forceSetFocus(minExclusivenessButton, isFocused && getFocused() == minExclusivenessButton);
+		WidgetUtils.forceSetFocus(maxExclusivenessButton, isFocused && getFocused() == maxExclusivenessButton);
 	}
 	
 	@Override public boolean isGroup() {
@@ -134,7 +134,7 @@ public class RangeListEntry<
 	}
 	
 	@Override public boolean charTyped(char chr, int modifiers) {
-		IGuiEventListener f = getListener();
+		IGuiEventListener f = getFocused();
 		ToggleImageButton button =
 		  f == minEntry || f == minExclusivenessButton
 		  ? minExclusivenessButton :

@@ -349,7 +349,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	
 	protected static IFormattableTextComponent coloredNumber(int minSize) {
 		return new StringTextComponent(String.valueOf(minSize))
-		  .mergeStyle(TextFormatting.DARK_AQUA);
+		  .withStyle(TextFormatting.DARK_AQUA);
 	}
 	
 	@Override public List<ITextComponent> getErrorsFromGUI(List<Pair<KG, G>> value) {

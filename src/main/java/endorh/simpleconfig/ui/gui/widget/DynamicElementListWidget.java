@@ -41,10 +41,10 @@ public abstract class DynamicElementListWidget<E extends ElementEntry>
 			this.dragging = dragging;
 		}
 		
-		@Override public IGuiEventListener getListener() {
+		@Override public IGuiEventListener getFocused() {
 			return this.focused;
 		}
-		@Override public void setListener(IGuiEventListener listener) {
+		@Override public void setFocused(IGuiEventListener listener) {
 			this.focused = listener;
 		}
 		

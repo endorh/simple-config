@@ -21,8 +21,8 @@ import java.nio.file.Path;
 	
 	public static Path getServerConfigPath() {
 		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-		Path serverConfig = server.func_240776_a_(SERVERCONFIG);
-		return FileUtils.getOrCreateDirectory(serverConfig, SERVERCONFIG.getFileName());
+		Path serverConfig = server.getWorldPath(SERVERCONFIG);
+		return FileUtils.getOrCreateDirectory(serverConfig, SERVERCONFIG.getId());
 	}
 	
 	public static Path getRemotePresetsDir() {

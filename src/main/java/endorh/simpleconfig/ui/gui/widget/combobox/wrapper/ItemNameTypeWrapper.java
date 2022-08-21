@@ -24,7 +24,7 @@ public class ItemNameTypeWrapper extends ResourceLocationTypeWrapper {
 		final Optional<Item> opt = Registry.ITEM.getOptional(element);
 		if (opt.isPresent()) {
 			Minecraft.getInstance().getItemRenderer()
-			  .renderItemIntoGUI(new ItemStack(opt.get()), x + 2, y + 2);
+			  .renderGuiItem(new ItemStack(opt.get()), x + 2, y + 2);
 		} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
 	}
 }

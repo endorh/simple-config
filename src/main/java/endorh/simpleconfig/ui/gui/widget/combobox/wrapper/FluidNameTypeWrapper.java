@@ -23,8 +23,8 @@ public class FluidNameTypeWrapper extends ResourceLocationTypeWrapper {
 	) {
 		final Optional<Fluid> opt = Registry.FLUID.getOptional(element);
 		if (opt.isPresent()) {
-			Minecraft.getInstance().getItemRenderer().renderItemIntoGUI(
-			  new ItemStack(opt.get().getFilledBucket()), x + 2, y + 2);
+			Minecraft.getInstance().getItemRenderer().renderGuiItem(
+			  new ItemStack(opt.get().getBucket()), x + 2, y + 2);
 		} else ICON_UNKNOWN.renderCentered(mStack, x, y, w, h);
 	}
 }

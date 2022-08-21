@@ -45,9 +45,9 @@ public class ServerConfig {
 			final List<String> names = Lists.newArrayList();
 			if (server != null) {
 				final PlayerList pl = server.getPlayerList();
-				final List<String> ops = Lists.newArrayList(pl.getOppedPlayerNames());
-				final List<String> whl = Lists.newArrayList(pl.getWhitelistedPlayerNames());
-				final List<String> nms = Lists.newArrayList(pl.getOnlinePlayerNames());
+				final List<String> ops = Lists.newArrayList(pl.getOpNames());
+				final List<String> whl = Lists.newArrayList(pl.getWhiteListNames());
+				final List<String> nms = Lists.newArrayList(pl.getPlayerNamesArray());
 				whl.removeAll(ops);
 				nms.removeAll(ops);
 				nms.removeAll(whl);
@@ -119,12 +119,12 @@ public class ServerConfig {
 	private static IFormattableTextComponent makeLink(
 	  String key, @Nullable String tooltipKey, String url, TextFormatting... styles
 	) {
-		return new TranslationTextComponent(key).modifyStyle(s -> {
-			s = s.createStyleFromFormattings(styles);
+		return new TranslationTextComponent(key).withStyle(s -> {
+			s = s.applyFormats(styles);
 			if (tooltipKey != null)
-				s = s.setHoverEvent(new HoverEvent(
+				s = s.withHoverEvent(new HoverEvent(
 				  Action.SHOW_TEXT, new TranslationTextComponent(tooltipKey)));
-			return s.setClickEvent(new ClickEvent(
+			return s.withClickEvent(new ClickEvent(
 			  ClickEvent.Action.OPEN_URL, url));
 		});
 	}
@@ -207,9 +207,9 @@ public class ServerConfig {
 			final Set<String> roles = permissions.roles.entrySet().stream().filter(
 			  e -> e.getValue().contains(player.getScoreboardName())
 			).map(Entry::getKey).collect(Collectors.toSet());
-			if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
+			if (player.hasPermissions(4)) // Top level admins/single-player cheats
 				return Pair.of(ConfigPermission.EDIT_SERVER_CONFIG, PresetPermission.SAVE_PRESETS);
-			if (player.hasPermissionLevel(2)) roles.add("[op]");
+			if (player.hasPermissions(2)) roles.add("[op]");
 			roles.add("[all]");
 			final Set<String> modGroups = permissions.mod_groups.entrySet().stream().filter(
 			  e -> e.getValue().getKey() == ListType.BLACKLIST ^ e.getValue().getValue().contains(mod)
@@ -238,9 +238,9 @@ public class ServerConfig {
 			final Set<String> roles = permissions.roles.entrySet().stream().filter(
 			  e -> e.getValue().contains(player.getScoreboardName())
 			).map(Entry::getKey).collect(Collectors.toSet());
-			if (player.hasPermissionLevel(4)) // Top level admins/single-player cheats
+			if (player.hasPermissions(4)) // Top level admins/single-player cheats
 				return true;
-			if (player.hasPermissionLevel(2)) roles.add("[op]");
+			if (player.hasPermissions(2)) roles.add("[op]");
 			roles.add("[all]");
 			for (Pair<String, Boolean> rule: Lists.reverse(hotkey_rules))
 				if (roles.contains(rule.getKey())) return rule.getValue();

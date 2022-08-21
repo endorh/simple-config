@@ -21,7 +21,7 @@ public class Modifier {
 	}
 	
 	public static @Nullable Modifier ofKeyCode(int code) {
-		if (Minecraft.IS_RUNNING_ON_MAC? code == 343 || code == 347 : code == 341 || code == 345) {
+		if (Minecraft.ON_OSX? code == 343 || code == 347 : code == 341 || code == 345) {
 			return of(false, true, false);
 		} else if (code == 344 || code == 340) {
 			return of(false, false, true);

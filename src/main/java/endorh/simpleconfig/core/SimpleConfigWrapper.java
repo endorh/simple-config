@@ -288,7 +288,7 @@ public class SimpleConfigWrapper {
 			for (String l: lines) {
 				l = l.substring(commonIndent);
 				IFormattableTextComponent ll = new StringTextComponent(l)
-				  .mergeStyle(TextFormatting.GRAY);
+				  .withStyle(TextFormatting.GRAY);
 				Matcher m = EXPERIMENTAL.matcher(l);
 				if (m.find()) {
 					builder = builder.withTags(EntryTag.EXPERIMENTAL);

@@ -22,6 +22,6 @@ public class StringTypeWrapper implements ITypeWrapper<String> {
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.plain(Style.EMPTY.setColor(Color.fromInt(0xE0E0E0)));
+		return ITextFormatter.plain(Style.EMPTY.withColor(Color.fromRgb(0xE0E0E0)));
 	}
 }

@@ -127,7 +127,7 @@ public class SimpleConfigGUIManager {
 			guiSession = guiSessions.get(modId);
 			screen.setEditedConfigHotKey(hotkey, r -> {
 				screen.setEditedConfigHotKey(null, null);
-				Minecraft.getInstance().displayGuiScreen(parentScreen);
+				Minecraft.getInstance().setScreen(parentScreen);
 				if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
 				guiSession = prevSession;
 			});
@@ -158,11 +158,11 @@ public class SimpleConfigGUIManager {
 			  guiStates.put(modId, removed.saveConfigScreenGUIState());
 			  guiSessions.remove(modId);
 			  if (configs.containsKey(SimpleConfig.Type.COMMON)
-			      && !Minecraft.getInstance().isIntegratedServerRunning()
+			      && !Minecraft.getInstance().isLocalServer()
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
 			  for (SimpleConfigImpl c: orderedConfigs) c.removeGUI();
-			  Minecraft.getInstance().displayGuiScreen(parentScreen);
+			  Minecraft.getInstance().setScreen(parentScreen);
 			  if (hotKeyDialog != null) parent.addDialog(hotKeyDialog);
 		  }); //.setClosingRunnable(() -> activeScreens.remove(modId));
 		for (SimpleConfigImpl config : orderedConfigs) config.buildGUI(builder, false);
@@ -200,7 +200,7 @@ public class SimpleConfigGUIManager {
 			  AbstractConfigScreen removed = activeScreens.remove(modId);
 			  guiStates.put(modId, removed.saveConfigScreenGUIState());
 			  if (configs.containsKey(SimpleConfig.Type.COMMON)
-			      && !Minecraft.getInstance().isIntegratedServerRunning()
+			      && !Minecraft.getInstance().isLocalServer()
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
 			  for (SimpleConfigImpl c: orderedConfigs) c.removeGUI();
@@ -212,7 +212,7 @@ public class SimpleConfigGUIManager {
 		for (SimpleConfigImpl config : orderedConfigs) {
 			config.buildGUI(builder, false);
 			if (config.getType() == SimpleConfig.Type.COMMON
-			    && !Minecraft.getInstance().isIntegratedServerRunning()
+			    && !Minecraft.getInstance().isLocalServer()
 			    && hasPermission
 			) config.buildGUI(builder, true);
 		}
@@ -227,7 +227,7 @@ public class SimpleConfigGUIManager {
 	 * Build a config GUI for the specified mod id, using the current screen as parent
 	 */
 	public static Screen getConfigGUI(String modId) {
-		return getConfigGUI(modId, Minecraft.getInstance().currentScreen);
+		return getConfigGUI(modId, Minecraft.getInstance().screen);
 	}
 	
 	/**
@@ -235,13 +235,13 @@ public class SimpleConfigGUIManager {
 	 */
 	@SuppressWarnings("unused")
 	public static void showConfigGUI(String modId) {
-		Minecraft.getInstance().displayGuiScreen(getConfigGUI(modId));
+		Minecraft.getInstance().setScreen(getConfigGUI(modId));
 	}
 	
 	public static void showConfigGUIForHotKey(
 	  String modId, IDialogCapableScreen parent, HotKeyListDialog hotKeyDialog, ConfigHotKey hotKey
 	) {
-		Minecraft.getInstance().displayGuiScreen(
+		Minecraft.getInstance().setScreen(
 		  getConfigGUIForHotKey(modId, parent, hotKeyDialog, hotKey));
 	}
 	
@@ -250,7 +250,7 @@ public class SimpleConfigGUIManager {
 	 */
 	public static void showModListGUI() {
 		final Minecraft mc = Minecraft.getInstance();
-		mc.displayGuiScreen(new ModListScreen(mc.currentScreen));
+		mc.setScreen(new ModListScreen(mc.screen));
 	}
 	
 	/**
@@ -258,7 +258,7 @@ public class SimpleConfigGUIManager {
 	 */
 	public static void showConfigHotkeysGUI() {
 		Minecraft mc = Minecraft.getInstance();
-		mc.displayGuiScreen(new DialogScreen(mc.currentScreen, new HotKeyListDialog(null)));
+		mc.setScreen(new DialogScreen(mc.screen, new HotKeyListDialog(null)));
 	}
 	
 	/**
@@ -318,7 +318,7 @@ public class SimpleConfigGUIManager {
 		for (Widget widget : widgets) {
 			if (widget instanceof Button) {
 				Button but = (Button) widget;
-				if (but.getMessage().getString().equals(I18n.format("menu.options"))) {
+				if (but.getMessage().getString().equals(I18n.get("menu.options"))) {
 					if (but.x == x && but.y == y && but.getWidth() == 98) {
 						return Optional.of(but);
 					}

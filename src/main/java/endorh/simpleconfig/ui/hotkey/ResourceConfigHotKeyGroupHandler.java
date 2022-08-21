@@ -42,27 +42,27 @@ public class ResourceConfigHotKeyGroupHandler extends ReloadListener<Loader> {
 	@Override protected @NotNull Loader prepare(@NotNull IResourceManager manager, @NotNull IProfiler profiler) {
 		Loader l = new Loader();
 		profiler.startTick();
-		for (String namespace: manager.getResourceNamespaces()) {
-			profiler.startSection(namespace);
+		for (String namespace: manager.getNamespaces()) {
+			profiler.push(namespace);
 			try {
-				for (IResource index: manager.getAllResources(new ResourceLocation(namespace, "config-hotkeys.json"))) {
-					profiler.startSection(index.getPackName());
+				for (IResource index: manager.getResources(new ResourceLocation(namespace, "config-hotkeys.json"))) {
+					profiler.push(index.getSourceName());
 					try (
 					  InputStream is = index.getInputStream();
 					  Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)
 					) {
-						profiler.startSection("parse");
-						ResourceHotKeyGroupsDescriptor desc = JSONUtils.fromJSONUnlenient(GSON, r, TYPE);
-						profiler.endStartSection("register");
+						profiler.push("parse");
+						ResourceHotKeyGroupsDescriptor desc = JSONUtils.fromJson(GSON, r, TYPE);
+						profiler.popPush("register");
 						if (desc != null) l.registerGroups(namespace, desc);
-						profiler.endSection();
+						profiler.pop();
 					} catch (RuntimeException e) {
-						LOGGER.warn("Invalid config-hotkeys.json in resourcepack: '{}'", index.getPackName(), e);
+						LOGGER.warn("Invalid config-hotkeys.json in resourcepack: '{}'", index.getSourceName(), e);
 					}
-					profiler.endSection();
+					profiler.pop();
 				}
 			} catch (IOException ignored) {}
-			profiler.endSection();
+			profiler.pop();
 		}
 		profiler.endTick();
 		return l;
@@ -119,15 +119,15 @@ public class ResourceConfigHotKeyGroupHandler extends ReloadListener<Loader> {
 			@Override public ResourceHotKeyGroupsDescriptor deserialize(
 			  JsonElement json, Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
-				JsonObject obj = JSONUtils.getJsonObject(json, "config hotkeys");
-				JsonArray arr = JSONUtils.getJsonArray(obj, "groups", new JsonArray());
+				JsonObject obj = JSONUtils.convertToJsonObject(json, "config hotkeys");
+				JsonArray arr = JSONUtils.getAsJsonArray(obj, "groups", new JsonArray());
 				Set<String> set = new HashSet<>();
 				if (arr != null) for (JsonElement item: arr)
-					set.add(JSONUtils.getString(item, "group name"));
-				arr = JSONUtils.getJsonArray(obj, "default_groups", new JsonArray());
+					set.add(JSONUtils.convertToString(item, "group name"));
+				arr = JSONUtils.getAsJsonArray(obj, "default_groups", new JsonArray());
 				Set<String> def = new HashSet<>();
 				if (arr != null) for (JsonElement item: arr)
-					def.add(JSONUtils.getString(item, "group name"));
+					def.add(JSONUtils.convertToString(item, "group name"));
 				return new ResourceHotKeyGroupsDescriptor(set, def);
 			}
 			

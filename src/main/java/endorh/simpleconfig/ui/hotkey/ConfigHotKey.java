@@ -62,7 +62,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 				} else messages.add(new TranslationTextComponent(
 				  "simpleconfig.hotkey.no_permission",
 				  new StringTextComponent(context.config.getModName())
-					 .mergeStyle(TextFormatting.GRAY)));
+					 .withStyle(TextFormatting.GRAY)));
 			} else {
 				context.config.loadSnapshot(context.result, false, false, null);
 				context.config.save();
@@ -83,11 +83,11 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	
 	public IFormattableTextComponent getTitle() {
 		return new StringTextComponent(name != null? name : "")
-		  .mergeStyle(TextFormatting.WHITE);
+		  .withStyle(TextFormatting.WHITE);
 	}
 	
 	public ITextComponent getCaption() {
-		return getTitle().appendString(" ").append(
+		return getTitle().append(" ").append(
 		  getKeyMapping().getDisplayName(TextFormatting.GRAY));
 	}
 	

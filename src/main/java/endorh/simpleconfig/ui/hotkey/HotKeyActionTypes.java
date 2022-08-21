@@ -68,7 +68,7 @@ public class HotKeyActionTypes {
 			return new TranslationTextComponent(
 			  "simpleconfig.hotkey.type.action." + getTranslationKey(), new StringTextComponent(
 				 value != null? value : "null"
-			).mergeStyle(TextFormatting.DARK_AQUA));
+			).withStyle(TextFormatting.DARK_AQUA));
 		}
 		
 		@SuppressWarnings("unchecked") public <V> SimpleHotKeyActionType<V, V> cast() {

@@ -318,16 +318,16 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				editButton.render(mStack, mouseX, mouseY, delta);
 				
 				int count = getCount();
-				FontRenderer font = Minecraft.getInstance().fontRenderer;
+				FontRenderer font = Minecraft.getInstance().font;
 				
 				int textX = x + 24;
-				int textY = y + h / 2 - font.FONT_HEIGHT / 2;
+				int textY = y + h / 2 - font.lineHeight / 2;
 				drawString(
 				  mStack, font, getDisplayText(),
 				  textX, textY, count == 0? 0xE0A0A0A0 : 0xE0E0E0E0);
 				ConfigHotKeyTreeView tree = getTree();
 				if (textX <= mouseX && mouseX < tree.getArea().getMaxX()
-				    && textY <= mouseY && mouseY < textY + font.FONT_HEIGHT) {
+				    && textY <= mouseY && mouseY < textY + font.lineHeight) {
 					List<ITextComponent> tooltip = getResumeTooltip();
 					if (!tooltip.isEmpty()) tree.getDialogScreen().addTooltip(Tooltip.of(
 					  Point.of(mouseX, mouseY), tooltip));
@@ -341,16 +341,16 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				IFormattableTextComponent name = ModList.get().getMods().stream()
 				  .filter(m -> modId.equals(m.getModId()))
 				  .findFirst().map(m -> new StringTextComponent(
-					 m.getDisplayName()).mergeStyle(style).appendString(" ")
+					 m.getDisplayName()).withStyle(style).append(" ")
 					 .append(new StringTextComponent(
 						"(" + modId + ")"
-					 ).mergeStyle(dim))
-				  ).orElse(new StringTextComponent(modId).mergeStyle(style));
+					 ).withStyle(dim))
+				  ).orElse(new StringTextComponent(modId).withStyle(style));
 				if (count > 0) name.append(
 				  new StringTextComponent(" [")
 					 .append(new StringTextComponent(String.valueOf(count))
-					           .mergeStyle(TextFormatting.AQUA))
-					 .appendString("]").mergeStyle(TextFormatting.DARK_AQUA));
+					           .withStyle(TextFormatting.AQUA))
+					 .append("]").withStyle(TextFormatting.DARK_AQUA));
 				return name;
 			}
 			
@@ -364,7 +364,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 						if (a != null && !a.isEmpty()) {
 							tt.add(new TranslationTextComponent(
 							  "simpleconfig.config.category." + type.getAlias()
-							).mergeStyle(TextFormatting.BOLD));
+							).withStyle(TextFormatting.BOLD));
 							a.forEach((k, v) -> tt.add(formatAction(k, v)));
 						}
 					}
@@ -374,8 +374,8 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			
 			protected <T> IFormattableTextComponent formatAction(String key, HotKeyAction<T> action) {
 				return new StringTextComponent("[" + key + "]: ")
-				  .mergeStyle(TextFormatting.LIGHT_PURPLE)
-				  .append(formatAction(action.getType(), action).deepCopy().mergeStyle(TextFormatting.GRAY));
+				  .withStyle(TextFormatting.LIGHT_PURPLE)
+				  .append(formatAction(action.getType(), action).copy().withStyle(TextFormatting.GRAY));
 			}
 			
 			@SuppressWarnings("unchecked") private <V, A extends HotKeyAction<V>, T extends HotKeyActionType<V, A>>

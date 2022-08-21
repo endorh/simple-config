@@ -97,8 +97,8 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		}
 		if (!isFocused() || !canShowColorPicker()) setColorPickerVisible(false);
 		final Minecraft mc = Minecraft.getInstance();
-		final MainWindow window = mc.getMainWindow();
-		final FontRenderer font = mc.fontRenderer;
+		final MainWindow window = mc.getWindow();
+		final FontRenderer font = mc.font;
 		colorDisplayWidget.y = y;
 		ColorValue value = getColorValue(getText());
 		if (!value.hasError()) {
@@ -107,12 +107,12 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		}
 		// An offset of 3 matches the visual offset with the reset button (2 + 1 (border))
 		final int offset = colorDisplayWidget.getWidth() + 3;
-		super.renderChildEntry(mStack, font.getBidiFlag()? x : x + offset, y, w - offset, h, mouseX, mouseY, delta);
+		super.renderChildEntry(mStack, font.isBidirectional()? x : x + offset, y, w - offset, h, mouseX, mouseY, delta);
 		colorDisplayWidget.x = x;
 		colorDisplayWidget.render(mStack, mouseX, mouseY, delta);
 		if (isColorPickerVisible()) {
-			final int cpw = colorPicker.getWidth(), cph = colorPicker.getHeightRealms();
-			final int ww = window.getScaledWidth();
+			final int cpw = colorPicker.getWidth(), cph = colorPicker.getHeight();
+			final int ww = window.getGuiScaledWidth();
 			colorPicker.y = y;
 			colorPicker.x = x + w / 2 < ww / 2? x + w + 3 : x - cpw - 3;
 			if (colorPicker.x < 4 || colorPicker.x + cpw > ww - 4) { // Wrap
@@ -182,7 +182,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 	}
 	
 	@Override public int getExtraScrollHeight() {
-		return isColorPickerVisible() ? colorDisplayWidget.getHeightRealms() + colorPickerRectangle.y - entryArea.y : -1;
+		return isColorPickerVisible() ? colorDisplayWidget.getHeight() + colorPickerRectangle.y - entryArea.y : -1;
 	}
 	
 	@Override protected Integer fromString(String s) {

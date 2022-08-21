@@ -66,8 +66,8 @@ public class PairListEntry<
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		leftEntry.updateFocused(isFocused && getListener() == leftEntry);
-		rightEntry.updateFocused(isFocused && getListener() == rightEntry);
+		leftEntry.updateFocused(isFocused && getFocused() == leftEntry);
+		rightEntry.updateFocused(isFocused && getFocused() == rightEntry);
 	}
 	
 	@Override public boolean isGroup() {

@@ -58,7 +58,7 @@ public class EntryPairListListEntry<
 	public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		for (EntryPairCell<K, V, KE, E> cell : cells)
-			cell.updateSelected(isFocused && getListener() == cell && expanded);
+			cell.updateSelected(isFocused && getFocused() == cell && expanded);
 	}
 	
 	@Override protected boolean isFieldFullWidth() {
@@ -181,9 +181,9 @@ public class EntryPairListListEntry<
 		
 		@Override public void updateSelected(boolean isSelected) {
 			super.updateSelected(isSelected);
-			keyEntry.updateFocused(isSelected && getListener() == keyEntry);
-			valueEntry.updateFocused(isSelected && getListener() == valueEntry);
-			if (isSelected) getListEntry().selectKey = getListener() == keyEntry;
+			keyEntry.updateFocused(isSelected && getFocused() == keyEntry);
+			valueEntry.updateFocused(isSelected && getFocused() == valueEntry);
+			if (isSelected) getListEntry().selectKey = getFocused() == keyEntry;
 		}
 		
 		@Override protected List<EntryError> computeErrors() {
@@ -223,8 +223,8 @@ public class EntryPairListListEntry<
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			keyOverlayColor = hasError() ? errorFilter : noFilter;
-			final FontRenderer fr = Minecraft.getInstance().fontRenderer;
-			int keyX = fr.getBidiFlag() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
+			final FontRenderer fr = Minecraft.getInstance().font;
+			int keyX = fr.isBidirectional() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
 			valueEntry.render(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			final EntryPairListListEntry<K, V, KE, E> listEntry = getListEntry();
 			keyEntry.renderChild(mStack, keyX, y, listEntry.getKeyFieldWidth(), 20, mouseX, mouseY, delta);
@@ -244,7 +244,7 @@ public class EntryPairListListEntry<
 			return isExpandable && ((BaseListEntry<?, ?, ?>) valueEntry).expanded && mouseY > 18;
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> children() {
 			return widgets;
 		}
 		
@@ -291,50 +291,50 @@ public class EntryPairListListEntry<
 		
 		// Modified tab order
 		@Override public boolean changeFocus(boolean forward) {
-			IGuiEventListener listener = getListener();
+			IGuiEventListener listener = getFocused();
 			boolean hasListener = listener != null;
 			BaseListEntry<?, ?, ?> subList = isExpandable? (BaseListEntry<?, ?, ?>) valueEntry : null;
-			if (forward && isExpandable && listener == valueEntry && subList.getListener() == subList.labelReference) {
+			if (forward && isExpandable && listener == valueEntry && subList.getFocused() == subList.labelReference) {
 				subList.changeFocus(false);
 				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
-				setListener(keyEntry);
+				setFocused(keyEntry);
 				return true;
 			} else if (
-			  !forward && isExpandable && listener == valueEntry && subList.getEventListeners().indexOf(subList.getListener()) == 1
+			  !forward && isExpandable && listener == valueEntry && subList.children().indexOf(subList.getFocused()) == 1
 			) {
 				subList.changeFocus(false);
 				subList.changeFocus(false);
 				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
-				setListener(keyEntry);
+				setFocused(keyEntry);
 				return true;
 			}
 			if (hasListener && listener.changeFocus(forward)) return true;
 			
 			if (isExpandable) {
 				if (listener == keyEntry) {
-					final List<? extends IGuiEventListener> subListeners = subList.getEventListeners();
+					final List<? extends IGuiEventListener> subListeners = subList.children();
 					final IGuiEventListener l = forward ? subListeners.get(1) : subListeners.get(0);
 					WidgetUtils.forceUnFocus(l);
-					setListener(valueEntry);
-					valueEntry.setListener(l);
+					setFocused(valueEntry);
+					valueEntry.setFocused(l);
 					if (valueEntry.changeFocus(forward))
 						return true;
 				}
 				
 				if (!hasListener && forward) {
-					setListener(valueEntry);
-					valueEntry.setListener(subList.labelReference);
+					setFocused(valueEntry);
+					valueEntry.setFocused(subList.labelReference);
 					return true;
 				}
 				
-				if (listener == valueEntry && valueEntry.getListener() == subList.labelReference && !forward) {
+				if (listener == valueEntry && valueEntry.getFocused() == subList.labelReference && !forward) {
 					valueEntry.changeFocus(false);
-					setListener(null);
+					setFocused(null);
 					return false;
 				}
 			}
 			
-			List<? extends IGuiEventListener> list = getEventListeners();
+			List<? extends IGuiEventListener> list = children();
 			int index = list.indexOf(listener);
 			int target = hasListener && index >= 0 ? index + (forward ? 1 : 0)
 			                                       : forward ? 0 : list.size();
@@ -345,24 +345,24 @@ public class EntryPairListListEntry<
 			while (hasNext.getAsBoolean()) {
 				IGuiEventListener next = supplier.get();
 				if (next.changeFocus(forward)) {
-					setListener(next);
+					setFocused(next);
 					return true;
 				}
 			}
 			
-			setListener(null);
+			setFocused(null);
 			return false;
 		}
 	}
 	
-	@Override public void setListener(IGuiEventListener listener) {
-		if (getEventListeners().contains(listener)) {
-			super.setListener(listener);
+	@Override public void setFocused(IGuiEventListener listener) {
+		if (children().contains(listener)) {
+			super.setFocused(listener);
 		} else {
 			for (EntryPairCell<K, V, KE, E> cell : cells) {
 				if (cell.keyEntry == listener || cell.valueEntry == listener) {
-					super.setListener(cell);
-					cell.setListener(listener);
+					super.setFocused(cell);
+					cell.setFocused(listener);
 					break;
 				}
 			}

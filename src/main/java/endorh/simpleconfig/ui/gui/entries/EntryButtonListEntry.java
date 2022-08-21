@@ -94,16 +94,16 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 		switch (keyCode) {
 			case 262: // Right
-				if (getListener() == entry) {
-					setListener(button);
+				if (getFocused() == entry) {
+					setFocused(button);
 					WidgetUtils.forceTransferFocus(entry, button);
 					playFeedbackTap(0.4F);
 					return true;
 				}
 				break;
 			case 263: // Left
-				if (getListener() == button) {
-					setListener(entry);
+				if (getFocused() == button) {
+					setFocused(entry);
 					WidgetUtils.forceTransferFocus(button, entry);
 					playFeedbackTap(0.4F);
 					return true;
@@ -133,7 +133,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	
 	@Override public void navigate() {
 		super.navigate();
-		setListener(entry);
+		setFocused(entry);
 	}
 	
 	@Override public List<HotKeyActionType<V, ?>> getHotKeyActionTypes() {

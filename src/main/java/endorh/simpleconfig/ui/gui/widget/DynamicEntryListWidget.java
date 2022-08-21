@@ -129,7 +129,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	 */
 	public E getFocusedItem() {
 		//noinspection unchecked
-		return (E) getListener();
+		return (E) getFocused();
 	}
 	
 	public @Nullable E getSelectedEntry() {
@@ -171,7 +171,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		return entries;
 	}
 	
-	@Override public final @NotNull List<E> getEventListeners() {
+	@Override public final @NotNull List<E> children() {
 		return Collections.unmodifiableList(entries);
 	}
 	
@@ -180,7 +180,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	protected E getItem(int index) {
-		return getEventListeners().get(index);
+		return children().get(index);
 	}
 	
 	protected int addItem(E item) {
@@ -189,7 +189,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	protected int getItemCount() {
-		return getEventListeners().size();
+		return children().size();
 	}
 	
 	protected final E getItemAtPosition(double mouseX, double mouseY) {
@@ -209,7 +209,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		}
 		return mouseX < (double) getScrollBarPosition() && mouseX >= (double) minX &&
 		       mouseX <= (double) maxX && itemIndex >= 0 && currentY >= 0 &&
-		       itemIndex < getItemCount() ? getEventListeners().get(itemIndex) : null;
+		       itemIndex < getItemCount() ? children().get(itemIndex) : null;
 	}
 	
 	public void setLeftPos(int left) {
@@ -261,19 +261,19 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	protected void renderBackBackground(
 	  MatrixStack mStack, BufferBuilder buffer, Tessellator tessellator
 	) {
-		Matrix4f matrix = mStack.getLast().getMatrix();
+		Matrix4f matrix = mStack.last().pose();
 		int scroll = (int) getScroll();
 		float div = 32F;
-		client.getTextureManager().bindTexture(backgroundLocation);
+		client.getTextureManager().bind(backgroundLocation);
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		// @formatter:off
-		buffer.pos(matrix, (float)     0, (float) bottom, 0F).tex((float)           0, (float) (bottom + scroll) / div).color(32, 32, 32, 255).endVertex();
-		buffer.pos(matrix, (float) width, (float) bottom, 0F).tex((float) width / div, (float) (bottom + scroll) / div).color(32, 32, 32, 255).endVertex();
-		buffer.pos(matrix, (float) width, (float) top,    0F).tex((float) width / div, (float) (top    + scroll) / div).color(32, 32, 32, 255).endVertex();
-		buffer.pos(matrix, (float)     0, (float) top,    0F).tex((float)           0, (float) (top    + scroll) / div).color(32, 32, 32, 255).endVertex();
+		buffer.vertex(matrix, (float)     0, (float) bottom, 0F).uv((float)           0, (float) (bottom + scroll) / div).color(32, 32, 32, 255).endVertex();
+		buffer.vertex(matrix, (float) width, (float) bottom, 0F).uv((float) width / div, (float) (bottom + scroll) / div).color(32, 32, 32, 255).endVertex();
+		buffer.vertex(matrix, (float) width, (float) top,    0F).uv((float) width / div, (float) (top    + scroll) / div).color(32, 32, 32, 255).endVertex();
+		buffer.vertex(matrix, (float)     0, (float) top,    0F).uv((float)           0, (float) (top    + scroll) / div).color(32, 32, 32, 255).endVertex();
 		// @formatter:on
-		tessellator.draw();
+		tessellator.end();
 	}
 	
 	public void tick() {
@@ -287,7 +287,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		RenderSystem.disableLighting();
 		RenderSystem.disableFog();
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
+		BufferBuilder buffer = tessellator.getBuilder();
 		renderBackBackground(mStack, buffer, tessellator);
 		
 		int rowLeft = getRowLeft();
@@ -307,19 +307,19 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		RenderSystem.disableAlphaTest();
 		RenderSystem.shadeModel(7425);
 		RenderSystem.disableTexture();
-		Matrix4f m = mStack.getLast().getMatrix();
+		Matrix4f m = mStack.last().pose();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(m, (float)     0, (float) (top + 4), 0F).tex(0F, 1F).color(0, 0, 0,   0).endVertex();
-		buffer.pos(m, (float) width, (float) (top + 4), 0F).tex(1F, 1F).color(0, 0, 0,   0).endVertex();
-		buffer.pos(m, (float) width, (float)  top     , 0F).tex(1F, 0F).color(0, 0, 0, 255).endVertex();
-		buffer.pos(m, (float)     0, (float)  top     , 0F).tex(0F, 0F).color(0, 0, 0, 255).endVertex();
-		tessellator.draw();
+		buffer.vertex(m, (float)     0, (float) (top + 4), 0F).uv(0F, 1F).color(0, 0, 0,   0).endVertex();
+		buffer.vertex(m, (float) width, (float) (top + 4), 0F).uv(1F, 1F).color(0, 0, 0,   0).endVertex();
+		buffer.vertex(m, (float) width, (float)  top     , 0F).uv(1F, 0F).color(0, 0, 0, 255).endVertex();
+		buffer.vertex(m, (float)     0, (float)  top     , 0F).uv(0F, 0F).color(0, 0, 0, 255).endVertex();
+		tessellator.end();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.pos(m, (float)     0, (float)  bottom,      0F).tex(0F, 1F).color(0, 0, 0, 255).endVertex();
-		buffer.pos(m, (float) width, (float)  bottom,      0F).tex(1F, 1F).color(0, 0, 0, 255).endVertex();
-		buffer.pos(m, (float) width, (float) (bottom - 4), 0F).tex(1F, 0F).color(0, 0, 0,   0).endVertex();
-		buffer.pos(m, (float)     0, (float) (bottom - 4), 0F).tex(0F, 0F).color(0, 0, 0,   0).endVertex();
-		tessellator.draw();
+		buffer.vertex(m, (float)     0, (float)  bottom,      0F).uv(0F, 1F).color(0, 0, 0, 255).endVertex();
+		buffer.vertex(m, (float) width, (float)  bottom,      0F).uv(1F, 1F).color(0, 0, 0, 255).endVertex();
+		buffer.vertex(m, (float) width, (float) (bottom - 4), 0F).uv(1F, 0F).color(0, 0, 0,   0).endVertex();
+		buffer.vertex(m, (float)     0, (float) (bottom - 4), 0F).uv(0F, 0F).color(0, 0, 0,   0).endVertex();
+		tessellator.end();
 		int maxScroll = getMaxScroll();
 		renderScrollBar(mStack, tessellator, buffer, maxScroll, scrollBarPosition, scrollBarEnd);
 		renderDecorations(mStack, mouseX, mouseY);
@@ -339,26 +339,26 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 			int sbMinY = (int) getScroll() * (bottom - top - sbHeight) / maxScroll + top;
 			if (sbMinY < top) sbMinY = top;
 			int alpha = 190;
-			Matrix4f m = matrices.getLast().getMatrix();
+			Matrix4f m = matrices.last().pose();
 			// @formatter:off
 			bb.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			bb.pos(m, (float) sbMinX, (float) bottom, 0.0f).tex(0.0f, 1.0f).color(0, 0, 0, alpha).endVertex();
-			bb.pos(m, (float) sbMaxX, (float) bottom, 0.0f).tex(1.0f, 1.0f).color(0, 0, 0, alpha).endVertex();
-			bb.pos(m, (float) sbMaxX, (float)    top, 0.0f).tex(1.0f, 0.0f).color(0, 0, 0, alpha).endVertex();
-			bb.pos(m, (float) sbMinX, (float)    top, 0.0f).tex(0.0f, 0.0f).color(0, 0, 0, alpha).endVertex();
-			tessellator.draw();
+			bb.vertex(m, (float) sbMinX, (float) bottom, 0.0f).uv(0.0f, 1.0f).color(0, 0, 0, alpha).endVertex();
+			bb.vertex(m, (float) sbMaxX, (float) bottom, 0.0f).uv(1.0f, 1.0f).color(0, 0, 0, alpha).endVertex();
+			bb.vertex(m, (float) sbMaxX, (float)    top, 0.0f).uv(1.0f, 0.0f).color(0, 0, 0, alpha).endVertex();
+			bb.vertex(m, (float) sbMinX, (float)    top, 0.0f).uv(0.0f, 0.0f).color(0, 0, 0, alpha).endVertex();
+			tessellator.end();
 			bb.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			bb.pos(m, (float) sbMinX, (float) (sbMinY + sbHeight), 0.0f).tex(0.0f, 1.0f).color(128, 128, 128, alpha).endVertex();
-			bb.pos(m, (float) sbMaxX, (float) (sbMinY + sbHeight), 0.0f).tex(1.0f, 1.0f).color(128, 128, 128, alpha).endVertex();
-			bb.pos(m, (float) sbMaxX, (float)  sbMinY,             0.0f).tex(1.0f, 0.0f).color(128, 128, 128, alpha).endVertex();
-			bb.pos(m, (float) sbMinX, (float)  sbMinY,             0.0f).tex(0.0f, 0.0f).color(128, 128, 128, alpha).endVertex();
-			tessellator.draw();
+			bb.vertex(m, (float) sbMinX, (float) (sbMinY + sbHeight), 0.0f).uv(0.0f, 1.0f).color(128, 128, 128, alpha).endVertex();
+			bb.vertex(m, (float) sbMaxX, (float) (sbMinY + sbHeight), 0.0f).uv(1.0f, 1.0f).color(128, 128, 128, alpha).endVertex();
+			bb.vertex(m, (float) sbMaxX, (float)  sbMinY,             0.0f).uv(1.0f, 0.0f).color(128, 128, 128, alpha).endVertex();
+			bb.vertex(m, (float) sbMinX, (float)  sbMinY,             0.0f).uv(0.0f, 0.0f).color(128, 128, 128, alpha).endVertex();
+			tessellator.end();
 			bb.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			bb.pos(sbMinX,     sbMinY + sbHeight - 1, 0.0).tex(0.0f, 1.0f).color(192, 192, 192, alpha).endVertex();
-			bb.pos(sbMaxX - 1, sbMinY + sbHeight - 1, 0.0).tex(1.0f, 1.0f).color(192, 192, 192, alpha).endVertex();
-			bb.pos(sbMaxX - 1, sbMinY,                0.0).tex(1.0f, 0.0f).color(192, 192, 192, alpha).endVertex();
-			bb.pos(sbMinX,     sbMinY,                0.0).tex(0.0f, 0.0f).color(192, 192, 192, alpha).endVertex();
-			tessellator.draw();
+			bb.vertex(sbMinX,     sbMinY + sbHeight - 1, 0.0).uv(0.0f, 1.0f).color(192, 192, 192, alpha).endVertex();
+			bb.vertex(sbMaxX - 1, sbMinY + sbHeight - 1, 0.0).uv(1.0f, 1.0f).color(192, 192, 192, alpha).endVertex();
+			bb.vertex(sbMaxX - 1, sbMinY,                0.0).uv(1.0f, 0.0f).color(192, 192, 192, alpha).endVertex();
+			bb.vertex(sbMinX,     sbMinY,                0.0).uv(0.0f, 0.0f).color(192, 192, 192, alpha).endVertex();
+			tessellator.end();
 			// @formatter:on
 		}
 	}
@@ -431,7 +431,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		E item = getItemAtPosition(mouseX, mouseY);
 		if (item != null) {
 			if (item.mouseClicked(mouseX, mouseY, button)) {
-				setListener(item);
+				setFocused(item);
 				setDragging(true);
 				updateSelectedTarget();
 				return true;
@@ -448,12 +448,12 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	protected void updateSelectedTarget() {
 		INavigableTarget target = null;
 		INestedGuiEventHandler nest = this;
-		while (nest.getListener() instanceof INestedGuiEventHandler) {
-			nest = ((INestedGuiEventHandler) nest.getListener());
+		while (nest.getFocused() instanceof INestedGuiEventHandler) {
+			nest = ((INestedGuiEventHandler) nest.getFocused());
 			if (nest instanceof INavigableTarget)
 				target = ((INavigableTarget) nest);
 		}
-		IGuiEventListener listener = nest.getListener();
+		IGuiEventListener listener = nest.getFocused();
 		if (listener instanceof INavigableTarget)
 			target = ((INavigableTarget) listener);
 		
@@ -562,8 +562,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	private void playFeedbackTap(float volume) {
-		Minecraft.getInstance().getSoundHandler().play(
-		  SimpleSound.master(SimpleConfigMod.UI_TAP, volume));
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
@@ -576,7 +576,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	) {
 		int itemCount = getItemCount();
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
+		BufferBuilder buffer = tessellator.getBuilder();
 		int yy = startY + headerHeight;
 		for (int renderIndex = 0; renderIndex < itemCount; ++renderIndex) {
 			E item = getItem(renderIndex);
@@ -584,7 +584,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 				int itemHeight = item.getItemHeight();
 				int itemWidth = getItemWidth();
 				int x = getRowLeft();
-				RenderHelper.disableStandardItemLighting();
+				RenderHelper.turnOff();
 				renderItem(
 				  mStack, item, renderIndex, x, yy, itemWidth, itemHeight, mouseX, mouseY,
 				  isMouseOver(mouseX, mouseY) && item.isMouseOver(mouseX, mouseY), delta);
@@ -601,7 +601,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	
 	protected void renderEmptyPlaceHolder(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		IFormattableTextComponent text = getEmptyPlaceHolder();
-		FontRenderer font = Minecraft.getInstance().fontRenderer;
+		FontRenderer font = Minecraft.getInstance().font;
 		drawCenteredString(mStack, font, text, (left + right) / 2, (top + bottom) / 2, 0xF0A0A0A0);
 	}
 	
@@ -653,20 +653,20 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	protected void renderBarBackground(
 	  MatrixStack matrices, int y1, int y2, int alpha1, int alpha2
 	) {
-		Matrix4f matrix = matrices.getLast().getMatrix();
+		Matrix4f matrix = matrices.last().pose();
 		float div = 32F;
-		client.getTextureManager().bindTexture(backgroundLocation);
+		client.getTextureManager().bind(backgroundLocation);
 		RenderSystem.color4f(1F, 1F, 1F, 1F);
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
+		BufferBuilder buffer = tessellator.getBuilder();
 		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 		// @formatter:off
-		buffer.pos(matrix, (float) 0,     (float) y2, 0F).tex(                 0F, (float) y2 / div).color(64, 64, 64, alpha2).endVertex();
-		buffer.pos(matrix, (float) width, (float) y2, 0F).tex((float) width / div, (float) y2 / div).color(64, 64, 64, alpha2).endVertex();
-		buffer.pos(matrix, (float) width, (float) y1, 0F).tex((float) width / div, (float) y1 / div).color(64, 64, 64, alpha1).endVertex();
-		buffer.pos(matrix, (float) 0,     (float) y1, 0F).tex(                 0F, (float) y1 / div).color(64, 64, 64, alpha1).endVertex();
+		buffer.vertex(matrix, (float) 0,     (float) y2, 0F).uv(                 0F, (float) y2 / div).color(64, 64, 64, alpha2).endVertex();
+		buffer.vertex(matrix, (float) width, (float) y2, 0F).uv((float) width / div, (float) y2 / div).color(64, 64, 64, alpha2).endVertex();
+		buffer.vertex(matrix, (float) width, (float) y1, 0F).uv((float) width / div, (float) y1 / div).color(64, 64, 64, alpha1).endVertex();
+		buffer.vertex(matrix, (float) 0,     (float) y1, 0F).uv(                 0F, (float) y1 / div).color(64, 64, 64, alpha1).endVertex();
 		// @formatter:on
-		tessellator.draw();
+		tessellator.end();
 	}
 	
 	protected E remove(int int_1) {
@@ -806,8 +806,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	public void changeFocusedMatch(int index) {
 		if (matchingEntries == null || matchingEntries.isEmpty()) {
 			focusedMatch = null;
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return;
 		}
 		matchingEntries.forEach(e -> e.setFocusedMatch(false));
@@ -851,8 +851,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 				parent.setLastSelectedNavigableSubTarget(t);
 			}
 			t.navigate();
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 0.3F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 0.3F));
 		}
 	}
 	
@@ -870,8 +870,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 			INavigableTarget t = subTargets.get(target);
 			selected.setLastSelectedNavigableSubTarget(t);
 			t.navigate();
-			Minecraft.getInstance().getSoundHandler().play(
-			  SimpleSound.master(SimpleConfigMod.UI_TAP, 0.3F));
+			Minecraft.getInstance().getSoundManager().play(
+			  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 0.3F));
 			return true;
 		}
 		return false;

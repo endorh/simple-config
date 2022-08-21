@@ -169,7 +169,7 @@ public class StringEntry
 	
 	protected static IFormattableTextComponent coloredNumber(int number) {
 		return new StringTextComponent(String.valueOf(number))
-		  .mergeStyle(TextFormatting.DARK_AQUA);
+		  .withStyle(TextFormatting.DARK_AQUA);
 	}
 	
 	@Override public List<String> getConfigCommentTooltips() {

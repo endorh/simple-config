@@ -104,7 +104,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	
 	protected boolean isFocusedCaption() {
-		return getListener() == captionReference;
+		return getFocused() == captionReference;
 	}
 	
 	// Layout properties
@@ -436,7 +436,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	
 	// Inherited properties
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 	

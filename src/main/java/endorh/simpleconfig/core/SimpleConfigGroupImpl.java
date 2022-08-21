@@ -152,7 +152,7 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	protected ITextComponent getTitle() {
 		if (ClientConfig.advanced.translation_debug_mode)
 			return getDebugTitle();
-		if (!I18n.hasKey(title)) {
+		if (!I18n.exists(title)) {
 			final String[] split = title.split("\\.");
 			return new StringTextComponent(split[split.length - 1]);
 		}
@@ -163,39 +163,39 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	protected ITextComponent getDebugTitle() {
 		if (title != null) {
 			IFormattableTextComponent status =
-			  I18n.hasKey(title) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			  I18n.exists(title) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
-				  I18n.hasKey(tooltip)
-				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+				  I18n.exists(tooltip)
+				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
 			}
-			TextFormatting format = I18n.hasKey(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			return new StringTextComponent("").append(status.append(new StringTextComponent(title)).mergeStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
+			TextFormatting format = I18n.exists(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			return new StringTextComponent("").append(status.append(new StringTextComponent(title)).withStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<ITextComponent[]> getDebugTooltip() {
 		List<ITextComponent> lines = new ArrayList<>();
-		lines.add(new StringTextComponent("Group Translation key:").mergeStyle(TextFormatting.GRAY));
+		lines.add(new StringTextComponent("Group Translation key:").withStyle(TextFormatting.GRAY));
 		if (title != null) {
 			final IFormattableTextComponent status =
-			  I18n.hasKey(title)
-			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
+			  I18n.exists(title)
+			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
 			lines.add(new StringTextComponent("   " + title + " ")
-			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
-		} else lines.add(new StringTextComponent("   Error: couldn't map translation key").mergeStyle(TextFormatting.RED));
-		lines.add(new StringTextComponent("Tooltip key:").mergeStyle(TextFormatting.GRAY));
+			            .withStyle(TextFormatting.DARK_AQUA).append(status));
+		} else lines.add(new StringTextComponent("   Error: couldn't map translation key").withStyle(TextFormatting.RED));
+		lines.add(new StringTextComponent("Tooltip key:").withStyle(TextFormatting.GRAY));
 		if (tooltip != null) {
 			final IFormattableTextComponent status =
-			  I18n.hasKey(tooltip)
-			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(not present)").mergeStyle(TextFormatting.GOLD);
+			  I18n.exists(tooltip)
+			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(not present)").withStyle(TextFormatting.GOLD);
 			lines.add(new StringTextComponent("   " + tooltip + " ")
-			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
-		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").mergeStyle(TextFormatting.RED));
+			            .withStyle(TextFormatting.DARK_AQUA).append(status));
+		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").withStyle(TextFormatting.RED));
 		AbstractConfigEntry.addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new ITextComponent[0]));
 	}
@@ -204,9 +204,9 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	protected Optional<ITextComponent[]> getTooltip() {
 		if (ClientConfig.advanced.translation_debug_mode)
 			return getDebugTooltip();
-		if (tooltip != null && I18n.hasKey(tooltip))
+		if (tooltip != null && I18n.exists(tooltip))
 			return Optional.of(
-			  Arrays.stream(I18n.format(tooltip).split("\n"))
+			  Arrays.stream(I18n.get(tooltip).split("\n"))
 				 .map(StringTextComponent::new).toArray(ITextComponent[]::new));
 		return Optional.empty();
 	}

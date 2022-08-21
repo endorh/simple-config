@@ -115,8 +115,8 @@ public abstract class BaseListCell<T> extends FocusableGui
 	) {
 		ITextComponent label = getLabel();
 		if (label != StringTextComponent.EMPTY) {
-			FontRenderer font = Minecraft.getInstance().fontRenderer;
-			int textX = font.getBidiFlag() ? x + cellWidth - font.getStringPropertyWidth(label) : x;
+			FontRenderer font = Minecraft.getInstance().font;
+			int textX = font.isBidirectional() ? x + cellWidth - font.width(label) : x;
 			renderLabel(
 			  mStack, label, textX, index, x, y, cellWidth, cellHeight,
 			  mouseX, mouseY, isSelected, delta);
@@ -135,20 +135,20 @@ public abstract class BaseListCell<T> extends FocusableGui
 	  MatrixStack mStack, ITextComponent label, int textX, int index, int x, int y,
 	  int cellWidth, int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 	) {
-		FontRenderer font = Minecraft.getInstance().fontRenderer;
-		font.func_238407_a_(
-		  mStack, label.func_241878_f(), textX,
-		  (float) y + cellHeight / 2F - font.FONT_HEIGHT / 2F, getPreferredTextColor());
+		FontRenderer font = Minecraft.getInstance().font;
+		font.drawShadow(
+		  mStack, label.getVisualOrderText(), textX,
+		  (float) y + cellHeight / 2F - font.lineHeight / 2F, getPreferredTextColor());
 	}
 	
 	public ITextComponent getLabel() {
-		return new StringTextComponent("•").mergeStyle(TextFormatting.GRAY);
+		return new StringTextComponent("•").withStyle(TextFormatting.GRAY);
 	}
 	
 	public void updateSelected(boolean isSelected) {
 		this.isSelected = isSelected;
 		if (!isSelected)
-			setListener(null);
+			setFocused(null);
 	}
 	
 	@Override public Rectangle getRowArea() {

@@ -216,9 +216,9 @@ public interface IOverlayCapableContainer {
 	default void renderOverlays(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		final List<OverlayTicket> removed = new LinkedList<>();
-		mStack.push(); {
+		mStack.pushPose(); {
 			mStack.translate(0D, 0D, 100D);
-			Screen screen = Minecraft.getInstance().currentScreen;
+			Screen screen = Minecraft.getInstance().screen;
 			IMultiTooltipScreen tScreen =
 			  screen instanceof IMultiTooltipScreen? (IMultiTooltipScreen) screen : null;
 			for (OverlayTicket ticket : sortedOverlays) {
@@ -228,7 +228,7 @@ public interface IOverlayCapableContainer {
 					removed.add(ticket);
 				ScissorsHandler.INSTANCE.popScissor();
 			}
-		} mStack.pop();
+		} mStack.popPose();
 		sortedOverlays.removeAll(removed);
 	}
 	

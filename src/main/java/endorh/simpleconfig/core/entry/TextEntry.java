@@ -133,59 +133,59 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		if (own) {
 			assert translationSupplier != null;
 			return new StringTextComponent("").append(
-			  translationSupplier.get().copyRaw().mergeStyle(TextFormatting.DARK_AQUA));
+			  translationSupplier.get().plainCopy().withStyle(TextFormatting.DARK_AQUA));
 		} else if (translation != null) {
 			IFormattableTextComponent status =
-			  I18n.hasKey(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			  I18n.exists(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
-				  I18n.hasKey(tooltip)
-				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
+				  I18n.exists(tooltip)
+				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
+				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
 			}
-			TextFormatting format = I18n.hasKey(translation) ? TextFormatting.DARK_GREEN : TextFormatting.RED;
+			TextFormatting format = I18n.exists(translation) ? TextFormatting.DARK_GREEN : TextFormatting.RED;
 			return new StringTextComponent("")
-			  .append(status.append(new StringTextComponent(translation)).mergeStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).mergeStyle(TextFormatting.DARK_RED));
+			  .append(status.append(new StringTextComponent(translation)).withStyle(format));
+		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected Optional<ITextComponent[]> supplyDebugTooltip(Void value) {
 		List<ITextComponent> lines = new ArrayList<>();
-		lines.add(new StringTextComponent("Text entry").mergeStyle(TextFormatting.GRAY));
+		lines.add(new StringTextComponent("Text entry").withStyle(TextFormatting.GRAY));
 		if (own) {
 			lines.add(new StringTextComponent(" + Provides its own translation")
-			            .mergeStyle(TextFormatting.GRAY));
+			            .withStyle(TextFormatting.GRAY));
 		} else if (translation != null) {
 			lines.add(new StringTextComponent("Translation key:")
-			            .mergeStyle(TextFormatting.GRAY));
+			            .withStyle(TextFormatting.GRAY));
 			final IFormattableTextComponent status =
-			  I18n.hasKey(translation)
-			  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
+			  I18n.exists(translation)
+			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+			  : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
 			lines.add(new StringTextComponent("   " + translation + " ")
-			            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
+			            .withStyle(TextFormatting.DARK_AQUA).append(status));
 		} else {
 			lines.add(new StringTextComponent("Translation key:")
-			            .mergeStyle(TextFormatting.GRAY));
+			            .withStyle(TextFormatting.GRAY));
 			lines.add(new StringTextComponent("   Error: couldn't map translation key")
-			            .mergeStyle(TextFormatting.RED));
+			            .withStyle(TextFormatting.RED));
 		}
 		if (tooltip != null) {
-			if (!name.startsWith("_text$") || I18n.hasKey(tooltip)) {
+			if (!name.startsWith("_text$") || I18n.exists(tooltip)) {
 				lines.add(new StringTextComponent("Tooltip key:")
-				            .mergeStyle(TextFormatting.GRAY));
+				            .withStyle(TextFormatting.GRAY));
 				final IFormattableTextComponent status =
-				  I18n.hasKey(tooltip)
-				  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-				  : new StringTextComponent("(not present)").mergeStyle(TextFormatting.GOLD);
+				  I18n.exists(tooltip)
+				  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+				  : new StringTextComponent("(not present)").withStyle(TextFormatting.GOLD);
 				lines.add(new StringTextComponent("   " + tooltip + " ")
-				            .mergeStyle(TextFormatting.DARK_AQUA).append(status));
+				            .withStyle(TextFormatting.DARK_AQUA).append(status));
 			}
 		} else {
-			lines.add(new StringTextComponent("Tooltip key:").mergeStyle(TextFormatting.GRAY));
+			lines.add(new StringTextComponent("Tooltip key:").withStyle(TextFormatting.GRAY));
 			lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key")
-			            .mergeStyle(TextFormatting.RED));
+			            .withStyle(TextFormatting.RED));
 		}
 		addTranslationsDebugInfo(lines);
 		addTranslationsDebugSuffix(lines);

@@ -65,9 +65,9 @@ public class KeyBindButton extends FocusableGui
 	private boolean error = false;
 	
 	private Style hotKeyStyle = Style.EMPTY;
-	private Style conflictStyle = Style.EMPTY.applyFormatting(TextFormatting.GOLD);
-	private Style errorStyle = Style.EMPTY.applyFormatting(TextFormatting.RED);
-	private Style recordStyle = Style.EMPTY.applyFormatting(TextFormatting.YELLOW);
+	private Style conflictStyle = Style.EMPTY.applyFormat(TextFormatting.GOLD);
+	private Style errorStyle = Style.EMPTY.applyFormat(TextFormatting.RED);
+	private Style recordStyle = Style.EMPTY.applyFormat(TextFormatting.YELLOW);
 	private int idleTint;
 	
 	public static KeyBindButton of(
@@ -148,7 +148,7 @@ public class KeyBindButton extends FocusableGui
 	@Override public Rectangle getArea() {
 		return area;
 	}
-	@Override public @NotNull List<IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<IGuiEventListener> children() {
 		return listeners;
 	}
 	
@@ -161,10 +161,10 @@ public class KeyBindButton extends FocusableGui
 	}
 	
 	@Override public boolean isFocused() {
-		return getListener() != null;
+		return getFocused() != null;
 	}
 	@Override public void setFocused(boolean focused) {
-		setListener(focused && !listeners.isEmpty()? listeners.get(0) : null);
+		setFocused(focused && !listeners.isEmpty()? listeners.get(0) : null);
 	}
 	
 	public KeyBindMapping getMapping() {
@@ -318,15 +318,15 @@ public class KeyBindButton extends FocusableGui
 	
 	public ITextComponent getDisplayedText() {
 		if (isCapturingModalInput()) {
-			if (startedKeys.isEmpty()) return new StringTextComponent(">  <").mergeStyle(recordStyle);
+			if (startedKeys.isEmpty()) return new StringTextComponent(">  <").withStyle(recordStyle);
 			return new StringTextComponent("")
-			  .append(new StringTextComponent("> ").mergeStyle(recordStyle))
+			  .append(new StringTextComponent("> ").withStyle(recordStyle))
 			  .append(startedMapping.getDisplayName())
-			  .append(new StringTextComponent(" <").mergeStyle(recordStyle));
+			  .append(new StringTextComponent(" <").withStyle(recordStyle));
 		} else {
 			KeyBindMapping mapping = getMapping();
 			return mapping.isUnset()
-			       ? new TranslationTextComponent("key.abbrev.unset").mergeStyle(TextFormatting.GRAY)
+			       ? new TranslationTextComponent("key.abbrev.unset").withStyle(TextFormatting.GRAY)
 			       : mapping.getDisplayName(getHotKeyStyle());
 		}
 	}
@@ -339,14 +339,14 @@ public class KeyBindButton extends FocusableGui
 			tooltip = new ArrayList<>();
 		} else tooltip.add(new StringTextComponent(""));
 		tooltip.add(new TranslationTextComponent("simpleconfig.keybind.overlaps")
-		              .mergeStyle(TextFormatting.GOLD));
+		              .withStyle(TextFormatting.GOLD));
 		overlaps.stream().map(o -> {
-			IFormattableTextComponent title = o.getCandidateName().deepCopy();
-			if (o.getModId() != null) title.appendString(" ").append(new StringTextComponent(
+			IFormattableTextComponent title = o.getCandidateName().copy();
+			if (o.getModId() != null) title.append(" ").append(new StringTextComponent(
 			  "(" + SimpleConfigImpl.getModNameOrId(o.getModId()) + ")"
-			).mergeStyle(TextFormatting.GRAY));
+			).withStyle(TextFormatting.GRAY));
 			return title
-			  .append(new StringTextComponent(": ").mergeStyle(TextFormatting.DARK_GRAY))
+			  .append(new StringTextComponent(": ").withStyle(TextFormatting.DARK_GRAY))
 			  .append(o.getCandidateDefinition().getDisplayName(TextFormatting.GRAY));
 		}).forEach(tooltip::add);
 		return tooltip;

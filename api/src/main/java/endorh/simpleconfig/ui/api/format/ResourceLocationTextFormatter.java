@@ -7,11 +7,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ResourceLocationTextFormatter implements ITextFormatter {
-	private Style namespaceStyle = Style.EMPTY.setColor(Color.fromInt(0xA0A0A0));
-	private Style colonStyle = Style.EMPTY.setColor(Color.fromInt(0x808080));
-	private Style pathStyle = Style.EMPTY.setColor(Color.fromInt(0x80FFA0));
-	private Style slashStyle = Style.EMPTY.setColor(Color.fromInt(0x4280FF));
-	private Style errorStyle = Style.EMPTY.setFormatting(TextFormatting.RED).func_244282_c(true);
+	private Style namespaceStyle = Style.EMPTY.withColor(Color.fromRgb(0xA0A0A0));
+	private Style colonStyle = Style.EMPTY.withColor(Color.fromRgb(0x808080));
+	private Style pathStyle = Style.EMPTY.withColor(Color.fromRgb(0x80FFA0));
+	private Style slashStyle = Style.EMPTY.withColor(Color.fromRgb(0x4280FF));
+	private Style errorStyle = Style.EMPTY.withColor(TextFormatting.RED).withUnderlined(true);
 	
 	private static final Pattern RESOURCE_LOCATION_PATTERN = Pattern.compile(
 	  "^(?<ls>\\s*+)(?<pre>(?<name>[a-zA-Z\\d_.-]*):)?(?<path>[a-zA-Z\\d_./-]+)(?<rs>\\s*+)$");
@@ -19,20 +19,20 @@ public class ResourceLocationTextFormatter implements ITextFormatter {
 	private static final Pattern UPPERCASE = Pattern.compile("[A-Z]");
 	
 	@Override public IFormattableTextComponent formatText(String text) {
-		if (text.isEmpty()) return StringTextComponent.EMPTY.deepCopy();
+		if (text.isEmpty()) return StringTextComponent.EMPTY.copy();
 		Matcher m = RESOURCE_LOCATION_PATTERN.matcher(text);
-		if (!m.matches()) return new StringTextComponent(text).mergeStyle(errorStyle);
+		if (!m.matches()) return new StringTextComponent(text).withStyle(errorStyle);
 		IFormattableTextComponent res = new StringTextComponent(m.group("ls"));
 		if (m.group("pre") != null) {
 			res.append(highlightUppercase(m.group("name"), namespaceStyle));
-			res.append(new StringTextComponent(":").mergeStyle(colonStyle));
+			res.append(new StringTextComponent(":").withStyle(colonStyle));
 		}
 		String path = m.group("path");
 		Matcher s = SLASH.matcher(path);
 		int idx = 0;
 		while (s.find()) {
 			res.append(highlightUppercase(path.substring(idx, s.start()), pathStyle));
-			res.append(new StringTextComponent(s.group()).mergeStyle(slashStyle));
+			res.append(new StringTextComponent(s.group()).withStyle(slashStyle));
 			idx = s.end();
 		}
 		if (idx < path.length())
@@ -47,17 +47,17 @@ public class ResourceLocationTextFormatter implements ITextFormatter {
 		int last = 0;
 		while (m.find()) {
 			res =
-			  append(res, new StringTextComponent(text.substring(last, m.start())).mergeStyle(style));
-			res = append(res, new StringTextComponent(m.group()).mergeStyle(errorStyle));
+			  append(res, new StringTextComponent(text.substring(last, m.start())).withStyle(style));
+			res = append(res, new StringTextComponent(m.group()).withStyle(errorStyle));
 			last = m.end();
 		}
 		if (last < text.length())
-			res = append(res, new StringTextComponent(text.substring(last)).mergeStyle(style));
-		return res != null ? res : StringTextComponent.EMPTY.deepCopy();
+			res = append(res, new StringTextComponent(text.substring(last)).withStyle(style));
+		return res != null ? res : StringTextComponent.EMPTY.copy();
 	}
 	
 	private IFormattableTextComponent append(IFormattableTextComponent c, ITextComponent append) {
-		return c == null ? append.deepCopy() : c.append(append);
+		return c == null ? append.copy() : c.append(append);
 	}
 	
 	public void setNamespaceStyle(Style namespaceStyle) {

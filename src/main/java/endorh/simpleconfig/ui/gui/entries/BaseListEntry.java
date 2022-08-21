@@ -312,7 +312,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		cells.remove(cell);
 		widgets.remove(cell);
 		if (prev != -1 && !cells.isEmpty())
-			setListener(cells.get(index == 0? 0 : index - 1));
+			setFocused(cells.get(index == 0? 0 : index - 1));
 		if (index < cells.size())
 		cells.subList(index, cells.size()).forEach(BaseListCell::onMove);
 	}
@@ -438,7 +438,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		cells.forEach(BaseListCell::tick);
 		super.tick();
 		label.setFocused(
-		  !isHeadless() && isFocused() && getListener() == labelReference && dragCursor == -1
+		  !isHeadless() && isFocused() && getFocused() == labelReference && dragCursor == -1
 		  && (getListParent() == null || getListParent().dragCursor == -1));
 	}
 	
@@ -456,9 +456,9 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		//noinspection unchecked
 		BaseListCell<T> focused =
-		  !expanded || getListener() == null ||
-		  !(getListener() instanceof BaseListCell)
-		  ? null : (BaseListCell<T>) getListener();
+		  !expanded || getFocused() == null ||
+		  !(getFocused() instanceof BaseListCell)
+		  ? null : (BaseListCell<T>) getFocused();
 		boolean insideCreateNew = isInsideCreateNew(mouseX, mouseY);
 		boolean insideDelete = isInsideDelete(mouseX, mouseY);
 		SimpleConfigIcons.Lists.EXPAND.renderCentered(
@@ -538,7 +538,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				} else {
 					cell.render(
 					  mStack, i, x + 14, yy, yy - y, entryWidth - 14, ch, mouseX, mouseY,
-					  isFocused() && getListener() == cell, delta);
+					  isFocused() && getFocused() == cell, delta);
 					yy += ch + yo;
 				}
 				i++;
@@ -596,7 +596,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		  mStack, dragCursor, area.x + 14, area.y + max(0, -o), -1,
 		  area.width - 14, cellHeight, mouseX, mouseY,
 		  getEntryList().getFocusedItem() != null && getEntryList().getFocusedItem().equals(this)
-		  && getListener() != null && getListener().equals(cell), delta);
+		  && getFocused() != null && getFocused().equals(cell), delta);
 		return true;
 	}
 	
@@ -615,13 +615,13 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	@Range(from = -1, to = Integer.MAX_VALUE)
 	protected int getSelectedIndex() {
 		//noinspection SuspiciousMethodCalls
-		return cells.indexOf(getListener());
+		return cells.indexOf(getFocused());
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		for (BaseListCell<T> cell : cells)
-			cell.updateSelected(isFocused && expanded && getListener() == cell);
+			cell.updateSelected(isFocused && expanded && getFocused() == cell);
 		int selected = isFocused? getSelectedIndex() : -1;
 		if (selected != lastSelected) {
 			if (selected != -1) preserveState();
@@ -668,14 +668,14 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		if (isEditable() && !(Screen.hasAltDown() && button == 0 || button == 2)) {
 			if (isInsideInsert(mouseX, mouseY)) {
 				addTransparently(caret);
-				setListener(cells.get(caret));
+				setFocused(cells.get(caret));
 				caret = -1;
 				playFeedbackClick(1F);
 				return true;
 			}
 			if (isInsideRemove(mouseX, mouseY)) {
 				if (getSelectedIndex() == cursor)
-					setListener(cells.isEmpty()? isHeadless()? null : labelReference
+					setFocused(cells.isEmpty()? isHeadless()? null : labelReference
 					                          : cells.get(max(0, cursor - 1)));
 				removeTransparently(cursor);
 				cursor = -1;
@@ -790,12 +790,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					parent.setExpanded(true);
 					final int idx = parent.insertInFront() ? 0 : parent.cells.size();
 					parent.addTransparently(idx);
-					parent.setListener(parent.cells.get(idx));
+					parent.setFocused(parent.cells.get(idx));
 					playFeedbackClick(1F);
 					return true;
 				}
 				if (parent.isDeleteButtonEnabled() && parent.isInsideDelete(mouseX, mouseY)) {
-					IGuiEventListener focused = parent.getListener();
+					IGuiEventListener focused = parent.getFocused();
 					if (parent.isExpanded() && focused instanceof BaseListCell) {
 						final int index = parent.cells.indexOf(focused);
 						if (index >= 0)
@@ -840,9 +840,9 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			y = area.y + 24;
 			w = area.width - 16;
 			h = 12;
-			final FontRenderer font = Minecraft.getInstance().fontRenderer;
-			final List<IReorderingProcessor> lines = font.trimStringToWidth(text, w);
-			int tw = font.func_243245_a(lines.get(0)) + 4;
+			final FontRenderer font = Minecraft.getInstance().font;
+			final List<IReorderingProcessor> lines = font.split(text, w);
+			int tw = font.width(lines.get(0)) + 4;
 			if (isMouseInside(mouseX, mouseY))
 				fill(mStack, x + 1, y + 1, x + tw - 1, y + h - 1, hoveredBgColor);
 			if (focused) {
@@ -852,7 +852,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				fill(mStack, x, y + h - 1, x + tw, y + h, borderColor);
 			}
 			if (!lines.isEmpty()) {
-				font.func_238407_a_(
+				font.drawShadow(
 				  mStack, lines.get(0), x + 2, y + 2,
 				  isMouseInside(mouseX, mouseY)? hoveredTextColor : textColor);
 			}
@@ -896,7 +896,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!cells.contains(listener)) return 0;
 		int y = 24;
@@ -909,7 +909,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		else if (listener instanceof BaseListCell)
@@ -930,8 +930,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return Lists.newArrayList(cells);
 	}
 	
-	@Override public void setListener(IGuiEventListener listener) {
-		super.setListener(listener);
+	@Override public void setFocused(IGuiEventListener listener) {
+		super.setFocused(listener);
 	}
 }
 

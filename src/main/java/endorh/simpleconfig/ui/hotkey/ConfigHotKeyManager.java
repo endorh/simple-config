@@ -259,8 +259,8 @@ public class ConfigHotKeyManager {
 		public ITextComponent getHotkeyReport(boolean enable) {
 			return new TranslationTextComponent(
 			  "simpleconfig.hotkey.group." + (enable ? "enable" : "disable"),
-			  new StringTextComponent(getName()).mergeStyle(TextFormatting.AQUA)
-			).mergeStyle(TextFormatting.GRAY);
+			  new StringTextComponent(getName()).withStyle(TextFormatting.AQUA)
+			).withStyle(TextFormatting.GRAY);
 		}
 		
 		@Override public Map<String, Object> serialize() {

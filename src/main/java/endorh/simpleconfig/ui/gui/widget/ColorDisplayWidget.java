@@ -15,7 +15,7 @@ public class ColorDisplayWidget extends Widget {
 	@Nullable public Runnable onClick = null;
 	
 	public ColorDisplayWidget(TextFieldWidgetEx textFieldWidget, int x, int y, int size, int color) {
-		super(x, y, size, size, NarratorChatListener.EMPTY);
+		super(x, y, size, size, NarratorChatListener.NO_TITLE);
 		this.textFieldWidget = textFieldWidget;
 		this.color = color;
 		this.size = size;

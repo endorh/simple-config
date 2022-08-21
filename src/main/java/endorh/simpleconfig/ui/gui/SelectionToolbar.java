@@ -87,7 +87,7 @@ public class SelectionToolbar extends FocusableGui {
 		buttons.add(widget);
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<IGuiEventListener> children() {
 		return children;
 	}
 }

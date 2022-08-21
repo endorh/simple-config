@@ -51,7 +51,7 @@ public abstract class AbstractDialog
 	protected Rectangle area = new Rectangle();
 	protected Rectangle animatedArea = new Rectangle();
 	protected RectangleAnimator areaAnimator = new RectangleAnimator(150L);
-	protected FontRenderer font = Minecraft.getInstance().fontRenderer;
+	protected FontRenderer font = Minecraft.getInstance().font;
 	
 	protected Pair<Integer, IGuiEventListener> dragged = null;
 	private final SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
@@ -84,7 +84,7 @@ public abstract class AbstractDialog
 	public void tick(boolean top) {}
 	
 	public void copyText() {
-		Minecraft.getInstance().keyboardListener.setClipboardString(getText());
+		Minecraft.getInstance().keyboardHandler.setClipboard(getText());
 	}
 	
 	public String getText() {
@@ -163,8 +163,8 @@ public abstract class AbstractDialog
 		if (handleOverlaysMouseClicked(mouseX, mouseY, button)) return true;
 		if (!isMouseInside(mouseX, mouseY) && !isPersistent()) {
 			cancel();
-			Minecraft.getInstance().getSoundHandler()
-			  .play(SimpleSound.master(SimpleConfigMod.UI_TAP, 0.8F));
+			Minecraft.getInstance().getSoundManager()
+			  .play(SimpleSound.forUI(SimpleConfigMod.UI_TAP, 0.8F));
 			return true;
 		}
 		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
@@ -201,7 +201,7 @@ public abstract class AbstractDialog
 	
 	// IExtendedDragAwareNestedGuiEventHandler
 	
-	@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+	@Override public @NotNull List<? extends IGuiEventListener> children() {
 		return listeners;
 	}
 	@Override public Pair<Integer, IGuiEventListener> getDragged() {

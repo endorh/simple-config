@@ -68,7 +68,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		confirmButton = TintedButton.of(DialogTexts.GUI_PROCEED, p -> confirm());
 		addButton(cancelButton);
 		addButton(confirmButton);
-		setListener(cancelButton);
+		setFocused(cancelButton);
 		cancelButton.changeFocus(true);
 	}
 	
@@ -108,11 +108,11 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	@Override protected void layout() {
 		int cW = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
 		int w = (int) MathHelper.clamp(getScreen().width * 0.4, 120, 800);
-		int titleWidth = font.getStringPropertyWidth(title);
+		int titleWidth = font.width(title);
 		w = max(w, titleWidth + 16);
-		lines = getBody().stream().map(l -> font.trimStringToWidth(l, cW - 16)).collect(Collectors.toList());
+		lines = getBody().stream().map(l -> font.split(l, cW - 16)).collect(Collectors.toList());
 		int bodyWidth = IntStream.concat(
-		  lines.stream().flatMap(Collection::stream).mapToInt(l -> font.func_243245_a(l)),
+		  lines.stream().flatMap(Collection::stream).mapToInt(l -> font.width(l)),
 		  Arrays.stream(checkBoxes).mapToInt(Widget::getWidth)
 		).max().orElse(w) + 16;
 		bodyWidth = max(bodyWidth, buttons.size() * 80);
@@ -131,7 +131,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		int ty = y + 4;
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
-				font.func_238407_a_(mStack, l, tx, ty, bodyColor);
+				font.drawShadow(mStack, l, tx, ty, bodyColor);
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;
@@ -154,7 +154,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		for (List<IReorderingProcessor> line : lines) {
 			for (IReorderingProcessor l : line) {
 				if (mY >= ty && mY < ty + lineHeight && mX >= tx && tx < x + w - 8)
-					return font.getCharacterManager().func_243239_a(l, (int) round(mX - tx));
+					return font.getSplitter().componentStyleAtWidth(l, (int) round(mX - tx));
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;

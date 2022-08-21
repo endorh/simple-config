@@ -39,7 +39,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	public static MultiFunctionImageButton of(
 	  @NotNull Icon icon, ButtonActionBuilder action
 	) {
-		return of(NarratorChatListener.EMPTY, icon, action);
+		return of(NarratorChatListener.NO_TITLE, icon, action);
 	}
 	
 	public static MultiFunctionImageButton of(
@@ -51,7 +51,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	public static MultiFunctionImageButton of(
 	  int width, int height, @NotNull Icon icon, ButtonActionBuilder action
 	) {
-		return of(NarratorChatListener.EMPTY, width, height, icon, action);
+		return of(NarratorChatListener.NO_TITLE, width, height, icon, action);
 	}
 	
 	public static MultiFunctionImageButton of(
@@ -63,7 +63,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	public MultiFunctionImageButton(
 	  int x, int y, int width, int height, @NotNull Icon icon, ButtonActionBuilder action
 	) {
-		this(x, y, width, height, icon, action, NarratorChatListener.EMPTY);
+		this(x, y, width, height, icon, action, NarratorChatListener.NO_TITLE);
 	}
 	
 	public MultiFunctionImageButton(
@@ -72,12 +72,12 @@ public class MultiFunctionImageButton extends ImageButton {
 	) {
 		super(
 		  x, y, width, height, icon.getU(), icon.getV(), icon.h, icon.getTexture(),
-		  icon.tw, icon.th, b -> {}, field_238486_s_, title);
+		  icon.tw, icon.th, b -> {}, NO_TOOLTIP, title);
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
-		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		actions.add(Pair.of(Modifier.NONE, defaultAction));
 		this.defaultAction = activeAction = defaultAction;
 	}
@@ -98,7 +98,7 @@ public class MultiFunctionImageButton extends ImageButton {
 		if ((action.activePredicate != null? action.activePredicate : defaultActivePredicate).get()) {
 			action.action.accept(button);
 			(action.sound != null ? action.sound : defaultSound).get()
-			  .ifPresent(s -> Minecraft.getInstance().getSoundHandler().play(s));
+			  .ifPresent(s -> Minecraft.getInstance().getSoundManager().play(s));
 			return true;
 		}
 		return false;
@@ -157,7 +157,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
 		final List<ITextComponent> ls = getTooltip();
 		if (!ls.isEmpty()) {
-			final Screen screen = Minecraft.getInstance().currentScreen;
+			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
 			int tooltipX = hovered? mouseX : x + width / 2;
 			int tooltipY = hovered? mouseY : y < 64? y + height : y;
@@ -165,7 +165,7 @@ public class MultiFunctionImageButton extends ImageButton {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
 				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
 			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().fontRenderer);
+				screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().font);
 		}
 	}
 	

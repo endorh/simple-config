@@ -136,7 +136,7 @@ public class CaptionedSubCategoryListEntry<
 	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
-		label.setFocused(isFocused() && getListener() == label);
+		label.setFocused(isFocused() && getFocused() == label);
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 		SimpleConfigIcons.Entries.EXPAND.renderCentered(
@@ -154,7 +154,7 @@ public class CaptionedSubCategoryListEntry<
 				if (entry.isShown()) {
 					entry.render(
 					  mStack, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
-					  mouseX, mouseY, isHovered && getListener() == entry, delta);
+					  mouseX, mouseY, isHovered && getFocused() == entry, delta);
 					yy += entry.getItemHeight();
 				}
 			}
@@ -209,14 +209,14 @@ public class CaptionedSubCategoryListEntry<
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (captionEntry != null) {
-			final boolean captionEntrySelected = isFocused && getListener() == captionEntry;
+			final boolean captionEntrySelected = isFocused && getFocused() == captionEntry;
 			final boolean prevSelected = captionEntry.isFocused();
 			captionEntry.updateFocused(captionEntrySelected);
 			if (!prevSelected && captionEntrySelected) getScreen().getHistory().preserveState(
 			  captionEntry);
 		}
 		for (AbstractConfigListEntry<?> entry : entries)
-			entry.updateFocused(isExpanded() && isFocused && getListener() == entry);
+			entry.updateFocused(isExpanded() && isFocused && getFocused() == entry);
 	}
 	
 	@Override public boolean isEditable() {
@@ -323,7 +323,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!entries.contains(listener))
 			return 0;
@@ -340,7 +340,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getListener();
+		final IGuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		if (listener instanceof AbstractConfigListEntry<?>)
@@ -373,7 +373,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getListener() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
+		if (getFocused() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
 			setExpanded(false, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;

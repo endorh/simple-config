@@ -40,8 +40,8 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			super(listListEntry);
 			// T finalValue = this.substituteDefault(value);
 			widget = new TextFieldWidgetEx(
-			  Minecraft.getInstance().fontRenderer, 0, 0, 100, 18,
-			  NarratorChatListener.EMPTY
+			  Minecraft.getInstance().font, 0, 0, 100, 18,
+			  NarratorChatListener.NO_TITLE
 			) {
 				@Override
 				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
@@ -81,12 +81,12 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		  int mouseY, boolean isSelected, float delta
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
-			FontRenderer font = Minecraft.getInstance().fontRenderer;
+			FontRenderer font = Minecraft.getInstance().font;
 			ListEntry listEntry = getListEntry();
 			
 			final boolean editable = listEntry.shouldRenderEditable();
 			int fieldWidth = listEntry.getFieldWidth();
-			int fieldX = font.getBidiFlag() ? x : x + cellWidth - fieldWidth;
+			int fieldX = font.isBidirectional() ? x : x + cellWidth - fieldWidth;
 			widget.setWidth(fieldWidth);
 			widget.x = fieldX;
 			widget.y = y + 1;
@@ -106,7 +106,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			}
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> getEventListeners() {
+		@Override public @NotNull List<? extends IGuiEventListener> children() {
 			return Collections.singletonList(widget);
 		}
 		
@@ -118,7 +118,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 				listEntry.setExpanded(true);
 				listEntry.claimFocus();
 				scrollToSelf();
-				listEntry.setListener(this);
+				listEntry.setFocused(this);
 				widget.setFocused(true);
 			}
 		}
@@ -128,8 +128,8 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			listEntry.expandParents();
 			listEntry.claimFocus();
 			listEntry.setExpanded(true);
-			listEntry.setListener(this);
-			setListener(widget);
+			listEntry.setFocused(this);
+			setFocused(widget);
 			widget.setFocused(true);
 			scrollToSelf();
 			listEntry.getEntryList().setSelectedTarget(this);
