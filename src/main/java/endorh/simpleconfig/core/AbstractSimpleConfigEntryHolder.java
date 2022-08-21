@@ -118,8 +118,10 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 			  (AbstractConfigEntry<?, Object, ?>) e.getValue();
 			if ((selectedPaths == null || selectedPaths.contains(entry.getPath())) && !entry.nonPersistent)
 				entry.put(
-				  config, fromGUI? entry.apply(ee -> ee.forConfig(ee.fromGuiOrDefault(ee.getGUI())))
-				                 : entry.apply(ee -> ee.forConfig(ee.get())));
+				  config,
+				  fromGUI
+				  ? entry.apply(ee -> ee.forConfig(ee.fromGuiOrDefault(ee.getGUI(fromRemote))))
+				  : entry.apply(ee -> ee.forConfig(ee.get())));
 		}
 	}
 	

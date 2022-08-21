@@ -1,2 +1,2 @@
 rootProject.name = "simpleconfig"
-include 'api'
+include("api")

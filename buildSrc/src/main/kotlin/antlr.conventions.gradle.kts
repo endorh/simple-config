@@ -31,133 +31,141 @@
  * is ignored for this regard.
  */
 
-apply plugin: 'antlr'
-apply plugin: 'idea'
+plugins {
+    id("antlr")
+    id("idea")
+}
 
 // Settings
 
-def antlrInput = "src/main/antlr",    // Removed on each generation (DO NOT USE)
-    antlrSource = "src/main/grammar", // True source directory for ANTLR files
-    antlrTempOutputDirectory = "$buildDir/generated-src/antlr/main",
-    grammarGenSource = "src/main/genGrammar",
-    defaultGrammarPackage = "endorh.simpleconfig.grammar"
+val antlrVersion by extra("4.9.1")
+val antlrInput by extra("src/main/antlr")    // Removed on each generation (DO NOT USE)
+val antlrSource by extra("src/main/grammar") // True source directory for ANTLR files
+val antlrTempOutputDirectory by extra("$buildDir/generated-src/antlr/main")
+val grammarGenSource by extra("src/main/genGrammar")
+val defaultGrammarPackage by extra("endorh.simpleconfig.grammar")
 
 // Project settings
 
 idea {
     module {
-        excludeDirs += file(antlrInput)
-        excludeDirs += file(antlrTempOutputDirectory)
-        sourceDirs += file(antlrSource)
+        excludeDirs.add(file(antlrInput))
+        excludeDirs.add(file(antlrTempOutputDirectory))
+        sourceDirs.add(file(antlrSource))
         // Generated source dirs must also be source dirs
-        sourceDirs += file(grammarGenSource)
-        generatedSourceDirs += file(grammarGenSource)
+        sourceDirs.add(file(grammarGenSource))
+        generatedSourceDirs.add(file(grammarGenSource))
     }
 }
 
+dependencies {
+    "antlr"("org.antlr:antlr4:$antlrVersion") // use ANTLR version 4
+    "antlr"("org.antlr:antlr4-runtime:$antlrVersion")
+}
+
 // Add dependency on grammar source set
-sourceSets.main.java.srcDir(file(grammarGenSource))
-sourceSets.test.java.srcDir(file(grammarGenSource))
+sourceSets {
+    main.get().java.srcDir(file(grammarGenSource))
+    test.get().java.srcDir(file(grammarGenSource))
+}
 
 // Task settings
 
-clean {
+tasks.clean {
     delete(antlrTempOutputDirectory)
     delete(antlrInput)
 }
 
-task prepareGenerateGrammarSource {
+val prepareGenerateGrammarSource = tasks.register("prepareGenerateGrammarSource") {
     group = "grammar"
     doFirst {
         syncAntlrInputFilesToFlatInputDirectory(antlrSource, antlrInput)
     }
-
+    
     inputs.dir(antlrSource)
     outputs.dir(grammarGenSource)
 }
 
-gradle.taskGraph.whenReady { graph ->
-    if (graph.hasTask(prepareGenerateGrammarSource)) {
-        if (file(antlrInput).exists() && file(antlrInput).list().length > 0)
-            throw new GradleException(
-                "The default input directory for ANTLR (src/main/antlr) is not empty. " +
-                "Please remove all files from this directory before generating the grammar.")
+gradle.taskGraph.whenReady {
+    if (hasTask(prepareGenerateGrammarSource.get())) {
+        if (file(antlrInput).exists() && file(antlrInput).list()?.size ?: 0 > 0)
+            throw GradleException(
+              "The default input directory for ANTLR (src/main/antlr) is not empty. " +
+              "Please remove all files from this directory before generating the grammar.")
     }
 }
 
-task cleanAfterGenerateGrammarSource {
+val cleanAfterGenerateGrammarSource = tasks.register("cleanAfterGenerateGrammarSource") {
     group = "grammar"
     onlyIf {
-        !prepareGenerateGrammarSource.state.upToDate
+        !prepareGenerateGrammarSource.get().state.upToDate
     }
     doLast {
-        project.delete file(antlrInput)
+        project.delete(file(antlrInput))
     }
 }
 
-generateGrammarSource {
+tasks.generateGrammarSource {
     group = "grammar"
     dependsOn(prepareGenerateGrammarSource)
 
     onlyIf {
-        !prepareGenerateGrammarSource.state.upToDate
+        !prepareGenerateGrammarSource.get().state.upToDate
     }
 
     outputDirectory = file(antlrTempOutputDirectory)
-    maxHeapSize = '64m'
+    maxHeapSize = "64m"
 
-    arguments += ['-visitor', '-long-messages']
+    arguments.addAll(listOf("-visitor", "-long-messages"))
 
     // UP-TO-DATE checks are handled by the prepareGenerateGrammarSource task
     outputs.upToDateWhen { false }
 
     doLast {
-        project.delete file(grammarGenSource)
+        project.delete(file(grammarGenSource))
         copyAntlrGeneratedFilesToTheirPackages(antlrTempOutputDirectory, grammarGenSource, defaultGrammarPackage)
     }
     finalizedBy(cleanAfterGenerateGrammarSource)
 }
 
-generateTestGrammarSource {
+tasks.generateTestGrammarSource {
     group = "grammar"
 }
 
-def syncAntlrInputFilesToFlatInputDirectory(sourceDirectory, antlrInputDirectory) {
-    project.delete fileTree(antlrInputDirectory).include('*.*')
-    def flatInput = file(antlrInputDirectory)
+fun syncAntlrInputFilesToFlatInputDirectory(sourceDirectory: String, antlrInputDirectory: String) {
+    project.delete(fileTree(antlrInputDirectory).include("*.*"))
+    val flatInput = file(antlrInputDirectory)
     flatInput.mkdirs()
     fileTree(sourceDirectory).matching {
         include("**/*.g4")
-    }.forEach { file ->
+    }.forEach {
         copy {
-            from file
-            into flatInput
+            from(it)
+            into(flatInput)
         }
     }
 }
 
-def copyAntlrGeneratedFilesToTheirPackages(antlrOutput, destFolder, defaultPackage) {
+fun copyAntlrGeneratedFilesToTheirPackages(antlrOutput: String, destFolder: String, defaultPackage: String) {
     fileTree(antlrOutput).matching {
         include("**/*.java")
-    }.each { file ->
-        final packageName = extractPackageNameFromJavaFile(file, defaultPackage)
+    }.forEach { file ->
+        val packageName = extractPackageNameFromJavaFile(file, defaultPackage)
         copy {
-            from file
-            into destFolder + "/" + packageName.replaceAll("\\.", "/")
+            from(file)
+            into(destFolder + "/" + packageName.replace(".", "/"))
         }
-        project.delete file
+        project.delete(file)
     }
 }
 
-static def extractPackageNameFromJavaFile(File javaFile, defaultPackage) {
-    final packageRegex = ~/^\s*+package\s++([a-zA-Z]++[a-zA-Z\d._]*+)\s*+;\s*+$/
-    def packageName = defaultPackage
-    for (def line in javaFile.readLines()) {
-        def m = packageRegex.matcher(line)
-        if (m.matches()) {
-            packageName = m.group(1)
-            break
-        }
+fun extractPackageNameFromJavaFile(javaFile: File, defaultPackage: String): String {
+    val packageRegex = Regex("""^\s*+package\s++([a-zA-Z]++[a-zA-Z\d._]*+)\s*+;\s*+$""")
+    var packageName = defaultPackage
+    for (line in javaFile.readLines()) {
+        if (packageRegex.matchEntire(line)?.let {
+            it.groups[1]?.let { packageName = it.value }
+        } != null) break
     }
     return packageName
 }
