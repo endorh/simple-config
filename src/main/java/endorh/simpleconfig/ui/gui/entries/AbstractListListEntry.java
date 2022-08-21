@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.Optional;
@@ -203,25 +204,25 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 					//noinspection SuspiciousMethodCalls
 					int index = listEntry.cells.indexOf(listener);
 					if (Screen.hasControlDown()) { // Move
-						if (keyCode == 264 && index < listEntry.cells.size() - 1) { // Down
+						if ( keyCode == GLFW.GLFW_KEY_DOWN &&index < listEntry.cells.size() - 1) {
 							listEntry.moveTransparently(index, index + 1);
 							((BaseListCell<?>) listener).navigate();
 							return true;
-						} else if (keyCode == 265 && index > 0) { // Up
+						} else if (keyCode == GLFW.GLFW_KEY_UP && index > 0) {
 							listEntry.moveTransparently(index, index - 1);
 							((BaseListCell<?>) listener).navigate();
 							return true;
 						}
 					}
-					if (keyCode == 257 || keyCode == 260) { // Enter | Insert
+					if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_INSERT) {
 						listEntry.addTransparently(index + 1);
 						listEntry.cells.get(index + 1).navigate();
 						return true;
-					} else if (index != -1 && (keyCode == 259 || keyCode == 261)) { // Backspace | Delete
+					} else if (index != -1 && (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE)) {
 						listEntry.removeTransparently(index);
 						if (!listEntry.cells.isEmpty())
 							listEntry.cells.get(
-							  MathHelper.clamp(keyCode == 259 ? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
+							  MathHelper.clamp(keyCode == GLFW.GLFW_KEY_BACKSPACE? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
 						return true;
 					}
 				}

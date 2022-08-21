@@ -24,6 +24,7 @@ import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -253,7 +254,7 @@ public class KeyBindButton extends FocusableGui
 	}
 	
 	@Override public boolean modalKeyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 256) {
+		if ( keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			commitInput();
 			return false;
 		}

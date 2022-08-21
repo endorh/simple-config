@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -201,11 +202,11 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		if (getListener() == label && keyCode == 263 && isExpanded()) { // Left
+		if (getListener() == label && keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
 			setExpanded(false, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;
-		} else if (keyCode == 262 && !isExpanded()) { // Right
+		} else if (keyCode == GLFW.GLFW_KEY_RIGHT && !isExpanded()) {
 			setExpanded(true, Screen.hasShiftDown());
 			playFeedbackTap(0.4F);
 			return true;

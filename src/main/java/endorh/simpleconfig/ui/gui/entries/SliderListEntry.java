@@ -278,7 +278,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		final IGuiEventListener listener = getListener();
 		if (Screen.hasAltDown()) return true; // Prevent navigation key from triggering slider
 		if ((listener == sliderWidget || listener == textFieldEntry)
-		    && canUseTextField() && keyCode == 257) { // Enter
+		    && canUseTextField() && keyCode == GLFW.GLFW_KEY_ENTER) {
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
 			boolean state = Screen.hasControlDown() || !Screen.hasShiftDown() && !isTextFieldShown();
 			boolean change = state != isTextFieldShown();

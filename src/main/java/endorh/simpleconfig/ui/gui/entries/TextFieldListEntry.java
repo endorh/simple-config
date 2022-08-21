@@ -21,6 +21,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +44,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	  ITextComponent fieldName, V original, boolean canExpand
 	) {
 		super(fieldName);
-		this.expandable = canExpand;
+		expandable = canExpand;
 		textFieldWidget = new TextFieldWidgetEx(
 		  Minecraft.getInstance().fontRenderer, 0, 0, 150, 18, NarratorChatListener.EMPTY);
 		textFieldWidget.setMaxLength(999999);
@@ -57,7 +58,6 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	
 	@Override public void setSubEntry(boolean isSubEntry) {
 		super.setSubEntry(isSubEntry);
-		expandAnimator.setLength(isSubEntry? 0L : 250L);
 	}
 	
 	@Override public V getDisplayedValue() {
@@ -132,17 +132,16 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		textFieldWidget.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	@Override public void setPreviewingExternal(boolean previewing) {
-		super.setPreviewingExternal(previewing);
-		// if (isPreviewingExternal()) setExpanded(false); // FIXME
-	}
-	
 	protected boolean isMouseOverLabel(double mouseX, double mouseY) {
 		return labelArea.contains(mouseX, mouseY);
 	}
 	
 	@Override public int getItemHeight() {
-		return 24 + (isHeadless()? 0 : (int) (expandAnimator.getEaseOut() * 24));
+		return 24 + (
+		  isHeadless()
+		  ? 0 : isSubEntry()
+		        ? expanded? 24 : 0
+		        : (int) (expandAnimator.getEaseOut() * 24));
 	}
 	
 	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
@@ -172,6 +171,9 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			return true;
 		if (isExpandable() && button == 0 && isMouseOverLabel(mouseX, mouseY)) {
 			setExpanded(!isExpanded());
+			WidgetUtils.forceUnFocus(getListener());
+			textFieldWidget.setFocused(true);
+			setListener(textFieldWidget);
 			playFeedbackTap(1F);
 			return true;
 		}
@@ -190,7 +192,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
-		return this.isChildSubEntry() ? childWidgets : widgets;
+		return isChildSubEntry() ? childWidgets : widgets;
 	}
 	
 	public void setMaxLength(int maxLength) {
@@ -213,11 +215,11 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 		if (isExpandable() && Screen.hasAltDown()) {
-			if (keyCode == 262 && !isExpanded()) {
+			if (keyCode == GLFW.GLFW_KEY_RIGHT && !isExpanded()) {
 				setExpanded(true);
 				playFeedbackTap(1F);
 				return true;
-			} else if (keyCode == 263 && isExpanded()) {
+			} else if (keyCode == GLFW.GLFW_KEY_LEFT && isExpanded()) {
 				setExpanded(false);
 				playFeedbackTap(1F);
 				return true;
