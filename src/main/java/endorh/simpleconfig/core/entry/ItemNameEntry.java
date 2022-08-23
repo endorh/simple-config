@@ -6,11 +6,11 @@ import endorh.simpleconfig.api.entry.ItemNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.item.Item;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.tags.ITag;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.Tag;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistryEntry;
@@ -44,7 +44,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 	
 	public static class Builder extends AbstractResourceEntry.Builder<ItemNameEntry, ItemNameEntryBuilder, Builder>
 	  implements ItemNameEntryBuilder {
-		protected ITag<Item> tag = null;
+		protected Tag<Item> tag = null;
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
@@ -62,7 +62,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(ITag<Item> tag) {
+		@Override @Contract(pure=true) public Builder suggest(Tag<Item> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

@@ -8,17 +8,17 @@ import endorh.simpleconfig.api.AbstractRange.LongRange;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.*;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.*;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import net.minecraft.block.Block;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -341,12 +341,12 @@ import java.util.regex.Pattern;
 	
 	// Convenience Minecraft entries
 	
-	@Override public INBTEntry.Builder nbtValue(INBT value) {
-		return new INBTEntry.Builder(value);
+	@Override public TagEntry.Builder tag(Tag value) {
+		return new TagEntry.Builder(value);
 	}
 	
-	@Override public CompoundNBTEntry.Builder nbtTag(CompoundNBT value) {
-		return new CompoundNBTEntry.Builder(value);
+	@Override public CompoundTagEntry.Builder compoundTag(CompoundTag value) {
+		return new CompoundTagEntry.Builder(value);
 	}
 	
 	@Override public ResourceLocationEntry.Builder resource(String resourceName) {

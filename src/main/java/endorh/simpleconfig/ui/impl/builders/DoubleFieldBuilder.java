@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.DoubleListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class DoubleFieldBuilder
   extends RangedFieldBuilder<Double, DoubleListEntry, DoubleFieldBuilder> {
 	
-	public DoubleFieldBuilder(ConfigFieldBuilder builder, ITextComponent name, double value) {
+	public DoubleFieldBuilder(ConfigFieldBuilder builder, Component name, double value) {
 		super(DoubleListEntry.class, builder, name, value);
 	}
 	

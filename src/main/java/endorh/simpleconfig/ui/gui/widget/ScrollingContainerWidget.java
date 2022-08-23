@@ -1,14 +1,14 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,9 +23,9 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
   implements IExtendedDragAwareNestedGuiEventHandler, IRectanglePositionableRenderable {
 	public final Rectangle area;
 	
-	protected final List<IGuiEventListener> listeners = new ArrayList<>();
-	protected IGuiEventListener listener;
-	protected Pair<Integer, IGuiEventListener> dragged;
+	protected final List<GuiEventListener> listeners = new ArrayList<>();
+	protected GuiEventListener listener;
+	protected Pair<Integer, GuiEventListener> dragged;
 	protected boolean dragging;
 	
 	public ScrollingContainerWidget(int x, int y, int w, int h) {
@@ -51,7 +51,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 		final double prev = scrollAmount;
 		final int maxScroll = getMaxScroll();
 		updatePosition(0F);
-		scrollAmount = MathHelper.clamp(scrollAmount, 0, maxScroll);
+		scrollAmount = Mth.clamp(scrollAmount, 0, maxScroll);
 	}
 	
 	public void scrollBy(double amount, boolean animated) {
@@ -65,7 +65,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	
 	public void position() {}
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		updateScroll();
 		position();
 		ScissorsHandler.INSTANCE.pushScissor(area);
@@ -77,7 +77,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	}
 	
 	public abstract void renderInner(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
 	
 	public abstract int getInnerHeight();
 	
@@ -104,13 +104,13 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 		);
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return listeners;
 	}
-	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+	@Override public Pair<Integer, GuiEventListener> getDragged() {
 		return dragged;
 	}
-	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+	@Override public void setDragged(Pair<Integer, GuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
 	@Override public boolean isDragging() {
@@ -119,20 +119,19 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	@Override public void setDragging(boolean dragging) {
 		this.dragging = dragging;
 	}
-	@Nullable @Override public IGuiEventListener getFocused() {
+	@Nullable @Override public GuiEventListener getFocused() {
 		return listener;
 	}
-	@Override public void setFocused(@Nullable IGuiEventListener listener) {
+	@Override public void setFocused(@Nullable GuiEventListener listener) {
 		this.listener = listener;
 	}
 	
 	@Override public boolean changeFocus(boolean focus) {
 		final boolean change = IExtendedDragAwareNestedGuiEventHandler.super.changeFocus(focus);
 		if (change) {
-			final IGuiEventListener listener = getFocused();
+			final GuiEventListener listener = getFocused();
 			if (listener != null) {
-				if (listener instanceof Widget) {
-					final Widget widget = (Widget) listener;
+				if (listener instanceof final AbstractWidget widget) {
 					int target = widget.y + widget.getHeight() / 2 - area.y;
 					scrollTo(target, true);
 				}

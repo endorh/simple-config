@@ -13,9 +13,9 @@ import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.command.arguments.IArgumentSerializer;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 	private static final DynamicCommandExceptionType INVALID_YAML = new DynamicCommandExceptionType(
-	  m -> new TranslationTextComponent("simpleconfig.command.error.invalid_yaml", m));
+	  m -> new TranslatableComponent("simpleconfig.command.error.invalid_yaml", m));
 	
 	public static SimpleConfigValueArgumentType entryValue(
 	  @Nullable String modId, @Nullable EditType type
@@ -77,24 +77,24 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 		String serialized = entry.getForCommand();
 		if (serialized != null)
-			builder.suggest(serialized, new TranslationTextComponent(
+			builder.suggest(serialized, new TranslatableComponent(
 			  "simpleconfig.command.suggest.current"));
 		String defSerialized = entry.forCommand(entry.defValue);
 		if (defSerialized != null && !defSerialized.equals(serialized))
-			builder.suggest(defSerialized, new TranslationTextComponent(
+			builder.suggest(defSerialized, new TranslatableComponent(
 			  "simpleconfig.command.suggest.default"));
 		return builder.buildFuture();
 	}
 	
-	public static class Serializer implements IArgumentSerializer<SimpleConfigValueArgumentType> {
-		@Override public void serializeToNetwork(@NotNull SimpleConfigValueArgumentType arg, @NotNull PacketBuffer buf) {
+	public static class Serializer implements ArgumentSerializer<SimpleConfigValueArgumentType> {
+		@Override public void serializeToNetwork(@NotNull SimpleConfigValueArgumentType arg, @NotNull FriendlyByteBuf buf) {
 			buf.writeBoolean(arg.modId != null);
 			if (arg.modId != null) buf.writeUtf(arg.modId);
 			buf.writeBoolean(arg.type != null);
 			if (arg.type != null) buf.writeEnum(arg.type);
 		}
 		
-		@Override public @NotNull SimpleConfigValueArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigValueArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
 			return new SimpleConfigValueArgumentType(
 			  buf.readBoolean()? buf.readUtf(32767) : null,
 			  buf.readBoolean()? buf.readEnum(EditType.class) : null);

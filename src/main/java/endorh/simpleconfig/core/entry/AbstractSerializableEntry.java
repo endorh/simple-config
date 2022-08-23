@@ -2,15 +2,15 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.SerializableEntryBuilder;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -68,14 +68,14 @@ public abstract class AbstractSerializableEntry
 		return value != null? deserialize(value) : null;
 	}
 	
-	protected Optional<ITextComponent> getErrorMessage(String value) {
-		return Optional.of(new TranslationTextComponent(
+	protected Optional<Component> getErrorMessage(String value) {
+		return Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.invalid_value_generic"));
 	}
 	
 	@Override
-	public Optional<ITextComponent> getErrorFromGUI(String value) {
-		final Optional<ITextComponent> opt = super.getErrorFromGUI(value);
+	public Optional<Component> getErrorFromGUI(String value) {
+		final Optional<Component> opt = super.getErrorFromGUI(value);
 		if (!opt.isPresent() && fromGui(value) == null && value != null) {
 			return getErrorMessage(value);
 		} else return opt;

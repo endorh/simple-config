@@ -81,8 +81,7 @@ public class SimpleConfigYamlRepresenter extends Representer {
 			if (value == null) return new SequenceNode(tag, Collections.emptyList(), FlowStyle.FLOW);
 			Node node = SimpleConfigYamlRepresenter.this.representData(value);
 			FlowStyle style = FlowStyle.BLOCK;
-			if (node instanceof ScalarNode) {
-				ScalarNode scalar = (ScalarNode) node;
+			if (node instanceof ScalarNode scalar) {
 				if (scalar.getScalarStyle() == ScalarStyle.PLAIN || scalar.getScalarStyle() == ScalarStyle.SINGLE_QUOTED)
 					style = FlowStyle.FLOW;
 			}

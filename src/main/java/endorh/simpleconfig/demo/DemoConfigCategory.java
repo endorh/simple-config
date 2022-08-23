@@ -9,30 +9,26 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
 import endorh.simpleconfig.core.SimpleConfigGroupImpl;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Entries;
-import net.minecraft.block.Blocks;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.StringNBT;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Direction.Axis;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.Axis;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.Color;
@@ -46,7 +42,7 @@ import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
-import static endorh.simpleconfig.ui.hotkey.KeyBindMapping.parse;
+import static endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.parse;
 import static java.lang.Math.abs;
 import static java.util.Arrays.asList;
 
@@ -58,11 +54,11 @@ public class DemoConfigCategory {
 	private static String prefix(String key) {
 		return SimpleConfigMod.MOD_ID + ".config." + key;
 	}
-	private static StringTextComponent stc(String msg, Object... args) {
-		return new StringTextComponent(String.format(msg, args));
+	private static TextComponent stc(String msg, Object... args) {
+		return new TextComponent(String.format(msg, args));
 	}
-	private static TranslationTextComponent ttc(String key, Object... args) {
-		return new TranslationTextComponent(key, args);
+	private static TranslatableComponent ttc(String key, Object... args) {
+		return new TranslatableComponent(key, args);
 	}
 	
 	// This category builder is added to the config builder
@@ -74,7 +70,7 @@ public class DemoConfigCategory {
 	//   in the server config
 	public static ConfigCategoryBuilder getDemoCategory() {
 		// This value will be used below
-		CompoundNBT nbt = new CompoundNBT();
+		CompoundTag nbt = new CompoundTag();
 		nbt.putString("name", "Steve");
 		nbt.putInt("health", 20);
 		
@@ -298,9 +294,9 @@ public class DemoConfigCategory {
 		            .add("item_name", itemName(new ResourceLocation("unknown:item")))
 		            // NBT tag entries contain CompoundNBT s, and automatically
 		            //   check the NBT syntax in the GUI
-		            .add("nbt_compound", nbtTag(nbt))
+		            .add("nbt_compound", compoundTag(nbt))
 		            // NBT value entries also accept INBT values as well as CompoundNBT s
-		            .add("nbt_value", nbtValue(StringNBT.valueOf("NBT")))
+		            .add("nbt_value", tag(StringTag.valueOf("NBT")))
 		            // It is also possible to use custom String serializable entries
 		            //   You may either pass an IConfigEntrySerializer,
 		            //   make the type implement ISerializableConfigEntry, or
@@ -457,8 +453,8 @@ public class DemoConfigCategory {
 		          .caption("caption", string("Caption entry")
 		            .suggest("Groups", "can", "hold", "entries", "in", "their", "captions"))
 		          // Text entries can also receive format arguments if they
-		          //   are defined by name instead of passing an ITextComponent
-		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).withStyle(TextFormatting.GRAY))
+		          //   are defined by name instead of passing an Component
+		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).withStyle(ChatFormatting.GRAY))
 		          // Any entry can be made non-persistent, by calling .temp()
 		          //   Non-persistent entries do not appear in the config file
 		          //   and are reset on every restart
@@ -482,7 +478,7 @@ public class DemoConfigCategory {
 		          //   specific builder exists as shown below
 		          .add("button_entry", button(
 		            number(2F).error(
-		              n -> abs(n) > 10 ? Optional.of(new StringTextComponent("> 10")) :
+		              n -> abs(n) > 10 ? Optional.of(new TextComponent("> 10")) :
 		                   Optional.empty()
 		            ), s -> {
 		            	final String path = "demo.entries.special.button_test";
@@ -541,9 +537,9 @@ public class DemoConfigCategory {
 		       //   by calling .modifyStyle() on text components
 		       // Format arguments may be suppliers, which will be evaluated before
 		       //   being filled in.
-		       .text("open_file", (Supplier<ITextComponent>) () ->
+		       .text("open_file", (Supplier<Component>) () ->
 			      ttc(prefix("text.mod_config_file")).withStyle(style -> style
-				     .withColor(TextFormatting.DARK_AQUA)
+				     .withColor(ChatFormatting.DARK_AQUA)
 				     .withClickEvent(new ClickEvent(
 				       ClickEvent.Action.OPEN_FILE,
 				       CLIENT_CONFIG.getFilePath().map(Path::toString).orElse("")))
@@ -599,7 +595,7 @@ public class DemoConfigCategory {
 		       //   into separate lines, so think if it's really necessary
 		       .add("dynamic_tooltip", string("Steve")
 			      .tooltip(s -> asList(
-				     ttc(prefix("text.hello"), stc(s).withStyle(TextFormatting.DARK_AQUA)))))
+				     ttc(prefix("text.hello"), stc(s).withStyle(ChatFormatting.DARK_AQUA)))))
 		       // Any value can be marked as requiring a restart to be effective
 		       //   Entire groups and categories can be marked as well
 		       .add("restart_bool", bool(false).restart())
@@ -614,14 +610,14 @@ public class DemoConfigCategory {
 		       // The order in which tags are specified is irrelevant, since the tags themselves
 		       //   define an ordering. An entry may have an arbitrary amount of tags
 		       .add("mixed_bool", bool(false).experimental().restart().withTags(
-					EntryTag.ADVANCED, EntryTag.coloredTag(TextFormatting.RED),
-					EntryTag.coloredTag(TextFormatting.GREEN),
-					EntryTag.coloredTag(TextFormatting.BLUE),
-					EntryTag.coloredBookmark(TextFormatting.YELLOW)))
+					EntryTag.ADVANCED, EntryTag.coloredTag(ChatFormatting.RED),
+					EntryTag.coloredTag(ChatFormatting.GREEN),
+					EntryTag.coloredTag(ChatFormatting.BLUE),
+					EntryTag.coloredBookmark(ChatFormatting.YELLOW)))
 		       .add("enable_switch", bool(false))
 		       .add("enable_test", string("text").editable(g -> g.getGUIBoolean("enable_switch"))))
-		  .text("end", new TranslationTextComponent("simpleconfig.text.wiki")
-		    .withStyle(style -> style.withColor(TextFormatting.AQUA)
+		  .text("end", new TranslatableComponent("simpleconfig.text.wiki")
+		    .withStyle(style -> style.withColor(ChatFormatting.AQUA)
 		      .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
 		  // Finally, we may manually set a baker method
 		  //   for this config/category/group
@@ -666,7 +662,7 @@ public class DemoConfigCategory {
 		UPRIGHT, UPSIDE_DOWN;
 		
 		// Although in this case it doesn't make much difference
-		@Override public ITextComponent getDisplayName() {
+		@Override public Component getDisplayName() {
 			return ttc(prefix("enum.placement." + name().toLowerCase()));
 		}
 	}
@@ -838,8 +834,8 @@ public class DemoConfigCategory {
 		@Bind public static class serializable {
 			@Bind public static ResourceLocation resource;
 			@Bind public static Item item;
-			@Bind public static CompoundNBT nbt_compound;
-			@Bind public static INBT nbt_value;
+			@Bind public static CompoundTag nbt_compound;
+			@Bind public static Tag nbt_value;
 			@Bind public static Pair<String, Integer> pair;
 		}
 		

@@ -5,7 +5,7 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.CaptionedListListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,7 +24,7 @@ public class CaptionedListEntryBuilder<
 	protected CEB captionEntry;
 	
 	public CaptionedListEntryBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, Pair<C, List<V>> value,
+	  ConfigFieldBuilder builder, Component name, Pair<C, List<V>> value,
 	  EB listEntry, CEB captionEntry
 	) {
 		super(CaptionedListListEntry.class, builder, name, value);

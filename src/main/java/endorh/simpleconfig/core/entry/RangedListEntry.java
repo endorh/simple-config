@@ -3,7 +3,11 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -65,30 +69,30 @@ public abstract class RangedListEntry<
 		}
 		
 		@Contract(pure=true)
-		@Override public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
+		@Override public Self elemError(Function<V, Optional<Component>> errorSupplier) {
 			return super.elemError(clamp(errorSupplier));
 		}
 		
-		protected Function<V, Optional<ITextComponent>> clamp(
-		  @Nullable Function<V, Optional<ITextComponent>> validator
+		protected Function<V, Optional<Component>> clamp(
+		  @Nullable Function<V, Optional<Component>> validator
 		) {
 			checkBounds();
 			return t -> {
 				if (t.compareTo(min) < 0)
 					return Optional
-					  .of(new TranslationTextComponent(
+					  .of(new TranslatableComponent(
 						 "simpleconfig.config.error.too_small", coloredBound(min)));
 				if (t.compareTo(max) > 0)
 					return Optional
-					  .of(new TranslationTextComponent(
+					  .of(new TranslatableComponent(
 						 "simpleconfig.config.error.too_large", coloredBound(max)));
 				return validator != null ? validator.apply(t) : Optional.empty();
 			};
 		}
 		
-		protected static IFormattableTextComponent coloredBound(Object bound) {
-			return new StringTextComponent(String.valueOf(bound))
-			  .withStyle(TextFormatting.DARK_AQUA);
+		protected static MutableComponent coloredBound(Object bound) {
+			return new TextComponent(String.valueOf(bound))
+			  .withStyle(ChatFormatting.DARK_AQUA);
 		}
 		
 		protected void checkBounds() {}

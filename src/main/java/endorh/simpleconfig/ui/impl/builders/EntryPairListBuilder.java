@@ -4,7 +4,7 @@ import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public class EntryPairListBuilder<
 	protected boolean ignoreOrder = false;
 	
 	public EntryPairListBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, List<Pair<K, V>> value,
+	  ConfigFieldBuilder builder, Component name, List<Pair<K, V>> value,
 	  Function<EntryPairListListEntry<K, V, KE, VE>, Pair<KE, VE>> cellFactory
 	) {
 		super(EntryPairListListEntry.class, builder, name, value);

@@ -1,6 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
@@ -8,13 +11,10 @@ import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction.WidgetDragBroadcastableAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableWidget;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Point;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -28,13 +28,13 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntry<E>>
-  extends FocusableGui {
+  extends AbstractContainerEventHandler {
 	private static final boolean DEBUG_DRAG = false;
 	private ArrangeableTreeView<E> tree;
 	private E parent;
 	private final Rectangle area = new Rectangle();
 	protected List<E> subEntries = new ArrayList<>();
-	protected final List<IGuiEventListener> listeners = new ArrayList<>();
+	protected final List<GuiEventListener> listeners = new ArrayList<>();
 	private E focusedSubEntry;
 	private boolean expanded;
 	private boolean awaitingSelectionMouseRelease;
@@ -307,7 +307,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		}
 	}
 	
-	@Override public void setFocused(@Nullable IGuiEventListener listener) {
+	@Override public void setFocused(@Nullable GuiEventListener listener) {
 		super.setFocused(listener);
 		if (focusedSubEntry != null && focusedSubEntry != listener)
 			focusedSubEntry.unFocus();
@@ -357,8 +357,8 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			parent.focus(false);
 			parent.setFocused(this);
 		}
-		List<IGuiEventListener> listeners = children();
-		IGuiEventListener first = listeners.stream()
+		List<GuiEventListener> listeners = children();
+		GuiEventListener first = listeners.stream()
 		  .findFirst().filter(l -> !(l instanceof ArrangeableTreeViewEntry)).orElse(null);
 		setFocused(first);
 		if (scroll) ensureVisible();
@@ -370,7 +370,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	protected void unFocus() {
-		IGuiEventListener listener = getFocused();
+		GuiEventListener listener = getFocused();
 		setFocused(null);
 		if (listener instanceof ArrangeableTreeViewEntry) {
 			((ArrangeableTreeViewEntry<?>) listener).unFocus();
@@ -432,7 +432,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	public void renderBackground(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		ArrangeableTreeView<E> tree = getTree();
 		if (tree.isDraggingEntries() && tree.isSelected(this)) {
@@ -456,7 +456,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	public void render(
-	  MatrixStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
 	) {
 		Point pos = interpolatePosition(x, y);
 		int ix = pos.getX();
@@ -504,7 +504,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		if (hasDragPreview) renderDragPreview(mStack, yy);
 	}
 	
-	protected void renderDragPreview(MatrixStack mStack, int y) {
+	protected void renderDragPreview(PoseStack mStack, int y) {
 		ArrangeableTreeView<E> tree = getTree();
 		int destX = tree.getDraggedOverParent().getArea().x + tree.getIndent();
 		drawBorderRect(mStack, destX, y, tree.area.getMaxX(), y + 20, 1, 0x8080A0FF, 0x646480FF);
@@ -513,7 +513,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	public abstract void renderContent(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
 	
 	public boolean isForceRenderAsGroup() {
 		return false;
@@ -597,7 +597,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		return false;
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> children() {
+	@Override public @NotNull List<GuiEventListener> children() {
 		return isExpanded()? Stream.concat(
 		  listeners.stream(), subEntries.stream()
 		).collect(Collectors.toList()) : listeners;
@@ -609,7 +609,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		return new DragBroadcastableControl<>(this::getTree, action, widget);
 	}
 	
-	public <W extends Widget> DragBroadcastableWidget<W> draggable(
+	public <W extends AbstractWidget> DragBroadcastableWidget<W> draggable(
 	  WidgetDragBroadcastableAction<W> action, W widget
 	) {
 		return new DragBroadcastableWidget<>(this::getTree, action, widget);

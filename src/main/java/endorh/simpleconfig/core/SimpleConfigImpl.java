@@ -7,6 +7,7 @@ import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.api.ConfigBuilderFactoryProxy;
 import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler.CSimpleConfigSyncPacket;
@@ -16,19 +17,18 @@ import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.yaml.NodeComments;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.command.CommandSource;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -37,8 +37,9 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.language.IModInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -103,10 +104,10 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
 	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
-	protected Set<PlayerEntity> remoteListeners = new HashSet<>();
+	protected Set<Player> remoteListeners = new HashSet<>();
 	private ModConfig modConfig;
 	private ModContainer modContainer;
-	private @Nullable LiteralArgumentBuilder<CommandSource> commandRoot;
+	private @Nullable LiteralArgumentBuilder<CommandSourceStack> commandRoot;
 	private Map<String, NodeComments> comments = new HashMap<>();
 	private final SimpleConfigCommentedYamlFormat configFormat = SimpleConfigCommentedYamlFormat.forConfig(this);
 	
@@ -164,7 +165,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	 * Get the display name of the mod, or just its mod id if not found
 	 */
 	@Internal public static String getModNameOrId(String modId) {
-		final Optional<ModInfo> first = ModList.get().getMods().stream()
+		final Optional<IModInfo> first = ModList.get().getMods().stream()
 		  .filter(m -> modId.equals(m.getModId())).findFirst();
 		if (first.isPresent())
 			return first.get().getDisplayName();
@@ -197,7 +198,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	  Map<String, SimpleConfigCategoryImpl> categories,
 	  Map<String, SimpleConfigGroupImpl> groups,
 	  List<IGUIEntry> order, ForgeConfigSpec spec,
-	  Icon icon, int color, @Nullable LiteralArgumentBuilder<CommandSource> commandRoot
+	  Icon icon, int color, @Nullable LiteralArgumentBuilder<CommandSourceStack> commandRoot
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
@@ -347,11 +348,11 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	@OnlyIn(Dist.CLIENT)
 	protected void checkRestart() {
 		if (anyDirtyRequiresRestart()) {
-			final ClientPlayerEntity player = Minecraft.getInstance().player;
+			final LocalPlayer player = Minecraft.getInstance().player;
 			if (player != null) {
-				player.sendMessage(new TranslationTextComponent(
+				player.sendMessage(new TranslatableComponent(
 				  "simpleconfig.config.msg.client_changes_require_restart"
-				).withStyle(TextFormatting.GOLD), Util.NIL_UUID);
+				).withStyle(ChatFormatting.GOLD), Util.NIL_UUID);
 			}
 		}
 	}
@@ -375,11 +376,11 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 			new CSimpleConfigSyncPacket(this).send();
 	}
 	
-	@Internal protected void addRemoteListener(PlayerEntity listener) {
+	@Internal protected void addRemoteListener(Player listener) {
 		remoteListeners.add(listener);
 	}
 	
-	@Internal protected void removeRemoteListener(PlayerEntity listener) {
+	@Internal protected void removeRemoteListener(Player listener) {
 		remoteListeners.remove(listener);
 	}
 	
@@ -413,7 +414,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	 * Handle external config modification events
 	 */
 	@SubscribeEvent
-	protected void onModConfigEvent(final ModConfig.ModConfigEvent event) {
+	protected void onModConfigEvent(final ModConfigEvent event) {
 		final ModConfig c = event.getConfig();
 		if (c == getModConfig()) {
 			bake();
@@ -444,10 +445,10 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		throw new NoSuchConfigGroupError(path);
 	}
 	
-	protected ITextComponent getTitle() {
+	protected Component getTitle() {
 		if (I18n.exists(defaultTitle))
-			return new TranslationTextComponent(defaultTitle);
-		return new TranslationTextComponent(
+			return new TranslatableComponent(defaultTitle);
+		return new TranslatableComponent(
 		  "simpleconfig.config.category." + getType().name().toLowerCase());
 	}
 	
@@ -505,7 +506,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 			getFilePath().ifPresent(category::setContainingFile);
 			category.setDescription(
 			  () -> I18n.exists(tooltip)
-			        ? Optional.of(splitTtc(tooltip).toArray(new ITextComponent[0]))
+			        ? Optional.of(splitTtc(tooltip).toArray(new Component[0]))
 			        : Optional.empty());
 			if (background != null)
 				category.setBackground(background);
@@ -603,7 +604,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		return modContainer;
 	}
 	
-	@Internal public LiteralArgumentBuilder<CommandSource> getCommandRoot() {
+	@Internal public LiteralArgumentBuilder<CommandSourceStack> getCommandRoot() {
 		return commandRoot;
 	}
 	

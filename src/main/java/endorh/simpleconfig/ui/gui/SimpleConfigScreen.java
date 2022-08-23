@@ -2,14 +2,27 @@ package endorh.simpleconfig.ui.gui;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.InputConstants.Key;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfigGroup;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Types;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
@@ -24,36 +37,25 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Types;
 import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState;
 import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState.ConfigCategoryGUIState;
 import endorh.simpleconfig.ui.impl.EasingMethod;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.client.util.InputMappings.Input;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.language.IModInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -88,7 +90,7 @@ import static java.lang.Math.min;
 	};
 	protected Map<ConfigCategory, ListWidget<AbstractConfigField<?>>> listWidgets;
 	protected ListWidget<AbstractConfigField<?>> listWidget;
-	protected ITextComponent displayTitle;
+	protected Component displayTitle;
 	protected TintedButton quitButton;
 	protected SaveButton saveButton;
 	protected List<MultiFunctionIconButton> modeButtons = Lists.newArrayList();
@@ -98,8 +100,8 @@ import static java.lang.Math.min;
 	protected MultiFunctionIconButton remoteCommonButton;
 	protected MultiFunctionIconButton serverButton;
 	protected PresetPickerWidget presetPickerWidget;
-	protected Widget buttonLeftTab;
-	protected Widget buttonRightTab;
+	protected AbstractWidget buttonLeftTab;
+	protected AbstractWidget buttonRightTab;
 	protected MultiFunctionImageButton undoButton;
 	protected MultiFunctionImageButton redoButton;
 	protected MultiFunctionImageButton editFileButton;
@@ -131,14 +133,14 @@ import static java.lang.Math.min;
 	private boolean isEdited = false;
 	
 	@Internal public SimpleConfigScreen(
-	  Screen parent, String modId, ITextComponent title,
+	  Screen parent, String modId, Component title,
 	  Collection<ConfigCategory> clientCategories, Collection<ConfigCategory> commonCategories,
 	  Collection<ConfigCategory> serverCommonCategories, Collection<ConfigCategory> serverCategories,
 	  ResourceLocation backgroundLocation
 	) {
 		super(parent, modId, title, backgroundLocation,
 		      clientCategories, commonCategories, serverCommonCategories, serverCategories);
-		displayTitle = new StringTextComponent(getModNameOrId(modId));
+		displayTitle = new TextComponent(getModNameOrId(modId));
 		for (ConfigCategory category : sortedCategories) {
 			for (AbstractConfigField<?> entry : category.getHeldEntries()) {
 				entry.setCategory(category);
@@ -155,7 +157,7 @@ import static java.lang.Math.min;
 		editedHotKeyButton.setTintColor(0x424280FF);
 		editedHotKeyNameTextField = TextFieldWidgetEx.of("");
 		editedHotKeyNameTextField.setBordered(false);
-		editedHotKeyNameTextField.setEmptyHint(new TranslationTextComponent(
+		editedHotKeyNameTextField.setEmptyHint(new TranslatableComponent(
 		  "simpleconfig.ui.hotkey.unnamed_hotkey.hint"));
 		minecraft = Minecraft.getInstance();
 		listWidgets = new HashMap<>();
@@ -171,7 +173,7 @@ import static java.lang.Math.min;
 			 () -> selectedCategory.getContainingFile().ifPresent(
 				f -> addDialog(EditConfigFileDialog.create(this, f.toAbsolutePath())))
 		  ).active(() -> selectedCategory.getContainingFile().isPresent())
-		  .tooltip(new TranslationTextComponent("simpleconfig.file.open")));
+		  .tooltip(new TranslatableComponent("simpleconfig.file.open")));
 		undoButton = MultiFunctionImageButton.of(20, 20, Buttons.UNDO, ButtonAction.of(() -> {
 			undo();
 			setFocused(listWidget);
@@ -184,7 +186,7 @@ import static java.lang.Math.min;
 		hotKeyButton = MultiFunctionIconButton.of(
 		  Buttons.KEYBOARD, 20, 20,
 		  ButtonAction.of(() -> addDialog(HotKeyListDialog.forModId(modId)))
-			 .tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.edit")));
+			 .tooltip(new TranslatableComponent("simpleconfig.ui.hotkey.edit")));
 		
 		buttonLeftTab = MultiFunctionImageButton.of(
 		  12, 18, Buttons.LEFT_TAB, ButtonAction.of(
@@ -195,7 +197,7 @@ import static java.lang.Math.min;
 		  ButtonAction.of(() -> tabsScroller.offset(48, true)).active(
 			 () -> tabsScroller.scrollAmount < tabsMaximumScrolled - (double) width + 40.0));
 		
-		quitButton = TintedButton.of(DialogTexts.GUI_CANCEL, widget -> {
+		quitButton = TintedButton.of(CommonComponents.GUI_CANCEL, widget -> {
 			if (isEditingConfigHotKey()) {
 				discardHotkey();
 			} else quit();
@@ -206,27 +208,27 @@ import static java.lang.Math.min;
 		settingsButton = MultiFunctionImageButton.of(
 		  18, 18, SimpleConfigIcons.Buttons.GEAR,
 		  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
-			 .tooltip(new TranslationTextComponent("simpleconfig.ui.simple_config_settings")));
+			 .tooltip(new TranslatableComponent("simpleconfig.ui.simple_config_settings")));
 		keyboardButton = MultiFunctionImageButton.of(
 		  18, 18, SimpleConfigIcons.Buttons.KEYBOARD,
 		  ButtonAction.of(() -> addDialog(getControlsDialog()))
-			 .tooltip(new TranslationTextComponent("simpleconfig.ui.controls")));
+			 .tooltip(new TranslatableComponent("simpleconfig.ui.controls")));
 	}
 	
 	@NotNull private MultiFunctionIconButton createModeButton(EditType type) {
 		String alias = type.getAlias().replace('-', '.');
 		return MultiFunctionIconButton.of(Types.iconFor(type), 20, 70, ButtonAction.of(
 			 () -> showType(type)
-		  ).title(() -> new TranslationTextComponent("simpleconfig.config.category." + alias))
+		  ).title(() -> new TranslatableComponent("simpleconfig.config.category." + alias))
 		  .tooltip(
 			 () -> hasType(type) && getEditedType() != type
-			       ? Lists.newArrayList(new TranslationTextComponent("simpleconfig.ui.switch." + alias))
+			       ? Lists.newArrayList(new TranslatableComponent("simpleconfig.ui.switch." + alias))
 			       : Collections.emptyList()
 		  ).active(() -> hasType(type)));
 	}
 	
 	protected static String getModNameOrId(String modId) {
-		final Optional<ModInfo> first = ModList.get().getMods().stream()
+		final Optional<IModInfo> first = ModList.get().getMods().stream()
 		  .filter(m -> modId.equals(m.getModId())).findFirst();
 		if (first.isPresent())
 			return first.get().getDisplayName();
@@ -264,7 +266,7 @@ import static java.lang.Math.min;
 		super.setEditedConfigHotKey(hotkey, hotKeySaver);
 		if (hotkey != null) {
 			editedHotKeyButton.setMapping(hotkey.getKeyMapping());
-			editedHotKeyNameTextField.setText(hotkey.getName());
+			editedHotKeyNameTextField.setValue(hotkey.getName());
 			categoryMap.forEach((alias, map) -> loadConfigHotKeyActions(hotkey, SimpleConfig.EditType.fromAlias(alias), map));
 		}
 		getAllMainEntries().forEach(e -> e.setEditingHotKeyAction(isEditingConfigHotKey()));
@@ -310,10 +312,10 @@ import static java.lang.Math.min;
 		bx += 20;
 		pos(redoButton, bx, 2);
 		bx += 20 + 4;
-		addButton(editFileButton);
+		addRenderableWidget(editFileButton);
 		if (hasUndoButtons()) {
-			addButton(undoButton);
-			addButton(redoButton);
+			addRenderableWidget(undoButton);
+			addRenderableWidget(redoButton);
 		} else bx -= 44;
 		
 		EditType type = getEditedType();
@@ -342,7 +344,7 @@ import static java.lang.Math.min;
 		for (MultiFunctionIconButton b: modeButtons) {
 			pos(b, bx, 2);
 			bx += b.getWidth();
-			addButton(b);
+			addRenderableWidget(b);
 		}
 		
 		selectionToolbar = new SelectionToolbar(this, 76, 2);
@@ -350,20 +352,20 @@ import static java.lang.Math.min;
 		addWidget(selectionToolbar);
 		
 		if (isEditingConfigHotKey()) {
-			int textFieldWidth = MathHelper.clamp(width / 5, 100, 300);
+			int textFieldWidth = Mth.clamp(width / 5, 100, 300);
 			pos(editedHotKeyNameTextField, width / 2 - textFieldWidth / 2, 8, textFieldWidth, 12);
-			addButton(editedHotKeyNameTextField);
+			addRenderableWidget(editedHotKeyNameTextField);
 		}
 		
 		// Right toolbar
 		if (!isEditingConfigHotKey()) {
-			int presetPickerWidth = MathHelper.clamp(width / 3, 80, 250);
+			int presetPickerWidth = Mth.clamp(width / 3, 80, 250);
 			presetPickerWidget.setPosition(width - presetPickerWidth - 24, 2, presetPickerWidth);
 			pos(hotKeyButton, width - 22, 2);
 			addWidget(presetPickerWidget);
-			addButton(hotKeyButton);
+			addRenderableWidget(hotKeyButton);
 		} else {
-			int hotKeyButtonWidth = MathHelper.clamp(width / 3, 80, 250);
+			int hotKeyButtonWidth = Mth.clamp(width / 3, 80, 250);
 			editedHotKeyButton.setPosition(width - hotKeyButtonWidth - 2, 2, hotKeyButtonWidth);
 			addWidget(editedHotKeyButton);
 		}
@@ -374,7 +376,7 @@ import static java.lang.Math.min;
 			tabsLeftBounds = new Rectangle(0, 24, 18, 24);
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
 			pos(buttonLeftTab, 4, 27);
-			children.add(buttonLeftTab);
+			addWidget(buttonLeftTab);
 			tabButtons.clear();
 			int ww = 0;
 			for (ConfigCategory cat : getSortedTypeCategories()) {
@@ -385,9 +387,9 @@ import static java.lang.Math.min;
 				  cat.getTitle(), cat.getDescription()));
 			}
 			tabsMaximumScrolled = ww;
-			children.addAll(tabButtons);
+			tabButtons.forEach(this::addWidget);
 			pos(buttonRightTab, width - 16, 27);
-			children.add(buttonRightTab);
+			addWidget(buttonRightTab);
 		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
 		
 		// Content
@@ -400,19 +402,19 @@ import static java.lang.Math.min;
 		addWidget(listWidget);
 		
 		// Status bar
-		addButton(statusDisplayBar);
+		addRenderableWidget(statusDisplayBar);
 		
 		// Left controls
 		selectAllButton = new MultiFunctionImageButton(
 		  2, height - 22, 20, 20, SimpleConfigIcons.Buttons.SELECT_ALL,
 		  ButtonAction.of(this::selectAllEntries)
-			 .tooltip(new TranslationTextComponent("simpleconfig.ui.select_all")));
-		addButton(selectAllButton);
+			 .tooltip(new TranslatableComponent("simpleconfig.ui.select_all")));
+		addRenderableWidget(selectAllButton);
 		invertSelectionButton = new MultiFunctionImageButton(
 		  24, height - 22, 20, 20, SimpleConfigIcons.Buttons.INVERT_SELECTION,
 		  ButtonAction.of(this::invertEntrySelection)
-			 .tooltip(new TranslationTextComponent("simpleconfig.ui.invert_selection")));
-		addButton(invertSelectionButton);
+			 .tooltip(new TranslatableComponent("simpleconfig.ui.invert_selection")));
+		addRenderableWidget(invertSelectionButton);
 		selectAllButton.visible = invertSelectionButton.visible = false;
 		
 		// Center controls
@@ -420,18 +422,18 @@ import static java.lang.Math.min;
 		int cX = width / 2;
 		int by = height - 24;
 		pos(quitButton, cX - buttonWidths - 2, by, buttonWidths);
-		addButton(quitButton);
+		addRenderableWidget(quitButton);
 		pos(saveButton, cX + 2, by, buttonWidths);
-		addButton(saveButton);
+		addRenderableWidget(saveButton);
 		saveButton.active = isEdited();
 		
 		// Right buttons
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
 			pos(settingsButton, width - 41, height - 21);
-			addButton(settingsButton);
+			addRenderableWidget(settingsButton);
 		}
 		pos(keyboardButton, width - 21, height - 21);
-		addButton(keyboardButton);
+		addRenderableWidget(keyboardButton);
 		
 		// Update UI mode
 		isSelecting = false;
@@ -523,7 +525,7 @@ import static java.lang.Math.min;
 		  }));
 	}
 	
-	public List<ITextComponent> getErrorsMessages() {
+	public List<Component> getErrorsMessages() {
 		return getErrors().stream().map(EntryError::getError).collect(Collectors.toList());
 	}
 	
@@ -681,7 +683,7 @@ import static java.lang.Math.min;
 		if (!isEditingConfigHotKey() || hotkey == null) return;
 		sortedCategoriesMap.forEach(
 		  (type, categories) -> addHotKeyActions(hotkey, type, categories));
-		hotkey.setName(editedHotKeyNameTextField.getText());
+		hotkey.setName(editedHotKeyNameTextField.getValue());
 		hotkey.setKeyMapping(editedHotKeyButton.getMapping());
 		super.saveHotkey();
 	}
@@ -722,7 +724,7 @@ import static java.lang.Math.min;
 	
 	@Override protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
 		if (super.screenKeyPressed(keyCode, scanCode, modifiers)) return true;
-		Input key = InputMappings.getKey(keyCode, scanCode);
+		Key key = InputConstants.getKey(keyCode, scanCode);
 		// Navigation key bindings first
 		if (KeyBindings.NEXT_TYPE.isActiveAndMatches(key)) {
 			MultiFunctionIconButton modeButton = modeButtonMap.get(getEditedType());
@@ -791,9 +793,9 @@ import static java.lang.Math.min;
 				if (entry != null) {
 					ResetButton resetButton = entry.getResetButton();
 					if (resetButton != null && resetButton.active) {
-						IGuiEventListener focused = entry.getFocused();
+						GuiEventListener focused = entry.getFocused();
 						if (focused != resetButton) {
-							if (focused instanceof Widget && ((Widget) focused).isFocused())
+							if (focused instanceof AbstractWidget && ((AbstractWidget) focused).isFocused())
 								WidgetUtils.forceUnFocus(focused);
 							if (entry.children().contains(resetButton))
 								entry.setFocused(resetButton);
@@ -812,9 +814,9 @@ import static java.lang.Math.min;
 				if (entry != null) {
 					HotKeyActionButton<?> button = entry.getHotKeyActionTypeButton();
 					if (button != null && button.active) {
-						IGuiEventListener focused = entry.getFocused();
+						GuiEventListener focused = entry.getFocused();
 						if (focused != button) {
-							if (focused instanceof Widget && ((Widget) focused).isFocused())
+							if (focused instanceof AbstractWidget && ((AbstractWidget) focused).isFocused())
 								WidgetUtils.forceUnFocus(focused);
 							if (entry.children().contains(button))
 								entry.setFocused(button);
@@ -859,7 +861,7 @@ import static java.lang.Math.min;
 				selectAllButton.visible = invertSelectionButton.visible = false;
 				modeButtons.forEach(b -> b.setWidthRange(20, 70));
 				remoteCommonButton.setExactWidth(20);
-				if (modeButtons.stream().mapToInt(Widget::getWidth).sum() > 0.35 * width)
+				if (modeButtons.stream().mapToInt(AbstractWidget::getWidth).sum() > 0.35 * width)
 					modeButtons.forEach(b -> b.setExactWidth(20));
 				for (MultiFunctionIconButton b: modeButtons) {
 					b.x = bx;
@@ -883,7 +885,7 @@ import static java.lang.Math.min;
 	}
 	
 	@Override
-	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (minecraft == null) return;
 		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
@@ -905,13 +907,13 @@ import static java.lang.Math.min;
 		listWidget.render(mStack, smX, smY, delta);
 		
 		if (!isEditingConfigHotKey()) {
-			final ITextComponent title = getDisplayedTitle();
+			final Component title = getDisplayedTitle();
 			if (isSelecting()) {
 				selectionToolbar.render(mStack, smX, smY, delta);
 				drawString(
-				  mStack, font, new TranslationTextComponent(
-					 "simpleconfig.ui.n_selected", new StringTextComponent(
-					 String.valueOf(selectedEntries.size())).withStyle(TextFormatting.AQUA)),
+				  mStack, font, new TranslatableComponent(
+					 "simpleconfig.ui.n_selected", new TextComponent(
+					 String.valueOf(selectedEntries.size())).withStyle(ChatFormatting.AQUA)),
 				  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xffffffff);
 			} else drawCenteredString(mStack, font, title, width / 2, 8, 0xffffffff);
 		}
@@ -937,7 +939,7 @@ import static java.lang.Math.min;
 		super.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	public ITextComponent getDisplayedTitle() {
+	public Component getDisplayedTitle() {
 		return displayTitle;
 	}
 	
@@ -973,8 +975,7 @@ import static java.lang.Math.min;
 	
 	public void focusNextExternalConflict(boolean forwards) {
 		Predicate<INavigableTarget> predicate = t -> {
-			if (!(t instanceof AbstractConfigField<?>)) return false;
-			final AbstractConfigField<?> entry = (AbstractConfigField<?>) t;
+			if (!(t instanceof final AbstractConfigField<?> entry)) return false;
 			return !entry.isSubEntry() && entry.hasExternalDiff()
 			       && !entry.hasAcceptedExternalDiff();
 		};
@@ -990,8 +991,7 @@ import static java.lang.Math.min;
 	
 	public void focusNextRequiresRestart(boolean forwards) {
 		Predicate<INavigableTarget> predicate = t -> {
-			if (!(t instanceof AbstractConfigField<?>)) return false;
-			final AbstractConfigField<?> entry = (AbstractConfigField<?>) t;
+			if (!(t instanceof final AbstractConfigField<?> entry)) return false;
 			return !entry.isSubEntry() && entry.isRequiresRestart() && entry.isEdited();
 		};
 		INavigableTarget next = getNext(predicate.and(INavigableTarget::isNavigable), forwards);
@@ -1019,36 +1019,34 @@ import static java.lang.Math.min;
 	}
 	
 	@SuppressWarnings("SameParameterValue" ) private void drawTabsShades(
-	  MatrixStack mStack, int lightColor, int darkColor
+	  PoseStack mStack, int lightColor, int darkColor
 	) {
 		drawTabsShades(mStack.last().pose(), lightColor, darkColor);
 	}
 	
 	private void drawTabsShades(Matrix4f matrix, int lightColor, int darkColor) {
+		RenderSystem.setShader(GameRenderer::getPositionColorShader);
+		RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ZERO, DestFactor.ONE);
 		RenderSystem.enableBlend();
-		RenderSystem.blendFuncSeparate(770, 771, 0, 1);
-		RenderSystem.disableAlphaTest();
-		RenderSystem.shadeModel(7425);
+		RenderSystem.disableDepthTest();
 		RenderSystem.disableTexture();
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuilder();
+		Tesselator tessellator = Tesselator.getInstance();
+		BufferBuilder bb = tessellator.getBuilder();
 		// @formatter:off
-		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMinY() + 4), 0.0f).uv(0.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
-		buffer.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMinY() + 4), 0.0f).uv(1.0f, 1.0f).color(0, 0, 0, lightColor).endVertex();
-		buffer.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMinY(), 0.0f).uv(1.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
-		buffer.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMinY(), 0.0f).uv(0.0f, 0.0f).color(0, 0, 0, darkColor).endVertex();
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		bb.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMinY() + 4), 0F).color(0, 0, 0, lightColor).endVertex();
+		bb.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMinY() + 4), 0F).color(0, 0, 0, lightColor).endVertex();
+		bb.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMinY(), 0F).color(0, 0, 0, darkColor).endVertex();
+		bb.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMinY(), 0F).color(0, 0, 0, darkColor).endVertex();
 		tessellator.end();
-		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-		buffer.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMaxY(), 0.0f).uv(0.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
-		buffer.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMaxY(), 0.0f).uv(1.0f, 1.0f).color(0, 0, 0, darkColor).endVertex();
-		buffer.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMaxY() - 4), 0.0f).uv(1.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
-		buffer.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMaxY() - 4), 0.0f).uv(0.0f, 0.0f).color(0, 0, 0, lightColor).endVertex();
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		bb.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) tabsBounds.getMaxY(), 0F).color(0, 0, 0, darkColor).endVertex();
+		bb.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) tabsBounds.getMaxY(), 0F).color(0, 0, 0, darkColor).endVertex();
+		bb.vertex(matrix, (float) (tabsBounds.getMaxX() - 20), (float) (tabsBounds.getMaxY() - 4), 0F).color(0, 0, 0, lightColor).endVertex();
+		bb.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMaxY() - 4), 0F).color(0, 0, 0, lightColor).endVertex();
 		tessellator.end();
 		// @formatter:on
 		RenderSystem.enableTexture();
-		RenderSystem.shadeModel(7424);
-		RenderSystem.enableAlphaTest();
 		RenderSystem.disableBlend();
 	}
 	
@@ -1098,7 +1096,7 @@ import static java.lang.Math.min;
 			  } else advanced.set(SHOW_UI_TIPS, b[0]);
 		  }, CheckboxButton.of(
 		    advanced.getGUIBoolean(SHOW_UI_TIPS),
-		    new TranslationTextComponent("simpleconfig.ui.controls.show_ui_tips")))
+		    new TranslatableComponent("simpleconfig.ui.controls.show_ui_tips")))
 		  .build();
 	}
 	
@@ -1125,8 +1123,7 @@ import static java.lang.Math.min;
 				@Override public boolean apply(
 				  INavigableTarget target, int mouseX, int mouseY
 				) {
-					if (target instanceof AbstractConfigListEntry<?>) {
-						final AbstractConfigListEntry<?> entry = (AbstractConfigListEntry<?>) target;
+					if (target instanceof final AbstractConfigListEntry<?> entry) {
 						if (entry.getSelectionCheckbox().isMouseOver(mouseX, mouseY)
 						    && entry.isSelectable() && entry.isSelected() != value) {
 							entry.setSelected(value);
@@ -1144,12 +1141,10 @@ import static java.lang.Math.min;
 				@Override public boolean apply(
 				  INavigableTarget target, int mouseX, int mouseY
 				) {
-					if (target instanceof IExpandable) {
-						if (target instanceof AbstractConfigListEntry<?>) {
-							final AbstractConfigListEntry<?> entry = (AbstractConfigListEntry<?>) target;
+					if (target instanceof final IExpandable expandable) {
+						if (target instanceof final AbstractConfigListEntry<?> entry) {
 							if (!entry.isMouseOverRow(mouseX, mouseY)) return false;
 						}
-						final IExpandable expandable = (IExpandable) target;
 						if (expandable.isExpanded() != value) {
 							expandable.setExpanded(value);
 							return expandable.isExpanded() == value;
@@ -1174,7 +1169,7 @@ import static java.lang.Math.min;
 			}
 			public void onSuccess(INavigableTarget entry, int mouseX, int mouseY) {
 				Minecraft.getInstance().getSoundManager()
-				  .play(SimpleSound.forUI(SimpleConfigMod.UI_TAP, 0.6F));
+				  .play(SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, 0.6F));
 			}
 			public abstract boolean apply(INavigableTarget entry, int mouseX, int mouseY);
 		}
@@ -1197,11 +1192,11 @@ import static java.lang.Math.min;
 		}
 		
 		@Override public int getFieldWidth() {
-			return (int) MathHelper.clamp((right - left) * 0.3F, 80, 250);
+			return (int) Mth.clamp((right - left) * 0.3F, 80, 250);
 		}
 		
 		@Override public int getKeyFieldWidth() {
-			return (int) MathHelper.clamp((right - left) * 0.25F, 80, 250);
+			return (int) Mth.clamp((right - left) * 0.25F, 80, 250);
 		}
 		
 		@Override protected int getScrollBarPosition() {
@@ -1213,7 +1208,7 @@ import static java.lang.Math.min;
 		}
 		
 		@Override protected void renderItem(
-		  MatrixStack matrices, R item, int index, int x, int y, int entryWidth, int entryHeight,
+		  PoseStack matrices, R item, int index, int x, int y, int entryWidth, int entryHeight,
 		  int mouseX, int mouseY, boolean isHovered, float delta
 		) {
 			item.updateFocused(getFocusedItem() == item);
@@ -1221,7 +1216,7 @@ import static java.lang.Math.min;
 		}
 		
 		@Override protected void renderList(
-		  MatrixStack mStack, int startX, int startY, int mouseX, int mouseY, float delta
+		  PoseStack mStack, int startX, int startY, int mouseX, int mouseY, float delta
 		) {
 			boolean animated = tabSlideAnimator.isInProgress();
 			if (animated) {
@@ -1235,8 +1230,8 @@ import static java.lang.Math.min;
 				thisTimeTarget = null;
 				if (hasCurrent) {
 					timePast = System.currentTimeMillis() - lastTouch;
-					int alpha = timePast <= 200L? 255 : MathHelper.ceil(
-					  255.0 - (double) (min((float) (timePast - 200L), 500.0f) / 500.0f) * 255.0);
+					int alpha = timePast <= 200L? 255 : Mth.ceil(
+					  255.0 - (double) (min((float) (timePast - 200L), 500F) / 500F) * 255.0);
 					alpha = alpha * 36 / 255 << 24;
 					fillGradient(
 					  mStack, currentX, currentY, currentX + currentWidth,
@@ -1273,29 +1268,26 @@ import static java.lang.Math.min;
 			if (animated) mStack.popPose();
 		}
 		
-		@Override protected IFormattableTextComponent getEmptyPlaceHolder() {
+		@Override protected MutableComponent getEmptyPlaceHolder() {
 			SearchBarWidget bar = screen.getSearchBar();
 			return bar.isFilter() && bar.isExpanded()
-			       ? new TranslationTextComponent("simpleconfig.ui.no_matches")
-			         .withStyle(TextFormatting.GOLD)
+			       ? new TranslatableComponent("simpleconfig.ui.no_matches")
+			         .withStyle(ChatFormatting.GOLD)
 			       : super.getEmptyPlaceHolder();
 		}
 		
 		protected void fillGradient(
-		  MatrixStack mStack, double xStart, double yStart, double xEnd, double yEnd,
+		  PoseStack mStack, double xStart, double yStart, double xEnd, double yEnd,
 		  int colorStart, int colorEnd
 		) {
 			RenderSystem.disableTexture();
 			RenderSystem.enableBlend();
-			RenderSystem.disableAlphaTest();
 			RenderSystem.defaultBlendFunc();
-			RenderSystem.shadeModel(7425);
+			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 			AbstractConfigScreen.fillGradient(
 			  mStack, xStart, yStart, xEnd, yEnd,
 			  getBlitOffset(), colorStart, colorEnd);
-			RenderSystem.shadeModel(7424);
 			RenderSystem.disableBlend();
-			RenderSystem.enableAlphaTest();
 			RenderSystem.enableTexture();
 		}
 		
@@ -1334,7 +1326,7 @@ import static java.lang.Math.min;
 		
 		@Override
 		protected void renderBackBackground(
-		  MatrixStack mStack, BufferBuilder buffer, Tessellator tessellator
+		  PoseStack mStack, BufferBuilder buffer, Tesselator tessellator
 		) {
 			if (!screen.isTransparentBackground()) {
 				super.renderBackBackground(mStack, buffer, tessellator);
@@ -1345,13 +1337,13 @@ import static java.lang.Math.min;
 		
 		@Override
 		protected void renderBarBackground(
-		  MatrixStack matrices, int y1, int y2, int alpha1, int alpha2
+		  PoseStack mStack, int y1, int y2, int alpha1, int alpha2
 		) {
 			if (!screen.isTransparentBackground()) {
-				super.renderBarBackground(matrices, y1, y2, alpha1, alpha2);
+				super.renderBarBackground(mStack, y1, y2, alpha1, alpha2);
 			}
 			if (screen.isEditingConfigHotKey()) {
-				fill(new MatrixStack(), 0, y1, width, y2, 0x4880A0FF);
+				fill(mStack, 0, y1, width, y2, 0x4880A0FF);
 			}
 		}
 		
@@ -1395,9 +1387,9 @@ import static java.lang.Math.min;
 	}
 	
 	public static class TooltipSearchBarWidget extends SearchBarWidget {
-		protected static ITextComponent[] TOOLTIP_SEARCH_TOOLTIP = {
-		  new TranslationTextComponent("simpleconfig.ui.search.tooltip"),
-		  new TranslationTextComponent("key.modifier.alt").append(" + T").withStyle(TextFormatting.GRAY)};
+		protected static Component[] TOOLTIP_SEARCH_TOOLTIP = {
+		  new TranslatableComponent("simpleconfig.ui.search.tooltip"),
+		  new TranslatableComponent("key.modifier.alt").append(" + T").withStyle(ChatFormatting.GRAY)};
 		
 		protected ToggleImageButton tooltipButton;
 		protected boolean searchTooltips = search.search_tooltips;
@@ -1426,7 +1418,7 @@ import static java.lang.Math.min;
 			super.updateModifiers();
 		}
 		
-		@Override public Optional<ITextComponent[]> getTooltip(double mouseX, double mouseY) {
+		@Override public Optional<Component[]> getTooltip(double mouseX, double mouseY) {
 			if (isExpanded() && tooltipButton.isMouseOver(mouseX, mouseY))
 				return Optional.of(TOOLTIP_SEARCH_TOOLTIP);
 			return super.getTooltip(mouseX, mouseY);
@@ -1476,23 +1468,23 @@ import static java.lang.Math.min;
 		protected EditConfigFileDialog(
 		  AbstractConfigScreen screen, Path file
 		) {
-			super(new TranslationTextComponent("simpleconfig.file.dialog.title"));
+			super(new TranslatableComponent("simpleconfig.file.dialog.title"));
 			withAction(b -> {
 				if (b) open(file);
 			});
 			setBody(splitTtc(
 			  "simpleconfig.file.dialog.body",
-			  new StringTextComponent(file.toString()).withStyle(s -> s
-				 .withColor(TextFormatting.DARK_AQUA).setUnderlined(true)
+			  new TextComponent(file.toString()).withStyle(s -> s
+				 .withColor(ChatFormatting.DARK_AQUA).setUnderlined(true)
 				 .withHoverEvent(new HoverEvent(
-					HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("chat.copy.click")))
+					HoverEvent.Action.SHOW_TEXT, new TranslatableComponent("chat.copy.click")))
 				 .withClickEvent(new ClickEvent(
 					ClickEvent.Action.COPY_TO_CLIPBOARD, file.toString())))));
-			setConfirmText(new TranslationTextComponent(
+			setConfirmText(new TranslatableComponent(
 			  "simpleconfig.file.dialog.option.open_n_continue"));
 			setConfirmButtonTint(0xAA8000AA);
 			this.file = file;
-			openAndExit = new TintedButton(0, 0, 0, 20, new TranslationTextComponent(
+			openAndExit = new TintedButton(0, 0, 0, 20, new TranslatableComponent(
 			  "simpleconfig.file.dialog.option.open_n_discard"), p -> {
 				open(file);
 				cancel(true);
@@ -1524,13 +1516,13 @@ import static java.lang.Math.min;
 			boolean hasErrors = screen.hasErrors();
 			active = !hasErrors && screen.isEdited();
 			boolean editingHotKey = screen.isEditingConfigHotKey();
-			setMessage(new TranslationTextComponent(
+			setMessage(new TranslatableComponent(
 			  hasErrors
 			  ? "simpleconfig.ui.error_cannot_save"
 			  : editingHotKey? "simpleconfig.ui.save_hotkey" : "simpleconfig.ui.save"));
 		}
 		
-		@Override public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
+		@Override public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
 			super.render(matrices, mouseX, mouseY, delta);
 		}
 	}

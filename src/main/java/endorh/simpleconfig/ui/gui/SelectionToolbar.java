@@ -1,22 +1,24 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SelectionToolbar extends FocusableGui {
-	private final List<IGuiEventListener> children = new ArrayList<>();
-	private final List<Widget> buttons = new ArrayList<>();
+public class SelectionToolbar extends AbstractContainerEventHandler implements NarratableEntry {
+	private final List<GuiEventListener> children = new ArrayList<>();
+	private final List<AbstractWidget> buttons = new ArrayList<>();
 	
 	public final MultiFunctionImageButton resetButton;
 	public final MultiFunctionImageButton restoreButton;
@@ -34,7 +36,7 @@ public class SelectionToolbar extends FocusableGui {
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
 		    .filter(AbstractConfigField::isResettable)
 		    .forEach(AbstractConfigField::resetValue))
-		).tooltip(new TranslationTextComponent("simpleconfig.ui.reset.selected"))
+		).tooltip(new TranslatableComponent("simpleconfig.ui.reset.selected"))
 		  .active(() -> screen.getSelectedEntries().stream()
 		    .anyMatch(AbstractConfigField::isResettable)));
 		addButton(resetButton);
@@ -43,7 +45,7 @@ public class SelectionToolbar extends FocusableGui {
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
 		    .filter(AbstractConfigField::isRestorable)
 		    .forEach(AbstractConfigField::restoreValue))
-		).tooltip(new TranslationTextComponent("simpleconfig.ui.restore.selected"))
+		).tooltip(new TranslatableComponent("simpleconfig.ui.restore.selected"))
 		  .active(() -> screen.getSelectedEntries().stream()
 		    .anyMatch(AbstractConfigField::isRestorable)));
 		addButton(restoreButton);
@@ -51,15 +53,15 @@ public class SelectionToolbar extends FocusableGui {
 		  x, y, 20, 20, Buttons.MERGE_ACCEPT_GROUP, ButtonAction.of(
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries()
 			   .forEach(AbstractConfigField::isSelected))
-		).tooltip(new TranslationTextComponent("simpleconfig.ui.merge.accept.selected"))
+		).tooltip(new TranslatableComponent("simpleconfig.ui.merge.accept.selected"))
 		  .active(() -> false));
 		addButton(acceptButton);
 	}
 	
-	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (visible) {
 			int xx = x;
-			for (Widget button : buttons) {
+			for (AbstractWidget button : buttons) {
 				button.x = xx;
 				button.y = y;
 				xx += button.getWidth();
@@ -78,16 +80,21 @@ public class SelectionToolbar extends FocusableGui {
 		return height;
 	}
 	
-	protected void addListener(IGuiEventListener listener) {
+	protected void addListener(GuiEventListener listener) {
 		children.add(listener);
 	}
 	
-	protected void addButton(Widget widget) {
+	protected void addButton(AbstractWidget widget) {
 		children.add(widget);
 		buttons.add(widget);
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> children() {
+	@Override public @NotNull List<GuiEventListener> children() {
 		return children;
 	}
+	
+	@Override public @NotNull NarrationPriority narrationPriority() {
+		return NarrationPriority.NONE;
+	}
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
 }

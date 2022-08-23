@@ -5,8 +5,8 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.core.io.WritingMode;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.ReportedException;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
@@ -29,9 +29,8 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 	
 	@Override public Function<ModConfig, CommentedFileConfig> reader(Path configBasePath) {
 		return (config) -> {
-			if (!(config instanceof SimpleConfigModConfig)) throw new IllegalArgumentException(
+			if (!(config instanceof SimpleConfigModConfig c)) throw new IllegalArgumentException(
 			  "SimpleConfigFileTypeHandler can only handle SimpleConfigModConfig");
-			SimpleConfigModConfig c = (SimpleConfigModConfig) config;
 			final Path configPath = configBasePath.resolve(c.getFileName());
 			final CommentedFileConfig configData = CommentedFileConfig.builder(
 			  configPath, c.getConfigFormat()

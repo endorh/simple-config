@@ -3,9 +3,9 @@ package endorh.simpleconfig.config;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.language.IModInfo;
 
 import java.awt.Color;
 import java.util.List;
@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 public class CommonConfig {
 	public static SimpleConfig build() {
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
-		  .map(ModInfo::getModId).collect(Collectors.toList());
+		  .map(IModInfo::getModId).collect(Collectors.toList());
 		return config(SimpleConfigMod.MOD_ID, SimpleConfig.Type.COMMON, CommonConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.COMMON)
 		  .withColor(0x64FFA090)
@@ -54,7 +54,7 @@ public class CommonConfig {
 	}
 	
 	public enum HotKeyLogLocation {
-		CHAT, RIGHT_OVERLAY, CENTER_TOAST, NONE;
+		CHAT, RIGHT_OVERLAY, CENTER_TOAST, NONE
 	}
 	
 	@Bind

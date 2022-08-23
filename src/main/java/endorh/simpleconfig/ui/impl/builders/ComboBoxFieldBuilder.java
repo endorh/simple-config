@@ -4,11 +4,11 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.ComboBoxListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.*;
-import net.minecraft.block.Block;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -24,7 +24,7 @@ public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T
 	protected int maxLength = Integer.MAX_VALUE;
 	
 	public ComboBoxFieldBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, T value, ITypeWrapper<T> typeWrapper
+	  ConfigFieldBuilder builder, Component name, T value, ITypeWrapper<T> typeWrapper
 	) {
 		super(ComboBoxListEntry.class, builder, name, value);
 		this.typeWrapper = typeWrapper;

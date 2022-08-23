@@ -1,7 +1,8 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
@@ -9,12 +10,11 @@ import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,26 +31,26 @@ import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
  *            of entries your tree supports. You may use multiple subclasses with different roles,
  *            as it's done in {@link ConfigHotKeyTreeView}.
  */
-public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends FocusableGui
+public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends AbstractContainerEventHandler
   implements IOverlayRenderer, IRectanglePositionableRenderable, IDragBroadcastableControlContainer {
 	private final IOverlayCapableContainer overlayContainer;
 	private final E root;
 	private @Nullable ArrangeableTreeViewCaption<E> caption = null;
 	private final RedirectGuiEventListener captionReference = new RedirectGuiEventListener(null);
 	private int indent = 12;
-	private ITextComponent placeHolder = new TranslationTextComponent(
+	private Component placeHolder = new TranslatableComponent(
 	  "simpleconfig.ui.nothing_here_yet");
 	
 	protected final Rectangle area = new Rectangle();
 	protected final Rectangle overlayArea = new Rectangle();
 	protected final ArrangeableTreeViewScroller scroller;
-	protected List<IGuiEventListener> listeners;
+	protected List<GuiEventListener> listeners;
 	
 	private boolean transparent = false;
 	private int borderColor = 0x80808080;
 	private int fillColor = 0x32242424;
 	
-	private Pair<Integer, IGuiEventListener> dragged;
+	private Pair<Integer, GuiEventListener> dragged;
 	// Entries can only be added to selection if they return true from canBeAddedToSelection(Set<E>)
 	private final Set<E> selection = new HashSet<>();
 	// Multiple entries can be dragged at once if they were selected
@@ -96,10 +96,10 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		captionReference.setTarget(caption);
 	}
 	
-	public ITextComponent getPlaceHolder() {
+	public Component getPlaceHolder() {
 		return placeHolder;
 	}
-	public void setPlaceHolder(ITextComponent placeHolder) {
+	public void setPlaceHolder(Component placeHolder) {
 		this.placeHolder = placeHolder;
 	}
 	
@@ -304,7 +304,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	
 	// Rendering
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
 		ArrangeableTreeViewCaption<E> caption = getCaption();
 		area.setBounds(x, y, w, h);
@@ -326,7 +326,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		return 1;
 	}
 	
-	public void renderLayout(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void renderLayout(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		Rectangle area = getArea();
 		fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), fillColor);
 		drawBorderRect(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), 1, borderColor, 0);
@@ -338,7 +338,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		overlayArea.setBounds(area.x - 128, area.y - 128, area.width + 256, area.height + 256);
 		if (!isDraggingEntries() || area != overlayArea) return false;
@@ -348,8 +348,8 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		if (draggedOverParent == null) draggedOver = null;
 		int draggedWidth = (int) (this.area.getWidth() * 0.8);
 		int draggedHeight = 48;
-		int dragX = MathHelper.clamp(mouseX + getDragOffsetX(), overlayArea.x, overlayArea.getMaxX() - draggedWidth);
-		int dragY = MathHelper.clamp(mouseY + getDragOffsetY(), overlayArea.y, overlayArea.getMaxY() - draggedHeight);
+		int dragX = Mth.clamp(mouseX + getDragOffsetX(), overlayArea.x, overlayArea.getMaxX() - draggedWidth);
+		int dragY = Mth.clamp(mouseY + getDragOffsetY(), overlayArea.y, overlayArea.getMaxY() - draggedHeight);
 		renderDragged(mStack, dragX, dragY, draggedWidth, mouseX, mouseY, delta);
 		
 		double autoScroll = 0.0;
@@ -368,7 +368,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	
 	public void renderDragged(
-	  MatrixStack mStack, int x, int y, int w, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int mouseX, int mouseY, float delta
 	) {
 		if (isDraggingEntries()) {
 			int yy = y;
@@ -436,14 +436,14 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	
 	// Inherited properties
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return listeners;
 	}
 	
-	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+	@Override public Pair<Integer, GuiEventListener> getDragged() {
 		return dragged;
 	}
-	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+	@Override public void setDragged(Pair<Integer, GuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
 	

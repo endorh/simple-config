@@ -1,20 +1,25 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.Matrix4f;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget.ListEntry;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.impl.EasingMethod.EasingMethodImpl;
-import endorh.simpleconfig.ui.math.Rectangle;
 import endorh.simpleconfig.ui.math.impl.PointHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +59,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	}
 	
 	@Override protected int getMaxScrollPosition() {
-		return max(getActualMaxScrollPosition(), userOverScroll + (bottom - top - 4));
+		return max(getActualMaxScrollPosition(), userOverScroll + bottom - top - 4);
 	}
 	
 	public boolean isSmoothScrolling() {
@@ -68,7 +73,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	@Override
 	public void setScroll(double scroll) {
 		if (!smoothScrolling) {
-			this.scroll = MathHelper.clamp(scroll, 0.0, getMaxScroll());
+			this.scroll = Mth.clamp(scroll, 0.0, getMaxScroll());
 		} else {
 			this.scroll = ScrollingHandler.clampExtension(scroll, getMaxScroll());
 			target = ScrollingHandler.clampExtension(scroll, getMaxScroll());
@@ -94,10 +99,10 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 			} else {
 				double double_5 = max(1, getMaxScroll());
 				int int_2 = bottom - top;
-				int int_3 = MathHelper.clamp((int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
+				int int_3 = Mth.clamp((int) ((float) (int_2 * int_2) / (float) getMaxScrollPosition()), 32, int_2 - 8);
 				double double_6 = max(1.0, double_5 / (double) (int_2 - int_3));
 				setScroll(
-				  MathHelper.clamp(getScroll() + deltaY * double_6, 0.0, getMaxScroll()));
+				  Mth.clamp(getScroll() + deltaY * double_6, 0.0, getMaxScroll()));
 			}
 			return true;
 		}
@@ -113,7 +118,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 		if (!smoothScrolling) {
 			scroll += 16.0 * -delta;
 			scroll =
-			  MathHelper.clamp(delta, 0.0, getMaxScroll());
+			  Mth.clamp(delta, 0.0, getMaxScroll());
 			return true;
 		}
 		// Do not animate for smaller delta values, since they usually come from
@@ -171,7 +176,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	}
 	
 	@Override
-	public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		long time = System.currentTimeMillis();
 		double[] target = {this.target};
 		double prev = scroll;
@@ -188,7 +193,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 			// Animate scroll on height changes
 			if (scroll < 0 || scroll > maxScroll)
 				scrollTo(scroll < 0 ? 0 : maxScroll, true);
-			else this.target = MathHelper.clamp(this.target, 0, maxScroll);
+			else this.target = Mth.clamp(this.target, 0, maxScroll);
 		}
 		super.render(mStack, mouseX, mouseY, delta);
 		if (scrollTargetEntry != null) {
@@ -201,47 +206,53 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	
 	@Override
 	protected void renderScrollBar(
-	  MatrixStack matrices, Tessellator tessellator, BufferBuilder buffer, int maxScroll,
+	  PoseStack matrices, Tesselator tessellator, BufferBuilder buffer, int maxScroll,
 	  int sbMinX, int sbMaxX
 	) {
 		if (!smoothScrolling) {
 			super.renderScrollBar(
 			  matrices, tessellator, buffer, maxScroll, sbMinX, sbMaxX);
 		} else if (maxScroll > 0) {
-			int height =
-			  (bottom - top) * (bottom - top) / getMaxScrollPosition();
-			height = MathHelper.clamp(height, 32, bottom - top - 8);
+			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+			RenderSystem.disableTexture();
+			RenderSystem.disableDepthTest();
+			RenderSystem.enableBlend();
+			RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ZERO, DestFactor.ONE);
+			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+			int height = (bottom - top) * (bottom - top) / getMaxScrollPosition();
+			height = Mth.clamp(height, 32, bottom - top - 8);
 			height = (int) ((double) height - min(
-           scroll < 0.0 ? (int) (-scroll)
-                                       : (scroll > (double) getMaxScroll() ?
-                                          (int) scroll - getMaxScroll() : 0),
+			  scroll < 0.0
+           ? (int) -scroll
+           : scroll > (double) getMaxScroll()? (int) scroll - getMaxScroll() : 0,
 			  (double) height * 0.95));
 			height = max(10, height);
 			int minY = min(max(
 			  (int) getScroll() * (bottom - top - height) / maxScroll + top,
-			  top), bottom - height
-			);
-			int bottomc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 168 : 128;
-			int topc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 222 : 172;
+			  top), bottom - height);
+			int bc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 168 : 128;
+			int tc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 222 : 172;
 			Matrix4f matrix = matrices.last().pose();
-			buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			buffer.vertex(matrix, (float) sbMinX, (float) bottom, 0.0f).uv(0.0f, 1.0f).color(0, 0, 0, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMaxX, (float) bottom, 0.0f).uv(1.0f, 1.0f).color(0, 0, 0, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMaxX, (float) top, 0.0f).uv(1.0f, 0.0f).color(0, 0, 0, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMinX, (float) top, 0.0f).uv(0.0f, 0.0f).color(0, 0, 0, 255).endVertex();
+			// @formatter:off
+			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			buffer.vertex(matrix, (float) sbMinX, (float) bottom, 0F).color(0, 0, 0, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) bottom, 0F).color(0, 0, 0, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) top,    0F).color(0, 0, 0, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMinX, (float) top,    0F).color(0, 0, 0, 255).endVertex();
 			tessellator.end();
-			buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			buffer.vertex(matrix, (float) sbMinX, (float) (minY + height), 0.0f).uv(0.0f, 1.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMaxX, (float) (minY + height), 0.0f).uv(1.0f, 1.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMaxX, (float) minY, 0.0f).uv(1.0f, 0.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMinX, (float) minY, 0.0f).uv(0.0f, 0.0f).color(bottomc, bottomc, bottomc, 255).endVertex();
+			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			buffer.vertex(matrix, (float) sbMinX, (float) (minY + height), 0F).color(bc, bc, bc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float) (minY + height), 0F).color(bc, bc, bc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMaxX, (float)  minY,           0F).color(bc, bc, bc, 255).endVertex();
+			buffer.vertex(matrix, (float) sbMinX, (float)  minY,           0F).color(bc, bc, bc, 255).endVertex();
 			tessellator.end();
-			buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-			buffer.vertex(matrix, (float) sbMinX, (float) (minY + height - 1), 0.0f).uv(0.0f, 1.0f).color(topc, topc, topc, 255).endVertex();
-			buffer.vertex(matrix, (float) (sbMaxX - 1), (float) (minY + height - 1), 0.0f).uv(1.0f, 1.0f).color(topc, topc, topc, 255).endVertex();
-			buffer.vertex(matrix, (float) (sbMaxX - 1), (float) minY, 0.0f).uv(1.0f, 0.0f).color(topc, topc, topc, 255).endVertex();
-			buffer.vertex(matrix, (float) sbMinX, (float) minY, 0.0f).uv(0.0f, 0.0f).color(topc, topc, topc, 255).endVertex();
+			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			buffer.vertex(matrix, (float)  sbMinX,      (float) (minY + height - 1), 0F).color(tc, tc, tc, 255).endVertex();
+			buffer.vertex(matrix, (float) (sbMaxX - 1), (float) (minY + height - 1), 0F).color(tc, tc, tc, 255).endVertex();
+			buffer.vertex(matrix, (float) (sbMaxX - 1), (float)  minY,               0F).color(tc, tc, tc, 255).endVertex();
+			buffer.vertex(matrix, (float)  sbMinX,      (float)  minY,               0F).color(tc, tc, tc, 255).endVertex();
 			tessellator.end();
+			// @formatter:on
 		}
 	}
 	

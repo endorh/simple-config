@@ -1,7 +1,8 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -10,10 +11,9 @@ import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -31,14 +31,14 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	
 	public final Entry entry;
 	protected final Button button;
-	protected final Supplier<ITextComponent> buttonLabelSupplier;
+	protected final Supplier<Component> buttonLabelSupplier;
 	protected final List<AbstractConfigField<?>> heldEntries;
-	protected List<IGuiEventListener> listeners;
-	protected List<IGuiEventListener> childListeners;
+	protected List<GuiEventListener> listeners;
+	protected List<GuiEventListener> childListeners;
 	
 	public EntryButtonListEntry(
-	  ITextComponent fieldName, final Entry entry, Consumer<V> action,
-	  Supplier<ITextComponent> buttonLabelSupplier
+	  Component fieldName, final Entry entry, Consumer<V> action,
+	  Supplier<Component> buttonLabelSupplier
 	) {
 		super(fieldName);
 		this.entry = entry;
@@ -114,7 +114,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
 		entry.setEditable(isEditable());
@@ -123,7 +123,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		entry.renderChild(mStack, x, y, w - 22, h, mouseX, mouseY, delta);
 		button.x = x + w - 20;
@@ -144,9 +144,9 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		return entry.seekableValueText();
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (button.isMouseOver(mouseX, mouseY))
-			return Optional.of(new ITextComponent[]{buttonLabelSupplier.get()});
+			return Optional.of(new Component[]{buttonLabelSupplier.get()});
 		if (entry instanceof TooltipListEntry) {
 			if (!((TooltipListEntry<?>) entry).getTooltip(mouseX, mouseY).isPresent()
 			    && ((TooltipListEntry<?>) entry).getTooltip().isPresent())
@@ -159,7 +159,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		return heldEntries;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return this.isChildSubEntry() ? childListeners : listeners;
 	}
 }

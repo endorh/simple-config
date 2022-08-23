@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget.treeview;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IDelegatedPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction.WidgetDragBroadcastableAction;
-import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.components.AbstractWidget;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
@@ -43,7 +43,7 @@ public class DragBroadcastableControl<W extends IPositionableRenderable> impleme
 		return control;
 	}
 	
-	public static class DragBroadcastableWidget<W extends Widget> extends DragBroadcastableControl<WidgetPositionableWrapper<W>> {
+	public static class DragBroadcastableWidget<W extends AbstractWidget> extends DragBroadcastableControl<WidgetPositionableWrapper<W>> {
 		public DragBroadcastableWidget(
 		  Supplier<IDragBroadcastableControlContainer> tree, WidgetDragBroadcastableAction<W> action, W widget
 		) {
@@ -60,7 +60,7 @@ public class DragBroadcastableControl<W extends IPositionableRenderable> impleme
 		default void start(W source) {}
 		default void end(W source) {}
 		
-		interface WidgetDragBroadcastableAction<W extends Widget>
+		interface WidgetDragBroadcastableAction<W extends AbstractWidget>
 		  extends DragBroadcastableAction<WidgetPositionableWrapper<W>> {
 			@Override default void apply(
 			  WidgetPositionableWrapper<W> widget, WidgetPositionableWrapper<W> source

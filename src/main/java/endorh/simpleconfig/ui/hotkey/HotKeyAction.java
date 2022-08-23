@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.hotkey;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfigImpl;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -20,9 +20,9 @@ public abstract class HotKeyAction<V> {
 	}
 	
 	public abstract <T, C, E extends AbstractConfigEntry<T, C, V>>
-	@Nullable ITextComponent apply(String path, E entry, CommentedConfig result);
+	@Nullable Component apply(String path, E entry, CommentedConfig result);
 	
-	public @Nullable ITextComponent apply(
+	public @Nullable Component apply(
 	  SimpleConfigImpl config, String path, CommentedConfig result
 	) {
 		try {

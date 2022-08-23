@@ -4,7 +4,7 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.TooltipListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, Self extends FieldBuilder<V, Entry, Self>> {
 	private final Class<?> entryClass;
 	private final ConfigFieldBuilder builder;
-	@NotNull protected final ITextComponent fieldNameKey;
+	@NotNull protected final Component fieldNameKey;
 	protected Consumer<Entry> onBuildListener;
 	protected boolean requireRestart = false;
 	protected V value;
@@ -28,14 +28,14 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 	protected String name;
 	@NotNull protected Supplier<V> defaultValue;
 	@NotNull protected Consumer<V> saveConsumer = t -> {};
-	@NotNull protected Function<V, Optional<ITextComponent>> errorSupplier = t -> Optional.empty();
-	@NotNull protected Function<V, Optional<ITextComponent[]>> tooltipSupplier = t -> Optional.empty();
+	@NotNull protected Function<V, Optional<Component>> errorSupplier = t -> Optional.empty();
+	@NotNull protected Function<V, Optional<Component[]>> tooltipSupplier = t -> Optional.empty();
 	@Nullable protected Supplier<Boolean> editableSupplier = null;
 	protected List<EntryTag> entryTags = new ArrayList<>();
 	protected boolean ignoreEdits = false;
 	
 	@Internal protected FieldBuilder(
-	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, V value
+	  Class<?> entryClass, ConfigFieldBuilder builder, Component name, V value
 	) {
 		this.entryClass = entryClass;
 		this.builder = builder;
@@ -67,18 +67,18 @@ public abstract class FieldBuilder<V, Entry extends AbstractConfigListEntry<V>, 
 		return self();
 	}
 	
-	public Self setErrorSupplier(Function<V, Optional<ITextComponent>> errorSupplier) {
+	public Self setErrorSupplier(Function<V, Optional<Component>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
 		return self();
 	}
-	public Self setTooltipSupplier(Function<V, Optional<ITextComponent[]>> tooltipSupplier) {
+	public Self setTooltipSupplier(Function<V, Optional<Component[]>> tooltipSupplier) {
 		this.tooltipSupplier = tooltipSupplier;
 		return self();
 	}
-	public Self setTooltipSupplier(Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
+	public Self setTooltipSupplier(Supplier<Optional<Component[]>> tooltipSupplier) {
 		return setTooltipSupplier(v -> tooltipSupplier.get());
 	}
-	public Self setTooltip(ITextComponent... tooltip) {
+	public Self setTooltip(Component... tooltip) {
 		return setTooltipSupplier(() -> Optional.ofNullable(tooltip));
 	}
 	

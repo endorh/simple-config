@@ -1,19 +1,19 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.ExpandedDragAction;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -38,15 +38,15 @@ public class CaptionedSubCategoryListEntry<
 	protected final CaptionWidget<CaptionedSubCategoryListEntry<T, CE>> label;
 	protected final List<AbstractConfigField<?>> heldEntries;
 	protected final List<AbstractConfigListEntry<?>> entries;
-	protected final List<IGuiEventListener> children;
-	protected final List<IGuiEventListener> expandedChildren;
+	protected final List<GuiEventListener> children;
+	protected final List<GuiEventListener> expandedChildren;
 	protected final Rectangle captionEntryArea = new Rectangle();
 	protected @Nullable CE captionEntry;
 	protected boolean expanded;
 	protected ToggleAnimator expandAnimator = new ToggleAnimator();
 	
 	@Internal public CaptionedSubCategoryListEntry(
-	  ITextComponent title, List<AbstractConfigListEntry<?>> entries, @Nullable CE captionEntry
+	  Component title, List<AbstractConfigListEntry<?>> entries, @Nullable CE captionEntry
 	) {
 		super(title);
 		this.entries = Lists.newArrayList(entries);
@@ -126,19 +126,19 @@ public class CaptionedSubCategoryListEntry<
 		return errors;
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (isHeldEntryHovered(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
 		label.setFocused(isFocused() && getFocused() == label);
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		SimpleConfigIcons.Entries.EXPAND.renderCentered(
 		  mStack, x - 15, y + 5, 9, 9,
 		  (label.area.contains(mouseX, mouseY) ? 2 : 0) + (isExpanded() ? 1 : 0));
@@ -164,7 +164,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override protected void renderField(
-	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
 	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		super.renderField(mStack, fieldX, fieldY, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index, mouseX, mouseY, delta);
@@ -318,12 +318,12 @@ public class CaptionedSubCategoryListEntry<
 		throw new UnsupportedOperationException();
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return isExpanded() ? expandedChildren : children;
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!entries.contains(listener))
 			return 0;
@@ -340,7 +340,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		if (listener instanceof AbstractConfigListEntry<?>)
@@ -396,7 +396,7 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	// Handles the caption clicks and key-presses, but not the rendering
-	public static class CaptionWidget<E extends AbstractConfigField<?> & IExpandable> implements IGuiEventListener {
+	public static class CaptionWidget<E extends AbstractConfigField<?> & IExpandable> implements GuiEventListener {
 		protected final Rectangle area = new Rectangle();
 		protected boolean focused = false;
 		protected E expandable;
@@ -410,7 +410,7 @@ public class CaptionedSubCategoryListEntry<
 			return expandable;
 		}
 		
-		public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 			if (focused && !expandable.isPreviewingExternal())
 				drawBorder(mStack, area.x + 4, area.y, area.width, area.height, 1, focusedColor);
 		}
@@ -453,7 +453,7 @@ public class CaptionedSubCategoryListEntry<
 					}
 					break;
 			}
-			return IGuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
+			return GuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
 		}
 		
 		@Override public boolean changeFocus(boolean focus) {

@@ -6,11 +6,11 @@ import endorh.simpleconfig.api.entry.FluidNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.tags.ITag;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.Tag;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistryEntry;
@@ -43,7 +43,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 	public static class Builder extends AbstractResourceEntry.Builder<FluidNameEntry, FluidNameEntryBuilder, Builder>
 	  implements FluidNameEntryBuilder {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier;
-		protected ITag<Fluid> tag = null;
+		protected Tag<Fluid> tag = null;
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
@@ -53,7 +53,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 			  .map(ForgeRegistryEntry::getRegistryName).collect(Collectors.toList());
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(ITag<Fluid> tag) {
+		@Override @Contract(pure=true) public Builder suggest(Tag<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

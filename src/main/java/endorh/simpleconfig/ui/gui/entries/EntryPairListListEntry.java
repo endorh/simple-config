@@ -1,17 +1,17 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry.EntryPairCell;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -37,7 +37,7 @@ public class EntryPairListListEntry<
 	protected boolean selectKey;
 	
 	public EntryPairListListEntry(
-	  ITextComponent fieldName, List<Pair<K, V>> value,
+	  Component fieldName, List<Pair<K, V>> value,
 	  Function<EntryPairListListEntry<K, V, KE, E>, Pair<KE, E>> cellFactory,
 	  boolean ignoreOrder
 	) {
@@ -133,7 +133,7 @@ public class EntryPairListListEntry<
 	  > {
 		protected final KE keyEntry;
 		protected final E valueEntry;
-		protected final List<IGuiEventListener> widgets;
+		protected final List<GuiEventListener> widgets;
 		protected int keyOffset = 0;
 		protected final boolean isExpandable;
 		
@@ -195,7 +195,7 @@ public class EntryPairListListEntry<
 			return errors;
 		}
 		
-		@Override public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<Component> getErrorMessage() {
 			return Optional.empty();
 		}
 		
@@ -218,12 +218,12 @@ public class EntryPairListListEntry<
 		
 		@Override
 		public void renderCell(
-		  MatrixStack mStack, int index, int x, int y, int cellWidth,
+		  PoseStack mStack, int index, int x, int y, int cellWidth,
 		  int cellHeight, int mouseX, int mouseY, boolean isHovered, float delta
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			keyOverlayColor = hasError() ? errorFilter : noFilter;
-			final FontRenderer fr = Minecraft.getInstance().font;
+			final Font fr = Minecraft.getInstance().font;
 			int keyX = fr.isBidirectional() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
 			valueEntry.render(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			final EntryPairListListEntry<K, V, KE, E> listEntry = getListEntry();
@@ -232,19 +232,19 @@ public class EntryPairListListEntry<
 		}
 		
 		@Override public void renderLabel(
-		  MatrixStack mStack, ITextComponent label, int textX, int index, int x, int y, int cellWidth,
+		  PoseStack mStack, Component label, int textX, int index, int x, int y, int cellWidth,
 		  int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 		) {}
 		
-		@Override public ITextComponent getLabel() {
-			return StringTextComponent.EMPTY;
+		@Override public Component getLabel() {
+			return TextComponent.EMPTY;
 		}
 		
 		@Override public boolean drawsLine(int mouseX, int mouseY) {
 			return isExpandable && ((BaseListEntry<?, ?, ?>) valueEntry).expanded && mouseY > 18;
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> children() {
+		@Override public @NotNull List<? extends GuiEventListener> children() {
 			return widgets;
 		}
 		
@@ -291,7 +291,7 @@ public class EntryPairListListEntry<
 		
 		// Modified tab order
 		@Override public boolean changeFocus(boolean forward) {
-			IGuiEventListener listener = getFocused();
+			GuiEventListener listener = getFocused();
 			boolean hasListener = listener != null;
 			BaseListEntry<?, ?, ?> subList = isExpandable? (BaseListEntry<?, ?, ?>) valueEntry : null;
 			if (forward && isExpandable && listener == valueEntry && subList.getFocused() == subList.labelReference) {
@@ -312,8 +312,8 @@ public class EntryPairListListEntry<
 			
 			if (isExpandable) {
 				if (listener == keyEntry) {
-					final List<? extends IGuiEventListener> subListeners = subList.children();
-					final IGuiEventListener l = forward ? subListeners.get(1) : subListeners.get(0);
+					final List<? extends GuiEventListener> subListeners = subList.children();
+					final GuiEventListener l = forward ? subListeners.get(1) : subListeners.get(0);
 					WidgetUtils.forceUnFocus(l);
 					setFocused(valueEntry);
 					valueEntry.setFocused(l);
@@ -334,16 +334,16 @@ public class EntryPairListListEntry<
 				}
 			}
 			
-			List<? extends IGuiEventListener> list = children();
+			List<? extends GuiEventListener> list = children();
 			int index = list.indexOf(listener);
 			int target = hasListener && index >= 0 ? index + (forward ? 1 : 0)
 			                                       : forward ? 0 : list.size();
-			ListIterator<? extends IGuiEventListener> l = list.listIterator(target);
+			ListIterator<? extends GuiEventListener> l = list.listIterator(target);
 			BooleanSupplier hasNext = forward ? l::hasNext : l::hasPrevious;
-			Supplier<? extends IGuiEventListener> supplier = forward ? l::next : l::previous;
+			Supplier<? extends GuiEventListener> supplier = forward ? l::next : l::previous;
 			
 			while (hasNext.getAsBoolean()) {
-				IGuiEventListener next = supplier.get();
+				GuiEventListener next = supplier.get();
 				if (next.changeFocus(forward)) {
 					setFocused(next);
 					return true;
@@ -355,7 +355,7 @@ public class EntryPairListListEntry<
 		}
 	}
 	
-	@Override public void setFocused(IGuiEventListener listener) {
+	@Override public void setFocused(GuiEventListener listener) {
 		if (children().contains(listener)) {
 			super.setFocused(listener);
 		} else {

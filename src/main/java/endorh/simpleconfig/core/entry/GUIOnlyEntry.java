@@ -7,7 +7,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.GUIOnlyEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.logging.log4j.LogManager;
@@ -82,7 +82,7 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		return false;
 	}
 	
-	@Override protected List<ITextComponent> addExtraTooltip(Gui value) {
+	@Override protected List<Component> addExtraTooltip(Gui value) {
 		return addNonPersistentTooltip ? super.addExtraTooltip(value) : Lists.newArrayList();
 	}
 	

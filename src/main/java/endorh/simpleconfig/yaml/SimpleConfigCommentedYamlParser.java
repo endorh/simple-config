@@ -80,8 +80,7 @@ public class SimpleConfigCommentedYamlParser implements ConfigParser<CommentedCo
 		if (node != null) {
 			NodeComments rootComments = NodeComments.from(node);
 			if (rootComments.isNotEmpty()) map.put("", rootComments);
-			if (node instanceof MappingNode) {
-				MappingNode mNode = (MappingNode) node;
+			if (node instanceof MappingNode mNode) {
 				for (NodeTuple tuple : mNode.getValue()) {
 					Node keyNode = tuple.getKeyNode();
 					if (keyNode instanceof ScalarNode) {
@@ -100,8 +99,7 @@ public class SimpleConfigCommentedYamlParser implements ConfigParser<CommentedCo
 		NodeComments comments = NodeComments.from(tuple);
 		if (comments.isNotEmpty()) destination.put(path, comments);
 		Node valueNode = tuple.getValueNode();
-		if (valueNode instanceof MappingNode) {
-			MappingNode mNode = (MappingNode) valueNode;
+		if (valueNode instanceof MappingNode mNode) {
 			for (NodeTuple childTuple : mNode.getValue()) {
 				Node childKeyNode = childTuple.getKeyNode();
 				if (childKeyNode instanceof ScalarNode) {

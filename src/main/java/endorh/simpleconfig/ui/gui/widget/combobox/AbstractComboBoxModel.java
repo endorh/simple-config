@@ -2,7 +2,11 @@ package endorh.simpleconfig.ui.gui.widget.combobox;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -19,7 +23,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	protected static Pattern TOKEN_SPLITTER = Pattern.compile("[\\s_]++|(?<=[a-z])(?=[A-Z])");
 	
 	/**
-	 * Extract a formatted substring from an {@link ITextComponent}.<br>
+	 * Extract a formatted substring from an {@link Component}.<br>
 	 * Should be called on the client side only, if the component may contain translations.<br>
 	 * <br>
 	 * See {@code endorh.util.text.TextUtil} from the {@code endorh-util} mod
@@ -31,7 +35,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	 *              Negative values are corrected counting from the end.
 	 *              Defaults to the end of the component.
 	 */
-	protected static IFormattableTextComponent subText(ITextComponent text, int start, int end) {
+	protected static MutableComponent subText(Component text, int start, int end) {
 		final int n = text.getString().length();
 		if (start > n)
 			throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
@@ -46,22 +50,22 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 				throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
 			end = n + end;
 		}
-		if (end <= start) return new StringTextComponent("");
+		if (end <= start) return new TextComponent("");
 		boolean started = false;
-		final List<ITextComponent> siblings = text.getSiblings();
-		IFormattableTextComponent res = new StringTextComponent("");
+		final List<Component> siblings = text.getSiblings();
+		MutableComponent res = new TextComponent("");
 		String str = text.getContents();
 		if (start < str.length()) {
 			started = true;
-			res = res.append(new StringTextComponent(
+			res = res.append(new TextComponent(
 			  str.substring(start, Math.min(str.length(), end))).setStyle(text.getStyle()));
 			if (end < str.length()) return res;
 		}
 		int o = str.length();
-		for (ITextComponent sibling : siblings) {
+		for (Component sibling : siblings) {
 			str = sibling.getContents();
 			if (started || start - o < str.length()) {
-				res = res.append(new StringTextComponent(
+				res = res.append(new TextComponent(
 				  str.substring(started ? 0 : start - o, Math.min(str.length(), end - o))
 				).setStyle(sibling.getStyle()));
 				started = true;
@@ -114,7 +118,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 		return result;
 	}
 	
-	@Override public Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
+	@Override public Pair<List<T>, List<Component>> pickAndDecorateSuggestions(
 	  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions
 	) {
 		if (query.isEmpty())
@@ -122,7 +126,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 			  .map(typeWrapper::getDisplayName).collect(Collectors.toList()));
 		if (suggestions.isEmpty()) return Pair.of(suggestions, new ArrayList<>());
 		Set<T> set = new LinkedHashSet<>();
-		List<ITextComponent> names = new ArrayList<>();
+		List<Component> names = new ArrayList<>();
 		suggestions.stream()
 		  .map(e -> {
 			  final String n = typeWrapper.getName(e);
@@ -139,7 +143,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 				  final String[] sp = TOKEN_SPLITTER.split(name);
 				  final List<String> matches = t.getRight();
 				  int i = 0, o = 0;
-				  IFormattableTextComponent stc = new StringTextComponent("");
+				  MutableComponent stc = new TextComponent("");
 				  for (final String frag : sp) {
 					  if (i >= matches.size()) break;
 					  final int s = n.indexOf(frag);
@@ -189,22 +193,22 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	}
 	
 	protected Style getMatchStyle() {
-		return Style.EMPTY.applyFormats(TextFormatting.BLUE);
+		return Style.EMPTY.applyFormats(ChatFormatting.BLUE);
 	}
 	
-	protected ITextComponent getMatch(
+	protected Component getMatch(
 	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
 	  String fragment, int matchPos, String match
 	) {
-		return new StringTextComponent(match).setStyle(getMatchStyle());
+		return new TextComponent(match).setStyle(getMatchStyle());
 	}
 	
-	protected ITextComponent getNonMatch(
+	protected Component getNonMatch(
 	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
 	) {
-		final ITextComponent title = typeWrapper.getDisplayName(item);
+		final Component title = typeWrapper.getDisplayName(item);
 		if (!title.getString().equals(name))
-			return new StringTextComponent(fragment);
+			return new TextComponent(fragment);
 		return subText(title, fragmentPos, fragmentPos + fragment.length());
 	}
 }

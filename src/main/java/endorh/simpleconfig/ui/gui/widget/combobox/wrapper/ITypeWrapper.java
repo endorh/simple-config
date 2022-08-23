@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import net.minecraft.util.text.ITextComponent;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +50,7 @@ public interface ITypeWrapper<T> {
 	 * and renders it if present.
 	 */
 	default void renderIcon(
-	  @Nullable T element, String text, @NotNull MatrixStack mStack, int x, int y, int w, int h,
+	  @Nullable T element, String text, @NotNull PoseStack mStack, int x, int y, int w, int h,
 	  int mouseX, int mouseY, float delta
 	) {
 		final Optional<Icon> opt = getIcon(element, text);
@@ -76,14 +76,14 @@ public interface ITypeWrapper<T> {
 	 * @return A pair containing the parsed element (or empty)
 	 * and an optional parse error message
 	 */
-	Pair<Optional<T>, Optional<ITextComponent>> parseElement(@NotNull String text);
+	Pair<Optional<T>, Optional<Component>> parseElement(@NotNull String text);
 	
 	/**
 	 * Get the display name of the element.<br>
 	 * It should have the same text as the lookup name,
 	 * otherwise the lookup will use the string name.
 	 */
-	ITextComponent getDisplayName(@NotNull T element);
+	Component getDisplayName(@NotNull T element);
 	
 	@Internal Pattern STYLE_ESCAPE = Pattern.compile("§[\\da-f]");
 	

@@ -1,27 +1,33 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.KeyBindSettingsButton.KeyBindSettingsOverlay;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.*;
-import endorh.simpleconfig.ui.icon.AnimatedIcon;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Entries;
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.icon.AnimatedIcon;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -36,8 +42,8 @@ import java.util.stream.Stream;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.max;
 
-public class KeyBindButton extends FocusableGui
-  implements IRectanglePositionableRenderable, IModalInputProcessor {
+public class KeyBindButton extends AbstractContainerEventHandler
+  implements IRectanglePositionableRenderable, IModalInputProcessor, NarratableEntry {
 	private static int ID;
 	private final int id = ID++;
 	private final Supplier<IModalInputCapableScreen> screenSupplier;
@@ -47,8 +53,8 @@ public class KeyBindButton extends FocusableGui
 	private final KeyBindSettingsButton settingsButton;
 	private final MultiFunctionIconButton cancelButton;
 	private final RedirectGuiEventListener sideButtonReference;
-	private Supplier<List<ITextComponent>> tooltipSupplier = null;
-	protected final List<IGuiEventListener> listeners = new ArrayList<>();
+	private Supplier<List<Component>> tooltipSupplier = null;
+	protected final List<GuiEventListener> listeners = new ArrayList<>();
 	
 	private final AnimatedIcon recordingIcon = SimpleConfigIcons.HOTKEY_RECORDING.copy();
 	private final IntList keys = new IntArrayList();
@@ -65,9 +71,9 @@ public class KeyBindButton extends FocusableGui
 	private boolean error = false;
 	
 	private Style hotKeyStyle = Style.EMPTY;
-	private Style conflictStyle = Style.EMPTY.applyFormat(TextFormatting.GOLD);
-	private Style errorStyle = Style.EMPTY.applyFormat(TextFormatting.RED);
-	private Style recordStyle = Style.EMPTY.applyFormat(TextFormatting.YELLOW);
+	private Style conflictStyle = Style.EMPTY.applyFormat(ChatFormatting.GOLD);
+	private Style errorStyle = Style.EMPTY.applyFormat(ChatFormatting.RED);
+	private Style recordStyle = Style.EMPTY.applyFormat(ChatFormatting.YELLOW);
 	private int idleTint;
 	
 	public static KeyBindButton of(
@@ -138,18 +144,22 @@ public class KeyBindButton extends FocusableGui
 		this.reportOverlaps = reportOverlaps;
 	}
 	
-	public void setTooltip(Supplier<List<ITextComponent>> tooltip) {
+	public void setTooltip(Supplier<List<Component>> tooltip) {
 		tooltipSupplier = tooltip;
 	}
-	public void setTooltip(List<ITextComponent> tooltip) {
+	public void setTooltip(List<Component> tooltip) {
 		setTooltip(() -> tooltip);
 	}
 	
 	@Override public Rectangle getArea() {
 		return area;
 	}
-	@Override public @NotNull List<IGuiEventListener> children() {
+	@Override public @NotNull List<GuiEventListener> children() {
 		return listeners;
+	}
+	
+	@Override public @NotNull NarrationPriority narrationPriority() {
+		return NarrationPriority.NONE;
 	}
 	
 	@Override public boolean isActive() {
@@ -278,7 +288,7 @@ public class KeyBindButton extends FocusableGui
 		// Scroll keys can only be the final key in a sequence, since they can't be
 		//   held down. It's impossible to use both of them in a hotkey.
 		int other = Keys.getKeyFromScroll(-amount);
-		if (startedKeys.contains(other)) startedKeys.remove((Integer) other);
+		if (startedKeys.contains(other)) startedKeys.removeInt(other);
 		if (!startedKeys.contains(k)) startedKeys.add(k);
 		return true;
 	}
@@ -316,43 +326,43 @@ public class KeyBindButton extends FocusableGui
 		return isError()? errorStyle : hasOverlaps()? conflictStyle : hotKeyStyle;
 	}
 	
-	public ITextComponent getDisplayedText() {
+	public Component getDisplayedText() {
 		if (isCapturingModalInput()) {
-			if (startedKeys.isEmpty()) return new StringTextComponent(">  <").withStyle(recordStyle);
-			return new StringTextComponent("")
-			  .append(new StringTextComponent("> ").withStyle(recordStyle))
+			if (startedKeys.isEmpty()) return new TextComponent(">  <").withStyle(recordStyle);
+			return new TextComponent("")
+			  .append(new TextComponent("> ").withStyle(recordStyle))
 			  .append(startedMapping.getDisplayName())
-			  .append(new StringTextComponent(" <").withStyle(recordStyle));
+			  .append(new TextComponent(" <").withStyle(recordStyle));
 		} else {
 			KeyBindMapping mapping = getMapping();
 			return mapping.isUnset()
-			       ? new TranslationTextComponent("key.abbrev.unset").withStyle(TextFormatting.GRAY)
+			       ? new TranslatableComponent("key.abbrev.unset").withStyle(ChatFormatting.GRAY)
 			       : mapping.getDisplayName(getHotKeyStyle());
 		}
 	}
 	
-	public List<ITextComponent> getTooltipLines() {
-		List<ITextComponent> tooltip = null;
+	public List<Component> getTooltipLines() {
+		List<Component> tooltip = null;
 		if (tooltipSupplier != null) tooltip = tooltipSupplier.get();
 		if (overlaps.isEmpty() || isCapturingModalInput()) return tooltip != null? tooltip : Collections.emptyList();
 		if (tooltip == null) {
 			tooltip = new ArrayList<>();
-		} else tooltip.add(new StringTextComponent(""));
-		tooltip.add(new TranslationTextComponent("simpleconfig.keybind.overlaps")
-		              .withStyle(TextFormatting.GOLD));
+		} else tooltip.add(new TextComponent(""));
+		tooltip.add(new TranslatableComponent("simpleconfig.keybind.overlaps")
+		              .withStyle(ChatFormatting.GOLD));
 		overlaps.stream().map(o -> {
-			IFormattableTextComponent title = o.getCandidateName().copy();
-			if (o.getModId() != null) title.append(" ").append(new StringTextComponent(
+			MutableComponent title = o.getCandidateName().copy();
+			if (o.getModId() != null) title.append(" ").append(new TextComponent(
 			  "(" + SimpleConfigImpl.getModNameOrId(o.getModId()) + ")"
-			).withStyle(TextFormatting.GRAY));
+			).withStyle(ChatFormatting.GRAY));
 			return title
-			  .append(new StringTextComponent(": ").withStyle(TextFormatting.DARK_GRAY))
-			  .append(o.getCandidateDefinition().getDisplayName(TextFormatting.GRAY));
+			  .append(new TextComponent(": ").withStyle(ChatFormatting.DARK_GRAY))
+			  .append(o.getCandidateDefinition().getDisplayName(ChatFormatting.GRAY));
 		}).forEach(tooltip::add);
 		return tooltip;
 	}
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		pos(button, area.x, area.y);
 		button.setExactWidth(area.width - 22);
 		pos(settingsButton, area.getMaxX() - 20, area.y);
@@ -418,4 +428,6 @@ public class KeyBindButton extends FocusableGui
 	public void setRecordStyle(Style recordStyle) {
 		this.recordStyle = recordStyle;
 	}
+	
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
 }

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 
 /**
  * Screen that wraps a dialog as a screen on its own.

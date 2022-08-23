@@ -4,8 +4,8 @@ import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,13 +16,13 @@ import java.util.function.Function;
 
 @OnlyIn(value = Dist.CLIENT)
 public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
-	public static final Function<Enum<?>, ITextComponent> DEFAULT_NAME_PROVIDER =
-	  t -> new TranslationTextComponent(
+	public static final Function<Enum<?>, Component> DEFAULT_NAME_PROVIDER =
+	  t -> new TranslatableComponent(
 		 t instanceof SelectionListEntry.Translatable ? ((Translatable) t).getKey() : t.toString());
 	
 	@Internal public EnumListEntry(
-	  ITextComponent fieldName, Class<E> clazz, E value,
-	  Function<Enum<?>, ITextComponent> enumNameProvider
+	  Component fieldName, Class<E> clazz, E value,
+	  Function<Enum<?>, Component> enumNameProvider
 	) {
 		super(fieldName, clazz.getEnumConstants(), value, enumNameProvider::apply);
 		hotKeyActionTypes.add(HotKeyActionTypes.ENUM_ADD.cast());

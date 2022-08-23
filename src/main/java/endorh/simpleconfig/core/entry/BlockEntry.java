@@ -10,12 +10,12 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.tags.ITag;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.ResourceLocationException;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.Tag;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -52,7 +52,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 	> implements BlockEntryBuilder {
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Block> filter = null;
-		protected @Nullable ITag<Block> tag = null;
+		protected @Nullable Tag<Block> tag = null;
 		protected boolean requireGroup = true;
 		
 		public Builder(Block value) {
@@ -81,7 +81,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(ITag<Block> tag) {
+		@Override @Contract(pure=true) public Builder from(Tag<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

@@ -10,11 +10,11 @@ import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextDescriptionBuilder;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 
 public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected @Nullable Supplier<ITextComponent> translationSupplier = null; // Lazy
+	protected @Nullable Supplier<Component> translationSupplier = null; // Lazy
 	protected boolean own = false;
 	protected boolean logged = false;
 	
@@ -43,24 +43,24 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	
 	public static class Builder extends AbstractConfigEntryBuilder<Void, Void, Void, TextEntry, TextEntryBuilder, Builder>
 	  implements TextEntryBuilder {
-		protected Supplier<ITextComponent> translationSupplier = null;
+		protected Supplier<Component> translationSupplier = null;
 		
 		public Builder() {
 			super(null, null);
 		}
 		
-		public Builder(@Nullable Supplier<ITextComponent> supplier) {
+		public Builder(@Nullable Supplier<Component> supplier) {
 			this();
 			translationSupplier = supplier;
 		}
 		
-		@Override @Contract(pure=true) public Builder text(Supplier<ITextComponent> supplier) {
+		@Override @Contract(pure=true) public Builder text(Supplier<Component> supplier) {
 			Builder copy = copy();
 			copy.translationSupplier = supplier;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder text(ITextComponent text) {
+		@Override @Contract(pure=true) public Builder text(Component text) {
 			return text(() -> text);
 		}
 		
@@ -89,7 +89,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		}
 	}
 	
-	@Override public Optional<ITextComponent> getErrorFromGUI(Void value) {
+	@Override public Optional<Component> getErrorFromGUI(Void value) {
 		return Optional.empty();
 	}
 	
@@ -100,7 +100,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	@Override protected void buildSpec(ConfigSpec spec, String parentPath) {}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override protected ITextComponent getDisplayName() {
+	@Override protected Component getDisplayName() {
 		if (displayName != null) return displayName;
 		if (debugTranslations()) {
 			return nullAsEmpty(getDebugDisplayName());
@@ -113,15 +113,15 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		}
 	}
 	
-	protected ITextComponent nullAsEmpty(@Nullable ITextComponent text) {
+	protected Component nullAsEmpty(@Nullable Component text) {
 		if (!logged && text == null) {
 			LOGGER.warn("Malformed config text entry " + getGlobalPath());
 			logged = true;
 		}
-		return text != null? text : StringTextComponent.EMPTY;
+		return text != null? text : TextComponent.EMPTY;
 	}
 	
-	@Override protected List<ITextComponent> addExtraTooltip(Void value) {
+	@Override protected List<Component> addExtraTooltip(Void value) {
 		return Lists.newArrayList();
 	}
 	@Override protected Optional<ConfigValue<?>> buildConfigEntry(ForgeConfigSpec.Builder builder) {
@@ -129,67 +129,67 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override protected ITextComponent getDebugDisplayName() {
+	@Override protected Component getDebugDisplayName() {
 		if (own) {
 			assert translationSupplier != null;
-			return new StringTextComponent("").append(
-			  translationSupplier.get().plainCopy().withStyle(TextFormatting.DARK_AQUA));
+			return new TextComponent("").append(
+			  translationSupplier.get().plainCopy().withStyle(ChatFormatting.DARK_AQUA));
 		} else if (translation != null) {
-			IFormattableTextComponent status =
-			  I18n.exists(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			MutableComponent status =
+			  I18n.exists(translation) ? new TextComponent("✔ ") : new TextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
+				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
-			TextFormatting format = I18n.exists(translation) ? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			return new StringTextComponent("")
-			  .append(status.append(new StringTextComponent(translation)).withStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
+			ChatFormatting format = I18n.exists(translation) ? ChatFormatting.DARK_GREEN : ChatFormatting.RED;
+			return new TextComponent("")
+			  .append(status.append(new TextComponent(translation)).withStyle(format));
+		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override protected Optional<ITextComponent[]> supplyDebugTooltip(Void value) {
-		List<ITextComponent> lines = new ArrayList<>();
-		lines.add(new StringTextComponent("Text entry").withStyle(TextFormatting.GRAY));
+	@Override protected Optional<Component[]> supplyDebugTooltip(Void value) {
+		List<Component> lines = new ArrayList<>();
+		lines.add(new TextComponent("Text entry").withStyle(ChatFormatting.GRAY));
 		if (own) {
-			lines.add(new StringTextComponent(" + Provides its own translation")
-			            .withStyle(TextFormatting.GRAY));
+			lines.add(new TextComponent(" + Provides its own translation")
+			            .withStyle(ChatFormatting.GRAY));
 		} else if (translation != null) {
-			lines.add(new StringTextComponent("Translation key:")
-			            .withStyle(TextFormatting.GRAY));
-			final IFormattableTextComponent status =
+			lines.add(new TextComponent("Translation key:")
+			            .withStyle(ChatFormatting.GRAY));
+			final MutableComponent status =
 			  I18n.exists(translation)
-			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
-			lines.add(new StringTextComponent("   " + translation + " ")
-			            .withStyle(TextFormatting.DARK_AQUA).append(status));
+			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
+			lines.add(new TextComponent("   " + translation + " ")
+			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
 		} else {
-			lines.add(new StringTextComponent("Translation key:")
-			            .withStyle(TextFormatting.GRAY));
-			lines.add(new StringTextComponent("   Error: couldn't map translation key")
-			            .withStyle(TextFormatting.RED));
+			lines.add(new TextComponent("Translation key:")
+			            .withStyle(ChatFormatting.GRAY));
+			lines.add(new TextComponent("   Error: couldn't map translation key")
+			            .withStyle(ChatFormatting.RED));
 		}
 		if (tooltip != null) {
 			if (!name.startsWith("_text$") || I18n.exists(tooltip)) {
-				lines.add(new StringTextComponent("Tooltip key:")
-				            .withStyle(TextFormatting.GRAY));
-				final IFormattableTextComponent status =
+				lines.add(new TextComponent("Tooltip key:")
+				            .withStyle(ChatFormatting.GRAY));
+				final MutableComponent status =
 				  I18n.exists(tooltip)
-				  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
-				  : new StringTextComponent("(not present)").withStyle(TextFormatting.GOLD);
-				lines.add(new StringTextComponent("   " + tooltip + " ")
-				            .withStyle(TextFormatting.DARK_AQUA).append(status));
+				  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+				  : new TextComponent("(not present)").withStyle(ChatFormatting.GOLD);
+				lines.add(new TextComponent("   " + tooltip + " ")
+				            .withStyle(ChatFormatting.DARK_AQUA).append(status));
 			}
 		} else {
-			lines.add(new StringTextComponent("Tooltip key:").withStyle(TextFormatting.GRAY));
-			lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key")
-			            .withStyle(TextFormatting.RED));
+			lines.add(new TextComponent("Tooltip key:").withStyle(ChatFormatting.GRAY));
+			lines.add(new TextComponent("   Error: couldn't map tooltip translation key")
+			            .withStyle(ChatFormatting.RED));
 		}
 		addTranslationsDebugInfo(lines);
 		addTranslationsDebugSuffix(lines);
-		return Optional.of(lines.toArray(new ITextComponent[0]));
+		return Optional.of(lines.toArray(new Component[0]));
 	}
 	
 	@Override protected Void getGUI() {

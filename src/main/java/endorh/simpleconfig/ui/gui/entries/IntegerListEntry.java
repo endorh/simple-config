@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -17,7 +17,7 @@ public class IntegerListEntry extends TextFieldListEntry<Integer> implements IRa
 	private int minimum = Integer.MIN_VALUE;
 	private int maximum = Integer.MAX_VALUE;
 	
-	@Internal public IntegerListEntry(ITextComponent fieldName, Integer value) {
+	@Internal public IntegerListEntry(Component fieldName, Integer value) {
 		super(fieldName, value, false);
 		setTextFormatter(ITextFormatter.numeric(true));
 		Stream.of(HotKeyActionTypes.INT_ADD, HotKeyActionTypes.INT_ADD_CYCLE)
@@ -41,16 +41,16 @@ public class IntegerListEntry extends TextFieldListEntry<Integer> implements IRa
 		}
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
+	@Internal @Override public Optional<Component> getErrorMessage() {
 		try {
 			int i = Integer.parseInt(getText());
 			if (i > this.maximum)
-				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_large", this.maximum));
+				return Optional.of(new TranslatableComponent("simpleconfig.config.error.too_large", this.maximum));
 			if (i < this.minimum)
-				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_small", this.minimum));
+				return Optional.of(new TranslatableComponent("simpleconfig.config.error.too_small", this.minimum));
 		} catch (NumberFormatException ex) {
 			return Optional.of(
-			  new TranslationTextComponent("simpleconfig.config.error.invalid_integer", getText()));
+			  new TranslatableComponent("simpleconfig.config.error.invalid_integer", getText()));
 		}
 		return super.getErrorMessage();
 	}

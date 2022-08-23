@@ -1,21 +1,21 @@
 package endorh.simpleconfig.ui.api;
 
 
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.INestedGuiEventHandler;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Propagates drag events with other buttons than 0<br>
  * Adds the method {@link IExtendedDragAwareNestedGuiEventHandler#endDrag(double, double, int)}
  */
-public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEventHandler {
+public interface IExtendedDragAwareNestedGuiEventHandler extends ContainerEventHandler {
 	
-	Pair<Integer, IGuiEventListener> getDragged();
-	void setDragged(Pair<Integer, IGuiEventListener> dragged);
+	Pair<Integer, GuiEventListener> getDragged();
+	void setDragged(Pair<Integer, GuiEventListener> dragged);
 	
 	@Override default boolean mouseClicked(double mouseX, double mouseY, int button) {
-		for(IGuiEventListener listener : this.children()) {
+		for(GuiEventListener listener : this.children()) {
 			if (listener.mouseClicked(mouseX, mouseY, button)) {
 				onMouseClickedForListener(listener, mouseX, mouseY, button);
 				return true;
@@ -25,7 +25,7 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	}
 	
 	default void onMouseClickedForListener(
-	  IGuiEventListener listener, double mouseX, double mouseY, int button
+	  GuiEventListener listener, double mouseX, double mouseY, int button
 	) {
 		this.setFocused(listener);
 		if ((!isDragging() || (getDragged() != null && getDragged().getLeft() == button)) && (
@@ -49,7 +49,7 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	}
 	
 	default void endDrag(double mouseX, double mouseY, int button) {
-		final Pair<Integer, IGuiEventListener> dragged = getDragged();
+		final Pair<Integer, GuiEventListener> dragged = getDragged();
 		if (dragged != null) {
 			if (dragged.getLeft() != button)
 				button = -1;
@@ -73,7 +73,7 @@ public interface IExtendedDragAwareNestedGuiEventHandler extends INestedGuiEvent
 	
 	@Override default boolean mouseReleased(double mouseX, double mouseY, int button) {
 		handleEndDrag(mouseX, mouseY, button);
-		return INestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
+		return ContainerEventHandler.super.mouseReleased(mouseX, mouseY, button);
 	}
 	
 	default void handleEndDrag(double mouseX, double mouseY, int button) {

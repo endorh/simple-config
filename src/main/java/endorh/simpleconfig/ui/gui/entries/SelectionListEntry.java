@@ -2,19 +2,19 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionButton;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -31,12 +31,12 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	protected final Button buttonWidget;
 	protected final IntegerListEntry intEntry;
 	protected final RedirectGuiEventListener widgetReference;
-	protected final Function<T, ITextComponent> nameProvider;
-	protected final List<IGuiEventListener> widgets;
-	protected final List<IGuiEventListener> childWidgets;
+	protected final Function<T, Component> nameProvider;
+	protected final List<GuiEventListener> widgets;
+	protected final List<GuiEventListener> childWidgets;
 	
 	@Internal public SelectionListEntry(
-	  ITextComponent fieldName, T[] valuesArray, T value, Function<T, ITextComponent> nameProvider
+	  Component fieldName, T[] valuesArray, T value, Function<T, Component> nameProvider
 	) {
 		super(fieldName);
 		values = valuesArray != null ? ImmutableList.copyOf(valuesArray) : ImmutableList.of(value);
@@ -56,13 +56,13 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			}
 			return false;
 		});
-		intEntry = new IntegerListEntry(StringTextComponent.EMPTY, 1);
+		intEntry = new IntegerListEntry(TextComponent.EMPTY, 1);
 		intEntry.setSubEntry(true);
 		intEntry.setParentEntry(this);
 		widgetReference = new RedirectGuiEventListener(buttonWidget);
 		widgets = Lists.newArrayList(widgetReference, sideButtonReference);
 		childWidgets = Lists.newArrayList(widgetReference);
-		this.nameProvider = nameProvider == null ? t -> new TranslationTextComponent(
+		this.nameProvider = nameProvider == null ? t -> new TranslatableComponent(
 		  t instanceof Translatable ? ((Translatable) t).getKey() : t.toString()) : nameProvider;
 	}
 	
@@ -82,7 +82,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (isEditingHotKeyAction()) {
 			HotKeyActionType<T, ?> type = getHotKeyActionType();
@@ -101,7 +101,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		buttonWidget.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (buttonWidget.isMouseOver(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
@@ -114,7 +114,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		intEntry.updateFocused(isFocused && isEditingHotKeyAction() && getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD);
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return this.isChildSubEntry() ? childWidgets : widgets;
 	}
 	

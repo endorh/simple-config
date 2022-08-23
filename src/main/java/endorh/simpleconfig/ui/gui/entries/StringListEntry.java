@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 @OnlyIn(value = Dist.CLIENT)
 public class StringListEntry extends TextFieldListEntry<String> {
-	@Internal public StringListEntry(ITextComponent fieldName, String value) {
+	@Internal public StringListEntry(Component fieldName, String value) {
 		super(fieldName, value, true);
 	}
 	

@@ -3,8 +3,8 @@ package endorh.simpleconfig.ui.gui;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +38,7 @@ public class ExternalChangesDialog extends ConfirmDialog {
 	protected ExternalChangesDialog(
 	  EditType type, @NotNull Consumer<ExternalChangeResponse> action
 	) {
-		super(new TranslationTextComponent(
+		super(new TranslatableComponent(
 		  type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		  "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;
@@ -48,11 +48,11 @@ public class ExternalChangesDialog extends ConfirmDialog {
 		  splitTtc(type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
 		           "simpleconfig.ui.external_changes_detected.body"
 		  ).stream(), Stream.of(
-			 StringTextComponent.EMPTY, new TranslationTextComponent(
+			 TextComponent.EMPTY, new TranslatableComponent(
 				"simpleconfig.ui.prompt_accept_changes"))).collect(Collectors.toList()));
 		
 		acceptAllButton = new TintedButton(
-		  0, 0, 120, 20, new TranslationTextComponent("simpleconfig.ui.action.accept_all_changes"),
+		  0, 0, 120, 20, new TranslatableComponent("simpleconfig.ui.action.accept_all_changes"),
 		  p -> {
 			  if (responseAction != null) {
 				  responseAction.accept(ACCEPT_ALL);
@@ -66,8 +66,8 @@ public class ExternalChangesDialog extends ConfirmDialog {
 		confirmButton.setTintColor(0x80683498);
 		withAction(this::action);
 		
-		setCancelText(new TranslationTextComponent("simpleconfig.ui.action.reject_changes"));
-		setConfirmText(new TranslationTextComponent("simpleconfig.ui.action.accept_non_conflicting_changes"));
+		setCancelText(new TranslatableComponent("simpleconfig.ui.action.reject_changes"));
+		setConfirmText(new TranslatableComponent("simpleconfig.ui.action.accept_non_conflicting_changes"));
 	}
 	
 	public void action(boolean acceptUnedited) {

@@ -1,15 +1,15 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.OverlayTicket;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.SortedOverlayCollection;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,7 +41,7 @@ public class OverlayInjector {
 	@SubscribeEvent public static void onRenderScreen(GuiScreenEvent.DrawScreenEvent.Post event) {
 		final SortedOverlayCollection sortedOverlays = getOverlays(event.getGui());
 		if (sortedOverlays == null) return;
-		MatrixStack mStack = event.getMatrixStack();
+		PoseStack mStack = event.getMatrixStack();
 		int mouseX = event.getMouseX();
 		int mouseY = event.getMouseY();
 		float delta = event.getRenderPartialTicks();

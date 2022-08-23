@@ -5,9 +5,9 @@ import endorh.simpleconfig.api.entry.ButtonEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ButtonFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 public class ButtonEntry extends GUIOnlyEntry<
   Consumer<ConfigEntryHolder>, Runnable, ButtonEntry> {
-	protected Supplier<ITextComponent> buttonLabelSupplier = () -> new StringTextComponent("");
+	protected Supplier<Component> buttonLabelSupplier = () -> new TextComponent("");
 	
 	public ButtonEntry(
 	  ConfigEntryHolder parent, String name, Consumer<ConfigEntryHolder> value
@@ -29,8 +29,8 @@ public class ButtonEntry extends GUIOnlyEntry<
 	public static class Builder extends GUIOnlyEntry.Builder<
 	  Consumer<ConfigEntryHolder>, Runnable, ButtonEntry, ButtonEntryBuilder, Builder
 	> implements ButtonEntryBuilder {
-		protected Supplier<ITextComponent> buttonLabelSupplier =
-		  () -> new TranslationTextComponent("simpleconfig.label.run");
+		protected Supplier<Component> buttonLabelSupplier =
+		  () -> new TranslatableComponent("simpleconfig.label.run");
 		
 		public Builder(Consumer<ConfigEntryHolder> value) {
 			super(value, Void.class);
@@ -38,18 +38,18 @@ public class ButtonEntry extends GUIOnlyEntry<
 		
 		@Override @Contract(pure=true) public Builder label(String translation) {
 			Builder copy = copy();
-			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
+			final TranslatableComponent ttc = new TranslatableComponent(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder label(ITextComponent label) {
+		@Override @Contract(pure=true) public Builder label(Component label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = () -> label;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder label(Supplier<ITextComponent> label) {
+		@Override @Contract(pure=true) public Builder label(Supplier<Component> label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = label;
 			return copy;

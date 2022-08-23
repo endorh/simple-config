@@ -5,22 +5,22 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.KeyBindEntryBuilder;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.VanillaKeyBindContext;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.demo.DemoConfigCategory;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProvider;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping.VanillaKeyBindContext;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.Util;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.language.IModInfo;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,7 +43,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	@Internal public static SimpleConfig build() {
 		KeyBindings.register();
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
-		  .map(ModInfo::getModId).collect(Collectors.toList());
+		  .map(IModInfo::getModId).collect(Collectors.toList());
 		return config(SimpleConfigMod.MOD_ID, SimpleConfig.Type.CLIENT, ClientConfig.class)
 		  .withIcon(SimpleConfigIcons.Types.CLIENT)
 		  .withColor(0x6490FF80)
@@ -132,7 +132,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 			   .add("mod_config_hotkeys", map(
 				  key().guiError(
 					 m -> m.getSettings().getContext() != VanillaKeyBindContext.GAME
-					      ? Optional.of(new TranslationTextComponent(
+					      ? Optional.of(new TranslatableComponent(
 							  "simpleconfig.config.error.unsupported_hotkey_context",
 							  m.getSettings().getContext().serialize())) : Optional.empty()),
 				  string("").suggest(modNameSupplier)).expand())
@@ -215,7 +215,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				if (mapping.getSettings().getContext() != VanillaKeyBindContext.GAME) return null;
 				if (!SimpleConfigImpl.getConfigModIds().contains(modId)) return null;
 				return ExtendedKeyBind.of(SimpleConfigMod.MOD_ID,
-				  new TranslationTextComponent(
+				  new TranslatableComponent(
 				    "simpleconfig.keybind.open_mod_config",
 				    SimpleConfigImpl.getModNameOrId(modId)),
 				  mapping, () -> SimpleConfigGUIManager.showConfigGUI(modId));

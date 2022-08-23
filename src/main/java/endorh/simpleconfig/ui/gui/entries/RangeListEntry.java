@@ -1,16 +1,16 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.ToggleImageButton;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,12 +29,12 @@ public class RangeListEntry<
 	protected Icon comparisonIcon = SimpleConfigIcons.Entries.LESS_EQUAL;
 	protected ToggleImageButton minExclusivenessButton;
 	protected ToggleImageButton maxExclusivenessButton;
-	protected List<IGuiEventListener> listeners;
+	protected List<GuiEventListener> listeners;
 	protected List<AbstractConfigField<?>> heldEntries;
 	protected List<ISeekableComponent> seekableChildren;
 	
 	public RangeListEntry(
-	  ITextComponent fieldName, R value, final E minEntry, final E maxEntry
+	  Component fieldName, R value, final E minEntry, final E maxEntry
 	) {
 		super(fieldName);
 		this.minEntry = minEntry;
@@ -94,7 +94,7 @@ public class RangeListEntry<
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		int iconWidth = middleIcon != null? middleIcon.w : 0;
 		int buttonWidth = minExclusivenessButton.getWidth();
@@ -134,7 +134,7 @@ public class RangeListEntry<
 	}
 	
 	@Override public boolean charTyped(char chr, int modifiers) {
-		IGuiEventListener f = getFocused();
+		GuiEventListener f = getFocused();
 		ToggleImageButton button =
 		  f == minEntry || f == minExclusivenessButton
 		  ? minExclusivenessButton :
@@ -158,7 +158,7 @@ public class RangeListEntry<
 		return seekableChildren;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return listeners;
 	}
 	

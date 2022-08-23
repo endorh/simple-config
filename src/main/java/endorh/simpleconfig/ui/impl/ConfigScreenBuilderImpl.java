@@ -9,12 +9,12 @@ import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.impl.builders.ConfigCategoryBuilderImpl;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.Util;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -32,10 +32,10 @@ import java.util.function.Consumer;
 	protected Screen parent;
 	protected ConfigHotKey editedConfigHotkey = null;
 	protected Consumer<Boolean> hotKeySaver = null;
-	protected ITextComponent title = new TranslationTextComponent("simpleconfig.config.title");
+	protected Component title = new TranslatableComponent("simpleconfig.config.title");
 	protected boolean editable = true;
 	protected boolean transparentBackground = false;
-	protected ResourceLocation defaultBackground = AbstractGui.BACKGROUND_LOCATION;
+	protected ResourceLocation defaultBackground = GuiComponent.BACKGROUND_LOCATION;
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
 	protected final EnumMap<EditType, Map<String, ConfigCategoryBuilder>> categories =
 	  Util.make(new EnumMap<>(EditType.class), m -> {
@@ -98,10 +98,10 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
-	@Override public ITextComponent getTitle() {
+	@Override public Component getTitle() {
 		return title;
 	}
-	@Override public ConfigScreenBuilder setTitle(ITextComponent title) {
+	@Override public ConfigScreenBuilder setTitle(Component title) {
 		this.title = title;
 		return this;
 	}

@@ -1,11 +1,11 @@
 package endorh.simpleconfig.core;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.storage.FolderName;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.FileUtils;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.nio.file.Path;
@@ -17,7 +17,7 @@ import java.nio.file.Path;
 	  .resolve(FMLConfig.defaultConfigPath());
 	public static final Path LOCAL_HOTKEYS_DIR = CLIENT_CONFIG_DIR.resolve("saved-hotkeys");
 	
-	public static final FolderName SERVERCONFIG = new FolderName("serverconfig");
+	public static final LevelResource SERVERCONFIG = new LevelResource("serverconfig");
 	
 	public static Path getServerConfigPath() {
 		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();

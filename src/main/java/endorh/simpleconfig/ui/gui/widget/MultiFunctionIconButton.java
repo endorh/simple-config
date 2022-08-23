@@ -1,7 +1,11 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Backgrounds;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
@@ -10,19 +14,15 @@ import endorh.simpleconfig.ui.gui.OverlayInjector;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Backgrounds;
-import endorh.simpleconfig.ui.math.Point;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.ISound;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -37,9 +37,9 @@ import static java.lang.Math.min;
 public class MultiFunctionIconButton extends TintedButton {
 	protected Icon defaultIcon;
 	protected Supplier<Boolean> defaultActivePredicate;
-	protected Supplier<ITextComponent> defaultTitle;
-	protected Supplier<List<ITextComponent>> defaultTooltip;
-	protected Supplier<Optional<ISound>> defaultSound;
+	protected Supplier<Component> defaultTitle;
+	protected Supplier<List<Component>> defaultTooltip;
+	protected Supplier<Optional<SoundInstance>> defaultSound;
 	protected TreeSet<Pair<Modifier, ButtonAction>> actions =
 	  new TreeSet<>(Comparator.comparing(Pair::getLeft));
 	protected @NotNull ButtonAction activeAction;
@@ -67,14 +67,14 @@ public class MultiFunctionIconButton extends TintedButton {
 	  int x, int y, int minWidth, int maxWidth, @NotNull Icon icon,
 	  ButtonActionBuilder action
 	) {
-		super(x, y, minWidth, 20, StringTextComponent.EMPTY, b -> {}, NO_TOOLTIP);
+		super(x, y, minWidth, 20, TextComponent.EMPTY, b -> {}, NO_TOOLTIP);
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
-		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : () -> StringTextComponent.EMPTY;
+		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : () -> TextComponent.EMPTY;
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
 		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(
-		  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		actions.add(Pair.of(Modifier.NONE, defaultAction));
 		this.defaultAction = activeAction = defaultAction;
 		this.minWidth = minWidth;
@@ -127,13 +127,13 @@ public class MultiFunctionIconButton extends TintedButton {
 		return this;
 	}
 	
-	public ITextComponent getTitle() {
+	public Component getTitle() {
 		ButtonAction action = activeAction;
 		return action.titleSupplier != null? action.titleSupplier.get() : defaultTitle.get();
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		activeAction = actions.stream().filter(
 		  p -> p.getLeft().isActive()
@@ -144,8 +144,8 @@ public class MultiFunctionIconButton extends TintedButton {
 		active = activeOverride != null? activeOverride : (action.activePredicate != null? action.activePredicate : defaultActivePredicate).get();
 		
 		Minecraft mc = Minecraft.getInstance();
-		FontRenderer font = mc.font;
-		ITextComponent title = getTitle();
+		Font font = mc.font;
+		Component title = getTitle();
 		Icon icon = action.icon != null ? action.icon.get() : null;
 		if (icon == null) icon = getDefaultIcon();
 		final int textWidth = font.width(title);
@@ -158,11 +158,11 @@ public class MultiFunctionIconButton extends TintedButton {
 			super.setTintColor(tint != null? tint : 0);
 		} else super.setTintColor(defaultTint);
 		
-		RenderSystem.color4f(1.0F, 1.0F, 1.0F, alpha);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		
-		mc.getTextureManager().bind(WIDGETS_LOCATION);
+		RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
 		int level = getYImage(isHovered());
 		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, x, y, width, height, level);
 		renderBg(mStack, mc, mouseX, mouseY);
@@ -170,19 +170,19 @@ public class MultiFunctionIconButton extends TintedButton {
 		mStack.pushPose(); {
 			if (contentWidth < width) mStack.translate((width - contentWidth) / 2.0, 0.0, 0.0);
 			if (icon != Icon.EMPTY) {
-				RenderSystem.color4f(0.1F, 0.1F, 0.1F, 0.8F);
+				RenderSystem.setShaderColor(0.1F, 0.1F, 0.1F, 0.8F);
 				icon.renderCentered(mStack, x + 1, y + 1, 20, 20);
 				float intensity = active ? 1F : 0.3F;
-				RenderSystem.color4f(intensity, intensity, intensity, 1F);
+				RenderSystem.setShaderColor(intensity, intensity, intensity, 1F);
 				icon.renderCentered(mStack, x, y, 20, 20);
 			}
-			RenderSystem.color4f(1F, 1F, 1F, 1F);
+			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			if (width > iconWidth) {
 				if (contentWidth > width) {
 					ScissorsHandler.INSTANCE.withScissor(
 					  new Rectangle(x + 2, y, width - 4, height), () -> drawString(
 						 mStack, font, title, x + iconWidth, y + (height - 8) / 2,
-						 color | MathHelper.ceil(alpha * 255.0F) << 24));
+						 color | Mth.ceil(alpha * 255.0F) << 24));
 					if (overlayArea == null) {
 						overlayArea = new Rectangle(x, y, contentWidth + 4, height + 1);
 						Screen screen = Minecraft.getInstance().screen;
@@ -195,16 +195,16 @@ public class MultiFunctionIconButton extends TintedButton {
 						if (screen != null && overlayArea.getMaxX() > screen.width)
 							overlayArea.x = max(4, screen.width - 4 - overlayArea.getWidth());
 					}
-				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
+				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | Mth.ceil(alpha * 255.0F) << 24);
 			}
 		} mStack.popPose();
 		
 		if (isHovered()) renderToolTip(mStack, mouseX, mouseY);
 	}
 	
-	private static final ITextComponent[] EMPTY_TEXT_COMPONENT_ARRAY = new ITextComponent[0];
-	@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
-		final List<ITextComponent> ls = getTooltip();
+	private static final Component[] EMPTY_TEXT_COMPONENT_ARRAY = new Component[0];
+	@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
+		final List<Component> ls = getTooltip();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
@@ -213,12 +213,11 @@ public class MultiFunctionIconButton extends TintedButton {
 			if (screen instanceof IMultiTooltipScreen) {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
 				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
-			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().font);
+			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
 		}
 	}
 	
-	public List<ITextComponent> getTooltip() {
+	public List<Component> getTooltip() {
 		ButtonAction action = activeAction;
 		return (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 	}
@@ -304,8 +303,8 @@ public class MultiFunctionIconButton extends TintedButton {
 		final ButtonAction action = actions.stream().filter(p -> p.getLeft().isActive()).map(Pair::getRight).findFirst()
 		  .orElseThrow(() -> new IllegalStateException("Button without default action"));
 		Minecraft mc = Minecraft.getInstance();
-		FontRenderer font = mc.font;
-		ITextComponent title = action.titleSupplier != null ? action.titleSupplier.get() : defaultTitle.get();
+		Font font = mc.font;
+		Component title = action.titleSupplier != null ? action.titleSupplier.get() : defaultTitle.get();
 		Icon icon = action.icon != null ? action.icon.get() : null;
 		if (icon == null) icon = getDefaultIcon();
 		final int textWidth = font.width(title);
@@ -321,7 +320,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		}
 		
 		@Override public boolean renderOverlay(
-		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 		) {
 			if (!button.isMouseOver(mouseX, mouseY)) {
 				button.overlayArea = null;

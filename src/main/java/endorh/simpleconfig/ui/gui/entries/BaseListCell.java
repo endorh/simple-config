@@ -1,19 +1,19 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,10 +24,10 @@ import java.util.function.Supplier;
 import static java.lang.Math.min;
 
 @OnlyIn(value = Dist.CLIENT)
-public abstract class BaseListCell<T> extends FocusableGui
+public abstract class BaseListCell<T> extends AbstractContainerEventHandler
   implements IExtendedDragAwareNestedGuiEventHandler, ISeekableComponent, INavigableTarget {
-	protected Supplier<Optional<ITextComponent>> errorSupplier;
-	protected Pair<Integer, IGuiEventListener> dragged = null;
+	protected Supplier<Optional<Component>> errorSupplier;
+	protected Pair<Integer, GuiEventListener> dragged = null;
 	protected final Rectangle cellArea = new Rectangle();
 	protected boolean isSelected = false;
 	
@@ -71,11 +71,11 @@ public abstract class BaseListCell<T> extends FocusableGui
 		return !getErrors().isEmpty();
 	}
 	
-	public void setErrorSupplier(Supplier<Optional<ITextComponent>> errorSupplier) {
+	public void setErrorSupplier(Supplier<Optional<Component>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
 	}
 	
-	public abstract Optional<ITextComponent> getErrorMessage();
+	public abstract Optional<Component> getErrorMessage();
 	
 	public abstract int getCellHeight();
 	
@@ -94,7 +94,7 @@ public abstract class BaseListCell<T> extends FocusableGui
 	}
 	
 	public void render(
-	  MatrixStack mStack, int index, int x, int y, int listY, int cellWidth, int cellHeight,
+	  PoseStack mStack, int index, int x, int y, int listY, int cellWidth, int cellHeight,
 	  int mouseX, int mouseY, boolean isSelected, float delta
 	) {
 		if (listY >= 0 && listY != lastListY) {
@@ -110,12 +110,12 @@ public abstract class BaseListCell<T> extends FocusableGui
 	}
 	
 	public void renderCell(
-	  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
+	  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
 	  int mouseX, int mouseY, boolean isSelected, float delta
 	) {
-		ITextComponent label = getLabel();
-		if (label != StringTextComponent.EMPTY) {
-			FontRenderer font = Minecraft.getInstance().font;
+		Component label = getLabel();
+		if (label != TextComponent.EMPTY) {
+			Font font = Minecraft.getInstance().font;
 			int textX = font.isBidirectional() ? x + cellWidth - font.width(label) : x;
 			renderLabel(
 			  mStack, label, textX, index, x, y, cellWidth, cellHeight,
@@ -132,17 +132,17 @@ public abstract class BaseListCell<T> extends FocusableGui
 	}
 	
 	public void renderLabel(
-	  MatrixStack mStack, ITextComponent label, int textX, int index, int x, int y,
+	  PoseStack mStack, Component label, int textX, int index, int x, int y,
 	  int cellWidth, int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 	) {
-		FontRenderer font = Minecraft.getInstance().font;
+		Font font = Minecraft.getInstance().font;
 		font.drawShadow(
 		  mStack, label.getVisualOrderText(), textX,
 		  (float) y + cellHeight / 2F - font.lineHeight / 2F, getPreferredTextColor());
 	}
 	
-	public ITextComponent getLabel() {
-		return new StringTextComponent("•").withStyle(TextFormatting.GRAY);
+	public Component getLabel() {
+		return new TextComponent("•").withStyle(ChatFormatting.GRAY);
 	}
 	
 	public void updateSelected(boolean isSelected) {
@@ -203,11 +203,11 @@ public abstract class BaseListCell<T> extends FocusableGui
 	
 	public void setOriginal(T value) {}
 	
-	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+	@Override public Pair<Integer, GuiEventListener> getDragged() {
 		return dragged;
 	}
 	
-	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+	@Override public void setDragged(Pair<Integer, GuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
 	

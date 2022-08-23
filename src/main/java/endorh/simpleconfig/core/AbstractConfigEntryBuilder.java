@@ -5,8 +5,8 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -38,8 +38,8 @@ public abstract class AbstractConfigEntryBuilder<
 > implements ConfigEntryBuilder<V, Config, Gui, Self> {
 	protected V value;
 	
-	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
-	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> tooltipSupplier = null;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> errorSupplier = null;
+	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<Component>> tooltipSupplier = null;
 	protected @Nullable Function<ConfigEntryHolder, Boolean> editableSupplier = null;
 	protected @Nullable String translation = null;
 	protected List<Object> nameArgs = new ArrayList<>();
@@ -77,24 +77,24 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier) {
+	@Override public Self guiError(Function<Gui, Optional<Component>> guiErrorSupplier) {
 		final SelfImpl copy = copy();
-		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
+		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
 		copy.errorSupplier = (e, g) -> or(prev.apply(e, g), () -> guiErrorSupplier.apply(g));
 		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
-	@Override public Self error(Function<V, Optional<ITextComponent>> errorSupplier) {
+	@Override public Self error(Function<V, Optional<Component>> errorSupplier) {
 		final SelfImpl copy = copy();
-		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
+		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
 		copy.errorSupplier = (e, g) -> or(
 		  prev.apply(e, g),
 		  () -> {
 			  V v = e.fromGui(g);
-			  if (v == null) return Optional.of(new TranslationTextComponent(
+			  if (v == null) return Optional.of(new TranslatableComponent(
 			    "simpleconfig.config.error.missing_value"));
 			  return errorSupplier.apply(v);
 		  });
@@ -102,15 +102,15 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self configError(Function<Config, Optional<ITextComponent>> configErrorSupplier) {
+	@Override public Self configError(Function<Config, Optional<Component>> configErrorSupplier) {
 		final SelfImpl copy = copy();
-		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> prev =
+		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
 		copy.errorSupplier = (e, g) -> or(
 		  prev.apply(e, g),
 		  () -> {
 			  V v = e.fromGui(g);
-			  if (v == null) return Optional.of(new TranslationTextComponent(
+			  if (v == null) return Optional.of(new TranslatableComponent(
 			    "simpleconfig.config.error.missing_value"));
 			  return configErrorSupplier.apply(e.forConfig(v));
 		  });
@@ -125,14 +125,14 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier) {
+	@Override public Self guiTooltip(Function<Gui, List<Component>> tooltipSupplier) {
 		final SelfImpl copy = copy();
 		copy.tooltipSupplier = (e, g) -> tooltipSupplier.apply(g);
 		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
-	@Override public Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier) {
+	@Override public Self tooltip(Function<V, List<Component>> tooltipSupplier) {
 		final SelfImpl copy = copy();
 		copy.tooltipSupplier = (e, g) -> {
 			V v = e.fromGui(g);

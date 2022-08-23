@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.BiPredicate;
 
@@ -12,7 +12,7 @@ public class MultiFunctionButton extends TintedButton {
 	protected BiPredicate<Button, Integer> pressAction;
 	
 	public MultiFunctionButton(
-	  int x, int y, int width, int height, ITextComponent title,
+	  int x, int y, int width, int height, Component title,
 	  BiPredicate<Button, Integer> pressAction
 	) {
 		super(x, y, width, height, title, b -> {});
@@ -20,8 +20,8 @@ public class MultiFunctionButton extends TintedButton {
 	}
 	
 	public MultiFunctionButton(
-	  int x, int y, int width, int height, ITextComponent title,
-	  BiPredicate<Button, Integer> pressAction, ITooltip onTooltip
+	  int x, int y, int width, int height, Component title,
+	  BiPredicate<Button, Integer> pressAction, OnTooltip onTooltip
 	) {
 		super(x, y, width, height, title, b -> {}, onTooltip);
 		this.pressAction = pressAction;

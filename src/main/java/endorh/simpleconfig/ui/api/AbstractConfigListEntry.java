@@ -1,8 +1,10 @@
 package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
@@ -11,16 +13,14 @@ import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.
 import endorh.simpleconfig.ui.gui.entries.BeanListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.ImageButton;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +36,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	protected final Rectangle entryArea = new Rectangle();
 	protected final Rectangle fieldArea = new Rectangle();
 	protected final Rectangle rowArea = new Rectangle();
-	protected final List<IGuiEventListener> previewListeners = new ArrayList<>();
+	protected final List<GuiEventListener> previewListeners = new ArrayList<>();
 	protected final Rectangle previewOverlayRectangle = new Rectangle();
 	protected final Rectangle previewOverlayCaptionRectangle = new Rectangle();
 	protected final Rectangle flagsRectangle = new Rectangle();
@@ -51,7 +51,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	protected int externalPreviewBorderColor = 0xE0956ED3;
 	protected int externalPreviewTextColor = 0xE0A48CD3;
 	
-	public AbstractConfigListEntry(ITextComponent name) {
+	public AbstractConfigListEntry(Component name) {
 		super(name);
 		setName(name.getString().replace(".", "")); // Default name
 		selectionCheckbox = new CheckboxButton(
@@ -62,28 +62,28 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		  this::acceptExternalValue
 		).active(() -> hasExternalDiff() && !hasAcceptedExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
-			 new TranslationTextComponent(
+			 new TranslatableComponent(
 				"simpleconfig.ui.merge.accept." + (getScreen().isEditingServer()? "remote" : "external"))
-			   .withStyle(TextFormatting.LIGHT_PURPLE))));
+			   .withStyle(ChatFormatting.LIGHT_PURPLE))));
 		mergeButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Entries.MERGE_CONFLICT, ButtonAction.of(
 			 () -> setPreviewingExternal(true)
 		  ).active(() -> !isPreviewingExternal() && hasConflictingExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
-			 new TranslationTextComponent(
+			 new TranslatableComponent(
 			   "simpleconfig.ui.view_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
-			   .withStyle(TextFormatting.GOLD)))
+			   .withStyle(ChatFormatting.GOLD)))
 		) {
-			@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
+			@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
 				if (advanced.show_ui_tips) super.renderToolTip(mStack, mouseX, mouseY - 16);
 			}
 		}.on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(() -> {})
 		  .active(() -> !isPreviewingExternal() && hasAcceptedExternalDiff())
 		  .icon(SimpleConfigIcons.Entries.MERGE_ACCEPTED)
 		  .tooltip(() -> Lists.newArrayList(
-			 new TranslationTextComponent(
+			 new TranslatableComponent(
 			   "simpleconfig.ui.accepted_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
-			   .withStyle(TextFormatting.DARK_GREEN)))
+			   .withStyle(ChatFormatting.DARK_GREEN)))
 		).on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(
 		  () -> setPreviewingExternal(false)
 		).active(this::isPreviewingExternal)
@@ -136,7 +136,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	
 	@Override public boolean handleModalClicks(double mouseX, double mouseY, int button) {
 		if (isPreviewingExternal()) {
-			for (IGuiEventListener listener : previewListeners)
+			for (GuiEventListener listener : previewListeners)
 				if (listener.mouseClicked(mouseX, mouseY, button)) return true;
 			return true;
 		}
@@ -145,7 +145,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	
 	@Override public boolean handleModalKeyPress(int keyCode, int scanCode, int modifiers) {
 		if (isPreviewingExternal()) {
-			for (IGuiEventListener listener : previewListeners)
+			for (GuiEventListener listener : previewListeners)
 				if (listener.keyPressed(keyCode, scanCode, modifiers)) return true;
 			return true;
 		}
@@ -185,7 +185,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
@@ -202,12 +202,12 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			selectionCheckbox.render(mStack, mouseX, mouseY, delta);
 		}
 		ResetButton resetButton = getResetButton();
-		FontRenderer font = Minecraft.getInstance().font;
+		Font font = Minecraft.getInstance().font;
 		int fieldWidth = getFieldWidth();
 		int fieldHeight = getFieldHeight();
 		int fieldX = font.isBidirectional()? x : x + entryWidth - fieldWidth;
 		if (shouldRenderTitle()) {
-			ITextComponent title = getDisplayedTitle();
+			Component title = getDisplayedTitle();
 			float textX = (float) (font.isBidirectional() ? x + entryWidth - font.width(title) : x);
 			renderTitle(
 			  mStack, title, textX, index, x, y, entryWidth, entryHeight,
@@ -298,12 +298,12 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area == previewOverlayRectangle) {
 			if (!isPreviewingExternal()) return false;
-			FontRenderer font = Minecraft.getInstance().font;
-			TranslationTextComponent caption = new TranslationTextComponent(
+			Font font = Minecraft.getInstance().font;
+			TranslatableComponent caption = new TranslatableComponent(
 			  "simpleconfig.ui." + (getScreen().isEditingServer()? "remote_changes" : "external_changes"));
 			
 			final int captionWidth = font.width(caption);
@@ -376,7 +376,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			setPreviewingExternal(false);
 			return false;
 		}
-		for (IGuiEventListener listener : previewListeners)
+		for (GuiEventListener listener : previewListeners)
 			if (listener.mouseClicked(mouseX, mouseY, button)) return true;
 		mergeButton.mouseClicked(mouseX, mouseY, button);
 		return true;
@@ -389,7 +389,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override public void renderBg(
-	  MatrixStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {
 		if (isPreviewingExternal()) {
@@ -402,7 +402,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	protected void renderField(
-	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight,
+	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight,
 	  int x, int y, int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		if (this instanceof IChildListEntry) {
@@ -412,7 +412,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override protected void renderSelectionOverlay(
-	  MatrixStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {
 		Rectangle area = getSelectionArea();
@@ -420,10 +420,10 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	protected void renderTitle(
-	  MatrixStack mStack, ITextComponent title, float textX, int index, int x, int y,
+	  PoseStack mStack, Component title, float textX, int index, int x, int y,
 	  int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		final FontRenderer font = Minecraft.getInstance().font;
+		final Font font = Minecraft.getInstance().font;
 		font.drawShadow(
 		  mStack, title.getVisualOrderText(), textX, (float) y + 6, getPreferredTextColor());
 		final NavigableSet<EntryTag> entryFlags = getEntryTags();
@@ -460,11 +460,11 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		return (int) round(entryArea.y - entryList.top + entryList.getScroll());
 	}
 	
-	@Override public final @NotNull List<? extends IGuiEventListener> children() {
+	@Override public final @NotNull List<? extends GuiEventListener> children() {
 		if (isPreviewingExternal())
 			return previewListeners;
 		return getEntryListeners();
 	}
 	
-	protected abstract @NotNull List<? extends IGuiEventListener> getEntryListeners();
+	protected abstract @NotNull List<? extends GuiEventListener> getEntryListeners();
 }

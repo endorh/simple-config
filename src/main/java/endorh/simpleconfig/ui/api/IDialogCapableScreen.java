@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.AbstractDialog;
-import net.minecraft.client.gui.INestedGuiEventHandler;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -45,7 +45,7 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		getDialogs().remove(dialog);
 	}
 	
-	default void renderDialogs(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	default void renderDialogs(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		SortedDialogCollection dialogs = getDialogs();
 		dialogs.update();
 		List<AbstractDialog> current = dialogs.getDialogs();
@@ -63,8 +63,8 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		}
 		dialogs.update();
 		current = dialogs.getDialogs();
-		if (!current.isEmpty() && this instanceof INestedGuiEventHandler)
-			((INestedGuiEventHandler) this).setFocused(current.get(current.size() - 1));
+		if (!current.isEmpty() && this instanceof ContainerEventHandler)
+			((ContainerEventHandler) this).setFocused(current.get(current.size() - 1));
 	}
 	
 	default void tickDialogs() {

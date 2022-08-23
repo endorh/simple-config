@@ -5,24 +5,24 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.demo.DemoServerCategory;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.HoverEvent.Action;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.management.PlayerList;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
-import net.minecraft.util.text.event.HoverEvent.Action;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.forgespi.language.IModInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,7 +60,7 @@ public class ServerConfig {
 		final Supplier<List<String>> roleNameSupplier = () -> new ArrayList<>(
 		  SimpleConfigMod.SERVER_CONFIG.<Map<String, List<String>>>getFromGUI("permissions.roles").keySet());
 		final Supplier<List<String>> modNameSupplier = () -> ModList.get().getMods().stream()
-		  .map(ModInfo::getModId).collect(Collectors.toList());
+		  .map(IModInfo::getModId).collect(Collectors.toList());
 		StringEntryBuilder modName = string("").suggest(modNameSupplier);
 		StringEntryBuilder roleName = string("").suggest(() -> {
 			List<String> roles = roleNameSupplier.get();
@@ -68,12 +68,12 @@ public class ServerConfig {
 			roles.add(1, "[op]");
 			return roles;
 		}).error(s -> roleNameSupplier.get().contains(s) || "[op]".equals(s) || "[all]".equals(s)
-		              ? Optional.empty() : Optional.of(new TranslationTextComponent(
-		  "simpleconfig.error.unknown_role")));
+		              ? Optional.empty() : Optional.of(new TranslatableComponent(
+							 "simpleconfig.config.error.unknown_role", s)));
 		StringEntryBuilder modGroupOrName = string("").suggest(() -> {
 			List<Pair<String, ?>> modGroups = SimpleConfigMod.SERVER_CONFIG.getGUI("permissions.mod_groups");
 			List<String> names = modGroups.stream().map(Pair::getKey).collect(Collectors.toList());
-			ModList.get().getMods().stream().map(ModInfo::getModId).forEachOrdered(names::add);
+			ModList.get().getMods().stream().map(IModInfo::getModId).forEachOrdered(names::add);
 			names.add(0, "[all]");
 			return names;
 		});
@@ -85,17 +85,17 @@ public class ServerConfig {
 		    "simpleconfig.config.server.desc.permission_level",
 		    "simpleconfig.config.server.desc.permission_level:help",
 		    "https://minecraft.fandom.com/wiki/Permission_level",
-		    TextFormatting.DARK_GRAY, TextFormatting.UNDERLINE))
+		    ChatFormatting.DARK_GRAY, ChatFormatting.UNDERLINE))
 		  .n(group("permissions", true)
 			    .add("roles", map(
 				   string("").notEmpty()
 				     .error(s -> "[op]".equals(s) || "[all]".equals(s)? Optional.of(
-					    new TranslationTextComponent(
+					    new TranslatableComponent(
 						   "simpleconfig.config.error.role.reserved", s)) : Optional.empty()),
 				   list(playerName)))
 			    .add("mod_groups", map(
 				   string("").notEmpty()
-				     .error(s -> "[all]".equals(s)? Optional.of(new TranslationTextComponent(
+				     .error(s -> "[all]".equals(s)? Optional.of(new TranslatableComponent(
 					    "simpleconfig.config.error.mod_group.reserved", s)) : Optional.empty()),
 				   caption(option(ListType.WHITELIST), list(modName))))
 			    .add("rules", pairList(
@@ -116,14 +116,14 @@ public class ServerConfig {
 		  .buildAndRegister();
 	}
 	
-	private static IFormattableTextComponent makeLink(
-	  String key, @Nullable String tooltipKey, String url, TextFormatting... styles
+	private static MutableComponent makeLink(
+	  String key, @Nullable String tooltipKey, String url, ChatFormatting... styles
 	) {
-		return new TranslationTextComponent(key).withStyle(s -> {
+		return new TranslatableComponent(key).withStyle(s -> {
 			s = s.applyFormats(styles);
 			if (tooltipKey != null)
 				s = s.withHoverEvent(new HoverEvent(
-				  Action.SHOW_TEXT, new TranslationTextComponent(tooltipKey)));
+				  Action.SHOW_TEXT, new TranslatableComponent(tooltipKey)));
 			return s.withClickEvent(new ClickEvent(
 			  ClickEvent.Action.OPEN_URL, url));
 		});
@@ -196,13 +196,13 @@ public class ServerConfig {
 		@OnlyIn(
 		  Dist.CLIENT)
 		public static Pair<ConfigPermission, PresetPermission> permissionFor(String mod) {
-			ClientPlayerEntity player = Minecraft.getInstance().player;
+			LocalPlayer player = Minecraft.getInstance().player;
 			return player == null? Pair.of(ConfigPermission.DENY, PresetPermission.LOAD_PRESETS)
 			                     : permissionFor(player, mod);
 		}
 		
 		public static Pair<ConfigPermission, PresetPermission> permissionFor(
-		  PlayerEntity player, String mod
+		  Player player, String mod
 		) {
 			final Set<String> roles = permissions.roles.entrySet().stream().filter(
 			  e -> e.getValue().contains(player.getScoreboardName())
@@ -230,11 +230,11 @@ public class ServerConfig {
 		}
 		
 		@OnlyIn(Dist.CLIENT) public static boolean canEditServerHotKeys() {
-			ClientPlayerEntity player = Minecraft.getInstance().player;
+			LocalPlayer player = Minecraft.getInstance().player;
 			return player != null && canEditServerHotKeys(player);
 		}
 		
-		public static boolean canEditServerHotKeys(PlayerEntity player) {
+		public static boolean canEditServerHotKeys(Player player) {
 			final Set<String> roles = permissions.roles.entrySet().stream().filter(
 			  e -> e.getValue().contains(player.getScoreboardName())
 			).map(Entry::getKey).collect(Collectors.toSet());

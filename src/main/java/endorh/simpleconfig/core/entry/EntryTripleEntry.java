@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryTripleEntryBuilder;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.DummyEntryHolder;
@@ -11,10 +12,9 @@ import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TripleListEntryBuilder;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Triple;
@@ -200,14 +200,12 @@ public class EntryTripleEntry<
 		LC left;
 		MC middle;
 		RC right;
-		if (value instanceof List<?>) {
-			List<?> list = (List<?>) value;
+		if (value instanceof List<?> list) {
 			if (list.size() != 3) return null;
 			left = leftEntry.fromActualConfig(list.get(0));
 			middle = middleEntry.fromActualConfig(list.get(1));
 			right = rightEntry.fromActualConfig(list.get(2));
-		} else if (value instanceof Triple) {
-			final Triple<?, ?, ?> pair = (Triple<?, ?, ?>) value;
+		} else if (value instanceof final Triple<?, ?, ?> pair) {
 			left = leftEntry.fromActualConfig(pair.getLeft());
 			middle = middleEntry.fromActualConfig(pair.getMiddle());
 			right = rightEntry.fromActualConfig(pair.getRight());
@@ -219,8 +217,8 @@ public class EntryTripleEntry<
 		return Triple.of(left, middle, right);
 	}
 	
-	@Override public List<ITextComponent> getErrorsFromGUI(Triple<LG, MG, RG> value) {
-		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+	@Override public List<Component> getErrorsFromGUI(Triple<LG, MG, RG> value) {
+		List<Component> errors = super.getErrorsFromGUI(value);
 		errors.addAll(leftEntry.getErrorsFromGUI(value.getLeft()));
 		errors.addAll(middleEntry.getErrorsFromGUI(value.getMiddle()));
 		errors.addAll(rightEntry.getErrorsFromGUI(value.getRight()));

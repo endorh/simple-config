@@ -29,6 +29,10 @@
  * For the last step, it's necessary that all input files specify their
  * package in a @header declaration. The directory structure of the source files
  * is ignored for this regard.
+ *
+ *
+ * This script only adds this behavior to the main source set, but also removes
+ * the default antlr input directory for other source sets.
  */
 
 plugins {
@@ -47,14 +51,19 @@ val defaultGrammarPackage by extra("endorh.simpleconfig.grammar")
 
 // Project settings
 
-idea {
-    module {
-        excludeDirs.add(file(antlrInput))
-        excludeDirs.add(file(antlrTempOutputDirectory))
-        sourceDirs.add(file(antlrSource))
-        // Generated source dirs must also be source dirs
-        sourceDirs.add(file(grammarGenSource))
-        generatedSourceDirs.add(file(grammarGenSource))
+afterEvaluate {
+    idea {
+        module {
+            sourceSets.forEach {
+                excludeDirs.addAll(it.antlr.srcDirs)
+            }
+            excludeDirs.add(file(antlrTempOutputDirectory))
+            sourceDirs.add(file(antlrSource))
+            
+            // Generated source dirs must also be source dirs
+            sourceDirs.add(file(grammarGenSource))
+            generatedSourceDirs.add(file(grammarGenSource))
+        }
     }
 }
 
@@ -69,12 +78,7 @@ sourceSets {
     test.get().java.srcDir(file(grammarGenSource))
 }
 
-// Task settings
-
-tasks.clean {
-    delete(antlrTempOutputDirectory)
-    delete(antlrInput)
-}
+// Tasks
 
 val prepareGenerateGrammarSource = tasks.register("prepareGenerateGrammarSource") {
     group = "grammar"
@@ -89,9 +93,11 @@ val prepareGenerateGrammarSource = tasks.register("prepareGenerateGrammarSource"
 gradle.taskGraph.whenReady {
     if (hasTask(prepareGenerateGrammarSource.get())) {
         if (file(antlrInput).exists() && file(antlrInput).list()?.size ?: 0 > 0)
-            throw GradleException(
-              "The default input directory for ANTLR (src/main/antlr) is not empty. " +
-              "Please remove all files from this directory before generating the grammar.")
+            throw GradleException("""
+                The default input directory for ANTLR (src/main/antlr) is not empty.
+                This directory is not used as a source, but as a temporary directory.
+                Please remove all files from this directory before generating the grammar.
+            """.trimIndent())
     }
 }
 
@@ -99,19 +105,20 @@ val cleanAfterGenerateGrammarSource = tasks.register("cleanAfterGenerateGrammarS
     group = "grammar"
     onlyIf {
         !prepareGenerateGrammarSource.get().state.upToDate
+        || tasks.getByName("makeSrcDirs").didWork
     }
+    
     doLast {
-        project.delete(file(antlrInput))
+        removeAntlrInputDirs()
     }
 }
 
 tasks.generateGrammarSource {
     group = "grammar"
-    dependsOn(prepareGenerateGrammarSource)
-
     onlyIf {
         !prepareGenerateGrammarSource.get().state.upToDate
     }
+    dependsOn(prepareGenerateGrammarSource)
 
     outputDirectory = file(antlrTempOutputDirectory)
     maxHeapSize = "64m"
@@ -122,7 +129,7 @@ tasks.generateGrammarSource {
     outputs.upToDateWhen { false }
 
     doLast {
-        project.delete(file(grammarGenSource))
+        delete(file(grammarGenSource))
         copyAntlrGeneratedFilesToTheirPackages(antlrTempOutputDirectory, grammarGenSource, defaultGrammarPackage)
     }
     finalizedBy(cleanAfterGenerateGrammarSource)
@@ -130,6 +137,14 @@ tasks.generateGrammarSource {
 
 tasks.generateTestGrammarSource {
     group = "grammar"
+}
+
+afterEvaluate {
+    tasks.getByName("makeSrcDirs") {
+        doLast {
+            removeAntlrInputDirs()
+        }
+    }
 }
 
 fun syncAntlrInputFilesToFlatInputDirectory(sourceDirectory: String, antlrInputDirectory: String) {
@@ -168,4 +183,16 @@ fun extractPackageNameFromJavaFile(javaFile: File, defaultPackage: String): Stri
         } != null) break
     }
     return packageName
+}
+
+fun removeAntlrInputDirs() {
+    sourceSets.flatMap { it.antlr.srcDirs }.firstOrNull { it.list()?.size ?: 0 > 0 }?.let {
+        throw GradleException("""
+            A default input directory for ANTLR ($it) is not empty.
+            This directory is not used as a source, but as a temporary directory.
+            Please remove all files from this directory before generating the grammar.
+        """.trimIndent())
+    } ?: sourceSets.forEach {
+        delete(it.antlr.srcDirs)
+    }
 }

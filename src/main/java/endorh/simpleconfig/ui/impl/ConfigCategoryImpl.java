@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.impl;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategory;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -21,10 +21,10 @@ import java.util.function.Supplier;
 public class ConfigCategoryImpl implements ConfigCategory {
 	protected final List<AbstractConfigField<?>> entries;
 	protected final String name;
-	protected ITextComponent title;
+	protected Component title;
 	protected int sortingOrder = 0;
 	protected @Nullable ResourceLocation background;
-	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
+	protected @Nullable Supplier<Optional<Component[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
 	protected EditType type;
 	protected boolean isEditable = true;
@@ -33,8 +33,8 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	
 	@Internal public ConfigCategoryImpl(
 	  String name, EditType type, List<AbstractConfigField<?>> entries,
-	  ITextComponent title, int sortingOrder, @Nullable ResourceLocation background,
-	  @Nullable Supplier<Optional<ITextComponent[]>> description, @Nullable Path containingFile,
+	  Component title, int sortingOrder, @Nullable ResourceLocation background,
+	  @Nullable Supplier<Optional<Component[]>> description, @Nullable Path containingFile,
 	  boolean isEditable, Icon icon, int color
 	) {
 		this.entries = entries;
@@ -50,10 +50,10 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		this.color = color;
 	}
 	
-	@Override public ITextComponent getTitle() {
+	@Override public Component getTitle() {
 		return title;
 	}
-	@Override public void setTitle(ITextComponent name) {
+	@Override public void setTitle(Component name) {
 		title = name;
 	}
 	
@@ -105,7 +105,7 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		return sortingOrder;
 	}
 	
-	@Override public @Nullable Supplier<Optional<ITextComponent[]>> getDescription() {
+	@Override public @Nullable Supplier<Optional<Component[]>> getDescription() {
 		return description;
 	}
 }

@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -22,22 +22,22 @@ import java.util.stream.Collectors;
 
 public class ProgressDialog extends ConfirmDialog {
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected List<ITextComponent> actualBody = Lists.newArrayList();
+	protected List<Component> actualBody = Lists.newArrayList();
 	protected boolean cancellableByUser = true;
 	protected boolean closeOnExceptions = false;
 	protected CompletableFuture<?> future;
-	protected @Nullable List<ITextComponent> error = null;
+	protected @Nullable List<Component> error = null;
 	protected @Nullable Icon iconSave = null;
 	protected Supplier<@Nullable AbstractDialog> successDialog = () -> null;
 	
 	public static ProgressDialog create(
-	  ITextComponent title, CompletableFuture<?> future
+	  Component title, CompletableFuture<?> future
 	) {
 		return create(title, future, null);
 	}
 	
 	public static ProgressDialog create(
-	  ITextComponent title, CompletableFuture<?> future,
+	  Component title, CompletableFuture<?> future,
 	  @Nullable Consumer<ProgressDialog> builder
 	) {
 		ProgressDialog dialog = new ProgressDialog(title, future);
@@ -46,7 +46,7 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	protected ProgressDialog(
-	  ITextComponent title, CompletableFuture<?> future
+	  Component title, CompletableFuture<?> future
 	) {
 		super(title);
 		this.future = future;
@@ -100,16 +100,16 @@ public class ProgressDialog extends ConfirmDialog {
 		}
 	}
 	
-	protected List<ITextComponent> renderException(Throwable e) {
+	protected List<Component> renderException(Throwable e) {
 		final StackTraceElement[] trace = e.getStackTrace();
-		final List<ITextComponent> l = Lists.newArrayList(
-		  new StringTextComponent(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage())
-			 .withStyle(TextFormatting.RED));
+		final List<Component> l = Lists.newArrayList(
+		  new TextComponent(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage())
+			 .withStyle(ChatFormatting.RED));
 		if (trace.length > 0)
-			l.add(new StringTextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).withStyle(TextFormatting.RED));
+			l.add(new TextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).withStyle(ChatFormatting.RED));
 		if (e.getCause() != null) {
-			final List<ITextComponent> c = renderException(e.getCause());
-			c.set(0, new StringTextComponent("caused by: ").withStyle(TextFormatting.RED)
+			final List<Component> c = renderException(e.getCause());
+			c.set(0, new TextComponent("caused by: ").withStyle(ChatFormatting.RED)
 			  .append(c.get(0)));
 			l.addAll(c);
 		}
@@ -121,14 +121,14 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override public void renderInner(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		update();
 		
 		int tx = x + 4;
 		int ty = y + 4;
-		for (List<IReorderingProcessor> line : lines) {
-			for (IReorderingProcessor l : line) {
+		for (List<FormattedCharSequence> line : lines) {
+			for (FormattedCharSequence l : line) {
 				font.drawShadow(mStack, l, tx, ty, bodyColor);
 				ty += lineHeight;
 			}
@@ -143,11 +143,11 @@ public class ProgressDialog extends ConfirmDialog {
 		if (error != null) actualBody.addAll(error);
 	}
 	
-	@Override public List<ITextComponent> getBody() {
+	@Override public List<Component> getBody() {
 		return actualBody;
 	}
 	
-	@Override public void setBody(List<? extends ITextComponent> body) {
+	@Override public void setBody(List<? extends Component> body) {
 		this.body = new ArrayList<>(body);
 		updateActualBody();
 	}
@@ -202,7 +202,7 @@ public class ProgressDialog extends ConfirmDialog {
 		this.successDialog = dialogSupplier;
 	}
 	
-	@Nullable public List<ITextComponent> getError() {
+	@Nullable public List<Component> getError() {
 		return error;
 	}
 	
@@ -211,13 +211,13 @@ public class ProgressDialog extends ConfirmDialog {
 		this.iconSave = icon;
 	}
 	
-	protected List<ITextComponent> decorateError(List<ITextComponent> error) {
+	protected List<Component> decorateError(List<Component> error) {
 		return error.stream()
-		  .map(t -> t.copy().withStyle(TextFormatting.RED))
+		  .map(t -> t.copy().withStyle(ChatFormatting.RED))
 		  .collect(Collectors.toList());
 	}
 	
-	public void setError(@Nullable List<ITextComponent> error) {
+	public void setError(@Nullable List<Component> error) {
 		if (error != null) error = decorateError(error);
 		this.error = error;
 		final int height = getInnerHeight();

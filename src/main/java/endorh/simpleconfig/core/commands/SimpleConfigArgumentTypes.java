@@ -2,8 +2,8 @@ package endorh.simpleconfig.core.commands;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import endorh.simpleconfig.SimpleConfigMod;
-import net.minecraft.command.arguments.ArgumentTypes;
-import net.minecraft.command.arguments.IArgumentSerializer;
+import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.commands.synchronization.ArgumentTypes;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
@@ -24,7 +24,7 @@ public class SimpleConfigArgumentTypes {
 	}
 	
 	private static <T extends ArgumentType<?>> void register(
-	  String name, Class<T> clazz, IArgumentSerializer<T> serializer
+	  String name, Class<T> clazz, ArgumentSerializer<T> serializer
 	) {
 		ArgumentTypes.register(SimpleConfigMod.MOD_ID + ":" + name, clazz, serializer);
 	}

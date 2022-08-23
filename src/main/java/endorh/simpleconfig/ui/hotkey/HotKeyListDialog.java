@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigGroup;
@@ -16,10 +17,9 @@ import endorh.simpleconfig.ui.gui.widget.treeview.ArrangeableTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
@@ -38,12 +38,12 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	public HotKeyListDialog(@Nullable String modId) {
-		super(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.title"));
-		TintedButton cancelButton = TintedButton.of(DialogTexts.GUI_CANCEL, p -> cancel(false));
+		super(new TranslatableComponent("simpleconfig.ui.hotkey.dialog.title"));
+		TintedButton cancelButton = TintedButton.of(CommonComponents.GUI_CANCEL, p -> cancel(false));
 		cancelButton.setTintColor(0x64FFA080);
 		addButton(cancelButton);
 		TintedButton saveButton = TintedButton.of(
-		  new TranslationTextComponent("simpleconfig.ui.save"),
+		  new TranslatableComponent("simpleconfig.ui.save"),
 		  p -> cancel(true));
 		saveButton.setTintColor(0x6480FFA0);
 		addButton(saveButton);
@@ -94,10 +94,10 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 		if (success) {
 			if (confirm.save_hotkeys && isEdited()) {
 				getScreen().addDialog(ConfirmDialog.create(
-				  new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.save.title"),
+				  new TranslatableComponent("simpleconfig.ui.hotkey.dialog.save.title"),
 				  d -> {
 					  d.setBody(splitTtc("simpleconfig.ui.hotkey.dialog.save.body"));
-					  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.controls.general.save"));
+					  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.controls.general.save"));
 					  d.setConfirmButtonTint(0x8080FF80);
 					  d.withCheckBoxes((b, c) -> {
 						  if (b) {
@@ -107,7 +107,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 							  save();
 							  super.cancel(true);
 						  }
-					  }, CheckboxButton.of(false, new TranslationTextComponent(
+					  }, CheckboxButton.of(false, new TranslatableComponent(
 						 "simpleconfig.ui.do_not_ask_again"
 					  )));
 				  }
@@ -119,11 +119,11 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 			}
 		} else if (confirm.discard_hotkeys && isEdited()) {
 			getScreen().addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent(
+			  new TranslatableComponent(
 				 "simpleconfig.ui.hotkey.dialog.discard.title"),
 			  d -> {
 				  d.setBody(splitTtc("simpleconfig.ui.hotkey.dialog.discard.body"));
-				  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.controls.general.discard"));
+				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.controls.general.discard"));
 				  d.setConfirmButtonTint(0x80FF8080);
 				  d.withCheckBoxes((b, c) -> {
 					  if (b) {
@@ -132,7 +132,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 						  } else CONFIRM.set(DISCARD_HOTKEYS, !c[0]);
 						  super.cancel(false);
 					  }
-				  }, CheckboxButton.of(false, new TranslationTextComponent(
+				  }, CheckboxButton.of(false, new TranslatableComponent(
 					 "simpleconfig.ui.do_not_ask_again"
 				  )));
 			  }
@@ -148,10 +148,10 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void layout() {
-		int w = MathHelper.clamp((int) (getScreen().width * 0.7), 120, 800);
+		int w = Mth.clamp((int) (getScreen().width * 0.7), 120, 800);
 		final int titleWidth = font.width(title);
 		w = max(w, titleWidth + 16);
-		int h = MathHelper.clamp(60 + getInnerHeight(), 68, (int) (getScreen().height * 0.9));
+		int h = Mth.clamp(60 + getInnerHeight(), 68, (int) (getScreen().height * 0.9));
 		w = max(w, buttons.size() * 80);
 		w = min(w, getScreen().width - 16);
 		setWidth(w);
@@ -160,7 +160,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public void renderInner(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		ConfigHotKeyTreeView treeView = getTreeView();
 		treeView.setX(x);
@@ -171,11 +171,11 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public int getInnerHeight() {
-		return MathHelper.clamp(getTreeView().getPreferredHeight() + 4, 64, (int) (getScreen().height * 0.9) - 60);
+		return Mth.clamp(getTreeView().getPreferredHeight() + 4, 64, (int) (getScreen().height * 0.9) - 60);
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (KeyBindings.SAVE.isActiveAndMatches(InputMappings.getKey(keyCode, scanCode))) {
+		if (KeyBindings.SAVE.isActiveAndMatches(InputConstants.getKey(keyCode, scanCode))) {
 			cancel(true);
 			return true;
 		}

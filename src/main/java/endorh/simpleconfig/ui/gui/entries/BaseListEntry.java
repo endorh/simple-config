@@ -1,7 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
@@ -9,22 +11,20 @@ import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.EditHistory.EditRecord;
 import endorh.simpleconfig.ui.impl.EditHistory.EditRecord.ListEditRecord;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -42,9 +42,9 @@ import static java.lang.Math.*;
 public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends BaseListEntry<T, C, Self>>
   extends TooltipListEntry<List<T>> implements IExpandable {
 	@NotNull protected final List<C> cells;
-	@NotNull protected List<IGuiEventListener> widgets;
-	@NotNull protected List<IGuiEventListener> unexpandedWidgets;
-	@NotNull protected List<IGuiEventListener> expandedEmptyWidgets;
+	@NotNull protected List<GuiEventListener> widgets;
+	@NotNull protected List<GuiEventListener> unexpandedWidgets;
+	@NotNull protected List<GuiEventListener> expandedEmptyWidgets;
 	
 	protected boolean expanded;
 	protected boolean deleteButtonEnabled;
@@ -65,18 +65,18 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	protected RedirectGuiEventListener sideButtonReferenceReference;
 	protected EmptyPlaceholderWidget placeholder;
 	@NotNull protected Function<Self, C> cellFactory;
-	@Nullable protected ITextComponent[] addTooltip = new ITextComponent[] {
-	  new TranslationTextComponent("simpleconfig.help.list.insert"),
-	  new TranslationTextComponent("simpleconfig.help.list.insert:key")
+	@Nullable protected Component[] addTooltip = new Component[] {
+	  new TranslatableComponent("simpleconfig.help.list.insert"),
+	  new TranslatableComponent("simpleconfig.help.list.insert:key")
 	};
-	@Nullable protected ITextComponent[] removeTooltip = new ITextComponent[] {
-	  new TranslationTextComponent("simpleconfig.help.list.remove"),
-	  new TranslationTextComponent("simpleconfig.help.list.remove:key")
+	@Nullable protected Component[] removeTooltip = new Component[] {
+	  new TranslatableComponent("simpleconfig.help.list.remove"),
+	  new TranslatableComponent("simpleconfig.help.list.remove:key")
 	};
-	protected ITextComponent[] moveTooltip = new ITextComponent[]{
-	  new TranslationTextComponent("simpleconfig.help.list.move"),
-	  new TranslationTextComponent("simpleconfig.help.list.move:drag"),
-	  new TranslationTextComponent("simpleconfig.help.list.move:key")
+	protected Component[] moveTooltip = new Component[]{
+	  new TranslatableComponent("simpleconfig.help.list.move"),
+	  new TranslatableComponent("simpleconfig.help.list.move:drag"),
+	  new TranslatableComponent("simpleconfig.help.list.move:key")
 	};
 	
 	protected int lastSelected = -1;
@@ -96,7 +96,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	protected int dragOverlayBackground = 0x64242424;
 	
 	public BaseListEntry(
-	  @NotNull ITextComponent fieldName, @NotNull Function<Self, C> cellFactory
+	  @NotNull Component fieldName, @NotNull Function<Self, C> cellFactory
 	) {
 		super(fieldName);
 		setValue(Lists.newArrayList());
@@ -209,19 +209,19 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		this.cellFactory = cellFactory;
 	}
 	
-	@Nullable public ITextComponent[] getAddTooltip() {
+	@Nullable public Component[] getAddTooltip() {
 		return addTooltip;
 	}
 	
-	public void setAddTooltip(@Nullable ITextComponent[] addTooltip) {
+	public void setAddTooltip(@Nullable Component[] addTooltip) {
 		this.addTooltip = addTooltip;
 	}
 	
-	@Nullable public ITextComponent[] getRemoveTooltip() {
+	@Nullable public Component[] getRemoveTooltip() {
 		return removeTooltip;
 	}
 	
-	public void setRemoveTooltip(@Nullable ITextComponent[] removeTooltip) {
+	public void setRemoveTooltip(@Nullable Component[] removeTooltip) {
 		this.removeTooltip = removeTooltip;
 	}
 	
@@ -245,7 +245,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return 0;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return expanded ? cells.isEmpty() ? expandedEmptyWidgets : widgets : unexpandedWidgets;
 	}
 	
@@ -406,7 +406,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		        isInsideUp(mouseX, mouseY) || isInsideDown(mouseX, mouseY));
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (isEditable() && advanced.show_ui_tips) {
 			if (addTooltip != null && (isInsideInsert(mouseX, mouseY) || isInsideCreateNew(mouseX, mouseY)))
 				return Optional.of(addTooltip);
@@ -425,7 +425,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override protected void renderTitle(
-	  MatrixStack mStack, ITextComponent title, float textX, int index, int x, int y, int entryWidth,
+	  PoseStack mStack, Component title, float textX, int index, int x, int y, int entryWidth,
 	  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderTitle(
@@ -443,7 +443,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
 		if (isDragging() && !isEditable()) endDrag(mouseX, mouseY, -1);
@@ -531,7 +531,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					childDrawsLine = cell.drawsLine(mouseX - 14, mouseY - yy);
 				}
 				if (dragCursor == i) {
-					int overlayY = MathHelper.clamp(mouseY - draggingOffset, y + 12, y + entryHeight - ch + 12);
+					int overlayY = Mth.clamp(mouseY - draggingOffset, y + 12, y + entryHeight - ch + 12);
 					dragOverlayRectangle.setBounds(
 					  x, overlayY + min(0, o),
 					  entryWidth, ch + abs(o));
@@ -574,12 +574,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		if (!isHeadless()) label.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	protected void renderDragPlaceHolder(MatrixStack mStack, int x, int y, int width, int height) {
+	protected void renderDragPlaceHolder(PoseStack mStack, int x, int y, int width, int height) {
 		fill(mStack, x, y, x + width, y + height, dragPlaceHolderColor);
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area != dragOverlayRectangle)
 			return super.renderOverlay(mStack, area, mouseX, mouseY, delta);
@@ -795,7 +795,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					return true;
 				}
 				if (parent.isDeleteButtonEnabled() && parent.isInsideDelete(mouseX, mouseY)) {
-					IGuiEventListener focused = parent.getFocused();
+					GuiEventListener focused = parent.getFocused();
 					if (parent.isExpanded() && focused instanceof BaseListCell) {
 						final int index = parent.cells.indexOf(focused);
 						if (index >= 0)
@@ -819,11 +819,11 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		}
 	}
 	
-	public static class EmptyPlaceholderWidget implements IGuiEventListener {
+	public static class EmptyPlaceholderWidget implements GuiEventListener {
 		protected boolean focused;
 		protected BaseListEntry<?, ?, ?> listEntry;
 		public int x, y, w, h;
-		protected ITextComponent text = new TranslationTextComponent("simpleconfig.help.list.insert");
+		protected Component text = new TranslatableComponent("simpleconfig.help.list.insert");
 		protected int textColor = 0xffa0ffa0;
 		protected int borderColor = 0xff80ff80;
 		protected int hoveredBgColor = 0x8080f080;
@@ -833,15 +833,15 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			this.listEntry = listEntry;
 		}
 		
-		public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 			final BaseListEntry<?, ?, ?> listEntry = getListEntry();
 			final Rectangle area = listEntry.entryArea;
 			x = area.x + 16;
 			y = area.y + 24;
 			w = area.width - 16;
 			h = 12;
-			final FontRenderer font = Minecraft.getInstance().font;
-			final List<IReorderingProcessor> lines = font.split(text, w);
+			final Font font = Minecraft.getInstance().font;
+			final List<FormattedCharSequence> lines = font.split(text, w);
 			int tw = font.width(lines.get(0)) + 4;
 			if (isMouseInside(mouseX, mouseY))
 				fill(mStack, x + 1, y + 1, x + tw - 1, y + h - 1, hoveredBgColor);
@@ -866,11 +866,11 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			return listEntry;
 		}
 		
-		public ITextComponent getText() {
+		public Component getText() {
 			return text;
 		}
 		
-		public void setText(ITextComponent text) {
+		public void setText(Component text) {
 			this.text = text;
 		}
 		
@@ -887,7 +887,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				getListEntry().addTransparently();
 				return true;
 			}
-			return IGuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
+			return GuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
 		}
 		
 		@Override public boolean changeFocus(boolean forward) {
@@ -896,7 +896,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!cells.contains(listener)) return 0;
 		int y = 24;
@@ -909,7 +909,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		else if (listener instanceof BaseListCell)
@@ -930,7 +930,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return Lists.newArrayList(cells);
 	}
 	
-	@Override public void setFocused(IGuiEventListener listener) {
+	@Override public void setFocused(GuiEventListener listener) {
 		super.setFocused(listener);
 	}
 }

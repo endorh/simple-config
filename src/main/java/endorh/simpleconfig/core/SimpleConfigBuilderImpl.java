@@ -3,11 +3,11 @@ package endorh.simpleconfig.core;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.command.CommandSource;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -51,7 +51,7 @@ public class SimpleConfigBuilderImpl
   implements SimpleConfigBuilder {
 	protected final String modId;
 	protected final Type type;
-	protected @Nullable LiteralArgumentBuilder<CommandSource> commandRoot = null;
+	protected @Nullable LiteralArgumentBuilder<CommandSourceStack> commandRoot = null;
 	
 	protected final String title;
 	
@@ -126,7 +126,7 @@ public class SimpleConfigBuilderImpl
 	}
 	
 	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withCommandRoot(
-	  LiteralArgumentBuilder<CommandSource> root
+	  LiteralArgumentBuilder<CommandSourceStack> root
 	) {
 		commandRoot = root;
 		return this;
@@ -183,9 +183,8 @@ public class SimpleConfigBuilderImpl
 	}
 	
 	@Override @Contract("_, _ -> this") public SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat, int index) {
-		if (!(cat instanceof CategoryBuilder)) throw new IllegalArgumentException(
+		if (!(cat instanceof CategoryBuilder c)) throw new IllegalArgumentException(
 		  "Category must be a CategoryBuilder");
-		CategoryBuilder c = (CategoryBuilder) cat;
 		checkName(c.name);
 		categories.put(c.name, c);
 		categoryOrder.put(c, index);
@@ -196,9 +195,8 @@ public class SimpleConfigBuilderImpl
 	
 	@Contract("_, _ -> this")
 	@Override public SimpleConfigBuilderImpl n(ConfigGroupBuilder group, int index) {
-		if (!(group instanceof GroupBuilder)) throw new IllegalArgumentException(
+		if (!(group instanceof GroupBuilder g)) throw new IllegalArgumentException(
 		  "Group must be a GroupBuilder");
-		GroupBuilder g = (GroupBuilder) group;
 		checkName(g.name);
 		groups.put(g.name, g);
 		guiOrder.put(g.name, index);
@@ -327,9 +325,8 @@ public class SimpleConfigBuilderImpl
 		
 		@Contract("_, _ -> this")
 		@Override public CategoryBuilder n(ConfigGroupBuilder group, int index) {
-			if (!(group instanceof GroupBuilder)) throw new IllegalArgumentException(
+			if (!(group instanceof GroupBuilder g)) throw new IllegalArgumentException(
 			  "Group must be a GroupBuilder");
-			GroupBuilder g = (GroupBuilder) group;
 			if (groups.containsKey(g.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + g.name + "\"");
 			groups.put(g.name, g);
@@ -442,9 +439,8 @@ public class SimpleConfigBuilderImpl
 		
 		@Contract("_, _ -> this")
 		@Override public GroupBuilder n(ConfigGroupBuilder nested, int index) {
-			if (!(nested instanceof GroupBuilder)) throw new IllegalArgumentException(
+			if (!(nested instanceof GroupBuilder n)) throw new IllegalArgumentException(
 			  "Group must be a GroupBuilder");
-			GroupBuilder n = (GroupBuilder) nested;
 			if (groups.containsKey(n.name))
 				throw new IllegalArgumentException("Duplicated config group: \"" + n.name + "\"");
 			if (category != null)

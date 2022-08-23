@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.LongListListEntry.LongListCell;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -18,7 +18,7 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 	private long minimum = Long.MIN_VALUE;
 	private long maximum = Long.MAX_VALUE;
 	
-	@Internal public LongListListEntry(ITextComponent fieldName, List<Long> value) {
+	@Internal public LongListListEntry(Component fieldName, List<Long> value) {
 		super(fieldName, value, LongListCell::new);
 	}
 	
@@ -44,29 +44,29 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 		
 		@Override public Long getValue() {
 			try {
-				return Long.valueOf(widget.getText());
+				return Long.valueOf(widget.getValue());
 			} catch (NumberFormatException e) {
 				return 0L;
 			}
 		}
 		
 		@Override public void doSetValue(Long value) {
-			widget.setText(String.valueOf(value));
+			widget.setValue(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<Component> getErrorMessage() {
 			try {
-				long l = Long.parseLong(widget.getText());
+				long l = Long.parseLong(widget.getValue());
 				final LongListListEntry listEntry = getListEntry();
 				if (l > listEntry.maximum)
-					return Optional.of(new TranslationTextComponent(
+					return Optional.of(new TranslatableComponent(
 					  "simpleconfig.config.error.too_large", listEntry.maximum));
 				if (l < listEntry.minimum)
-					return Optional.of(new TranslationTextComponent(
+					return Optional.of(new TranslatableComponent(
 					  "simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslationTextComponent("simpleconfig.config.error.invalid_integer", widget.getText()));
+				  new TranslatableComponent("simpleconfig.config.error.invalid_integer", widget.getValue()));
 			}
 			return Optional.empty();
 		}

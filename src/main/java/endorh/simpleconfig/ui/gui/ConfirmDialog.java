@@ -1,14 +1,14 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -19,11 +19,11 @@ import java.util.stream.IntStream;
 import static java.lang.Math.*;
 
 public class ConfirmDialog extends AbstractButtonDialog {
-	protected List<ITextComponent> body = Collections.emptyList();
+	protected List<Component> body = Collections.emptyList();
 	protected int bodyColor = 0xffbdbdbd;
 	protected int lineHeight = 10;
 	protected int paragraphMarginDown = 4;
-	protected List<List<IReorderingProcessor>> lines;
+	protected List<List<FormattedCharSequence>> lines;
 	protected TintedButton cancelButton;
 	protected TintedButton confirmButton;
 	protected DialogAction action = (ComplexDialogAction) (v, s) -> {};
@@ -49,23 +49,23 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	public static ConfirmDialog create(
-	  ITextComponent title
+	  Component title
 	) {
 		return create(title, d -> {});
 	}
 	
 	public static ConfirmDialog create(
-	  ITextComponent title, Consumer<ConfirmDialog> builder
+	  Component title, Consumer<ConfirmDialog> builder
 	) {
 		ConfirmDialog dialog = new ConfirmDialog(title);
 		builder.accept(dialog);
 		return dialog;
 	}
 	
-	protected ConfirmDialog(ITextComponent title) {
+	protected ConfirmDialog(Component title) {
 		super(title);
-		cancelButton = TintedButton.of(DialogTexts.GUI_CANCEL, p -> cancel());
-		confirmButton = TintedButton.of(DialogTexts.GUI_PROCEED, p -> confirm());
+		cancelButton = TintedButton.of(CommonComponents.GUI_CANCEL, p -> cancel());
+		confirmButton = TintedButton.of(CommonComponents.GUI_PROCEED, p -> confirm());
 		addButton(cancelButton);
 		addButton(confirmButton);
 		setFocused(cancelButton);
@@ -106,31 +106,31 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	@Override protected void layout() {
-		int cW = (int) MathHelper.clamp(getScreen().width * 0.7, 120, 800);
-		int w = (int) MathHelper.clamp(getScreen().width * 0.4, 120, 800);
+		int cW = (int) Mth.clamp(getScreen().width * 0.7, 120, 800);
+		int w = (int) Mth.clamp(getScreen().width * 0.4, 120, 800);
 		int titleWidth = font.width(title);
 		w = max(w, titleWidth + 16);
 		lines = getBody().stream().map(l -> font.split(l, cW - 16)).collect(Collectors.toList());
 		int bodyWidth = IntStream.concat(
 		  lines.stream().flatMap(Collection::stream).mapToInt(l -> font.width(l)),
-		  Arrays.stream(checkBoxes).mapToInt(Widget::getWidth)
+		  Arrays.stream(checkBoxes).mapToInt(AbstractWidget::getWidth)
 		).max().orElse(w) + 16;
 		bodyWidth = max(bodyWidth, buttons.size() * 80);
 		w = max(w, bodyWidth);
 		w = min(w, getScreen().width - 32);
-		int h = (int) MathHelper.clamp(60 + getInnerHeight(), 68, getScreen().height * 0.9);
+		int h = (int) Mth.clamp(60 + getInnerHeight(), 68, getScreen().height * 0.9);
 		setWidth(w);
 		setHeight(h);
 		super.layout();
 	}
 	
 	@Override public void renderInner(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		int tx = x + 4;
 		int ty = y + 4;
-		for (List<IReorderingProcessor> line : lines) {
-			for (IReorderingProcessor l : line) {
+		for (List<FormattedCharSequence> line : lines) {
+			for (FormattedCharSequence l : line) {
 				font.drawShadow(mStack, l, tx, ty, bodyColor);
 				ty += lineHeight;
 			}
@@ -151,8 +151,8 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	) {
 		int tx = x + 4;
 		int ty = y + 4;
-		for (List<IReorderingProcessor> line : lines) {
-			for (IReorderingProcessor l : line) {
+		for (List<FormattedCharSequence> line : lines) {
+			for (FormattedCharSequence l : line) {
 				if (mY >= ty && mY < ty + lineHeight && mX >= tx && tx < x + w - 8)
 					return font.getSplitter().componentStyleAtWidth(l, (int) round(mX - tx));
 				ty += lineHeight;
@@ -171,20 +171,20 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	
 	@Override public String getText() {
 		return title.getString() + "\n" + getBody().stream()
-		  .map(ITextComponent::getString).collect(Collectors.joining("\n"));
+		  .map(Component::getString).collect(Collectors.joining("\n"));
 	}
 	
-	public List<ITextComponent> getBody() {
+	public List<Component> getBody() {
 		return body;
 	}
-	public void setBody(List<? extends ITextComponent> body) {
+	public void setBody(List<? extends Component> body) {
 		this.body = new ArrayList<>(body);
 	}
 	
-	public void setCancelText(ITextComponent text) {
+	public void setCancelText(Component text) {
 		cancelButton.setMessage(text);
 	}
-	public void setConfirmText(ITextComponent text) {
+	public void setConfirmText(Component text) {
 		confirmButton.setMessage(text);
 	}
 	

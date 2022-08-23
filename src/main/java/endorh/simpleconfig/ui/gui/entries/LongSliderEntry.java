@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -15,16 +15,16 @@ import static java.lang.Math.*;
 public class LongSliderEntry extends SliderListEntry<Long> {
 	
 	public LongSliderEntry(
-	  ITextComponent fieldName,
+	  Component fieldName,
 	  long min, long max, long value
 	) {
 		super(
 		  fieldName, min, max, value,
-		  v -> new TranslationTextComponent(
+		  v -> new TranslatableComponent(
 		    "simpleconfig.format.slider",
 		    String.format("%d", v)));
 		final LongListEntry textEntry =
-		  new LongListEntry(StringTextComponent.EMPTY, value);
+		  new LongListEntry(TextComponent.EMPTY, value);
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
 		textEntry.setChildSubEntry(true);

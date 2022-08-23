@@ -1,26 +1,27 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettingsBuilder;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindContext;
+import endorh.simpleconfig.api.ui.icon.KeyBindSettingsIcon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Hotkeys;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.SelectorButton.BooleanButton;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettingsBuilder;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindActivation;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindContext;
-import endorh.simpleconfig.ui.icon.KeyBindSettingsIcon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Hotkeys;
-import endorh.simpleconfig.ui.math.Point;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -139,29 +140,39 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		int w = container.getScreenWidth();
 		int h = container.getScreenHeight();
 		int offset = 2;
+		
+		// Determine side
 		boolean right = parent.getCenterX() > w / 2;
 		boolean bottom = parent.getCenterY() > h / 2;
+		
+		// Place to the left/right
 		area.x = right? parent.getMinX() - area.width - offset
 		              : parent.getMaxX() + offset;
 		area.y = bottom? parent.getMaxY() - area.height
 		               : parent.getMinY();
-		if (area.getMaxX() > w || area.x < 0 || area.y < 10) {
+		
+		// Place above/below
+		if (area.getMaxX() > w || area.x < 0 || area.y < 0) {
 			area.x = right? parent.getMaxX() - area.width
 			              : parent.getMinX();
 			area.y = bottom? parent.getMinY() - area.height - offset
 			               : parent.getMaxY() + offset;
 		}
+		
+		// Final clamp
+		area.x = Mth.clamp(area.x, 2, w - area.width - 2);
+		area.y = Mth.clamp(area.y, 2, h - area.height - 2);
 		return area;
 	}
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (overlayShown) positionOverlay();
 		icon.setHighlight(isMouseOver(mouseX, mouseY) || overlayShown);
 		if (icon.getSettings() != settings) icon.setSettings(settings);
 		super.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	public List<ITextComponent> getHint() {
+	public List<Component> getHint() {
 		return overlayShown? Collections.emptyList() : splitTtc(
 		  System.currentTimeMillis() - copyTimestamp < 1000
 		  ? "simpleconfig.keybind.settings.copied" : "simpleconfig.keybind.settings:help");
@@ -189,25 +200,25 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			this.button = button;
 			activationButton = SelectorButton.of(
 			  KeyBindActivation.class,
-			  t -> new TranslationTextComponent("simpleconfig.keybind.activation." + t.name().toLowerCase()),
+			  t -> new TranslatableComponent("simpleconfig.keybind.activation." + t.name().toLowerCase()),
 			  KeyBindActivation::getIcon, t -> update());
 			contextButton = SelectorButton.of(
 			  KeyBindContext.getAllContexts(), KeyBindContext::getDisplayName,
 			  KeyBindContext::getIcon, t -> update());
 			allowExtraKeysCheckBox = BooleanButton.of(
-			  TextFormatting.GREEN, TextFormatting.LIGHT_PURPLE,
+			  ChatFormatting.GREEN, ChatFormatting.LIGHT_PURPLE,
 			  Hotkeys.EXTRA_KEYS_ALLOW, Hotkeys.EXTRA_KEYS_BLOCK, b -> update());
 			orderSensitiveCheckBox = BooleanButton.of(
-			  TextFormatting.GOLD, TextFormatting.AQUA,
+			  ChatFormatting.GOLD, ChatFormatting.AQUA,
 			  Hotkeys.ORDER_SENSITIVE, Hotkeys.ORDER_INSENSITIVE, b -> update());
 			exclusiveCheckBox = BooleanButton.of(
-			  TextFormatting.GOLD, TextFormatting.AQUA,
+			  ChatFormatting.GOLD, ChatFormatting.AQUA,
 			  Hotkeys.EXCLUSIVE_YES, Hotkeys.EXCLUSIVE_NO, b -> update());
 			matchByCharCheckBox = BooleanButton.of(
-			  TextFormatting.LIGHT_PURPLE, TextFormatting.GREEN,
+			  ChatFormatting.LIGHT_PURPLE, ChatFormatting.GREEN,
 			  Hotkeys.MATCH_BY_NAME, Hotkeys.MATCH_BY_CODE, b -> update());
 			preventFurtherCheckBox = BooleanButton.of(
-			  TextFormatting.GREEN, TextFormatting.GOLD,
+			  ChatFormatting.GREEN, ChatFormatting.GOLD,
 			  Hotkeys.PREVENT_FURTHER_YES, Hotkeys.PREVENT_FURTHER_NO, b -> update());
 			Stream.of(
 			  activationButton, contextButton, allowExtraKeysCheckBox, orderSensitiveCheckBox,
@@ -264,16 +275,16 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			preventFurtherCheckBox.setToggle(settings.isPreventFurther());
 		}
 		
-		@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 			Rectangle area = getArea();
 			drawBorderRect(mStack, area, 1, 0xEEEEEEEE, 0xEE242424);
-			FontRenderer font = Minecraft.getInstance().font;
+			Font font = Minecraft.getInstance().font;
 			int to = 10 - (font.lineHeight + 1) / 2;
 			int xx = area.x + 4;
 			int yy = area.y + 4;
 			int bw = 70;
 			int bx = area.getMaxX() - bw - 4;
-			List<ITextComponent> tooltip = null;
+			List<Component> tooltip = null;
 			boolean tooltipInXRange = mouseX >= xx + 2 && mouseX < bx - 2;
 			drawString(mStack, font, getLabel("activation"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("activation");
@@ -324,7 +335,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			if (tooltip != null) renderTooltip(tooltip, mouseX, mouseY);
 		}
 		
-		protected void renderTooltip(List<ITextComponent> tooltip, int mouseX, int mouseY) {
+		protected void renderTooltip(List<Component> tooltip, int mouseX, int mouseY) {
 			Screen screen = Minecraft.getInstance().screen;
 			if (screen instanceof IMultiTooltipScreen)
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
@@ -339,11 +350,11 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			return 0x64424242;
 		}
 		
-		protected IFormattableTextComponent getLabel(String translationKey) {
-			return new TranslationTextComponent("simpleconfig.keybind.setting." + translationKey);
+		protected MutableComponent getLabel(String translationKey) {
+			return new TranslatableComponent("simpleconfig.keybind.setting." + translationKey);
 		}
 		
-		protected List<ITextComponent> getTooltip(String translationKey) {
+		protected List<Component> getTooltip(String translationKey) {
 			return splitTtc("simpleconfig.keybind.setting." + translationKey + ":help");
 		}
 	}

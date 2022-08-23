@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import com.google.common.collect.Maps;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.entry.BeanProxy;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.BeanListEntry;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -21,7 +21,7 @@ public class BeanFieldBuilder<B> extends FieldBuilder<B, BeanListEntry<B>, BeanF
 	protected @Nullable Function<B, Icon> iconProvider;
 	
 	public BeanFieldBuilder(
-	  BeanProxy<B> proxy, ConfigFieldBuilder builder, ITextComponent name, B value
+	  BeanProxy<B> proxy, ConfigFieldBuilder builder, Component name, B value
 	) {
 		super(BeanListEntry.class, builder, name, value);
 		this.proxy = proxy;

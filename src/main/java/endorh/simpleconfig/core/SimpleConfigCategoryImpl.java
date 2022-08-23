@@ -5,17 +5,17 @@ import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.text.WordUtils;
@@ -138,7 +138,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		category.setTitle(getTitle());
 		category.setDescription(
 		  () -> I18n.exists(tooltip)
-		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new ITextComponent[0]))
+		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new Component[0]))
 		        : Optional.empty());
 		root.getFilePath().ifPresent(category::setContainingFile);
 		if (background != null) {
@@ -189,11 +189,11 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		}
 	}
 	
-	protected ITextComponent getTitle() {
+	protected Component getTitle() {
 		if (ClientConfig.advanced.translation_debug_mode)
-			return new StringTextComponent(title);
+			return new TextComponent(title);
 		return I18n.exists(title)
-		       ? new TranslationTextComponent(title)
-		       : new StringTextComponent(WordUtils.capitalize(name));
+		       ? new TranslatableComponent(title)
+		       : new TextComponent(WordUtils.capitalize(name));
 	}
 }

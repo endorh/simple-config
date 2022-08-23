@@ -11,8 +11,8 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigImpl;
-import net.minecraft.command.arguments.IArgumentSerializer;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.network.FriendlyByteBuf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,8 +61,8 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 		return builder.buildFuture();
 	}
 	
-	public static class Serializer implements IArgumentSerializer<SimpleConfigKeyArgumentType> {
-		@Override public void serializeToNetwork(@NotNull SimpleConfigKeyArgumentType arg, @NotNull PacketBuffer buf) {
+	public static class Serializer implements ArgumentSerializer<SimpleConfigKeyArgumentType> {
+		@Override public void serializeToNetwork(@NotNull SimpleConfigKeyArgumentType arg, @NotNull FriendlyByteBuf buf) {
 			buf.writeBoolean(arg.modId != null);
 			if (arg.modId != null) buf.writeUtf(arg.modId);
 			buf.writeBoolean(arg.type != null);
@@ -70,7 +70,7 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 			buf.writeBoolean(arg.includeGroups);
 		}
 		
-		@Override public @NotNull SimpleConfigKeyArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigKeyArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
 			return new SimpleConfigKeyArgumentType(
 			  buf.readBoolean()? buf.readUtf(32767) : null,
 			  buf.readBoolean()? buf.readEnum(EditType.class) : null,

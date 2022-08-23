@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.gui.entries.StringListListEntry.StringListCell;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,7 +16,7 @@ public class StringListListEntry
 	
 		
 	@Internal public StringListListEntry(
-	  ITextComponent fieldName, List<String> value
+	  Component fieldName, List<String> value
 	) {
 		super(fieldName, value, StringListCell::new);
 	}
@@ -32,14 +32,14 @@ public class StringListListEntry
 		}
 		
 		@Override public String getValue() {
-			return this.widget.getText();
+			return this.widget.getValue();
 		}
 		
 		@Override public void doSetValue(String value) {
-			this.widget.setText(value);
+			this.widget.setValue(value);
 		}
 		
-		@Override public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<Component> getErrorMessage() {
 			return Optional.empty();
 		}
 	}

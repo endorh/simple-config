@@ -1,22 +1,22 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.AbstractSlider;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -37,15 +37,15 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	protected V min;
 	protected V max;
 	
-	protected Function<V, ITextComponent> textGetter;
-	protected List<IGuiEventListener> widgets;
-	protected List<IGuiEventListener> textWidgets;
-	protected List<IGuiEventListener> childWidgets;
-	protected List<IGuiEventListener> textChildWidgets;
+	protected Function<V, Component> textGetter;
+	protected List<GuiEventListener> widgets;
+	protected List<GuiEventListener> textWidgets;
+	protected List<GuiEventListener> childWidgets;
+	protected List<GuiEventListener> textChildWidgets;
 	
 	public SliderListEntry(
-	  ITextComponent fieldName, V min, V max, V value,
-	  Function<V, ITextComponent> textGetter
+	  Component fieldName, V min, V max, V value,
+	  Function<V, Component> textGetter
 	) {
 		super(fieldName);
 		this.min = min;
@@ -115,12 +115,12 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		this.max = max;
 	}
 	
-	public Function<V, ITextComponent> getTextGetter() {
+	public Function<V, Component> getTextGetter() {
 		return textGetter;
 	}
 	
 	public void setTextGetter(
-	  Function<V, ITextComponent> textGetter
+	  Function<V, Component> textGetter
 	) {
 		this.textGetter = textGetter;
 		sliderWidget.setMessage(this.textGetter.apply(getValue()));
@@ -138,16 +138,16 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			textFieldEntry.setDisplayedValue(value);
 	}
 	
-	@Override public Optional<ITextComponent> getErrorMessage() {
+	@Override public Optional<Component> getErrorMessage() {
 		if (isTextFieldShown()) {
-			Optional<ITextComponent> error = textFieldEntry.getErrorMessage();
+			Optional<Component> error = textFieldEntry.getErrorMessage();
 			if (error.isPresent())
 				return error;
 		}
 		return super.getErrorMessage();
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return isTextFieldShown()? this.isChildSubEntry() ? textChildWidgets : textWidgets
 		                         : this.isChildSubEntry() ? childWidgets : widgets;
 	}
@@ -171,7 +171,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
@@ -195,7 +195,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (isTextFieldShown()) {
 			textFieldEntry.updateFocused(isFocused() && getFocused() == textFieldEntry);
@@ -253,14 +253,14 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		    && entryArea.grow(32, 0, 0, 0).contains(mouseX, mouseY)) {
 			setTextFieldShown(!isTextFieldShown(), true);
 			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(canUseTextField()? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			  SimpleSoundInstance.forUI(canUseTextField()? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return false;
 	}
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		if ((listener == sliderWidget || listener == textFieldEntry)
 		    && canUseTextField() && codePoint == ' ') {
 			// Space to toggle, Ctrl + Space to use text, Shift + Space to use slider
@@ -268,14 +268,14 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			boolean change = state != isTextFieldShown();
 			setTextFieldShown(state, true);
 			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			  SimpleSoundInstance.forUI(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return super.charTyped(codePoint, modifiers);
 	}
 	
 	@Override public boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		if (Screen.hasAltDown()) return true; // Prevent navigation key from triggering slider
 		if ((listener == sliderWidget || listener == textFieldEntry)
 		    && canUseTextField() && keyCode == GLFW.GLFW_KEY_ENTER) {
@@ -284,13 +284,13 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			boolean change = state != isTextFieldShown();
 			setTextFieldShown(state, true);
 			Minecraft.getInstance().getSoundManager().play(
-			  SimpleSound.forUI(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
+			  SimpleSoundInstance.forUI(change? SimpleConfigMod.UI_TAP : SimpleConfigMod.UI_DOUBLE_TAP, 1F));
 			return true;
 		}
 		return super.onKeyPressed(keyCode, scanCode, modifiers);
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (sliderWidget.isMouseOver(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
@@ -301,11 +301,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		if (!isFocused) WidgetUtils.forceUnFocus(sliderWidget);
 	}
 	
-	public abstract class SliderWidget extends AbstractSlider {
+	public abstract class SliderWidget extends AbstractSliderButton {
 		public SliderWidget(
 		  int x, int y, int width, int height
 		) {
-			super(x, y, width, height, StringTextComponent.EMPTY, 0D);
+			super(x, y, width, height, TextComponent.EMPTY, 0D);
 		}
 		
 		@Override protected void updateMessage() {
@@ -330,7 +330,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 				boolean left = keyCode == GLFW.GLFW_KEY_LEFT;
 				if (left || keyCode == GLFW.GLFW_KEY_RIGHT) {
 					final double step = getStep(left);
-					final double v = MathHelper.clamp(value + step, 0D, 1D);
+					final double v = Mth.clamp(value + step, 0D, 1D);
 					value = v;
 					SliderListEntry.this.setDisplayedValue(getValue());
 					value = v;

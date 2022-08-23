@@ -3,9 +3,13 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Presets;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
@@ -17,14 +21,13 @@ import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Presets;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,8 +41,8 @@ import java.util.stream.Stream;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.forceUnFocus;
 
-public class PresetPickerWidget extends FocusableGui implements IRectanglePositionableRenderable {
-	protected List<IGuiEventListener> listeners;
+public class PresetPickerWidget extends AbstractContainerEventHandler implements IRectanglePositionableRenderable, NarratableEntry {
+	protected List<GuiEventListener> listeners;
 	protected long lastUpdate = 0L;
 	protected long updateCooldown = 1000L;
 	protected @Nullable CompletableFuture<Void> lastFuture = null;
@@ -55,10 +58,12 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	protected Map<Type, Map<String, Preset>> knownRemotePresets = Maps.newHashMap();
 	protected Map<Type, Map<String, Preset>> knownResourcePresets = Maps.newHashMap();
 	
-	protected Style selectedCountStyle = Style.EMPTY.applyFormat(TextFormatting.DARK_AQUA);
-	protected Style nameStyle = Style.EMPTY.applyFormat(TextFormatting.LIGHT_PURPLE);
+	protected Style selectedCountStyle = Style.EMPTY.applyFormat(ChatFormatting.DARK_AQUA);
+	protected Style nameStyle = Style.EMPTY.applyFormat(ChatFormatting.LIGHT_PURPLE);
 	
 	protected ComboBoxWidget<Preset> selector;
+	
+	private boolean active;
 	
 	public PresetPickerWidget(
 	  AbstractConfigScreen screen, int x, int y, int w
@@ -80,17 +85,17 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 			  final Preset value = selector.getValue();
 			  if (value == null) return Lists.newArrayList();
 			  return Lists.newArrayList(
-			    new TranslationTextComponent(
+			    new TranslatableComponent(
 			      "simpleconfig.preset.load." + value.getLocation().getAlias(),
-			      new TranslationTextComponent("simpleconfig.preset." + value.getType().getAlias())));
-		  }), new TranslationTextComponent("simpleconfig.preset.load.label"));
+			      new TranslatableComponent("simpleconfig.preset." + value.getType().getAlias())));
+		  }), new TranslatableComponent("simpleconfig.preset.load.label"));
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 		  () -> save(selector.getText(), false)
 		).tooltip(() -> getSaveTooltip(false, false))
 		  .active(() -> getHandler() != null
 		                && isValidName(selector.getText())
 		                && screen.isEditable()
-		  ), new TranslationTextComponent("simpleconfig.preset.save.label")
+		  ), new TranslatableComponent("simpleconfig.preset.save.label")
 		).on(Modifier.SHIFT, ButtonAction.of(() -> save(selector.getText(), true))
 		  .icon(Buttons.SAVE_REMOTE)
 		  .active(() -> getHandler() != null
@@ -110,32 +115,39 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		  }));
 		selector = new ComboBoxWidget<>(
 		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
-		  new TranslationTextComponent("simpleconfig.preset.picker.label"));
-		selector.setHint(new TranslationTextComponent("simpleconfig.preset.picker.hint"));
+		  new TranslatableComponent("simpleconfig.preset.picker.label"));
+		selector.setHint(new TranslatableComponent("simpleconfig.preset.picker.hint"));
 		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
 		  () -> getKnownPresets(screen.getEditedType().getType()));
-		provider.setPlaceholder(new TranslationTextComponent("simpleconfig.ui.no_presets_found"));
+		provider.setPlaceholder(new TranslatableComponent("simpleconfig.ui.no_presets_found"));
 		selector.setSuggestionProvider(provider);
 		listeners = Lists.newArrayList(selector, loadButton, saveButton);
 	}
 	
-	protected List<ITextComponent> getSaveTooltip(
+	@Override public boolean isActive() {
+		return active;
+	}
+	@Override public void setActive(boolean active) {
+		this.active = active;
+	}
+	
+	protected List<Component> getSaveTooltip(
 	  boolean delete, boolean remote
 	) {
 		final IConfigSnapshotHandler handler = getHandler();
 		if (handler == null || !isValidName(selector.getText()))
 			return Lists.newArrayList();
 		Type type = screen.getEditedType().getType();
-		final List<ITextComponent> tt = Lists.newArrayList(
-		  new TranslationTextComponent(String.format(
+		final List<Component> tt = Lists.newArrayList(
+		  new TranslatableComponent(String.format(
 		    "simpleconfig.preset.%s.%s",
 		    delete? "delete" : "save",
 			 remote? "remote" : "local"
-		  ), new TranslationTextComponent("simpleconfig.preset." + type.getAlias())));
+		  ), new TranslatableComponent("simpleconfig.preset." + type.getAlias())));
 		if (!delete && !remote && handler.canSaveRemote())
-			tt.add(new TranslationTextComponent("simpleconfig.preset.save.remote.shift"));
+			tt.add(new TranslatableComponent("simpleconfig.preset.save.remote.shift"));
 		if (!delete && selector.getValue() != null)
-			tt.add(new TranslationTextComponent("simpleconfig.preset.delete.alt"));
+			tt.add(new TranslatableComponent("simpleconfig.preset.delete.alt"));
 		return tt;
 	}
 	
@@ -198,7 +210,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		}
 	}
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		final long time = System.currentTimeMillis();
 		if ((selector.isFocused() || lastUpdate == 0L) && time - lastUpdate > updateCooldown) {
 			lastUpdate = time;
@@ -243,7 +255,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 			final CompletableFuture<Void> future = handler.getRemote(preset.getName(), type)
 			  .thenAccept(config -> doLoad(config, preset, type, selection));
 			screen.addDialog(ProgressDialog.create(
-			  new TranslationTextComponent("simpleconfig.preset.dialog.loading.title"),
+			  new TranslatableComponent("simpleconfig.preset.dialog.loading.title"),
 			  future, d -> d.setBody(splitTtc(
 				 "simpleconfig.preset.dialog.loading.remote.body", presetName(preset.getName())))));
 		} else {
@@ -258,12 +270,12 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	) {
 		final IConfigSnapshotHandler handler = getHandler();
 		String ll = preset.getLocation().getAlias();
-		TextComponent tt = new TranslationTextComponent("simpleconfig.preset." + type.getAlias());
+		BaseComponent tt = new TranslatableComponent("simpleconfig.preset." + type.getAlias());
 		int matches = getMatches(snapshot, selection);
 		int total = getTotalSize(snapshot);
 		screen.runAtomicTransparentAction(
 		  () -> handler.restore(snapshot, type, selection));
-		screen.addDialog(InfoDialog.create(new TranslationTextComponent(
+		screen.addDialog(InfoDialog.create(new TranslatableComponent(
 		  "simpleconfig.preset.dialog.load.success.title"
 		), Util.make(new ArrayList<>(), b -> {
 			b.addAll(splitTtc(
@@ -317,38 +329,38 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		final Map<String, Preset> otherMap = getKnownPresets(type, remote? Location.LOCAL : Location.REMOTE);
 		final Map<String, Preset> resourceMap = getKnownPresets(type, Location.RESOURCE);
 		String ll = remote? "remote" : "local";
-		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + type.getAlias());
+		Component tt = new TranslatableComponent("simpleconfig.preset." + type.getAlias());
 		if (!overwrite && !userSkipOverwriteDialog && presetMap.containsKey(name)
 		    && presetMap.get(name).getType() == type) {
 			screen.addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.title"), d -> {
+			  new TranslatableComponent("simpleconfig.preset.dialog.overwrite.title"), d -> {
 				  d.withCheckBoxes((b, cs) -> {
 					  if (b) {
 						  if (cs[0]) userSkipOverwriteDialog = true;
 						  save(name, remote, true);
 					  }
-				  }, CheckboxButton.of(false, new TranslationTextComponent(
+				  }, CheckboxButton.of(false, new TranslatableComponent(
 				    "simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
 				    "simpleconfig.preset.dialog.overwrite." + ll, tt, presetName(name)));
-				  d.setConfirmText(new TranslationTextComponent("simpleconfig.preset.dialog.overwrite.confirm"));
+				  d.setConfirmText(new TranslatableComponent("simpleconfig.preset.dialog.overwrite.confirm"));
 				  d.setConfirmButtonTint(0xAAAA00AA);
 			  }));
 		} else if (!overwrite && (otherMap.containsKey(name) || resourceMap.containsKey(name)) && !presetMap.containsKey(name)) {
 			boolean resource = !otherMap.containsKey(name);
 			String r = resource? "resource." : "";
 			screen.addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("simpleconfig.preset.dialog.mistaken.title"), d -> {
+			  new TranslatableComponent("simpleconfig.preset.dialog.mistaken.title"), d -> {
 				  d.withAction(b -> {
 					  if (b) save(name, remote, true);
 				  });
 				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + r + ll + ".body", presetName(name)));
-				  d.setConfirmText(new TranslationTextComponent(
+				  d.setConfirmText(new TranslatableComponent(
 				    "simpleconfig.preset.dialog.mistaken.option." + ll + ".create"));
 				  d.setConfirmButtonTint(remote ? 0xAA429090 : 0xAA429042);
 				  if (!resource) {
 					  d.addButton(1, TintedButton.of(
-						 new TranslationTextComponent(
+						 new TranslatableComponent(
 							"simpleconfig.preset.dialog.mistaken.option." + ll + ".overwrite"),
 						 remote? 0xAA429042 : 0xAA429090, p -> {
 							 save(name, !remote, true);
@@ -359,7 +371,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		} else if (remote) {
 			final CompletableFuture<Void> future = handler.saveRemote(name, type, preserved);
 			screen.addDialog(ProgressDialog.create(
-			  new TranslationTextComponent("simpleconfig.preset.dialog.saving.title"),
+			  new TranslatableComponent("simpleconfig.preset.dialog.saving.title"),
 			  future, d -> {
 				  d.setBody(splitTtc("simpleconfig.preset.dialog.saving.remote.body", presetName(name)));
 				  d.setCancellableByUser(false);
@@ -371,7 +383,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 			Optional<Throwable> result = handler.saveLocal(name, type, preserved);
 			if (result.isPresent()) {
 				screen.addDialog(ErrorDialog.create(
-				  new TranslationTextComponent(
+				  new TranslatableComponent(
 					 "simpleconfig.preset.dialog.saving.error.title"), result.get(), d -> d.setBody(
 					 splitTtc("simpleconfig.preset.dialog.saving.error.local.body", presetName(name)))));
 			} else {
@@ -385,9 +397,9 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	  boolean remote, Type type, String name, int selected
 	) {
 		String ll = remote? "remote" : "local";
-		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + type.getAlias());
+		Component tt = new TranslatableComponent("simpleconfig.preset." + type.getAlias());
 		return InfoDialog.create(
-		  new TranslationTextComponent("simpleconfig.preset.dialog.save.success.title"),
+		  new TranslatableComponent("simpleconfig.preset.dialog.save.success.title"),
 		  Util.make(new ArrayList<>(), b -> {
 			  b.addAll(splitTtc("simpleconfig.preset.dialog.save.success." + ll, tt, presetName(name)));
 			  if (selected > 0) {
@@ -405,27 +417,27 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
 		String ll = preset.isRemote()? "remote" : "local";
-		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + preset.getType().getAlias());
+		Component tt = new TranslatableComponent("simpleconfig.preset." + preset.getType().getAlias());
 		if (!userSkipConfirmDeleteDialog && !skipConfirm) {
 			screen.addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
+			  new TranslatableComponent("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
 				  d.withCheckBoxes((b, cs) -> {
 					  if (b) {
 						  if (cs[0]) userSkipConfirmDeleteDialog = true;
 						  delete(preset, true);
 					  }
-				  }, CheckboxButton.of(false, new TranslationTextComponent(
+				  }, CheckboxButton.of(false, new TranslatableComponent(
 				    "simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
 					 "simpleconfig.preset.dialog.delete.confirm." + ll, tt, presetName(preset.getName())));
-				  d.setConfirmText(new TranslationTextComponent(
+				  d.setConfirmText(new TranslatableComponent(
 					 "simpleconfig.preset.dialog.delete.confirm.delete"));
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else if (preset.isRemote()) {
 			final CompletableFuture<Void> future = handler.deleteRemote(preset.getName(), type);
 			screen.addDialog(ProgressDialog.create(
-			  new TranslationTextComponent("simpleconfig.preset.dialog.deleting.title"),
+			  new TranslatableComponent("simpleconfig.preset.dialog.deleting.title"),
 			  future, d -> {
 				  d.setBody(splitTtc("simpleconfig.preset.dialog.deleting.remote.body", presetName(
 				    preset.getName())));
@@ -444,18 +456,18 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 	  Preset preset
 	) {
 		String ll = preset.isRemote()? "remote" : "local";
-		ITextComponent tt = new TranslationTextComponent("simpleconfig.preset." + preset.getType().getAlias());
+		Component tt = new TranslatableComponent("simpleconfig.preset." + preset.getType().getAlias());
 		return InfoDialog.create(
-		  new TranslationTextComponent("simpleconfig.preset.dialog.delete.success.title"),
+		  new TranslatableComponent("simpleconfig.preset.dialog.delete.success.title"),
 		  splitTtc("simpleconfig.preset.dialog.delete.success." + ll, tt, presetName(preset.getName())));
 	}
 	
-	protected IFormattableTextComponent selectedCount(int count) {
-		return new StringTextComponent(String.valueOf(count)).withStyle(selectedCountStyle);
+	protected MutableComponent selectedCount(int count) {
+		return new TextComponent(String.valueOf(count)).withStyle(selectedCountStyle);
 	}
 	
-	protected IFormattableTextComponent presetName(String name) {
-		return new StringTextComponent(name).withStyle(nameStyle);
+	protected MutableComponent presetName(String name) {
+		return new TextComponent(name).withStyle(nameStyle);
 	}
 	
 	public boolean isKnownPreset(String name) {
@@ -481,6 +493,11 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		selector.setValue(null);
 		selector.setText(text);
 	}
+	
+	@Override public @NotNull NarrationPriority narrationPriority() {
+		return NarrationPriority.NONE;
+	}
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
 	
 	public static class Preset {
 		private final String name;
@@ -573,7 +590,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 				this.widget = widget;
 			}
 			
-			@Override public Pair<Optional<Preset>, Optional<ITextComponent>> parseElement(
+			@Override public Pair<Optional<Preset>, Optional<Component>> parseElement(
 			  @NotNull String text
 			) {
 				final Type type = widget.screen.getEditedType().getType();
@@ -582,16 +599,16 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 					if (presets.containsKey(text))
 						return Pair.of(Optional.of(presets.get(text)), Optional.empty());
 				}
-				return Pair.of(Optional.empty(), Optional.of(new TranslationTextComponent(
+				return Pair.of(Optional.empty(), Optional.of(new TranslatableComponent(
 				  "simpleconfig.config.error.unknown_preset")));
 			}
 			
 			@Override public String getName(@NotNull Preset element) {
 				return element.getName();
 			}
-			@Override public ITextComponent getDisplayName(@NotNull Preset element) {
-				return new StringTextComponent(element.getName()).withStyle(
-				  element.isRemote()? TextFormatting.AQUA : TextFormatting.GREEN);
+			@Override public Component getDisplayName(@NotNull Preset element) {
+				return new TextComponent(element.getName()).withStyle(
+				  element.isRemote()? ChatFormatting.AQUA : ChatFormatting.GREEN);
 			}
 			
 			@Override public boolean hasIcon() {
@@ -650,7 +667,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return listeners;
 	}
 }

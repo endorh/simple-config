@@ -1,15 +1,15 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -24,7 +24,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
   extends AbstractListListEntry<T, C, Self> {
 	
 	@Internal public AbstractTextFieldListListEntry(
-	  ITextComponent fieldName, List<T> value, Function<Self, C> cellFactory
+	  Component fieldName, List<T> value, Function<Self, C> cellFactory
 	) {
 		super(fieldName, value, cellFactory);
 	}
@@ -44,7 +44,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			  NarratorChatListener.NO_TITLE
 			) {
 				@Override
-				public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
+				public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
 					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
 				}
@@ -73,15 +73,15 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		}
 		
 		@Override protected String seekableText() {
-			return widget.getText();
+			return widget.getValue();
 		}
 		
 		@Override public void renderCell(
-		  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
+		  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
 		  int mouseY, boolean isSelected, float delta
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
-			FontRenderer font = Minecraft.getInstance().font;
+			Font font = Minecraft.getInstance().font;
 			ListEntry listEntry = getListEntry();
 			
 			final boolean editable = listEntry.shouldRenderEditable();
@@ -106,7 +106,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			}
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> children() {
+		@Override public @NotNull List<? extends GuiEventListener> children() {
 			return Collections.singletonList(widget);
 		}
 		

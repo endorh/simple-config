@@ -2,11 +2,11 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ResourceLocationEntryBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.ResourceLocationException;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,12 +39,12 @@ public class ResourceLocationEntry
 	}
 	
 	@Override
-	protected Optional<ITextComponent> getErrorMessage(String value) {
+	protected Optional<Component> getErrorMessage(String value) {
 		try {
 			new ResourceLocation(value);
 			return Optional.empty();
 		} catch (ResourceLocationException e) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.invalid_resource_location", e.getMessage()));
 		}
 	}

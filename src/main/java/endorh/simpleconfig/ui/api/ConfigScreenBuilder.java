@@ -8,9 +8,9 @@ import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.impl.ConfigEntryBuilderImpl;
 import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -36,8 +36,8 @@ public interface ConfigScreenBuilder {
 	Screen getParentScreen();
 	ConfigScreenBuilder setParentScreen(Screen parent);
 	
-	ITextComponent getTitle();
-	ConfigScreenBuilder setTitle(ITextComponent title);
+	Component getTitle();
+	ConfigScreenBuilder setTitle(Component title);
 	
 	ConfigHotKey getEditedConfigHotKey();
 	Consumer<Boolean> getHotKeySaver();

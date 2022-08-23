@@ -1,21 +1,21 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.core.entry.BeanEntry.ConfigBeanAccessException;
 import endorh.simpleconfig.core.entry.BeanProxy;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry.CaptionWidget;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -36,8 +36,8 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	protected final List<AbstractConfigField<?>> heldEntries;
 	protected final List<BeanPropertyCell> cells;
 	protected final Map<String, AbstractConfigListEntry<?>> entries;
-	protected final List<IGuiEventListener> children;
-	protected final List<IGuiEventListener> expandedChildren;
+	protected final List<GuiEventListener> children;
+	protected final List<GuiEventListener> expandedChildren;
 	protected @Nullable AbstractConfigListEntry<?> captionEntry;
 	protected final Rectangle captionEntryArea = new Rectangle();
 	protected @Nullable Function<B, Icon> iconProvider;
@@ -47,7 +47,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	private boolean expanded;
 	
 	public BeanListEntry(
-	  ITextComponent fieldName, B value, BeanProxy<B> proxy,
+	  Component fieldName, B value, BeanProxy<B> proxy,
 	  Map<String, AbstractConfigListEntry<?>> entries,
 	  @Nullable String caption, @Nullable Function<B, Icon> iconProvider
 	) {
@@ -120,13 +120,13 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
 		label.setFocused(isFocused() && getFocused() == label);
 		super.renderEntry(
 		  mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		Icon icon = this.icon != null? this.icon : SimpleConfigIcons.Entries.EXPAND;
 		icon.renderCentered(
 		  mStack, x - 20, y, 18, 18,
@@ -153,7 +153,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override protected void renderField(
-	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
 	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		super.renderField(
@@ -217,7 +217,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public int getFocusedScroll() {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		//noinspection SuspiciousMethodCalls
 		if (!heldEntries.contains(listener))
 			return 0;
@@ -234,7 +234,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public int getFocusedHeight() {
-		final IGuiEventListener listener = getFocused();
+		final GuiEventListener listener = getFocused();
 		if (listener instanceof IExpandable)
 			return ((IExpandable) listener).getFocusedHeight();
 		if (listener instanceof AbstractConfigListEntry<?>)
@@ -377,7 +377,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	protected static class BeanPropertyCell implements INavigableTarget {
 		private final INavigableTarget parent;
 		private final AbstractConfigField<?> entry;
-		private final List<IGuiEventListener> listeners = new ArrayList<>(1);
+		private final List<GuiEventListener> listeners = new ArrayList<>(1);
 		
 		public BeanPropertyCell(INavigableTarget parent, AbstractConfigField<?> entry) {
 			this.parent = parent;
@@ -424,7 +424,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 			entry.applyFocusHighlight(color, length);
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> children() {
+		@Override public @NotNull List<? extends GuiEventListener> children() {
 			return listeners;
 		}
 		
@@ -435,13 +435,13 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 			entry.setDragging(dragging);
 		}
 		
-		@Nullable @Override public IGuiEventListener getFocused() {
+		@Nullable @Override public GuiEventListener getFocused() {
 			return entry;
 		}
-		@Override public void setFocused(@Nullable IGuiEventListener listener) {}
+		@Override public void setFocused(@Nullable GuiEventListener listener) {}
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return isExpanded()? expandedChildren : children;
 	}
 }

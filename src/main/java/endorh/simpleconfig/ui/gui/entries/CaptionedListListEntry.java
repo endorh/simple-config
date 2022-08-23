@@ -1,15 +1,15 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry.ListCaptionWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -31,9 +31,9 @@ public class CaptionedListListEntry<
 	private final CE captionEntry;
 	private final List<AbstractConfigField<?>> heldEntries;
 	private final List<ISeekableComponent> seekableChildren;
-	protected List<IGuiEventListener> children;
+	protected List<GuiEventListener> children;
 	
-	public CaptionedListListEntry(ITextComponent fieldName, final E listEntry, final CE captionEntry) {
+	public CaptionedListListEntry(Component fieldName, final E listEntry, final CE captionEntry) {
 		super(fieldName);
 		this.listEntry = listEntry;
 		this.captionEntry = captionEntry;
@@ -55,7 +55,7 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		listEntry.render(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
@@ -63,7 +63,7 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override protected void renderField(
-	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
 	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		captionEntry.renderChild(mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
@@ -175,7 +175,7 @@ public class CaptionedListListEntry<
 		return seekableChildren;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return children;
 	}
 	

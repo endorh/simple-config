@@ -2,10 +2,10 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.PatternEntryBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
@@ -74,12 +74,12 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 		}
 	}
 	
-	@Override protected List<ITextComponent> addExtraTooltip(String value) {
-		final List<ITextComponent> extra = super.addExtraTooltip(value);
+	@Override protected List<Component> addExtraTooltip(String value) {
+		final List<Component> extra = super.addExtraTooltip(value);
 		if (flags != 0)
-			extra.add(0, new TranslationTextComponent(
+			extra.add(0, new TranslatableComponent(
 			  "simpleconfig.config.help.pattern_flags", displayFlags(flags)
-			).withStyle(TextFormatting.GRAY));
+			).withStyle(ChatFormatting.GRAY));
 		return extra;
 	}
 	
@@ -111,12 +111,12 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 	}
 	
 	@Override
-	protected Optional<ITextComponent> getErrorMessage(String value) {
+	protected Optional<Component> getErrorMessage(String value) {
 		try {
 			Pattern.compile(value, flags);
 			return super.getErrorMessage(value);
 		} catch (PatternSyntaxException e) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.invalid_pattern",
 			  e.getMessage().trim().replace("\r\n", ": ")));
 		}

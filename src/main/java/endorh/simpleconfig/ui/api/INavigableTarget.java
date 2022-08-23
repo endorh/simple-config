@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.INestedGuiEventHandler;
+import endorh.simpleconfig.api.ui.math.Rectangle;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 /**
  * Designed for row based interfaces
  */
-public interface INavigableTarget extends INestedGuiEventHandler {
+public interface INavigableTarget extends ContainerEventHandler {
 	void navigate();
 	
 	default boolean isNavigable() {

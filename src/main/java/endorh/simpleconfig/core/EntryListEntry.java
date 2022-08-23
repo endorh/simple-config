@@ -9,8 +9,8 @@ import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EntryListFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -131,8 +131,8 @@ public class EntryListEntry
 		return entry.fromGui(value);
 	}
 	
-	@Override public List<ITextComponent> getElementErrors(int index, G value) {
-		List<ITextComponent> errors = super.getElementErrors(index, value);
+	@Override public List<Component> getElementErrors(int index, G value) {
+		List<Component> errors = super.getElementErrors(index, value);
 		entry.getErrorsFromGUI(value).stream()
 		  .map(e -> addIndex(e, index))
 		  .forEach(errors::add);
@@ -148,7 +148,7 @@ public class EntryListEntry
 	) {
 		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
-		e.setDisplayName(new StringTextComponent("•"));
+		e.setDisplayName(new TextComponent("•"));
 		e.nonPersistent = true;
 		e.actualValue = e.defValue;
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)

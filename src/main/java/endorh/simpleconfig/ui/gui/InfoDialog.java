@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui;
 
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -9,13 +9,13 @@ import java.util.function.Consumer;
 
 public class InfoDialog extends ConfirmDialog {
 	public static InfoDialog create(
-	  ITextComponent title, List<ITextComponent> body
+	  Component title, List<Component> body
 	) {
 		return create(title, body, null);
 	}
 	
 	public static InfoDialog create(
-	  ITextComponent title, List<ITextComponent> body,
+	  Component title, List<Component> body,
 	  @Nullable Consumer<InfoDialog> builder
 	) {
 		InfoDialog dialog = new InfoDialog(title, body);
@@ -24,11 +24,11 @@ public class InfoDialog extends ConfirmDialog {
 	}
 	
 	protected InfoDialog(
-	  ITextComponent title, List<ITextComponent> body
+	  Component title, List<Component> body
 	) {
 		super(title);
 		setBody(body);
 		removeButton(cancelButton);
-		setConfirmText(DialogTexts.GUI_DONE);
+		setConfirmText(CommonComponents.GUI_DONE);
 	}
 }

@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -27,13 +27,13 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	protected ComboBoxWidget<T> comboBox;
 	@NotNull protected List<T> suggestions;
 	protected boolean suggestionMode = true;
-	protected List<IGuiEventListener> listeners;
-	protected List<IGuiEventListener> childListeners;
+	protected List<GuiEventListener> listeners;
+	protected List<GuiEventListener> childListeners;
 	protected int maxLength;
 	private int frame = 0;
 	
 	public ComboBoxListEntry(
-	  ITextComponent fieldName, T value, ITypeWrapper<T> typeWrapper, @Nullable Collection<T> suggestions
+	  Component fieldName, T value, ITypeWrapper<T> typeWrapper, @Nullable Collection<T> suggestions
 	) {
 		super(fieldName);
 		setOriginal(value);
@@ -50,7 +50,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		comboBox.setEnabled(shouldRenderEditable());
 		comboBox.setRestrictedToSuggestions(!isSuggestionMode());
@@ -84,7 +84,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setSuggestionProvider(provider);
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
+	@Internal @Override public Optional<Component> getErrorMessage() {
 		return comboBox.getError();
 	}
 	
@@ -109,7 +109,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		if ((frame++) % 10 == 0) comboBox.tick();
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (comboBox.isMouseOver(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
@@ -119,7 +119,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		return comboBox.isDropDownShown()? comboBox.getDropDownHeight() : 0;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return this.isChildSubEntry() ? childListeners : listeners;
 	}
 	

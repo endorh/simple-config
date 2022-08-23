@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.block.Block;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.core.Registry;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,12 +24,12 @@ public class BlockTypeWrapper extends RegistryObjectTypeWrapper<Block> {
 		return Registry.BLOCK.getOptional(name).orElse(null);
 	}
 	
-	@Override protected ITextComponent getUnknownError(ResourceLocation name) {
-		return new TranslationTextComponent("argument.block.id.invalid", name);
+	@Override protected Component getUnknownError(ResourceLocation name) {
+		return new TranslatableComponent("argument.block.id.invalid", name);
 	}
 	
 	@Override public void renderIcon(
-	  @Nullable Block element, String text, @NotNull MatrixStack mStack, int x, int y,
+	  @Nullable Block element, String text, @NotNull PoseStack mStack, int x, int y,
 	  int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (element != null) {

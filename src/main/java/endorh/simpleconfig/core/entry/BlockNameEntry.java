@@ -6,10 +6,10 @@ import endorh.simpleconfig.api.entry.BlockNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.block.Block;
-import net.minecraft.tags.ITag;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.Tag;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistryEntry;
@@ -42,7 +42,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 	public static class Builder extends AbstractResourceEntry.Builder<BlockNameEntry, BlockNameEntryBuilder, Builder>
 	  implements BlockNameEntryBuilder {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier;
-		protected ITag<Block> tag = null;
+		protected Tag<Block> tag = null;
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
@@ -51,7 +51,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 			  .collect(Collectors.toList());
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(ITag<Block> tag) {
+		@Override @Contract(pure=true) public Builder suggest(Tag<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

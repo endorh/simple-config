@@ -8,6 +8,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.BeanEntryBuilder;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.DummyEntryHolder;
@@ -16,10 +17,9 @@ import endorh.simpleconfig.core.entry.BeanProxy.IBeanGuiAdapter;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.builders.BeanFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Java Bean entry.
@@ -216,8 +218,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			List<Object> seq = (List<Object>) value;
 			Map<String, Object> map = new LinkedHashMap<>();
 			for (Object o: seq) {
-				if (o instanceof Map) {
-					Map<?, ?> mm = (Map<?, ?>) o;
+				if (o instanceof Map<?, ?> mm) {
 					if (mm.entrySet().size() != 1) return null;
 					Map.Entry<?, ?> e = mm.entrySet().stream().findFirst()
 					  .orElseThrow(IllegalStateException::new);
@@ -227,8 +228,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 					Object val = entry.fromActualConfig(e.getValue());
 					if (key == null || val == null) return null;
 					map.put(key, val);
-				} else if (o instanceof Config) {
-					Config config = (Config) o;
+				} else if (o instanceof Config config) {
 					if (config.entrySet().size() != 1) return null;
 					Config.Entry e = config.entrySet().stream().findFirst()
 					  .orElseThrow(IllegalStateException::new);
@@ -267,6 +267,16 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		return null;
 	}
 	
+	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> comments = super.getConfigCommentTooltips();
+		comments.add(
+		  "Object: \n  " + entries.entrySet().stream().map(
+			 e -> e.getKey() + ": " + LINE_BREAK.matcher(e.getValue().getConfigCommentTooltip()).replaceAll("\n  ").trim()
+		  ).collect(Collectors.joining("\n  ")));
+		return comments;
+	}
+	
 	protected static <T> @Nullable T tryCast(Object value, Class<T> type) {
 		return type.isInstance(value)? type.cast(value) : null;
 	}
@@ -277,10 +287,9 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		  .withIcon(iconProvider);
 		entries.forEach((name, entry) -> {
 			if (name.equals(caption)) {
-				if (!(entry instanceof IKeyEntry)) {
+				if (!(entry instanceof IKeyEntry<?> keyEntry)) {
 					LOGGER.debug("Caption for Bean entry is not a key entry: " + getGlobalPath());
 				} else {
-					IKeyEntry<?> keyEntry = (IKeyEntry<?>) entry;
 					addCaption(
 					  builder, fieldBuilder.withoutTags(EntryTag.NON_PERSISTENT, entry.copyTag),
 					  name, keyEntry);

@@ -3,14 +3,15 @@ package endorh.simpleconfig.ui.hotkey;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.PairList;
 import endorh.simpleconfig.core.SimpleConfigPaths;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -191,8 +192,7 @@ public class ConfigHotKeyManager {
 		if (group.isEnabled()) for (IConfigHotKeyGroupEntry entry: group.getEntries()) {
 			if (entry instanceof ConfigHotKeyGroup) {
 				updateHotKeys(keys, (ConfigHotKeyGroup) entry);
-			} else if (entry instanceof ConfigHotKey) {
-				ConfigHotKey hotkey = (ConfigHotKey) entry;
+			} else if (entry instanceof ConfigHotKey hotkey) {
 				if (hotkey.isEnabled() && !hotkey.getKeyMapping().isUnset()) keys.add(hotkey);
 			}
 		}
@@ -207,7 +207,7 @@ public class ConfigHotKeyManager {
 		
 		public ConfigHotKeyGroup() {
 			keyBind = new ExtendedKeyBindImpl(
-			  new StringTextComponent(getName()),
+			  new TextComponent(getName()),
 			  keyMapping, this::applyHotkey);
 		}
 		
@@ -216,7 +216,7 @@ public class ConfigHotKeyManager {
 		}
 		public void setName(String name) {
 			this.name = name;
-			keyBind.setTitle(new StringTextComponent(name));
+			keyBind.setTitle(new TextComponent(name));
 		}
 		
 		@Override public ExtendedKeyBindImpl getKeyBind() {
@@ -256,11 +256,11 @@ public class ConfigHotKeyManager {
 			ConfigHotKeyLogger.logHotKey(getHotkeyReport(enabled), Collections.emptyList());
 		}
 		
-		public ITextComponent getHotkeyReport(boolean enable) {
-			return new TranslationTextComponent(
+		public Component getHotkeyReport(boolean enable) {
+			return new TranslatableComponent(
 			  "simpleconfig.hotkey.group." + (enable ? "enable" : "disable"),
-			  new StringTextComponent(getName()).withStyle(TextFormatting.AQUA)
-			).withStyle(TextFormatting.GRAY);
+			  new TextComponent(getName()).withStyle(ChatFormatting.AQUA)
+			).withStyle(ChatFormatting.GRAY);
 		}
 		
 		@Override public Map<String, Object> serialize() {
@@ -285,8 +285,7 @@ public class ConfigHotKeyManager {
 				Object entries = value.get("entries");
 				if (entries instanceof PairList) {
 					((PairList<?, ?>) entries).forEach((k, v) -> {
-						if (k instanceof String) {
-							String key = (String) k;
+						if (k instanceof String key) {
 							if (key.startsWith("(") && key.endsWith(")") && v instanceof Map) {
 								String nm = key.substring(1, key.length() - 1);
 								ConfigHotKeyGroup sub = deserialize(nm, (Map<?, ?>) v);

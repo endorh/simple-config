@@ -1,7 +1,11 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Hotkeys;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ServerConfig;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
@@ -24,18 +28,13 @@ import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Hotkeys;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.*;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.io.FileUtils;
@@ -64,9 +63,9 @@ import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_HOTKEYS_DIR;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRectanglePositionableRenderable {
+public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler implements IRectanglePositionableRenderable {
 	public static boolean skipOverwriteDialog = false;
-	protected final List<IGuiEventListener> listeners = new ArrayList<>();
+	protected final List<GuiEventListener> listeners = new ArrayList<>();
 	protected final Rectangle area = new Rectangle(0, 0, 100, 20);
 	private final Supplier<IDialogCapableScreen> screen;
 	protected final IOverlayCapableContainer overlayContainer;
@@ -92,18 +91,18 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		loadButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.LOAD, ButtonAction.of(
 		  this::load
 		).active(() -> selector.getValue() != null)
-		  .tooltip(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.load_group")));
+		  .tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.load_group")));
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 			 () -> saveLocal(false)
 		).active(() -> !selector.getText().isEmpty() && tree.getFocusedEntry() instanceof ConfigHotKeyTreeViewGroupEntry)
-		  .tooltip(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.save_group.local")))
+		  .tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.save_group.local")))
 		  .on(Modifier.SHIFT, ButtonAction.of(() -> saveRemote(false))
 		    .icon(Buttons.SAVE_REMOTE)
 		    .active(
 				() -> !selector.getText().isEmpty()
 				      && tree.getFocusedEntry() instanceof ConfigHotKeyTreeViewGroupEntry
 				      && permissions.canEditServerHotKeys()
-		    ).tooltip(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.save_group.remote")))
+		    ).tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.save_group.remote")))
 		  .on(Modifier.ALT, ButtonAction.of(() -> delete(true))
 		    .icon(Buttons.DELETE)
 		    .active(() -> {
@@ -111,11 +110,11 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 				 return value instanceof WritableSavedHotKeyGroup
 				        && ((WritableSavedHotKeyGroup) value).canWrite();
 			 })
-		    .tooltip(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.delete_group")));
+		    .tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.delete_group")));
 		selector = new ComboBoxWidget<>(
 		  new SavedHotKeyGroupWrapper(this), () -> overlayContainer, 0, 0, 80, 18);
 		selector.setSuggestionProvider(new SimpleComboBoxModel<>(this::getSavedGroups));
-		selector.setHint(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.hint"));
+		selector.setHint(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.hint"));
 		Stream.of(selector, loadButton, saveButton).forEach(listeners::add);
 	}
 	
@@ -158,10 +157,10 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		if (group != null) {
 			String rr = group instanceof ResourceSavedHotKeyGroup? "resource" :
 			            group instanceof RemoteSavedHotKeyGroup? "remote" : "local";
-			IFormattableTextComponent displayName = new StringTextComponent(group.getName())
-			  .withStyle(TextFormatting.LIGHT_PURPLE);
+			MutableComponent displayName = new TextComponent(group.getName())
+			  .withStyle(ChatFormatting.LIGHT_PURPLE);
 			getScreen().addDialog(ProgressDialog.create(
-			  new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.loading"),
+			  new TranslatableComponent("simpleconfig.ui.saved_hotkeys.loading"),
 			  group.load().thenAccept(g -> {
 				  if (g != null) tree.tryAddEntry(
 				    new ConfigHotKeyTreeViewGroupEntry(
@@ -171,7 +170,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 					 "simpleconfig.ui.saved_hotkeys.loading." + rr, displayName
 				  ));
 				  d.setSuccessDialog(InfoDialog.create(
-					 new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.loaded"),
+					 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.loaded"),
 					 paragraph(
 						 "simpleconfig.ui.saved_hotkeys.loaded." + rr, displayName)
 				  ));
@@ -181,23 +180,23 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 	}
 	
 	protected boolean showConfirmDialog(
-	  String intent, String overwrite, ITextComponent name,
+	  String intent, String overwrite, Component name,
 	  Runnable action, @Nullable Runnable alternative
 	) {
 		boolean mistaken = !intent.equals(overwrite);
 		if (!mistaken && skipOverwriteDialog) return false;
 		String problem = mistaken? "mistaken" : "overwrite";
-		List<ITextComponent> body = splitTtc(
+		List<Component> body = splitTtc(
 		  "simpleconfig.ui.saved_hotkeys." + problem + "." + overwrite, name);
 		if (mistaken) {
 			body.addAll(splitTtc("simpleconfig.ui.saved_hotkeys.mistaken.question." + intent));
 		} else body.addAll(splitTtc("simpleconfig.ui.saved_hotkeys.overwrite.question"));
 		getScreen().addDialog(ConfirmDialog.create(
-		  new TranslationTextComponent(
+		  new TranslatableComponent(
 		    "simpleconfig.ui.saved_hotkeys." + problem),
 		  d -> {
 			  d.setBody(body);
-			  d.setConfirmText(new TranslationTextComponent(
+			  d.setConfirmText(new TranslatableComponent(
 				 mistaken? "simpleconfig.ui.saved_hotkeys.mistaken.option.create." + intent :
 				 "simpleconfig.ui.confirm_overwrite.overwrite"));
 			  d.setConfirmButtonTint("remote".equals(intent)? 0x6480A0FF : 0x6480FFA0);
@@ -206,7 +205,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 					  if (b) action.run();
 				  });
 				  if (alternative != null && !"resource".equals(overwrite)) d.addButton(1, TintedButton.of(
-					 new TranslationTextComponent("simpleconfig.ui.confirm_overwrite.overwrite"),
+					 new TranslatableComponent("simpleconfig.ui.confirm_overwrite.overwrite"),
 					 "remote".equals(overwrite)? 0x6480A0FF : 0x6480FFA0, p -> {
 						 d.cancel(false);
 						 alternative.run();
@@ -216,7 +215,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 					  skipOverwriteDialog = c[0];
 					  action.run();
 				  }
-			  }, CheckboxButton.of(false, new TranslationTextComponent(
+			  }, CheckboxButton.of(false, new TranslatableComponent(
 			    "simpleconfig.ui.do_not_ask_again_this_session"
 			  )));
 		  }
@@ -229,8 +228,8 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		if (g == null) return;
 		LocalSavedHotKeyGroup group = SavedHotKeyGroup.local(selector.getText());
 		String name = group.getName();
-		IFormattableTextComponent displayName = new StringTextComponent(name)
-		  .withStyle(TextFormatting.LIGHT_PURPLE);
+		MutableComponent displayName = new TextComponent(name)
+		  .withStyle(ChatFormatting.LIGHT_PURPLE);
 		if (!overwrite) {
 			String oo = null;
 			if (existsGroup(name, localGroups)) oo = "local";
@@ -242,21 +241,21 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		File file = group.getFile();
 		getScreen().addDialog(
 		  ProgressDialog.create(
-			 new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.saving"),
+			 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saving"),
 		    group.save(g), d -> {
 				 d.setCancellableByUser(false);
 			    d.setBody(paragraph(
 				   "simpleconfig.ui.saved_hotkeys.saving.local", displayName
 				 ));
 				 d.setSuccessDialog(InfoDialog.create(
-					new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.saved"),
+					new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saved"),
 					paragraph(
 					  "simpleconfig.ui.saved_hotkeys.saved.local", displayName,
 					  "simpleconfig.ui.saved_hotkeys.saved.file",
-					  new StringTextComponent(
+					  new TextComponent(
 					    SimpleConfigPaths.relativize(file.toPath()).toString()
-					  ).withStyle(s -> s.setUnderlined(true).applyFormat(TextFormatting.BLUE)
-					    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslationTextComponent("chat.copy")))
+					  ).withStyle(s -> s.setUnderlined(true).applyFormat(ChatFormatting.BLUE)
+					    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslatableComponent("chat.copy")))
 					    .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, file.getAbsolutePath()))))
 				 ));
 		    }));
@@ -267,8 +266,8 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		if (g == null) return;
 		RemoteSavedHotKeyGroup group = SavedHotKeyGroup.remote(selector.getText());
 		String name = group.getName();
-		IFormattableTextComponent displayName = new StringTextComponent(name)
-		  .withStyle(TextFormatting.LIGHT_PURPLE);
+		MutableComponent displayName = new TextComponent(name)
+		  .withStyle(ChatFormatting.LIGHT_PURPLE);
 		if (!overwrite) {
 			String oo = null;
 			if (existsGroup(name, remoteGroups)) oo = "remote";
@@ -280,14 +279,14 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		if (group.canWrite()) {
 			getScreen().addDialog(
 			  ProgressDialog.create(
-				 new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.saving"),
+				 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saving"),
 				 group.save(g), d -> {
 					 d.setCancellableByUser(false);
 					 d.setBody(paragraph(
 						"simpleconfig.ui.saved_hotkeys.saving.remote", displayName
 					 ));
 					 d.setSuccessDialog(InfoDialog.create(
-						new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.saved"),
+						new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saved"),
 						paragraph(
 						  "simpleconfig.ui.saved_hotkeys.saved.remote", displayName)
 					 ));
@@ -297,33 +296,32 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 	
 	public void delete(boolean confirm) {
 		SavedHotKeyGroup value = selector.getValue();
-		if (value instanceof WritableSavedHotKeyGroup) {
-			WritableSavedHotKeyGroup writable = (WritableSavedHotKeyGroup) value;
+		if (value instanceof WritableSavedHotKeyGroup writable) {
 			if (writable.canWrite()) {
-				IFormattableTextComponent displayName = new StringTextComponent(writable.getName())
-				  .withStyle(TextFormatting.LIGHT_PURPLE);
+				MutableComponent displayName = new TextComponent(writable.getName())
+				  .withStyle(ChatFormatting.LIGHT_PURPLE);
 				String rr = writable instanceof RemoteSavedHotKeyGroup? "remote" : "local";
 				if (confirm) {
 					getScreen().addDialog(ConfirmDialog.create(
-					  new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.confirm.delete.title"), d -> {
+					  new TranslatableComponent("simpleconfig.ui.saved_hotkeys.confirm.delete.title"), d -> {
 						  d.setBody(splitTtc(
 							 "simpleconfig.ui.saved_hotkeys.confirm.delete.body." + rr, displayName
 						  ));
-						  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.confirm.delete"));
+						  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.confirm.delete"));
 						  d.setConfirmButtonTint(0x80BD2424);
 						  d.withAction(b -> {
 							  if (b) delete(false);
 						  });
 					  }));
 				} else getScreen().addDialog(ProgressDialog.create(
-				  new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.deleting"),
+				  new TranslatableComponent("simpleconfig.ui.saved_hotkeys.deleting"),
 				  writable.delete(), d -> {
 					  d.setCancellableByUser(false);
 					  d.setBody(paragraph(
 						 "simpleconfig.ui.saved_hotkeys.deleting." + rr, displayName
 					  ));
 					  d.setSuccessDialog(InfoDialog.create(
-						 new TranslationTextComponent("simpleconfig.ui.saved_hotkeys.deleted"),
+						 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.deleted"),
 						 paragraph(
 							"simpleconfig.ui.saved_hotkeys.deleted." + rr, displayName)
 					  ));
@@ -333,7 +331,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 	}
 	
 	@Override public void render(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		long time = System.currentTimeMillis();
 		if (time - lastUpdate > UPDATE_INTERVAL) {
@@ -368,7 +366,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		selector.setText(selector.getText());
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return listeners;
 	}
 	
@@ -423,18 +421,18 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			return future;
 		}
 		
-		public ITextComponent getDisplayName() {
+		public Component getDisplayName() {
 			String name = getName();
 			if (name.contains(":")) {
 				String[] split = HYPHEN.split(name, 2);
-				return new StringTextComponent(split[0]).withStyle(TextFormatting.GRAY)
-				  .append(new StringTextComponent(":").withStyle(TextFormatting.DARK_GRAY).withStyle(TextFormatting.BOLD))
-				  .append(new StringTextComponent(split[1]).withStyle(getStyle()));
+				return new TextComponent(split[0]).withStyle(ChatFormatting.GRAY)
+				  .append(new TextComponent(":").withStyle(ChatFormatting.DARK_GRAY).withStyle(ChatFormatting.BOLD))
+				  .append(new TextComponent(split[1]).withStyle(getStyle()));
 			}
-			return new StringTextComponent(name).withStyle(getStyle());
+			return new TextComponent(name).withStyle(getStyle());
 		}
 		public Style getStyle() {
-			return Style.EMPTY.applyFormat(TextFormatting.WHITE);
+			return Style.EMPTY.applyFormat(ChatFormatting.WHITE);
 		}
 		public Icon getIcon() {
 			return Icon.EMPTY;
@@ -502,7 +500,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@Override public Style getStyle() {
-			return Style.EMPTY.applyFormat(TextFormatting.GREEN);
+			return Style.EMPTY.applyFormat(ChatFormatting.GREEN);
 		}
 		@Override public Icon getIcon() {
 			return Hotkeys.LOCAL_HOTKEY;
@@ -515,7 +513,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@OnlyIn(Dist.CLIENT) @Override public boolean canWrite() {
-			ClientPlayerEntity player = Minecraft.getInstance().player;
+			LocalPlayer player = Minecraft.getInstance().player;
 			if (player == null) return false;
 			return ServerConfig.permissions.canEditServerHotKeys(player);
 		}
@@ -531,7 +529,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@Override public Style getStyle() {
-			return Style.EMPTY.applyFormat(TextFormatting.AQUA);
+			return Style.EMPTY.applyFormat(ChatFormatting.AQUA);
 		}
 		@Override public Icon getIcon() {
 			return Hotkeys.REMOTE_HOTKEY;
@@ -564,7 +562,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 		
 		@Override public Style getStyle() {
-			return Style.EMPTY.applyFormat(TextFormatting.DARK_GREEN);
+			return Style.EMPTY.applyFormat(ChatFormatting.DARK_GREEN);
 		}
 		@Override public Icon getIcon() {
 			return Hotkeys.RESOURCE_HOTKEY;
@@ -589,7 +587,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			this.widget = widget;
 		}
 		
-		@Override public Pair<Optional<SavedHotKeyGroup>, Optional<ITextComponent>> parseElement(
+		@Override public Pair<Optional<SavedHotKeyGroup>, Optional<Component>> parseElement(
 		  @NotNull String text
 		) {
 			SavedHotKeyGroup group = widget.getSavedGroups().stream()
@@ -598,7 +596,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 			return Pair.of(Optional.ofNullable(group), Optional.empty());
 		}
 		
-		@Override public ITextComponent getDisplayName(@NotNull SavedHotKeyGroupPickerWidget.SavedHotKeyGroup element) {
+		@Override public Component getDisplayName(@NotNull SavedHotKeyGroupPickerWidget.SavedHotKeyGroup element) {
 			return element.getDisplayName();
 		}
 		

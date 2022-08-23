@@ -3,13 +3,18 @@ package endorh.simpleconfig.ui.hotkey;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.IConfigHotKeyGroupEntry;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -47,22 +52,22 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 				HotKeyExecutionContext context = contexts.computeIfAbsent(
 				  pair, k -> new HotKeyExecutionContext(config));
 				configActions.forEach((path, action) -> {
-					ITextComponent r = action.apply(config, path, context.result);
+					Component r = action.apply(config, path, context.result);
 					if (r != null) context.report.add(r);
 				});
 			}
 		});
-		List<ITextComponent> messages = new ArrayList<>();
+		List<Component> messages = new ArrayList<>();
 		contexts.forEach((pair, context) -> {
 			if (pair.getRight().isRemote()) {
 				if (SimpleConfigNetworkHandler.applyRemoteSnapshot(
 				  context.config, context.result, context.report
 				)) {
 					messages.addAll(context.report);
-				} else messages.add(new TranslationTextComponent(
+				} else messages.add(new TranslatableComponent(
 				  "simpleconfig.hotkey.no_permission",
-				  new StringTextComponent(context.config.getModName())
-					 .withStyle(TextFormatting.GRAY)));
+				  new TextComponent(context.config.getModName())
+					 .withStyle(ChatFormatting.GRAY)));
 			} else {
 				context.config.loadSnapshot(context.result, false, false, null);
 				context.config.save();
@@ -75,20 +80,20 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	private static class HotKeyExecutionContext {
 		public final SimpleConfigImpl config;
 		public final CommentedConfig result = CommentedConfig.inMemory();
-		public final List<ITextComponent> report = new ArrayList<>();
+		public final List<Component> report = new ArrayList<>();
 		private HotKeyExecutionContext(SimpleConfigImpl config) {
 			this.config = config;
 		}
 	}
 	
-	public IFormattableTextComponent getTitle() {
-		return new StringTextComponent(name != null? name : "")
-		  .withStyle(TextFormatting.WHITE);
+	public MutableComponent getTitle() {
+		return new TextComponent(name != null? name : "")
+		  .withStyle(ChatFormatting.WHITE);
 	}
 	
-	public ITextComponent getCaption() {
+	public Component getCaption() {
 		return getTitle().append(" ").append(
-		  getKeyMapping().getDisplayName(TextFormatting.GRAY));
+		  getKeyMapping().getDisplayName(ChatFormatting.GRAY));
 	}
 	
 	public String getName() {
@@ -184,8 +189,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 		Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = new LinkedHashMap<>();
 		Map<String, Map<String, Map<String, Object>>> unknown = new LinkedHashMap<>();
 		a.forEach((id, s) -> {
-			if (id instanceof String && s instanceof Map) {
-				final String modId = (String) id;
+			if (id instanceof final String modId && s instanceof Map) {
 				((Map<?, ?>) s).forEach((t, ss) -> {
 					if (t instanceof String && ss instanceof Map) {
 						EditType type = SimpleConfig.EditType.fromAlias((String) t);
@@ -195,9 +199,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 							Map<String, HotKeyAction<?>> aa = actions
 							  .computeIfAbsent(pair, cc -> new LinkedHashMap<>());
 							((Map<?, ?>) ss).forEach((p, v) -> {
-								if (p instanceof String && v instanceof HotKeyActionWrapper) {
-									String path = (String) p;
-									HotKeyActionWrapper<?, ?> w = (HotKeyActionWrapper<?, ?>) v;
+								if (p instanceof String path && v instanceof HotKeyActionWrapper<?, ?> w) {
 									if (config.hasEntry(path)) {
 										try {
 											HotKeyAction<?> action = deserialize(

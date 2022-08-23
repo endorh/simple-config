@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.impl.builders;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry.DoubleListCell;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +15,7 @@ public class DoubleListBuilder extends RangedListFieldBuilder<
   Double, DoubleListCell, DoubleListListEntry, DoubleListBuilder> {
 	
 	public DoubleListBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, List<Double> value
+	  ConfigFieldBuilder builder, Component name, List<Double> value
 	) {
 		super(DoubleListListEntry.class, builder, name, value);
 	}

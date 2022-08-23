@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.ConfigCategoryImpl;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -19,8 +19,8 @@ public interface ConfigCategoryBuilder {
 	ConfigCategoryBuilder addEntry(FieldBuilder<?, ?, ?> entry);
 	ConfigCategoryBuilder addEntry(int index, FieldBuilder<?, ?, ?> entry);
 	
-	ITextComponent getTitle();
-	void setTitle(ITextComponent title);
+	Component getTitle();
+	void setTitle(Component title);
 	
 	int getSortingOrder();
 	void setSortingOrder(int sortingOrder);
@@ -28,9 +28,9 @@ public interface ConfigCategoryBuilder {
 	@Nullable ResourceLocation getBackground();
 	void setBackground(@Nullable ResourceLocation background);
 	
-	@Nullable Supplier<Optional<ITextComponent[]>> getDescription();
+	@Nullable Supplier<Optional<Component[]>> getDescription();
 	void setDescription(
-	  @Nullable Supplier<Optional<ITextComponent[]>> description);
+	  @Nullable Supplier<Optional<Component[]>> description);
 	
 	@Nullable Path getContainingFile();
 	void setContainingFile(@Nullable Path containingFile);

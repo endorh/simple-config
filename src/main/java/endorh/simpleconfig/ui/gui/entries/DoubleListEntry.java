@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,7 +16,7 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 	private double minimum = Double.NEGATIVE_INFINITY;
 	private double maximum = Double.POSITIVE_INFINITY;
 	
-	@Internal public DoubleListEntry(ITextComponent fieldName, Double value) {
+	@Internal public DoubleListEntry(Component fieldName, Double value) {
 		super(fieldName, value, false);
 		setTextFormatter(ITextFormatter.numeric(false));
 		Stream.of(
@@ -41,16 +41,16 @@ public class DoubleListEntry extends TextFieldListEntry<Double> implements IRang
 		}
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
+	@Internal @Override public Optional<Component> getErrorMessage() {
 		try {
 			double i = Double.parseDouble(getText());
 			if (i > this.maximum)
-				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_large", this.maximum));
+				return Optional.of(new TranslatableComponent("simpleconfig.config.error.too_large", this.maximum));
 			if (i < this.minimum)
-				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_small", this.minimum));
+				return Optional.of(new TranslatableComponent("simpleconfig.config.error.too_small", this.minimum));
 		} catch (NumberFormatException ex) {
 			return Optional.of(
-			  new TranslationTextComponent("simpleconfig.config.error.invalid_float", getText()));
+			  new TranslatableComponent("simpleconfig.config.error.invalid_float", getText()));
 		}
 		return super.getErrorMessage();
 	}

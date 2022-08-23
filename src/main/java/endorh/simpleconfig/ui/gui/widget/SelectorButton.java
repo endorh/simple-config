@@ -1,12 +1,16 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
-import endorh.simpleconfig.ui.icon.Icon;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -20,37 +24,37 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 	private Consumer<T> action;
 	private List<T> values;
 	private int selectedIndex = 0;
-	private Function<T, ITextComponent> formatter;
+	private Function<T, Component> formatter;
 	private @Nullable Function<T, Icon> iconProvider;
 	
 	public static <T extends Enum<?>> SelectorButton<T> of(
-	  Class<T> enumClass, Function<T, ITextComponent> formatter, Consumer<T> action
+	  Class<T> enumClass, Function<T, Component> formatter, Consumer<T> action
 	) {
 		return of(enumClass, formatter, null, action);
 	}
 	
 	public static <T extends Enum<?>> SelectorButton<T> of(
-	  Class<T> enumClass, Function<T, ITextComponent> formatter,
+	  Class<T> enumClass, Function<T, Component> formatter,
 	  @Nullable Function<T, Icon> iconProvider, Consumer<T> action
 	) {
 		return of(Arrays.asList(enumClass.getEnumConstants()), formatter, iconProvider, action);
 	}
 	
 	public static <T> SelectorButton<T> of(
-	  Collection<T> values, Function<T, ITextComponent> formatter, Consumer<T> action
+	  Collection<T> values, Function<T, Component> formatter, Consumer<T> action
 	) {
 		return of(values, formatter, null, action);
 	}
 	
 	public static <T> SelectorButton<T> of(
-	  Collection<T> values, Function<T, ITextComponent> formatter,
+	  Collection<T> values, Function<T, Component> formatter,
 	  @Nullable Function<T, Icon> iconProvider, Consumer<T> action
 	) {
 		return new SelectorButton<>(new ArrayList<>(values), formatter, iconProvider, action);
 	}
 	
 	public SelectorButton(
-	  List<T> values, Function<T, ITextComponent> formatter,
+	  List<T> values, Function<T, Component> formatter,
 	  @Nullable Function<T, Icon> iconProvider, Consumer<T> action
 	) {
 		super(0, 0, 80, 80, Icon.EMPTY, ButtonAction.of(() -> {}));
@@ -80,7 +84,7 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		return iconProvider != null? iconProvider.apply(getValue()) : Icon.EMPTY;
 	}
 	
-	@Override public ITextComponent getTitle() {
+	@Override public Component getTitle() {
 		return formatter.apply(getValue());
 	}
 	
@@ -121,10 +125,10 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		this.action = action;
 	}
 	
-	public Function<T, ITextComponent> getFormatter() {
+	public Function<T, Component> getFormatter() {
 		return formatter;
 	}
-	public void setFormatter(Function<T, ITextComponent> formatter) {
+	public void setFormatter(Function<T, Component> formatter) {
 		this.formatter = formatter;
 	}
 	public @Nullable Function<T, Icon> getIconProvider() {
@@ -138,7 +142,7 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		private static final List<Boolean> VALUES = Arrays.asList(false, true);
 		
 		public static BooleanButton of(BooleanConsumer action) {
-			return new BooleanButton(b -> new TranslationTextComponent(
+			return new BooleanButton(b -> new TranslatableComponent(
 			  "simpleconfig.format.bool.yes_no." + b.toString()
 			), null, action);
 		}
@@ -146,13 +150,13 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		public static BooleanButton of(
 		  Icon trueIcon, Icon falseIcon, BooleanConsumer action
 		) {
-			return new BooleanButton(b -> new TranslationTextComponent(
+			return new BooleanButton(b -> new TranslatableComponent(
 			  "simpleconfig.format.bool.yes_no." + b.toString()
 			), b -> b? trueIcon : falseIcon, action);
 		}
 		
 		public static BooleanButton of(
-		  TextFormatting trueStyle, TextFormatting falseStyle, Icon trueIcon, Icon falseIcon,
+		  ChatFormatting trueStyle, ChatFormatting falseStyle, Icon trueIcon, Icon falseIcon,
 		  BooleanConsumer action
 		) {
 			return of(
@@ -164,20 +168,20 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		  Style trueStyle, Style falseStyle, Icon trueIcon, Icon falseIcon, BooleanConsumer action
 		) {
 			return of(
-			  b -> new StringTextComponent(SimpleConfigTextUtil.stripFormattingCodes(I18n.get(
+			  b -> new TextComponent(SimpleConfigTextUtil.stripFormattingCodes(I18n.get(
 				 "simpleconfig.format.bool.yes_no." + b.toString()
 			  ))).withStyle(b? trueStyle : falseStyle),
 			  trueIcon, falseIcon, action);
 		}
 		
 		public static BooleanButton of(
-		  Function<Boolean, ITextComponent> formatter, Icon trueIcon, Icon falseIcon, BooleanConsumer action
+		  Function<Boolean, Component> formatter, Icon trueIcon, Icon falseIcon, BooleanConsumer action
 		) {
 			return new BooleanButton(formatter, b -> b? trueIcon : falseIcon, action);
 		}
 		
 		public BooleanButton(
-		  Function<Boolean, ITextComponent> formatter, @Nullable Function<Boolean, Icon> iconProvider,
+		  Function<Boolean, Component> formatter, @Nullable Function<Boolean, Icon> iconProvider,
 		  BooleanConsumer action
 		) {
 			super(VALUES, formatter, iconProvider, b -> action.accept((boolean) b));

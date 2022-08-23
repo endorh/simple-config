@@ -1,29 +1,29 @@
 package endorh.simpleconfig.ui.api;
 
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 
 public class EntryError {
-	protected ITextComponent error;
+	protected Component error;
 	protected INavigableTarget source;
 	protected AbstractConfigField<?> entry;
 	
 	protected EntryError(
-	  ITextComponent error, INavigableTarget source
+	  Component error, INavigableTarget source
 	) {
 		this.error = error;
 		this.source = source;
 		this.entry = source.findParentEntry();
 	}
 	
-	public static EntryError of(ITextComponent error, INavigableTarget source) {
+	public static EntryError of(Component error, INavigableTarget source) {
 		return new EntryError(error, source);
 	}
 	
-	public static EntryError wrap(ITextComponent error, EntryError cause) {
+	public static EntryError wrap(Component error, EntryError cause) {
 		return new EntryError(error, cause.source);
 	}
 	
-	public ITextComponent getError() {
+	public Component getError() {
 		return error;
 	}
 	

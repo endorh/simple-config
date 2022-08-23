@@ -1,15 +1,15 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
@@ -23,15 +23,15 @@ import java.util.function.Function;
 public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChildListEntry {
 	protected boolean displayedValue;
 	protected final Button buttonWidget;
-	protected final List<IGuiEventListener> widgets;
-	protected final List<IGuiEventListener> childWidgets;
-	protected @NotNull Function<Boolean, ITextComponent> yesNoSupplier = bool ->
-	  new TranslationTextComponent("simpleconfig.format.bool.yes_no." + bool);
+	protected final List<GuiEventListener> widgets;
+	protected final List<GuiEventListener> childWidgets;
+	protected @NotNull Function<Boolean, Component> yesNoSupplier = bool ->
+	  new TranslatableComponent("simpleconfig.format.bool.yes_no." + bool);
 	
 	@Deprecated
 	@ApiStatus.Internal
 	public BooleanListEntry(
-	  ITextComponent fieldName, boolean value
+	  Component fieldName, boolean value
 	) {
 		super(fieldName);
 		setValue(value);
@@ -51,7 +51,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	}
 	
 	public void setYesNoSupplier(
-	  @NotNull Function<Boolean, ITextComponent> yesNoSupplier
+	  @NotNull Function<Boolean, Component> yesNoSupplier
 	) {
 		this.yesNoSupplier = yesNoSupplier;
 	}
@@ -78,7 +78,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		buttonWidget.active = shouldRenderEditable();
 		buttonWidget.x = x;
@@ -89,17 +89,17 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		buttonWidget.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	public ITextComponent getYesNoText(boolean bool) {
+	public Component getYesNoText(boolean bool) {
 		return yesNoSupplier.apply(bool);
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (buttonWidget.isMouseOver(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return this.isChildSubEntry() ? childWidgets : this.widgets;
 	}
 	

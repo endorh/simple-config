@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,12 +24,12 @@ public class PairListEntry<
 	private final RE rightEntry;
 	protected @Nullable Icon middleIcon = null;
 	protected float splitPos = 0.5F;
-	protected List<IGuiEventListener> listeners;
+	protected List<GuiEventListener> listeners;
 	protected List<AbstractConfigField<?>> heldEntries;
 	protected List<ISeekableComponent> seekableChildren;
 	
 	public PairListEntry(
-	  ITextComponent fieldName, Pair<L, R> value, LE leftEntry, RE rightEntry
+	  Component fieldName, Pair<L, R> value, LE leftEntry, RE rightEntry
 	) {
 		super(fieldName);
 		this.leftEntry = leftEntry;
@@ -81,7 +81,7 @@ public class PairListEntry<
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		int iconWidth = middleIcon != null? middleIcon.w : 4;
 		int leftWidth = (int) ((w - iconWidth) * splitPos);
@@ -113,7 +113,7 @@ public class PairListEntry<
 		return seekableChildren;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return listeners;
 	}
 	

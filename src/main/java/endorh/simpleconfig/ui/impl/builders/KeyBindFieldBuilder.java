@@ -3,9 +3,9 @@ package endorh.simpleconfig.ui.impl.builders;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.KeyBindListEntry;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import net.minecraft.util.text.ITextComponent;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +19,7 @@ public class KeyBindFieldBuilder
 	private boolean reportOverlaps;
 	
 	public KeyBindFieldBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, KeyBindMapping value
+	  ConfigFieldBuilder builder, Component name, KeyBindMapping value
 	) {
 		super(KeyBindListEntry.class, builder, name, value.copy());
 	}

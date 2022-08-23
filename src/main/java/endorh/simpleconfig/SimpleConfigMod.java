@@ -1,5 +1,6 @@
 package endorh.simpleconfig;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.CommonConfig;
@@ -14,12 +15,11 @@ import endorh.simpleconfig.highlight.HighlighterManager;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
 import endorh.simpleconfig.ui.hotkey.ResourceConfigHotKeyGroupHandler;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.resources.IReloadableResourceManager;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
@@ -28,11 +28,11 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fmlclient.registry.ClientRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.lwjgl.glfw.GLFW;
@@ -68,7 +68,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	
 	@SubscribeEvent
 	public static void registerReloadListener(ParticleFactoryRegisterEvent event) {
-		IReloadableResourceManager manager = (IReloadableResourceManager) Minecraft.getInstance().getResourceManager();
+		ReloadableResourceManager manager = (ReloadableResourceManager) Minecraft.getInstance().getResourceManager();
 		manager.registerReloadListener(JSON_HIGHLIGHTER_MANAGER);
 		manager.registerReloadListener(RESOURCE_PRESET_HANDLER);
 		manager.registerReloadListener(RESOURCE_HOT_KEY_GROUP_HANDLER);
@@ -96,7 +96,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	@EventBusSubscriber(value = Dist.CLIENT, bus = Bus.MOD, modid = MOD_ID)
 	public static class KeyBindings {
 		public static final String CATEGORY = "Simple Config";
-		public static KeyBinding
+		public static KeyMapping
 		  SEARCH,
 		  PREV_TYPE, NEXT_TYPE,
 		  PREV_PAGE, NEXT_PAGE,
@@ -124,14 +124,14 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 			});
 		}
 		
-		@OnlyIn(Dist.CLIENT) private static KeyBinding reg(String name, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
+		@OnlyIn(Dist.CLIENT) private static KeyMapping reg(String name, int keyCode) {
+			KeyMapping binding = new KeyMapping(MOD_ID + ".key." + name, GUI, InputConstants.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}
 		
-		@OnlyIn(Dist.CLIENT) private static KeyBinding reg(String name, KeyModifier modifier, int keyCode) {
-			KeyBinding binding = new KeyBinding(MOD_ID + ".key." + name, GUI, modifier, InputMappings.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
+		@OnlyIn(Dist.CLIENT) private static KeyMapping reg(String name, KeyModifier modifier, int keyCode) {
+			KeyMapping binding = new KeyMapping(MOD_ID + ".key." + name, GUI, modifier, InputConstants.Type.KEYSYM.getOrCreate(keyCode), CATEGORY);
 			ClientRegistry.registerKeyBinding(binding);
 			return binding;
 		}

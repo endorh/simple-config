@@ -1,25 +1,28 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager.LogicOp;
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import net.minecraft.client.KeyboardListener;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.Matrix4f;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.SharedConstants;
+import net.minecraft.Util;
+import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -42,9 +45,9 @@ import static java.lang.Math.min;
  * Improved text field widget.
  */
 @OnlyIn(Dist.CLIENT)
-public class TextFieldWidgetEx extends Widget {
-	protected final FontRenderer font;
-	protected String text = "";
+public class TextFieldWidgetEx extends AbstractWidget {
+	protected final Font font;
+	protected String value = "";
 	protected long lastClick;
 	protected long lastInteraction = 0;
 	protected boolean draggingText;
@@ -59,27 +62,27 @@ public class TextFieldWidgetEx extends Widget {
 	private int borderColor = 0xFFFFFF;
 	private int textColor = 0xFFE0E0E0;
 	private int textColorUneditable = 0xFF707070;
-	private @Nullable Function<String, Optional<ITextComponent>> hintProvider;
+	private @Nullable Function<String, Optional<Component>> hintProvider;
 	protected Consumer<String> responder;
 	protected Predicate<String> filter = Objects::nonNull;
 	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
 	
 	public static TextFieldWidgetEx of(String text) {
 		TextFieldWidgetEx tf = new TextFieldWidgetEx(
-		  Minecraft.getInstance().font, 0, 0, 0, 0, StringTextComponent.EMPTY);
-		tf.setText(text);
+		  Minecraft.getInstance().font, 0, 0, 0, 0, TextComponent.EMPTY);
+		tf.setValue(text);
 		return tf;
 	}
 	
 	public TextFieldWidgetEx(
-	  FontRenderer font, int x, int y, int w, int h, ITextComponent title
+	  Font font, int x, int y, int w, int h, Component title
 	) {
 		this(font, x, y, w, h, null, title);
 	}
 	
 	public TextFieldWidgetEx(
-	  FontRenderer font, int x, int y, int w, int h,
-	  @Nullable TextFieldWidgetEx copy, ITextComponent title
+	  Font font, int x, int y, int w, int h,
+	  @Nullable TextFieldWidgetEx copy, Component title
 	) {
 		super(x, y, w, h, title);
 		this.font = font;
@@ -101,39 +104,39 @@ public class TextFieldWidgetEx extends Widget {
 	
 	public void tick() {}
 	
-	@Override protected @NotNull IFormattableTextComponent createNarrationMessage() {
-		ITextComponent itextcomponent = getMessage();
-		return new TranslationTextComponent("gui.narrate.editBox", itextcomponent, text);
+	@Override protected @NotNull MutableComponent createNarrationMessage() {
+		Component component = getMessage();
+		return new TranslatableComponent("gui.narrate.editBox", component, value);
 	}
 	
-	public void setText(String text) {
-		if (filter.test(text)) {
-			if (text.length() > maxLength) {
-				this.text = text.substring(0, maxLength);
-			} else this.text = text;
+	public void setValue(String value) {
+		if (filter.test(value)) {
+			if (value.length() > maxLength) {
+				this.value = value.substring(0, maxLength);
+			} else this.value = value;
 			
 			moveCaretToEnd();
 			setAnchorPos(caretPos);
-			onTextChange(text);
+			onValueChange(value);
 		}
 	}
 	
-	public String getText() {
-		return text;
+	public String getValue() {
+		return value;
 	}
 	
-	public IFormattableTextComponent getDisplayedText() {
-		return formatter.formatText(text);
+	public MutableComponent getDisplayedText() {
+		return formatter.formatText(value);
 	}
 	
 	public boolean hasSelection() {
 		return anchorPos != caretPos;
 	}
 	
-	public String getSelectedText() {
+	public String getHighlighted() {
 		return caretPos < anchorPos
-		       ? text.substring(caretPos, anchorPos)
-		       : text.substring(anchorPos, caretPos);
+		       ? value.substring(caretPos, anchorPos)
+		       : value.substring(anchorPos, caretPos);
 	}
 	
 	public void setFilter(Predicate<String> filter) {
@@ -145,7 +148,7 @@ public class TextFieldWidgetEx extends Widget {
 		
 		int start = min(caretPos, anchorPos);
 		int end = max(caretPos, anchorPos);
-		int allowed = maxLength - text.length() - (start - end);
+		int allowed = maxLength - value.length() - (start - end);
 		String txt = SharedConstants.filterText(inserted);
 		int length = txt.length();
 		if (allowed < length) {
@@ -153,21 +156,20 @@ public class TextFieldWidgetEx extends Widget {
 			length = allowed;
 		}
 		
-		String result = (new StringBuilder(text)).replace(start, end, txt).toString();
+		String result = (new StringBuilder(value)).replace(start, end, txt).toString();
 		if (filter.test(result)) {
-			text = result;
+			value = result;
 			setCaretPosition(start + length);
 			setAnchorPos(caretPos);
-			onTextChange(text);
+			onValueChange(value);
 		}
 	}
 	
-	private void onTextChange(String newText) {
+	private void onValueChange(String newText) {
 		if (responder != null) responder.accept(newText);
-		nextNarration = Util.getMillis() + 500L;
 	}
 	
-	private void delete(int words) {
+	private void deleteText(int words) {
 		if (hasSelection()) {
 			insertText("");
 		} else if (Screen.hasControlDown()) {
@@ -178,7 +180,7 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public void deleteWords(int words) {
-		if (!text.isEmpty()) {
+		if (!value.isEmpty()) {
 			if (hasSelection()) {
 				insertText("");
 			} else {
@@ -188,7 +190,7 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public void deleteFromCaret(int chars) {
-		if (!text.isEmpty()) {
+		if (!value.isEmpty()) {
 			if (hasSelection()) {
 				insertText("");
 			} else {
@@ -196,7 +198,7 @@ public class TextFieldWidgetEx extends Widget {
 				int start = min(i, caretPos);
 				int stop = max(i, caretPos);
 				if (start != stop) {
-					String text = getText();
+					String text = getValue();
 					if (formatter != null && chars == -1 && stop - start == 1 && stop < text.length()) {
 						String context = new StringBuilder(text).delete(start, stop + 1).toString();
 						String closingPair = formatter.closingPair(text.charAt(start), context, start);
@@ -206,7 +208,7 @@ public class TextFieldWidgetEx extends Widget {
 					String s = new StringBuilder(text).delete(start, stop).toString();
 					
 					if (filter.test(s)) {
-						this.text = s;
+						this.value = s;
 						moveCaretWithAnchor(start);
 					}
 				}
@@ -245,7 +247,7 @@ public class TextFieldWidgetEx extends Widget {
 	  "|(?<=[^\\p{Alnum}\\s_])(?=[\\p{Alnum}\\s_])");
 	public int getWordPosFromPos(int wordStep, int pos) {
 		if (wordStep == 0) return pos;
-		String text = getText();
+		String text = getValue();
 		int length = text.length();
 		boolean reverse = wordStep < 0;
 		if (reverse) {
@@ -271,13 +273,13 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	private int expandLigaturesFromCaret(int relativePos) {
-		return Util.offsetByCodepoints(text, caretPos, relativePos);
+		return Util.offsetByCodepoints(value, caretPos, relativePos);
 	}
 	
 	public void moveCaret(int pos) {
 		setCaretPosition(pos);
 		if (!Screen.hasShiftDown()) setAnchorPos(caretPos);
-		onTextChange(text);
+		onValueChange(value);
 	}
 	
 	public void moveCaretWithAnchor(int pos) {
@@ -286,7 +288,7 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public void setCaretPosition(int pos) {
-		caretPos = MathHelper.clamp(pos, 0, text.length());
+		caretPos = Mth.clamp(pos, 0, value.length());
 		scrollToFitCaret();
 	}
 	
@@ -295,7 +297,7 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public void moveCaretToEnd() {
-		moveCaret(text.length());
+		moveCaret(value.length());
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -308,24 +310,24 @@ public class TextFieldWidgetEx extends Widget {
 				setAnchorPos(0);
 				return true;
 			} else {
-				KeyboardListener kl = Minecraft.getInstance().keyboardHandler;
+				KeyboardHandler kl = Minecraft.getInstance().keyboardHandler;
 				if (Screen.isCopy(keyCode)) {
-					kl.setClipboard(getSelectedText());
+					kl.setClipboard(getHighlighted());
 					return true;
 				} else if (Screen.isPaste(keyCode)) {
 					if (isEditable()) insertText(kl.getClipboard());
 					return true;
 				} else if (Screen.isCut(keyCode)) {
-					kl.setClipboard(getSelectedText());
+					kl.setClipboard(getHighlighted());
 					if (isEditable()) insertText("");
 					return true;
 				} else {
 					switch(keyCode) {
 						case GLFW.GLFW_KEY_BACKSPACE:
-							if (isEditable()) delete(-1);
+							if (isEditable()) deleteText(-1);
 							return true;
 						case GLFW.GLFW_KEY_DELETE:
-							if (isEditable()) delete(1);
+							if (isEditable()) deleteText(1);
 							return true;
 						case GLFW.GLFW_KEY_RIGHT:
 							if (hasSelection() && !Screen.hasShiftDown()) {
@@ -373,7 +375,7 @@ public class TextFieldWidgetEx extends Widget {
 				String closingPair = null;
 				if (formatter != null) {
 					int caret = getCaret();
-					String text = getText();
+					String text = getValue();
 					if (caret < text.length() && text.charAt(caret) == codePoint
 					    && formatter.shouldSkipClosingPair(codePoint, text, caret)) {
 						moveCaretWithAnchor(caret + 1);
@@ -465,7 +467,7 @@ public class TextFieldWidgetEx extends Widget {
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 	
-	protected int getClickedCaretPos(IFormattableTextComponent line, double relX) {
+	protected int getClickedCaretPos(MutableComponent line, double relX) {
 		int lineLength = line.getString().length();
 		int floor = font.substrByWidth(line, (int) relX).getString().length();
 		if (floor >= lineLength) return lineLength;
@@ -474,7 +476,7 @@ public class TextFieldWidgetEx extends Widget {
 		return relX < (left + right) * 0.5? floor: floor + 1;
 	}
 	
-	@Override public void renderButton(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (isVisible()) {
 			boolean bordered = isBordered();
 			if (bordered) {
@@ -489,7 +491,7 @@ public class TextFieldWidgetEx extends Widget {
 			int relAnchor = anchorPos - hScroll;
 			int innerWidth = getInnerWidth();
 			
-			IFormattableTextComponent displayedText = subText(getDisplayedText(), hScroll);
+			MutableComponent displayedText = subText(getDisplayedText(), hScroll);
 			String shown = font.substrByWidth(displayedText, innerWidth).getString();
 			int fitLength = shown.length();
 			displayedText = subText(displayedText, 0, fitLength);
@@ -507,7 +509,7 @@ public class TextFieldWidgetEx extends Widget {
 				font.drawShadow(mStack, displayedText, textX, textY, color);
 			
 			// Render hint
-			ITextComponent hint = hintProvider != null? hintProvider.apply(text).orElse(null) : null;
+			Component hint = hintProvider != null? hintProvider.apply(value).orElse(null) : null;
 			if (relCaret == shown.length() && hint != null)
 				font.drawShadow(mStack, hint, caretX, textY, 0xFF808080);
 			
@@ -526,15 +528,15 @@ public class TextFieldWidgetEx extends Widget {
 		}
 	}
 	
-	protected void renderCaret(MatrixStack mStack, int x, int y, int w, int h) {
-		Tessellator tessellator = Tessellator.getInstance();
+	protected void renderCaret(PoseStack mStack, int x, int y, int w, int h) {
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
-		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		RenderSystem.logicOp(LogicOp.OR_REVERSE);
 		Matrix4f m = mStack.last().pose();
-		bb.begin(7, DefaultVertexFormats.POSITION);
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
 		bb.vertex(m,     x, y + h, 0F).endVertex();
 		bb.vertex(m, x + w, y + h, 0F).endVertex();
 		bb.vertex(m, x + w,     y, 0F).endVertex();
@@ -544,7 +546,7 @@ public class TextFieldWidgetEx extends Widget {
 		RenderSystem.enableTexture();
 	}
 	
-	protected void renderSelection(MatrixStack mStack, int sX, int sY, int eX, int eY) {
+	protected void renderSelection(PoseStack mStack, int sX, int sY, int eX, int eY) {
 		if (sX < eX) {
 			int swap = sX;
 			sX = eX;
@@ -559,14 +561,14 @@ public class TextFieldWidgetEx extends Widget {
 		if (eX > x + width) eX = x + width;
 		if (sX > x + width) sX = x + width;
 		
-		Tessellator tessellator = Tessellator.getInstance();
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
 		Matrix4f m = mStack.last().pose();
-		RenderSystem.color4f(0F, 0F, 1F, 1F);
+		RenderSystem.setShaderColor(0F, 0F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
-		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
-		bb.begin(7, DefaultVertexFormats.POSITION);
+		RenderSystem.logicOp(LogicOp.OR_REVERSE);
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
 		bb.vertex(m, sX, eY, 0F).endVertex();
 		bb.vertex(m, eX, eY, 0F).endVertex();
 		bb.vertex(m, eX, sY, 0F).endVertex();
@@ -575,14 +577,14 @@ public class TextFieldWidgetEx extends Widget {
 		RenderSystem.disableColorLogicOp();
 		RenderSystem.enableTexture();
 		// Do not leak the blue filter
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 	}
 	
 	public void setMaxLength(int length) {
 		maxLength = length;
-		if (text.length() > length) {
-			text = text.substring(0, length);
-			onTextChange(text);
+		if (value.length() > length) {
+			value = value.substring(0, length);
+			onValueChange(value);
 		}
 	}
 	
@@ -640,7 +642,7 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public int getMaxHScroll() {
-		String text = this.text;
+		String text = this.value;
 		String reversed = new StringBuilder(text).reverse().toString();
 		return text.length() - font.plainSubstrByWidth(reversed, getInnerWidth()).length();
 	}
@@ -651,7 +653,7 @@ public class TextFieldWidgetEx extends Widget {
 			if (hScroll > maxHScroll) hScroll = maxHScroll;
 			
 			int w = getInnerWidth();
-			String shown = font.plainSubstrByWidth(text.substring(hScroll), w);
+			String shown = font.plainSubstrByWidth(value.substring(hScroll), w);
 			int lastShown = shown.length() + hScroll;
 			
 			if (pos > lastShown) {
@@ -660,7 +662,7 @@ public class TextFieldWidgetEx extends Widget {
 				hScroll = pos - 1;
 			}
 			
-			hScroll = MathHelper.clamp(hScroll, 0, maxHScroll);
+			hScroll = Mth.clamp(hScroll, 0, maxHScroll);
 		}
 	}
 	
@@ -669,8 +671,8 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public void setAnchorPos(int pos) {
-		int len = text.length();
-		anchorPos = MathHelper.clamp(pos, 0, len);
+		int len = value.length();
+		anchorPos = Mth.clamp(pos, 0, len);
 	}
 	
 	public boolean isCanLoseFocus() {
@@ -690,30 +692,42 @@ public class TextFieldWidgetEx extends Widget {
 	}
 	
 	public void setPlainHint(@Nullable String hint) {
-		setHint(hint != null? new StringTextComponent(hint) : null);
+		setHint(hint != null? new TextComponent(hint) : null);
 	}
 	
 	public void setPlainHint(@Nullable Function<String, Optional<String>> hintProvider) {
-		setHint(hintProvider != null? s -> hintProvider.apply(s).map(StringTextComponent::new) : null);
+		setHint(hintProvider != null? s -> hintProvider.apply(s).map(TextComponent::new) : null);
 	}
 	
-	public void setHint(@Nullable ITextComponent hint) {
+	public void setHint(@Nullable Component hint) {
 		setHint(hint != null? s -> Optional.of(hint) : null);
 	}
 	
-	public void setHint(@Nullable Function<String, Optional<ITextComponent>> hintProvider) {
+	public void setHint(@Nullable Function<String, Optional<Component>> hintProvider) {
 		this.hintProvider = hintProvider;
 	}
 	
 	public void setEmptyHint(String hint) {
-		setEmptyHint(new StringTextComponent(hint));
+		setEmptyHint(new TextComponent(hint));
 	}
 	
-	public void setEmptyHint(ITextComponent hint) {
+	public void setEmptyHint(Component hint) {
 		setHint(s -> s.isEmpty()? Optional.of(hint) : Optional.empty());
 	}
 	
-	public int getTextXForPos(int pos) {
-		return pos > text.length() ? x : x + font.width(text.substring(0, pos));
+	public int getScreenX(int pos) {
+		return pos > value.length()? x : x + font.width(value.substring(0, pos));
+	}
+	
+	public void setX(int x) {
+		this.x = x;
+	}
+	
+	public void setY(int y) {
+		this.y = y;
+	}
+	
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {
+		out.add(NarratedElementType.TITLE, new TranslatableComponent("narration.edit_box", getValue()));
 	}
 }

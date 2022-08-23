@@ -8,12 +8,12 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler.Loader;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.client.resources.ReloadListener;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.JSONUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.util.profiling.ProfilerFiller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 
-public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
+public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadListener<Loader> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Gson GSON = new GsonBuilder()
 	  .registerTypeAdapter(PresetsDescriptor.class, new PresetsDescriptor.Serializer())
@@ -46,20 +46,20 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 		return presetRegistry.get(modId).get(preset);
 	}
 	
-	@Override protected @NotNull Loader prepare(@NotNull IResourceManager manager, @NotNull IProfiler profiler) {
+	@Override protected @NotNull Loader prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller profiler) {
 		Loader l = new Loader();
 		profiler.startTick();
 		for (String namespace: manager.getNamespaces()) {
 			profiler.push(namespace);
 			try {
-				for (IResource index: manager.getResources(new ResourceLocation(namespace, "config-presets.json"))) {
+				for (Resource index: manager.getResources(new ResourceLocation(namespace, "config-presets.json"))) {
 					profiler.push(index.getSourceName());
 					try (
 					  InputStream is = index.getInputStream();
 					  Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)
 					) {
 						profiler.push("parse");
-						Map<String, PresetsDescriptor> map = JSONUtils.fromJson(GSON, r, TYPE);
+						Map<String, PresetsDescriptor> map = GsonHelper.fromJson(GSON, r, TYPE);
 						profiler.popPush("register");
 						map.forEach((k, v) -> l.registerPresets(namespace, k, v));
 						profiler.pop();
@@ -75,7 +75,7 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 		return l;
 	}
 	
-	@Override protected void apply(@NotNull Loader l, @NotNull IResourceManager manager, @NotNull IProfiler profiler) {
+	@Override protected void apply(@NotNull Loader l, @NotNull ResourceManager manager, @NotNull ProfilerFiller profiler) {
 		presetRegistry.clear();
 		l.getPresetMap().forEach((modId, m) -> {
 			Map<Preset, CommentedConfig> mm = presetRegistry.computeIfAbsent(modId, i -> Maps.newHashMap());
@@ -147,23 +147,23 @@ public class SimpleConfigResourcePresetHandler extends ReloadListener<Loader> {
 			@Override public PresetsDescriptor deserialize(
 			  JsonElement json, java.lang.reflect.Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
-				JsonObject obj = JSONUtils.convertToJsonObject(json, "mod config presets");
+				JsonObject obj = GsonHelper.convertToJsonObject(json, "mod config presets");
 				Optional<String> first = obj.entrySet().stream().map(Entry::getKey)
 				  .filter(k -> !"client".equals(k) && !"server".equals(k) && !"common".equals(k)).findFirst();
 				if (first.isPresent())
 					throw new JsonSyntaxException("Unknown preset type: " + first.get());
-				JsonArray client = JSONUtils.getAsJsonArray(obj, "client", new JsonArray());
-				JsonArray common = JSONUtils.getAsJsonArray(obj, "common", new JsonArray());
-				JsonArray server = JSONUtils.getAsJsonArray(obj, "server", new JsonArray());
+				JsonArray client = GsonHelper.getAsJsonArray(obj, "client", new JsonArray());
+				JsonArray common = GsonHelper.getAsJsonArray(obj, "common", new JsonArray());
+				JsonArray server = GsonHelper.getAsJsonArray(obj, "server", new JsonArray());
 				Set<String> clientPresets = new HashSet<>();
 				Set<String> commonPresets = new HashSet<>();
 				Set<String> serverPresets = new HashSet<>();
 				if (client != null) for (JsonElement item: client)
-					clientPresets.add(JSONUtils.convertToString(item, "preset name"));
+					clientPresets.add(GsonHelper.convertToString(item, "preset name"));
 				if (common != null) for (JsonElement item: common)
-					commonPresets.add(JSONUtils.convertToString(item, "preset name"));
+					commonPresets.add(GsonHelper.convertToString(item, "preset name"));
 				if (server != null) for (JsonElement item: server)
-					serverPresets.add(JSONUtils.convertToString(item, "preset name"));
+					serverPresets.add(GsonHelper.convertToString(item, "preset name"));
 				return new PresetsDescriptor(clientPresets, commonPresets, serverPresets);
 			}
 			

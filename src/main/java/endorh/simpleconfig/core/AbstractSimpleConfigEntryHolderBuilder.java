@@ -6,7 +6,7 @@ import endorh.simpleconfig.api.ConfigGroupBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.TextEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 
@@ -100,11 +100,11 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 		return self();
 	}
 	
-	@Override @Contract("_ -> this") public Builder text(ITextComponent text) {
+	@Override @Contract("_ -> this") public Builder text(Component text) {
 		add(SimpleConfigImpl.nextTextID(), new TextEntry.Builder(() -> text));
 		return self();
 	}
-	@Override @Contract("_ -> this") public Builder text(Supplier<ITextComponent> textSupplier) {
+	@Override @Contract("_ -> this") public Builder text(Supplier<Component> textSupplier) {
 		add(SimpleConfigImpl.nextTextID(), new TextEntry.Builder(textSupplier));
 		return self();
 	}

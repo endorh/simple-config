@@ -1,19 +1,19 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -27,17 +27,17 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public class TextListEntry extends TooltipListEntry<Void> {
-	protected FontRenderer font;
+	protected Font font;
 	protected int color;
-	protected Supplier<ITextComponent> textSupplier;
-	protected ITextComponent savedText;
+	protected Supplier<Component> textSupplier;
+	protected Component savedText;
 	protected int savedWidth;
 	protected int savedX;
 	protected int savedY;
-	private List<IReorderingProcessor> wrappedLines;
+	private List<FormattedCharSequence> wrappedLines;
 	
 	@Internal public TextListEntry(
-	  ITextComponent fieldName, Supplier<ITextComponent> textSupplier, int color
+	  Component fieldName, Supplier<Component> textSupplier, int color
 	) {
 		super(fieldName);
 		font = Minecraft.getInstance().font;
@@ -63,10 +63,10 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	}
 	
 	@Override protected void renderTitle(
-	  MatrixStack mStack, ITextComponent title, float textX, int index, int x, int y, int entryWidth,
+	  PoseStack mStack, Component title, float textX, int index, int x, int y, int entryWidth,
 	  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		final ITextComponent text = getText();
+		final Component text = getText();
 		if (savedWidth != entryWidth || savedX != x || savedY != y
 		    || !Objects.equals(text, savedText)) {
 			savedText = text;
@@ -78,7 +78,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		}
 		int yy = y + 4;
 		int lineHeight = getLineHeightWithMargin();
-		for (IReorderingProcessor string : wrappedLines) {
+		for (FormattedCharSequence string : wrappedLines) {
 			Minecraft.getInstance().font.drawShadow(
 			  mStack, string, (float) x, (float) yy, color);
 			Objects.requireNonNull(Minecraft.getInstance().font);
@@ -123,27 +123,27 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		int lineCount = wrappedLines.size();
 		if (lineCount > 0) {
 			int line;
-			int textX = MathHelper.floor(x - (double) savedX);
-			int textY = MathHelper.floor(y - 4.0 - (double) savedY);
+			int textX = Mth.floor(x - (double) savedX);
+			int textY = Mth.floor(y - 4.0 - (double) savedY);
 			int lineHeight = getLineHeightWithMargin();
 			if (textX >= 0 && textY >= 0 && textX <= savedWidth &&
 			    textY < lineHeight * lineCount + lineCount && (line = textY / lineHeight) < wrappedLines.size()) {
-				IReorderingProcessor orderedText = wrappedLines.get(line);
+				FormattedCharSequence orderedText = wrappedLines.get(line);
 				return font.getSplitter().componentStyleAtWidth(orderedText, textX);
 			}
 		}
 		return null;
 	}
 	
-	public ITextComponent getText() {
-		ITextComponent text = textSupplier.get();
+	public Component getText() {
+		Component text = textSupplier.get();
 		if (matchedText == null || matchedText.isEmpty())
 			return text;
 		String str = text.getString();
 		int index = str.indexOf(matchedText);
 		if (index == -1) return text;
 		return SimpleConfigTextUtil.applyStyle(
-		  text.copy(), isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW,
+		  text.copy(), isFocusedMatch()? ChatFormatting.GOLD : ChatFormatting.YELLOW,
 		  index, index + matchedText.length());
 	}
 	
@@ -159,7 +159,7 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		return getItemHeight() - 4;
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return Collections.emptyList();
 	}
 	

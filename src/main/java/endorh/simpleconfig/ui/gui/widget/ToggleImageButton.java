@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.ImageButton;
+import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -68,12 +68,12 @@ public class ToggleImageButton extends ImageButton {
 			if (button == 0) {
 				setValue(!isToggle());
 				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+				  SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			} else if (button == 1) {
 				setValue(Screen.hasShiftDown());
 				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SimpleConfigMod.UI_TAP, 1F));
+				  SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, 1F));
 				return true;
 			}
 		}
@@ -89,7 +89,7 @@ public class ToggleImageButton extends ImageButton {
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		Icon icon = tintedIcon == null? this.icon : tintedIcon;
 		icon.renderStretch(mStack, x, y, width, height, isToggle() ? 1 : 0);

@@ -1,14 +1,14 @@
 package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.ConfigCategoryImpl;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -26,10 +26,10 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 	protected final String name;
 	protected EditType type;
 	protected final List<FieldBuilder<?, ?, ?>> entries = new ArrayList<>();
-	protected ITextComponent title;
+	protected Component title;
 	protected int sortingOrder;
 	protected @Nullable ResourceLocation background;
-	protected @Nullable Supplier<Optional<ITextComponent[]>> description = Optional::empty;
+	protected @Nullable Supplier<Optional<Component[]>> description = Optional::empty;
 	protected @Nullable Path containingFile;
 	protected boolean isEditable = true;
 	protected Icon icon = Icon.EMPTY;
@@ -59,10 +59,10 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 		return this;
 	}
 	
-	@Override public ITextComponent getTitle() {
-		return title != null? title : new StringTextComponent(name);
+	@Override public Component getTitle() {
+		return title != null? title : new TextComponent(name);
 	}
-	@Override public void setTitle(ITextComponent title) {
+	@Override public void setTitle(Component title) {
 		this.title = title;
 	}
 	
@@ -80,11 +80,11 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 		this.background = background;
 	}
 	
-	@Override public @Nullable Supplier<Optional<ITextComponent[]>> getDescription() {
+	@Override public @Nullable Supplier<Optional<Component[]>> getDescription() {
 		return description;
 	}
 	@Override public void setDescription(
-	  @Nullable Supplier<Optional<ITextComponent[]>> description
+	  @Nullable Supplier<Optional<Component[]>> description
 	) {
 		this.description = description;
 	}

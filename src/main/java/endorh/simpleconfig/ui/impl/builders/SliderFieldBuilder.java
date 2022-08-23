@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.SliderListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -17,10 +17,10 @@ public abstract class SliderFieldBuilder<
 	
 	protected final V min;
 	protected final V max;
-	protected Function<V, ITextComponent> textGetter = null;
+	protected Function<V, Component> textGetter = null;
 	
 	public SliderFieldBuilder(
-	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, V value, V min, V max
+	  Class<?> entryClass, ConfigFieldBuilder builder, Component name, V value, V min, V max
 	) {
 		super(entryClass, builder, name, Objects.requireNonNull(value));
 		this.min = Objects.requireNonNull(min);
@@ -30,7 +30,7 @@ public abstract class SliderFieldBuilder<
 	}
 	
 	public Self setTextGetter(
-	  Function<V, ITextComponent> textGetter
+	  Function<V, Component> textGetter
 	) {
 		this.textGetter = textGetter;
 		return self();

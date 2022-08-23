@@ -15,22 +15,23 @@ import endorh.simpleconfig.ui.gui.DialogScreen;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.IngameMenuScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.client.gui.widget.button.ImageButton;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fmlclient.ConfigGuiHandler;
+import net.minecraftforge.fmlclient.ConfigGuiHandler.ConfigGuiFactory;
+import net.minecraftforge.fmlclient.gui.screen.ModListScreen;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.*;
@@ -84,11 +85,12 @@ public class SimpleConfigGUIManager {
 	protected static void registerConfig(SimpleConfigImpl config) {
 		String modId = config.getModId();
 		ModContainer container = config.getModContainer();
-		Optional<BiFunction<Minecraft, Screen, Screen>> ext = container.getCustomExtension(ExtensionPoint.CONFIGGUIFACTORY);
+		Optional<BiFunction<Minecraft, Screen, Screen>> ext =
+		  ConfigGuiHandler.getGuiFactoryFor(container.getModInfo());
 		if (config.isWrapper() && (
 		  !CommonConfig.menu.shouldWrapConfig(modId)
 		  || ext.isPresent()
-		     && !(ext.get() instanceof ConfigGUIFactory)
+		     && !(ext.get() instanceof SimpleConfigGuiFactory)
 		     && !CommonConfig.menu.shouldReplaceMenu(modId)
 		)) return;
 		if (!autoAddedButton)
@@ -96,24 +98,19 @@ public class SimpleConfigGUIManager {
 		if (!modConfigs.containsKey(modId)) {
 			modConfigs.computeIfAbsent(modId, s -> synchronizedMap(new HashMap<>())).put(
 			  config.getType(), config);
+			
 			container.registerExtensionPoint(
-			  ExtensionPoint.CONFIGGUIFACTORY, () -> new ConfigGUIFactory(modId));
+			  ConfigGuiFactory.class,
+			  () -> new ConfigGuiFactory(new SimpleConfigGuiFactory(modId)));
 		} else modConfigs.get(modId).put(config.getType(), config);
 	}
 	
 	/**
 	 * Used for marking instead of an anonymous lambda.
 	 */
-	private static class ConfigGUIFactory implements BiFunction<Minecraft, Screen, Screen> {
-		private final String modId;
-		private ConfigGUIFactory(String modId) {
-			this.modId = modId;
-		}
+	public record SimpleConfigGuiFactory(String modId) implements BiFunction<Minecraft, Screen, Screen> {
 		@Override public Screen apply(Minecraft minecraft, Screen screen) {
 			return getConfigGUI(modId, screen);
-		}
-		public String getModId() {
-			return modId;
 		}
 	}
 	
@@ -148,7 +145,7 @@ public class SimpleConfigGUIManager {
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parentScreen)
 		  .setSavingRunnable(() -> {})
-		  .setTitle(new TranslationTextComponent(
+		  .setTitle(new TranslatableComponent(
 		    "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setPreviousGUIState(guiStates.get(modId))
@@ -204,7 +201,7 @@ public class SimpleConfigGUIManager {
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
 			  for (SimpleConfigImpl c: orderedConfigs) c.removeGUI();
-		  }).setTitle(new TranslationTextComponent(
+		  }).setTitle(new TranslatableComponent(
 			 "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setSnapshotHandler(handler)
@@ -271,7 +268,7 @@ public class SimpleConfigGUIManager {
 		if (!addButton || !menu.add_pause_menu_button)
 			return;
 		final Screen gui = event.getGui();
-		if (gui instanceof IngameMenuScreen) {
+		if (gui instanceof PauseScreen) {
 			// Coordinates taken from IngameMenuScreen#addButtons
 			int w = 20, h = 20, x, y;
 			switch (menu.menu_button_position) {
@@ -313,11 +310,10 @@ public class SimpleConfigGUIManager {
 	 * Checks its position and size before returning, so it returns
 	 * empty if the button does not match the expected placement<br>
 	 */
-	public static Optional<Button> getOptionsButton(Screen gui, List<Widget> widgets) {
+	public static Optional<Button> getOptionsButton(Screen gui, List<GuiEventListener> widgets) {
 		final int x = gui.width / 2 - 102, y = gui.height / 4 + 96 - 16;
-		for (Widget widget : widgets) {
-			if (widget instanceof Button) {
-				Button but = (Button) widget;
+		for (GuiEventListener widget : widgets) {
+			if (widget instanceof Button but) {
 				if (but.getMessage().getString().equals(I18n.get("menu.options"))) {
 					if (but.x == x && but.y == y && but.getWidth() == 98) {
 						return Optional.of(but);

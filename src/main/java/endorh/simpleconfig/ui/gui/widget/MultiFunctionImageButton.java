@@ -1,20 +1,20 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.math.Point;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.ISound;
-import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.ImageButton;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 public class MultiFunctionImageButton extends ImageButton {
 	protected Icon defaultIcon;
 	protected Supplier<Boolean> defaultActivePredicate;
-	protected Supplier<List<ITextComponent>> defaultTooltip;
-	protected Supplier<Optional<ISound>> defaultSound;
+	protected Supplier<List<Component>> defaultTooltip;
+	protected Supplier<Optional<SoundInstance>> defaultSound;
 	protected TreeSet<Pair<Modifier, ButtonAction>> actions =
 	  new TreeSet<>(Comparator.naturalOrder());
 	protected @NotNull ButtonAction activeAction;
@@ -43,7 +43,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	public static MultiFunctionImageButton of(
-	  ITextComponent title, @NotNull Icon icon, ButtonActionBuilder action
+	  Component title, @NotNull Icon icon, ButtonActionBuilder action
 	) {
 		return of(title, icon.w, icon.h, icon, action);
 	}
@@ -55,7 +55,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	public static MultiFunctionImageButton of(
-	  ITextComponent title, int width, int height, @NotNull Icon icon, ButtonActionBuilder action
+	  Component title, int width, int height, @NotNull Icon icon, ButtonActionBuilder action
 	) {
 		return new MultiFunctionImageButton(0, 0, width, height, icon, action, title);
 	}
@@ -68,7 +68,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	
 	public MultiFunctionImageButton(
 	  int x, int y, int width, int height, @NotNull Icon icon,
-	  ButtonActionBuilder action, ITextComponent title
+	  ButtonActionBuilder action, Component title
 	) {
 		super(
 		  x, y, width, height, icon.getU(), icon.getV(), icon.h, icon.getTexture(),
@@ -77,7 +77,7 @@ public class MultiFunctionImageButton extends ImageButton {
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
-		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 		actions.add(Pair.of(Modifier.NONE, defaultAction));
 		this.defaultAction = activeAction = defaultAction;
 	}
@@ -140,7 +140,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		updateState();
 		final ButtonAction action = activeAction;
@@ -153,9 +153,9 @@ public class MultiFunctionImageButton extends ImageButton {
 			renderToolTip(mStack, mouseX, mouseY);
 	}
 	
-	private static final ITextComponent[] EMPTY_TEXT_COMPONENT_ARRAY = new ITextComponent[0];
-	@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
-		final List<ITextComponent> ls = getTooltip();
+	private static final Component[] EMPTY_TEXT_COMPONENT_ARRAY = new Component[0];
+	@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
+		final List<Component> ls = getTooltip();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
@@ -164,12 +164,11 @@ public class MultiFunctionImageButton extends ImageButton {
 			if (screen instanceof IMultiTooltipScreen) {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
 				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
-			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().font);
+			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
 		}
 	}
 	
-	public List<ITextComponent> getTooltip() {
+	public List<Component> getTooltip() {
 		ButtonAction action = activeAction;
 		return (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 	}
@@ -226,19 +225,19 @@ public class MultiFunctionImageButton extends ImageButton {
 		public final @Nullable Supplier<Icon> icon;
 		public final @Nullable Supplier<Integer> tint;
 		public final Consumer<Integer> action;
-		public final @Nullable Supplier<ITextComponent> titleSupplier;
-		public final @Nullable Supplier<List<ITextComponent>> tooltipSupplier;
+		public final @Nullable Supplier<Component> titleSupplier;
+		public final @Nullable Supplier<List<Component>> tooltipSupplier;
 		public final @Nullable Supplier<Boolean> activePredicate;
-		public final @Nullable Supplier<Optional<ISound>> sound;
+		public final @Nullable Supplier<Optional<SoundInstance>> sound;
 		
 		public ButtonAction(
 		  int priority,
 		  @Nullable Supplier<Icon> icon, @Nullable Supplier<Integer> tint,
 		  Consumer<Integer> action,
-		  @Nullable Supplier<ITextComponent> titleSupplier,
-		  @Nullable Supplier<List<ITextComponent>> tooltipSupplier,
+		  @Nullable Supplier<Component> titleSupplier,
+		  @Nullable Supplier<List<Component>> tooltipSupplier,
 		  @Nullable Supplier<Boolean> activePredicate,
-		  @Nullable Supplier<Optional<ISound>> sound
+		  @Nullable Supplier<Optional<SoundInstance>> sound
 		) {
 			this.priority = priority;
 			this.icon = icon;
@@ -290,10 +289,10 @@ public class MultiFunctionImageButton extends ImageButton {
 			protected final Consumer<Integer> action;
 			protected @Nullable Supplier<Icon> icon = null;
 			protected @Nullable Supplier<Integer> tint = null;
-			protected @Nullable Supplier<ITextComponent> titleSupplier = null;
-			protected @Nullable Supplier<List<ITextComponent>> tooltipSupplier = null;
+			protected @Nullable Supplier<Component> titleSupplier = null;
+			protected @Nullable Supplier<List<Component>> tooltipSupplier = null;
 			protected @Nullable Supplier<Boolean> activePredicate = null;
-			protected @Nullable Supplier<Optional<ISound>> sound = null;
+			protected @Nullable Supplier<Optional<SoundInstance>> sound = null;
 			
 			private ButtonActionBuilder(Consumer<Integer> action) {
 				this.action = action;
@@ -322,20 +321,20 @@ public class MultiFunctionImageButton extends ImageButton {
 				return this;
 			}
 			
-			public ButtonActionBuilder title(Supplier<ITextComponent> title) {
+			public ButtonActionBuilder title(Supplier<Component> title) {
 				titleSupplier = title;
 				return this;
 			}
 			
-			public ButtonActionBuilder tooltip(ITextComponent tooltip) {
+			public ButtonActionBuilder tooltip(Component tooltip) {
 				return tooltip(() -> Lists.newArrayList(tooltip));
 			}
 			
-			public ButtonActionBuilder tooltip(List<ITextComponent> tooltip) {
+			public ButtonActionBuilder tooltip(List<Component> tooltip) {
 				return tooltip(() -> tooltip);
 			}
 			
-			public ButtonActionBuilder tooltip(Supplier<List<ITextComponent>> tooltip) {
+			public ButtonActionBuilder tooltip(Supplier<List<Component>> tooltip) {
 				tooltipSupplier = tooltip;
 				return this;
 			}
@@ -345,7 +344,7 @@ public class MultiFunctionImageButton extends ImageButton {
 				return this;
 			}
 			
-			public ButtonActionBuilder sound(Supplier<Optional<ISound>> sound) {
+			public ButtonActionBuilder sound(Supplier<Optional<SoundInstance>> sound) {
 				this.sound = sound;
 				return this;
 			}

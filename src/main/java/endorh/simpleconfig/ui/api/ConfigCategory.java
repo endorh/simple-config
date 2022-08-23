@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,9 +16,9 @@ import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public interface ConfigCategory extends IEntryHolder {
-	ITextComponent getTitle();
+	Component getTitle();
 	
-	void setTitle(ITextComponent name);
+	void setTitle(Component name);
 	
 	@Override @Internal List<AbstractConfigField<?>> getHeldEntries();
 	
@@ -36,7 +36,7 @@ public interface ConfigCategory extends IEntryHolder {
 	Icon getIcon();
 	int getSortingOrder();
 	
-	@Nullable Supplier<Optional<ITextComponent[]>> getDescription();
+	@Nullable Supplier<Optional<Component[]>> getDescription();
 	Optional<Path> getContainingFile();
 }
 

@@ -2,10 +2,10 @@ package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.*;
+import net.minecraft.network.chat.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -33,21 +33,21 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	public ConfirmLinkDialog(
 	  String link, boolean securityWarning
 	) {
-		this(link, new TranslationTextComponent("chat.link.confirmTrusted"),
-		     Lists.newArrayList(), DialogTexts.GUI_CANCEL,
-		     new TranslationTextComponent("chat.copy"),
-		     new TranslationTextComponent("chat.link.open"), securityWarning);
+		this(link, new TranslatableComponent("chat.link.confirmTrusted"),
+		     Lists.newArrayList(), CommonComponents.GUI_CANCEL,
+		     new TranslatableComponent("chat.copy"),
+		     new TranslatableComponent("chat.link.open"), securityWarning);
 	}
 	
-	protected IFormattableTextComponent formatLink(String link) {
+	protected MutableComponent formatLink(String link) {
 		if (link.length() > 256)
 			link = link.substring(0, 253) + "...";
-		return new StringTextComponent(link).withStyle(TextFormatting.GRAY);
+		return new TextComponent(link).withStyle(ChatFormatting.GRAY);
 	}
 	
 	public ConfirmLinkDialog(
-	  String link, ITextComponent title, List<ITextComponent> body,
-	  ITextComponent cancelText, ITextComponent copyText, ITextComponent confirmText,
+	  String link, Component title, List<Component> body,
+	  Component cancelText, Component copyText, Component confirmText,
 	  boolean securityWarning
 	) {
 		super(title);
@@ -55,8 +55,8 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 		setConfirmText(confirmText);
 		withAction(this::action);
 		if (securityWarning)
-			body.add(0, new TranslationTextComponent("chat.link.warning"));
-		body.add(new TranslationTextComponent("simpleconfig.ui.link.display", formatLink(link)));
+			body.add(0, new TranslatableComponent("chat.link.warning"));
+		body.add(new TranslatableComponent("simpleconfig.ui.link.display", formatLink(link)));
 		setBody(body);
 		this.link = link;
 		copyButton = new TintedButton(0, 0, 120, 20, copyText, p -> copy());

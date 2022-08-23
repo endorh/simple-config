@@ -2,25 +2,25 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.ButtonListEntry;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 
 import java.util.function.Supplier;
 
 public class ButtonFieldBuilder extends FieldBuilder<Runnable, ButtonListEntry, ButtonFieldBuilder> {
-	private Supplier<ITextComponent> buttonLabelSupplier = () -> new StringTextComponent("");
+	private Supplier<Component> buttonLabelSupplier = () -> new TextComponent("");
 	
 	public ButtonFieldBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, Runnable value
+	  ConfigFieldBuilder builder, Component name, Runnable value
 	) {
 		super(ButtonListEntry.class, builder, name, value);
 	}
 	
-	public ButtonFieldBuilder withButtonLabel(ITextComponent label) {
+	public ButtonFieldBuilder withButtonLabel(Component label) {
 		return withButtonLabel(() -> label);
 	}
 	
-	public ButtonFieldBuilder withButtonLabel(Supplier<ITextComponent> supplier) {
+	public ButtonFieldBuilder withButtonLabel(Supplier<Component> supplier) {
 		buttonLabelSupplier = supplier;
 		return this;
 	}

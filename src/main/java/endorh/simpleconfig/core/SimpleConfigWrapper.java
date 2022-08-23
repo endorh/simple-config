@@ -12,7 +12,11 @@ import endorh.simpleconfig.config.CommonConfig.menu;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.ConfigValueBuilder;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -22,10 +26,11 @@ import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.config.IConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -97,10 +102,15 @@ public class SimpleConfigWrapper {
 							ModConfig config = configs.get(configType);
 							if (!(config instanceof SimpleConfigModConfig) && menu.shouldWrapConfig(modId)) {
 								LOGGER.info("Wrapping " + tt + " config for mod {}", modId);
-								SimpleConfigBuilderImpl
-								  builder = (SimpleConfigBuilderImpl) wrap(container, config);
-								if (builder != null) builder.buildAndRegister(
-								  null, new WrappingConfigValueBuilder(container, config));
+								IConfigSpec<?> s = config.getSpec();
+								if (!(s instanceof ForgeConfigSpec spec)) throw new IllegalArgumentException(
+								  "Config spec for mod " + container.getModInfo().getDisplayName() + " (" +
+								  container.getModId() + ") is not a ForgeConfigSpec");
+								SimpleConfigBuilderImpl builder = (SimpleConfigBuilderImpl) wrap(container, config, spec);
+								if (builder == null || builder.entries.isEmpty() && builder.categories.isEmpty() && builder.groups.isEmpty()) {
+									LOGGER.warn("Unable to wrap " + tt + " config for mod {}: Wrapped config is empty", modId);
+								} else builder.buildAndRegister(
+								  null, new WrappingConfigValueBuilder(container, config, spec));
 							}
 						}
 						LOGGER.info("Wrapped " + tt + " config for mod " + logName);
@@ -114,14 +124,14 @@ public class SimpleConfigWrapper {
 		});
 	}
 	
-	private static SimpleConfigBuilder wrap(ModContainer container, ModConfig config) {
+	private static SimpleConfigBuilder wrap(
+	  ModContainer container, ModConfig config, ForgeConfigSpec spec
+	) {
 		if (config instanceof SimpleConfigModConfig) return null;
 		Type type = SimpleConfig.Type.fromConfigType(config.getType());
 		SimpleConfigBuilder builder = config(config.getModId(), type);
 		
-		ForgeConfigSpec forgeSpec = config.getSpec();
-		UnmodifiableConfig spec = forgeSpec.getSpec();
-		wrapConfig(builder, spec, "");
+		wrapConfig(builder, spec.getValues(), spec.getSpec(), "");
 		return builder;
 	}
 	
@@ -131,11 +141,13 @@ public class SimpleConfigWrapper {
 		private final ForgeConfigSpec spec;
 		private final Stack<UnmodifiableConfig> stack = new Stack<>();
 		private final Stack<String> path = new Stack<>();
-		protected WrappingConfigValueBuilder(ModContainer container, ModConfig modConfig) {
+		protected WrappingConfigValueBuilder(
+		  ModContainer container, ModConfig modConfig, ForgeConfigSpec spec
+		) {
 			this.container = container;
 			this.modConfig = modConfig;
-			spec = modConfig.getSpec();
-			stack.push(spec.getValues());
+			this.spec = spec;
+			stack.push(this.spec.getValues());
 		}
 		
 		@Override public void buildModConfig(SimpleConfigImpl config) {
@@ -191,33 +203,35 @@ public class SimpleConfigWrapper {
 	}
 	
 	private static void wrapConfig(
-	  ConfigEntryHolderBuilder<?> builder, UnmodifiableConfig spec, String path
+	  ConfigEntryHolderBuilder<?> builder, UnmodifiableConfig values,
+	  UnmodifiableConfig spec, String path
 	) {
-		Map<String, Object> specMap = spec.valueMap();
+		Map<String, Object> specMap = values.valueMap();
 		for (Map.Entry<String, Object> specEntry: specMap.entrySet()) {
 			final String key = specEntry.getKey();
 			String entryPath = path.isEmpty()? key : path + "." + key;
 			final Object specValue = specEntry.getValue();
-			if (specValue instanceof UnmodifiableConfig) {
-				UnmodifiableConfig subSpec = (UnmodifiableConfig) specValue;
-				if (builder instanceof SimpleConfigBuilder && menu.wrap_top_level_groups_as_categories) {
-					SimpleConfigBuilder configBuilder = (SimpleConfigBuilder) builder;
+			if (specValue instanceof UnmodifiableConfig subSpec) {
+				if (builder instanceof SimpleConfigBuilder configBuilder && menu.wrap_top_level_groups_as_categories) {
 					ConfigCategoryBuilder categoryBuilder = category(key);
-					wrapConfig(categoryBuilder, subSpec, entryPath);
+					wrapConfig(categoryBuilder, subSpec, spec, entryPath);
 					configBuilder.n(categoryBuilder);
 				} else {
 					ConfigGroupBuilder groupBuilder = group(key, true);
-					wrapConfig(groupBuilder, subSpec, entryPath);
+					wrapConfig(groupBuilder, subSpec, spec, entryPath);
 					builder.n(groupBuilder);
 				}
-			} else if (specValue instanceof ValueSpec) {
-				ValueSpec valueSpec = (ValueSpec) specValue;
-				Optional<ConfigEntryBuilder<?, ?, ?, ?>> opt = wrapValue(valueSpec);
-				if (opt.isPresent()) {
-					builder.add(key, opt.get());
+			} else if (specValue instanceof ConfigValue<?> configValue) {
+				Object o = spec.get(configValue.getPath());
+				if (o instanceof ValueSpec s) {
+					Optional<ConfigEntryBuilder<?, ?, ?, ?>> opt = wrapValue(s);
+					if (opt.isPresent()) {
+						builder.add(key, opt.get());
+					} else LOGGER.warn(
+					  "Could not wrap config value: " + entryPath + " of type "
+					  + configValue.getClass().getCanonicalName());
 				} else LOGGER.warn(
-				  "Could not wrap config value: " + entryPath + " of type "
-				  + ((ValueSpec) specValue).getClazz().getCanonicalName());
+				  "Invalid value spec: " + o + " for entry " + entryPath);
 			}
 		}
 	}
@@ -274,11 +288,11 @@ public class SimpleConfigWrapper {
 	) {
 		builder = builder.restart(spec.needsWorldRestart());
 		String translation = spec.getTranslationKey();
-		if (translation != null) //noinspection unchecked
-			builder = (B) ((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) builder).translation(translation);
+		if (translation != null)
+			builder = ((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) builder).translation(translation);
 		String comment = spec.getComment();
 		if (comment != null) {
-			List<ITextComponent> tooltip = new ArrayList<>();
+			List<Component> tooltip = new ArrayList<>();
 			String[] lines = LINE_BREAK.split(comment);
 			int commonIndent = Arrays.stream(lines).mapToInt(l -> {
 				Matcher m = INDENT.matcher(l);
@@ -287,19 +301,19 @@ public class SimpleConfigWrapper {
 			}).min().orElse(0);
 			for (String l: lines) {
 				l = l.substring(commonIndent);
-				IFormattableTextComponent ll = new StringTextComponent(l)
-				  .withStyle(TextFormatting.GRAY);
+				MutableComponent ll = new TextComponent(l)
+				  .withStyle(ChatFormatting.GRAY);
 				Matcher m = EXPERIMENTAL.matcher(l);
 				if (m.find()) {
 					builder = builder.withTags(EntryTag.EXPERIMENTAL);
 					if (FMLEnvironment.dist == Dist.CLIENT)
-						ll = applyStyle(ll, TextFormatting.GOLD, m.start(), m.end());
+						ll = applyStyle(ll, ChatFormatting.GOLD, m.start(), m.end());
 				}
 				tooltip.add(ll);
 			}
 			builder = builder.tooltip(tooltip);
 		}
-		builder = builder.configError(t -> !spec.test(t)? Optional.of(new TranslationTextComponent(
+		builder = builder.configError(t -> !spec.test(t)? Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.invalid_value_generic")) : Optional.empty());
 		//noinspection unchecked
 		return (B) builder;
@@ -380,8 +394,7 @@ public class SimpleConfigWrapper {
 		//noinspection unchecked
 		reg((Class<List<?>>) (Class<?>) List.class, Function.identity(), (s, v) -> {
 			Object defValue = s.getDefault();
-			if (!(defValue instanceof List)) return null;
-			List<?> def = (List<?>) defValue;
+			if (!(defValue instanceof List<?> def)) return null;
 			ListEntryBuilder<?, ?, ?, ?> builder = guessListType(def, s::test);
 			if (!s.test(Lists.newArrayList()))
 				builder = builder.minSize(1);

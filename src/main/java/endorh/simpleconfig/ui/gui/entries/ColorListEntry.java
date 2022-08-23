@@ -1,18 +1,18 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.math.Color;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.widget.ColorDisplayWidget;
 import endorh.simpleconfig.ui.gui.widget.ColorPickerWidget;
-import endorh.simpleconfig.ui.math.Color;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -31,10 +31,10 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 	protected boolean colorPickerVisible = false;
 	protected Rectangle colorPickerRectangle = new Rectangle();
 	protected Rectangle reportedColorPickerRectangle = new Rectangle();
-	protected List<IGuiEventListener> widgetsWithColorPicker;
-	protected List<IGuiEventListener> childWidgetsWithColorPicker;
+	protected List<GuiEventListener> widgetsWithColorPicker;
+	protected List<GuiEventListener> childWidgetsWithColorPicker;
 	
-	@Internal public ColorListEntry(ITextComponent fieldName, int value) {
+	@Internal public ColorListEntry(Component fieldName, int value) {
 		super(fieldName, 0, false);
 		alpha = true;
 		ColorValue colorValue = getColorValue(String.valueOf(value));
@@ -89,7 +89,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (last != getDisplayedValue()) {
 			last = getDisplayedValue();
@@ -97,8 +97,8 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		}
 		if (!isFocused() || !canShowColorPicker()) setColorPickerVisible(false);
 		final Minecraft mc = Minecraft.getInstance();
-		final MainWindow window = mc.getWindow();
-		final FontRenderer font = mc.font;
+		final Window window = mc.getWindow();
+		final Font font = mc.font;
 		colorDisplayWidget.y = y;
 		ColorValue value = getColorValue(getText());
 		if (!value.hasError()) {
@@ -127,7 +127,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area != reportedColorPickerRectangle)
 			return super.renderOverlay(mStack, area, mouseX, mouseY, delta);
@@ -193,11 +193,11 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		return getHexColorString(value);
 	}
 	
-	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
+	@Internal @Override public Optional<Component> getErrorMessage() {
 		ColorValue colorValue = getColorValue(getText());
 		ColorError error = colorValue.getError();
 		if (error != null) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.invalid_color", getText()));
 		}
 		return super.getErrorMessage();
@@ -306,7 +306,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		}
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		if (this.isChildSubEntry())
 			return isColorPickerVisible()? childWidgetsWithColorPicker : childWidgets;
 		return isColorPickerVisible()? widgetsWithColorPicker : widgets;

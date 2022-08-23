@@ -2,13 +2,22 @@ package endorh.simpleconfig.ui.gui;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.InputConstants.Key;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.ConfigScreen;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
@@ -21,27 +30,15 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.impl.EditHistory;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.client.util.InputMappings.Input;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.ClickEvent.Action;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent.Action;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,7 +74,7 @@ public abstract class AbstractConfigScreen extends Screen
 	protected @Nullable Runnable savingRunnable = null;
 	protected @Nullable Runnable closingRunnable;
 	protected @Nullable Consumer<Screen> afterInitConsumer = null;
-	protected Pair<Integer, IGuiEventListener> dragged = null;
+	protected Pair<Integer, GuiEventListener> dragged = null;
 	protected Map<String, Map<String, ConfigCategory>> categoryMap;
 	protected ExternalChangesDialog externalChangesDialog;
 	
@@ -99,7 +96,7 @@ public abstract class AbstractConfigScreen extends Screen
 	protected Set<EditType> loadedRemoteConfigs = Collections.newSetFromMap(new EnumMap<EditType, Boolean>(EditType.class));
 	
 	protected AbstractConfigScreen(
-	  Screen parent, String modId, ITextComponent title, ResourceLocation backgroundLocation,
+	  Screen parent, String modId, Component title, ResourceLocation backgroundLocation,
 	  Collection<ConfigCategory> clientCategories,
 	  Collection<ConfigCategory> commonCategories,
 	  Collection<ConfigCategory> serverCommonCategories,
@@ -150,7 +147,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public static void fillGradient(
-	  MatrixStack mStack, double xStart, double yStart, double xEnd, double yEnd,
+	  PoseStack mStack, double xStart, double yStart, double xEnd, double yEnd,
 	  int blitOffset, int from, int to
 	) {
 		float fa = (float) (from >> 24 & 0xFF) / 255F;
@@ -161,9 +158,9 @@ public abstract class AbstractConfigScreen extends Screen
 		float tr = (float) (to >> 16 & 0xFF) / 255F;
 		float tg = (float) (to >> 8 & 0xFF) / 255F;
 		float tb = (float) (to & 0xFF) / 255F;
-		Tessellator tessellator = Tessellator.getInstance();
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
-		bb.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 		// @formatter:off
 		final Matrix4f m = mStack.last().pose();
 		bb.vertex(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
@@ -175,13 +172,13 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public static void drawBorderRect(
-	  MatrixStack mStack, Rectangle area, int w, int color, int innerColor
+	  PoseStack mStack, Rectangle area, int w, int color, int innerColor
 	) {
 		drawBorderRect(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), w, color, innerColor);
 	}
 	
 	public static void drawBorderRect(
-	  MatrixStack mStack, int l, int t, int r, int b, int w, int color, int innerColor
+	  PoseStack mStack, int l, int t, int r, int b, int w, int color, int innerColor
 	) {
 		fill(mStack, l, t, r, t + w, color);
 		fill(mStack, l, b - w, r, b, color);
@@ -331,8 +328,8 @@ public abstract class AbstractConfigScreen extends Screen
 		boolean remote = !forceOverwrite && confirm.overwrite_remote && hasConflictingRemoteChanges();
 		if (external || remote) {
 			addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("simpleconfig.ui.confirm_overwrite"), d -> {
-				  List<ITextComponent> body = splitTtc(
+			  new TranslatableComponent("simpleconfig.ui.confirm_overwrite"), d -> {
+				  List<Component> body = splitTtc(
 					 "simpleconfig.ui.confirm_overwrite.msg."
 					 + (external ? remote ? "both" : "external" : "remote"));
 				  body.addAll(SimpleConfigTextUtil.splitTtc(
@@ -340,10 +337,10 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setBody(body);
 				  CheckboxButton[] checkBoxes = Stream.concat(
 					 Stream.of(
-						CheckboxButton.of(!confirm.overwrite_external, new TranslationTextComponent(
+						CheckboxButton.of(!confirm.overwrite_external, new TranslatableComponent(
 						  "simpleconfig.ui.confirm_overwrite.do_not_ask_external"
 						))).filter(p -> external),
-					 Stream.of(CheckboxButton.of(!confirm.overwrite_remote, new TranslationTextComponent(
+					 Stream.of(CheckboxButton.of(!confirm.overwrite_remote, new TranslatableComponent(
 						"simpleconfig.ui.confirm_overwrite.do_not_ask_remote"
 					 ))).filter(p -> remote)).toArray(CheckboxButton[]::new);
 				  d.withCheckBoxes((b, s) -> {
@@ -366,14 +363,14 @@ public abstract class AbstractConfigScreen extends Screen
 						  doSaveAll(openOtherScreens);
 					  }
 				  }, checkBoxes);
-				  d.setConfirmText(new TranslationTextComponent(
+				  d.setConfirmText(new TranslatableComponent(
 					 "simpleconfig.ui.confirm_overwrite.overwrite"));
 				  d.setConfirmButtonTint(0x80603070);
 			  }
 			));
 		} else if (confirmSave || forceConfirm) {
 			addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("simpleconfig.ui.confirm_save"), d -> {
+			  new TranslatableComponent("simpleconfig.ui.confirm_save"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -386,9 +383,9 @@ public abstract class AbstractConfigScreen extends Screen
 						  doSaveAll(openOtherScreens);
 					  }
 				  }, CheckboxButton.of(
-					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
+					 false, new TranslatableComponent("simpleconfig.ui.do_not_ask_again")));
 				  d.setBody(splitTtc("simpleconfig.ui.confirm_save.msg"));
-				  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.save"));
+				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.save"));
 				  d.setConfirmButtonTint(0x8042BD42);
 			  }));
 		} else doSaveAll(openOtherScreens);
@@ -564,11 +561,11 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	protected void playFeedbackTap(float volume) {
 		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
+		  SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
-		Input key = InputMappings.getKey(keyCode, scanCode);
+		Key key = InputConstants.getKey(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
 			selectNextCategory(true);
 			recomputeFocus();
@@ -597,7 +594,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (minecraft == null) return false;
 		if (!skipConfirm && confirmUnsaved && isEdited()) {
 			addDialog(ConfirmDialog.create(
-			  new TranslationTextComponent("simpleconfig.ui.discard.dialog"), d -> {
+			  new TranslatableComponent("simpleconfig.ui.discard.dialog"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -610,9 +607,9 @@ public abstract class AbstractConfigScreen extends Screen
 						  quit(true);
 					  }
 				  }, CheckboxButton.of(
-					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
+					 false, new TranslatableComponent("simpleconfig.ui.do_not_ask_again")));
 				  d.setBody(splitTtc("simpleconfig.ui.discard.confirm"));
-				  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.discard"));
+				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.discard"));
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else {
@@ -627,19 +624,14 @@ public abstract class AbstractConfigScreen extends Screen
 		tickDialogs();
 		boolean edited = isEdited();
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
-		  edited ? new TranslationTextComponent("simpleconfig.ui.discard")
-		         : DialogTexts.GUI_CANCEL));
-		for (IGuiEventListener child : children()) {
-			if (!(child instanceof ITickableTileEntity)) continue;
-			((ITickableTileEntity) child).tick();
-		}
+		  edited ? new TranslatableComponent("simpleconfig.ui.discard") : CommonComponents.GUI_CANCEL));
 	}
 	
-	@Nullable protected Widget getQuitButton() {
+	@Nullable protected AbstractWidget getQuitButton() {
 		return null;
 	}
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
 		super.render(mStack, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
@@ -649,7 +641,7 @@ public abstract class AbstractConfigScreen extends Screen
 		renderTooltips(mStack, mouseX, mouseY, delta);
 	}
 	
-	protected void renderTooltips(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderTooltips(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		for (Tooltip tooltip : tooltips) {
 			int ty = tooltip.getY();
 			if (ty <= 24) ty += 16;
@@ -669,22 +661,22 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void overlayBackground(
-	  MatrixStack mStack, Rectangle rect, int r, int g, int b
+	  PoseStack mStack, Rectangle rect, int r, int g, int b
 	) {
 		overlayBackground(mStack, rect, r, g, b, 255, 255);
 	}
 	
 	@SuppressWarnings("SameParameterValue") protected void overlayBackground(
-	  MatrixStack mStack, Rectangle rect, int r, int g, int b, int startAlpha, int endAlpha
+	  PoseStack mStack, Rectangle rect, int r, int g, int b, int startAlpha, int endAlpha
 	) {
 		if (minecraft == null || isTransparentBackground()) return;
-		Tessellator tessellator = Tessellator.getInstance();
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder buffer = tessellator.getBuilder();
-		minecraft.getTextureManager().bind(getBackgroundLocation());
-		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+		RenderSystem.setShaderTexture(0, getBackgroundLocation());
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		final Matrix4f m = mStack.last().pose();
 		// @formatter:off
-		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+		buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
 		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
 		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
@@ -694,7 +686,7 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public void renderComponentHoverEffect(
-	  @NotNull MatrixStack matrices, Style style, int x, int y
+	  @NotNull PoseStack matrices, Style style, int x, int y
 	) {
 		super.renderComponentHoverEffect(matrices, style, x, y);
 	}
@@ -739,11 +731,11 @@ public abstract class AbstractConfigScreen extends Screen
 		return !type.isOnlyRemote() || loadedRemoteConfigs.contains(type);
 	}
 	
-	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+	@Override public Pair<Integer, GuiEventListener> getDragged() {
 		return dragged;
 	}
 	
-	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+	@Override public void setDragged(Pair<Integer, GuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
 	
@@ -838,16 +830,16 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public static void fill(
-	  MatrixStack mStack, ResourceLocation texture, float tw, float th,
+	  PoseStack mStack, ResourceLocation texture, float tw, float th,
 	  float x, float y, float w, float h, int tint
 	) {
 		float r = tint >> 16 & 0xFF, g = tint >> 8 & 0xFF, b = tint & 0xFF, a = tint >> 24;
-		Minecraft.getInstance().getTextureManager().bind(texture);
-		RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
-		Tessellator tessellator = Tessellator.getInstance();
+		RenderSystem.setShaderTexture(0, texture);
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder buffer = tessellator.getBuilder();
 		Matrix4f m = mStack.last().pose();
-		buffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+		buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		// @formatter:off
 		buffer.vertex(m,     x,     y, 0F).uv(     x  / tw,      y  / th).color(r, g, b, a).endVertex();
 		buffer.vertex(m, x + w,     y, 0F).uv((x + w) / tw,      y  / th).color(r, g, b, a).endVertex();

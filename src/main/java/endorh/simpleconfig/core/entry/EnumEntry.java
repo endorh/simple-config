@@ -13,8 +13,12 @@ import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -84,7 +88,7 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	public interface ITranslatedEnum {
-		ITextComponent getDisplayName();
+		Component getDisplayName();
 	}
 	
 	public String presentName(E value) {
@@ -118,46 +122,46 @@ public class EnumEntry<E extends Enum<E>>
 		return tooltips;
 	}
 	
-	@Override protected ITextComponent getDebugDisplayName() {
+	@Override protected Component getDebugDisplayName() {
 		if (translation != null) {
-			IFormattableTextComponent status =
-			  I18n.exists(translation) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			MutableComponent status =
+			  I18n.exists(translation) ? new TextComponent("✔ ") : new TextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
+				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
 			boolean correct = defValue instanceof ITranslatedEnum
 			                  || Arrays.stream(enumClass.getEnumConstants())
 			                    .allMatch(e -> I18n.exists(getEnumTranslationKey(e)));
 			status = status.append(
-			  correct ? new StringTextComponent("✔ ").withStyle(TextFormatting.LIGHT_PURPLE)
-			          : new StringTextComponent("✘ ").withStyle(TextFormatting.LIGHT_PURPLE));
-			TextFormatting format =
-			  I18n.exists(translation)? correct? TextFormatting.DARK_GREEN : TextFormatting.GOLD : TextFormatting.RED;
-			return new StringTextComponent("").append(status.append(new StringTextComponent(translation)).withStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
+			  correct ? new TextComponent("✔ ").withStyle(ChatFormatting.LIGHT_PURPLE)
+			          : new TextComponent("✘ ").withStyle(ChatFormatting.LIGHT_PURPLE));
+			ChatFormatting format =
+			  I18n.exists(translation)? correct? ChatFormatting.DARK_GREEN : ChatFormatting.GOLD : ChatFormatting.RED;
+			return new TextComponent("").append(status.append(new TextComponent(translation)).withStyle(format));
+		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
-	@OnlyIn(Dist.CLIENT) @Override protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
+	@OnlyIn(Dist.CLIENT) @Override protected void addTranslationsDebugInfo(List<Component> tooltip) {
 		super.addTranslationsDebugInfo(tooltip);
 		if (parent != null) {
 			if (defValue instanceof ITranslatedEnum)
-				tooltip.add(new StringTextComponent(" + Enum provides its own translations").withStyle(
-				  TextFormatting.GRAY));
+				tooltip.add(new TextComponent(" + Enum provides its own translations").withStyle(
+				  ChatFormatting.GRAY));
 			tooltip.add(
-			  new StringTextComponent(" + Enum translation keys:").withStyle(TextFormatting.GRAY));
+			  new TextComponent(" + Enum translation keys:").withStyle(ChatFormatting.GRAY));
 			for (E elem : enumClass.getEnumConstants()) {
 				final String key = getEnumTranslationKey(elem);
-				final IFormattableTextComponent status =
+				final MutableComponent status =
 				  I18n.exists(key)
-				  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
+				  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
 				  : (defValue instanceof ITranslatedEnum)
-				    ? new StringTextComponent("(not present)").withStyle(TextFormatting.DARK_GRAY)
-				    : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
-				tooltip.add(new StringTextComponent("   > ").withStyle(TextFormatting.GRAY)
-				              .append(new StringTextComponent(key).withStyle(TextFormatting.DARK_AQUA))
+				    ? new TextComponent("(not present)").withStyle(ChatFormatting.DARK_GRAY)
+				    : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
+				tooltip.add(new TextComponent("   > ").withStyle(ChatFormatting.GRAY)
+				              .append(new TextComponent(key).withStyle(ChatFormatting.DARK_AQUA))
 				              .append(" ").append(status));
 			}
 		}
@@ -170,14 +174,14 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected ITextComponent enumName(E item) {
+	protected Component enumName(E item) {
 		if (item instanceof ITranslatedEnum)
 			return ((ITranslatedEnum) item).getDisplayName();
 		final String key = getEnumTranslationKey(item);
-		// if (debugTranslations()) return new StringTextComponent(key);
+		// if (debugTranslations()) return new TextComponent(key);
 		if (I18n.exists(key))
-			return new TranslationTextComponent(key);
-		return new StringTextComponent(item.name());
+			return new TranslatableComponent(key);
+		return new TextComponent(item.name());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -204,25 +208,25 @@ public class EnumEntry<E extends Enum<E>>
 	public static class ChoicesTypeWrapper<V> implements ITypeWrapper<V> {
 		protected List<V> choices;
 		protected Function<V, String> nameProvider;
-		protected Function<V, ITextComponent> formattedNameProvider;
+		protected Function<V, Component> formattedNameProvider;
 		
 		public ChoicesTypeWrapper(
 		  List<V> choices, Function<V, String> nameProvider,
-		  Function<V, ITextComponent> formattedNameProvider
+		  Function<V, Component> formattedNameProvider
 		) {
 			this.choices = choices;
 			this.nameProvider = nameProvider;
 			this.formattedNameProvider = formattedNameProvider;
 		}
 		
-		@Override public Pair<Optional<V>, Optional<ITextComponent>> parseElement(@NotNull String text) {
+		@Override public Pair<Optional<V>, Optional<Component>> parseElement(@NotNull String text) {
 			final Optional<V> opt = choices.stream().filter(c -> text.equals(nameProvider.apply(c))).findFirst();
-			Optional<ITextComponent> error = opt.isPresent()? Optional.empty() : Optional.of(new TranslationTextComponent(
+			Optional<Component> error = opt.isPresent()? Optional.empty() : Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.unknown_value"));
 			return Pair.of(opt, error);
 		}
 		
-		@Override public ITextComponent getDisplayName(@NotNull V element) {
+		@Override public Component getDisplayName(@NotNull V element) {
 			return formattedNameProvider.apply(element);
 		}
 		

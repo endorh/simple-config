@@ -1,9 +1,13 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindRegistrar;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindRegistrar;
+import endorh.simpleconfig.api.ui.hotkey.InputMatchingContext;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
+import net.minecraft.client.KeyMapping;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
@@ -164,7 +168,7 @@ public class ExtendedKeyBindDispatcher {
 		}
 		// Since the event is not cancellable, we have to play dirty
 		if (preventFurther && action != GLFW.GLFW_RELEASE)
-			KeyBinding.releaseAll();
+			KeyMapping.releaseAll();
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)

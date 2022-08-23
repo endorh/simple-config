@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.EnumListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -13,10 +13,10 @@ import java.util.function.Function;
 @OnlyIn(value = Dist.CLIENT)
 public class EnumSelectorBuilder<V extends Enum<?>> extends FieldBuilder<V, EnumListEntry<V>, EnumSelectorBuilder<V>> {
 	protected final Class<V> clazz;
-	protected Function<Enum<?>, ITextComponent> enumNameProvider = EnumListEntry.DEFAULT_NAME_PROVIDER;
+	protected Function<Enum<?>, Component> enumNameProvider = EnumListEntry.DEFAULT_NAME_PROVIDER;
 	
 	public EnumSelectorBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, V value
+	  ConfigFieldBuilder builder, Component name, V value
 	) {
 		super(EnumListEntry.class, builder, name, value);
 		Objects.requireNonNull(value);
@@ -26,7 +26,7 @@ public class EnumSelectorBuilder<V extends Enum<?>> extends FieldBuilder<V, Enum
 	}
 	
 	public EnumSelectorBuilder<V> setEnumNameProvider(
-	  Function<Enum<?>, ITextComponent> enumNameProvider
+	  Function<Enum<?>, Component> enumNameProvider
 	) {
 		Objects.requireNonNull(enumNameProvider);
 		this.enumNameProvider = enumNameProvider;

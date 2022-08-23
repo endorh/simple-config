@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.impl.builders;
 
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.StringListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, Text
 	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	public TextFieldBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, String value
+	  ConfigFieldBuilder builder, Component name, String value
 	) {
 		super(StringListEntry.class, builder, name, Objects.requireNonNull(value));
 	}

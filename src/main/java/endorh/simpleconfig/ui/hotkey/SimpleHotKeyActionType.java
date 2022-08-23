@@ -1,10 +1,14 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -42,12 +46,12 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 		return translationKey;
 	}
 	
-	@Override public ITextComponent formatAction(SimpleHotKeyAction<V, S> action) {
-		return new TranslationTextComponent(
+	@Override public Component formatAction(SimpleHotKeyAction<V, S> action) {
+		return new TranslatableComponent(
 		  "simpleconfig.hotkey.type.action." + getTranslationKey(), formatStorage(action.getStorage()));
 	}
 	
-	public ITextComponent formatStorage(S storage) {
+	public Component formatStorage(S storage) {
 		String value;
 		if (storage instanceof Float) {
 			value = String.format("%.2f", storage);
@@ -56,7 +60,7 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 		} else {
 			value = String.valueOf(storage);
 		}
-		return new StringTextComponent(value).withStyle(TextFormatting.DARK_AQUA);
+		return new TextComponent(value).withStyle(ChatFormatting.DARK_AQUA);
 	}
 	
 	@SuppressWarnings("unchecked") @Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> SimpleHotKeyAction<V, S> deserialize(
@@ -73,14 +77,14 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 	}
 	
 	@Override
-	public <T, C, E extends AbstractConfigEntry<T, C, V>> Optional<ITextComponent> getActionError(
+	public <T, C, E extends AbstractConfigEntry<T, C, V>> Optional<Component> getActionError(
 	  E entry, Object value
 	) {
 		try {
 			//noinspection unchecked
 			return error != null? error.getError(entry, (S) value) : Optional.empty();
 		} catch (ClassCastException e) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.command.error.set.invalid_type_generic"));
 		}
 	}
@@ -114,8 +118,8 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 		}
 		
 		@Override public <T, C, E extends AbstractConfigEntry<T, C, V>>
-		@Nullable ITextComponent apply(String path, E entry, CommentedConfig result) {
-			ITextComponent prev = formatValue(entry.getForCommand());
+		@Nullable Component apply(String path, E entry, CommentedConfig result) {
+			Component prev = formatValue(entry.getForCommand());
 			T prevValue = entry.get();
 			T newValue = entry.fromGui(applyValue(entry.forGui(prevValue)));
 			boolean success = entry.isValidValue(newValue);
@@ -124,33 +128,33 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 				newValue = entry.defValue;
 			}
 			T v = newValue;
-			ITextComponent set = formatValue(entry.forCommand(v));
+			Component set = formatValue(entry.forCommand(v));
 			boolean change = success && !Objects.equals(prevValue, v);
 			if (success) result.set(path, entry.apply(e -> e.forActualConfig(e.forConfig(v))));
-			IFormattableTextComponent report = formatPath(entry.getPath()).append(" ")
-			  .append(new TranslationTextComponent(
+			MutableComponent report = formatPath(entry.getPath()).append(" ")
+			  .append(new TranslatableComponent(
 				 "simpleconfig.hotkey.type.report." + getType().getTranslationKey(),
 				 getType().formatStorage(getStorage()), prev, set)
-				         .withStyle(change? TextFormatting.WHITE : TextFormatting.GRAY));
-			if (!success) report.append(" ").append(new TranslationTextComponent(
-			  "simpleconfig.hotkey.report.failure").withStyle(TextFormatting.RED));
+				         .withStyle(change? ChatFormatting.WHITE : ChatFormatting.GRAY));
+			if (!success) report.append(" ").append(new TranslatableComponent(
+			  "simpleconfig.hotkey.report.failure").withStyle(ChatFormatting.RED));
 			return report;
 		}
 		
-		private IFormattableTextComponent formatPath(String path) {
+		private MutableComponent formatPath(String path) {
 			if (path.length() > 60)
 				path = path.substring(0, 10) + "..." + path.substring(path.length() - 47);
-			return new StringTextComponent("[" + path + "]").withStyle(TextFormatting.LIGHT_PURPLE);
+			return new TextComponent("[" + path + "]").withStyle(ChatFormatting.LIGHT_PURPLE);
 		}
 		
 		private static final Pattern FLOATING_NUMBER = Pattern.compile(
 		  "^[+-]?(?:\\d*\\.\\d+|\\d*\\.)$");
-		private ITextComponent formatValue(String value) {
+		private Component formatValue(String value) {
 			if (FLOATING_NUMBER.matcher(value).matches()) {
 				double v = Double.parseDouble(value);
 				value = String.format("%.3f", v);
 			}
-			return new StringTextComponent(value).withStyle(TextFormatting.DARK_AQUA);
+			return new TextComponent(value).withStyle(ChatFormatting.DARK_AQUA);
 		}
 		
 		public @Nullable V applyValue(V value) {
@@ -187,6 +191,6 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 	}
 	
 	@FunctionalInterface public interface ISimpleHotKeyError<V, S> {
-		Optional<ITextComponent> getError(AbstractConfigEntry<?, ?, V> entry, S storage);
+		Optional<Component> getError(AbstractConfigEntry<?, ?, V> entry, S storage);
 	}
 }

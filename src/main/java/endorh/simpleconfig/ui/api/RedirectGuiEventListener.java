@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.api;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.IRenderable;
-import net.minecraft.client.gui.widget.Widget;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,17 +11,17 @@ import org.jetbrains.annotations.Nullable;
  * Redirects all {@link IGuiEventListener} related events to a given target.<br>
  * Convenient to replace event listeners in multiple queues.
  */
-public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListener, IRenderable {
-	private @Nullable IGuiEventListener target;
-	public RedirectGuiEventListener(@Nullable IGuiEventListener target) {
+public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListener, Widget {
+	private @Nullable GuiEventListener target;
+	public RedirectGuiEventListener(@Nullable GuiEventListener target) {
 		this.target = target;
 	}
 	
-	public @Nullable IGuiEventListener getTarget() {
+	public @Nullable GuiEventListener getTarget() {
 		return target;
 	}
 	
-	public void setTarget(@Nullable IGuiEventListener target) {
+	public void setTarget(@Nullable GuiEventListener target) {
 		this.target = target;
 	}
 	
@@ -88,18 +88,18 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 	
 	// IRenderable methods
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
-		if (target instanceof IRenderable)
-			((IRenderable) target).render(mStack, mouseX, mouseY, delta);
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+		if (target instanceof Widget)
+			((Widget) target).render(mStack, mouseX, mouseY, delta);
 	}
 	
 	// Widget methods
 	
 	public int getWidth() {
-		return target instanceof Widget? ((Widget) target).getWidth() : 0;
+		return target instanceof AbstractWidget? ((AbstractWidget) target).getWidth() : 0;
 	}
 	
 	public int getHeight() {
-		return target instanceof Widget? ((Widget) target).getHeight() : 0;
+		return target instanceof AbstractWidget? ((AbstractWidget) target).getHeight() : 0;
 	}
 }

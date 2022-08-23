@@ -1,21 +1,21 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -29,8 +29,8 @@ import java.util.Optional;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implements IChildListEntry {
 	protected TextFieldWidgetEx textFieldWidget;
-	protected List<IGuiEventListener> widgets;
-	protected List<IGuiEventListener> childWidgets;
+	protected List<GuiEventListener> widgets;
+	protected List<GuiEventListener> childWidgets;
 	protected boolean expandable;
 	private boolean expanded = false;
 	protected Rectangle labelArea = new Rectangle();
@@ -41,7 +41,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
 	
 	@Internal protected TextFieldListEntry(
-	  ITextComponent fieldName, V original, boolean canExpand
+	  Component fieldName, V original, boolean canExpand
 	) {
 		super(fieldName);
 		expandable = canExpand;
@@ -61,13 +61,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public V getDisplayedValue() {
-		return fromString(textFieldWidget.getText());
+		return fromString(textFieldWidget.getValue());
 	}
 	@Override public void setDisplayedValue(V v) {
-		textFieldWidget.setText(toString(v));
+		textFieldWidget.setValue(toString(v));
 	}
 	public String getText() {
-		return textFieldWidget.getText();
+		return textFieldWidget.getValue();
 	}
 	
 	protected abstract @Nullable V fromString(String s);
@@ -88,7 +88,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
@@ -107,21 +107,21 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override protected void renderField(
-	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
 	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		float p = expandAnimator.getEaseOut();
 		int expandedX = Minecraft.getInstance().font.isBidirectional()? fieldX : x + 14;
 		renderChild(
-		  mStack, (int) MathHelper.lerp(p, fieldX, expandedX),
-		  isHeadless()? fieldY : (int) MathHelper.lerp(p, fieldY, y + 24),
-		  (int) MathHelper.lerp(p, fieldWidth,
+		  mStack, (int) Mth.lerp(p, fieldX, expandedX),
+		  isHeadless()? fieldY : (int) Mth.lerp(p, fieldY, y + 24),
+		  (int) Mth.lerp(p, fieldWidth,
 		             isHeadless()? entryWidth - 16 - resetButton.getWidth() : entryWidth - 14),
 		  fieldHeight, mouseX, mouseY, delta);
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		textFieldWidget.setEditable(shouldRenderEditable());
 		// Text fields render the border outside, so we inset it 1px to match other controls
@@ -144,7 +144,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		        : (int) (expandAnimator.getEaseOut() * 24));
 	}
 	
-	@Override public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (textFieldWidget.isMouseOver(mouseX, mouseY))
 			return Optional.empty();
 		return super.getTooltip(mouseX, mouseY);
@@ -180,18 +180,18 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		return false;
 	}
 	
-	@Override public Optional<ITextComponent> getErrorMessage() {
-		final Optional<ITextComponent> opt = super.getErrorMessage();
+	@Override public Optional<Component> getErrorMessage() {
+		final Optional<Component> opt = super.getErrorMessage();
 		if (opt.isPresent()) return opt;
 		if (getText().length() < minLength)
 			return Optional.of(
 			  minLength == 1
-			  ? new TranslationTextComponent("simpleconfig.config.error.string.empty")
-			  : new TranslationTextComponent("simpleconfig.config.error.string.min_length", minLength));
+			  ? new TranslatableComponent("simpleconfig.config.error.string.empty")
+			  : new TranslatableComponent("simpleconfig.config.error.string.min_length", minLength));
 		return Optional.empty();
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return isChildSubEntry() ? childWidgets : widgets;
 	}
 	

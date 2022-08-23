@@ -1,16 +1,16 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -22,11 +22,11 @@ import java.util.List;
 @OnlyIn(value = Dist.CLIENT)
 public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implements IChildListEntry {
 	protected final KeyBindButton hotKeyButton;
-	protected final List<IGuiEventListener> widgets;
-	protected final List<IGuiEventListener> childWidgets;
+	protected final List<GuiEventListener> widgets;
+	protected final List<GuiEventListener> childWidgets;
 	
 	@Internal public KeyBindListEntry(
-	  ITextComponent fieldName, KeyBindMapping value, @Nullable ExtendedKeyBindImpl keyBind
+	  Component fieldName, KeyBindMapping value, @Nullable ExtendedKeyBindImpl keyBind
 	) {
 		super(fieldName);
 		setOriginal(value.copy());
@@ -80,12 +80,12 @@ public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implement
 		return v == null ? null : v.copy();
 	}
 	
-	private ITextComponent getLocalizedName() {
+	private Component getLocalizedName() {
 		return getDisplayedValue().getDisplayName();
 	}
 	
 	@Override public void renderChildEntry(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		hotKeyButton.setActive(shouldRenderEditable());
 		hotKeyButton.setPosition(x, y, w);
@@ -99,7 +99,7 @@ public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implement
 			WidgetUtils.forceUnFocus(hotKeyButton);
 	}
 	
-	@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 		return this.isChildSubEntry() ? childWidgets : widgets;
 	}
 }

@@ -5,14 +5,14 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntry;
 import endorh.simpleconfig.ui.gui.entries.SubCategoryListEntry.VoidEntryBuilder;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class SubCategoryBuilder extends CaptionedSubCategoryBuilder<Void, VoidEntry, VoidEntryBuilder> {
-	public SubCategoryBuilder(ConfigFieldBuilder builder, ITextComponent name) {
+	public SubCategoryBuilder(ConfigFieldBuilder builder, Component name) {
 		super(builder, name, null);
 	}
 	

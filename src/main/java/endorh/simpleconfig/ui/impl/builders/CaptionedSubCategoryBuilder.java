@@ -5,7 +5,7 @@ import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ public class CaptionedSubCategoryBuilder<
 	protected @Nullable HEB captionEntry;
 	
 	public CaptionedSubCategoryBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, @Nullable HEB captionEntry
+	  ConfigFieldBuilder builder, Component name, @Nullable HEB captionEntry
 	) {
 		super(CaptionedSubCategoryListEntry.class, builder, name,
 		      captionEntry != null? captionEntry.value : null);

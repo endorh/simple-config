@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.api;
 
-import endorh.simpleconfig.ui.math.Point;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.ITextProperties;
-import net.minecraft.util.text.LanguageMap;
+import endorh.simpleconfig.api.ui.math.Point;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Arrays;
@@ -13,29 +13,29 @@ import java.util.List;
 
 public class QueuedTooltip implements Tooltip {
 	private final Point location;
-	private final List<IReorderingProcessor> text;
+	private final List<FormattedCharSequence> text;
 	
-	private QueuedTooltip(Point location, List<IReorderingProcessor> text) {
+	private QueuedTooltip(Point location, List<FormattedCharSequence> text) {
 		this.location = location;
 		this.text = Collections.unmodifiableList(text);
 	}
 	
-	public static QueuedTooltip create(Point location, List<ITextComponent> text) {
+	public static QueuedTooltip create(Point location, List<Component> text) {
 		//noinspection unchecked
-		return new QueuedTooltip(location, LanguageMap.getInstance().getVisualOrder(
-		  (List<ITextProperties>) (List<?>) text));
+		return new QueuedTooltip(location, Language.getInstance().getVisualOrder(
+		  (List<FormattedText>) (List<?>) text));
 	}
 	
-	public static QueuedTooltip create(Point location, ITextComponent... text) {
+	public static QueuedTooltip create(Point location, Component... text) {
 		return QueuedTooltip.create(location, Arrays.asList(text));
 	}
 	
-	public static QueuedTooltip create(Point location, IReorderingProcessor... text) {
+	public static QueuedTooltip create(Point location, FormattedCharSequence... text) {
 		return new QueuedTooltip(location, Arrays.asList(text));
 	}
 	
-	public static QueuedTooltip create(Point location, ITextProperties... text) {
-		return new QueuedTooltip(location, LanguageMap.getInstance().getVisualOrder(Arrays.asList(text)));
+	public static QueuedTooltip create(Point location, FormattedText... text) {
+		return new QueuedTooltip(location, Language.getInstance().getVisualOrder(Arrays.asList(text)));
 	}
 	
 	@Override
@@ -45,7 +45,7 @@ public class QueuedTooltip implements Tooltip {
 	
 	@Override
 	@ApiStatus.Internal
-	public List<IReorderingProcessor> getText() {
+	public List<FormattedCharSequence> getText() {
 		return this.text;
 	}
 }

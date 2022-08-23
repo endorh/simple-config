@@ -1,8 +1,11 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
@@ -10,17 +13,14 @@ import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.RectangleAnimator;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -28,9 +28,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public abstract class AbstractDialog
-  extends FocusableGui
+  extends AbstractContainerEventHandler
   implements IExtendedDragAwareNestedGuiEventHandler, IOverlayCapableContainer {
-	protected ITextComponent title;
+	protected Component title;
 	protected MultiFunctionImageButton copyTextButton;
 	protected RedirectGuiEventListener copyTextReference;
 	protected int titleColor = 0xFFE0E0E0;
@@ -40,7 +40,7 @@ public abstract class AbstractDialog
 	protected int backgroundOverlayColor = 0xFF343434;
 	protected int screenColor = 0x80101010;
 	private Screen screen;
-	protected List<IGuiEventListener> listeners = Lists.newArrayList();
+	protected List<GuiEventListener> listeners = Lists.newArrayList();
 	/**
 	 * Set to true to avoid cancelling when clicking outside
 	 */
@@ -51,16 +51,16 @@ public abstract class AbstractDialog
 	protected Rectangle area = new Rectangle();
 	protected Rectangle animatedArea = new Rectangle();
 	protected RectangleAnimator areaAnimator = new RectangleAnimator(150L);
-	protected FontRenderer font = Minecraft.getInstance().font;
+	protected Font font = Minecraft.getInstance().font;
 	
-	protected Pair<Integer, IGuiEventListener> dragged = null;
+	protected Pair<Integer, GuiEventListener> dragged = null;
 	private final SortedOverlayCollection sortedOverlays = new SortedOverlayCollection();
 	
-	public AbstractDialog(ITextComponent title) {
+	public AbstractDialog(Component title) {
 		this.title = title;
 		this.copyTextButton = new MultiFunctionImageButton(
 		  0, 0, 18, 18, SimpleConfigIcons.Buttons.COPY, ButtonAction.of(this::copyText)
-		  .tooltip(new TranslationTextComponent("simpleconfig.ui.copy_dialog")));
+		  .tooltip(new TranslatableComponent("simpleconfig.ui.copy_dialog")));
 		copyTextReference = new RedirectGuiEventListener(copyTextButton);
 		listeners.add(copyTextReference);
 	}
@@ -114,7 +114,7 @@ public abstract class AbstractDialog
 		animatedArea = areaAnimator.getCurrentEaseOut();
 	}
 	
-	public boolean render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public boolean render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (isCancelled()) return false;
 		layout();
 		animateLayout();
@@ -127,7 +127,7 @@ public abstract class AbstractDialog
 		return true;
 	}
 	
-	public void renderTitle(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void renderTitle(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		int x = getX(), y = getY(), w = getWidth();
 		fill(mStack, x + 1, y + 1, x + w - 1, y + 23, backgroundOverlayColor);
 		fill(mStack, x + 1, y + 23, x + w - 1, y + 24, subBorderColor);
@@ -141,7 +141,7 @@ public abstract class AbstractDialog
 			copyTextButton.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	public void renderBackground(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void renderBackground(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		fill(mStack, 0, 0, getScreen().width, getScreen().height, screenColor);
 		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
 		fill(mStack, x - 8, y - 8, x + w + 8, y + h + 8, 0x24242424);
@@ -152,7 +152,7 @@ public abstract class AbstractDialog
 		fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, backgroundColor);
 	}
 	
-	public abstract void renderBody(MatrixStack mStack, int mouseX, int mouseY, float delta);
+	public abstract void renderBody(PoseStack mStack, int mouseX, int mouseY, float delta);
 	
 	public boolean isMouseInside(double mouseX, double mouseY) {
 		int x = getX(), y = getY();
@@ -164,7 +164,7 @@ public abstract class AbstractDialog
 		if (!isMouseInside(mouseX, mouseY) && !isPersistent()) {
 			cancel();
 			Minecraft.getInstance().getSoundManager()
-			  .play(SimpleSound.forUI(SimpleConfigMod.UI_TAP, 0.8F));
+			  .play(SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, 0.8F));
 			return true;
 		}
 		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
@@ -201,13 +201,13 @@ public abstract class AbstractDialog
 	
 	// IExtendedDragAwareNestedGuiEventHandler
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return listeners;
 	}
-	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+	@Override public Pair<Integer, GuiEventListener> getDragged() {
 		return dragged;
 	}
-	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+	@Override public void setDragged(Pair<Integer, GuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
 	
@@ -226,10 +226,10 @@ public abstract class AbstractDialog
 	
 	// Getters and Setters
 	
-	public ITextComponent getTitle() {
+	public Component getTitle() {
 		return title;
 	}
-	public void setTitle(ITextComponent title) {
+	public void setTitle(Component title) {
 		this.title = title;
 	}
 	public boolean canCopyText() {

@@ -2,8 +2,8 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -18,15 +18,15 @@ import java.util.function.Function;
 public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V, ?, Entry>,
   Self extends ListFieldBuilder<V, Entry, Self>> extends FieldBuilder<List<V>, Entry, Self> {
 	
-	@NotNull protected BiFunction<Integer, V, Optional<ITextComponent>> cellErrorSupplier = (i, v) -> Optional.empty();
-	@NotNull protected Function<List<V>, @Nullable List<Optional<ITextComponent>>> multiCellErrorSupplier = l -> null;
-	protected ITextComponent[] addTooltip = new ITextComponent[] {
-	  new TranslationTextComponent("simpleconfig.help.list.insert"),
-	  new TranslationTextComponent("simpleconfig.help.list.insert:key")
+	@NotNull protected BiFunction<Integer, V, Optional<Component>> cellErrorSupplier = (i, v) -> Optional.empty();
+	@NotNull protected Function<List<V>, @Nullable List<Optional<Component>>> multiCellErrorSupplier = l -> null;
+	protected Component[] addTooltip = new Component[] {
+	  new TranslatableComponent("simpleconfig.help.list.insert"),
+	  new TranslatableComponent("simpleconfig.help.list.insert:key")
 	};
-	protected ITextComponent[] removeTooltip = new ITextComponent[] {
-	  new TranslationTextComponent("simpleconfig.help.list.remove"),
-	  new TranslationTextComponent("simpleconfig.help.list.remove:key")
+	protected Component[] removeTooltip = new Component[] {
+	  new TranslatableComponent("simpleconfig.help.list.remove"),
+	  new TranslatableComponent("simpleconfig.help.list.remove:key")
 	};
 	protected boolean expanded = false;
 	protected boolean insertInFront = false;
@@ -35,27 +35,27 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 	// protected @Nullable AbstractConfigListEntry<?> heldEntry = null;
 	
 	protected ListFieldBuilder(
-	  Class<?> entryClass, ConfigFieldBuilder builder, ITextComponent name, List<V> value
+	  Class<?> entryClass, ConfigFieldBuilder builder, Component name, List<V> value
 	) {
 		super(entryClass, builder, name, value);
 	}
 	
-	public Self setCellErrorSupplier(@NotNull BiFunction<Integer, V, Optional<ITextComponent>> cellError) {
+	public Self setCellErrorSupplier(@NotNull BiFunction<Integer, V, Optional<Component>> cellError) {
 		cellErrorSupplier = cellError;
 		return self();
 	}
 	
-	public Self setMultiCellErrorSupplier(@NotNull Function<List<V>, @Nullable List<Optional<ITextComponent>>> multiCellError) {
+	public Self setMultiCellErrorSupplier(@NotNull Function<List<V>, @Nullable List<Optional<Component>>> multiCellError) {
 		multiCellErrorSupplier = multiCellError;
 		return self();
 	}
 	
-	public Self setAddButtonTooltip(ITextComponent[] addTooltip) {
+	public Self setAddButtonTooltip(Component[] addTooltip) {
 		this.addTooltip = addTooltip;
 		return self();
 	}
 	
-	public Self setRemoveButtonTooltip(ITextComponent[] removeTooltip) {
+	public Self setRemoveButtonTooltip(Component[] removeTooltip) {
 		this.removeTooltip = removeTooltip;
 		return self();
 	}

@@ -1,15 +1,15 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -18,12 +18,12 @@ import java.util.List;
 import static java.lang.Math.max;
 
 public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEntry<E>>
-  extends FocusableGui {
+  extends AbstractContainerEventHandler {
 	private final ArrangeableTreeView<E> tree;
-	protected List<IGuiEventListener> listeners = new ArrayList<>();
+	protected List<GuiEventListener> listeners = new ArrayList<>();
 	protected List<IPositionableRenderable> controls = new ArrayList<>();
 	protected List<IPositionableRenderable> rightControls = new ArrayList<>();
-	private ITextComponent title = StringTextComponent.EMPTY;
+	private Component title = TextComponent.EMPTY;
 	private int titleColor = 0xE0E0E0E0;
 	
 	protected ArrangeableTreeViewCaption(ArrangeableTreeView<E> tree) {
@@ -34,11 +34,11 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		return tree;
 	}
 	
-	protected void addControl(Widget control) {
+	protected void addControl(AbstractWidget control) {
 		addControl(controls.size(), control);
 	}
 	
-	protected void addControl(int pos, Widget control) {
+	protected void addControl(int pos, AbstractWidget control) {
 		addControl(pos, IPositionableRenderable.wrap(control));
 	}
 	
@@ -51,11 +51,11 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		listeners.add(pos, control);
 	}
 	
-	protected void addRightControl(Widget control) {
+	protected void addRightControl(AbstractWidget control) {
 		addRightControl(rightControls.size(), control);
 	}
 	
-	protected void addRightControl(int pos, Widget control) {
+	protected void addRightControl(int pos, AbstractWidget control) {
 		addControl(pos, IPositionableRenderable.wrap(control));
 	}
 	
@@ -68,11 +68,11 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		listeners.add(pos + controls.size(), control);
 	}
 	
-	public ITextComponent getTitle() {
+	public Component getTitle() {
 		return title;
 	}
 	
-	public void setTitle(ITextComponent title) {
+	public void setTitle(Component title) {
 		this.title = title;
 	}
 	
@@ -88,13 +88,13 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		return 24;
 	}
 	
-	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		ArrangeableTreeView<E> tree = getTree();
 		int pad = tree.getPadding();
 		int x = tree.getX() + pad, y = tree.getY() + pad;
 		int height = getHeight();
 		boolean focused = tree.isFocusedCaption();
-		FontRenderer font = Minecraft.getInstance().font;
+		Font font = Minecraft.getInstance().font;
 		for (IPositionableRenderable control: controls) {
 			if (!focused || control != getFocused()) control.setFocused(false);
 			control.setPosition(x, y);
@@ -124,7 +124,7 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		}
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return listeners;
 	}
 }

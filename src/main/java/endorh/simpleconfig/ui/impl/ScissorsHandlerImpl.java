@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.impl;
 
+import com.mojang.blaze3d.platform.Window;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -69,7 +69,7 @@ public final class ScissorsHandlerImpl
 			if (r.isEmpty()) {
 				GL11.glScissor(0, 0, 0, 0);
 			} else {
-				MainWindow window = Minecraft.getInstance().getWindow();
+				Window window = Minecraft.getInstance().getWindow();
 				double scaleFactor = window.getGuiScale();
 				GL11.glScissor(
               (int) ((double) r.x * scaleFactor),

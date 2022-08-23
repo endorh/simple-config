@@ -1,17 +1,17 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.gui.screen.ControlsScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.util.text.*;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.controls.ControlsScreen;
+import net.minecraft.network.chat.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -22,41 +22,41 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ControlsHelpDialog extends ConfirmDialog {
-	protected ControlsHelpDialog(ITextComponent title) {
+	protected ControlsHelpDialog(Component title) {
 		super(title);
 	}
 	
 	public static Builder of(String prefix) {
-		return of(prefix, new TranslationTextComponent("simpleconfig.ui.controls"));
+		return of(prefix, new TranslatableComponent("simpleconfig.ui.controls"));
 	}
 	
-	public static Builder of(String prefix, ITextComponent title) {
+	public static Builder of(String prefix, Component title) {
 		return new Builder(prefix, title);
 	}
 	
 	public static class Builder {
 		private static final Pattern COMMA = Pattern.compile("\\s*,\\s*");
 		private static final Pattern SLASH = Pattern.compile("\\s*/\\s*");
-		private final ITextComponent title;
+		private final Component title;
 		private final String prefix;
-		private final List<ITextComponent> lines = Lists.newArrayList();
+		private final List<Component> lines = Lists.newArrayList();
 		private Style categoryStyle = Style.EMPTY.withBold(true).withUnderlined(true);
-		private Style keyStyle = Style.EMPTY.withColor(TextFormatting.DARK_AQUA);
-		private Style keyBindStyle = Style.EMPTY.withColor(TextFormatting.DARK_GREEN);
-		private Style unboundKeyBindStyle = Style.EMPTY.withColor(TextFormatting.DARK_RED);
-		private Style modifierStyle = Style.EMPTY.withColor(TextFormatting.DARK_PURPLE);
-		private Style helpStyle = Style.EMPTY.withColor(TextFormatting.GRAY);
+		private Style keyStyle = Style.EMPTY.withColor(ChatFormatting.DARK_AQUA);
+		private Style keyBindStyle = Style.EMPTY.withColor(ChatFormatting.DARK_GREEN);
+		private Style unboundKeyBindStyle = Style.EMPTY.withColor(ChatFormatting.DARK_RED);
+		private Style modifierStyle = Style.EMPTY.withColor(ChatFormatting.DARK_PURPLE);
+		private Style helpStyle = Style.EMPTY.withColor(ChatFormatting.GRAY);
 		private CheckboxButton[] checkBoxes = new CheckboxButton[0];
 		private ComplexDialogAction action = (v, s) -> {};
-		private ITextComponent confirmText = DialogTexts.GUI_DONE;
+		private Component confirmText = CommonComponents.GUI_DONE;
 		private @Nullable Function<Screen, Screen> controlsScreenSupplier = s -> new ControlsScreen(s, Minecraft.getInstance().options);
 		
-		private Builder(String prefix, ITextComponent title) {
+		private Builder(String prefix, Component title) {
 			this.prefix = prefix.endsWith(".")? prefix : prefix + ".";
 			this.title = title;
 		}
 		
-		private IFormattableTextComponent parseSingle(String key) {
+		private MutableComponent parseSingle(String key) {
 			return KeyBindMapping.parse(key).getDisplayName(keyStyle).copy();
 			// if (key.endsWith("!"))
 			// 	return ModifierKeyCode.parse(key.substring(0, key.length() - 1))
@@ -64,14 +64,14 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			// return ModifierKeyCode.parse(key).getLocalizedName(modifierStyle, keyStyle).deepCopy();
 		}
 		
-		private IFormattableTextComponent parse(String keys) {
-			final IFormattableTextComponent comma = new StringTextComponent(", ").withStyle(keyStyle);
-			final IFormattableTextComponent slash = new StringTextComponent("/").withStyle(keyStyle);
+		private MutableComponent parse(String keys) {
+			final MutableComponent comma = new TextComponent(", ").withStyle(keyStyle);
+			final MutableComponent slash = new TextComponent("/").withStyle(keyStyle);
 			return Arrays.stream(COMMA.split(keys)).map(
 			  s -> Arrays.stream(SLASH.split(s))
 			    .map(this::parseSingle)
-				 .reduce((a, b) -> a.append(slash).append(b)).orElse(StringTextComponent.EMPTY.copy())
-			).reduce((a, b) -> a.append(comma).append(b)).orElse(StringTextComponent.EMPTY.copy());
+				 .reduce((a, b) -> a.append(slash).append(b)).orElse(TextComponent.EMPTY.copy())
+			).reduce((a, b) -> a.append(comma).append(b)).orElse(TextComponent.EMPTY.copy());
 		}
 		
 		private static final Pattern TITLE_CASE_PATTERN = Pattern.compile("(?<!\\w)\\w");
@@ -126,7 +126,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			return this;
 		}
 		
-		public Builder withConfirmText(ITextComponent confirmText) {
+		public Builder withConfirmText(Component confirmText) {
 			this.confirmText = confirmText;
 			return this;
 		}
@@ -137,18 +137,18 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		}
 		
 		public Builder category(String name, Consumer<CategoryBuilder> builder) {
-			lines.add(new TranslationTextComponent(prefix + "category." + name)
+			lines.add(new TranslatableComponent(prefix + "category." + name)
 			            .withStyle(categoryStyle));
 			builder.accept(new CategoryBuilder(name));
-			lines.add(StringTextComponent.EMPTY);
+			lines.add(TextComponent.EMPTY);
 			return this;
 		}
 		
 		public Builder text(String key) {
-			return text(new TranslationTextComponent(prefix + key));
+			return text(new TranslatableComponent(prefix + key));
 		}
 		
-		public Builder text(ITextComponent text) {
+		public Builder text(Component text) {
 			lines.add(text);
 			return this;
 		}
@@ -165,7 +165,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 				  SimpleConfigIcons.Buttons.KEYBOARD, -1, -1, ButtonAction.of(() -> {
 					  Minecraft.getInstance().setScreen(controlsScreenSupplier.apply(d.getScreen()));
 					  d.cancel();
-				  }).title(() -> new TranslationTextComponent("simpleconfig.ui.controls.edit_controls"))
+				  }).title(() -> new TranslatableComponent("simpleconfig.ui.controls.edit_controls"))
 					 .tint(0x80815C2E)
 				));
 			}
@@ -180,30 +180,30 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			}
 			
 			public CategoryBuilder key(String help, String keys) {
-				final IFormattableTextComponent keyHelp =
-				  new TranslationTextComponent(prefix + name + "." + help).withStyle(helpStyle);
+				final MutableComponent keyHelp =
+				  new TranslatableComponent(prefix + name + "." + help).withStyle(helpStyle);
 				lines.add(
 				  parse(keys)
-					 .append(new StringTextComponent(": ").withStyle(TextFormatting.DARK_GRAY))
+					 .append(new TextComponent(": ").withStyle(ChatFormatting.DARK_GRAY))
 					 .append(keyHelp));
 				return this;
 			}
 			
-			public CategoryBuilder key(String help, KeyBinding key) {
-				final IFormattableTextComponent keyHelp = new TranslationTextComponent(prefix + name + "." + help).withStyle(helpStyle);
+			public CategoryBuilder key(String help, KeyMapping key) {
+				final MutableComponent keyHelp = new TranslatableComponent(prefix + name + "." + help).withStyle(helpStyle);
 				final String keyName = key.isUnbound()? "---" : toTitleCase(key.getTranslatedKeyMessage().getString());
 				lines.add(
-				  new StringTextComponent(keyName).withStyle(key.isUnbound()? unboundKeyBindStyle : keyBindStyle)
-					 .append(new StringTextComponent(": ").withStyle(TextFormatting.DARK_GRAY))
+				  new TextComponent(keyName).withStyle(key.isUnbound()? unboundKeyBindStyle : keyBindStyle)
+					 .append(new TextComponent(": ").withStyle(ChatFormatting.DARK_GRAY))
 					 .append(keyHelp));
 				return this;
 			}
 			
 			public CategoryBuilder text(String key) {
-				return text(new TranslationTextComponent(prefix + name + "." + key));
+				return text(new TranslatableComponent(prefix + name + "." + key));
 			}
 			
-			public CategoryBuilder text(ITextComponent text) {
+			public CategoryBuilder text(Component text) {
 				lines.add(text);
 				return this;
 			}

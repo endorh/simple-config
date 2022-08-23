@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.ResourceLocationException;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.ChatFormatting;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,14 +35,14 @@ public abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
 	
 	protected abstract @Nullable T getFromRegistryName(@NotNull ResourceLocation name);
 	
-	protected abstract ITextComponent getUnknownError(ResourceLocation name);
+	protected abstract Component getUnknownError(ResourceLocation name);
 	
 	@Override public String getName(@NotNull T element) {
 		final ResourceLocation name = getRegistryName(element);
 		return name.getNamespace().equals("minecraft") ? name.getPath() : name.toString();
 	}
 	
-	@Override public Pair<Optional<T>, Optional<ITextComponent>> parseElement(
+	@Override public Pair<Optional<T>, Optional<Component>> parseElement(
 	  @NotNull String text
 	) {
 		try {
@@ -53,17 +53,17 @@ public abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
 			return Pair.of(Optional.empty(), Optional.of(getUnknownError(name)));
 		} catch (ResourceLocationException e) {
 			return Pair.of(
-			  Optional.empty(), Optional.of(new StringTextComponent(e.getLocalizedMessage())));
+			  Optional.empty(), Optional.of(new TextComponent(e.getLocalizedMessage())));
 		}
 	}
 	
-	@Override public ITextComponent getDisplayName(@NotNull T element) {
+	@Override public Component getDisplayName(@NotNull T element) {
 		final ResourceLocation name = getRegistryName(element);
 		if (name.getNamespace().equals("minecraft"))
-			return new StringTextComponent(name.getPath());
-		return new StringTextComponent(name.getNamespace()).withStyle(TextFormatting.GRAY)
-		  .append(new StringTextComponent(":").withStyle(TextFormatting.GRAY))
-		  .append(new StringTextComponent(name.getPath()).withStyle(TextFormatting.WHITE));
+			return new TextComponent(name.getPath());
+		return new TextComponent(name.getNamespace()).withStyle(ChatFormatting.GRAY)
+		  .append(new TextComponent(":").withStyle(ChatFormatting.GRAY))
+		  .append(new TextComponent(name.getPath()).withStyle(ChatFormatting.WHITE));
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {

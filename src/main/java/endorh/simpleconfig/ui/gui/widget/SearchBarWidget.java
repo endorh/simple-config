@@ -1,9 +1,13 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.SearchBar;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
@@ -14,18 +18,16 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.PatternTypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.StringTypeWrapper;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.SearchBar;
-import endorh.simpleconfig.ui.math.Point;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -40,16 +42,16 @@ import java.util.stream.Collectors;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
-	protected static ITextComponent[] CASE_SENSITIVE_TOOLTIP = {
-	  new TranslationTextComponent("simpleconfig.ui.search.case_sensitive"),
-	  new TranslationTextComponent("key.modifier.alt").append(" + C").withStyle(TextFormatting.GRAY)};
-	protected static ITextComponent[] REGEX_TOOLTIP = new ITextComponent[] {
-	  new TranslationTextComponent("simpleconfig.ui.search.regex"),
-	  new TranslationTextComponent("key.modifier.alt").append(" + R").withStyle(TextFormatting.GRAY)};
-	protected static ITextComponent[] FILTER_TOOLTIP = new ITextComponent[] {
-	  new TranslationTextComponent("simpleconfig.ui.search.filter"),
-	  new TranslationTextComponent("key.modifier.alt").append(" + F").withStyle(TextFormatting.GRAY)};
+public class SearchBarWidget extends AbstractContainerEventHandler implements IOverlayRenderer, NarratableEntry {
+	protected static Component[] CASE_SENSITIVE_TOOLTIP = {
+	  new TranslatableComponent("simpleconfig.ui.search.case_sensitive"),
+	  new TranslatableComponent("key.modifier.alt").append(" + C").withStyle(ChatFormatting.GRAY)};
+	protected static Component[] REGEX_TOOLTIP = new Component[] {
+	  new TranslatableComponent("simpleconfig.ui.search.regex"),
+	  new TranslatableComponent("key.modifier.alt").append(" + R").withStyle(ChatFormatting.GRAY)};
+	protected static Component[] FILTER_TOOLTIP = new Component[] {
+	  new TranslatableComponent("simpleconfig.ui.search.filter"),
+	  new TranslatableComponent("key.modifier.alt").append(" + F").withStyle(ChatFormatting.GRAY)};
 	
 	public int x;
 	public int y;
@@ -69,9 +71,9 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	protected ToggleImageButton regexButton;
 	protected ToggleImageButton caseButton;
 	protected ToggleImageButton filterButton;
-	protected List<IGuiEventListener> expandedListeners;
-	protected List<IGuiEventListener> regexListeners;
-	protected List<IGuiEventListener> closedListeners;
+	protected List<GuiEventListener> expandedListeners;
+	protected List<GuiEventListener> regexListeners;
+	protected List<GuiEventListener> closedListeners;
 	
 	protected boolean overMatch = false;
 	protected int currentMatch = 0;
@@ -289,7 +291,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
 	}
 	
-	public Optional<ITextComponent[]> getTooltip(double mouseX, double mouseY) {
+	public Optional<Component[]> getTooltip(double mouseX, double mouseY) {
 		if (isExpanded()) {
 			if (caseButton.isMouseOver(mouseX, mouseY))
 				return Optional.of(CASE_SENSITIVE_TOOLTIP);
@@ -311,7 +313,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (!expanded) return false;
 		drawBackground(mStack, mouseX, mouseY, delta);
@@ -321,14 +323,14 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			comboBox.setFocused(true);
 		positionExpanded(mStack, mouseX, mouseY, delta);
 		renderExpanded(mStack, mouseX, mouseY, delta);
-		final Optional<ITextComponent[]> tt = getTooltip(mouseX, mouseY);
+		final Optional<Component[]> tt = getTooltip(mouseX, mouseY);
 		//noinspection OptionalIsPresent
 		if (tt.isPresent())
 			screen.addTooltip(Tooltip.of(Point.of(mouseX, mouseY + 16), tt.get()));
 		return true;
 	}
 	
-	public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		final ComboBoxWidget<?> comboBox = getComboBox();
 		overlay.setBounds(x, y, w, comboBox.isDropDownShown()? h + comboBox.getDropDownHeight() : h);
 		if (!expanded) {
@@ -337,9 +339,9 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		}
 	}
 	
-	protected void positionExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void positionExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		int textY = y + 8;
-		final FontRenderer font = Minecraft.getInstance().font;
+		final Font font = Minecraft.getInstance().font;
 		final String text =
 		  String.format("%s / %s", totalMatches > 0 ? currentMatch + 1 : 0, totalMatches);
 		final int textW = font.width(text);
@@ -366,12 +368,12 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		font.drawShadow(mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
 	}
 	
-	protected void positionNotExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void positionNotExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		open.x = x + 2;
 		open.y = y + 2;
 	}
 	
-	protected void renderExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (regex)
 			regexComboBox.render(mStack, mouseX, mouseY, delta);
 		else comboBox.render(mStack, mouseX, mouseY, delta);
@@ -381,11 +383,11 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		close.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	protected void renderNotExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderNotExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		open.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	protected void drawBackground(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void drawBackground(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		fill(mStack, x, y, x + w, y + h, 0xFF343434);
 	}
 	
@@ -461,7 +463,7 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		return getComboBox().getText().isEmpty();
 	}
 	
-	@Override public @NotNull List<? extends IGuiEventListener> children() {
+	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return isExpanded()? regex? regexListeners : expandedListeners : closedListeners;
 	}
 	
@@ -481,6 +483,11 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			makeQuery();
 		} else handler.dismissQuery();
 	}
+	
+	@Override public @NotNull NarrationPriority narrationPriority() {
+		return NarrationPriority.NONE;
+	}
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
 	
 	public interface ISearchHandler {
 		/**

@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -15,16 +15,16 @@ import java.util.function.Consumer;
 
 public class CheckboxButton extends ToggleImageButton {
 	
-	protected @Nullable ITextComponent label;
+	protected @Nullable Component label;
 	protected int textColor = 0xffe0e0e0;
 	protected int realWidth;
 	
-	public static CheckboxButton of(boolean value, @Nullable ITextComponent label) {
+	public static CheckboxButton of(boolean value, @Nullable Component label) {
 		return new CheckboxButton(value, 0, 0, 18, label, null);
 	}
 	
 	public CheckboxButton(
-	  boolean value, int x, int y, int w, @Nullable ITextComponent label,
+	  boolean value, int x, int y, int w, @Nullable Component label,
 	  @Nullable Consumer<Boolean> onChange
 	) {
 		this(value, x, y, w, 18, SimpleConfigIcons.Widgets.CHECKBOX, label, onChange);
@@ -32,7 +32,7 @@ public class CheckboxButton extends ToggleImageButton {
 	
 	public CheckboxButton(
 	  boolean value, int x, int y, int w, int h, Icon icon,
-	  @Nullable ITextComponent label, @Nullable Consumer<Boolean> onChange
+	  @Nullable Component label, @Nullable Consumer<Boolean> onChange
 	) {
 		super(value, x, y, w, h, icon, onChange);
 		this.label = label;
@@ -44,15 +44,15 @@ public class CheckboxButton extends ToggleImageButton {
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
 		final int w = width;
 		width = 18;
 		super.renderButton(mStack, mouseX, mouseY, delta);
 		width = w;
 		if (label != null) {
-			final FontRenderer font = Minecraft.getInstance().font;
-			final List<IReorderingProcessor> lines =
+			final Font font = Minecraft.getInstance().font;
+			final List<FormattedCharSequence> lines =
 			  font.split(label, width - 24);
 			if (!lines.isEmpty())
 				font.drawShadow(mStack, lines.get(0), x + 22, y + 6, textColor);
@@ -72,11 +72,11 @@ public class CheckboxButton extends ToggleImageButton {
 		super.setHeight(18);
 	}
 	
-	@Nullable public ITextComponent getLabel() {
+	@Nullable public Component getLabel() {
 		return label;
 	}
 	
-	public void setLabel(@Nullable ITextComponent label) {
+	public void setLabel(@Nullable Component label) {
 		this.label = label;
 	}
 	

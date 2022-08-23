@@ -1,14 +1,17 @@
 package endorh.simpleconfig.ui.api;
 
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.impl.EasingMethod.EasingMethodImpl;
-import endorh.simpleconfig.ui.math.Rectangle;
 import endorh.simpleconfig.ui.math.impl.PointHelper;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -59,7 +62,7 @@ public abstract class ScrollingHandler {
 	}
 	
 	public double clamp(double v, double clampExtension) {
-		return MathHelper.clamp(v, -clampExtension, (double) getMaxScroll() + clampExtension);
+		return Mth.clamp(v, -clampExtension, (double) getMaxScroll() + clampExtension);
 	}
 	
 	public void offset(double value, boolean animated) {
@@ -140,7 +143,7 @@ public abstract class ScrollingHandler {
 	}
 	
 	public static double clampExtension(double v, double maxScroll, double clampExtension) {
-		return MathHelper.clamp(v, -clampExtension, maxScroll + clampExtension);
+		return Mth.clamp(v, -clampExtension, maxScroll + clampExtension);
 	}
 	
 	public void renderScrollBar() {
@@ -154,57 +157,53 @@ public abstract class ScrollingHandler {
 			int maxScrollHeight = getMaxScrollHeight();
 			if (maxScrollHeight <= 0) maxScrollHeight = 1;
 			int height = bounds.height * bounds.height / maxScrollHeight;
-			height = MathHelper.clamp(height, 32, bounds.height);
+			height = Mth.clamp(height, 32, bounds.height);
 			height = (int) ((double) height - min(
            scrollAmount < 0.0 ? (int) -scrollAmount
                               : scrollAmount > (double) maxScroll ?
                                 (int) scrollAmount - maxScroll : 0,
 			  (double) height * 0.95));
 			height = max(10, height);
-			int minY = min(
-			  max((int) scrollAmount * (bounds.height - height) / maxScroll + bounds.y,
-			           bounds.y), bounds.getMaxY() - height);
-			int scrollbarPositionMinX = getScrollBarX();
-			int scrollbarPositionMaxX = scrollbarPositionMinX + 6;
+			int minY = Mth.clamp(
+			  (int) scrollAmount * (bounds.height - height) / maxScroll + bounds.y,
+			  bounds.y, bounds.getMaxY() - height);
+			int minX = getScrollBarX();
+			int maxX = minX + 6;
 			boolean hovered =
-			  new Rectangle(scrollbarPositionMinX, minY, scrollbarPositionMaxX - scrollbarPositionMinX,
-			                height).contains(PointHelper.ofMouse());
+			  new Rectangle(minX, minY, maxX - minX, height).contains(PointHelper.ofMouse());
 			float bottomC = (hovered ? 0.67f : 0.5f) * scrollBarAlphaOffset;
 			float topC = (hovered ? 0.87f : 0.67f) * scrollBarAlphaOffset;
 			// @formatter:off
 			RenderSystem.disableTexture();
 			RenderSystem.enableBlend();
-			RenderSystem.disableAlphaTest();
-			RenderSystem.blendFuncSeparate(770, 771, 1, 0);
-			RenderSystem.shadeModel(7425);
-			Tessellator tessellator = Tessellator.getInstance();
+			RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ZERO, DestFactor.ONE);
+			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+			Tesselator tessellator = Tesselator.getInstance();
 			BufferBuilder buffer = tessellator.getBuilder();
 			float a = (float) (background >> 24 & 0xFF) / 255.0f;
 			float r = (float) (background >> 16 & 0xFF) / 255.0f;
 			float g = (float) (background >> 8 & 0xFF) / 255.0f;
 			float b = (float) (background & 0xFF) / 255.0f;
-			buffer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-			buffer.vertex(scrollbarPositionMinX, bounds.getMaxY(), 0.0).color(r, g, b, a).endVertex();
-			buffer.vertex(scrollbarPositionMaxX, bounds.getMaxY(), 0.0).color(r, g, b, a).endVertex();
-			buffer.vertex(scrollbarPositionMaxX, bounds.y, 0.0).color(r, g, b, a).endVertex();
-			buffer.vertex(scrollbarPositionMinX, bounds.y, 0.0).color(r, g, b, a).endVertex();
+			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			buffer.vertex(minX, bounds.getMaxY(), 0.0).color(r, g, b, a).endVertex();
+			buffer.vertex(maxX, bounds.getMaxY(), 0.0).color(r, g, b, a).endVertex();
+			buffer.vertex(maxX, bounds.y, 0.0).color(r, g, b, a).endVertex();
+			buffer.vertex(minX, bounds.y, 0.0).color(r, g, b, a).endVertex();
 			tessellator.end();
-			buffer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-			buffer.vertex(scrollbarPositionMinX, minY + height, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
-			buffer.vertex(scrollbarPositionMaxX, minY + height, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
-			buffer.vertex(scrollbarPositionMaxX, minY, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
-			buffer.vertex(scrollbarPositionMinX, minY, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
+			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			buffer.vertex(minX, minY + height, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
+			buffer.vertex(maxX, minY + height, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
+			buffer.vertex(maxX, minY, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
+			buffer.vertex(minX, minY, 0.0).color(bottomC, bottomC, bottomC, alpha).endVertex();
 			tessellator.end();
-			buffer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-			buffer.vertex(scrollbarPositionMinX, minY + height - 1, 0.0).color(topC, topC, topC, alpha).endVertex();
-			buffer.vertex(scrollbarPositionMaxX - 1, minY + height - 1, 0.0).color(topC, topC, topC, alpha).endVertex();
-			buffer.vertex(scrollbarPositionMaxX - 1, minY, 0.0).color(topC, topC, topC, alpha).endVertex();
-			buffer.vertex(scrollbarPositionMinX, minY, 0.0).color(topC, topC, topC, alpha).endVertex();
+			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+			buffer.vertex(minX, minY + height - 1, 0.0).color(topC, topC, topC, alpha).endVertex();
+			buffer.vertex(maxX - 1, minY + height - 1, 0.0).color(topC, topC, topC, alpha).endVertex();
+			buffer.vertex(maxX - 1, minY, 0.0).color(topC, topC, topC, alpha).endVertex();
+			buffer.vertex(minX, minY, 0.0).color(topC, topC, topC, alpha).endVertex();
 			tessellator.end();
-			RenderSystem.shadeModel(7424);
-			RenderSystem.disableBlend();
-			RenderSystem.enableAlphaTest();
 			RenderSystem.enableTexture();
+			RenderSystem.disableBlend();
 			// @formatter:on
 		}
 	}
@@ -224,10 +223,10 @@ public abstract class ScrollingHandler {
 			if (mouseY >= (double) bounds.y && mouseY <= (double) bounds.getMaxY()) {
 				double maxScroll = max(1, getMaxScroll());
 				double int_3 =
-				  MathHelper.clamp((double) (actualHeight * actualHeight) / (double) height, 32.0, actualHeight - 8);
+				  Mth.clamp((double) (actualHeight * actualHeight) / (double) height, 32.0, actualHeight - 8);
 				double double_6 = max(1.0, maxScroll / ((double) actualHeight - int_3));
 				float to =
-				  MathHelper.clamp((float) (scrollAmount + dy * double_6), 0.0f, (float) getMaxScroll());
+				  Mth.clamp((float) (scrollAmount + dy * double_6), 0.0f, (float) getMaxScroll());
 				if (snapToRows) {
 					double nearestRow = (double) Math.round((double) to / rowSize) * rowSize;
 					scrollTo(nearestRow, false);

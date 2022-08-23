@@ -17,7 +17,7 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -133,8 +133,7 @@ public class CaptionedListEntry<
 	}
 	
 	@Override public @Nullable Pair<CC, List<C>> fromActualConfig(@Nullable Object value) {
-		if (value instanceof Map) {
-			Map<?, ?> m = (Map<?, ?>) value;
+		if (value instanceof Map<?, ?> m) {
 			if (m.size() != 1) return null;
 			Map.Entry<?, ?> entry = m.entrySet().stream().findFirst()
 			  .orElseThrow(ConcurrentModificationException::new);
@@ -152,8 +151,8 @@ public class CaptionedListEntry<
 		return null;
 	}
 	
-	@Override public List<ITextComponent> getErrorsFromGUI(Pair<CG, List<G>> value) {
-		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+	@Override public List<Component> getErrorsFromGUI(Pair<CG, List<G>> value) {
+		List<Component> errors = super.getErrorsFromGUI(value);
 		errors.addAll(captionEntry.getErrorsFromGUI(value.getKey()));
 		errors.addAll(listEntry.getErrorsFromGUI(value.getValue()));
 		return errors;
@@ -197,7 +196,7 @@ public class CaptionedListEntry<
 	  LGE extends AbstractListListEntry<G, ?, LGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
 	endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder<G, LGE, ?, CG, CGE, ?> makeGUIEntry(
-	  ConfigFieldBuilder builder, ITextComponent name,
+	  ConfigFieldBuilder builder, Component name,
 	  FieldBuilder<List<G>, ?, ?> listEntry, Pair<CG, List<G>> value
 	) {
 		final FieldBuilder<CG, CGE, ?> cge = getCaptionEntry().buildChildGUIEntry(builder);

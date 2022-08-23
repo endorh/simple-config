@@ -1,17 +1,17 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry.AbstractListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, SELF>, SELF extends AbstractListListEntry<T, C, SELF>>
   extends BaseListEntry<T, C, SELF> {
-	protected BiFunction<Integer, T, Optional<ITextComponent>> cellErrorSupplier = (i, t) -> Optional.empty();
-	protected Function<List<T>, @Nullable List<Optional<ITextComponent>>> multiCellErrorSupplier = l -> null;
-	protected @Nullable List<Optional<ITextComponent>> multiCellErrors = null;
+	protected BiFunction<Integer, T, Optional<Component>> cellErrorSupplier = (i, t) -> Optional.empty();
+	protected Function<List<T>, @Nullable List<Optional<Component>>> multiCellErrorSupplier = l -> null;
+	protected @Nullable List<Optional<Component>> multiCellErrors = null;
 	
 	@Internal public AbstractListListEntry(
-	  ITextComponent fieldName, List<T> value, Function<SELF, C> createNewCell
+	  Component fieldName, List<T> value, Function<SELF, C> createNewCell
 	) {
 		super(fieldName, createNewCell);
 		setOriginal(value);
@@ -42,22 +42,22 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		setDisplayedValue(value);
 	}
 	
-	public BiFunction<Integer, T, Optional<ITextComponent>> getCellErrorSupplier() {
+	public BiFunction<Integer, T, Optional<Component>> getCellErrorSupplier() {
 		return this.cellErrorSupplier;
 	}
 	
-	public void setCellErrorSupplier(BiFunction<Integer, T, Optional<ITextComponent>> cellErrorSupplier) {
+	public void setCellErrorSupplier(BiFunction<Integer, T, Optional<Component>> cellErrorSupplier) {
 		this.cellErrorSupplier = cellErrorSupplier;
 		final List<T> value = getValue();
 		setValue(value);
 		setDisplayedValue(value);
 	}
 	
-	public Function<List<T>, List<Optional<ITextComponent>>> getMultiCellErrorSupplier() {
+	public Function<List<T>, List<Optional<Component>>> getMultiCellErrorSupplier() {
 		return multiCellErrorSupplier;
 	}
 	
-	public void setMultiCellErrorSupplier(Function<List<T>, @Nullable List<Optional<ITextComponent>>> multiCellErrorSupplier) {
+	public void setMultiCellErrorSupplier(Function<List<T>, @Nullable List<Optional<Component>>> multiCellErrorSupplier) {
 		this.multiCellErrorSupplier = multiCellErrorSupplier;
 		final List<T> value = getValue();
 		setValue(value);
@@ -157,14 +157,14 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		
 		@Override protected List<EntryError> computeErrors() {
 			List<EntryError> errors = super.computeErrors();
-			List<Optional<ITextComponent>> multi = listEntry.multiCellErrors;
+			List<Optional<Component>> multi = listEntry.multiCellErrors;
 			if (multi != null && index >= 0 && index < multi.size())
 				multi.get(index).ifPresent(e -> errors.add(EntryError.of(e, this)));
 			return errors;
 		}
 		
 		@Override public void renderCell(
-		  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
+		  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
 		  int mouseY, boolean isSelected, float delta
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
@@ -198,7 +198,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 			final ListEntry listEntry = getListEntry();
 			if (listEntry.isEditable() && Screen.hasAltDown()) {
-				final IGuiEventListener listener = listEntry.getFocused();
+				final GuiEventListener listener = listEntry.getFocused();
 				//noinspection SuspiciousMethodCalls
 				if (listener instanceof BaseListCell && listEntry.cells.contains(listener)) {
 					//noinspection SuspiciousMethodCalls
@@ -222,7 +222,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 						listEntry.removeTransparently(index);
 						if (!listEntry.cells.isEmpty())
 							listEntry.cells.get(
-							  MathHelper.clamp(keyCode == GLFW.GLFW_KEY_BACKSPACE? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
+							  Mth.clamp(keyCode == GLFW.GLFW_KEY_BACKSPACE? index - 1 : index, 0, listEntry.cells.size() - 1)).navigate();
 						return true;
 					}
 				}

@@ -1,8 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
@@ -18,13 +22,15 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewHotKeyEntry;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Point;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.*;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import net.minecraftforge.fml.ModList;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
@@ -60,7 +66,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		containerSupplier = () -> overlayContainer;
 		this.hotKeyEditor = hotKeyEditor;
 		setCaption(new ConfigHotKeyTreeViewCaption(screenSupplier, overlayContainer, this));
-		setPlaceHolder(new TranslationTextComponent("simpleconfig.ui.no_hotkeys"));
+		setPlaceHolder(new TranslatableComponent("simpleconfig.ui.no_hotkeys"));
 		ExtendedKeyBindDispatcher.registerProvider(provider);
 	}
 	
@@ -117,19 +123,19 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_ADD, 20, 20, ButtonAction.of(
 					tree::addHotKey
-				 ).tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.hotkey"))
+				 ).tooltip(new TranslatableComponent("simpleconfig.ui.hotkey.dialog.add.hotkey"))
 				 .tint(0x6480FF80)
 			));
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_ADD_GROUP, 20, 20, ButtonAction.of(
 				  tree::addGroup
-				 ).tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.group"))
+				 ).tooltip(new TranslatableComponent("simpleconfig.ui.hotkey.dialog.add.group"))
 				 .tint(0x6480FF80)
 			));
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_REMOVE, 20, 20, ButtonAction.of(
 					tree::removeSelection
-				 ).tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.remove"))
+				 ).tooltip(new TranslatableComponent("simpleconfig.ui.hotkey.dialog.remove"))
 				 .tint(0x64FF8080)
 				 .active(() -> !tree.getSelection().isEmpty())
 			));
@@ -149,9 +155,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			return 20;
 		}
 		
-		@Override public void render(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+		@Override public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
 			int width = getTree().getWidth();
-			savedHotKeyGroupPickerWidget.setWidth(MathHelper.clamp((int) (width * 0.45), 90, 300));
+			savedHotKeyGroupPickerWidget.setWidth(Mth.clamp((int) (width * 0.45), 90, 300));
 			super.render(mStack, mouseX, mouseY, delta);
 		}
 	}
@@ -217,12 +223,12 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField = TextFieldWidgetEx.of(hotKey.getName());
 				textField.setMaxLength(256);
 				textField.setBordered(false);
-				textField.setEmptyHint(new TranslationTextComponent(
+				textField.setEmptyHint(new TranslatableComponent(
 				  "simpleconfig.ui.hotkey.unnamed.hint"));
 				hotKeyButton = KeyBindButton.of(
 				  screenSupplier::get, containerSupplier, keyBind);
 				enabledCheckbox = draggable(
-				  ENABLE_ACTION, CheckboxButton.of(hotKey.isEnabled(), StringTextComponent.EMPTY));
+				  ENABLE_ACTION, CheckboxButton.of(hotKey.isEnabled(), TextComponent.EMPTY));
 				Stream.of(hotKeyButton, textField, enabledCheckbox).forEach(listeners::add);
 				for (String id: SimpleConfigImpl.getConfigModIds())
 					entries.put(id, new ConfigHotKeyTreeViewModEntry(hotKey, id));
@@ -230,7 +236,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			
 			public ConfigHotKey buildHotKey() {
 				hotKey.setKeyMapping(hotKeyButton.getMapping());
-				hotKey.setName(textField.getText());
+				hotKey.setName(textField.getValue());
 				hotKey.setEnabled(enabledCheckbox.getWidget().getValue());
 				return hotKey;
 			}
@@ -257,19 +263,19 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				entries.keySet().stream()
 				  .sorted(modOrder)
 				  .map(entries::get).forEach(subEntries::add);
-				keyBind.setCandidateName(new StringTextComponent(textField.getText()));
+				keyBind.setCandidateName(new TextComponent(textField.getValue()));
 				hotKeyButton.tick();
 			}
 			
 			@Override public void render(
-			  MatrixStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
+			  PoseStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
 			) {
 				if (getParent().getFocusedSubEntry() != this) setExpanded(false);
 				super.render(mStack, x, y, width, mouseX, mouseY, delta);
 			}
 			
 			@Override public void renderContent(
-			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				int hotKeyButtonWidth = min(150, (w - 46) / 2);
 				hotKeyButton.setPosition(x, y, hotKeyButtonWidth);
@@ -312,13 +318,13 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			@Override public void renderContent(
-			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				pos(editButton, x + 2, y + 1, 18, 18);
 				editButton.render(mStack, mouseX, mouseY, delta);
 				
 				int count = getCount();
-				FontRenderer font = Minecraft.getInstance().font;
+				Font font = Minecraft.getInstance().font;
 				
 				int textX = x + 24;
 				int textY = y + h / 2 - font.lineHeight / 2;
@@ -328,43 +334,43 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				ConfigHotKeyTreeView tree = getTree();
 				if (textX <= mouseX && mouseX < tree.getArea().getMaxX()
 				    && textY <= mouseY && mouseY < textY + font.lineHeight) {
-					List<ITextComponent> tooltip = getResumeTooltip();
+					List<Component> tooltip = getResumeTooltip();
 					if (!tooltip.isEmpty()) tree.getDialogScreen().addTooltip(Tooltip.of(
 					  Point.of(mouseX, mouseY), tooltip));
 				}
 			}
 			
-			protected IFormattableTextComponent getDisplayText() {
+			protected MutableComponent getDisplayText() {
 				int count = getCount();
-				TextFormatting style = count > 0? TextFormatting.WHITE : TextFormatting.GRAY;
-				TextFormatting dim = count > 0? TextFormatting.GRAY : TextFormatting.DARK_GRAY;
-				IFormattableTextComponent name = ModList.get().getMods().stream()
+				ChatFormatting style = count > 0? ChatFormatting.WHITE : ChatFormatting.GRAY;
+				ChatFormatting dim = count > 0? ChatFormatting.GRAY : ChatFormatting.DARK_GRAY;
+				MutableComponent name = ModList.get().getMods().stream()
 				  .filter(m -> modId.equals(m.getModId()))
-				  .findFirst().map(m -> new StringTextComponent(
+				  .findFirst().map(m -> new TextComponent(
 					 m.getDisplayName()).withStyle(style).append(" ")
-					 .append(new StringTextComponent(
+					 .append(new TextComponent(
 						"(" + modId + ")"
 					 ).withStyle(dim))
-				  ).orElse(new StringTextComponent(modId).withStyle(style));
+				  ).orElse(new TextComponent(modId).withStyle(style));
 				if (count > 0) name.append(
-				  new StringTextComponent(" [")
-					 .append(new StringTextComponent(String.valueOf(count))
-					           .withStyle(TextFormatting.AQUA))
-					 .append("]").withStyle(TextFormatting.DARK_AQUA));
+				  new TextComponent(" [")
+					 .append(new TextComponent(String.valueOf(count))
+					           .withStyle(ChatFormatting.AQUA))
+					 .append("]").withStyle(ChatFormatting.DARK_AQUA));
 				return name;
 			}
 			
-			protected List<ITextComponent> getResumeTooltip() {
+			protected List<Component> getResumeTooltip() {
 				Map<Pair<String, EditType>, Map<String, HotKeyAction<?>>> actions = hotKey.getActions();
-				List<ITextComponent> tt = new ArrayList<>();
+				List<Component> tt = new ArrayList<>();
 				for (EditType type: SimpleConfig.EditType.values()) {
 					SimpleConfigImpl config = SimpleConfigImpl.getConfigOrNull(modId, type.getType());
 					if (config != null) {
 						Map<String, HotKeyAction<?>> a = actions.get(Pair.of(modId, type));
 						if (a != null && !a.isEmpty()) {
-							tt.add(new TranslationTextComponent(
+							tt.add(new TranslatableComponent(
 							  "simpleconfig.config.category." + type.getAlias()
-							).withStyle(TextFormatting.BOLD));
+							).withStyle(ChatFormatting.BOLD));
 							a.forEach((k, v) -> tt.add(formatAction(k, v)));
 						}
 					}
@@ -372,14 +378,14 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				return tt;
 			}
 			
-			protected <T> IFormattableTextComponent formatAction(String key, HotKeyAction<T> action) {
-				return new StringTextComponent("[" + key + "]: ")
-				  .withStyle(TextFormatting.LIGHT_PURPLE)
-				  .append(formatAction(action.getType(), action).copy().withStyle(TextFormatting.GRAY));
+			protected <T> MutableComponent formatAction(String key, HotKeyAction<T> action) {
+				return new TextComponent("[" + key + "]: ")
+				  .withStyle(ChatFormatting.LIGHT_PURPLE)
+				  .append(formatAction(action.getType(), action).copy().withStyle(ChatFormatting.GRAY));
 			}
 			
 			@SuppressWarnings("unchecked") private <V, A extends HotKeyAction<V>, T extends HotKeyActionType<V, A>>
-			ITextComponent formatAction(T type, HotKeyAction<?> action) {
+			Component formatAction(T type, HotKeyAction<?> action) {
 				return type.formatAction((A) action);
 			}
 			
@@ -420,13 +426,13 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField = TextFieldWidgetEx.of(group.getName());
 				textField.setMaxLength(256);
 				textField.setBordered(false);
-				textField.setEmptyHint(new TranslationTextComponent(
+				textField.setEmptyHint(new TranslatableComponent(
 				  "simpleconfig.ui.hotkey.unnamed.hint"));
 				keyBind = group.getKeyBind();
 				hotKeyButton = KeyBindButton.of(screenSupplier::get, containerSupplier, keyBind);
 				hotKeyButton.setTooltip(splitTtc("simpleconfig.ui.hotkey.group.hotkey"));
 				enabledCheckbox = draggable(
-				  ENABLE_ACTION, CheckboxButton.of(group.isEnabled(), StringTextComponent.EMPTY));
+				  ENABLE_ACTION, CheckboxButton.of(group.isEnabled(), TextComponent.EMPTY));
 				Stream.of(textField, hotKeyButton, enabledCheckbox).forEach(listeners::add);
 				setExpanded(true, false);
 			}
@@ -440,14 +446,14 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 						return ((ConfigHotKeyTreeViewHotKeyEntry) e).buildHotKey();
 					} else return null;
 				}).filter(Objects::nonNull).forEach(group.getEntries()::add);
-				group.setName(textField.getText());
+				group.setName(textField.getValue());
 				group.setKeyMapping(hotKeyButton.getMapping());
 				group.setEnabled(enabledCheckbox.getWidget().getValue());
 				return group;
 			}
 			
 			@Override protected void tick() {
-				keyBind.setCandidateName(new StringTextComponent(textField.getText()));
+				keyBind.setCandidateName(new TextComponent(textField.getValue()));
 				hotKeyButton.tick();
 			}
 			
@@ -469,7 +475,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			@Override public void renderContent(
-			  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				int hotKeyButtonWidth = min(140, (int) (w * 0.4));
 				pos(textField, x + 4, y + 6, w - 30 - hotKeyButtonWidth, h - 10);

@@ -17,7 +17,7 @@ import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -159,8 +159,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 	}
 	
 	@Override public @Nullable Pair<CC, Map<KC, C>> fromActualConfig(@Nullable Object value) {
-		if (value instanceof Map) {
-			Map<?, ?> m = (Map<?, ?>) value;
+		if (value instanceof Map<?, ?> m) {
 			if (m.size() != 1) return null;
 			Map.Entry<?, ?> entry = m.entrySet().stream().findFirst()
 			  .orElseThrow(ConcurrentModificationException::new);
@@ -178,8 +177,8 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 		return null;
 	}
 	
-	@Override public List<ITextComponent> getErrorsFromGUI(Pair<CG, List<Pair<KG, G>>> value) {
-		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+	@Override public List<Component> getErrorsFromGUI(Pair<CG, List<Pair<KG, G>>> value) {
+		List<Component> errors = super.getErrorsFromGUI(value);
 		errors.addAll(captionEntry.getErrorsFromGUI(value.getKey()));
 		errors.addAll(mapEntry.getErrorsFromGUI(value.getValue()));
 		return errors;
@@ -222,7 +221,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 	  MGE extends AbstractListListEntry<Pair<KG, G>, ?, MGE>,
 	  CGE extends AbstractConfigListEntry<CG> & IChildListEntry>
 	CaptionedListEntryBuilder<Pair<KG, G>, MGE, ?, CG, CGE, ?> makeGUIEntry(
-	  ConfigFieldBuilder builder, ITextComponent name,
+	  ConfigFieldBuilder builder, Component name,
 	  FieldBuilder<List<Pair<KG, G>>, ?, ?> mapEntry, Pair<CG, List<Pair<KG, G>>> value
 	) {
 		final FieldBuilder<CG, CGE, ?> cge = getCaptionEntry().buildChildGUIEntry(builder);

@@ -1,16 +1,17 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Vector3f;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.config.ClientConfig.advanced;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Color;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +35,7 @@ import static java.lang.Math.*;
  * The palette can be used to store colors (right click) and
  * reuse them (left click).
  */
-public class ColorPickerWidget extends Widget {
+public class ColorPickerWidget extends AbstractWidget {
 	protected int colorBg = 0xFF242424;
 	protected int colorBorder = 0xFF646464;
 	protected int colorBorderHover = 0xFFA0A0A0;
@@ -113,8 +114,8 @@ public class ColorPickerWidget extends Widget {
 	}
 	
 	@Override
-	public void renderButton(@NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks) {
-		RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
+	public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.enableDepthTest();
@@ -156,12 +157,12 @@ public class ColorPickerWidget extends Widget {
 			subWidget.render(mStack, mouseX, mouseY);
 	}
 	
-	protected void drawBox(MatrixStack mStack, int x, int y, int w, int h) {
+	protected void drawBox(PoseStack mStack, int x, int y, int w, int h) {
 		fill(mStack, x, y, x + w, y + h, colorBorder);
 		fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, colorBg);
 	}
 	
-	protected boolean drawBox(MatrixStack mStack, int x, int y, int w, int h, int mX, int mY) {
+	protected boolean drawBox(PoseStack mStack, int x, int y, int w, int h, int mX, int mY) {
 		final boolean hovered = mX >= x && mX < x + w && mY >= y && mY < y + h;
 		fill(mStack, x, y, x + w, y + h, hovered ? colorBorderHover : colorBorder);
 		fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, colorBg);
@@ -248,6 +249,8 @@ public class ColorPickerWidget extends Widget {
 		return false;
 	}
 	
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
+	
 	public abstract static class SubWidget {
 		public int x = 0;
 		public int y = 0;
@@ -258,7 +261,7 @@ public class ColorPickerWidget extends Widget {
 			return x <= mouseX && mouseX < x + w && y <= mouseY && mouseY < y + h;
 		}
 		
-		public abstract void render(MatrixStack mStack, int mX, int mY);
+		public abstract void render(PoseStack mStack, int mX, int mY);
 		public boolean onClick(double mouseX, double mouseY, int button) {
 			return false;
 		}
@@ -266,7 +269,7 @@ public class ColorPickerWidget extends Widget {
 	}
 	
 	public class BrightnessSaturationControl extends SubWidget {
-		@Override public void render(MatrixStack mStack, int mX, int mY) {
+		@Override public void render(PoseStack mStack, int mX, int mY) {
 			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
@@ -297,14 +300,14 @@ public class ColorPickerWidget extends Widget {
 		}
 		
 		protected void dragBrightnessSaturation(double mouseX, double mouseY) {
-			final float s = lastSaturation = MathHelper.clamp((float) ((mouseX - x) / (w - 1)), 0F, 1F);
-			final float b = 1F - MathHelper.clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
+			final float s = lastSaturation = Mth.clamp((float) ((mouseX - x) / (w - 1)), 0F, 1F);
+			final float b = 1F - Mth.clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
 			updateValue(Color.ofHSBA(lastHue, s, b, value.getAlpha()));
 		}
 	}
 	
 	public class HueBar extends SubWidget {
-		@Override public void render(MatrixStack mStack, int mX, int mY) {
+		@Override public void render(PoseStack mStack, int mX, int mY) {
 			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
@@ -343,13 +346,13 @@ public class ColorPickerWidget extends Widget {
 		}
 		
 		protected void dragHue(double mouseX, double mouseY) {
-			final float h = lastHue = MathHelper.clamp((float) ((mouseY - y) / (this.h - 1)), 0F, 1F);
+			final float h = lastHue = Mth.clamp((float) ((mouseY - y) / (this.h - 1)), 0F, 1F);
 			updateValue(Color.ofHSBA(h, value.getSaturation(), value.getBrightness(), value.getAlpha()));
 		}
 	}
 	
 	public class TransparencyBar extends SubWidget {
-		@Override public void render(MatrixStack mStack, int mX, int mY) {
+		@Override public void render(PoseStack mStack, int mX, int mY) {
 			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
 			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, w, h);
 			mStack.pushPose(); {
@@ -384,13 +387,13 @@ public class ColorPickerWidget extends Widget {
 		}
 		
 		protected void dragTransparency(double mouseX, double mouseY) {
-			final float a = 1F - MathHelper.clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
+			final float a = 1F - Mth.clamp((float) ((mouseY - y) / (h - 1)), 0F, 1F);
 			updateValue(Color.ofTransparent(value.getColor() & 0xFFFFFF | round(a * 255F) << 24));
 		}
 	}
 	
 	public class HistoryBar extends SubWidget {
-		@Override public void render(MatrixStack mStack, int mX, int mY) {
+		@Override public void render(PoseStack mStack, int mX, int mY) {
 			final boolean hovered = drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
 			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, w, h);
 			mStack.pushPose(); {
@@ -453,7 +456,7 @@ public class ColorPickerWidget extends Widget {
 	}
 	
 	public class Palette extends SubWidget {
-		@Override public void render(MatrixStack mStack, int mX, int mY) {
+		@Override public void render(PoseStack mStack, int mX, int mY) {
 			fill(mStack, x, y, x + 1, y + h, colorBorder);
 			final Map<Integer, java.awt.Color> saved_colors = advanced.color_picker_saved_colors;
 			paletteRows = (h + margin) / (unit + margin);
@@ -464,7 +467,7 @@ public class ColorPickerWidget extends Widget {
 			}
 		}
 		
-		protected void drawPaletteEntry(java.awt.Color color, MatrixStack mStack, int x, int y, int mX, int mY) {
+		protected void drawPaletteEntry(java.awt.Color color, PoseStack mStack, int x, int y, int mX, int mY) {
 			drawBox(mStack, x - 1, y - 1, unit + 2, unit + 2, mX, mY);
 			if (color == null) {
 				SimpleConfigIcons.ColorPicker.DIAGONAL_TEXTURE.renderFill(mStack, x, y, unit, unit);

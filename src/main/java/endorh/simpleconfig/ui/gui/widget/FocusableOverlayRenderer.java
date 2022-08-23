@@ -1,30 +1,30 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.FocusableGui;
-import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FocusableOverlayRenderer extends FocusableGui
+public abstract class FocusableOverlayRenderer extends AbstractContainerEventHandler
   implements IRectanglePositionableRenderable,
              IExtendedDragAwareNestedGuiEventHandler,
              IOverlayRenderer {
 	private final Rectangle area = new Rectangle();
 	private boolean hidden = false;
-	private Pair<Integer, IGuiEventListener> dragged = null;
+	private Pair<Integer, GuiEventListener> dragged = null;
 	private boolean active;
-	protected List<IGuiEventListener> listeners = new ArrayList<>();
+	protected List<GuiEventListener> listeners = new ArrayList<>();
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area != getArea()) return false;
 		if (hidden) {
@@ -87,14 +87,14 @@ public abstract class FocusableOverlayRenderer extends FocusableGui
 		return true;
 	}
 	
-	@Override public Pair<Integer, IGuiEventListener> getDragged() {
+	@Override public Pair<Integer, GuiEventListener> getDragged() {
 		return dragged;
 	}
-	@Override public void setDragged(Pair<Integer, IGuiEventListener> dragged) {
+	@Override public void setDragged(Pair<Integer, GuiEventListener> dragged) {
 		this.dragged = dragged;
 	}
 	
-	@Override public @NotNull List<IGuiEventListener> children() {
+	@Override public @NotNull List<GuiEventListener> children() {
 		return listeners;
 	}
 	

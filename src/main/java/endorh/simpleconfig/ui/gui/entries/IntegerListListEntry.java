@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.IntegerListListEntry.IntegerListCell;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -19,7 +19,7 @@ public class IntegerListListEntry
 	private int minimum = Integer.MIN_VALUE;
 	private int maximum = Integer.MAX_VALUE;
 	
-	@Internal public IntegerListListEntry(ITextComponent fieldName, List<Integer> value) {
+	@Internal public IntegerListListEntry(Component fieldName, List<Integer> value) {
 		super(fieldName, value, IntegerListCell::new);
 	}
 	
@@ -44,29 +44,29 @@ public class IntegerListListEntry
 		
 		@Override public Integer getValue() {
 			try {
-				return Integer.valueOf(widget.getText());
+				return Integer.valueOf(widget.getValue());
 			} catch (NumberFormatException e) {
 				return 0;
 			}
 		}
 		
 		@Override public void doSetValue(Integer value) {
-			widget.setText(String.valueOf(value));
+			widget.setValue(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<Component> getErrorMessage() {
 			try {
-				int i = Integer.parseInt(widget.getText());
+				int i = Integer.parseInt(widget.getValue());
 				final IntegerListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
-					return Optional.of(new TranslationTextComponent(
+					return Optional.of(new TranslatableComponent(
 					  "simpleconfig.config.error.too_large", listEntry.maximum));
 				if (i < listEntry.minimum)
-					return Optional.of(new TranslationTextComponent(
+					return Optional.of(new TranslatableComponent(
 					  "simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslationTextComponent("simpleconfig.config.error.invalid_integer", widget.getText()));
+				  new TranslatableComponent("simpleconfig.config.error.invalid_integer", widget.getValue()));
 			}
 			return Optional.empty();
 		}

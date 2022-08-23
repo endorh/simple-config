@@ -8,14 +8,19 @@ import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.hotkey.*;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.KeyBindFieldBuilder;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.KeyMapping;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fmlclient.registry.ClientRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -29,8 +34,8 @@ import java.util.Optional;
  * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
  * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
  * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
- * <b>Consider registering regular {@link KeyBinding}s through
- * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+ * <b>Consider registering regular {@link KeyMapping}s through
+ * {@link ClientRegistry#registerKeyBinding(KeyMapping)}
  * </b><br>
  */
 @OnlyIn(Dist.CLIENT)

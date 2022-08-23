@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -12,15 +12,15 @@ import java.util.stream.Stream;
 @OnlyIn(Dist.CLIENT)
 public class DoubleSliderEntry extends SliderListEntry<Double> {
 	public DoubleSliderEntry(
-	  ITextComponent fieldName,
+	  Component fieldName,
 	  double min, double max, double value
 	) {
 		super(
 		  fieldName, min, max, value,
-		  v -> new TranslationTextComponent(
+		  v -> new TranslatableComponent(
 		    "simpleconfig.format.slider",
 		    String.format("%5.2f", v)));
-		final DoubleListEntry textEntry = new DoubleListEntry(StringTextComponent.EMPTY, value);
+		final DoubleListEntry textEntry = new DoubleListEntry(TextComponent.EMPTY, value);
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
 		textEntry.setChildSubEntry(true);

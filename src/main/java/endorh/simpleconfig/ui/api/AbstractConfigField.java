@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
 import com.ibm.icu.impl.Pair;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfig.Type;
@@ -21,15 +21,15 @@ import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -66,7 +66,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	private boolean updatedValue = false; // Reset after every tick
 	
 	@NotNull private Supplier<T> defaultSupplier = () -> null;
-	@Nullable private Supplier<Optional<ITextComponent>> errorSupplier = null;
+	@Nullable private Supplier<Optional<Component>> errorSupplier = null;
 	@Nullable private Consumer<T> saveConsumer = null;
 	
 	private boolean isSubEntry = false;
@@ -80,7 +80,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	
 	private ConfigCategory category = null;
 	private String name = "";
-	private ITextComponent title;
+	private Component title;
 	
 	private final NavigableSet<EntryTag> entryTags = new TreeSet<>();
 	
@@ -109,7 +109,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	private HotKeyAction<T> prevHotKeyAction = null;
 	protected @Nullable AbstractConfigEntry<?, ?, T> configEntry = null;
 	
-	public AbstractConfigField(ITextComponent title) {
+	public AbstractConfigField(Component title) {
 		this.title = title;
 		resetButton = new ResetButton(this);
 		hotKeyActionButton = new HotKeyActionButton<>(this);
@@ -255,35 +255,35 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		}
 	}
 	
-	public ITextComponent getTitle() {
+	public Component getTitle() {
 		return title;
 	}
-	public void setTitle(ITextComponent title) {
+	public void setTitle(Component title) {
 		this.title = title;
 	}
 	
-	public ITextComponent getDisplayedTitle() {
+	public Component getDisplayedTitle() {
 		boolean hasError = hasError();
 		boolean isEdited = isEdited();
-		IFormattableTextComponent text = getTitle().copy();
+		MutableComponent text = getTitle().copy();
 		if (matchedText != null && !matchedText.isEmpty()) {
 			final String title = getUnformattedString(getTitle());
 			final int i = title.indexOf(matchedText);
 			if (i != -1) {
-				text = new StringTextComponent(title.substring(0, i))
-				  .append(new StringTextComponent(title.substring(i, i + matchedText.length()))
-				            .withStyle(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
-				            // .mergeStyle(TextFormatting.BOLD)
-				            .withStyle(TextFormatting.UNDERLINE))
+				text = new TextComponent(title.substring(0, i))
+				  .append(new TextComponent(title.substring(i, i + matchedText.length()))
+				            .withStyle(isFocusedMatch()? ChatFormatting.GOLD : ChatFormatting.YELLOW)
+				            // .mergeStyle(ChatFormatting.BOLD)
+				            .withStyle(ChatFormatting.UNDERLINE))
 				  .append(title.substring(i + matchedText.length()));
 			}
 		}
-		if (hasError) text.withStyle(TextFormatting.RED);
+		if (hasError) text.withStyle(ChatFormatting.RED);
 		if (isEditingHotKeyAction()) {
-			if (getHotKeyActionType() == null) text.withStyle(TextFormatting.GRAY);
+			if (getHotKeyActionType() == null) text.withStyle(ChatFormatting.GRAY);
 		} else {
-			if (isEdited) text.withStyle(TextFormatting.ITALIC);
-			if (!hasError && !isEdited) text.withStyle(TextFormatting.GRAY);
+			if (isEdited) text.withStyle(ChatFormatting.ITALIC);
+			if (!hasError && !isEdited) text.withStyle(ChatFormatting.GRAY);
 		}
 		return text;
 	}
@@ -442,7 +442,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		focusHighlightLength = length;
 	}
 	
-	@Internal public Optional<ITextComponent> getErrorMessage() {
+	@Internal public Optional<Component> getErrorMessage() {
 		return Optional.empty();
 	}
 	
@@ -482,10 +482,10 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		            .anyMatch(AbstractConfigField::hasError);
 	}
 	
-	public void setErrorSupplier(@Nullable Supplier<Optional<ITextComponent>> errorSupplier) {
+	public void setErrorSupplier(@Nullable Supplier<Optional<Component>> errorSupplier) {
 		this.errorSupplier = errorSupplier;
 	}
-	public @Nullable Supplier<Optional<ITextComponent>> getErrorSupplier() {
+	public @Nullable Supplier<Optional<Component>> getErrorSupplier() {
 		return errorSupplier;
 	}
 	
@@ -541,8 +541,8 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		}
 		setFocused(isFocused);
 		if (!isFocused) {
-			final IGuiEventListener listener = getFocused();
-			if (listener instanceof Widget && ((Widget) listener).isFocused())
+			final GuiEventListener listener = getFocused();
+			if (listener instanceof AbstractWidget && ((AbstractWidget) listener).isFocused())
 				WidgetUtils.forceUnFocus(listener);
 			setFocused(null);
 		}
@@ -668,7 +668,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	@Override public void render(
-	  MatrixStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {
 		renderBg(mStack, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
@@ -694,7 +694,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	public void renderBg(
-	  MatrixStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {
 		AbstractConfigScreen screen = getScreen();
@@ -710,12 +710,12 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	@Internal public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {}
 	
 	public void renderEntryOverlay(
-	  MatrixStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {
 		if (isSelected())
@@ -723,7 +723,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	protected void renderSelectionOverlay(
-	  MatrixStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
+	  PoseStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
 	  boolean isHovered, float delta
 	) {
 		fill(mStack, 2, y - 2, x + w, y + h - 2, selectionColor);
@@ -753,12 +753,12 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	
 	protected static void playFeedbackTap(float volume) {
 		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
+		  SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	protected static void playFeedbackClick(float volume) {
 		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
+		  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
 	}
 	
 	// Search
@@ -855,21 +855,21 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	protected void acquireFocus() {
-		final List<? extends IGuiEventListener> listeners = children();
+		final List<? extends GuiEventListener> listeners = children();
 		if (!listeners.isEmpty()) {
-			final IGuiEventListener listener = listeners.get(0);
+			final GuiEventListener listener = listeners.get(0);
 			setFocused(listener);
 			WidgetUtils.forceFocus(listener);
 		}
 	}
 	
 	private static final Pattern STYLE_ESCAPE = Pattern.compile("§[\\da-f]");
-	protected static String getUnformattedString(ITextComponent component) {
+	protected static String getUnformattedString(Component component) {
 		return STYLE_ESCAPE.matcher(component.getString()).replaceAll("");
 	}
 	
 	protected static void drawBorder(
-	  MatrixStack mStack, int x, int y, int w, int h, int borderWidth, int color
+	  PoseStack mStack, int x, int y, int w, int h, int borderWidth, int color
 	) {
 		int maxX = x + w;
 		int maxY = y + h;

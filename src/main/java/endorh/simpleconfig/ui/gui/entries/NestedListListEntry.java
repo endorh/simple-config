@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry.NestedListCell;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -29,7 +29,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 	// protected final List<ReferenceProvider> referencableEntries = Lists.newArrayList();
 	
 	public NestedListListEntry(
-	  ITextComponent fieldName, List<T> value,
+	  Component fieldName, List<T> value,
 	  Function<NestedListListEntry<T, Inner>, Inner> createInner
 	) {
 		super(fieldName, value,
@@ -120,7 +120,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			return errors;
 		}
 		
-		@Override public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<Component> getErrorMessage() {
 			return Optional.empty();
 		}
 		
@@ -140,7 +140,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		}
 		
 		@Override public void renderCell(
-		  MatrixStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
+		  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
 		  int mouseX, int mouseY, boolean isSelected, float delta
 		) {
 			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
@@ -148,7 +148,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		}
 		
 		@Override public void renderLabel(
-		  MatrixStack mStack, ITextComponent label, int textX, int index, int x, int y, int cellWidth,
+		  PoseStack mStack, Component label, int textX, int index, int x, int y, int cellWidth,
 		  int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 		) {
 			super.renderLabel(
@@ -156,7 +156,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			  cellWidth, nestedEntry.getCaptionHeight(), mouseX, mouseY, isSelected, delta);
 		}
 		
-		@Override public @NotNull List<? extends IGuiEventListener> children() {
+		@Override public @NotNull List<? extends GuiEventListener> children() {
 			return Collections.singletonList(nestedEntry);
 		}
 		
@@ -229,7 +229,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		return false;
 	}
 	
-	@Override public void setFocused(IGuiEventListener listener) {
+	@Override public void setFocused(GuiEventListener listener) {
 		if (children().contains(listener)) {
 			super.setFocused(listener);
 		} else {

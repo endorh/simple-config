@@ -1,11 +1,15 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindFactory;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindActivation;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindFactory;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.InputMatchingContext;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,9 +17,9 @@ import java.util.Set;
 
 public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	private final String modId;
-	private ITextComponent title;
+	private Component title;
 	private KeyBindMapping keyBind;
-	private @Nullable ITextComponent candidateName;
+	private @Nullable Component candidateName;
 	private @Nullable KeyBindMapping candidateDefinition;
 	private final Runnable callback;
 	private boolean pressed = false;
@@ -23,7 +27,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	
 	protected static final ExtendedKeyBindFactory FACTORY = new ExtendedKeyBindFactory() {
 		@Override public ExtendedKeyBind create(
-		  @Nullable String modId, ITextComponent title, KeyBindMapping definition, Runnable action
+		  @Nullable String modId, Component title, KeyBindMapping definition, Runnable action
 		) {
 			return new ExtendedKeyBindImpl(modId, title, definition, action);
 		}
@@ -37,12 +41,12 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 		}
 	};
 	
-	public ExtendedKeyBindImpl(ITextComponent title, KeyBindMapping keyBind, Runnable callback) {
+	public ExtendedKeyBindImpl(Component title, KeyBindMapping keyBind, Runnable callback) {
 		this(null, title, keyBind, callback);
 	}
 	
 	public ExtendedKeyBindImpl(
-	  @Nullable String modId, ITextComponent title,
+	  @Nullable String modId, Component title,
 	  KeyBindMapping keyBind, Runnable callback
 	) {
 		this.modId = modId;
@@ -54,10 +58,10 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	@Override public @Nullable String getModId() {
 		return modId;
 	}
-	@Override public ITextComponent getTitle() {
+	@Override public Component getTitle() {
 		return title;
 	}
-	@Override public void setTitle(ITextComponent title) {
+	@Override public void setTitle(Component title) {
 		this.title = title;
 	}
 	@Override public KeyBindMapping getDefinition() {
@@ -67,10 +71,10 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 		this.keyBind = keyBind;
 	}
 	
-	public ITextComponent getCandidateName() {
+	public Component getCandidateName() {
 		return candidateName != null? candidateName : getTitle();
 	}
-	public void setCandidateName(@Nullable ITextComponent name) {
+	public void setCandidateName(@Nullable Component name) {
 		candidateName = name;
 	}
 	public KeyBindMapping getCandidateDefinition() {

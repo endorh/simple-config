@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.IRenderable;
-import net.minecraft.client.gui.widget.Widget;
+import endorh.simpleconfig.api.ui.math.Rectangle;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,8 +15,8 @@ import org.jetbrains.annotations.NotNull;
  * Subclasses should consider implementing the optional methods
  * {@link #isFocused()}, {@link #isActive()} and their setters.
  */
-public interface IPositionableRenderable extends IGuiEventListener, IRenderable {
-	static <W extends Widget> WidgetPositionableWrapper<W> wrap(W widget) {
+public interface IPositionableRenderable extends GuiEventListener, Widget {
+	static <W extends AbstractWidget> WidgetPositionableWrapper<W> wrap(W widget) {
 		return new WidgetPositionableWrapper<>(widget);
 	}
 	
@@ -94,8 +94,8 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		}
 	}
 	
-	class WidgetPositionableWrapper<W extends Widget>
-	  implements IPositionableRenderable, IGuiEventListener {
+	class WidgetPositionableWrapper<W extends AbstractWidget>
+	  implements IPositionableRenderable, GuiEventListener {
 		private W widget;
 		public WidgetPositionableWrapper(W widget) {
 			this.widget = widget;
@@ -137,7 +137,7 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 		}
 		
 		@Override public void render(
-		  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
+		  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 		) {
 			widget.render(mStack, mouseX, mouseY, partialTicks);
 		}
@@ -248,7 +248,7 @@ public interface IPositionableRenderable extends IGuiEventListener, IRenderable 
 			getDelegate().setDimensions(w, h);
 		}
 		
-		@Override default void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks) {
+		@Override default void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
 			getDelegate().render(mStack, mouseX, mouseY, partialTicks);
 		}
 		

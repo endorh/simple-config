@@ -14,10 +14,10 @@ import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
-import net.minecraft.command.arguments.IArgumentSerializer;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 	private static final DynamicCommandExceptionType UNKNOWN_TYPE =
 	  new DynamicCommandExceptionType(
-		 m -> new TranslationTextComponent("simpleconfig.command.error.no_such_type", m));
+		 m -> new TranslatableComponent("simpleconfig.command.error.no_such_type", m));
 	
 	public static SimpleConfigTypeArgumentType type(String modId, boolean isRemote) {
 		return new SimpleConfigTypeArgumentType(modId, isRemote);
@@ -69,19 +69,19 @@ public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 	@OnlyIn(Dist.CLIENT) private <S> boolean denyPermission(
 	  String modId
 	) {
-		PlayerEntity player = Minecraft.getInstance().player;
+		Player player = Minecraft.getInstance().player;
 		return player == null || !permissions.permissionFor(player, modId).getLeft().canView();
 	}
 	
-	public static class Serializer implements IArgumentSerializer<SimpleConfigTypeArgumentType> {
+	public static class Serializer implements ArgumentSerializer<SimpleConfigTypeArgumentType> {
 		@Override
-		public void serializeToNetwork(@NotNull SimpleConfigTypeArgumentType arg, @NotNull PacketBuffer buf) {
+		public void serializeToNetwork(@NotNull SimpleConfigTypeArgumentType arg, @NotNull FriendlyByteBuf buf) {
 			buf.writeBoolean(arg.modId != null);
 			if (arg.modId != null) buf.writeUtf(arg.modId);
 			buf.writeBoolean(arg.isRemote);
 		}
 		
-		@Override public @NotNull SimpleConfigTypeArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigTypeArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
 			return new SimpleConfigTypeArgumentType(
 			  buf.readBoolean()? buf.readUtf(32767) : null,
 			  buf.readBoolean());

@@ -3,8 +3,8 @@ package endorh.simpleconfig.ui.gui.widget.treeview;
 import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.INestedGuiEventHandler;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 
 public interface IDragBroadcastableControlContainer
   extends IExtendedDragAwareNestedGuiEventHandler {
@@ -36,9 +36,9 @@ public interface IDragBroadcastableControlContainer
 	) {
 		DragBroadcastableAction<?> action = getDragBroadcastableAction();
 		if (action != null) {
-			IGuiEventListener listener = this;
-			while (listener instanceof INestedGuiEventHandler)
-				listener = ((INestedGuiEventHandler) listener)
+			GuiEventListener listener = this;
+			while (listener instanceof ContainerEventHandler)
+				listener = ((ContainerEventHandler) listener)
 				  .getChildAt(mouseX, mouseY).orElse(null);
 			if (listener instanceof DragBroadcastableControl)
 				applyDragBroadcastAction(((DragBroadcastableControl<?>) listener));

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
-import net.minecraft.client.gui.FocusableGui;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
 
 /**
  * Feature interface intended for widgets that can capture modal input from an
@@ -12,7 +12,7 @@ public interface IModalInputProcessor {
 	/**
 	 * Handle a modal key event.
 	 * @return true if modal input processing should continue, false if modal input is released.
-	 * @see FocusableGui#keyPressed(int, int, int)
+	 * @see ContainerEventHandler#keyPressed(int, int, int)
 	 */
 	default boolean modalKeyPressed(int keyCode, int scanCode, int modifiers) {
 		return true;
@@ -21,7 +21,7 @@ public interface IModalInputProcessor {
 	/**
 	 * Handle a modal key release event.
 	 * @return true if modal input processing should continue, false if modal input is released.
-	 * @see FocusableGui#keyReleased(int, int, int)
+	 * @see ContainerEventHandler#keyReleased(int, int, int)
 	 */
 	default boolean modalKeyReleased(int keyCode, int scanCode, int modifiers) {
 		return true;
@@ -30,7 +30,7 @@ public interface IModalInputProcessor {
 	/**
 	 * Handle a modal character event.
 	 * @return true if modal input processing should continue, false if modal input is released.
-	 * @see FocusableGui#charTyped(char, int)
+	 * @see ContainerEventHandler#charTyped(char, int)
 	 */
 	default boolean modalCharTyped(char codePoint, int modifiers) {
 		return true;
@@ -39,7 +39,7 @@ public interface IModalInputProcessor {
 	/**
 	 * Handle a modal mouse event.
 	 * @return true if modal input processing should continue, false if modal input is released.
-	 * @see FocusableGui#mouseClicked(double, double, int)
+	 * @see ContainerEventHandler#mouseClicked(double, double, int)
 	 */
 	default boolean modalMouseClicked(double mouseX, double mouseY, int button) {
 		return true;
@@ -48,7 +48,7 @@ public interface IModalInputProcessor {
 	/**
 	 * Handle a modal mouse release event.
 	 * @return true if modal input processing should continue, false if modal input is released.
-	 * @see FocusableGui#mouseReleased(double, double, int)
+	 * @see ContainerEventHandler#mouseReleased(double, double, int)
 	 */
 	default boolean modalMouseReleased(double mouseX, double mouseY, int button) {
 		return true;
@@ -57,7 +57,7 @@ public interface IModalInputProcessor {
 	/**
 	 * Handle a modal mouse scroll event.
 	 * @return true if modal input processing should continue, false if modal input is released.
-	 * @see FocusableGui#mouseScrolled(double, double, double)
+	 * @see ContainerEventHandler#mouseScrolled(double, double, double)
 	 */
 	default boolean modalMouseScrolled(double mouseX, double mouseY, double amount) {
 		return true;

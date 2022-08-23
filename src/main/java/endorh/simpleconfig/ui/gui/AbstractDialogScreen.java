@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
 import endorh.simpleconfig.ui.api.Tooltip;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,11 +19,11 @@ public abstract class AbstractDialogScreen extends Screen implements IDialogCapa
 	private final List<Tooltip> tooltips = Lists.newArrayList();
 	private IModalInputProcessor modalInputProcessor = null;
 	
-	protected AbstractDialogScreen(ITextComponent title) {
+	protected AbstractDialogScreen(Component title) {
 		super(title);
 	}
 	
-	@Override public final void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public final void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
 		int mX = suppressHover? -1 : mouseX, mY = suppressHover? -1 : mouseY;
@@ -35,9 +35,9 @@ public abstract class AbstractDialogScreen extends Screen implements IDialogCapa
 		renderTooltips(mStack, mouseX, mouseY, delta);
 	}
 	
-	public void renderScreen(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {}
+	public void renderScreen(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {}
 	
-	protected void renderTooltips(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderTooltips(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		for (Tooltip tooltip: tooltips) {
 			int ty = tooltip.getY();
 			if (ty <= 24) ty += 16;

@@ -1,16 +1,16 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.text.Color;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -25,30 +25,30 @@ import java.util.function.Supplier;
 public class ConfigCategoryButton extends MultiFunctionIconButton {
 	protected final SimpleConfigScreen screen;
 	protected final ConfigCategory category;
-	protected final Supplier<Optional<ITextComponent[]>> descriptionSupplier;
+	protected final Supplier<Optional<Component[]>> descriptionSupplier;
 	
 	private int lastColor = 0;
 	private int lastDark;
 	private int lastLight;
 	
 	public ConfigCategoryButton(
-	  SimpleConfigScreen screen, ConfigCategory category, int x, int y, ITextComponent title
+	  SimpleConfigScreen screen, ConfigCategory category, int x, int y, Component title
 	) {
 		this(screen, category, x, y, title, null);
 	}
 	
 	public ConfigCategoryButton(
 	  SimpleConfigScreen screen, ConfigCategory category, int x, int y,
-	  ITextComponent title, @Nullable Supplier<Optional<ITextComponent[]>> descriptionSupplier
+	  Component title, @Nullable Supplier<Optional<Component[]>> descriptionSupplier
 	) {
 		super(x, y, 20, 200, Icon.EMPTY, ButtonAction.of(() -> {
 			if (category != null) screen.setSelectedCategory(category);
 		})/*.tint(category.getColor())*/
 		  .icon(category.getIcon())
-		  .title(() -> screen.isSelecting() ? title.copy().append(new StringTextComponent(
+		  .title(() -> screen.isSelecting() ? title.copy().append(new TextComponent(
 		    " [" + category.getAllMainEntries().stream().filter(
 			   AbstractConfigField::isSelected).count() + "]"
-		  ).withStyle(TextFormatting.AQUA)) : title));
+		  ).withStyle(ChatFormatting.AQUA)) : title));
 		this.descriptionSupplier = descriptionSupplier;
 		this.category = category;
 		this.screen = screen;
@@ -56,9 +56,9 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		updateColors();
 	}
 	
-	@Override public List<ITextComponent> getTooltip() {
+	@Override public List<Component> getTooltip() {
 		if (descriptionSupplier != null && (!isSelected() || isHovered))
-			return Lists.newArrayList(descriptionSupplier.get().orElse(new ITextComponent[0]));
+			return Lists.newArrayList(descriptionSupplier.get().orElse(new Component[0]));
 		return Collections.emptyList();
 	}
 	
@@ -70,14 +70,14 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		lastLight = c == 0? 0x32E0E0E0 : c;
 	}
 	
-	@Override public ITextComponent getTitle() {
-		ITextComponent title = super.getTitle();
-		if (!isSelected()) title = title.copy().withStyle(s -> s.withColor(Color.fromRgb(0xAADBDBDB)));
+	@Override public Component getTitle() {
+		Component title = super.getTitle();
+		if (!isSelected()) title = title.copy().withStyle(s -> s.withColor(TextColor.fromRgb(0xAADBDBDB)));
 		return title;
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		int c = category.getColor();
 		if (c != lastColor) updateColors();

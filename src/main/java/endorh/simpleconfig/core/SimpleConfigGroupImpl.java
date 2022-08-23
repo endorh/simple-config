@@ -12,8 +12,12 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.CaptionedSubCategoryBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -149,65 +153,65 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected ITextComponent getTitle() {
+	protected Component getTitle() {
 		if (ClientConfig.advanced.translation_debug_mode)
 			return getDebugTitle();
 		if (!I18n.exists(title)) {
 			final String[] split = title.split("\\.");
-			return new StringTextComponent(split[split.length - 1]);
+			return new TextComponent(split[split.length - 1]);
 		}
-		return new TranslationTextComponent(title);
+		return new TranslatableComponent(title);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected ITextComponent getDebugTitle() {
+	protected Component getDebugTitle() {
 		if (title != null) {
-			IFormattableTextComponent status =
-			  I18n.exists(title) ? new StringTextComponent("✔ ") : new StringTextComponent("✘ ");
+			MutableComponent status =
+			  I18n.exists(title) ? new TextComponent("✔ ") : new TextComponent("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new StringTextComponent("✔ ").withStyle(TextFormatting.DARK_AQUA)
-				  : new StringTextComponent("_ ").withStyle(TextFormatting.DARK_AQUA));
+				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
-			TextFormatting format = I18n.exists(title)? TextFormatting.DARK_GREEN : TextFormatting.RED;
-			return new StringTextComponent("").append(status.append(new StringTextComponent(title)).withStyle(format));
-		} else return new StringTextComponent("").append(new StringTextComponent("⚠ " + name).withStyle(TextFormatting.DARK_RED));
+			ChatFormatting format = I18n.exists(title)? ChatFormatting.DARK_GREEN : ChatFormatting.RED;
+			return new TextComponent("").append(status.append(new TextComponent(title)).withStyle(format));
+		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected Optional<ITextComponent[]> getDebugTooltip() {
-		List<ITextComponent> lines = new ArrayList<>();
-		lines.add(new StringTextComponent("Group Translation key:").withStyle(TextFormatting.GRAY));
+	protected Optional<Component[]> getDebugTooltip() {
+		List<Component> lines = new ArrayList<>();
+		lines.add(new TextComponent("Group Translation key:").withStyle(ChatFormatting.GRAY));
 		if (title != null) {
-			final IFormattableTextComponent status =
+			final MutableComponent status =
 			  I18n.exists(title)
-			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(✘ missing)").withStyle(TextFormatting.RED);
-			lines.add(new StringTextComponent("   " + title + " ")
-			            .withStyle(TextFormatting.DARK_AQUA).append(status));
-		} else lines.add(new StringTextComponent("   Error: couldn't map translation key").withStyle(TextFormatting.RED));
-		lines.add(new StringTextComponent("Tooltip key:").withStyle(TextFormatting.GRAY));
+			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
+			lines.add(new TextComponent("   " + title + " ")
+			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
+		} else lines.add(new TextComponent("   Error: couldn't map translation key").withStyle(ChatFormatting.RED));
+		lines.add(new TextComponent("Tooltip key:").withStyle(ChatFormatting.GRAY));
 		if (tooltip != null) {
-			final IFormattableTextComponent status =
+			final MutableComponent status =
 			  I18n.exists(tooltip)
-			  ? new StringTextComponent("(✔ present)").withStyle(TextFormatting.DARK_GREEN)
-			  : new StringTextComponent("(not present)").withStyle(TextFormatting.GOLD);
-			lines.add(new StringTextComponent("   " + tooltip + " ")
-			            .withStyle(TextFormatting.DARK_AQUA).append(status));
-		} else lines.add(new StringTextComponent("   Error: couldn't map tooltip translation key").withStyle(TextFormatting.RED));
+			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : new TextComponent("(not present)").withStyle(ChatFormatting.GOLD);
+			lines.add(new TextComponent("   " + tooltip + " ")
+			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
+		} else lines.add(new TextComponent("   Error: couldn't map tooltip translation key").withStyle(ChatFormatting.RED));
 		AbstractConfigEntry.addTranslationsDebugSuffix(lines);
-		return Optional.of(lines.toArray(new ITextComponent[0]));
+		return Optional.of(lines.toArray(new Component[0]));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	protected Optional<ITextComponent[]> getTooltip() {
+	protected Optional<Component[]> getTooltip() {
 		if (ClientConfig.advanced.translation_debug_mode)
 			return getDebugTooltip();
 		if (tooltip != null && I18n.exists(tooltip))
 			return Optional.of(
 			  Arrays.stream(I18n.get(tooltip).split("\n"))
-				 .map(StringTextComponent::new).toArray(ITextComponent[]::new));
+				 .map(TextComponent::new).toArray(Component[]::new));
 		return Optional.empty();
 	}
 	

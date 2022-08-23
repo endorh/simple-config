@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.api;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.math.Rectangle;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * <br><br>
  * In addition to implementing the {@link #getSortedOverlays()} method as a final property,
  * implementations must insert hook calls in the respective methods to <ul>
- *    <li>{@link #renderOverlays(MatrixStack, int, int, float)}</li>
+ *    <li>{@link #renderOverlays(PoseStack, int, int, float)}</li>
  *    <li>{@link #handleOverlaysMouseClicked(double, double, int)}</li>
  *    <li>{@link #handleOverlaysMouseReleased(double, double, int)}</li>
  *    <li>{@link #handleOverlaysMouseDragged(double, double, int, double, double)}</li>
@@ -45,7 +45,7 @@ public interface IOverlayCapableContainer {
 		 *         {@code false} if the overlay should be removed.
 		 */
 		boolean renderOverlay(
-		  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta);
+		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta);
 		
 		/**
 		 * Called when a click event happens within an overlay
@@ -213,7 +213,7 @@ public interface IOverlayCapableContainer {
 		return false;
 	}
 	
-	default void renderOverlays(MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	default void renderOverlays(PoseStack mStack, int mouseX, int mouseY, float delta) {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		final List<OverlayTicket> removed = new LinkedList<>();
 		mStack.pushPose(); {

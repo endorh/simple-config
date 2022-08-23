@@ -6,12 +6,12 @@ import com.google.gson.reflect.TypeToken;
 import endorh.simpleconfig.ui.hotkey.ResourceConfigHotKeyGroupHandler.Loader;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.ResourceSavedHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.SavedHotKeyGroup;
-import net.minecraft.client.resources.ReloadListener;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.JSONUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.util.profiling.ProfilerFiller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-public class ResourceConfigHotKeyGroupHandler extends ReloadListener<Loader> {
+public class ResourceConfigHotKeyGroupHandler extends SimplePreparableReloadListener<Loader> {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final Gson GSON = new GsonBuilder()
 	  .registerTypeAdapter(ResourceHotKeyGroupsDescriptor.class, new ResourceHotKeyGroupsDescriptor.Serializer())
@@ -39,20 +39,20 @@ public class ResourceConfigHotKeyGroupHandler extends ReloadListener<Loader> {
 		return new ArrayList<>(groupRegistry.values());
 	}
 	
-	@Override protected @NotNull Loader prepare(@NotNull IResourceManager manager, @NotNull IProfiler profiler) {
+	@Override protected @NotNull Loader prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller profiler) {
 		Loader l = new Loader();
 		profiler.startTick();
 		for (String namespace: manager.getNamespaces()) {
 			profiler.push(namespace);
 			try {
-				for (IResource index: manager.getResources(new ResourceLocation(namespace, "config-hotkeys.json"))) {
+				for (Resource index: manager.getResources(new ResourceLocation(namespace, "config-hotkeys.json"))) {
 					profiler.push(index.getSourceName());
 					try (
 					  InputStream is = index.getInputStream();
 					  Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)
 					) {
 						profiler.push("parse");
-						ResourceHotKeyGroupsDescriptor desc = JSONUtils.fromJson(GSON, r, TYPE);
+						ResourceHotKeyGroupsDescriptor desc = GsonHelper.fromJson(GSON, r, TYPE);
 						profiler.popPush("register");
 						if (desc != null) l.registerGroups(namespace, desc);
 						profiler.pop();
@@ -68,7 +68,7 @@ public class ResourceConfigHotKeyGroupHandler extends ReloadListener<Loader> {
 		return l;
 	}
 	
-	@Override protected void apply(@NotNull Loader l, @NotNull IResourceManager manager, @NotNull IProfiler profiler) {
+	@Override protected void apply(@NotNull Loader l, @NotNull ResourceManager manager, @NotNull ProfilerFiller profiler) {
 		groupRegistry.clear();
 		l.getGroups().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(
 		  e -> groupRegistry.put(e.getKey(), e.getValue()));
@@ -119,15 +119,15 @@ public class ResourceConfigHotKeyGroupHandler extends ReloadListener<Loader> {
 			@Override public ResourceHotKeyGroupsDescriptor deserialize(
 			  JsonElement json, Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
-				JsonObject obj = JSONUtils.convertToJsonObject(json, "config hotkeys");
-				JsonArray arr = JSONUtils.getAsJsonArray(obj, "groups", new JsonArray());
+				JsonObject obj = GsonHelper.convertToJsonObject(json, "config hotkeys");
+				JsonArray arr = GsonHelper.getAsJsonArray(obj, "groups", new JsonArray());
 				Set<String> set = new HashSet<>();
 				if (arr != null) for (JsonElement item: arr)
-					set.add(JSONUtils.convertToString(item, "group name"));
-				arr = JSONUtils.getAsJsonArray(obj, "default_groups", new JsonArray());
+					set.add(GsonHelper.convertToString(item, "group name"));
+				arr = GsonHelper.getAsJsonArray(obj, "default_groups", new JsonArray());
 				Set<String> def = new HashSet<>();
 				if (arr != null) for (JsonElement item: arr)
-					def.add(JSONUtils.convertToString(item, "group name"));
+					def.add(GsonHelper.convertToString(item, "group name"));
 				return new ResourceHotKeyGroupsDescriptor(set, def);
 			}
 			

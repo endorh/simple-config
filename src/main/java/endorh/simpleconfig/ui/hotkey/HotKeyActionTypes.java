@@ -1,6 +1,8 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig.Entry;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Actions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.entry.AbstractRangedEntry;
 import endorh.simpleconfig.core.entry.BeanEntry;
@@ -10,13 +12,11 @@ import endorh.simpleconfig.core.entry.EntryPairEntry;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyAction;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Actions;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
@@ -57,18 +57,18 @@ public class HotKeyActionTypes {
 			return entry.forActualConfig(entry.forConfig(v));
 		}
 		
-		@Override public ITextComponent formatAction(SimpleHotKeyAction<Object, Object> action) {
+		@Override public Component formatAction(SimpleHotKeyAction<Object, Object> action) {
 			return formatAction(action.getEntry(), action);
 		}
 		
-		private <T> ITextComponent formatAction(
+		private <T> Component formatAction(
 		  AbstractConfigEntry<T, ?, Object> entry, SimpleHotKeyAction<Object, Object> action
 		) {
 			String value = entry.forCommand(entry.fromGui(action.getStorage()));
-			return new TranslationTextComponent(
-			  "simpleconfig.hotkey.type.action." + getTranslationKey(), new StringTextComponent(
+			return new TranslatableComponent(
+			  "simpleconfig.hotkey.type.action." + getTranslationKey(), new TextComponent(
 				 value != null? value : "null"
-			).withStyle(TextFormatting.DARK_AQUA));
+			).withStyle(ChatFormatting.DARK_AQUA));
 		}
 		
 		@SuppressWarnings("unchecked") public <V> SimpleHotKeyActionType<V, V> cast() {
@@ -77,7 +77,7 @@ public class HotKeyActionTypes {
 	}
 	
 	public static final SimpleHotKeyActionType<Integer, Number> INT_ADD = type(
-	  "int:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
+	  "int:add", Actions.ADD, ranged((entry, a, b, min, max) -> Mth.clamp(
 		 a + b.intValue(), min.intValue(), max.intValue())), notNull());
 	public static final SimpleHotKeyActionType<Integer, Number> INT_ADD_CYCLE = type(
 	  "int:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -87,7 +87,7 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.intValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD = type(
-	  "long:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
+	  "long:add", Actions.ADD, ranged((entry, a, b, min, max) -> Mth.clamp(
 		 a + b.longValue(), min.longValue(), max.longValue())), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD_CYCLE = type(
 	  "long:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -97,7 +97,7 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.longValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_ADD = type(
-	  "float:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
+	  "float:add", Actions.ADD, ranged((entry, a, b, min, max) -> Mth.clamp(
 		 a + b.floatValue(), min.floatValue(), max.floatValue())), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_ADD_CYCLE = type(
 	  "float:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -107,14 +107,14 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.floatValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_MULTIPLY = type(
-	  "float:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> MathHelper.clamp(
+	  "float:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> Mth.clamp(
 		 a * b.floatValue(), min.floatValue(), max.floatValue())), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_DIVIDE = type(
 	  "float:div", Actions.DIVIDE, ranged(
-		 (entry, a, b, min, max) -> b.floatValue() == 0F? null : MathHelper.clamp(
+		 (entry, a, b, min, max) -> b.floatValue() == 0F? null : Mth.clamp(
 			a / b.floatValue(), min.floatValue(), max.floatValue())), divError());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_ADD = type(
-	  "double:add", Actions.ADD, ranged((entry, a, b, min, max) -> MathHelper.clamp(
+	  "double:add", Actions.ADD, ranged((entry, a, b, min, max) -> Mth.clamp(
 		 a + b.doubleValue(), min.doubleValue(), max.doubleValue())), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_ADD_CYCLE = type(
 	  "double:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
@@ -124,11 +124,11 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.doubleValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_MULTIPLY = type(
-	  "double:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> MathHelper.clamp(
+	  "double:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> Mth.clamp(
 		 a * b.doubleValue(), min.doubleValue(), max.doubleValue())), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_DIVIDE = type(
 	  "double:div", Actions.DIVIDE, ranged(
-		 (entry, a, b, min, max) -> b.doubleValue() == 0D? null : MathHelper.clamp(
+		 (entry, a, b, min, max) -> b.doubleValue() == 0D? null : Mth.clamp(
 			a / b.doubleValue(), min.doubleValue(), max.doubleValue())), divError());
 	public static final EnumAddSimpleHotKeyActionType<Enum<?>> ENUM_ADD = reg(new EnumAddSimpleHotKeyActionType<>());
 	public static class EnumAddSimpleHotKeyActionType<E extends Enum<?>> extends SimpleHotKeyActionType<E, Integer> {
@@ -145,10 +145,10 @@ public class HotKeyActionTypes {
 		}
 		
 		@Override
-		public <T, C, EE extends AbstractConfigEntry<T, C, E>> Optional<ITextComponent> getActionError(
+		public <T, C, EE extends AbstractConfigEntry<T, C, E>> Optional<Component> getActionError(
 		  EE entry, Object value
 		) {
-			if (value == null) return Optional.of(new TranslationTextComponent(
+			if (value == null) return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.missing_value"));
 			return Optional.empty();
 		}
@@ -278,16 +278,16 @@ public class HotKeyActionTypes {
 	}
 	
 	protected static <V, S> ISimpleHotKeyError<V, S> notNull() {
-		return (entry, v) -> v == null? Optional.of(new TranslationTextComponent(
+		return (entry, v) -> v == null? Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.missing_value")) : Optional.empty();
 	}
 	
 	protected static <V, S> ISimpleHotKeyError<V, S> divError() {
 		return (entry, v) -> {
-			if (v == null) return Optional.of(new TranslationTextComponent(
+			if (v == null) return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.missing_value"));
 			if (v instanceof Number && ((Number) v).doubleValue() == 0.0)
-				return Optional.of(new TranslationTextComponent(
+				return Optional.of(new TranslatableComponent(
 				  "simpleconfig.config.error.zero_div"));
 			return Optional.empty();
 		};

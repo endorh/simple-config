@@ -1,8 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.base.Splitter;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettingsBuilder;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.*;
 import org.apache.commons.lang3.text.WordUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindActivation.*;
+import static endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation.*;
 
 public class KeyBindMappingImpl implements KeyBindMapping {
 	private final IntList requiredKeys;
@@ -122,13 +126,13 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		  settings.copy());
 	}
 	
-	@Override public ITextComponent getDisplayName(Style style) {
+	@Override public Component getDisplayName(Style style) {
 		ExtendedKeyBindSettings settings = getSettings();
-		IFormattableTextComponent joiner = new StringTextComponent(
+		MutableComponent joiner = new TextComponent(
 		  settings.isOrderSensitive()? ">" : "+"
-		).withStyle(TextFormatting.GRAY);
-		if (requiredKeys.isEmpty()) return StringTextComponent.EMPTY;
-		IFormattableTextComponent r = new StringTextComponent("");
+		).withStyle(ChatFormatting.GRAY);
+		if (requiredKeys.isEmpty()) return TextComponent.EMPTY;
+		MutableComponent r = new TextComponent("");
 		int first = requiredKeys.getInt(0);
 		boolean matchByChar = settings.isMatchByChar();
 		String firstChar = charMap != null? charMap.get(first) : null;
@@ -255,17 +259,17 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		return key.substring(1, key.length() - 1);
 	}
 	
-	protected IFormattableTextComponent formatKey(int key) {
-		return new StringTextComponent(WordUtils.capitalize(
+	protected MutableComponent formatKey(int key) {
+		return new TextComponent(WordUtils.capitalize(
 		  Keys.getDisplayNameForKey(key).getString()
-		)).withStyle(s -> s.withColor(Color.fromRgb(
+		)).withStyle(s -> s.withColor(TextColor.fromRgb(
 		  Keys.isMouseKey(key) || Keys.isScrollKey(key)
 		  ? 0xAAAAFF : Keys.isScanCode(key)? 0xAAFFFF : Keys.isModifier(key)? 0xEEEEEE : 0xFFFFFF)));
 	}
 	
-	protected IFormattableTextComponent formatKey(String key) {
-		return new StringTextComponent(WordUtils.capitalize(key))
-		  .withStyle(TextFormatting.ITALIC);
+	protected MutableComponent formatKey(String key) {
+		return new TextComponent(WordUtils.capitalize(key))
+		  .withStyle(ChatFormatting.ITALIC);
 	}
 	
 	@Override public boolean equals(Object o) {

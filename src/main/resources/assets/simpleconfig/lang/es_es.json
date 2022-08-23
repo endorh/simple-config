@@ -558,6 +558,7 @@
   "simpleconfig.config.error.not_even": "No es par!",
   "simpleconfig.config.error.not_odd": "No es impar!",
   "simpleconfig.config.error.zero_div": "Cannot divide by zero!",
+  "simpleconfig.config.error.unknown_role": "Rol desconocido: %s",
 
   "simpleconfig.config.error.min_greater_than_max": "Mín > Máx!",
   "simpleconfig.config.error.range_too_small": "Rango demasiado pequeño! (debe medir al menos %5.2d, pero mide %5.2d)",
@@ -576,7 +577,7 @@
   "simpleconfig.help.list.insert": "§aInsertar",
   "simpleconfig.help.list.insert:key": "§7Pulsa §8[§3Alt + Insertar§8]§7",
   "simpleconfig.help.list.remove": "§cEliminar",
-  "simpleconfig.help.list.remove:key": "§7Pulsa §8[§3Alt + Supr§8]§7",
+  "simpleconfig.help.list.remove:key": "§7Pulsa §8[§3Alt + Supr/Retr§8]§7",
   "simpleconfig.help.list.move": "§9Mover",
   "simpleconfig.help.list.move:drag": "§7Arrastra con §8[§3Click Central§8]§7 o §8[§3Alt + Click Izquierdo§8]§7",
   "simpleconfig.help.list.move:key": "§7Pulsa §8[§3Ctrl + Alt + Arriba/Abajo§8]§7",

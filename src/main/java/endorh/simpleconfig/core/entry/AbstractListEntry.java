@@ -5,10 +5,10 @@ import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -27,7 +27,7 @@ public abstract class AbstractListEntry
   <V, Config, Gui, Self extends AbstractListEntry<V, Config, Gui, Self>>
   extends AbstractConfigEntry<List<V>, List<Config>, List<Gui>> {
 	protected Class<?> innerType;
-	protected Function<V, Optional<ITextComponent>> elemErrorSupplier;
+	protected Function<V, Optional<Component>> elemErrorSupplier;
 	protected boolean expand;
 	protected int minSize = 0;
 	protected int maxSize = Integer.MAX_VALUE;
@@ -44,7 +44,7 @@ public abstract class AbstractListEntry
 	  SelfImpl extends Builder<V, Config, Gui, Entry, Self, SelfImpl>
 	> extends AbstractConfigEntryBuilder<List<V>, List<Config>, List<Gui>, Entry, Self, SelfImpl>
 	  implements ListEntryBuilder<V, Config, Gui, Self> {
-		protected Function<V, Optional<ITextComponent>> elemErrorSupplier = v -> Optional.empty();
+		protected Function<V, Optional<Component>> elemErrorSupplier = v -> Optional.empty();
 		protected boolean expand = false;
 		protected Class<?> innerType;
 		protected int minSize = 0;
@@ -78,7 +78,7 @@ public abstract class AbstractListEntry
 		}
 		
 		@Override @Contract(pure=true) public Self elemError(
-		  Function<V, Optional<ITextComponent>> errorSupplier
+		  Function<V, Optional<Component>> errorSupplier
 		) {
 			SelfImpl copy = copy();
 			copy.elemErrorSupplier = errorSupplier;
@@ -156,14 +156,14 @@ public abstract class AbstractListEntry
 		return (V) value;
 	}
 	
-	protected static ITextComponent addIndex(ITextComponent message, int index) {
+	protected static Component addIndex(Component message, int index) {
 		if (index < 0) return message;
-		return message.plainCopy().append(", ").append(new TranslationTextComponent(
+		return message.plainCopy().append(", ").append(new TranslatableComponent(
 		  "simpleconfig.config.error.at_index",
-		  new StringTextComponent(String.format("%d", index + 1)).withStyle(TextFormatting.DARK_AQUA)));
+		  new TextComponent(String.format("%d", index + 1)).withStyle(ChatFormatting.DARK_AQUA)));
 	}
 	
-	@Override public List<ITextComponent> getErrorsFromGUI(List<Gui> value) {
+	@Override public List<Component> getErrorsFromGUI(List<Gui> value) {
 		return Stream.concat(
 		  Stream.of(getErrorFromGUI(value)).filter(Optional::isPresent).map(Optional::get),
 		  IntStream.range(0, value.size()).boxed()
@@ -171,28 +171,28 @@ public abstract class AbstractListEntry
 		).collect(Collectors.toList());
 	}
 	
-	@Override public Optional<ITextComponent> getErrorFromGUI(List<Gui> value) {
+	@Override public Optional<Component> getErrorFromGUI(List<Gui> value) {
 		int size = value.size();
 		if (size < minSize) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_small"),
-			  new StringTextComponent(String.valueOf(minSize)).withStyle(TextFormatting.DARK_AQUA)));
+			  new TextComponent(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		} else if (size > maxSize) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.list.too_large",
-			  new StringTextComponent(String.valueOf(maxSize)).withStyle(TextFormatting.DARK_AQUA)));
+			  new TextComponent(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		}
 		return super.getErrorFromGUI(value);
 	}
 	
-	public Optional<ITextComponent> getElementError(int index, Gui value) {
+	public Optional<Component> getElementError(int index, Gui value) {
 		V elem = elemFromGui(value);
-		if (elem == null) return Optional.of(addIndex(new TranslationTextComponent(
+		if (elem == null) return Optional.of(addIndex(new TranslatableComponent(
 		  "simpleconfig.config.error.missing_value"), index));
 		return elemErrorSupplier.apply(elem).map(e -> addIndex(e, index));
 	}
 	
-	public List<ITextComponent> getElementErrors(int index, Gui value) {
+	public List<Component> getElementErrors(int index, Gui value) {
 		return Stream.of(getElementError(index, value))
 		  .filter(Optional::isPresent).map(Optional::get)
 		  .collect(Collectors.toList());

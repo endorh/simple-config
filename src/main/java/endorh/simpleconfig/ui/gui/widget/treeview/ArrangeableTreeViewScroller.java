@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.widget.ScrollingContainerWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.Component;
 
 import static java.lang.Math.max;
 
@@ -18,14 +18,14 @@ public class ArrangeableTreeViewScroller extends ScrollingContainerWidget {
 	}
 	
 	@Override public void renderInner(
-	  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		ArrangeableTreeView<?> tree = getTree();
 		ArrangeableTreeViewEntry<?> root = tree.getRoot();
 		if (root.getSubEntries().isEmpty()) {
-			ITextComponent placeHolder = tree.getPlaceHolder();
+			Component placeHolder = tree.getPlaceHolder();
 			if (placeHolder != null) {
-				FontRenderer font = Minecraft.getInstance().font;
+				Font font = Minecraft.getInstance().font;
 				ArrangeableTreeViewCaption<?> caption = tree.getCaption();
 				int maxWidth = tree.getWidth() - 8;
 				int width = font.width(placeHolder);

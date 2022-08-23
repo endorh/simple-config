@@ -1,7 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.IEntryHolder;
@@ -9,18 +12,15 @@ import endorh.simpleconfig.ui.api.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
@@ -33,18 +33,18 @@ import static java.util.Arrays.asList;
 
 public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
-	protected static List<ITextComponent> resetTooltip = asList(
-	  new TranslationTextComponent("simpleconfig.ui.reset"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt"),
-	  new TranslationTextComponent("simpleconfig.ui.hotkey.ctrl"));
-	protected static List<ITextComponent> resetTooltipGroup = asList(
-	  new TranslationTextComponent("simpleconfig.ui.reset.group"),
-	  new TranslationTextComponent("simpleconfig.ui.restore.alt"),
-	  new TranslationTextComponent("simpleconfig.ui.hotkey.ctrl"));
-	protected static List<ITextComponent> restoreTooltip = asList(
-	  new TranslationTextComponent("simpleconfig.ui.restore"));
-	protected static List<ITextComponent> restoreTooltipGroup = asList(
-	  new TranslationTextComponent("simpleconfig.ui.restore.group"));
+	protected static List<Component> resetTooltip = asList(
+	  new TranslatableComponent("simpleconfig.ui.reset"),
+	  new TranslatableComponent("simpleconfig.ui.restore.alt"),
+	  new TranslatableComponent("simpleconfig.ui.hotkey.ctrl"));
+	protected static List<Component> resetTooltipGroup = asList(
+	  new TranslatableComponent("simpleconfig.ui.reset.group"),
+	  new TranslatableComponent("simpleconfig.ui.restore.alt"),
+	  new TranslatableComponent("simpleconfig.ui.hotkey.ctrl"));
+	protected static List<Component> restoreTooltip = asList(
+	  new TranslatableComponent("simpleconfig.ui.restore"));
+	protected static List<Component> restoreTooltipGroup = asList(
+	  new TranslatableComponent("simpleconfig.ui.restore.group"));
 	
 	protected AbstractConfigField<?> entry;
 	protected boolean shift = false;
@@ -70,7 +70,7 @@ public class ResetButton extends MultiFunctionImageButton
 		       isGroup() ? confirm.group_reset : confirm.reset;
 	}
 	
-	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (dragging) {
 			if (Minecraft.getInstance().font.isBidirectional())
 				overlay.setBounds(x - 4, y - 4, 2 * width + 48, height + 8);
@@ -98,8 +98,7 @@ public class ResetButton extends MultiFunctionImageButton
 	
 	protected boolean computeIsGroup() {
 		if (!entry.isGroup()) return false;
-		if (!(entry instanceof IEntryHolder)) return true;
-		final IEntryHolder entryHolder = (IEntryHolder) entry;
+		if (!(entry instanceof final IEntryHolder entryHolder)) return true;
 		boolean restore = isRestore();
 		return shift
 		       || (restore? entryHolder.getSingleRestorableEntry()
@@ -169,8 +168,7 @@ public class ResetButton extends MultiFunctionImageButton
 	protected boolean reset(AbstractConfigField<?> entry, int button) {
 		tick();
 		if (button == 0) {
-			if (entry instanceof IEntryHolder) {
-				final IEntryHolder entryHolder = (IEntryHolder) entry;
+			if (entry instanceof final IEntryHolder entryHolder) {
 				final AbstractConfigField<?> singleEntry = entryHolder.getSingleResettableEntry();
 				if (singleEntry != null && isGroup()) {
 					if (isRestore() && entry.isRestorable()) {
@@ -200,7 +198,7 @@ public class ResetButton extends MultiFunctionImageButton
 			final boolean result = reset(entry, button);
 			if (result) {
 				Minecraft.getInstance().getSoundManager().play(
-				  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+				  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
 			}
 			return result;
 		}
@@ -242,8 +240,8 @@ public class ResetButton extends MultiFunctionImageButton
 		if (!dragging) return false;
 		dragOffset = (int) round(mouseX - x - dragAnchor);
 		if (Minecraft.getInstance().font.isBidirectional())
-			dragOffset = MathHelper.clamp(dragOffset, 0, 40 + width);
-		else dragOffset = MathHelper.clamp(dragOffset, -40 - width, 0);
+			dragOffset = Mth.clamp(dragOffset, 0, 40 + width);
+		else dragOffset = Mth.clamp(dragOffset, -40 - width, 0);
 		return true;
 	}
 	
@@ -255,11 +253,11 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (!dragging && !confirming) return false;
 		getScreen().removeTooltips(area);
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		RenderSystem.enableBlend();
 		fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), 0x80FF4242);
 		fill(mStack, area.x + 2, area.y + 2, area.getMaxX() - 2, area.getMaxY() - 2, 0xFFFF6464);
@@ -300,12 +298,12 @@ public class ResetButton extends MultiFunctionImageButton
 		super.setFocused(focused);
 	}
 	
-	@Override public List<ITextComponent> getTooltip() {
+	@Override public List<Component> getTooltip() {
 		if (isGroup()) return isRestore()? restoreTooltipGroup : resetTooltipGroup;
 		return isRestore()? restoreTooltip : resetTooltip;
 	}
 	
-	public Optional<List<ITextComponent>> getTooltip(int mouseX, int mouseY) {
+	public Optional<List<Component>> getTooltip(int mouseX, int mouseY) {
 		return isMouseOver(mouseX, mouseY)? Optional.of(getTooltip()) : Optional.empty();
 	}
 }

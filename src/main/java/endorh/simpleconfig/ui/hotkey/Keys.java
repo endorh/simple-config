@@ -1,18 +1,18 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.InputConstants.Key;
+import com.mojang.blaze3d.platform.InputConstants.Type;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.client.util.InputMappings.Input;
-import net.minecraft.client.util.InputMappings.Type;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraft.Util;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -44,38 +44,38 @@ public class Keys {
 		).forEach(s::add);
 	});
 	
-	public static Input getInputFromName(String name) {
+	public static Key getInputFromName(String name) {
 		name = SEPARATOR_PATTERN.matcher(name).replaceAll(".").toLowerCase();
-		Input input;
+		Key input;
 		try {
 			if (name.startsWith("mouse.") || name.startsWith("keyboard.")) {
-				input = InputMappings.getKey("key." + name);
+				input = InputConstants.getKey("key." + name);
 			} else if (!name.contains(".")) {
-				input = InputMappings.getKey("key.keyboard." + name);
+				input = InputConstants.getKey("key.keyboard." + name);
 			} else try {
-				input = InputMappings.getKey(name);
+				input = InputConstants.getKey(name);
 			} catch (IllegalArgumentException ignored) {
-				input = InputMappings.getKey("key.keyboard." + name);
+				input = InputConstants.getKey("key.keyboard." + name);
 			}
 			return input;
 		} catch (IllegalArgumentException e) {
-			return InputMappings.UNKNOWN;
+			return InputConstants.UNKNOWN;
 		}
 	}
 	
-	public static Input getInputFromKey(int key) {
+	public static Key getInputFromKey(int key) {
 		if (key >= -100 && key < -1) {
 			return Type.MOUSE.getOrCreate(key + 100);
 		} else if (key <= -300) {
-			return InputMappings.getKey(-1, -300 - key);
-		} else if (key >= 0) return InputMappings.getKey(key, -1);
-		return InputMappings.UNKNOWN;
+			return InputConstants.getKey(-1, -300 - key);
+		} else if (key >= 0) return InputConstants.getKey(key, -1);
+		return InputConstants.UNKNOWN;
 	}
 	
 	public static int getKeyFromName(String name) {
 		int key = NAMES_TO_IDS.getOrDefault(name, -1);
 		if (key != -1) return key;
-		Input input = getInputFromName(name);
+		Key input = getInputFromName(name);
 		switch (input.getType()) {
 			case MOUSE:
 				return input.getValue() - 100;
@@ -89,7 +89,7 @@ public class Keys {
 	public static String getNameForKey(int key) {
 		String name = IDS_TO_NAMES.get(key);
 		if (name != null) return name;
-		Input input = getInputFromKey(key);
+		Key input = getInputFromKey(key);
 		String keyName = input.getName();
 		if (keyName.startsWith("key.keyboard.")) {
 			keyName = keyName.substring("key.keyboard.".length());
@@ -100,7 +100,7 @@ public class Keys {
 	}
 	
 	public static int getKeyFromInput(int keyCode, int scanCode) {
-		Input input = InputMappings.getKey(keyCode, scanCode);
+		Key input = InputConstants.getKey(keyCode, scanCode);
 		return input.getType() == Type.SCANCODE? -300 - input.getValue() : input.getValue();
 	}
 	
@@ -136,10 +136,10 @@ public class Keys {
 		return MODIFIER_KEYS.contains(key);
 	}
 	
-	public static IFormattableTextComponent getDisplayNameForKey(int key) {
-		if (key == -1) return new TranslationTextComponent("key.abbrev.unknown");
+	public static MutableComponent getDisplayNameForKey(int key) {
+		if (key == -1) return new TranslatableComponent("key.abbrev.unknown");
 		String translationKey;
-		Input input = null;
+		Key input = null;
 		if (key == -102) {
 			translationKey = "key.mouse.scroll.down";
 		} else if (key == -101) {
@@ -149,14 +149,14 @@ public class Keys {
 			translationKey = input.getName();
 		}
 		if (TRANSLATION_OVERRIDES.containsKey(translationKey))
-			return new TranslationTextComponent(TRANSLATION_OVERRIDES.get(translationKey));
+			return new TranslatableComponent(TRANSLATION_OVERRIDES.get(translationKey));
 		return input != null
 		       ? input.getDisplayName().copy()
-		       : new TranslationTextComponent(translationKey);
+		       : new TranslatableComponent(translationKey);
 	}
 	
 	public static @Nullable String getCharFromKey(int key) {
-		Input input = getInputFromKey(key);
+		Key input = getInputFromKey(key);
 		if (input.getType() == Type.MOUSE) return null;
 		if (input.getType() == Type.KEYSYM)
 			return GLFW.glfwGetKeyName(input.getValue(), -1);
@@ -164,7 +164,7 @@ public class Keys {
 	}
 	
 	public static int getKeyFromChar(String ch) {
-		Optional<Input> opt = getInputMap(Type.KEYSYM).values().stream()
+		Optional<Key> opt = getInputMap(Type.KEYSYM).values().stream()
 		  .filter(i -> ch.equals(GLFW.glfwGetKeyName(i.getValue(), -1)))
 		  .findFirst();
 		if (opt.isPresent()) return opt.get().getValue();
@@ -174,9 +174,8 @@ public class Keys {
 		return opt.map(input -> -300 - input.getValue()).orElse(-1);
 	}
 	
-	protected static Int2ObjectMap<Input> getInputMap(Type type) {
-		return ObfuscationReflectionHelper.getPrivateValue(
-		  Type.class, type, "map");
+	protected static Int2ObjectMap<Key> getInputMap(Type type) {
+		return ObfuscationReflectionHelper.getPrivateValue(Type.class, type, "map");
 	}
 	
 	static {
@@ -208,7 +207,7 @@ public class Keys {
 		TRANSLATION_OVERRIDES.put(key, override);
 	}
 	
-	private static void addAlias(int keyCode, String name, String... aliases) {
+	private static void addAlias(int keyCode, String name) {
 		IDS_TO_NAMES.put(keyCode, name);
 		NAMES_TO_IDS.put(name, keyCode);
 	}

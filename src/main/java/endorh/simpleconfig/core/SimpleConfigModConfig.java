@@ -2,21 +2,19 @@ package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IFutureReloadListener;
-import net.minecraft.resources.IResourceManager;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Unit;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
-import net.minecraftforge.resource.SelectiveReloadStateHandler;
-import net.minecraftforge.resource.VanillaResourceType;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -59,19 +57,14 @@ public class SimpleConfigModConfig extends ModConfig {
 		return configFormat;
 	}
 	
-	public static class LanguageReloadManager implements IFutureReloadListener {
+	public static class LanguageReloadManager implements PreparableReloadListener {
 		public static final LanguageReloadManager INSTANCE = new LanguageReloadManager();
 		
 		@Override public @NotNull CompletableFuture<Void> reload(
-		  @NotNull IStage stage, @NotNull IResourceManager resourceManager, @NotNull IProfiler preparationsProfiler,
-		  @NotNull IProfiler reloadProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor
+		  @NotNull PreparationBarrier stage, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller preparationsProfiler,
+		  @NotNull ProfilerFiller reloadProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor
 		) {
-			return stage.wait(Unit.INSTANCE)
-			  .thenRunAsync(
-			    SelectiveReloadStateHandler.INSTANCE.get().test(VanillaResourceType.LANGUAGES)
-				 ? SimpleConfigImpl::updateAllFileTranslations
-				 : () -> {}
-			  );
+			return stage.wait(Unit.INSTANCE).thenRunAsync(SimpleConfigImpl::updateAllFileTranslations);
 		}
 	}
 	

@@ -14,10 +14,10 @@ import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
-import net.minecraft.command.arguments.IArgumentSerializer;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 	private static final DynamicCommandExceptionType UNKNOWN_MOD = new DynamicCommandExceptionType(
-		 m -> new TranslationTextComponent("simpleconfig.command.error.no_such_mod", m));
+		 m -> new TranslatableComponent("simpleconfig.command.error.no_such_mod", m));
 	
 	public static SimpleConfigModIdArgumentType modId(boolean isRemote) {
 		return new SimpleConfigModIdArgumentType(isRemote);
@@ -64,7 +64,7 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 	@OnlyIn(Dist.CLIENT) private CompletableFuture<Suggestions> listSuggestionsWithPermissions(
 	  SuggestionsBuilder builder
 	) {
-		PlayerEntity player = Minecraft.getInstance().player;
+		Player player = Minecraft.getInstance().player;
 		Set<Type> types = isRemote? SimpleConfig.Type.remoteTypes() : SimpleConfig.Type.localTypes();
 		SimpleConfigImpl.getAllConfigs().stream()
 		  .filter(c -> types.contains(c.getType()))
@@ -74,12 +74,12 @@ public class SimpleConfigModIdArgumentType implements ArgumentType<String> {
 		return builder.buildFuture();
 	}
 	
-	public static class Serializer implements IArgumentSerializer<SimpleConfigModIdArgumentType> {
-		@Override public void serializeToNetwork(@NotNull SimpleConfigModIdArgumentType arg, @NotNull PacketBuffer buf) {
+	public static class Serializer implements ArgumentSerializer<SimpleConfigModIdArgumentType> {
+		@Override public void serializeToNetwork(@NotNull SimpleConfigModIdArgumentType arg, @NotNull FriendlyByteBuf buf) {
 			buf.writeBoolean(arg.isRemote);
 		}
 		
-		@Override public @NotNull SimpleConfigModIdArgumentType deserializeFromNetwork(@NotNull PacketBuffer buf) {
+		@Override public @NotNull SimpleConfigModIdArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
 			return new SimpleConfigModIdArgumentType(buf.readBoolean());
 		}
 		

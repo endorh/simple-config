@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.hotkey.NestedHotKeyActionType.NestedHotKeyAction;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -57,8 +57,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> NestedHotKeyAction<V> deserialize(
 	  E entry, Object value
 	) {
-		if (value instanceof Map) {
-			Map<?, ?> m = (Map<?, ?>) value;
+		if (value instanceof Map<?, ?> m) {
 			Map<String, HotKeyActionWrapper<?, ?>> storages = new LinkedHashMap<>();
 			m.entrySet().stream()
 			  .filter(e -> e.getKey() instanceof String && e.getValue() instanceof HotKeyActionWrapper)
@@ -130,7 +129,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 		}
 		
 		@Override public <T, C, E extends AbstractConfigEntry<T, C, V>>
-		@Nullable ITextComponent apply(String path, E entry, CommentedConfig result) {
+		@Nullable Component apply(String path, E entry, CommentedConfig result) {
 			try {
 				Map<String, AbstractConfigEntry<?, ?, ?>> entries = action.getEntries(entry, storage.keySet());
 				if (entries == null) return null;
@@ -150,7 +149,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 				});
 				Object value = action.applyValue(entry, config);
 				if (value != null) result.set(path, value);
-				return new StringTextComponent("Testing... blip blap blop!");
+				return new TextComponent("Testing... blip blap blop!");
 			} catch (ClassCastException e) {
 				LOGGER.error("Error applying hotkey action " + path, e);
 			}

@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 public class TintedButton extends Button {
@@ -11,25 +11,25 @@ public class TintedButton extends Button {
 	protected int tintColor = 0x00000000;
 	
 	public static TintedButton of(
-	  ITextComponent title, IPressable pressedAction
+	  Component title, OnPress pressedAction
 	) {
 		return of(80, 20, title, pressedAction);
 	}
 	
 	public static TintedButton of(
-	  ITextComponent title, int tint, IPressable pressedAction
+	  Component title, int tint, OnPress pressedAction
 	) {
 		return of(80, 20, title, tint, pressedAction);
 	}
 	
 	public static TintedButton of(
-	  int width, int height,  ITextComponent title, IPressable pressedAction
+	  int width, int height,  Component title, OnPress pressedAction
 	) {
 		return of(width, height, title, 0, pressedAction);
 	}
 	
 	public static TintedButton of(
-	  int width, int height, ITextComponent title, int tint, IPressable pressedAction
+	  int width, int height, Component title, int tint, OnPress pressedAction
 	) {
 		TintedButton button = new TintedButton(0, 0, width, height, title, pressedAction);
 		button.setTintColor(tint);
@@ -37,19 +37,19 @@ public class TintedButton extends Button {
 	}
 	
 	public TintedButton(
-	  int x, int y, int width, int height, ITextComponent title, IPressable pressedAction
+	  int x, int y, int width, int height, Component title, OnPress pressedAction
 	) {
 		super(x, y, width, height, title, pressedAction);
 	}
 	
 	public TintedButton(
-	  int x, int y, int width, int height, ITextComponent title, IPressable pressedAction, ITooltip onTooltip
+	  int x, int y, int width, int height, Component title, OnPress pressedAction, OnTooltip onTooltip
 	) {
 		super(x, y, width, height, title, pressedAction, onTooltip);
 	}
 	
 	@Override protected void renderBg(
-	  @NotNull MatrixStack mStack, @NotNull Minecraft minecraft, int mouseX, int mouseY
+	  @NotNull PoseStack mStack, @NotNull Minecraft minecraft, int mouseX, int mouseY
 	) {
 		super.renderBg(mStack, minecraft, mouseX, mouseY);
 		// The 2-patch button texture blit implementation floors width to even numbers

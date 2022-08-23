@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.impl.ScissorsHandlerImpl;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;

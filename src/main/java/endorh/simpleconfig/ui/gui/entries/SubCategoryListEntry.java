@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -9,9 +10,8 @@ import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +21,7 @@ import java.util.List;
 
 public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, VoidEntry> {
 	public SubCategoryListEntry(
-	  ITextComponent title, List<AbstractConfigListEntry<?>> entries
+	  Component title, List<AbstractConfigListEntry<?>> entries
 	) {
 		super(title, entries, null);
 	}
@@ -44,11 +44,11 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 	}
 	
 	@Internal public static abstract class VoidEntry extends AbstractConfigListEntry<Void> implements IChildListEntry {
-		private VoidEntry(ITextComponent title) {
+		private VoidEntry(Component title) {
 			super(title);
 		}
 		@Override public void renderChildEntry(
-		  MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+		  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 		) {}
 		@Override public Rectangle getRowArea() {
 			return null;
@@ -56,14 +56,14 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 		@Override public int getScrollY() {
 			return 0;
 		}
-		@Override protected @NotNull List<? extends IGuiEventListener> getEntryListeners() {
+		@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
 			return Collections.emptyList();
 		}
 	}
 	
 	@Internal public static abstract class VoidEntryBuilder
 	  extends FieldBuilder<Void, VoidEntry, VoidEntryBuilder> {
-		protected VoidEntryBuilder(ConfigFieldBuilder builder, ITextComponent name, Void value) {
+		protected VoidEntryBuilder(ConfigFieldBuilder builder, Component name, Void value) {
 			super(VoidEntry.class, builder, name, value);
 		}
 	}

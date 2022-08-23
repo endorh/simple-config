@@ -65,11 +65,10 @@ public class SimpleConfigYamlConstructor extends Constructor {
 	
 	public class ConstructPair extends AbstractConstruct {
 		@Override public Object construct(Node node) {
-			if (!(node instanceof SequenceNode)) throw new ConstructorException(
+			if (!(node instanceof SequenceNode snode)) throw new ConstructorException(
 			  "while constructing a pair",
 			  node.getStartMark(), "expected a sequence, but found " + node.getNodeId(),
 			  node.getStartMark());
-			SequenceNode snode = (SequenceNode) node;
 			List<Node> values = snode.getValue();
 			if (values.size() != 2) {
 				throw new ConstructorException(
@@ -83,11 +82,10 @@ public class SimpleConfigYamlConstructor extends Constructor {
 	
 	public class ConstructTriple extends AbstractConstruct {
 		@Override public Object construct(Node node) {
-			if (!(node instanceof SequenceNode)) throw new ConstructorException(
+			if (!(node instanceof SequenceNode snode)) throw new ConstructorException(
 			  "while constructing a triple",
 			  node.getStartMark(), "expected a sequence, but found " + node.getNodeId(),
 			  node.getStartMark());
-			SequenceNode snode = (SequenceNode) node;
 			List<Node> values = snode.getValue();
 			if (values.size() != 3) {
 				throw new ConstructorException(
@@ -105,21 +103,19 @@ public class SimpleConfigYamlConstructor extends Constructor {
 	public class ConstructPairList extends AbstractConstruct {
 		@Override
 		public Object construct(Node node) {
-			if (!(node instanceof SequenceNode)) {
+			if (!(node instanceof SequenceNode snode)) {
 				throw new ConstructorException(
 				  "while constructing pairs", node.getStartMark(),
 				  "expected a sequence, but found " + node.getNodeId(), node.getStartMark());
 			}
-			SequenceNode snode = (SequenceNode) node;
 			PairList<Object, Object> pairs = new PairList<>(snode.getValue().size());
 			for (Node subNode : snode.getValue()) {
-				if (!(subNode instanceof MappingNode)) {
+				if (!(subNode instanceof MappingNode mNode)) {
 					throw new ConstructorException(
 					  "while constructing pairs", node.getStartMark(),
 					  "expected a mapping of length 1, but found " + subNode.getNodeId(),
 					  subNode.getStartMark());
 				}
-				MappingNode mNode = (MappingNode) subNode;
 				if (mNode.getValue().size() != 1) {
 					throw new ConstructorException(
 					  "while constructing pairs", node.getStartMark(),
@@ -143,12 +139,11 @@ public class SimpleConfigYamlConstructor extends Constructor {
 		}
 		
 		@Override public Object construct(Node node) {
-			if (!(node instanceof SequenceNode)) {
+			if (!(node instanceof SequenceNode seq)) {
 				throw new ConstructorException(
 				  "while constructing hotkey wrapper", node.getStartMark(),
 				  "expected a sequence, but found " + node.getNodeId(), node.getStartMark());
 			}
-			SequenceNode seq = (SequenceNode) node;
 			List<Node> nodes = seq.getValue();
 			if (nodes.size() > 1) {
 				throw new ConstructorException(

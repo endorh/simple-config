@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry.DoubleListCell;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -20,7 +20,7 @@ public class DoubleListListEntry
 	private double maximum = Double.POSITIVE_INFINITY;
 	
 	@Internal public DoubleListListEntry(
-	  ITextComponent fieldName, List<Double> value
+	  Component fieldName, List<Double> value
 	) {
 		super(fieldName, value, DoubleListCell::new);
 	}
@@ -47,29 +47,29 @@ public class DoubleListListEntry
 		
 		@Override public Double getValue() {
 			try {
-				return Double.valueOf(widget.getText());
+				return Double.valueOf(widget.getValue());
 			} catch (NumberFormatException e) {
 				return 0.0;
 			}
 		}
 		
 		@Override public void doSetValue(Double value) {
-			widget.setText(String.valueOf(value));
+			widget.setValue(String.valueOf(value));
 		}
 		
-		@Override public Optional<ITextComponent> getErrorMessage() {
+		@Override public Optional<Component> getErrorMessage() {
 			try {
-				double i = Double.parseDouble(widget.getText());
+				double i = Double.parseDouble(widget.getValue());
 				final DoubleListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
-					return Optional.of(new TranslationTextComponent(
+					return Optional.of(new TranslatableComponent(
 					  "simpleconfig.config.error.too_large", listEntry.maximum));
 				if (i < listEntry.minimum)
-					return Optional.of(new TranslationTextComponent(
+					return Optional.of(new TranslatableComponent(
 					  "simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslationTextComponent("simpleconfig.config.error.invalid_float", widget.getText()));
+				  new TranslatableComponent("simpleconfig.config.error.invalid_float", widget.getValue()));
 			}
 			return Optional.empty();
 		}

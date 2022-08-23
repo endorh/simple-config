@@ -10,14 +10,14 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.tags.ITag;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.ResourceLocationException;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.Tag;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -52,7 +52,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 	  implements ItemEntryBuilder {
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Item> filter = null;
-		protected @Nullable ITag<Item> tag = null;
+		protected @Nullable Tag<Item> tag = null;
 		protected boolean requireGroup = true;
 		
 		public Builder(Item value) {
@@ -84,7 +84,7 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			return from(Ingredient.of(items));
 		}
 		
-		@Override @Contract(pure=true) public Builder from(ITag<Item> tag) {
+		@Override @Contract(pure=true) public Builder from(Tag<Item> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

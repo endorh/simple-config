@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryPairEntryBuilder;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.DummyEntryHolder;
@@ -11,10 +12,9 @@ import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.icon.Icon;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.PairListEntryBuilder;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -135,13 +135,11 @@ public class EntryPairEntry<
 	@Nullable @Override public Pair<LC, RC> fromActualConfig(@Nullable Object value) {
 		LC left;
 		RC right;
-		if (value instanceof List<?>) {
-			List<?> list = (List<?>) value;
+		if (value instanceof List<?> list) {
 			if (list.size() != 2) return null;
 			left = leftEntry.fromActualConfig(list.get(0));
 			right = rightEntry.fromActualConfig(list.get(1));
-		} else if (value instanceof Pair) {
-			final Pair<?, ?> pair = (Pair<?, ?>) value;
+		} else if (value instanceof final Pair<?, ?> pair) {
 			left = leftEntry.fromActualConfig(pair.getLeft());
 			right = rightEntry.fromActualConfig(pair.getRight());
 		} else return null;
@@ -151,8 +149,8 @@ public class EntryPairEntry<
 		return Pair.of(left, right);
 	}
 	
-	@Override public List<ITextComponent> getErrorsFromGUI(Pair<LG, RG> value) {
-		List<ITextComponent> errors = super.getErrorsFromGUI(value);
+	@Override public List<Component> getErrorsFromGUI(Pair<LG, RG> value) {
+		List<Component> errors = super.getErrorsFromGUI(value);
 		errors.addAll(leftEntry.getErrorsFromGUI(value.getLeft()));
 		errors.addAll(rightEntry.getErrorsFromGUI(value.getRight()));
 		return errors;

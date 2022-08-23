@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 
 import java.util.List;
 import java.util.stream.Collectors;

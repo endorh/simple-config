@@ -1,11 +1,11 @@
 package endorh.simpleconfig.core;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.text.LanguageMap;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.locale.Language;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.ForgeI18n;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.minecraftforge.fmllegacy.ForgeI18n;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.IllegalFormatException;
@@ -39,7 +39,7 @@ import java.util.Map;
 		if (FMLEnvironment.dist == Dist.CLIENT) {
 			lang = I18n.get(KEY);
 		} else if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-			lang = LanguageMap.getInstance().getOrDefault(KEY);
+			lang = Language.getInstance().getOrDefault(KEY);
 		}
 		return KEY.equals(lang)? "<not loaded>" : lang;
 	}

@@ -8,8 +8,8 @@ import endorh.simpleconfig.ui.gui.entries.BaseListCell;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.Util;
+import net.minecraft.util.Mth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -186,7 +186,7 @@ public class EditHistory {
 	}
 	
 	public int getCursor() {
-		cursor = MathHelper.clamp(cursor, 0, records.size());
+		cursor = Mth.clamp(cursor, 0, records.size());
 		return cursor;
 	}
 	

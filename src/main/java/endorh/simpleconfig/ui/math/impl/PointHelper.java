@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.math.impl;
 
-import endorh.simpleconfig.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

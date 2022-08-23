@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.impl.builders;
 
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.SelectionListEntry;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -15,10 +15,10 @@ public class SelectorBuilder<V>
   extends FieldBuilder<V, SelectionListEntry<V>, SelectorBuilder<V>> {
 	protected final V value;
 	protected final V[] valuesArray;
-	protected Function<V, ITextComponent> nameProvider = null;
+	protected Function<V, Component> nameProvider = null;
 	
 	public SelectorBuilder(
-	  ConfigFieldBuilder builder, ITextComponent name, V[] valuesArray, V value
+	  ConfigFieldBuilder builder, Component name, V[] valuesArray, V value
 	) {
 		super(SelectionListEntry.class, builder, name, value);
 		Objects.requireNonNull(value);
@@ -27,7 +27,7 @@ public class SelectorBuilder<V>
 	}
 	
 	public SelectorBuilder<V> setNameProvider(
-	  Function<V, ITextComponent> enumNameProvider
+	  Function<V, Component> enumNameProvider
 	) {
 		this.nameProvider = enumNameProvider;
 		return this;

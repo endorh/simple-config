@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import net.minecraft.util.text.Color;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.Style;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,15 +13,15 @@ import java.util.Optional;
 
 public class StringTypeWrapper implements ITypeWrapper<String> {
 	@Override
-	public Pair<Optional<String>, Optional<ITextComponent>> parseElement(@NotNull String text) {
+	public Pair<Optional<String>, Optional<Component>> parseElement(@NotNull String text) {
 		return Pair.of(Optional.of(text), Optional.empty());
 	}
 	
-	@Override public ITextComponent getDisplayName(@NotNull String element) {
-		return new StringTextComponent(element);
+	@Override public Component getDisplayName(@NotNull String element) {
+		return new TextComponent(element);
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.plain(Style.EMPTY.withColor(Color.fromRgb(0xE0E0E0)));
+		return ITextFormatter.plain(Style.EMPTY.withColor(TextColor.fromRgb(0xE0E0E0)));
 	}
 }

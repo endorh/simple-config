@@ -15,28 +15,33 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyLogger;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.RemoteSavedHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.SavedHotKeyGroup;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.network.play.ClientPlayNetHandler;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.*;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.ModConfigEvent;
-import net.minecraftforge.fml.config.ModConfig.Reloading;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.minecraftforge.fml.event.config.ModConfigEvent.Reloading;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.network.FMLHandshakeHandler;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent.Context;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fmllegacy.network.FMLHandshakeHandler;
+import net.minecraftforge.fmllegacy.network.NetworkDirection;
+import net.minecraftforge.fmllegacy.network.NetworkEvent.Context;
+import net.minecraftforge.fmllegacy.network.NetworkRegistry;
+import net.minecraftforge.fmllegacy.network.PacketDistributor;
+import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -74,13 +79,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
  */
 @Internal public class SimpleConfigNetworkHandler {
 	public static Style ALLOWED_UPDATE_STYLE = Style.EMPTY
-	  .applyFormat(TextFormatting.GRAY).withItalic(true);
+	  .applyFormat(ChatFormatting.GRAY).withItalic(true);
 	public static Style DENIED_UPDATE_STYLE = Style.EMPTY
-	  .applyFormat(TextFormatting.GOLD).withItalic(true);
+	  .applyFormat(ChatFormatting.GOLD).withItalic(true);
 	public static Style ERROR_UPDATE_STYLE = Style.EMPTY
-	  .applyFormat(TextFormatting.DARK_RED).withItalic(true);
+	  .applyFormat(ChatFormatting.DARK_RED).withItalic(true);
 	public static Style REQUIRES_RESTART_STYLE = Style.EMPTY
-	  .applyFormat(TextFormatting.DARK_PURPLE).withItalic(true);
+	  .applyFormat(ChatFormatting.DARK_PURPLE).withItalic(true);
 	public static Style ALLOWED_SNAPSHOT_UPDATE_STYLE = ALLOWED_UPDATE_STYLE;
 	public static Style DENIED_SNAPSHOT_UPDATE_STYLE = DENIED_UPDATE_STYLE;
 	
@@ -107,7 +112,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			setConfigData = ModConfig.class.getDeclaredMethod("setConfigData", CommentedConfig.class);
 			setConfigData.setAccessible(true);
 			member = "ModConfig$fireEvent method";
-			fireEvent = ModConfig.class.getDeclaredMethod("fireEvent", ModConfigEvent.class);
+			fireEvent = ModConfig.class.getDeclaredMethod("fireEvent", IConfigEvent.class);
 			fireEvent.setAccessible(true);
 			member = "ModConfig$Reloading constructor";
 			reloading = Reloading.class.getDeclaredConstructor(ModConfig.class);
@@ -123,7 +128,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 	}
 	
-	private static void broadcastToOperators(ITextComponent message) {
+	private static void broadcastToOperators(Component message) {
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
 		  .filter(p -> p.hasPermissions(2))
 		  .forEach(p -> p.sendMessage(message, Util.NIL_UUID));
@@ -234,7 +239,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	}
 	
 	public static boolean isConnectedToSimpleConfigServer() {
-		ClientPlayNetHandler connection = Minecraft.getInstance().getConnection();
+		ClientPacketListener connection = Minecraft.getInstance().getConnection();
 		if (connection == null) return false;
 		return getChannel().isRemotePresent(connection.getConnection());
 	}
@@ -329,10 +334,10 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	 */
 	protected abstract static class AbstractPacket {
 		protected abstract void handle(Supplier<Context> ctxSupplier);
-		public abstract void write(PacketBuffer buf);
-		public abstract void read(PacketBuffer buf);
+		public abstract void write(FriendlyByteBuf buf);
+		public abstract void read(FriendlyByteBuf buf);
 		
-		public static <Packet extends AbstractPacket> Function<PacketBuffer, Packet> decoder(
+		public static <Packet extends AbstractPacket> Function<FriendlyByteBuf, Packet> decoder(
 		  Supplier<Packet> factory
 		) {
 			return buf -> {
@@ -358,35 +363,35 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	}
 	
 	protected abstract static class SAbstractPacket extends AbstractPacket {
-		private static final PacketDistributor<ServerPlayerEntity> EXCEPT = new PacketDistributor<>(
+		private static final PacketDistributor<ServerPlayer> EXCEPT = new PacketDistributor<>(
 		  (distributor, supplier) -> packet -> {
-			  final ServerPlayerEntity exception = supplier.get();
+			  final ServerPlayer exception = supplier.get();
 			  final MinecraftServer server = exception.level.getServer();
 			  if (server == null) return;
 			  server.getPlayerList().getPlayers()
 				 .stream().filter(p -> exception != p)
 				 .forEach(p -> p.connection.send(packet));
 		  }, NetworkDirection.PLAY_TO_CLIENT);
-		private static final PacketDistributor<ServerPlayerEntity> OPS_EXCEPT = new PacketDistributor<>(
+		private static final PacketDistributor<ServerPlayer> OPS_EXCEPT = new PacketDistributor<>(
 		  (distributor, supplier) -> packet -> {
-			  final ServerPlayerEntity exception = supplier.get();
+			  final ServerPlayer exception = supplier.get();
 			  final MinecraftServer server = exception.level.getServer();
 			  if (server == null) return;
 			  server.getPlayerList().getPlayers()
 			    .stream().filter(p -> exception != p && p.hasPermissions(2))
 			    .forEach(p -> p.connection.send(packet));
 		  }, NetworkDirection.PLAY_TO_CLIENT);
-		private static final PacketDistributor<Collection<? extends PlayerEntity>> LIST =
+		private static final PacketDistributor<Collection<? extends Player>> LIST =
 		  new PacketDistributor<>(
 		    (distributor, supplier) -> packet -> {
-			    final Collection<? extends PlayerEntity> players = supplier.get();
+			    final Collection<? extends Player> players = supplier.get();
 			    players.stream()
-			      .filter(p -> p instanceof ServerPlayerEntity)
-			      .forEach(p -> ((ServerPlayerEntity) p).connection.send(packet));
+			      .filter(p -> p instanceof ServerPlayer)
+			      .forEach(p -> ((ServerPlayer) p).connection.send(packet));
 		    }, NetworkDirection.PLAY_TO_CLIENT);
 		
-		public static void sendMessage(ITextComponent message) {
-			final ClientPlayerEntity player = Minecraft.getInstance().player;
+		public static void sendMessage(Component message) {
+			final LocalPlayer player = Minecraft.getInstance().player;
 			if (player == null)
 				return;
 			player.sendMessage(message, Util.NIL_UUID);
@@ -406,19 +411,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		
 		public void onClient(Context ctx) {}
 		
-		public void sendTo(ServerPlayerEntity player) {
+		public void sendTo(ServerPlayer player) {
 			CHANNEL.sendTo(this, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
 		}
 		
-		public void sendTo(Collection<? extends PlayerEntity> players) {
+		public void sendTo(Collection<? extends Player> players) {
 			CHANNEL.send(LIST.with(() -> Lists.newArrayList(players)), this);
 		}
 		
-		public void sendExcept(ServerPlayerEntity player) {
+		public void sendExcept(ServerPlayer player) {
 			CHANNEL.send(SAbstractPacket.EXCEPT.with(() -> player), this);
 		}
 		
-		public void sendToOpsExcept(ServerPlayerEntity player) {
+		public void sendToOpsExcept(ServerPlayer player) {
 			CHANNEL.send(SAbstractPacket.OPS_EXCEPT.with(() -> player), this);
 		}
 		
@@ -488,8 +493,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			super.onServer(ctx);
 		}
 		
-		@Override public void write(PacketBuffer buf) {}
-		@Override public void read(PacketBuffer buf) {}
+		@Override public void write(FriendlyByteBuf buf) {}
+		@Override public void read(FriendlyByteBuf buf) {}
 	}
 	
 	protected static List<Pair<String, SLoginConfigDataPacket>> getLoginConfigDataPackets(
@@ -522,12 +527,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeByteArray(fileData);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			fileData = buf.readByteArray();
 		}
@@ -546,7 +551,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			SimpleConfigImpl config = SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER);
 			final String modName = SimpleConfigImpl.getModNameOrId(modId);
 			if (sender == null)
@@ -556,7 +561,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" tried to modify " +
 				            "the server config for mod \"" + modName + "\" without privileges");
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
 				).withStyle(DENIED_UPDATE_STYLE));
 				// Send back a re-sync packet
@@ -570,7 +575,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.error_updating_by",
 				  modName, senderName, e.getMessage()
 				).withStyle(ERROR_UPDATE_STYLE));
@@ -579,24 +584,24 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			LOGGER.info(
 			  "Server config for mod \"" + modName + "\" " +
 			  "has been updated by authorized player \"" + senderName + "\"");
-			IFormattableTextComponent msg = new TranslationTextComponent(
+			MutableComponent msg = new TranslatableComponent(
 			  "simpleconfig.config.msg.updated_by",
 			  modName, senderName).withStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
-				msg = msg.append("\n").append(new TranslationTextComponent(
+				msg = msg.append("\n").append(new TranslatableComponent(
 				  "simpleconfig.config.msg.server_changes_require_restart"
 				).withStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
 			new SSimpleConfigSyncPacket(modId, snapshot).sendExcept(sender);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeByteArray(snapshot);
 			buf.writeBoolean(requireRestart);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			snapshot = buf.readByteArray();
 			requireRestart = buf.readBoolean();
@@ -626,19 +631,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 					tryUpdateConfig(SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER), snapshot, false);
 				} catch (ConfigUpdateReflectionError e) {
 					LOGGER.error("Error updating client config for mod \"" + modId + "\"", e);
-					sendMessage(new TranslationTextComponent(
+					sendMessage(new TranslatableComponent(
 					  "simpleconfig.config.msg.error_updating_from_server",
 					  SimpleConfigImpl.getModNameOrId(modId), e.getMessage()));
 				}
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeByteArray(snapshot);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			snapshot = buf.readByteArray();
 		}
@@ -657,7 +662,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			final String modName = SimpleConfigImpl.getModNameOrId(modId);
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
@@ -675,10 +680,10 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 		}
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 		}
 	}
@@ -730,12 +735,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeBoolean(snapshot != null);
 			if (snapshot != null) buf.writeByteArray(snapshot);
 		}
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
 		}
@@ -774,7 +779,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			final String modName = SimpleConfigImpl.getModNameOrId(modId);
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
@@ -783,7 +788,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" attempted to save server common config " +
 				            "for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
 				).withStyle(DENIED_UPDATE_STYLE));
 				return;
@@ -794,7 +799,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.error_updating_by",
 				  modName, senderName, e.getMessage()
 				).withStyle(ERROR_UPDATE_STYLE));
@@ -803,25 +808,25 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			LOGGER.info(
 			  "Server common config for mod \"" + modName + "\" " +
 			  "has been updated by authorized player \"" + senderName + "\"");
-			IFormattableTextComponent msg = new TranslationTextComponent(
+			MutableComponent msg = new TranslatableComponent(
 			  "simpleconfig.config.msg.updated_by",
 			  modName, senderName
 			).withStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
-				msg = msg.append("\n").append(new TranslationTextComponent(
+				msg = msg.append("\n").append(new TranslatableComponent(
 				  "simpleconfig.config.msg.server_changes_require_restart"
 				).withStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeBoolean(requireRestart);
 			buf.writeBoolean(snapshot != null);
 			if (snapshot != null) buf.writeByteArray(snapshot);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			requireRestart = buf.readBoolean();
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
@@ -837,7 +842,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			final String modName = SimpleConfigImpl.getModNameOrId(modId);
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
@@ -853,11 +858,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			LOGGER.info("Released server common config for mod \"" + modName + "\" by player " + sender);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 		}
 	}
@@ -865,12 +870,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	protected static class CSimpleConfigApplyPatchPacket extends CAbstractPacket {
 		private String modId;
 		private Type type;
-		private List<ITextComponent> report;
+		private List<Component> report;
 		private byte @Nullable[] snapshot;
 		
 		public CSimpleConfigApplyPatchPacket() {}
 		public CSimpleConfigApplyPatchPacket(
-		  SimpleConfigImpl config, CommentedConfig snapshot, List<ITextComponent> report
+		  SimpleConfigImpl config, CommentedConfig snapshot, List<Component> report
 		) {
 			modId = config.getModId();
 			type = config.getType();
@@ -879,7 +884,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			final String modName = SimpleConfigImpl.getModNameOrId(modId);
 			if (sender == null) throw new IllegalStateException(
 			  "Received server config update from non-player source for mod \"" + modName + "\"");
@@ -897,7 +902,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error applying snapshot to config for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.error_updating_by",
 				  modName, senderName, e.getMessage()
 				).withStyle(ERROR_UPDATE_STYLE));
@@ -905,17 +910,17 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 			LOGGER.info("Snapshot applied to config for mod \"" + modName + "\" by player " + sender);
 			if (report.isEmpty()) {
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.patched_by", modName, senderName
 				).withStyle(ALLOWED_UPDATE_STYLE));
 			} else {
-				new SSimpleConfigPatchReportPacket(new TranslationTextComponent(
+				new SSimpleConfigPatchReportPacket(new TranslatableComponent(
 				  "simpleconfig.hotkey.remote", sender.getName()), report
 				).sendToOpsExcept(sender);
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeEnum(type);
 			buf.writeBoolean(snapshot != null);
@@ -924,23 +929,23 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			report.forEach(buf::writeComponent);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			type = buf.readEnum(Type.class);
 			snapshot = buf.readBoolean()? buf.readByteArray() : null;
 			int size = buf.readVarInt();
-			List<ITextComponent> report = new ArrayList<>(size);
+			List<Component> report = new ArrayList<>(size);
 			for (int i = 0; i < size; i++) report.add(buf.readComponent());
 			this.report = report;
 		}
 	}
 	
 	protected static class SSimpleConfigPatchReportPacket extends SAbstractPacket {
-		private ITextComponent title;
-		private List<ITextComponent> report;
+		private Component title;
+		private List<Component> report;
 		
 		public SSimpleConfigPatchReportPacket() {}
-		public SSimpleConfigPatchReportPacket(ITextComponent title, List<ITextComponent> report) {
+		public SSimpleConfigPatchReportPacket(Component title, List<Component> report) {
 			this.title = title;
 			this.report = report;
 		}
@@ -951,22 +956,22 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			super.onClient(ctx);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeComponent(title);
 			buf.writeVarInt(report.size());
 			report.forEach(buf::writeComponent);
 		}
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			title = buf.readComponent();
 			int size = buf.readVarInt();
-			List<ITextComponent> report = new ArrayList<>(size);
+			List<Component> report = new ArrayList<>(size);
 			for (int i = 0; i < size; i++) report.add(buf.readComponent());
 			this.report = report;
 		}
 	}
 	
 	@Internal public static boolean applyRemoteSnapshot(
-	  SimpleConfigImpl config, CommentedConfig snapshot, List<ITextComponent> report
+	  SimpleConfigImpl config, CommentedConfig snapshot, List<Component> report
 	) {
 		if (!isConnectedToSimpleConfigServer()
 		    || !config.getType().isRemote()
@@ -1004,7 +1009,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			if (sender == null) {
 				LOGGER.error("Received server config preset from non-player source for mod \"" + modId + "\"");
 				return;
@@ -1036,7 +1041,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 					if (!dest.delete()) throw new IllegalStateException("Unable to delete file");
 				}
 				
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.snapshot." + tt + "." + action + "d_by",
 				  this.presetName, modName, senderName).withStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
 				LOGGER.info(
@@ -1044,7 +1049,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				  "has been " + action + "d by player \"" + senderName + "\"");
 				new SSimpleConfigSavedPresetPacket(modId, type, this.presetName, null).sendTo(sender);
 			} catch (RuntimeException | IOException e) {
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.snapshot.error_updating_by",
 				  this.presetName, modName, senderName, e.getMessage()
 				).withStyle(ERROR_UPDATE_STYLE));
@@ -1054,7 +1059,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				  modId, type, this.presetName, e.getClass().getSimpleName() + ": " + e.getMessage()
 				).sendTo(sender);
 			} catch (NoPermissionException e) {
-				broadcastToOperators(new TranslationTextComponent(
+				broadcastToOperators(new TranslatableComponent(
 				  "simpleconfig.config.msg.snapshot." + tt + ".tried_to_" + action,
 				  senderName, this.presetName, modName
 				).withStyle(DENIED_SNAPSHOT_UPDATE_STYLE));
@@ -1067,7 +1072,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeEnum(type);
 			buf.writeUtf(presetName);
@@ -1076,7 +1081,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				buf.writeByteArray(fileData);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			type = buf.readEnum(Type.class);
 			presetName = buf.readUtf(32767);
@@ -1109,7 +1114,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} else future.complete(null);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeEnum(type);
 			buf.writeUtf(presetName);
@@ -1117,7 +1122,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			type = buf.readEnum(Type.class);
 			presetName = buf.readUtf(32767);
@@ -1140,7 +1145,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			if (sender == null) return;
 			final File dir = SimpleConfigPaths.getRemotePresetsDir().toFile();
 			if (!dir.isDirectory()) return;
@@ -1158,11 +1163,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			new SSimpleConfigPresetListPacket(modId, names).sendTo(sender);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 		}
 	}
@@ -1185,7 +1190,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (future != null) future.complete(presets);
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeVarInt(presets.size());
 			for (Preset preset : presets) {
@@ -1194,7 +1199,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			presets = new ArrayList<>();
 			for (int i = buf.readVarInt(); i > 0; i--)
@@ -1217,7 +1222,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			if (sender == null) return;
 			Path dir = SimpleConfigPaths.getRemotePresetsDir();
 			String tt = type.getAlias();
@@ -1236,13 +1241,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeEnum(type);
 			buf.writeUtf(presetName);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			type = buf.readEnum(Type.class);
 			presetName = buf.readUtf(32767);
@@ -1292,7 +1297,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(modId);
 			buf.writeEnum(type);
 			buf.writeUtf(presetName);
@@ -1302,7 +1307,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			type = buf.readEnum(Type.class);
 			presetName = buf.readUtf(32767);
@@ -1357,7 +1362,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			final ServerPlayerEntity sender = ctx.getSender();
+			final ServerPlayer sender = ctx.getSender();
 			if (sender == null) return;
 			final File dir = SimpleConfigPaths.getRemoteHotKeyGroupsDir().toFile();
 			if (!dir.isDirectory()) return;
@@ -1372,8 +1377,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			new SSimpleConfigSavedHotKeyGroupsPacket(groups).sendTo(sender);
 		}
 		
-		@Override public void write(PacketBuffer buf) {}
-		@Override public void read(PacketBuffer buf) {}
+		@Override public void write(FriendlyByteBuf buf) {}
+		@Override public void read(FriendlyByteBuf buf) {}
 	}
 	
 	protected static class SSimpleConfigSavedHotKeyGroupsPacket extends SAbstractPacket {
@@ -1390,13 +1395,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			future = null;
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeVarInt(groups.size());
 			for (RemoteSavedHotKeyGroup group : groups)
 				buf.writeUtf(group.getName());
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			List<RemoteSavedHotKeyGroup> groups = new ArrayList<>();
 			for (int i = buf.readVarInt(); i > 0; i--)
 				groups.add(SavedHotKeyGroup.remote(buf.readUtf(32767)));
@@ -1414,7 +1419,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			ServerPlayerEntity sender = ctx.getSender();
+			ServerPlayer sender = ctx.getSender();
 			if (sender == null) return;
 			final String fileName = name + ".yaml";
 			final File file = SimpleConfigPaths.getRemoteHotKeyGroupsDir().resolve(fileName).toFile();
@@ -1428,11 +1433,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(name);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			name = buf.readUtf(32767);
 		}
 	}
@@ -1464,7 +1469,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(name);
 			buf.writeBoolean(data != null);
 			if (data != null) buf.writeByteArray(data);
@@ -1472,7 +1477,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			name = buf.readUtf(32767);
 			data = buf.readBoolean()? buf.readByteArray() : null;
 			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
@@ -1492,7 +1497,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		}
 		
 		@Override public void onServer(Context ctx) {
-			ServerPlayerEntity sender = ctx.getSender();
+			ServerPlayer sender = ctx.getSender();
 			if (sender == null) return;
 			if (!permissions.canEditServerHotKeys(sender)) {
 				LOGGER.warn(
@@ -1524,13 +1529,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(name);
 			buf.writeBoolean(data != null);
 			if (data != null) buf.writeByteArray(data);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			name = buf.readUtf(32767);
 			data = buf.readBoolean()? buf.readByteArray() : null;
 		}
@@ -1558,13 +1563,13 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			}
 		}
 		
-		@Override public void write(PacketBuffer buf) {
+		@Override public void write(FriendlyByteBuf buf) {
 			buf.writeUtf(name);
 			buf.writeBoolean(errorMsg != null);
 			if (errorMsg != null) buf.writeUtf(errorMsg);
 		}
 		
-		@Override public void read(PacketBuffer buf) {
+		@Override public void read(FriendlyByteBuf buf) {
 			name = buf.readUtf(32767);
 			errorMsg = buf.readBoolean()? buf.readUtf(32767) : null;
 		}

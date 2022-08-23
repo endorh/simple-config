@@ -1,9 +1,11 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -12,15 +14,13 @@ import endorh.simpleconfig.ui.gui.SimpleConfigScreen.TooltipSearchBarWidget;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Point;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -33,14 +33,14 @@ import java.util.stream.Collectors;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
-	@Nullable private Supplier<Optional<ITextComponent[]>> tooltipSupplier;
+	@Nullable private Supplier<Optional<Component[]>> tooltipSupplier;
 	protected String matchedTooltipText = null;
 	protected EntryTag helpEntryFlag;
 	protected EntryTag matchedHelpEntryFlag;
 	protected MultiFunctionImageButton matchedHelpButton;
-	private @Nullable ITextComponent[] lastTooltip = null;
+	private @Nullable Component[] lastTooltip = null;
 	
-	protected TooltipListEntry(ITextComponent fieldName) {
+	protected TooltipListEntry(Component fieldName) {
 		super(fieldName);
 		helpEntryFlag = new EntryTag(
 		  -200, null, SimpleConfigIcons.Entries.HELP,
@@ -81,11 +81,11 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	}
 	
 	@Override public void renderEntry(
-	  MatrixStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
 	  int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		Optional<ITextComponent[]> tooltip;
+		Optional<Component[]> tooltip;
 		if (getScreen().isShowingHelp() && getEntryList().getSelectedEntry() == this) {
 			getTooltip().ifPresent(
 			  t -> addTooltip(Tooltip.of(Point.of(rowArea.x - 12, rowArea.getMaxY() + 12), t)));
@@ -105,19 +105,19 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		       && isMouseOverRow(mouseX, mouseY);
 	}
 	
-	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
+	protected FormattedCharSequence[] postProcessTooltip(Component[] tooltip) {
 		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
 			 component -> Minecraft.getInstance().font.split(
             component, (int) (getScreen().width * advanced.tooltip_max_width)).stream())
-		  .toArray(IReorderingProcessor[]::new);
+		  .toArray(FormattedCharSequence[]::new);
 	}
 	
-	public Optional<ITextComponent[]> getTooltip() {
+	public Optional<Component[]> getTooltip() {
 		return Optional.ofNullable(lastTooltip);
 	}
 	
-	protected Optional<ITextComponent[]> updateTooltip() {
+	protected Optional<Component[]> updateTooltip() {
 		if (tooltipSupplier != null)
 			return tooltipSupplier.get().map(this::decorateTooltip);
 		return Optional.empty();
@@ -138,7 +138,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		return super.onMouseClicked(mouseX, mouseY, button);
 	}
 	
-	public Optional<ITextComponent[]> getTooltip(int mouseX, int mouseY) {
+	public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
 		if (flagsRectangle.contains(mouseX, mouseY)) {
 			int index = (mouseX - flagsRectangle.x) / 14;
 			final NavigableSet<EntryTag> entryFlags = getEntryTags();
@@ -146,18 +146,18 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 				Iterator<EntryTag> iterator = entryFlags.iterator();
 				EntryTag flag = null;
 				for (int i = 0; i <= index; i++) flag = iterator.next();
-				List<ITextComponent> tooltip = flag.getTooltip();
-				return Optional.of(tooltip.toArray(new ITextComponent[0]));
+				List<Component> tooltip = flag.getTooltip();
+				return Optional.of(tooltip.toArray(new Component[0]));
 			}
 		}
 		return getTooltip();
 	}
 	
-	@Nullable public Supplier<Optional<ITextComponent[]>> getTooltipSupplier() {
+	@Nullable public Supplier<Optional<Component[]>> getTooltipSupplier() {
 		return tooltipSupplier;
 	}
 	
-	public void setTooltipSupplier(@Nullable Supplier<Optional<ITextComponent[]>> tooltipSupplier) {
+	public void setTooltipSupplier(@Nullable Supplier<Optional<Component[]>> tooltipSupplier) {
 		this.tooltipSupplier = tooltipSupplier;
 	}
 	
@@ -172,7 +172,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	}
 	
 	protected static final Pattern NEW_LINE = Pattern.compile("\\R");
-	protected ITextComponent[] decorateTooltip(ITextComponent[] tooltip) {
+	protected Component[] decorateTooltip(Component[] tooltip) {
 		if (matchedTooltipText != null && !matchedTooltipText.isEmpty()) {
 			final String tooltipText = Arrays.stream(tooltip)
 			  .map(AbstractConfigField::getUnformattedString)
@@ -180,16 +180,16 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 			int i = tooltipText.indexOf(matchedTooltipText);
 			if (i != -1) {
 				int j = i + matchedTooltipText.length();
-				List<ITextComponent> tt = Lists.newArrayList();
+				List<Component> tt = Lists.newArrayList();
 				Style style = Style.EMPTY
-				  .applyFormat(isFocusedMatch()? TextFormatting.GOLD : TextFormatting.YELLOW)
-				  // .applyFormatting(TextFormatting.BOLD)
-				  .applyFormat(TextFormatting.UNDERLINE);
-				for (ITextComponent line: tooltip) {
+				  .applyFormat(isFocusedMatch()? ChatFormatting.GOLD : ChatFormatting.YELLOW)
+				  // .applyFormatting(ChatFormatting.BOLD)
+				  .applyFormat(ChatFormatting.UNDERLINE);
+				for (Component line: tooltip) {
 					final int l = getUnformattedString(line).length();
-					int a = MathHelper.clamp(i, 0, l);
-					int b = MathHelper.clamp(j, 0, l);
-					IFormattableTextComponent ln;
+					int a = Mth.clamp(i, 0, l);
+					int b = Mth.clamp(j, 0, l);
+					MutableComponent ln;
 					if (a != b) {
 						ln = SimpleConfigTextUtil.applyStyle(line, style, a, b);
 					} else ln = line.copy();
@@ -197,7 +197,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 					i -= l + 1;
 					j -= l + 1;
 				}
-				return tt.toArray(new ITextComponent[0]);
+				return tt.toArray(new Component[0]);
 			}
 		}
 		return tooltip;

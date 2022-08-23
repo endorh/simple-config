@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.ui.icon.Icon;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -32,12 +32,12 @@ public abstract class HotKeyActionType<V, A extends HotKeyAction<V>> {
 	public Icon getIcon() {
 		return icon;
 	}
-	public ITextComponent getDisplayName() {
-		return new TranslationTextComponent("simpleconfig.hotkey.type.name." + getTranslationKey());
+	public Component getDisplayName() {
+		return new TranslatableComponent("simpleconfig.hotkey.type.name." + getTranslationKey());
 	}
 	
-	public ITextComponent formatAction(A action) {
-		return new TranslationTextComponent("simpleconfig.hotkey.type.action." + getTranslationKey());
+	public Component formatAction(A action) {
+		return new TranslatableComponent("simpleconfig.hotkey.type.action." + getTranslationKey());
 	}
 	
 	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> A create(E entry, Object value) {
@@ -46,7 +46,7 @@ public abstract class HotKeyActionType<V, A extends HotKeyAction<V>> {
 	public abstract @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> A deserialize(E entry, Object value);
 	public abstract <T, C, E extends AbstractConfigEntry<T, C, V>> @Nullable Object serialize(E entry, A action);
 	
-	public <T, C, E extends AbstractConfigEntry<T, C, V>> Optional<ITextComponent> getActionError(E entry, Object value) {
+	public <T, C, E extends AbstractConfigEntry<T, C, V>> Optional<Component> getActionError(E entry, Object value) {
 		return Optional.empty();
 	}
 }

@@ -4,7 +4,11 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +36,7 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		protected V min;
 		protected V max;
 		protected boolean asSlider;
-		protected Function<V, ITextComponent> sliderTextSupplier;
+		protected Function<V, Component> sliderTextSupplier;
 		
 		public Builder(V value, Class<?> typeClass) {this(value, typeClass, "%d");}
 		
@@ -75,12 +79,12 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		}
 		
 		@Override @Contract(pure=true) public Self slider(String sliderTextTranslation) {
-			return slider(v -> new TranslationTextComponent(
+			return slider(v -> new TranslatableComponent(
 			  sliderTextTranslation, String.format(sliderFormat, v)));
 		}
 		
 		@Override @Contract(pure=true) public Self slider(
-		  Function<V, ITextComponent> sliderTextSupplier
+		  Function<V, Component> sliderTextSupplier
 		) {
 			SelfImpl copy = copy();
 			copy.asSlider = true;
@@ -119,7 +123,7 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 	protected V min;
 	protected V max;
 	protected boolean asSlider;
-	protected Function<V, ITextComponent> sliderTextSupplier;
+	protected Function<V, Component> sliderTextSupplier;
 	
 	public AbstractRangedEntry(
 	  ConfigEntryHolder parent, String name, V value
@@ -164,24 +168,24 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		return min + " ~ " + max;
 	}
 	
-	@Override public Optional<ITextComponent> getErrorFromGUI(Gui value) {
-		Optional<ITextComponent> error = super.getErrorFromGUI(value);
+	@Override public Optional<Component> getErrorFromGUI(Gui value) {
+		Optional<Component> error = super.getErrorFromGUI(value);
 		if (error.isPresent()) return error;
 		V v = fromGui(value);
-		if (v == null) return Optional.of(new TranslationTextComponent(
+		if (v == null) return Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.missing_value"));
 		if (min != null && min.compareTo(v) > 0)
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.too_small", coloredBound(min)));
 		if (max != null && max.compareTo(v) < 0)
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.too_large", coloredBound(max)));
 		return Optional.empty();
 	}
 	
-	protected static IFormattableTextComponent coloredBound(Object bound) {
-		return new StringTextComponent(String.valueOf(bound))
-		  .withStyle(TextFormatting.DARK_AQUA);
+	protected static MutableComponent coloredBound(Object bound) {
+		return new TextComponent(String.valueOf(bound))
+		  .withStyle(ChatFormatting.DARK_AQUA);
 	}
 	
 	@Override

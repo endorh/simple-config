@@ -1,8 +1,12 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.INavigableTarget;
@@ -13,19 +17,15 @@ import endorh.simpleconfig.ui.gui.StatusDisplayBar.StatusState.StatusStyle;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Point;
-import endorh.simpleconfig.ui.math.Rectangle;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
-import net.minecraft.util.text.event.HoverEvent.Action;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.HoverEvent.Action;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class StatusDisplayBar extends Widget implements IOverlayRenderer {
+public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer {
 	protected SimpleConfigScreen screen;
 	protected final NavigableSet<StatusState> states = new TreeSet<>(Comparator.naturalOrder());
 	protected final MultiFunctionImageButton dialogButton;
@@ -46,7 +46,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 	public StatusDisplayBar(
 	  SimpleConfigScreen screen
 	) {
-		super(0, 0, screen.width, 14, StringTextComponent.EMPTY);
+		super(0, 0, screen.width, 14, TextComponent.EMPTY);
 		this.screen = screen;
 		dialogButton = new MultiFunctionImageButton(
 		  0, 0, 15, 15, SimpleConfigIcons.Status.H_DOTS, ButtonAction.of(
@@ -64,7 +64,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
 		width = screen.width;
 		height = 19;
@@ -89,7 +89,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		return activeState != null && activeState.hasDialog(screen);
 	}
 	
-	public List<ITextComponent> getDialogTooltip() {
+	public List<Component> getDialogTooltip() {
 		return activeState != null ? activeState.getTooltip(screen, true) : Collections.emptyList();
 	}
 	
@@ -109,7 +109,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (activeState == null) {
 			claimed = false;
@@ -118,7 +118,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		}
 		
 		Minecraft mc = Minecraft.getInstance();
-		FontRenderer font = mc.font;
+		Font font = mc.font;
 		
 		StatusStyle style = activeState.getStyle(screen);
 		fillGradient(mStack, x, y - 4, x + width, y, 0x00000000, shadowColor);
@@ -127,7 +127,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		fill(mStack, x, y + height - 1, x + width, y + height, style.borderColor);
 		if (style.icon != null)
 			style.icon.renderCentered(mStack, x + 2, y + 2, 15, 15);
-		ITextComponent title = activeState.getTitle(screen);
+		Component title = activeState.getTitle(screen);
 		drawString(mStack, font, title, x + 19, y + 6, 0xFFE0E0E0);
 		if (hasDialog()) {
 			dialogButton.x = x + width - 17;
@@ -137,14 +137,16 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		dialogButton.render(mStack, mouseX, mouseY, delta);
 		
 		if (isMouseOver(mouseX, mouseY) && !dialogButton.isMouseOver(mouseX, mouseY)) {
-			List<ITextComponent> tooltip = activeState.getTooltip(screen, false);
+			List<Component> tooltip = activeState.getTooltip(screen, false);
 			if (!tooltip.isEmpty()) {
 				screen.addTooltip(Tooltip.of(
-				  Point.of(mouseX, mouseY), tooltip.toArray(new ITextComponent[0])));
+				  Point.of(mouseX, mouseY), tooltip.toArray(new Component[0])));
 			}
 		}
 		return true;
 	}
+	
+	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
 	
 	public static abstract class StatusState implements Comparable<StatusState> {
 		public static final StatusState READ_ONLY = new StatusState(30) {
@@ -152,11 +154,11 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				return !screen.isEditable();
 			}
 			
-			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
-				return new TranslationTextComponent("simpleconfig.ui.read_only").withStyle(TextFormatting.AQUA);
+			@Override public Component getTitle(SimpleConfigScreen screen) {
+				return new TranslatableComponent("simpleconfig.ui.read_only").withStyle(ChatFormatting.AQUA);
 			}
 			
-			@Override public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
+			@Override public List<Component> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc("simpleconfig.ui.read_only:help");
 			}
 			
@@ -170,9 +172,9 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				return screen.isRequiresRestart();
 			}
 			
-			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
-				return new TranslationTextComponent("simpleconfig.ui.status.requires_restart")
-				  .withStyle(TextFormatting.GOLD);
+			@Override public Component getTitle(SimpleConfigScreen screen) {
+				return new TranslatableComponent("simpleconfig.ui.status.requires_restart")
+				  .withStyle(ChatFormatting.GOLD);
 			}
 			
 			@Override public boolean hasDialog(SimpleConfigScreen screen) {
@@ -192,19 +194,19 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				final List<AbstractConfigField<?>> entries = screen.getAllMainEntries().stream()
 				  .filter(e -> e.isRequiresRestart() && e.isEdited())
 				  .collect(Collectors.toList());
-				final List<ITextComponent> lines = IntStream.range(0, entries.size()).mapToObj(i -> {
+				final List<Component> lines = IntStream.range(0, entries.size()).mapToObj(i -> {
 					AbstractConfigField<?> entry = entries.get(i);
-					IFormattableTextComponent title = entry.getTitle().copy();
-					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
-					               .withStyle(TextFormatting.GRAY));
-					title.withStyle(s -> s.withColor(TextFormatting.GOLD)
-					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslationTextComponent(
+					MutableComponent title = entry.getTitle().copy();
+					title.append(new TextComponent(" [" + entry.getPath() + "]")
+					               .withStyle(ChatFormatting.GRAY));
+					title.withStyle(s -> s.withColor(ChatFormatting.GOLD)
+					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslatableComponent(
 						 "simpleconfig.ui.go_to_entry")))
 					  .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i)));
 					return title;
 				}).collect(Collectors.toList());
 				return InfoDialog.create(
-				  new TranslationTextComponent("simpleconfig.ui.status.requires_restart.all.title"),
+				  new TranslatableComponent("simpleconfig.ui.status.requires_restart.all.title"),
 				  lines,
 				  d -> {
 					  d.setIcon(SimpleConfigIcons.Entries.REQUIRES_RESTART);
@@ -222,7 +224,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 						  }
 					  });
 					  d.addButton(TintedButton.of(
-						 new TranslationTextComponent(
+						 new TranslatableComponent(
 							"simpleconfig.ui.action.restore.all"), 0x806480FF, b -> {
 							 d.cancel(true);
 							 screen.runAtomicTransparentAction(
@@ -232,7 +234,7 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				  });
 			}
 			
-			@Override public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
+			@Override public List<Component> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc("simpleconfig.ui.status.requires_restart.click");
 			}
 		};
@@ -253,18 +255,18 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				       || !screen.hasConflictingExternalChanges() ? "remote" : "external";
 			}
 			
-			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
-				return new TranslationTextComponent(
+			@Override public Component getTitle(SimpleConfigScreen screen) {
+				return new TranslatableComponent(
 				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected");
 			}
 			
 			@Override
-			public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
+			public List<Component> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc(
 				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected."
 				  + (menu? "all" : "click"),
-				  KeyBindings.NEXT_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA),
-				  KeyBindings.PREV_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA));
+				  KeyBindings.NEXT_ERROR.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.DARK_AQUA),
+				  KeyBindings.PREV_ERROR.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.DARK_AQUA));
 			}
 			
 			@Override public boolean hasDialog(SimpleConfigScreen screen) {
@@ -273,19 +275,19 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<AbstractConfigField<?>> conflicts = screen.getAllExternalConflicts();
-				final List<ITextComponent> lines = IntStream.range(0, conflicts.size()).mapToObj(i -> {
+				final List<Component> lines = IntStream.range(0, conflicts.size()).mapToObj(i -> {
 					AbstractConfigField<?> entry = conflicts.get(i);
-					IFormattableTextComponent title = entry.getTitle().copy();
-					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
-					               .withStyle(TextFormatting.GRAY));
-					title.withStyle(s -> s.withColor(TextFormatting.GOLD)
-					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslationTextComponent(
+					MutableComponent title = entry.getTitle().copy();
+					title.append(new TextComponent(" [" + entry.getPath() + "]")
+					               .withStyle(ChatFormatting.GRAY));
+					title.withStyle(s -> s.withColor(ChatFormatting.GOLD)
+					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslatableComponent(
 						 "simpleconfig.ui.changes.all.link:help")))
 					  .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i)));
 					return title;
 				}).collect(Collectors.toList());
 				return InfoDialog.create(
-				  new TranslationTextComponent("simpleconfig.ui.changes.all.title"), lines,
+				  new TranslatableComponent("simpleconfig.ui.changes.all.title"), lines,
 				  d -> {
 					  d.setIcon(SimpleConfigIcons.Entries.MERGE_CONFLICT);
 					  d.setLinkActionHandler(s -> {
@@ -302,14 +304,14 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 						  }
 					  });
 					  d.addButton(TintedButton.of(
-					    new TranslationTextComponent(
+					    new TranslatableComponent(
 						   "simpleconfig.ui.action.accept_all_changes"), 0x8081542F, b -> {
 						    d.cancel(true);
 						    screen.handleExternalChangeResponse(ExternalChangeResponse.ACCEPT_ALL);
 					    }
 					  ));
 					  d.addButton(Util.make(TintedButton.of(
-					    new TranslationTextComponent(
+					    new TranslatableComponent(
 						   "simpleconfig.ui.action.accept_non_conflicting_changes"), 0x80683498, b -> {
 						    d.cancel(true);
 						    screen.handleExternalChangeResponse(
@@ -336,12 +338,12 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				screen.focusNextError(!Screen.hasShiftDown());
 			}
 			
-			@Override public ITextComponent getTitle(SimpleConfigScreen screen) {
-				List<ITextComponent> errors = screen.getErrorsMessages();
-				if (errors.isEmpty()) return StringTextComponent.EMPTY;
-				return (errors.size() == 1 ? errors.get(0).copy() : new TranslationTextComponent(
+			@Override public Component getTitle(SimpleConfigScreen screen) {
+				List<Component> errors = screen.getErrorsMessages();
+				if (errors.isEmpty()) return TextComponent.EMPTY;
+				return (errors.size() == 1 ? errors.get(0).copy() : new TranslatableComponent(
 				  "simpleconfig.ui.errors.multiple", errors.size(), errors.get(0).copy().getString()
-				)).withStyle(TextFormatting.RED);
+				)).withStyle(ChatFormatting.RED);
 			}
 			
 			@Override public boolean hasDialog(SimpleConfigScreen screen) {
@@ -350,25 +352,25 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<EntryError> errors = screen.getErrors();
-				final List<ITextComponent> lines = IntStream.range(0, errors.size()).mapToObj(i -> {
-					TranslationTextComponent goToError = new TranslationTextComponent(
+				final List<Component> lines = IntStream.range(0, errors.size()).mapToObj(i -> {
+					TranslatableComponent goToError = new TranslatableComponent(
 					  "simpleconfig.ui.errors.all.link:help");
 					HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, goToError);
 					ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i);
 					EntryError error = errors.get(i);
 					AbstractConfigField<?> entry = error.getEntry();
-					IFormattableTextComponent title = entry.getTitle().copy();
-					title.append(new StringTextComponent(" [" + entry.getPath() + "]")
-					               .withStyle(TextFormatting.DARK_RED));
-					title.withStyle(s -> s.withColor(TextFormatting.RED)
+					MutableComponent title = entry.getTitle().copy();
+					title.append(new TextComponent(" [" + entry.getPath() + "]")
+					               .withStyle(ChatFormatting.DARK_RED));
+					title.withStyle(s -> s.withColor(ChatFormatting.RED)
 					  .withHoverEvent(hoverEvent).withClickEvent(clickEvent));
-					IFormattableTextComponent err = new StringTextComponent("  ").append(
-					  error.getError().copy().withStyle(s -> s.withColor(TextFormatting.RED)
+					MutableComponent err = new TextComponent("  ").append(
+					  error.getError().copy().withStyle(s -> s.withColor(ChatFormatting.RED)
 					    .withHoverEvent(hoverEvent).withClickEvent(clickEvent)));
-					return new ITextComponent[] {title, err};
+					return new Component[] {title, err};
 				}).flatMap(Arrays::stream).collect(Collectors.toList());
 				return InfoDialog.create(
-				  new TranslationTextComponent("simpleconfig.ui.errors.all.title"), lines,
+				  new TranslatableComponent("simpleconfig.ui.errors.all.title"), lines,
 				  d -> {
 					  d.setIcon(SimpleConfigIcons.Status.ERROR);
 					  d.titleColor = 0xFFFF8080;
@@ -390,11 +392,11 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 				  });
 			}
 			
-			@Override public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
+			@Override public List<Component> getTooltip(SimpleConfigScreen screen, boolean menu) {
 				return SimpleConfigTextUtil.splitTtc(
 				  menu? "simpleconfig.ui.errors.extra:help" : "simpleconfig.ui.errors:help",
-				  KeyBindings.NEXT_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA),
-				  KeyBindings.PREV_ERROR.getTranslatedKeyMessage().copy().withStyle(TextFormatting.DARK_AQUA)
+				  KeyBindings.NEXT_ERROR.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.DARK_AQUA),
+				  KeyBindings.PREV_ERROR.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.DARK_AQUA)
 				);
 			}
 			
@@ -411,14 +413,14 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		
 		public abstract boolean isActive(SimpleConfigScreen screen);
 		public void onClick(SimpleConfigScreen screen, double mouseX, double mouseY, int button) {}
-		public abstract ITextComponent getTitle(SimpleConfigScreen screen);
+		public abstract Component getTitle(SimpleConfigScreen screen);
 		public boolean hasDialog(SimpleConfigScreen screen) {
 			return getDialog(screen) != null;
 		}
 		public @Nullable AbstractDialog getDialog(SimpleConfigScreen screen) {
 			return null;
 		}
-		public List<ITextComponent> getTooltip(SimpleConfigScreen screen, boolean menu) {
+		public List<Component> getTooltip(SimpleConfigScreen screen, boolean menu) {
 			return Collections.emptyList();
 		}
 		public abstract StatusStyle getStyle(SimpleConfigScreen screen);

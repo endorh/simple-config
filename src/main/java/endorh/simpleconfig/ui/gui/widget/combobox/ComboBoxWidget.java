@@ -1,36 +1,43 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager.LogicOp;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.math.Rectangle;
-import net.minecraft.client.KeyboardListener;
+import net.minecraft.ChatFormatting;
+import net.minecraft.SharedConstants;
+import net.minecraft.Util;
+import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.text.*;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +57,7 @@ import java.util.regex.Pattern;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.subText;
 import static java.lang.Math.*;
 
-public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
+public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRenderer {
 	@Internal protected IOverlayCapableContainer screen = null;
 	protected Supplier<IOverlayCapableContainer> screenSupplier;
 	protected final @NotNull ITypeWrapper<T> typeWrapper;
@@ -70,16 +77,16 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected long scrollAnimationDuration = 150L;
 	protected long lastSuggestionCursorNavigation = 0;
 	protected ToggleAnimator expandAnimator = new ToggleAnimator(250L);
-	protected @Nullable ITextComponent hint = null;
+	protected @Nullable Component hint = null;
 	
 	protected @NotNull IComboBoxModel<T> suggestionProvider;
 	
-	protected final FontRenderer font;
+	protected final Font font;
 	/** Has the current text being edited on the textbox. */
 	protected String text = "";
 	protected T autoCompleteValue = null;
 	protected @Nullable T value = null;
-	protected @Nullable ITextComponent parseError = null;
+	protected @Nullable Component parseError = null;
 	private boolean isEnabled = true;
 	protected int maxLength = 32;
 	protected long lastInteraction;
@@ -103,7 +110,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected List<T> lastSuggestions = Lists.newArrayList();
 	protected List<T> lastSortedSuggestions = Lists.newArrayList();
 	protected String lastQuery = "";
-	protected List<ITextComponent> decoratedSuggestions = Lists.newArrayList();
+	protected List<Component> decoratedSuggestions = Lists.newArrayList();
 	/** Called to check if the text is valid */
 	protected Predicate<String> filter = Objects::nonNull;
 	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
@@ -119,12 +126,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public ComboBoxWidget(
 	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
-	  int x, int y, int width, int height, @NotNull ITextComponent title
+	  int x, int y, int width, int height, @NotNull Component title
 	) { this(typeWrapper, screen, Minecraft.getInstance().font, x, y, width, height, title); }
 	
 	public ComboBoxWidget(
 	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
-	  @NotNull FontRenderer font, int x, int y, int width, int height, @NotNull ITextComponent title
+	  @NotNull Font font, int x, int y, int width, int height, @NotNull Component title
 	) {
 		super(x, y, width, height, title);
 		this.typeWrapper = typeWrapper;
@@ -160,17 +167,17 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		setSuggestionProvider(new SimpleComboBoxModel<>(suggestions));
 	}
 	
-	public @Nullable ITextComponent getHint() {
+	public @Nullable Component getHint() {
 		return hint;
 	}
 	
-	public ComboBoxWidget<T> setHint(@Nullable ITextComponent hint) {
+	public ComboBoxWidget<T> setHint(@Nullable Component hint) {
 		this.hint = hint;
 		return this;
 	}
 	
 	@Override public boolean renderOverlay(
-	  MatrixStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (!isDropDownShown())
 			return false;
@@ -202,9 +209,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			if (!lastSortedSuggestions.isEmpty()) {
 				final int suggestionHeight = getSuggestionHeight();
 				int firstIdx =
-				  (int) MathHelper.clamp(this.dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+				  (int) Mth.clamp(this.dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				int lastIdx =
-				  (int) MathHelper.clamp((this.dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+				  (int) Mth.clamp((this.dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				
 				int yy = area.y + 1 - ((int) this.dropDownScroll) % suggestionHeight;
 				for (int i = firstIdx; i <= lastIdx; i++) {
@@ -229,7 +236,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					  mStack, scrollBarX, thumbY, area.getMaxX() - 1, thumbY + thumbHeight, thumbColor);
 				}
 			} else {
-				final Optional<ITextComponent> opt = suggestionProvider.getPlaceHolder(typeWrapper, text);
+				final Optional<Component> opt = suggestionProvider.getPlaceHolder(typeWrapper, text);
 				if (opt.isPresent()) {
 					drawTextComponent(
 					  opt.get(), mStack, area.x + 4, area.y + 2,
@@ -245,7 +252,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	protected void renderSuggestion(
-	  int i, T suggestion, MatrixStack mStack, int x, int y, int w, int h,
+	  int i, T suggestion, PoseStack mStack, int x, int y, int w, int h,
 	  int mouseX, int mouseY, float delta, boolean selected
 	) {
 		boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
@@ -272,7 +279,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			textY += (iconHeight - 10) / 2;
 		}
 		
-		final ITextComponent name =
+		final Component name =
 		  i >= 0 && i < decoratedSuggestions.size()
 		  ? decoratedSuggestions.get(i) : typeWrapper.getDisplayName(suggestion);
 		
@@ -285,9 +292,9 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	protected void drawTextComponent(
-	  ITextComponent component, MatrixStack mStack, int x, int y, int w, int h, int color
+	  Component component, PoseStack mStack, int x, int y, int w, int h, int color
 	) {
-		final List<IReorderingProcessor> processors = font.split(component, w);
+		final List<FormattedCharSequence> processors = font.split(component, w);
 		if (!processors.isEmpty())
 			font.drawShadow(mStack, processors.get(0), (float) x, (float) y, color);
 	}
@@ -430,7 +437,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void setDropDownScroll(int scroll) {
-		dropDownScroll = MathHelper.clamp(scroll, 0, getMaxDropDownScroll());
+		dropDownScroll = Mth.clamp(scroll, 0, getMaxDropDownScroll());
 		dropDownScrollTarget = dropDownScroll;
 		scrollAnimationStart = 0;
 	}
@@ -446,10 +453,10 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public void scrollTo(double scroll, boolean animated) {
 		if (animated) {
-			dropDownScrollTarget = MathHelper.clamp(scroll, -32, getMaxDropDownScroll() + 32);
+			dropDownScrollTarget = Mth.clamp(scroll, -32, getMaxDropDownScroll() + 32);
 			scrollAnimationStart = System.currentTimeMillis();
 		} else {
-			dropDownScroll = dropDownScrollTarget = MathHelper.clamp(scroll, 0, getMaxDropDownScroll());
+			dropDownScroll = dropDownScrollTarget = Mth.clamp(scroll, 0, getMaxDropDownScroll());
 			scrollAnimationStart = 0;
 		}
 	}
@@ -472,11 +479,11 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	public void tick() {}
 	
-	@Override protected @NotNull IFormattableTextComponent createNarrationMessage() {
-		ITextComponent itextcomponent = getMessage();
+	@Override protected @NotNull MutableComponent createNarrationMessage() {
+		Component itextcomponent = getMessage();
 		// This should have its own key, but I think having it untranslated
 		// is worse than reporting it as an edit box
-		return new TranslationTextComponent("gui.narrate.editBox", itextcomponent, text);
+		return new TranslatableComponent("gui.narrate.editBox", itextcomponent, text);
 	}
 	
 	/**
@@ -556,9 +563,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	protected void onTextChanged(String newText) {
-		if (textListener != null)
-			textListener.accept(newText);
-		nextNarration = Util.getMillis() + 500L;
+		if (textListener != null) textListener.accept(newText);
 		if (isRestrictedToSuggestions() && isAutoDropDown())
 			setDropDownShown(true);
 		updateValue();
@@ -566,7 +571,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	protected void updateValue() {
 		if (!isRestrictedToSuggestions()) {
-			final Pair<Optional<T>, Optional<ITextComponent>> parsed = typeWrapper.parseElement(text);
+			final Pair<Optional<T>, Optional<Component>> parsed = typeWrapper.parseElement(text);
 			this.value = parsed.getLeft().orElse(null);
 			this.parseError = parsed.getRight().orElse(null);
 			this.onValueChanged(value);
@@ -582,7 +587,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			boolean changed = !suggestions.equals(lastSuggestions);
 			if (changed) lastSuggestions = suggestions;
 			if (!query.equals(lastQuery) || changed) {
-				final Pair<List<T>, List<ITextComponent>> pair =
+				final Pair<List<T>, List<Component>> pair =
 				  suggestionProvider.pickAndDecorateSuggestions(typeWrapper, query, lastSuggestions);
 				lastSortedSuggestions = pair.getLeft();
 				decoratedSuggestions = pair.getRight();
@@ -730,7 +735,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	}
 	
 	public void setCaretPosition(int pos) {
-		caretPos = MathHelper.clamp(pos, 0, text.length());
+		caretPos = Mth.clamp(pos, 0, text.length());
 	}
 	
 	/**
@@ -768,7 +773,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				setAnchorPos(0);
 				return true;
 			} else {
-				final KeyboardListener kl = Minecraft.getInstance().keyboardHandler;
+				final KeyboardHandler kl = Minecraft.getInstance().keyboardHandler;
 				if (Screen.isCopy(keyCode)) {
 					kl.setClipboard(getSelectedText());
 					playFeedbackTap(1F);
@@ -839,23 +844,23 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	
 	private void playFeedbackTap(float volume) {
 		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SimpleConfigMod.UI_TAP, volume));
+		  SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
 	private void playFeedbackClick(float volume) {
 		Minecraft.getInstance().getSoundManager().play(
-		  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
+		  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
 	}
 	
 	public void moveSuggestionCursor(int step) {
 		if (!isDropDownShown())
 			setDropDownShown(true);
 		int prev = suggestionCursor;
-		suggestionCursor = MathHelper.clamp(suggestionCursor + step, 0, lastSortedSuggestions.size() - 1);
+		suggestionCursor = Mth.clamp(suggestionCursor + step, 0, lastSortedSuggestions.size() - 1);
 		// Ensure visible
 		final int suggestionHeight = getSuggestionHeight();
-		int firstIdx = (int) MathHelper.clamp(dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
-		int lastIdx = (int) MathHelper.clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+		int firstIdx = (int) Mth.clamp(dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+		int lastIdx = (int) Mth.clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 		
 		final long t = System.currentTimeMillis();
 		// Do not animate for very fast movement for better readability
@@ -931,7 +936,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 					setDropDownShown(!wasShown);
 					if (!wasShown) setText("");
 					Minecraft.getInstance().getSoundManager().play(
-					  SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
+					  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1F));
 				}
 				return true;
 			}
@@ -1010,7 +1015,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 	
-	protected int getClickedCaretPos(IFormattableTextComponent line, double relX) {
+	protected int getClickedCaretPos(MutableComponent line, double relX) {
 		int lineLength = line.getString().length();
 		int floor = font.substrByWidth(line, (int) relX).getString().length();
 		if (floor >= lineLength) return lineLength;
@@ -1038,12 +1043,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			reportedDropDownRectangle.setBounds(0, 0, 0, 0);
 	}
 	
-	public IFormattableTextComponent getDisplayedText() {
+	public MutableComponent getDisplayedText() {
 		return formatter.formatText(getText());
 	}
 	
 	@Override public void renderButton(
-	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float delta
+	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
 		if (isVisible()) {
 			updateSuggestions();
@@ -1076,13 +1081,13 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 			int iconX = x;
 			int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
 			final int innerWidth = getInnerWidth();
-			final ITextComponent hint = getHint();
+			final Component hint = getHint();
 			int color = isEnabled() ? enabledColor : disabledColor;
 			if (isFocused() || value == null && hint == null) {
 				int relCaret = caretPos - hScroll;
 				int relAnchor = anchorPos - hScroll;
 				
-				IFormattableTextComponent displayedText = subText(getDisplayedText(), hScroll);
+				MutableComponent displayedText = subText(getDisplayedText(), hScroll);
 				String shown = font.substrByWidth(displayedText, innerWidth).getString();
 				int fitLength = shown.length();
 				displayedText = subText(displayedText, 0, fitLength);
@@ -1122,28 +1127,28 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				}
 			} else if (text.isEmpty() && value == null) {
 				// Render hint
-				drawTextComponent(hint.copy().withStyle(TextFormatting.GRAY),
+				drawTextComponent(hint.copy().withStyle(ChatFormatting.GRAY),
 				  mStack, textX, textY, innerWidth, 10, 0x96FFFFFF);
 			} else if (value != null) {
 				// Render value
-				ITextComponent display = typeWrapper.getDisplayName(value);
-				if (!isEnabled()) display = new StringTextComponent(
-				  display.getContents()).withStyle(TextFormatting.GRAY);
+				Component display = typeWrapper.getDisplayName(value);
+				if (!isEnabled()) display = new TextComponent(
+				  display.getContents()).withStyle(ChatFormatting.GRAY);
 				drawTextComponent(display, mStack, textX, textY, innerWidth, 10, 0xFFE0E0E0);
 			} else {
 				// Render text
-				IFormattableTextComponent displayedText = subText(getDisplayedText(), hScroll);
+				MutableComponent displayedText = subText(getDisplayedText(), hScroll);
 				displayedText = subText(
 				  displayedText, 0, font.substrByWidth(displayedText, innerWidth).getString().length());
 				font.drawShadow(mStack, displayedText, textX, textY, color);
 			}
 			
 			if (hasIcon) {
-				RenderSystem.color4f(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
+				RenderSystem.setShaderColor(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
 				typeWrapper.renderIcon(
 				  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
 				  iconX, iconY, iconWidth, iconHeight, mouseX, mouseY, delta);
-				RenderSystem.color4f(1F, 1F, 1F, 1F);
+				RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			}
 			
 			int arrowX = x + width - arrowWidth, arrowY = y;
@@ -1151,15 +1156,15 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		}
 	}
 	
-	protected void renderCaret(MatrixStack mStack, int x, int y, int w, int h) {
-		Tessellator tessellator = Tessellator.getInstance();
+	protected void renderCaret(PoseStack mStack, int x, int y, int w, int h) {
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
-		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		RenderSystem.logicOp(LogicOp.OR_REVERSE);
 		Matrix4f m = mStack.last().pose();
-		bb.begin(7, DefaultVertexFormats.POSITION);
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
 		bb.vertex(m,     x, y + h, 0F).endVertex();
 		bb.vertex(m, x + w, y + h, 0F).endVertex();
 		bb.vertex(m, x + w,     y, 0F).endVertex();
@@ -1181,21 +1186,21 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		       && mouseY >= iconY && mouseY < iconY + iconHeight;
 	}
 	
-	protected void renderArrow(MatrixStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, int backgroundX) {
+	protected void renderArrow(PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, int backgroundX) {
 		final boolean hovered = mouseX >= backgroundX && mouseX < x + w && mouseY >= y && mouseY < y + h;
 		int arrowBackground = hovered ? 0x80646464 : 0x80242424;
 		if (backgroundX == mouseX || hovered)
 			fill(mStack, backgroundX, y, x + w, y + h, arrowBackground);
-		RenderSystem.color4f(1F, 1F, 1F, canShowDropDown()? 1F : 0.7F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, canShowDropDown()? 1F : 0.7F);
 		SimpleConfigIcons.ComboBox.DROP_DOWN_ARROW.renderCentered(
 		  mStack, x, y + (h - 10) / 2, 10, 10, isDropDownShown()? 1 : 0);
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 	}
 	
 	/**
 	 * Draws the blue selection box.
 	 */
-	protected void renderSelection(MatrixStack mStack, int sX, int sY, int eX, int eY) {
+	protected void renderSelection(PoseStack mStack, int sX, int sY, int eX, int eY) {
 		if (sX < eX) {
 			final int swap = sX;
 			sX = eX;
@@ -1210,14 +1215,14 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		if (eX > x + width) eX = x + width;
 		if (sX > x + width) sX = x + width;
 		
-		Tessellator tessellator = Tessellator.getInstance();
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
-		RenderSystem.color4f(0F, 0F, 1F, 1F);
+		RenderSystem.setShaderColor(0F, 0F, 1F, 1F);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
-		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		RenderSystem.logicOp(LogicOp.OR_REVERSE);
 		Matrix4f m = mStack.last().pose();
-		bb.begin(7, DefaultVertexFormats.POSITION);
+		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
 		bb.vertex(m, sX, eY, 0F).endVertex();
 		bb.vertex(m, eX, eY, 0F).endVertex();
 		bb.vertex(m, eX, sY, 0F).endVertex();
@@ -1226,7 +1231,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		RenderSystem.disableColorLogicOp();
 		RenderSystem.enableTexture();
 		// Do not leak the blue filter
-		RenderSystem.color4f(1F, 1F, 1F, 1F);
+		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 	}
 	
 	/**
@@ -1354,7 +1359,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	 */
 	public void setAnchorPos(int pos) {
 		int i = text.length();
-		anchorPos = MathHelper.clamp(pos, 0, i);
+		anchorPos = Mth.clamp(pos, 0, i);
 		if (font != null) {
 			if (hScroll > i)
 				hScroll = i;
@@ -1373,7 +1378,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 				hScroll = anchorPos;
 			}
 			
-			hScroll = MathHelper.clamp(hScroll, 0, i);
+			hScroll = Mth.clamp(hScroll, 0, i);
 		}
 	}
 	
@@ -1410,7 +1415,12 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		return value;
 	}
 	
-	public Optional<ITextComponent> getError() {
+	public Optional<Component> getError() {
 		return Optional.ofNullable(parseError);
+	}
+	
+	@Override public void updateNarration(NarrationElementOutput out) {
+		// TODO: Narrate suggestions?
+		out.add(NarratedElementType.TITLE, new TranslatableComponent("narration.edit_box", getValue()));
 	}
 }

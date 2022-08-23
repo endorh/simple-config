@@ -13,8 +13,8 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -126,9 +126,9 @@ public abstract class AbstractRangeEntry<
 		}
 	}
 	
-	@Override public Optional<ITextComponent> getErrorFromGUI(R value) {
+	@Override public Optional<Component> getErrorFromGUI(R value) {
 		if (value.getMin().compareTo(value.getMax()) > 0) return Optional.of(
-		  new TranslationTextComponent("simpleconfig.config.error.min_greater_than_max"));
+		  new TranslatableComponent("simpleconfig.config.error.min_greater_than_max"));
 		return super.getErrorFromGUI(value);
 	}
 	
@@ -258,13 +258,13 @@ public abstract class AbstractRangeEntry<
 			}
 		}
 		
-		@Override public Optional<ITextComponent> getErrorFromGUI(R value) {
-			Optional<ITextComponent> opt = super.getErrorFromGUI(value);
+		@Override public Optional<Component> getErrorFromGUI(R value) {
+			Optional<Component> opt = super.getErrorFromGUI(value);
 			if (opt.isPresent()) return opt;
 			double size = value.getSize();
-			if (size < minSize) return Optional.of(new TranslationTextComponent(
+			if (size < minSize) return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.range_too_small", minSize, size));
-			if (size > maxSize) return Optional.of(new TranslationTextComponent(
+			if (size > maxSize) return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.range_too_large", maxSize, size));
 			return Optional.empty();
 		}

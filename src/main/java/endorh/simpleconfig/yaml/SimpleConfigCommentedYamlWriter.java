@@ -50,8 +50,7 @@ public class SimpleConfigCommentedYamlWriter implements ConfigWriter {
 		NodeComments rootComments = comments.get("");
 		if (rootComments != null)
 			rootComments.apply(root);
-		if (root instanceof MappingNode) {
-			MappingNode mappingNode = (MappingNode) root;
+		if (root instanceof MappingNode mappingNode) {
 			for (NodeTuple tuple : mappingNode.getValue()) {
 				Node keyNode = tuple.getKeyNode();
 				if (keyNode instanceof ScalarNode) {
@@ -68,8 +67,7 @@ public class SimpleConfigCommentedYamlWriter implements ConfigWriter {
 		NodeComments nodeComments = comments.get(path);
 		if (nodeComments != null) nodeComments.apply(tuple);
 		Node value = tuple.getValueNode();
-		if (value instanceof MappingNode) {
-			MappingNode mappingNode = (MappingNode) value;
+		if (value instanceof MappingNode mappingNode) {
 			for (NodeTuple childTuple : mappingNode.getValue()) {
 				Node childKeyNode = childTuple.getKeyNode();
 				if (childKeyNode instanceof ScalarNode) {

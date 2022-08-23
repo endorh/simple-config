@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +15,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 	@NotNull protected Supplier<List<T>> suggestions;
 	protected long lastUpdate = 0L;
 	protected long updateCooldown = 250L;
-	protected @Nullable Function<String, ITextComponent> placeholder = null;
+	protected @Nullable Function<String, Component> placeholder = null;
 	
 	public SimpleComboBoxModel(
 	  @NotNull List<T> suggestions
@@ -39,7 +39,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 		return Optional.of(new ArrayList<>(this.suggestions.get()));
 	}
 	
-	@Override public Optional<ITextComponent> getPlaceHolder(
+	@Override public Optional<Component> getPlaceHolder(
 	  ITypeWrapper<T> typeWrapper, String query
 	) {
 		return placeholder != null ? Optional.of(placeholder.apply(query))
@@ -54,11 +54,11 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 		this.updateCooldown = cooldownMs;
 	}
 	
-	public void setPlaceholder(@Nullable Function<String, ITextComponent> getter) {
+	public void setPlaceholder(@Nullable Function<String, Component> getter) {
 		this.placeholder = getter;
 	}
 	
-	public void setPlaceholder(ITextComponent placeholder) {
+	public void setPlaceholder(Component placeholder) {
 		setPlaceholder(s -> placeholder);
 	}
 }

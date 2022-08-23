@@ -14,8 +14,8 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -117,8 +117,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 			List<Object> seq = (List<Object>) value;
 			List<Pair<KC, C>> pairs = new ArrayList<>();
 			for (Object o : seq) {
-				if (o instanceof Map) {
-					Map<?, ?> map = (Map<?, ?>) o;
+				if (o instanceof Map<?, ?> map) {
 					if (map.entrySet().size() != 1) return null;
 					Map.Entry<?, ?> e = map.entrySet().stream().findFirst()
 					  .orElseThrow(IllegalStateException::new);
@@ -126,8 +125,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 					C val = entry.fromActualConfig(e.getValue());
 					if (key == null || val == null) return null;
 					pairs.add(Pair.of(key, val));
-				} else if (o instanceof Config) {
-					Config config = (Config) o;
+				} else if (o instanceof Config config) {
 					if (config.entrySet().size() != 1) return null;
 					Config.Entry e = config.entrySet().stream().findFirst()
 					  .orElseThrow(IllegalStateException::new);
@@ -168,11 +166,11 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(ConfigFieldBuilder builder) {
 		final AbstractConfigEntry<K, KC, KG> ke = keyEntryBuilder.build(holder, holder.nextName());
 		ke.setSaver((g, h) -> {});
-		ke.setDisplayName(new StringTextComponent(""));
+		ke.setDisplayName(new TextComponent(""));
 		ke.nonPersistent = true;
 		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
-		e.setDisplayName(new StringTextComponent(""));
+		e.setDisplayName(new TextComponent(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
@@ -187,8 +185,8 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		return Pair.of(kg, g);
 	}
 	
-	@Override public List<ITextComponent> getElementErrors(int index, Pair<KG, G> value) {
-		List<ITextComponent> errors = super.getElementErrors(index, value);
+	@Override public List<Component> getElementErrors(int index, Pair<KG, G> value) {
+		List<Component> errors = super.getElementErrors(index, value);
 		keyEntry.getErrorsFromGUI(value.getKey()).stream()
 		  .map(e -> addIndex(e, index))
 		  .forEach(errors::add);

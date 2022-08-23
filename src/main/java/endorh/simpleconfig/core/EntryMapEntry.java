@@ -14,8 +14,12 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.text.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -41,7 +45,7 @@ import static java.util.Collections.singletonList;
  * {@link IKeyEntry}. This excludes using as key entries other lists,
  * maps and GUI only entries, since their rendering or serialization
  * is not supported.<br>
- * Currently, serializes in the config file as a {@link CompoundNBT}
+ * Currently, serializes in the config file as a {@link CompoundTag}
  */
 public class EntryMapEntry<K, V, KC, C, KG, G,
   B extends AbstractConfigEntryBuilder<V, C, G, ?, ?, B>,
@@ -56,7 +60,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	protected final Class<?> keyEntryTypeClass;
 	protected final Class<?> entryTypeClass;
 	protected final CollectionEntryHolder holder;
-	protected BiFunction<K, V, Optional<ITextComponent>> elemErrorSupplier = (k, v) -> Optional.empty();
+	protected BiFunction<K, V, Optional<Component>> elemErrorSupplier = (k, v) -> Optional.empty();
 	protected int minSize = 0;
 	protected int maxSize = Integer.MAX_VALUE;
 	protected boolean expand;
@@ -103,7 +107,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		protected B entryBuilder;
 		protected boolean expand;
 		protected boolean linked;
-		protected BiFunction<K, V, Optional<ITextComponent>> elemErrorSupplier = (k, v) -> Optional.empty();
+		protected BiFunction<K, V, Optional<Component>> elemErrorSupplier = (k, v) -> Optional.empty();
 		protected int minSize = 0;
 		protected int maxSize = Integer.MAX_VALUE;
 		
@@ -145,7 +149,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		}
 		
 		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> entryError(
-		  BiFunction<K, V, Optional<ITextComponent>> supplier
+		  BiFunction<K, V, Optional<Component>> supplier
 		) {
 			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
 			copy.elemErrorSupplier = supplier;
@@ -213,8 +217,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			List<Object> seq = (List<Object>) value;
 			Map<KC, C> map = new LinkedHashMap<>();
 			for (Object o : seq) {
-				if (o instanceof Map) {
-					Map<?, ?> mm = (Map<?, ?>) o;
+				if (o instanceof Map<?, ?> mm) {
 					if (mm.entrySet().size() != 1) return null;
 					Map.Entry<?, ?> e = mm.entrySet().stream().findFirst()
 					  .orElseThrow(IllegalStateException::new);
@@ -222,8 +225,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 					C val = entry.fromActualConfig(e.getValue());
 					if (key == null || val == null) return null;
 					map.put(key, val);
-				} else if (o instanceof Config) {
-					Config config = (Config) o;
+				} else if (o instanceof Config config) {
 					if (config.entrySet().size() != 1) return null;
 					Config.Entry e = config.entrySet().stream().findFirst()
 					  .orElseThrow(IllegalStateException::new);
@@ -317,11 +319,11 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	) {
 		final AbstractConfigEntry<K, KC, KG> ke = keyEntryBuilder.build(holder, holder.nextName());
 		ke.setSaver((g, h) -> {});
-		ke.setDisplayName(new StringTextComponent(""));
+		ke.setDisplayName(new TextComponent(""));
 		ke.nonPersistent = true;
 		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
-		e.setDisplayName(new StringTextComponent(""));
+		e.setDisplayName(new TextComponent(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
@@ -336,23 +338,23 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		return Pair.of(kg, g);
 	}
 	
-	@Override public Optional<ITextComponent> getErrorFromGUI(List<Pair<KG, G>> value) {
+	@Override public Optional<Component> getErrorFromGUI(List<Pair<KG, G>> value) {
 		if (value.size() < minSize) {
-			return Optional.of(new TranslationTextComponent(
+			return Optional.of(new TranslatableComponent(
 			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_small"),
 			  coloredNumber(minSize)));
-		} else if (value.size() > maxSize) return Optional.of(new TranslationTextComponent(
+		} else if (value.size() > maxSize) return Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.list.too_large",
 		  coloredNumber(maxSize)));
 		return super.getErrorFromGUI(value);
 	}
 	
-	protected static IFormattableTextComponent coloredNumber(int minSize) {
-		return new StringTextComponent(String.valueOf(minSize))
-		  .withStyle(TextFormatting.DARK_AQUA);
+	protected static MutableComponent coloredNumber(int minSize) {
+		return new TextComponent(String.valueOf(minSize))
+		  .withStyle(ChatFormatting.DARK_AQUA);
 	}
 	
-	@Override public List<ITextComponent> getErrorsFromGUI(List<Pair<KG, G>> value) {
+	@Override public List<Component> getErrorsFromGUI(List<Pair<KG, G>> value) {
 		return Stream.concat(
 		  Stream.of(getErrorFromGUI(value), getDuplicateError(value))
 		    .filter(Optional::isPresent).map(Optional::get),
@@ -360,31 +362,31 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		  ).collect(Collectors.toList());
 	}
 	
-	protected Optional<ITextComponent> getDuplicateError(List<Pair<KG, G>> value) {
+	protected Optional<Component> getDuplicateError(List<Pair<KG, G>> value) {
 		Set<KG> set = new HashSet<>();
 		for (Pair<KG, G> pair : value) {
 			final KG key = pair.getKey();
 			if (!set.add(key))
-				return Optional.of(new TranslationTextComponent(
+				return Optional.of(new TranslatableComponent(
 				  "simpleconfig.config.error.duplicate_key", key));
 		}
 		return Optional.empty();
 	}
 	
-	public Optional<ITextComponent> getCellError(int index, Pair<KG, G> p) {
+	public Optional<Component> getCellError(int index, Pair<KG, G> p) {
 		// Already handled by the GUI
-		// Optional<ITextComponent> e = keyEntry.getError(p.getKey());
+		// Optional<Component> e = keyEntry.getError(p.getKey());
 		// if (e.isPresent()) return e;
 		// e = entry.getError(p.getValue());
 		// if (e.isPresent()) return e;
 		K key = keyEntry.fromGui(p.getKey());
 		V value = entry.fromGui(p.getValue());
-		if (key == null || value == null) return Optional.of(new TranslationTextComponent(
+		if (key == null || value == null) return Optional.of(new TranslatableComponent(
 		  "simpleconfig.config.error.missing_value"));
 		return elemErrorSupplier.apply(key, value);
 	}
 	
-	public List<Optional<ITextComponent>> getMultiCellError(List<Pair<KG, G>> gui) {
+	public List<Optional<Component>> getMultiCellError(List<Pair<KG, G>> gui) {
 		Map<K, List<Integer>> groups = IntStream.range(0, gui.size())
 		  .mapToObj(i -> Pair.of(keyEntry.fromGui(gui.get(i).getKey()), i))
 		  .collect(Collectors.<Pair<K, Integer>, K, List<Integer>>toMap(
@@ -393,17 +395,17 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 				 indices.addAll(b);
 				 return indices;
 			 }));
-		List<Optional<ITextComponent>> errors = gui.stream()
-		  .map(p -> Optional.<ITextComponent>empty()).collect(Collectors.toList());
+		List<Optional<Component>> errors = gui.stream()
+		  .map(p -> Optional.<Component>empty()).collect(Collectors.toList());
 		groups.values().stream().filter(l -> l.size() > 1).forEach(
-		  g -> g.forEach(i -> errors.set(i, Optional.of(new TranslationTextComponent(
+		  g -> g.forEach(i -> errors.set(i, Optional.of(new TranslatableComponent(
 			 "simpleconfig.config.error.duplicate_key", gui.get(i).getKey())
 		  ))));
 		return errors;
 	}
 	
-	public List<ITextComponent> getElementErrors(Pair<KG, G> p) {
-		List<ITextComponent> errors = keyEntry.getErrorsFromGUI(p.getKey());
+	public List<Component> getElementErrors(Pair<KG, G> p) {
+		List<Component> errors = keyEntry.getErrorsFromGUI(p.getKey());
 		errors.addAll(entry.getErrorsFromGUI(p.getValue()));
 		return errors;
 	}

@@ -10,13 +10,13 @@ import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
-import net.minecraft.block.Block;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -125,8 +125,8 @@ public class SimpleConfigClassParser {
 		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));
 		registerFieldParser(Entry.class, Block.class, (a, field, value) -> block(value));
 		registerFieldParser(Entry.class, Fluid.class, (a, field, value) -> fluid(value));
-		registerFieldParser(Entry.class, CompoundNBT.class, (a, field, value) -> nbtTag(value));
-		registerFieldParser(Entry.class, INBT.class, (a, field, value) -> nbtValue(value));
+		registerFieldParser(Entry.class, CompoundTag.class, (a, field, value) -> compoundTag(value));
+		registerFieldParser(Entry.class, Tag.class, (a, field, value) -> tag(value));
 		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) -> resource(value));
 	}
 	
@@ -157,12 +157,12 @@ public class SimpleConfigClassParser {
 		final Method validate = tryGetMethod(cl, field.getName(), "elemError", getTypeParameter(field, 0));
 		if (validate != null) {
 			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
-			if (checkType(validate, Optional.class, ITextComponent.class)) {
+			if (checkType(validate, Optional.class, Component.class)) {
 				builder = builder.elemError(e -> invoke(
 				  validate, null, errorMsg, Optional.class, e));
 			} else throw new SimpleConfigClassParseException(cl,
 			  "Unsupported return type in config list element validator method " + getMethodName(validate) +
-			  "\n  Return type must be either \"boolean\" or \"Optional<ITextComponent>\"");
+			  "\n  Return type must be either \"boolean\" or \"Optional<Component>\"");
 		}
 		return builder;
 	}
@@ -172,10 +172,10 @@ public class SimpleConfigClassParser {
 	) {
 		final Method m = tryGetMethod(cl, field.getName(), "error", field.getType());
 		if (m != null) {
-			if (!checkType(m, Optional.class, ITextComponent.class))
+			if (!checkType(m, Optional.class, Component.class))
 				throw new SimpleConfigClassParseException(cl,
 				  "Invalid return type in config field error supplier method " + getMethodName(m)
-				  + ": " + getMethodTypeName(m) + "\n  Error suppliers must return Optional<ITextComponent>");
+				  + ": " + getMethodTypeName(m) + "\n  Error suppliers must return Optional<Component>");
 			final String errorMsg = "Reflection error invoking config element error supplier method %s";
 			builder = builder.error(v -> invoke(m, null, errorMsg, Optional.class, v));
 		}
@@ -197,10 +197,10 @@ public class SimpleConfigClassParser {
 			a = false;
 		}
 		if (m != null) {
-			if (!checkType(m, List.class, ITextComponent.class))
+			if (!checkType(m, List.class, Component.class))
 				throw new SimpleConfigClassParseException(cl,
 				  "Invalid return type in config field error supplier method " + getMethodName(m)
-				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return List<ITextComponent>");
+				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return List<Component>");
 			final String errorMsg = "Reflection error invoking config element tooltip supplier method %s";
 			final Method mm = m;
 			builder = builder.tooltip(
@@ -309,18 +309,17 @@ public class SimpleConfigClassParser {
 				TextEntry.Builder textBuilder;
 				if (field.getType() == String.class) {
 					textBuilder = new TextEntry.Builder();
-				} else if (value instanceof ITextComponent) {
-					final ITextComponent tc = (ITextComponent) value;
+				} else if (value instanceof final Component tc) {
 					textBuilder = new TextEntry.Builder(() -> tc);
-				} else if (value instanceof Supplier && ITextComponent.class.isAssignableFrom(
+				} else if (value instanceof Supplier && Component.class.isAssignableFrom(
 				  (Class<?>) ((ParameterizedType) field.getGenericType())
 				    .getActualTypeArguments()[0])) {
 					//noinspection unchecked
-					final Supplier<ITextComponent> supplier = (Supplier<ITextComponent>) value;
+					final Supplier<Component> supplier = (Supplier<Component>) value;
 					textBuilder = new TextEntry.Builder(supplier);
 				} else throw new SimpleConfigClassParseException(builder,
 				  "Unsupported text supplier in config field " + getFieldName(field) + " of type " + fieldTypeName
-				  + "\n  Should be either String (contents ignored), ITextComponent or Supplier<ITextComponent>");
+				  + "\n  Should be either String (contents ignored), Component or Supplier<Component>");
 				builder.add(getOrder(field), field.getName(), addTooltip(textBuilder, configClass, field));
 				continue;
 			}
@@ -441,8 +440,7 @@ public class SimpleConfigClassParser {
 				  "Config inner class " + clazz.getName() + " was annotated with @Bind " +
 				  "but no matching config category/group was found defined");
 		}
-		if (builder instanceof SimpleConfigBuilderImpl) {
-			final SimpleConfigBuilderImpl b = (SimpleConfigBuilderImpl) builder;
+		if (builder instanceof final SimpleConfigBuilderImpl b) {
 			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigImpl.class);
 			if (baker != null) {
 				final String errorMsg = "Reflective error invoking config baker method %s";
@@ -459,8 +457,7 @@ public class SimpleConfigClassParser {
 					  "or let the reflection find it to suppress this warning.");
 				}
 			}
-		} else if (builder instanceof CategoryBuilder) {
-			final CategoryBuilder b = (CategoryBuilder) builder;
+		} else if (builder instanceof final CategoryBuilder b) {
 			boolean useArg = true;
 			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategoryImpl.class);
 			if (m == null) {
@@ -491,8 +488,7 @@ public class SimpleConfigClassParser {
 				  "Found method named \"bake\" in config category class " + className + " with an " +
 				  "unsupported signature.\nRename the method to suppress this warning, or fix the bug");
 			}
-		} else if (builder instanceof GroupBuilder) {
-			final GroupBuilder b = (GroupBuilder) builder;
+		} else if (builder instanceof final GroupBuilder b) {
 			boolean useArg = true;
 			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroupImpl.class);
 			if (m == null) {

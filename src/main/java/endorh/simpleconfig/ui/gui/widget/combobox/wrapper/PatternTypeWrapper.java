@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
-import net.minecraft.util.text.Color;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.Style;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,23 +25,23 @@ public class PatternTypeWrapper implements ITypeWrapper<Pattern> {
 		this.flags = flags;
 	}
 	
-	@Override public Pair<Optional<Pattern>, Optional<ITextComponent>> parseElement(
+	@Override public Pair<Optional<Pattern>, Optional<Component>> parseElement(
 	  @NotNull String text
 	) {
 		try {
 			return Pair.of(Optional.of(Pattern.compile(text, flags)), Optional.empty());
 		} catch (PatternSyntaxException e) {
 			return Pair.of(
-			  Optional.empty(), Optional.of(new StringTextComponent(e.getLocalizedMessage())));
+			  Optional.empty(), Optional.of(new TextComponent(e.getLocalizedMessage())));
 		}
 	}
 	
-	@Override public ITextComponent getDisplayName(@NotNull Pattern element) {
-		return new StringTextComponent(element.pattern());
+	@Override public Component getDisplayName(@NotNull Pattern element) {
+		return new TextComponent(element.pattern());
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {
 		return ITextFormatter.forLanguageOrDefault("regex", ITextFormatter.plain(
-		  Style.EMPTY.withColor(Color.fromRgb(0xFFA080))));
+		  Style.EMPTY.withColor(TextColor.fromRgb(0xFFA080))));
 	}
 }
