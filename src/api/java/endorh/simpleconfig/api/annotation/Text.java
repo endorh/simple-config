@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.annotation;
 
+import endorh.simpleconfig.api.SimpleConfigBuilder;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,7 +26,7 @@ import java.lang.annotation.Target;
  * config API for your project<br><br>
  *
  * However, <b>you're encouraged</b> to generate your entries with
- * the {@link ISimpleConfigBuilder} methods
+ * the {@link SimpleConfigBuilder} methods
  * instead, because it provides more options and is less prone
  * to errors<br>
  * Declaring text entries in the backing class forces you to define

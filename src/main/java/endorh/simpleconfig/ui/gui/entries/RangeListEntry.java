@@ -140,12 +140,14 @@ public class RangeListEntry<
 		  ? minExclusivenessButton :
 		  f == maxEntry || f == maxExclusivenessButton ? maxExclusivenessButton : null;
 		if (button != null && button.active) switch (chr) {
-			case '<':
+			case '<' -> {
 				button.setToggle(true);
 				return true;
-			case '=':
+			}
+			case '=' -> {
 				button.setToggle(false);
 				return true;
+			}
 		}
 		return super.charTyped(chr, modifiers);
 	}

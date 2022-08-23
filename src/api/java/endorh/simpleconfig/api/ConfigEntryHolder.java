@@ -381,7 +381,7 @@ public interface ConfigEntryHolder {
 	}
 	
 	/**
-	 * Get an candidate int config value from the GUI, or directly from
+	 * Get a candidate int config value from the GUI, or directly from
 	 * the config if no GUI is active
 	 * @param path Name or dot-separated path to the value
 	 * @throws NoSuchConfigEntryError if the value is not found

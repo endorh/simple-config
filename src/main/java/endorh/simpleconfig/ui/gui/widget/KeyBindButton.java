@@ -1,23 +1,26 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import endorh.simpleconfig.core.SimpleConfigImpl;
-import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
-import endorh.simpleconfig.ui.api.IModalInputProcessor;
-import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
-import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
-import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
-import endorh.simpleconfig.ui.gui.widget.KeyBindSettingsButton.KeyBindSettingsOverlay;
-import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.hotkey.*;
 import endorh.simpleconfig.api.ui.icon.AnimatedIcon;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.core.SimpleConfigImpl;
+import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
+import endorh.simpleconfig.ui.api.IModalInputProcessor;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
+import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
+import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
+import endorh.simpleconfig.ui.gui.widget.KeyBindSettingsButton.KeyBindSettingsOverlay;
+import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
+import endorh.simpleconfig.ui.hotkey.KeyBindMappingImpl;
+import endorh.simpleconfig.ui.hotkey.Keys;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -179,7 +182,7 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	
 	public KeyBindMapping getMapping() {
 		ExtendedKeyBindSettings settings = getSettings();
-		return new KeyBindMappingImpl(keys, settings.isMatchByChar()? chars : null, settings);
+		return new KeyBindMappingImpl(keys, settings.matchByChar()? chars : null, settings);
 	}
 	public void setMapping(KeyBindMapping mapping) {
 		keys.clear();
@@ -212,7 +215,7 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	
 	public void updateKeys() {
 		ExtendedKeyBindSettings settings = settingsButton.getSettings();
-		if (settings.isMatchByChar()) {
+		if (settings.matchByChar()) {
 			ListIterator<Integer> iter = keys.listIterator();
 			int unmatched = Keys.FIRST_UNASSIGNED_KEY;
 			while (iter.hasNext()) {

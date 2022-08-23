@@ -76,7 +76,7 @@ public abstract class AbstractSerializableEntry
 	@Override
 	public Optional<Component> getErrorFromGUI(String value) {
 		final Optional<Component> opt = super.getErrorFromGUI(value);
-		if (!opt.isPresent() && fromGui(value) == null && value != null) {
+		if (opt.isEmpty() && fromGui(value) == null && value != null) {
 			return getErrorMessage(value);
 		} else return opt;
 	}

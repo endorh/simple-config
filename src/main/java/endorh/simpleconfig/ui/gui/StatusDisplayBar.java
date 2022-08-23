@@ -192,8 +192,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<AbstractConfigField<?>> entries = screen.getAllMainEntries().stream()
-				  .filter(e -> e.isRequiresRestart() && e.isEdited())
-				  .collect(Collectors.toList());
+				  .filter(e -> e.isRequiresRestart() && e.isEdited()).toList();
 				final List<Component> lines = IntStream.range(0, entries.size()).mapToObj(i -> {
 					AbstractConfigField<?> entry = entries.get(i);
 					MutableComponent title = entry.getTitle().copy();
@@ -429,15 +428,6 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			return Integer.compare(priority, o.priority);
 		}
 		
-		public static class StatusStyle {
-			public final @Nullable Icon icon;
-			public final int borderColor;
-			public final int backgroundColor;
-			public StatusStyle(@Nullable Icon icon, int borderColor, int backgroundColor) {
-				this.icon = icon;
-				this.borderColor = borderColor;
-				this.backgroundColor = backgroundColor;
-			}
-		}
+		public record StatusStyle(@Nullable Icon icon, int borderColor, int backgroundColor) {}
 	}
 }

@@ -190,8 +190,7 @@ public class EntryPairListListEntry<
 			List<EntryError> errors = super.computeErrors();
 			errors.addAll(
 			  Stream.concat(keyEntry.getEntryErrors().stream(), valueEntry.getEntryErrors().stream())
-			    .filter(e -> !errors.contains(e))
-			    .collect(Collectors.toList()));
+				 .filter(e -> !errors.contains(e)).toList());
 			return errors;
 		}
 		

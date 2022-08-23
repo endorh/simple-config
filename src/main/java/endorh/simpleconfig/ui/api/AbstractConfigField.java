@@ -421,9 +421,9 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		if (updatedValue && !force) return;
 		if (isPreviewingExternal()) {
 			setDisplayedValue(getExternalValue());
-		} else if (isEditingHotKeyAction()) {
-			// Pass
-		} else if (isEditable()) setValue(getDisplayedValue());
+		} else if (!isEditingHotKeyAction()) {
+			if (isEditable()) setValue(getDisplayedValue());
+		} // else pass
 		updatedValue = true;
 	}
 	
@@ -770,7 +770,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		final boolean matchesSelf = searchSelf(query);
 		final List<Pair<ISeekableComponent, List<ISeekableComponent>>> children =
 		  seekableChildren().stream().map(c -> Pair.of(c, c.search(query)))
-			 .filter(p -> !p.second.isEmpty()).collect(Collectors.toList());
+			 .filter(p -> !p.second.isEmpty()).toList();
 		final List<ISeekableComponent> result =
 		  children.stream().flatMap(p -> p.second.stream()).collect(Collectors.toList());
 		if (matchesSelf)

@@ -16,13 +16,13 @@ public class ExtendedKeyBindSettingsBuilder {
 	public ExtendedKeyBindSettingsBuilder() {}
 	
 	public ExtendedKeyBindSettingsBuilder(ExtendedKeyBindSettings settings) {
-		activation = settings.getActivation();
-		context = settings.getContext();
-		allowExtraKeys = settings.isAllowExtraKeys();
-		orderSensitive = settings.isOrderSensitive();
-		exclusive = settings.isExclusive();
-		matchByChar = settings.isMatchByChar();
-		preventFurther = settings.isPreventFurther();
+		activation = settings.activation();
+		context = settings.context();
+		allowExtraKeys = settings.allowExtraKeys();
+		orderSensitive = settings.orderSensitive();
+		exclusive = settings.exclusive();
+		matchByChar = settings.matchByChar();
+		preventFurther = settings.preventFurther();
 	}
 	
 	public KeyBindActivation getActivation() {

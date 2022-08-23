@@ -118,6 +118,18 @@ sourceSets.main.get().resources {
     srcDir("src/generated/resources")
 }
 
+if (project.hasProperty("UPDATE_MAPPINGS")) {
+    tasks.getByName<net.minecraftforge.gradle.common.tasks.ExtractRangeMap>("extractRangeMap") {
+        sources.from(apiSourceSet.java.srcDirs)
+    }
+    tasks.getByName<net.minecraftforge.gradle.common.tasks.ApplyRangeMap>("applyRangeMap") {
+        sources.from(apiSourceSet.java.srcDirs)
+    }
+    tasks.getByName<net.minecraftforge.gradle.common.tasks.ExtractExistingFiles>("extractMappedNew") {
+        targets.from(apiSourceSet.java.srcDirs)
+    }
+}
+
 // Java options ----------------------------------------------------------------
 
 java {
@@ -154,8 +166,6 @@ minecraft {
                 create(modId) {
                     source(sourceSets.main.get())
                     source(apiSourceSet)
-                    // classes("libs/snakeyaml-$yamlVersion.jar")
-                    // source(apiProject.sourceSets.main.get())
                 }
             }
         }
@@ -174,7 +184,6 @@ minecraft {
                 create(modId) {
                     source(sourceSets.main.get())
                     source(apiSourceSet)
-                    // source(apiProject.sourceSets.main.get())
                 }
             }
         }

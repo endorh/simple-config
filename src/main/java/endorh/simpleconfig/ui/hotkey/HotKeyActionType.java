@@ -17,7 +17,7 @@ public abstract class HotKeyActionType<V, A extends HotKeyAction<V>> {
 	public HotKeyActionType(String tagName, Icon icon) {
 		this.tagName = tagName;
 		this.tag = new Tag("!action." + tagName);
-		this.icon = icon;;
+		this.icon = icon;
 	}
 	
 	public String getTranslationKey() {

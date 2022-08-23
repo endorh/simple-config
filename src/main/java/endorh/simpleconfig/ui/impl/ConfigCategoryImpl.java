@@ -22,14 +22,14 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected final List<AbstractConfigField<?>> entries;
 	protected final String name;
 	protected Component title;
-	protected int sortingOrder = 0;
+	protected int sortingOrder;
 	protected @Nullable ResourceLocation background;
-	protected @Nullable Supplier<Optional<Component[]>> description = Optional::empty;
+	protected @Nullable Supplier<Optional<Component[]>> description;
 	protected @Nullable Path containingFile;
 	protected EditType type;
-	protected boolean isEditable = true;
-	protected Icon icon = Icon.EMPTY;
-	protected int color = 0;
+	protected boolean isEditable;
+	protected Icon icon;
+	protected int color;
 	
 	@Internal public ConfigCategoryImpl(
 	  String name, EditType type, List<AbstractConfigField<?>> entries,

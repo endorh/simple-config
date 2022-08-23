@@ -25,9 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -366,10 +364,10 @@ public class SimpleConfigBuilderImpl
 			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 			).map(
 			  n -> groups.containsKey(n)? groups.get(n) : entriesByName.get(n)
-			).collect(Collectors.toList());
+			).toList();
 			cat.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
-			  unmodifiableList(order), icon, tint);
+			  order, icon, tint);
 			if (!isRoot) builder.exitSection();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 				cat.decorator = decorator;
@@ -574,10 +572,10 @@ public class SimpleConfigBuilderImpl
 			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 			).map(
 			  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
-			).collect(Collectors.toList());
+			).toList();
 			group.build(
 			  unmodifiableMap(entriesByName), unmodifiableMap(groupMap),
-			  unmodifiableList(builtOrder), heldEntry);
+			  builtOrder, heldEntry);
 			builder.exitSection();
 			return group;
 		}
@@ -654,10 +652,10 @@ public class SimpleConfigBuilderImpl
 		  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
 		).map(
 		  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
-		).collect(Collectors.toList());
+		).toList();
 		config.build(
 		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
-		  unmodifiableMap(groupMap), unmodifiableList(order), builder.build(),
+		  unmodifiableMap(groupMap), order, builder.build(),
 		  defaultCategory.icon, defaultCategory.color, commandRoot);
 		builder.buildModConfig(config);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {

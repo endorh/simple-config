@@ -173,7 +173,7 @@ public class HotKeyActionTypes {
 				  });
 				  return map;
 			  }, (entry, values) -> {
-				 if (!(entry instanceof BeanEntry)) return null;
+				  if (!(entry instanceof BeanEntry)) return null;
 				  //noinspection unchecked
 				  BeanEntry<B> e = (BeanEntry<B>) entry;
 				  BeanProxy<B> proxy = e.getProxy();

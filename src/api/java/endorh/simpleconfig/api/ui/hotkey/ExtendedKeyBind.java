@@ -28,17 +28,17 @@ public interface ExtendedKeyBind {
 		return ExtendedKeyBindProxy.getFactory().create(modId, title, keyBind, callback);
 	}
 	
-	public static ExtendedKeyBind of(String modId, String name, Runnable callback) {
+	static ExtendedKeyBind of(String modId, String name, Runnable callback) {
 		return of(modId, name, KeyBindMapping.unset(), callback);
 	}
 	
-	public static ExtendedKeyBind of(
+	static ExtendedKeyBind of(
 	  String modId, String name, String definition, Runnable callback
 	) {
 		return of(modId, name, KeyBindMapping.parse(definition), callback);
 	}
 	
-	public static ExtendedKeyBind of(
+	static ExtendedKeyBind of(
 	  String modId, String name, KeyBindMapping keyBind, Runnable callback
 	) {
 		return of(modId, new TranslatableComponent(

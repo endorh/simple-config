@@ -100,9 +100,6 @@ public class ExtendedKeyBindDispatcher {
 		ctx.getSortedPressedKeys().add(key);
 		ctx.getPressedKeys().add(key);
 		updateKeyBinds();
-		// ConfigHotKeyOverlay.addToastMessage(
-		//   "Press: " + key + ", pressed: [" +
-		//   ctx.getPressedKeys().stream().map(String::valueOf).collect(Collectors.joining(", ")) + "]");
 		return ctx.isPreventFurther();
 	}
 	
@@ -118,9 +115,6 @@ public class ExtendedKeyBindDispatcher {
 			String ch = ctx.getCharMap().get(key);
 			if (ch != null) ctx.getPressedChars().remove(ch);
 		}
-		// ConfigHotKeyOverlay.addToastMessage(
-		//   "Release: " + key + ", pressed: [" +
-		//   ctx.getPressedKeys().stream().map(String::valueOf).collect(Collectors.joining(", ")) + "]");
 		return ctx.isPreventFurther();
 	}
 	
@@ -176,16 +170,11 @@ public class ExtendedKeyBindDispatcher {
 		int action = event.getAction();
 		int button = event.getButton();
 		int key = Keys.getKeyFromMouseInput(button);
-		boolean preventFurther = false;
-		switch(action) {
-			case GLFW.GLFW_PRESS:
-				preventFurther = press(key);
-				break;
-			case GLFW.GLFW_RELEASE:
-				preventFurther = release(key);
-				break;
-		}
-		if (preventFurther) event.setCanceled(true);
+		if (switch (action) {
+			case GLFW.GLFW_PRESS -> press(key);
+			case GLFW.GLFW_RELEASE -> release(key);
+			default -> false;
+		}) event.setCanceled(true);
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)

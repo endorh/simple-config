@@ -201,7 +201,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			textFieldEntry.updateFocused(isFocused() && getFocused() == textFieldEntry);
 			textFieldEntry.setEditable(shouldRenderEditable());
 			textFieldEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
-			if (!textFieldEntry.getErrorMessage().isPresent() || isTextFieldEnforced()) {
+			if (textFieldEntry.getErrorMessage().isEmpty() || isTextFieldEnforced()) {
 				V value = textFieldEntry.getDisplayedValue();
 				if (value != null) setDisplayedValue(value);
 			}

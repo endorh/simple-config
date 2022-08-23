@@ -52,7 +52,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 			//noinspection unchecked
 			this.backingFieldBuilder =
 			  typeClass != null
-			  ? BackingField.<V, V>field(Function.identity(), (Class<V>) typeClass)
+			  ? BackingField.field(Function.identity(), (Class<V>) typeClass)
 			    .withCommitter(Function.identity()) : null;
 			this.formatter = serializer.getConfigTextFormatter();
 		}

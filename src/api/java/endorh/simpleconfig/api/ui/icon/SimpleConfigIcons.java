@@ -24,21 +24,19 @@ import net.minecraft.resources.ResourceLocation;
 		  COMMON_SERVER = b.at(64, 0);
 		
 		public static Icon iconFor(Type type) {
-			switch (type) {
-				case CLIENT: return CLIENT;
-				case SERVER: return SERVER;
-				case COMMON: return COMMON;
-				default: throw new IllegalArgumentException("Unknown type: " + type);
-			}
+			return switch (type) {
+				case CLIENT -> CLIENT;
+				case SERVER -> SERVER;
+				case COMMON -> COMMON;
+			};
 		}
 		public static Icon iconFor(EditType type) {
-			switch (type) {
-				case CLIENT: return CLIENT;
-				case SERVER: return SERVER;
-				case COMMON: return COMMON_CLIENT;
-				case SERVER_COMMON: return COMMON_SERVER;
-				default: throw new IllegalArgumentException("Unknown type: " + type);
-			}
+			return switch (type) {
+				case CLIENT -> CLIENT;
+				case SERVER -> SERVER;
+				case COMMON -> COMMON_CLIENT;
+				case SERVER_COMMON -> COMMON_SERVER;
+			};
 		}
 		static { b = null; }
 	}

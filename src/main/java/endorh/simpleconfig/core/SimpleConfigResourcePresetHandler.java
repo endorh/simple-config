@@ -33,7 +33,7 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 	  .registerTypeAdapter(PresetsDescriptor.class, new PresetsDescriptor.Serializer())
 	  .create();
 	private static final TypeToken<Map<String, PresetsDescriptor>> TYPE =
-	  new TypeToken<Map<String, PresetsDescriptor>>() {};
+	  new TypeToken<>() {};
 	public static final SimpleConfigResourcePresetHandler
 	  INSTANCE = new SimpleConfigResourcePresetHandler();
 	private final Map<String, Map<Preset, CommentedConfig>> presetRegistry = Maps.newHashMap();
@@ -61,7 +61,7 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 						profiler.push("parse");
 						Map<String, PresetsDescriptor> map = GsonHelper.fromJson(GSON, r, TYPE);
 						profiler.popPush("register");
-						map.forEach((k, v) -> l.registerPresets(namespace, k, v));
+						if (map != null) map.forEach((k, v) -> l.registerPresets(namespace, k, v));
 						profiler.pop();
 					} catch (RuntimeException e) {
 						LOGGER.warn("Invalid config-presets.json in resourcepack: '{}'", index.getSourceName(), e);
@@ -132,24 +132,18 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 		}
 	}
 	
-	public static class PresetsDescriptor {
-		public final Set<String> clientPresets;
-		public final Set<String> commonPresets;
-		public final Set<String> serverPresets;
-		
-		public PresetsDescriptor(Set<String> clientPresets, Set<String> commonPresets, Set<String> serverPresets) {
-			this.clientPresets = clientPresets;
-			this.commonPresets = commonPresets;
-			this.serverPresets = serverPresets;
-		}
-		
-		public static class Serializer implements JsonDeserializer<PresetsDescriptor>, JsonSerializer<PresetsDescriptor> {
+	public record PresetsDescriptor(
+	  Set<String> clientPresets, Set<String> commonPresets, Set<String> serverPresets
+	) {
+		public static class Serializer
+		  implements JsonDeserializer<PresetsDescriptor>, JsonSerializer<PresetsDescriptor> {
 			@Override public PresetsDescriptor deserialize(
 			  JsonElement json, java.lang.reflect.Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
 				JsonObject obj = GsonHelper.convertToJsonObject(json, "mod config presets");
 				Optional<String> first = obj.entrySet().stream().map(Entry::getKey)
-				  .filter(k -> !"client".equals(k) && !"server".equals(k) && !"common".equals(k)).findFirst();
+				  .filter(k -> !"client".equals(k) && !"server".equals(k) && !"common".equals(k))
+				  .findFirst();
 				if (first.isPresent())
 					throw new JsonSyntaxException("Unknown preset type: " + first.get());
 				JsonArray client = GsonHelper.getAsJsonArray(obj, "client", new JsonArray());

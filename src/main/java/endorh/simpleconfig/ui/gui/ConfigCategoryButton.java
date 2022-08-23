@@ -27,7 +27,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	protected final ConfigCategory category;
 	protected final Supplier<Optional<Component[]>> descriptionSupplier;
 	
-	private int lastColor = 0;
+	private int lastColor;
 	private int lastDark;
 	private int lastLight;
 	

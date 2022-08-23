@@ -79,7 +79,7 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	) {
 		if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
 		  "Entry builder not instance of AbstractConfigEntryBuilder");
-		return add(0, name, (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entryBuilder);
+		return add(0, name, entryBuilder);
 	}
 	
 	/**

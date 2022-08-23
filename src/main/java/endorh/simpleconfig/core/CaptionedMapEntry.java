@@ -168,7 +168,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 			return key != null && map != null? Pair.of(key, map) : null;
 		} else if (value instanceof Config) {
 			Optional<? extends Entry> opt = ((Config) value).entrySet().stream().findFirst();
-			if (!opt.isPresent()) return null;
+			if (opt.isEmpty()) return null;
 			Entry entry = opt.get();
 			CC key = captionEntry.fromActualConfig(entry.getKey());
 			Map<KC, C> map = mapEntry.fromActualConfig(entry.getValue());
@@ -235,7 +235,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 	) {
 		mapEntry.setDisplayName(getDisplayName());
 		final Optional<FieldBuilder<List<Pair<KG, G>>, ?, ?>> opt = mapEntry.buildGUIEntry(builder);
-		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
+		if (opt.isEmpty()) throw new IllegalStateException("List entry has no GUI entry");
 		final FieldBuilder<List<Pair<KG, G>>, ?, ?> mapGUIEntry = opt.get();
 		mapGUIEntry.withoutTags(EntryTag.NON_PERSISTENT);
 		final CaptionedListEntryBuilder<Pair<KG, G>, ?, ?, CG, ?, ?> entryBuilder =

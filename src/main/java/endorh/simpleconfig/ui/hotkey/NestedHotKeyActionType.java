@@ -67,7 +67,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 			Map<String, HotKeyAction<?>> map = new LinkedHashMap<>();
 			storages.forEach((key, wrapper) -> {
 				AbstractConfigEntry<?, ?, ?> e = entries.get(key);
-				if (e != null) map.put(key, deserializeNested(wrapper, entry, wrapper.getValue()));
+				if (e != null) map.put(key, deserializeNested(wrapper, entry, wrapper.value()));
 			});
 			if (!map.isEmpty()) return new NestedHotKeyAction<>(this, action, map);
 		}
@@ -79,7 +79,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 	) {
 		try {
 			//noinspection unchecked
-			return wrapper.getType().deserialize((AbstractConfigEntry<Object, Object, V>) entry, value);
+			return wrapper.type().deserialize((AbstractConfigEntry<Object, Object, V>) entry, value);
 		} catch (ClassCastException e) {
 			LOGGER.error("Could not deserialize hotkey action: " + entry.getGlobalPath(), e);
 			return null;
@@ -182,7 +182,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 		  BiFunction<AbstractConfigEntry<?, ?, V>, Set<String>, Map<String, AbstractConfigEntry<?, ?, ?>>> getter,
 		  BiFunction<AbstractConfigEntry<?, ?, V>, CommentedConfig, Object> setter
 		) {
-			return new INestedHotKeyAction<V>() {
+			return new INestedHotKeyAction<>() {
 				@Override public @Nullable Map<String, AbstractConfigEntry<?, ?, ?>> getEntries(
 				  AbstractConfigEntry<?, ?, V> entry, Set<String> names
 				) {

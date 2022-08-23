@@ -158,10 +158,10 @@ public class ConfigHotKeyManager {
 			LOGGER.error("I/O Error loading hotkeys from memory", e);
 			throw new RuntimeException(e);
 		} catch (RuntimeException e) {
-			LOGGER.error(
-			  "Unexpected error loading hotkeys from memory\n" +
-			  "Ensure the source file contains valid YAML.\n" +
-			  "Otherwise, you may report this to the Simple Config mod issue tracker", e);
+			LOGGER.error("""
+				Unexpected error loading hotkeys from memory
+				Ensure the source file contains valid YAML.
+				Otherwise, you may report this to the Simple Config mod issue tracker""", e);
 			throw e;
 		}
 	}
@@ -198,7 +198,7 @@ public class ConfigHotKeyManager {
 		}
 	}
 	
-	public static class ConfigHotKeyGroup implements IConfigHotKeyGroupEntry, IConfigHotKey {
+	public static class ConfigHotKeyGroup implements IConfigHotKeyGroupEntry {
 		private final ExtendedKeyBindImpl keyBind;
 		private String name = "";
 		private KeyBindMapping keyMapping = KeyBindMapping.unset();

@@ -86,7 +86,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	
 	@Override public boolean isPressed() {
 		ExtendedKeyBindSettings settings = getDefinition().getSettings();
-		KeyBindActivation activation = settings.getActivation();
+		KeyBindActivation activation = settings.activation();
 		return activation == KeyBindActivation.TOGGLE
 		       ? pressedToggle
 		       : activation == KeyBindActivation.TOGGLE_RELEASE
@@ -108,9 +108,9 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	@Override @Internal public void updatePressed(InputMatchingContext context) {
 		KeyBindMapping keyBind = getDefinition();
 		ExtendedKeyBindSettings settings = keyBind.getSettings();
-		if (!settings.getContext().isActive()
+		if (!settings.context().isActive()
 		    || context.isCancelled()
-		    || context.isTriggered() && settings.isExclusive()
+		    || context.isTriggered() && settings.exclusive()
 		) {
 			context.getRepeatableKeyBinds().remove(this);
 			pressed = false;
@@ -118,7 +118,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 		}
 		IntList requiredKeys = keyBind.getRequiredKeys();
 		Int2ObjectMap<String> requiredChars = keyBind.getCharMap();
-		boolean matchByChar = settings.isMatchByChar() && requiredChars != null;
+		boolean matchByChar = settings.matchByChar() && requiredChars != null;
 		if (requiredKeys.isEmpty()) {
 			context.getRepeatableKeyBinds().remove(this);
 			pressed = false;
@@ -132,7 +132,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 		Set<String> pressedChars = context.getPressedChars();
 		int pressedSize = pressedKeys.size();
 		int requiredSize = requiredKeys.size();
-		if (settings.isAllowExtraKeys()? pressedSize >= requiredSize : pressedSize == requiredSize) {
+		if (settings.allowExtraKeys()? pressedSize >= requiredSize : pressedSize == requiredSize) {
 			if (matchByChar) {
 				pressed = true;
 				for (int key: requiredKeys) {
@@ -143,10 +143,9 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 					}
 				}
 			} else pressed = pressedKeys.containsAll(requiredKeys);
-			if (settings.isOrderSensitive()) {
+			if (settings.orderSensitive()) {
 				int pi = 0;
 				int sizeDiff = pressedSize - requiredSize;
-				//noinspection IfStatementWithIdenticalBranches
 				if (matchByChar) match:for (int i = 0; i < requiredSize; i++) {
 					int key = requiredKeys.getInt(i);
 					String requiredChar = requiredChars.get(key);
@@ -170,7 +169,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 				}
 			}
 		} else pressed = false;
-		KeyBindActivation activation = settings.getActivation();
+		KeyBindActivation activation = settings.activation();
 		if (!pressed) context.getRepeatableKeyBinds().remove(this);
 		
 		if (activation == KeyBindActivation.TOGGLE && pressed && !prevPressed
@@ -179,7 +178,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 		
 		if (pressed == prevPressed) return;
 		
-		if (pressed && !context.isPreventFurther() && settings.isPreventFurther())
+		if (pressed && !context.isPreventFurther() && settings.preventFurther())
 			context.setPreventFurther(true);
 		
 		if (activation == KeyBindActivation.BOTH
@@ -198,7 +197,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	
 	@Override @Internal public void onRepeat() {
 		ExtendedKeyBindSettings settings = getDefinition().getSettings();
-		if (settings.getActivation() != KeyBindActivation.REPEAT || !isPhysicallyPressed()) return;
+		if (settings.activation() != KeyBindActivation.REPEAT || !isPhysicallyPressed()) return;
 		trigger();
 	}
 	

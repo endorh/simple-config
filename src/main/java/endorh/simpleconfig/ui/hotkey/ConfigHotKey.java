@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
+public class ConfigHotKey implements IConfigHotKeyGroupEntry {
 	private final ExtendedKeyBindImpl keyBind;
 	private KeyBindMapping keyMapping;
 	private String name = "";
@@ -203,7 +203,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 									if (config.hasEntry(path)) {
 										try {
 											HotKeyAction<?> action = deserialize(
-											  w, config.getEntry(path), w.getValue());
+											  w, config.getEntry(path), w.value());
 											if (action != null) aa.put(path, action);
 										} catch (ClassCastException ignored) {}
 									}
@@ -229,7 +229,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry, IConfigHotKey {
 	protected static <V, A extends HotKeyAction<V>, E extends AbstractConfigEntry<Object, Object, V>> A deserialize(
 	  HotKeyActionWrapper<V, A> wrapper, E entry, Object value
 	) {
-		return wrapper.getType().deserialize(entry, value);
+		return wrapper.type().deserialize(entry, value);
 	}
 	
 	@Contract("_, _, _, !null -> !null")

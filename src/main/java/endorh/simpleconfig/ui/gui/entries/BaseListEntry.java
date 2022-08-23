@@ -144,7 +144,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		} else {
 			labelReference.setTarget(label);
 			sideButtonReferenceReference.setTarget(sideButtonReference);
-		};
+		}
 	}
 	
 	@Override public void setValue(List<T> value) {
@@ -314,7 +314,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		if (prev != -1 && !cells.isEmpty())
 			setFocused(cells.get(index == 0? 0 : index - 1));
 		if (index < cells.size())
-		cells.subList(index, cells.size()).forEach(BaseListCell::onMove);
+			cells.subList(index, cells.size()).forEach(BaseListCell::onMove);
 	}
 	
 	public void setTransparently(int index, T element) {

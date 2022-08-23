@@ -281,7 +281,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 		public String getRuleForRule(String rule) {
 			return rulesByRule.computeIfAbsent(
 			  rule, r -> rules.entrySet().stream()
-				 .filter(e -> e.getValue().getRules().contains(r))
+				 .filter(e -> e.getValue().rules().contains(r))
 				 .map(Entry::getKey)
 				 .findFirst().orElse(null));
 		}
@@ -289,7 +289,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 		public String getRuleForToken(String token) {
 			return rulesByToken.computeIfAbsent(
 			  token, t -> rules.entrySet().stream()
-				 .filter(e -> e.getValue().getTokens().contains(t))
+				 .filter(e -> e.getValue().tokens().contains(t))
 				 .map(Entry::getKey)
 				 .findFirst().orElse(null));
 		}
@@ -395,23 +395,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 		}
 	}
 	
-	public static class HighlightRule {
-		private final List<String> tokens;
-		private final List<String> rules;
-		
-		public HighlightRule(List<String> tokens, List<String> rules) {
-			this.tokens = tokens;
-			this.rules = rules;
-		}
-		
-		public List<String> getTokens() {
-			return tokens;
-		}
-		
-		public List<String> getRules() {
-			return rules;
-		}
-		
+	public record HighlightRule(List<String> tokens, List<String> rules) {
 		public static class RuleDeserializer implements JsonDeserializer<HighlightRule> {
 			@Override public HighlightRule deserialize(
 			  JsonElement json, Type typeOfT, JsonDeserializationContext context
@@ -422,7 +406,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 				JsonArray arr = GsonHelper.getAsJsonArray(obj, "tokens", null);
 				List<String> tokens = new ArrayList<>();
 				if (arr != null) {
-					for (JsonElement element : arr) {
+					for (JsonElement element: arr) {
 						String str = element.getAsJsonPrimitive().getAsString();
 						tokens.add(str);
 					}
@@ -430,7 +414,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 				arr = GsonHelper.getAsJsonArray(obj, "rules", null);
 				List<String> rules = new ArrayList<>();
 				if (arr != null) {
-					for (JsonElement element : arr) {
+					for (JsonElement element: arr) {
 						String str = element.getAsJsonPrimitive().getAsString();
 						rules.add(str);
 					}
@@ -438,6 +422,5 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 				return new HighlightRule(tokens, rules);
 			}
 		}
-	
 	}
 }

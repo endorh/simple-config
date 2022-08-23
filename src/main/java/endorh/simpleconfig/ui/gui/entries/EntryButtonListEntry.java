@@ -52,7 +52,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		button = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Buttons.ACCEPT,
 		  ButtonAction.of(() -> action.accept(getValue()))
-		    .active(() -> shouldRenderEditable() && !getErrorMessage().isPresent()));
+		    .active(() -> shouldRenderEditable() && getErrorMessage().isEmpty()));
 		listeners = Lists.newArrayList(entry, button, sideButtonReference);
 		childListeners = Lists.newArrayList(entry, button);
 		heldEntries = Lists.newArrayList(entry);
@@ -148,7 +148,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 		if (button.isMouseOver(mouseX, mouseY))
 			return Optional.of(new Component[]{buttonLabelSupplier.get()});
 		if (entry instanceof TooltipListEntry) {
-			if (!((TooltipListEntry<?>) entry).getTooltip(mouseX, mouseY).isPresent()
+			if (((TooltipListEntry<?>) entry).getTooltip(mouseX, mouseY).isEmpty()
 			    && ((TooltipListEntry<?>) entry).getTooltip().isPresent())
 				return Optional.empty();
 		}

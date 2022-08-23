@@ -65,7 +65,7 @@ public class Range extends Pair<Double, Double> {
 	}
 	
 	/**
-	 * Generate an uniform random value within this range.<br>
+	 * Generate a uniform random value within this range.<br>
 	 * Extremes are clamped to [-{@link Double#MAX_VALUE}, {@link Double#MAX_VALUE}].
 	 */
 	public double randomValue(Random random) {

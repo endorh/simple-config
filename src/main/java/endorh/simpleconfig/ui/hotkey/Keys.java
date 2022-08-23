@@ -35,14 +35,12 @@ public class Keys {
 	private static final Object2IntMap<String> NAMES_TO_IDS = new Object2IntOpenHashMap<>();
 	private static final Int2ObjectMap<String> IDS_TO_NAMES = new Int2ObjectOpenHashMap<>();
 	private static final Map<String, String> TRANSLATION_OVERRIDES = new HashMap<>();
-	private static final IntSet MODIFIER_KEYS = Util.make(new IntOpenHashSet(8), s -> {
-		IntStream.of(
-		  GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER,
-		  GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL,
-		  GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT,
-		  GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT
-		).forEach(s::add);
-	});
+	private static final IntSet MODIFIER_KEYS = Util.make(new IntOpenHashSet(8), s -> IntStream.of(
+	  GLFW.GLFW_KEY_LEFT_SUPER, GLFW.GLFW_KEY_RIGHT_SUPER,
+	  GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL,
+	  GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT,
+	  GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT
+	).forEach(s::add));
 	
 	public static Key getInputFromName(String name) {
 		name = SEPARATOR_PATTERN.matcher(name).replaceAll(".").toLowerCase();
@@ -76,14 +74,11 @@ public class Keys {
 		int key = NAMES_TO_IDS.getOrDefault(name, -1);
 		if (key != -1) return key;
 		Key input = getInputFromName(name);
-		switch (input.getType()) {
-			case MOUSE:
-				return input.getValue() - 100;
-			case SCANCODE:
-				return -300 - input.getValue();
-			default:
-				return input.getValue();
-		}
+		return switch (input.getType()) {
+			case MOUSE -> input.getValue() - 100;
+			case SCANCODE -> -300 - input.getValue();
+			default -> input.getValue();
+		};
 	}
 	
 	public static String getNameForKey(int key) {

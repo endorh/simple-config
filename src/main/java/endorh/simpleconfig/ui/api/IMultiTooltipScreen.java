@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.api;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Screen supporting the queuing of tooltips.
@@ -28,7 +27,7 @@ public interface IMultiTooltipScreen {
 	default boolean removeTooltips(Rectangle area) {
 		final List<Tooltip> tooltips = getTooltips();
 		final List<Tooltip> removed =
-		  tooltips.stream().filter(t -> area.contains(t.getPoint())).collect(Collectors.toList());
+		  tooltips.stream().filter(t -> area.contains(t.getPoint())).toList();
 		return tooltips.removeAll(removed);
 	}
 }

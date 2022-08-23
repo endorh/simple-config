@@ -26,7 +26,7 @@ public interface IKeyEntry<KG> {
 			//noinspection unchecked
 			final Optional<FieldBuilder<KG, ?, ?>> opt =
 			  ((AbstractConfigEntry<?, ?, KG>) this).buildGUIEntry(builder);
-			if (!opt.isPresent())
+			if (opt.isEmpty())
 				throw new IllegalStateException(
 				  "Config entry of type " + getClass().getSimpleName() + " did not produce " +
 				  "any gui entry, violating its IKeyEntry contract");

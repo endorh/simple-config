@@ -270,7 +270,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		if (value == null) return null;
 		List<Pair<K, V>> pairs = value.entrySet().stream().map(e -> Pair.of(
 		  keyEntry.fromConfig(e.getKey()), entry.fromConfig(e.getValue()))
-		).collect(Collectors.toList());
+		).toList();
 		if (pairs.stream().anyMatch(p -> p.getLeft() == null || p.getRight() == null)) return null;
 		final Map<K, V> m = new LinkedHashMap<>();
 		pairs.forEach(p -> m.put(p.getKey(), p.getValue()));
@@ -287,8 +287,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	@Nullable @Override public Map<K, V> fromGui(@Nullable List<Pair<KG, G>> value) {
 		if (value == null) return null;
 		List<Pair<K, V>> pairs = value.stream()
-		  .map(e -> Pair.of(keyEntry.fromGui(e.getKey()), entry.fromGui(e.getValue())))
-		  .collect(Collectors.toList());
+		  .map(e -> Pair.of(keyEntry.fromGui(e.getKey()), entry.fromGui(e.getValue()))).toList();
 		if (pairs.stream().anyMatch(e -> e.getKey() == null || e.getValue() == null)) return null;
 		// For duplicate keys, only the last is kept
 		return pairs.stream().collect(
@@ -341,10 +340,10 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	@Override public Optional<Component> getErrorFromGUI(List<Pair<KG, G>> value) {
 		if (value.size() < minSize) {
 			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_small"),
+			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_short"),
 			  coloredNumber(minSize)));
 		} else if (value.size() > maxSize) return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.list.too_large",
+		  "simpleconfig.config.error.list.too_long",
 		  coloredNumber(maxSize)));
 		return super.getErrorFromGUI(value);
 	}
@@ -374,11 +373,6 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	}
 	
 	public Optional<Component> getCellError(int index, Pair<KG, G> p) {
-		// Already handled by the GUI
-		// Optional<Component> e = keyEntry.getError(p.getKey());
-		// if (e.isPresent()) return e;
-		// e = entry.getError(p.getValue());
-		// if (e.isPresent()) return e;
 		K key = keyEntry.fromGui(p.getKey());
 		V value = entry.fromGui(p.getValue());
 		if (key == null || value == null) return Optional.of(new TranslatableComponent(

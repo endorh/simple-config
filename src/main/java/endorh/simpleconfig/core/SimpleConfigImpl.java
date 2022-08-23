@@ -191,7 +191,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	}
 	
 	/**
-	 * Setup the config
+	 * Set up the config
 	 */
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
@@ -278,7 +278,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	 * Commits any changes in the backing fields to the actual config file.
 	 * Entries with non-readable backing fields are ignored.
 	 * (see {@link BackingFieldBuilder#withCommitter}
-	 * @throws InvalidConfigValueException if the current value of the a field is invalid.
+	 * @throws InvalidConfigValueException if the current value of the field is invalid.
 	 */
 	@Override public void commitFields() {
 		try {
@@ -604,7 +604,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		return modContainer;
 	}
 	
-	@Internal public LiteralArgumentBuilder<CommandSourceStack> getCommandRoot() {
+	@Internal public @Nullable LiteralArgumentBuilder<CommandSourceStack> getCommandRoot() {
 		return commandRoot;
 	}
 	

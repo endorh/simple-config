@@ -266,13 +266,13 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		}
 		
 		public void applySettings(ExtendedKeyBindSettings settings) {
-			activationButton.setValue(settings.getActivation());
-			contextButton.setValue(settings.getContext());
-			allowExtraKeysCheckBox.setToggle(settings.isAllowExtraKeys());
-			orderSensitiveCheckBox.setToggle(settings.isOrderSensitive());
-			exclusiveCheckBox.setToggle(settings.isExclusive());
-			matchByCharCheckBox.setToggle(settings.isMatchByChar());
-			preventFurtherCheckBox.setToggle(settings.isPreventFurther());
+			activationButton.setValue(settings.activation());
+			contextButton.setValue(settings.context());
+			allowExtraKeysCheckBox.setToggle(settings.allowExtraKeys());
+			orderSensitiveCheckBox.setToggle(settings.orderSensitive());
+			exclusiveCheckBox.setToggle(settings.exclusive());
+			matchByCharCheckBox.setToggle(settings.matchByChar());
+			preventFurtherCheckBox.setToggle(settings.preventFurther());
 		}
 		
 		@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
@@ -316,13 +316,13 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			
 			ExtendedKeyBindSettings def = button.defaultSettings;
 			int editedColor = getEditedTint(), defaultColor = getDefaultTint();
-			activationButton.setTintColor(def.getActivation() != activationButton.getValue()? editedColor : defaultColor);
-			contextButton.setTintColor(def.getContext() != contextButton.getValue()? editedColor : defaultColor);
-			allowExtraKeysCheckBox.setTintColor(def.isAllowExtraKeys() != allowExtraKeysCheckBox.getToggle()? editedColor : defaultColor);
-			orderSensitiveCheckBox.setTintColor(def.isOrderSensitive() != orderSensitiveCheckBox.getToggle()? editedColor : defaultColor);
-			exclusiveCheckBox.setTintColor(def.isExclusive() != exclusiveCheckBox.getToggle()? editedColor : defaultColor);
-			matchByCharCheckBox.setTintColor(def.isMatchByChar() != matchByCharCheckBox.getToggle()? editedColor : defaultColor);
-			preventFurtherCheckBox.setTintColor(def.isPreventFurther() != preventFurtherCheckBox.getToggle()? editedColor : defaultColor);
+			activationButton.setTintColor(def.activation() != activationButton.getValue()? editedColor : defaultColor);
+			contextButton.setTintColor(def.context() != contextButton.getValue()? editedColor : defaultColor);
+			allowExtraKeysCheckBox.setTintColor(def.allowExtraKeys() != allowExtraKeysCheckBox.getToggle()? editedColor : defaultColor);
+			orderSensitiveCheckBox.setTintColor(def.orderSensitive() != orderSensitiveCheckBox.getToggle()? editedColor : defaultColor);
+			exclusiveCheckBox.setTintColor(def.exclusive() != exclusiveCheckBox.getToggle()? editedColor : defaultColor);
+			matchByCharCheckBox.setTintColor(def.matchByChar() != matchByCharCheckBox.getToggle()? editedColor : defaultColor);
+			preventFurtherCheckBox.setTintColor(def.preventFurther() != preventFurtherCheckBox.getToggle()? editedColor : defaultColor);
 			
 			activationButton.render(mStack, mouseX, mouseY, delta);
 			contextButton.render(mStack, mouseX, mouseY, delta);

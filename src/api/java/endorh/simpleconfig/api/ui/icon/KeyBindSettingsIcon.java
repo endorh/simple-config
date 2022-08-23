@@ -103,16 +103,16 @@ public class KeyBindSettingsIcon extends LayeredIcon<SimpleIconLayer> {
 	protected void updateLayers() {
 		updateBackground();
 		ExtendedKeyBindSettings settings = getSettings();
-		KeyBindContext context = settings.getContext();
+		KeyBindContext context = settings.context();
 		contextLayer.setIcon(context.getCropIcon());
-		KeyBindActivation activation = settings.getActivation();
+		KeyBindActivation activation = settings.activation();
 		activationLayer.setIcon(ACTIVATION_ICONS.get(activation));
 		
-		orderLayer.setIcon(settings.isOrderSensitive()? ORDER_SENSITIVE : ORDER_INSENSITIVE);
-		extraKeysLayer.setIcon(settings.isAllowExtraKeys()? EXTRA_KEYS_ALLOW : EXTRA_KEYS_BLOCK);
-		exclusiveLayer.setIcon(settings.isExclusive()? EXCLUSIVE_YES : EXCLUSIVE_NOT);
-		storeLayer.setIcon(settings.isMatchByChar()? STORE_CHAR : STORE_CODE);
-		preventLayer.setIcon(settings.isPreventFurther()? PREVENT_YES : PREVENT_NO);
+		orderLayer.setIcon(settings.orderSensitive()? ORDER_SENSITIVE : ORDER_INSENSITIVE);
+		extraKeysLayer.setIcon(settings.allowExtraKeys()? EXTRA_KEYS_ALLOW : EXTRA_KEYS_BLOCK);
+		exclusiveLayer.setIcon(settings.exclusive()? EXCLUSIVE_YES : EXCLUSIVE_NOT);
+		storeLayer.setIcon(settings.matchByChar()? STORE_CHAR : STORE_CODE);
+		preventLayer.setIcon(settings.preventFurther()? PREVENT_YES : PREVENT_NO);
 	}
 	
 	@Override protected void beforeRender(int level) {

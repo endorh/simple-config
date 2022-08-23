@@ -127,7 +127,7 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	 * contextually irrelevant.<br>
 	 * Avoid overusing it, since users may find it frustrating.<br>
 	 * <b>Users may be able to edit this entry through other means.</b><br>
-	 * You may alse use {@link #editable(Function)} to receive the parent entry holder
+	 * You may also use {@link #editable(Function)} to receive the parent entry holder
 	 * of this entry as an argument.
 	 */
 	@Contract(pure=true) Self editable(Supplier<Boolean> editable);

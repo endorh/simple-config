@@ -109,7 +109,9 @@ val cleanAfterGenerateGrammarSource = tasks.register("cleanAfterGenerateGrammarS
     }
     
     doLast {
-        removeAntlrInputDirs()
+        sourceSets.forEach {
+            delete(it.antlr.srcDirs)
+        }
     }
 }
 

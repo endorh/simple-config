@@ -131,10 +131,10 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 			   .add("edit_config_hotkeys", keyBind(EDIT_CONFIG_HOTKEYS))
 			   .add("mod_config_hotkeys", map(
 				  key().guiError(
-					 m -> m.getSettings().getContext() != VanillaKeyBindContext.GAME
+					 m -> m.getSettings().context() != VanillaKeyBindContext.GAME
 					      ? Optional.of(new TranslatableComponent(
 							  "simpleconfig.config.error.unsupported_hotkey_context",
-							  m.getSettings().getContext().serialize())) : Optional.empty()),
+							  m.getSettings().context().serialize())) : Optional.empty()),
 				  string("").suggest(modNameSupplier)).expand())
 			 // Hook here the demo category
 		  ).n(DemoConfigCategory.getDemoCategory())
@@ -212,7 +212,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 			mod_config_keybinds = mod_config_hotkeys.entrySet().stream().map(e -> {
 				KeyBindMapping mapping = e.getKey();
 				String modId = e.getValue();
-				if (mapping.getSettings().getContext() != VanillaKeyBindContext.GAME) return null;
+				if (mapping.getSettings().context() != VanillaKeyBindContext.GAME) return null;
 				if (!SimpleConfigImpl.getConfigModIds().contains(modId)) return null;
 				return ExtendedKeyBind.of(SimpleConfigMod.MOD_ID,
 				  new TranslatableComponent(

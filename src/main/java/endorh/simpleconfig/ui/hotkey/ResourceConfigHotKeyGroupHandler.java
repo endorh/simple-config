@@ -31,7 +31,7 @@ public class ResourceConfigHotKeyGroupHandler extends SimplePreparableReloadList
 	  .registerTypeAdapter(ResourceHotKeyGroupsDescriptor.class, new ResourceHotKeyGroupsDescriptor.Serializer())
 	  .create();
 	private static final TypeToken<ResourceHotKeyGroupsDescriptor> TYPE =
-	  new TypeToken<ResourceHotKeyGroupsDescriptor>() {};
+	  new TypeToken<>() {};
 	public static final ResourceConfigHotKeyGroupHandler INSTANCE = new ResourceConfigHotKeyGroupHandler();
 	private final Map<String, ResourceSavedHotKeyGroup> groupRegistry = Maps.newLinkedHashMap();
 	
@@ -77,12 +77,12 @@ public class ResourceConfigHotKeyGroupHandler extends SimplePreparableReloadList
 	public static class Loader {
 		private final Map<String, ResourceSavedHotKeyGroup> groupMap = Maps.newHashMap();
 		public void registerGroups(String namespace, ResourceHotKeyGroupsDescriptor descriptor) {
-			for (String name: descriptor.getGroups()) {
+			for (String name: descriptor.groups()) {
 				String groupName = namespace + ":" + name;
 				groupMap.put(groupName, SavedHotKeyGroup.resource(
 				  groupName, new ResourceLocation(namespace, "config-hotkeys/" + name + ".yaml")));
 			}
-			descriptor.getDefaultGroups().stream().sorted().forEach(name -> {
+			descriptor.defaultGroups().stream().sorted().forEach(name -> {
 				String groupName = namespace + ":" + name;
 				ResourceSavedHotKeyGroup group = SavedHotKeyGroup.resource(
 				  groupName, new ResourceLocation(namespace, "config-hotkeys/" + name + ".yaml"));
@@ -98,24 +98,12 @@ public class ResourceConfigHotKeyGroupHandler extends SimplePreparableReloadList
 		}
 	}
 	
-	public static class ResourceHotKeyGroupsDescriptor {
-		private final Set<String> groups;
-		private final Set<String> defaultGroups;
-		
-		public ResourceHotKeyGroupsDescriptor(Set<String> groups, Set<String> defaultGroups) {
-			this.groups = groups;
-			this.defaultGroups = defaultGroups;
-		}
-		
-		public Set<String> getGroups() {
-			return groups;
-		}
-		
-		public Set<String> getDefaultGroups() {
-			return defaultGroups;
-		}
-		
-		public static class Serializer implements JsonDeserializer<ResourceHotKeyGroupsDescriptor>, JsonSerializer<ResourceHotKeyGroupsDescriptor> {
+	public record ResourceHotKeyGroupsDescriptor(
+	  Set<String> groups, Set<String> defaultGroups
+	) {
+		public static class Serializer
+		  implements JsonDeserializer<ResourceHotKeyGroupsDescriptor>,
+		             JsonSerializer<ResourceHotKeyGroupsDescriptor> {
 			@Override public ResourceHotKeyGroupsDescriptor deserialize(
 			  JsonElement json, Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {

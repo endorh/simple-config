@@ -93,7 +93,8 @@ public abstract class AbstractConfigScreen extends Screen
 	protected @Nullable ConfigScreenBuilder.IRemoteConfigProvider remoteConfigProvider;
 	
 	protected Map<EditType, CommentedConfig> remoteConfigs = new EnumMap<>(EditType.class);
-	protected Set<EditType> loadedRemoteConfigs = Collections.newSetFromMap(new EnumMap<EditType, Boolean>(EditType.class));
+	protected Set<EditType> loadedRemoteConfigs = Collections.newSetFromMap(
+	  new EnumMap<>(EditType.class));
 	
 	protected AbstractConfigScreen(
 	  Screen parent, String modId, Component title, ResourceLocation backgroundLocation,
@@ -656,7 +657,7 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	@Override public boolean removeTooltips(Rectangle area) {
 		final List<Tooltip> removed =
-		  tooltips.stream().filter(t -> area.contains(t.getPoint())).collect(Collectors.toList());
+		  tooltips.stream().filter(t -> area.contains(t.getPoint())).toList();
 		return tooltips.removeAll(removed);
 	}
 	

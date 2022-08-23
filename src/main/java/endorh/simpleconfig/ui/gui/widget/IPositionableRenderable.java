@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.gui.WidgetUtils;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Generic interface useful for layout controllers.<br>
- * Use {@link #wrap(Widget)} to wrap a {@link Widget} in this interface.<br>
+ * Use {@link #wrap(AbstractWidget)} to wrap a {@link Widget} in this interface.<br>
  *
  * Subclasses should consider implementing the optional methods
  * {@link #isFocused()}, {@link #isActive()} and their setters.
@@ -95,7 +95,7 @@ public interface IPositionableRenderable extends GuiEventListener, Widget {
 	}
 	
 	class WidgetPositionableWrapper<W extends AbstractWidget>
-	  implements IPositionableRenderable, GuiEventListener {
+	  implements IPositionableRenderable {
 		private W widget;
 		public WidgetPositionableWrapper(W widget) {
 			this.widget = widget;

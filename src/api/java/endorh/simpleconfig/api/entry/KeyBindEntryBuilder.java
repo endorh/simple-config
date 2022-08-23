@@ -25,12 +25,12 @@ public interface KeyBindEntryBuilder extends ConfigEntryBuilder<
 	KeyBindEntryBuilder reportOverlaps(boolean reportOverlaps);
 	
 	/**
-	 * Replace this' keybind's title with the title of this entry.
+	 * Replace this keybind's title with the title of this entry.
 	 */
 	KeyBindEntryBuilder inheritTitle();
 	
 	/**
-	 * Replace this' keybind's title with the title of this entry.
+	 * Replace this keybind's title with the title of this entry.
 	 */
 	KeyBindEntryBuilder inheritTitle(boolean inheritTitle);
 }

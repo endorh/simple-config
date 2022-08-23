@@ -40,7 +40,7 @@ public class DummyEntryHolder<V> implements ConfigEntryHolder {
 		throw new UnsupportedOperationException();
 	}
 	
-	@Override public <V> void setForGUI(String path, V value) {
+	@Override public <T> void setForGUI(String path, T value) {
 		throw new UnsupportedOperationException();
 	}
 	

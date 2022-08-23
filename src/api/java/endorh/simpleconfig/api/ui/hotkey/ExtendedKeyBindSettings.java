@@ -17,19 +17,19 @@ public interface ExtendedKeyBindSettings {
 		return new ExtendedKeyBindSettingsBuilder().withContext(VanillaKeyBindContext.ALL);
 	}
 	
-	KeyBindActivation getActivation();
+	KeyBindActivation activation();
 	
-	KeyBindContext getContext();
+	KeyBindContext context();
 	
-	boolean isAllowExtraKeys();
+	boolean allowExtraKeys();
 	
-	boolean isOrderSensitive();
+	boolean orderSensitive();
 	
-	boolean isExclusive();
+	boolean exclusive();
 	
-	boolean isMatchByChar();
+	boolean matchByChar();
 	
-	boolean isPreventFurther();
+	boolean preventFurther();
 	
 	ExtendedKeyBindSettings copy();
 }

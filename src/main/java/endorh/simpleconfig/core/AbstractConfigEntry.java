@@ -177,11 +177,11 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		}).toArray();
 	}
 	
-	@Internal public void setSaver(BiConsumer<Gui, ConfigEntryHolder> saver) {
+	@Internal public void setSaver(@Nullable BiConsumer<Gui, ConfigEntryHolder> saver) {
 		this.saver = saver;
 	}
 	
-	@Internal public void setDisplayName(Component name) {
+	@Internal public void setDisplayName(@Nullable Component name) {
 		displayName = name;
 	}
 	

@@ -28,8 +28,8 @@ public class SimpleConfigCommentedYamlWriter implements ConfigWriter {
 	
 	public SimpleConfigCommentedYamlWriter(SimpleConfigCommentedYamlFormat format) {
 		this.format = format;
-		this.yaml = format.getYaml();
-		this.config = format.getSimpleConfig();
+		yaml = format.getYaml();
+		config = format.getSimpleConfig();
 	}
 	
 	@Override public void write(

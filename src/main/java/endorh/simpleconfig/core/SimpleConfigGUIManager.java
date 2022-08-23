@@ -36,7 +36,6 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.synchronizedMap;
 
@@ -138,9 +137,8 @@ public class SimpleConfigGUIManager {
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
 		final List<SimpleConfigImpl> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.getType() != SimpleConfig.Type.SERVER || hasPermission)
-		  .sorted(typeOrder)
-		  .collect(Collectors.toList());
+		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
+		  .sorted(typeOrder).toList();
 		// final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parentScreen)
@@ -183,9 +181,8 @@ public class SimpleConfigGUIManager {
 		boolean hasPermission =
 		  mc.player != null && ServerConfig.permissions.permissionFor(mc.player, modId).getLeft().canView();
 		final List<SimpleConfigImpl> orderedConfigs = configs.values().stream()
-		  .filter(c -> c.getType() != SimpleConfig.Type.SERVER || hasPermission)
-		  .sorted(typeOrder)
-		  .collect(Collectors.toList());
+		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
+		  .sorted(typeOrder).toList();
 		final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parent)
@@ -259,7 +256,7 @@ public class SimpleConfigGUIManager {
 	}
 	
 	/**
-	 * Adds a minimal button to the pause menu to open the mod list ingame.<br>
+	 * Adds a minimal button to the pause menu to open the mod list in-game.<br>
 	 * This behaviour can be disabled in the config, in case it interferes with
 	 * another mod
 	 */

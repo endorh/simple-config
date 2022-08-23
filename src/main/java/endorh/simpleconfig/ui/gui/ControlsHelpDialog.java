@@ -58,10 +58,6 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		
 		private MutableComponent parseSingle(String key) {
 			return KeyBindMapping.parse(key).getDisplayName(keyStyle).copy();
-			// if (key.endsWith("!"))
-			// 	return ModifierKeyCode.parse(key.substring(0, key.length() - 1))
-			// 	  .getLayoutAgnosticLocalizedName(modifierStyle, keyStyle).deepCopy();
-			// return ModifierKeyCode.parse(key).getLocalizedName(modifierStyle, keyStyle).deepCopy();
 		}
 		
 		private MutableComponent parse(String keys) {
@@ -77,7 +73,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		private static final Pattern TITLE_CASE_PATTERN = Pattern.compile("(?<!\\w)\\w");
 		private static String toTitleCase(String s) {
 			final Matcher m = TITLE_CASE_PATTERN.matcher(s.toLowerCase());
-			final StringBuffer sb = new StringBuffer();
+			final StringBuilder sb = new StringBuilder();
 			while (m.find()) m.appendReplacement(sb, m.group().toUpperCase());
 			m.appendTail(sb);
 			return sb.toString();

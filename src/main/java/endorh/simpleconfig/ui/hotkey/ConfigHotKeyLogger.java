@@ -35,20 +35,16 @@ public class ConfigHotKeyLogger {
 			message.add(new TranslatableComponent("simpleconfig.hotkey.more", size - maxSize));
 		}
 		switch (location) {
-			case CHAT:
+			case CHAT -> {
 				LocalPlayer player = Minecraft.getInstance().player;
 				if (player != null) {
 					MutableComponent msg = title.copy();
 					message.forEach(l -> msg.append("\n").append(l));
 					player.sendMessage(msg, Util.NIL_UUID);
 				}
-				break;
-			case RIGHT_OVERLAY:
-				ConfigHotKeyOverlay.addMessage(title, message);
-				break;
-			case CENTER_TOAST:
-				ConfigHotKeyOverlay.addToastMessage(title);
-				break;
+			}
+			case RIGHT_OVERLAY -> ConfigHotKeyOverlay.addMessage(title, message);
+			case CENTER_TOAST -> ConfigHotKeyOverlay.addToastMessage(title);
 		}
 	}
 }

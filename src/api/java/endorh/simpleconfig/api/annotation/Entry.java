@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.annotation;
 
+import endorh.simpleconfig.api.SimpleConfigBuilder;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,7 +37,7 @@ import java.lang.annotation.Target;
  *
  * Some annotations, like {@link Min}, {@link Max}, {@link Slider},
  * {@link HasAlpha}, {@link RequireRestart} or {@link NonPersistent}
- * allow to configure some of the settings of the generated entries
+ * allow to configure some settings of the generated entries
  * for the types that support them<br>
  *
  * A sibling method with the same name followed by '{@code $error}'
@@ -55,7 +57,7 @@ import java.lang.annotation.Target;
  * instead of using the '{@code $error}' method, which takes the whole list<br><br>
  *
  * <b>You're encouraged</b> to generate your entries with
- * the {@link ISimpleConfigBuilder} methods
+ * the {@link SimpleConfigBuilder} methods
  * instead, because it provides more options and is less prone
  * to errors<br>
  * However, for simpler configs, you might want to check out other

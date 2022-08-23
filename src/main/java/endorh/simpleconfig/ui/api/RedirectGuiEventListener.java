@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Redirects all {@link IGuiEventListener} related events to a given target.<br>
+ * Redirects all {@link GuiEventListener} related events to a given target.<br>
  * Convenient to replace event listeners in multiple queues.
  */
 public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListener, Widget {

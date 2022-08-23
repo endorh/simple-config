@@ -394,15 +394,18 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 	@Override public boolean charTyped(char codePoint, int modifiers) {
 		if (Screen.hasAltDown()) {
 			switch (Character.toLowerCase(codePoint)) {
-				case 'c':
+				case 'c' -> {
 					caseButton.setValue(!caseButton.getValue());
 					return true;
-				case 'r':
+				}
+				case 'r' -> {
 					regexButton.setValue(!regexButton.getValue());
 					return true;
-				case 'f':
+				}
+				case 'f' -> {
 					filterButton.setValue(!filterButton.getValue());
 					return true;
+				}
 			}
 		}
 		return super.charTyped(codePoint, modifiers);

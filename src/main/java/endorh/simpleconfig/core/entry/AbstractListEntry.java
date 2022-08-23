@@ -175,11 +175,11 @@ public abstract class AbstractListEntry
 		int size = value.size();
 		if (size < minSize) {
 			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_small"),
+			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "min_size"),
 			  new TextComponent(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		} else if (size > maxSize) {
 			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list.too_large",
+			  "simpleconfig.config.error.list.too_long",
 			  new TextComponent(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		}
 		return super.getErrorFromGUI(value);

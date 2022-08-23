@@ -232,12 +232,11 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 	}
 	
 	public Map<String, Preset> getKnownPresets(Type type, Location location) {
-		switch (location) {
-			case LOCAL: return knownLocalPresets.get(type);
-			case REMOTE: return knownRemotePresets.get(type);
-			case RESOURCE: return knownResourcePresets.get(type);
-			default: return Collections.emptyMap();
-		}
+		return switch (location) {
+			case LOCAL -> knownLocalPresets.get(type);
+			case REMOTE -> knownRemotePresets.get(type);
+			case RESOURCE -> knownResourcePresets.get(type);
+		};
 	}
 	
 	public boolean isKnownPreset(Preset preset) {
@@ -583,6 +582,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			}
 		}
 		
+		@SuppressWarnings("ClassCanBeRecord")
 		public static class TypeWrapper implements ITypeWrapper<Preset> {
 			public final PresetPickerWidget widget;
 			
@@ -630,39 +630,31 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			} // @formatter:on
 			
 			public static Icon saveIconFor(Type type) {
-				switch (type) {
-					case CLIENT: return Presets.CLIENT_SAVE;
-					case COMMON: return Presets.COMMON_SAVE;
-					case SERVER: return Presets.SERVER_SAVE;
-					default: return null;
-				}
+				return switch (type) {
+					case CLIENT -> Presets.CLIENT_SAVE;
+					case COMMON -> Presets.COMMON_SAVE;
+					case SERVER -> Presets.SERVER_SAVE;
+				};
 			}
 			
 			public static Icon iconFor(Type type, Location location) {
-				switch (type) {
-					case CLIENT:
-						switch (location) {
-							case LOCAL: return Presets.CLIENT_LOCAL;
-							case REMOTE: return Presets.CLIENT_REMOTE;
-							case RESOURCE: return Presets.CLIENT_RESOURCE;
-							default: return null;
-						}
-					case COMMON:
-						switch (location) {
-							case LOCAL: return Presets.COMMON_LOCAL;
-							case REMOTE: return Presets.COMMON_REMOTE;
-							case RESOURCE: return Presets.COMMON_RESOURCE;
-							default: return null;
-						}
-					case SERVER:
-						switch (location) {
-							case LOCAL: return Presets.SERVER_LOCAL;
-							case REMOTE: return Presets.SERVER_REMOTE;
-							case RESOURCE: return Presets.SERVER_RESOURCE;
-							default: return null;
-						}
-					default: return null;
-				}
+				return switch (type) {
+					case CLIENT -> switch (location) {
+						case LOCAL -> Presets.CLIENT_LOCAL;
+						case REMOTE -> Presets.CLIENT_REMOTE;
+						case RESOURCE -> Presets.CLIENT_RESOURCE;
+					};
+					case COMMON -> switch (location) {
+						case LOCAL -> Presets.COMMON_LOCAL;
+						case REMOTE -> Presets.COMMON_REMOTE;
+						case RESOURCE -> Presets.COMMON_RESOURCE;
+					};
+					case SERVER -> switch (location) {
+						case LOCAL -> Presets.SERVER_LOCAL;
+						case REMOTE -> Presets.SERVER_REMOTE;
+						case RESOURCE -> Presets.SERVER_RESOURCE;
+					};
+				};
 			}
 		}
 	}

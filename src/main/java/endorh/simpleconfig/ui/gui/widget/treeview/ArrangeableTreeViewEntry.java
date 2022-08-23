@@ -298,13 +298,12 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 					entry.focusAndSelect(clear, select, redirect != null? redirect : this);
 				} else entry.handleArrowKeys(false, this);
 			}
-			return true;
 		} else {
 			if (forwards) {
 				subEntries.get(0).focusAndSelect(clear, select, redirect);
 			} else subEntries.get(subEntries.size() - 1).handleArrowKeys(false, redirect);
-			return true;
 		}
+		return true;
 	}
 	
 	@Override public void setFocused(@Nullable GuiEventListener listener) {
@@ -395,7 +394,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			int dragX = mouseX + tree.getDragOffsetX();
 			List<E> subEntries = getSubEntries();
 			Optional<E> first = subEntries.stream().filter(e -> !tree.isSelected(e)).findFirst();
-			boolean empty = !first.isPresent();
+			boolean empty = first.isEmpty();
 			List<E> draggedEntries = tree.getDraggedEntries();
 			if (isExpanded() && (empty || dragY < yy + first.get().getOwnHeight() / 2)
 			    && canBeDroppedInto(0, draggedEntries) &&

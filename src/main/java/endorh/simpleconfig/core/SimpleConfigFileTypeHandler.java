@@ -37,7 +37,7 @@ public class SimpleConfigFileTypeHandler extends ConfigFileTypeHandler {
 			  ).sync()
 			  .preserveInsertionOrder()
 			  .autosave()
-			  .onFileNotFound((newfile, configFormat) -> setupConfigFile(config, newfile, configFormat))
+			  .onFileNotFound((newFile, configFormat) -> setupConfigFile(config, newFile, configFormat))
 			  .writingMode(WritingMode.REPLACE)
 			  .build();
 			LOGGER.debug(CONFIG, "Built YAML config for {}", configPath.toString());

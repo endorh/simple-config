@@ -292,10 +292,10 @@ public class DemoConfigCategory {
 		            //   provides icons and auto-completion for known items
 		            // You may also suggest a specific set of items calling .suggest()
 		            .add("item_name", itemName(new ResourceLocation("unknown:item")))
-		            // NBT tag entries contain CompoundNBT s, and automatically
-		            //   check the NBT syntax in the GUI
+		            // NBT compound tag entries contain `CompoundTag`s, and automatically
+		            //   check the SNBT syntax in the GUI
 		            .add("nbt_compound", compoundTag(nbt))
-		            // NBT value entries also accept INBT values as well as CompoundNBT s
+		            // NBT tag entries also accept `Tag` values as well as `CompoundTag`s
 		            .add("nbt_value", tag(StringTag.valueOf("NBT")))
 		            // It is also possible to use custom String serializable entries
 		            //   You may either pass an IConfigEntrySerializer,
@@ -453,7 +453,7 @@ public class DemoConfigCategory {
 		          .caption("caption", string("Caption entry")
 		            .suggest("Groups", "can", "hold", "entries", "in", "their", "captions"))
 		          // Text entries can also receive format arguments if they
-		          //   are defined by name instead of passing an Component
+		          //   are defined by name instead of passing a Component
 		          .text("non_persistent_desc", ttc(prefix("text.non_persistent")).withStyle(ChatFormatting.GRAY))
 		          // Any entry can be made non-persistent, by calling .temp()
 		          //   Non-persistent entries do not appear in the config file
@@ -668,7 +668,7 @@ public class DemoConfigCategory {
 	}
 	
 	public static class BeanDemo {
-		private static final Map<Color, Icon> ICON_CACHE = new LinkedHashMap<Color, Icon>(51) {
+		private static final Map<Color, Icon> ICON_CACHE = new LinkedHashMap<>(51) {
 			@Override protected boolean removeEldestEntry(Entry eldest) {
 				return size() > 50;
 			}

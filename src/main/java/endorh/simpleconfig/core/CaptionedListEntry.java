@@ -142,7 +142,7 @@ public class CaptionedListEntry<
 			return key != null && list != null? Pair.of(key, list) : null;
 		} else if (value instanceof Config) {
 			Optional<? extends Entry> opt = ((Config) value).entrySet().stream().findFirst();
-			if (!opt.isPresent()) return null;
+			if (opt.isEmpty()) return null;
 			Entry entry = opt.get();
 			CC key = captionEntry.fromActualConfig(entry.getKey());
 			List<C> list = listEntry.fromActualConfig(entry.getValue());
@@ -210,7 +210,7 @@ public class CaptionedListEntry<
 	) {
 		listEntry.setDisplayName(getDisplayName());
 		final Optional<FieldBuilder<List<G>, ?, ?>> opt = listEntry.buildGUIEntry(builder);
-		if (!opt.isPresent()) throw new IllegalStateException("List entry has no GUI entry");
+		if (opt.isEmpty()) throw new IllegalStateException("List entry has no GUI entry");
 		final FieldBuilder<List<G>, ?, ?> listGUIEntry = opt.get();
 		listGUIEntry.withoutTags(EntryTag.NON_PERSISTENT);
 		final endorh.simpleconfig.ui.impl.builders.CaptionedListEntryBuilder<G, ?, ?, CG, ?, ?>

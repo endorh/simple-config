@@ -534,13 +534,15 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		if (target != null && target.handleNavigationKey(keyCode, scanCode, modifiers))
 			return true;
 		switch (keyCode) {
-			case GLFW.GLFW_KEY_DOWN:
+			case GLFW.GLFW_KEY_DOWN -> {
 				navigateEntries(1);
 				return true;
-			case GLFW.GLFW_KEY_UP:
+			}
+			case GLFW.GLFW_KEY_UP -> {
 				navigateEntries(-1);
 				return true;
-			case GLFW.GLFW_KEY_LEFT:
+			}
+			case GLFW.GLFW_KEY_LEFT -> {
 				if (subTarget instanceof IExpandable && ((IExpandable) subTarget).isExpanded()) {
 					((IExpandable) subTarget).setExpanded(false, Screen.hasShiftDown());
 					playFeedbackTap(0.4F);
@@ -561,8 +563,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 						return true;
 					}
 				}
-				break;
-			case GLFW.GLFW_KEY_RIGHT:
+			}
+			case GLFW.GLFW_KEY_RIGHT -> {
 				if (subTarget instanceof IExpandable && !((IExpandable) subTarget).isExpanded()) {
 					((IExpandable) subTarget).setExpanded(true, Screen.hasShiftDown());
 					playFeedbackTap(0.4F);
@@ -574,6 +576,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 					playFeedbackTap(0.4F);
 					return true;
 				}
+			}
 		}
 		return false;
 	}

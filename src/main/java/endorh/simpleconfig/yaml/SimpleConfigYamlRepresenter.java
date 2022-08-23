@@ -75,9 +75,9 @@ public class SimpleConfigYamlRepresenter extends Representer {
 	public class RepresentHotKeyActionWrapper implements Represent {
 		@Override public Node representData(Object data) {
 			HotKeyActionWrapper<?, ?> wrapper = (HotKeyActionWrapper<?, ?>) data;
-			HotKeyActionType<?, ?> type = wrapper.getType();
+			HotKeyActionType<?, ?> type = wrapper.type();
 			Tag tag = type.getTag();
-			Object value = wrapper.getValue();
+			Object value = wrapper.value();
 			if (value == null) return new SequenceNode(tag, Collections.emptyList(), FlowStyle.FLOW);
 			Node node = SimpleConfigYamlRepresenter.this.representData(value);
 			FlowStyle style = FlowStyle.BLOCK;

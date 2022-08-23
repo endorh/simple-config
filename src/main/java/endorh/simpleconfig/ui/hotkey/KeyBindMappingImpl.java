@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation.*;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class KeyBindMappingImpl implements KeyBindMapping {
 	private final IntList requiredKeys;
 	private final @Nullable Int2ObjectMap<String> charMap;
@@ -60,7 +61,7 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		ExtendedKeyBindSettings settings = getSettings();
 		ExtendedKeyBindSettings otherSettings = other.getSettings();
 		if (
-		  !settings.getContext().conflictsWith(otherSettings.getContext())
+		  !settings.context().conflictsWith(otherSettings.context())
 		  || isUnset() || other.isUnset()
 		) return false;
 		
@@ -71,16 +72,16 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		
 		if (keysSize < otherKeysSize) return false; // return other.overlaps(this);
 		
-		KeyBindActivation act = settings.getActivation();
-		KeyBindActivation otherAct = otherSettings.getActivation();
+		KeyBindActivation act = settings.activation();
+		KeyBindActivation otherAct = otherSettings.activation();
 		
-		boolean isRelease = (act == RELEASE || act == TOGGLE_RELEASE) && settings.isExclusive();
+		boolean isRelease = (act == RELEASE || act == TOGGLE_RELEASE) && settings.exclusive();
 		boolean otherIsRelease =
-		  (otherAct == RELEASE || otherAct == TOGGLE_RELEASE) && otherSettings.isExclusive();
+		  (otherAct == RELEASE || otherAct == TOGGLE_RELEASE) && otherSettings.exclusive();
 		if (isRelease != otherIsRelease && act != BOTH && otherAct != BOTH) return false;
 		
-		boolean matchByChar = settings.isMatchByChar();
-		boolean otherMatchByChar = otherSettings.isMatchByChar();
+		boolean matchByChar = settings.matchByChar();
+		boolean otherMatchByChar = otherSettings.matchByChar();
 		Int2ObjectMap<String> charMap = getCharMap();
 		Int2ObjectMap<String> otherCharMap = other.getCharMap();
 		boolean compareByChar = matchByChar || otherMatchByChar;
@@ -88,8 +89,8 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		assert !matchByChar || charMap != null;
 		assert !otherMatchByChar || otherCharMap != null;
 		
-		if (settings.isOrderSensitive() && otherSettings.isOrderSensitive()) {
-			boolean strict = !otherSettings.isAllowExtraKeys();
+		if (settings.orderSensitive() && otherSettings.orderSensitive()) {
+			boolean strict = !otherSettings.allowExtraKeys();
 			int j = 0;
 			match:for (int i = 0; i < otherKeysSize; i++) {
 				int otherKey = otherKeys.getInt(i);
@@ -129,12 +130,12 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	@Override public Component getDisplayName(Style style) {
 		ExtendedKeyBindSettings settings = getSettings();
 		MutableComponent joiner = new TextComponent(
-		  settings.isOrderSensitive()? ">" : "+"
+		  settings.orderSensitive()? ">" : "+"
 		).withStyle(ChatFormatting.GRAY);
 		if (requiredKeys.isEmpty()) return TextComponent.EMPTY;
 		MutableComponent r = new TextComponent("");
 		int first = requiredKeys.getInt(0);
-		boolean matchByChar = settings.isMatchByChar();
+		boolean matchByChar = settings.matchByChar();
 		String firstChar = charMap != null? charMap.get(first) : null;
 		r.append((matchByChar && firstChar != null? formatKey(firstChar) : formatKey(first)).withStyle(style));
 		for (int i = 1; i < requiredKeys.size(); i++) {
@@ -147,8 +148,8 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	
 	@Override public String serialize() {
 		ExtendedKeyBindSettings settings = getSettings();
-		String joiner = settings.isOrderSensitive()? ">" : "+";
-		boolean matchByChar = settings.isMatchByChar();
+		String joiner = settings.orderSensitive()? ">" : "+";
+		boolean matchByChar = settings.matchByChar();
 		String keys =
 		  requiredKeys.isEmpty()
 		  ? "unset"
@@ -160,18 +161,18 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		    : requiredKeys.stream()
 		      .map(KeyBindMappingImpl::serializeKey)
 		      .collect(Collectors.joining(joiner));
-		KeyBindActivation activation = settings.getActivation();
-		KeyBindContext context = settings.getContext();
+		KeyBindActivation activation = settings.activation();
+		KeyBindContext context = settings.context();
 		String act = activation != PRESS? activation.serialize() : "";
 		String ctx = context != VanillaKeyBindContext.GAME? context.serialize() : "";
 		StringBuilder b =
 		  new StringBuilder(keys.length() + act.length() + ctx.length() + 4);
-		if (settings.isMatchByChar() && !keys.contains("\"")) b.append('@');
-		if (settings.isExclusive()) b.append('!');
-		if (settings.isOrderSensitive() && requiredKeys.size() <= 1) b.append('>');
+		if (settings.matchByChar() && !keys.contains("\"")) b.append('@');
+		if (settings.exclusive()) b.append('!');
+		if (settings.orderSensitive() && requiredKeys.size() <= 1) b.append('>');
 		b.append(keys);
-		if (!settings.isAllowExtraKeys()) b.append("!");
-		if (!settings.isPreventFurther()) b.append(">");
+		if (!settings.allowExtraKeys()) b.append("!");
+		if (!settings.preventFurther()) b.append(">");
 		if (!act.isEmpty()) {
 			b.append(':');
 			b.append(act);

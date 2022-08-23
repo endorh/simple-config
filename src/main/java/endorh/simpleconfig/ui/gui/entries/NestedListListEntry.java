@@ -115,8 +115,7 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 			List<EntryError> errors = super.computeErrors();
 			errors.addAll(
 			  nestedEntry.getEntryErrors().stream()
-			    .filter(e -> !errors.contains(e))
-			    .collect(Collectors.toList()));
+				 .filter(e -> !errors.contains(e)).toList());
 			return errors;
 		}
 		

@@ -113,14 +113,14 @@ public abstract class AbstractRange<
 		}
 		
 		/**
-		 * Generate an uniform random value within this range.<br>
+		 * Generate a uniform random value within this range.<br>
 		 * Exclusiveness of the limits is considered.<br>
 		 * If this range is empty, {@code null} is returned.
 		 */
 		public abstract N randomUniform(Random random);
 		
 		/**
-		 * Generate an uniform random value with gaussian distribution centered
+		 * Generate a uniform random value with gaussian distribution centered
 		 * on this range, with standard deviation equal to the radius of this
 		 * range.<br>
 		 * In particular, the returned values can be outside range.<br>
@@ -220,7 +220,7 @@ public abstract class AbstractRange<
 		}
 		
 		/**
-		 * Generate an uniform random value within this range.<br>
+		 * Generate a uniform random value within this range.<br>
 		 * Infinite bounds are clamped to
 		 * [-{@link Double#MAX_VALUE}, {@link Double#MAX_VALUE}].<br>
 		 * Exclusiveness of the limits is considered.<br>
@@ -383,7 +383,7 @@ public abstract class AbstractRange<
 		}
 		
 		/**
-		 * Generate an uniform random value within this range.<br>
+		 * Generate a uniform random value within this range.<br>
 		 * Infinite bounds are clamped to
 		 * [-{@link Float#MAX_VALUE}, {@link Float#MAX_VALUE}].<br>
 		 * Exclusiveness of the limits is considered.<br>

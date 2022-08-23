@@ -63,8 +63,8 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	@Contract("_ -> this") SimpleConfigBuilder withColor(int tint);
 	
 	/**
-	 * Use the solid background too when ingame<br>
-	 * By default, config GUIs are transparent when ingame
+	 * Use the solid background too when in-game<br>
+	 * By default, config GUIs are transparent when in-game
 	 */
 	@Contract("-> this") SimpleConfigBuilder withSolidInGameBackground();
 	

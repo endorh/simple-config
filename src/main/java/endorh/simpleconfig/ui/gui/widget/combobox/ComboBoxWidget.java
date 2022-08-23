@@ -480,10 +480,10 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	public void tick() {}
 	
 	@Override protected @NotNull MutableComponent createNarrationMessage() {
-		Component itextcomponent = getMessage();
+		Component msg = getMessage();
 		// This should have its own key, but I think having it untranslated
 		// is worse than reporting it as an edit box
-		return new TranslatableComponent("gui.narrate.editBox", itextcomponent, text);
+		return new TranslatableComponent("gui.narrate.editBox", msg, text);
 	}
 	
 	/**

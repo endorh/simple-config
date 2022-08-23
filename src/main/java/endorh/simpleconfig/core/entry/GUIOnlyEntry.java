@@ -53,9 +53,6 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		@Override
 		protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			nonPersistent = true;
-			/*if (parent.getRoot().type != Type.CLIENT)
-				throw new IllegalArgumentException(
-				  "Attempt to declare non persistent config entry in a non-client config");*/
 			return super.build(parent, name);
 		}
 	}

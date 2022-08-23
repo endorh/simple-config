@@ -1392,7 +1392,6 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			CompletableFuture<List<RemoteSavedHotKeyGroup>> future =
 			  CSimpleConfigRequestSavedHotKeyGroupsPacket.future;
 			if (future != null && !future.isDone()) future.complete(groups);
-			future = null;
 		}
 		
 		@Override public void write(FriendlyByteBuf buf) {

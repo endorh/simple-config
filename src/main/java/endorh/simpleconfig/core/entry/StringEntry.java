@@ -118,12 +118,6 @@ public class StringEntry
 		
 		@Override protected StringEntry buildEntry(ConfigEntryHolder parent, String name) {
 			final StringEntry entry = new StringEntry(parent, name, value);
-			if (value.length() > maxLength)
-				throw new IllegalArgumentException(
-				  "Config entry's default value is longer than its max length: " + entry.getGlobalPath());
-			// if (value.length() < minLength)
-			// 	throw new IllegalArgumentException(
-			// 	  "Config entry's default value is shorter than its min length: " + entry.getPath());
 			entry.choiceSupplier = choiceSupplier;
 			entry.restrict = restrict;
 			entry.maxLength = maxLength;
