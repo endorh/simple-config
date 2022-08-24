@@ -35,13 +35,13 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.config.ModConfigEvent.Reloading;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fmllegacy.network.FMLHandshakeHandler;
-import net.minecraftforge.fmllegacy.network.NetworkDirection;
-import net.minecraftforge.fmllegacy.network.NetworkEvent.Context;
-import net.minecraftforge.fmllegacy.network.NetworkRegistry;
-import net.minecraftforge.fmllegacy.network.PacketDistributor;
-import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
-import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.network.HandshakeHandler;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent.Context;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -307,7 +307,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		  .loginIndex(ILoginPacket::getLoginIndex, ILoginPacket::setLoginIndex)
 		  .encoder(SAbstractLoginPacket::write)
 		  .decoder(AbstractPacket.decoder(factory))
-		  .consumer(FMLHandshakeHandler.biConsumerFor(SAbstractLoginPacket::handleWithReply))
+		  .consumer(HandshakeHandler.biConsumerFor(SAbstractLoginPacket::handleWithReply))
 		  .buildLoginPacketList(packetListBuilder)
 		  .add();
 	}
@@ -323,7 +323,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		  .loginIndex(ILoginPacket::getLoginIndex, ILoginPacket::setLoginIndex)
 		  .encoder(CAbstractLoginPacket::write)
 		  .decoder(AbstractPacket.decoder(factory))
-		  .consumer(FMLHandshakeHandler.indexFirst(CAbstractLoginPacket::handle))
+		  .consumer(HandshakeHandler.indexFirst(CAbstractLoginPacket::handle))
 		  .add();
 	}
 	
@@ -449,19 +449,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			this.loginIndex = loginIndex;
 		}
 		
-		public void handle(FMLHandshakeHandler handler, Supplier<Context> ctxSupplier) {
+		public void handle(HandshakeHandler handler, Supplier<Context> ctxSupplier) {
 			handle(ctxSupplier);
 		}
-		public void handleWithReply(FMLHandshakeHandler handler, Supplier<Context> ctxSupplier) {
+		public void handleWithReply(HandshakeHandler handler, Supplier<Context> ctxSupplier) {
 			handleWithReply(ctxSupplier);
 		}
 		public static void handle(
-		  FMLHandshakeHandler handler, SAbstractLoginPacket packet, Supplier<Context> ctxSupplier
+		  HandshakeHandler handler, SAbstractLoginPacket packet, Supplier<Context> ctxSupplier
 		) {
 			packet.handle(handler, ctxSupplier);
 		}
 		public static void handleWithReply(
-		  FMLHandshakeHandler handler, SAbstractLoginPacket packet, Supplier<Context> ctxSupplier
+		  HandshakeHandler handler, SAbstractLoginPacket packet, Supplier<Context> ctxSupplier
 		) {
 			packet.handleWithReply(handler, ctxSupplier);
 		}
@@ -476,11 +476,11 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			this.loginIndex = loginIndex;
 		}
 		
-		public void handle(FMLHandshakeHandler handler, Supplier<Context> ctxSupplier) {
+		public void handle(HandshakeHandler handler, Supplier<Context> ctxSupplier) {
 			handle(ctxSupplier);
 		}
 		public static void handle(
-		  FMLHandshakeHandler handler, CAbstractLoginPacket packet, Supplier<Context> ctxSupplier
+		  HandshakeHandler handler, CAbstractLoginPacket packet, Supplier<Context> ctxSupplier
 		) {
 			packet.handle(handler, ctxSupplier);
 		}

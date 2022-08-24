@@ -31,9 +31,9 @@ val apiVersion = "0.1.6"
 
 val modVersion = "0.8.18"
 val mappingsChannel = "official"
-val mappingsVersion = "1.17.1"
-val mcVersion = "1.17.1"
-val forge = "37.1.1"
+val mappingsVersion = "1.18.2"
+val mcVersion = "1.18.2"
+val forge = "40.1.0"
 val forgeVersion = "$mcVersion-$forge"
 
 val apiMavenArtifact = "$modGroup:$modId-api:$apiVersion"
@@ -71,7 +71,7 @@ val apiDisplayName = "Simple Config API"
 // Dependencies
 // FIXME: Update to 1.31 when available (bitbucket.org/snakeyaml/snakeyaml/issues/518)
 val yamlVersion = "1.30"
-val jeiVersion = "8.3.1.62"
+val jeiVersion = "9.7.1.255"
 val antlrVersion: String by extra
 
 // Jar manifest attributes
@@ -119,14 +119,16 @@ sourceSets.main.get().resources {
 }
 
 if (project.hasProperty("UPDATE_MAPPINGS")) {
+    val dirs = HashSet(apiSourceSet.java.srcDirs)
+    dirs.removeIf { it.path.contains("antlr") }
     tasks.getByName<net.minecraftforge.gradle.common.tasks.ExtractRangeMap>("extractRangeMap") {
-        sources.from(apiSourceSet.java.srcDirs)
+        sources.from(dirs)
     }
     tasks.getByName<net.minecraftforge.gradle.common.tasks.ApplyRangeMap>("applyRangeMap") {
-        sources.from(apiSourceSet.java.srcDirs)
+        sources.from(dirs)
     }
     tasks.getByName<net.minecraftforge.gradle.common.tasks.ExtractExistingFiles>("extractMappedNew") {
-        targets.from(apiSourceSet.java.srcDirs)
+        targets.from(dirs)
     }
 }
 
@@ -134,7 +136,7 @@ if (project.hasProperty("UPDATE_MAPPINGS")) {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(16))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -245,10 +247,10 @@ dependencies {
     
     // Testing dependencies
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3529459"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3803098"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:3537614"))
+    runtimeOnly(fg.deobf("curse.maven:configured-457570:3946495"))
     
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-$mcVersion:$jeiVersion"))

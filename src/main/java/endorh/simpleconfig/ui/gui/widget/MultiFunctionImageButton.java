@@ -144,12 +144,12 @@ public class MultiFunctionImageButton extends ImageButton {
 	) {
 		updateState();
 		final ButtonAction action = activeAction;
-		int level = active? isHovered()? 2 : 1 : 0;
+		int level = active? isHoveredOrFocused()? 2 : 1 : 0;
 		
 		Icon icon = action.icon != null? action.icon.get() : null;
 		if (icon == null) icon = defaultIcon;
 		icon.renderStretch(mStack, x, y, width, height, level);
-		if (isHovered())
+		if (isHoveredOrFocused())
 			renderToolTip(mStack, mouseX, mouseY);
 	}
 	

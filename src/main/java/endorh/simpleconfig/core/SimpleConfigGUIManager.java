@@ -25,13 +25,13 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
+import net.minecraftforge.client.ConfigGuiHandler;
+import net.minecraftforge.client.ConfigGuiHandler.ConfigGuiFactory;
+import net.minecraftforge.client.event.ScreenEvent.InitScreenEvent;
+import net.minecraftforge.client.gui.ModListScreen;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fmlclient.ConfigGuiHandler;
-import net.minecraftforge.fmlclient.ConfigGuiHandler.ConfigGuiFactory;
-import net.minecraftforge.fmlclient.gui.screen.ModListScreen;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.*;
@@ -261,10 +261,10 @@ public class SimpleConfigGUIManager {
 	 * another mod
 	 */
 	@SubscribeEvent
-	public static void onGuiInit(InitGuiEvent.Post event) {
+	public static void onGuiInit(InitScreenEvent.Post event) {
 		if (!addButton || !menu.add_pause_menu_button)
 			return;
-		final Screen gui = event.getGui();
+		final Screen gui = event.getScreen();
 		if (gui instanceof PauseScreen) {
 			// Coordinates taken from IngameMenuScreen#addButtons
 			int w = 20, h = 20, x, y;
@@ -278,7 +278,7 @@ public class SimpleConfigGUIManager {
 				case BOTTOM_RIGHT_CORNER:
 					x = gui.width - 28; y = gui.height - 28; break;
 				case SPLIT_OPTIONS_BUTTON:
-					Optional<Button> opt = getOptionsButton(gui, event.getWidgetList());
+					Optional<Button> opt = getOptionsButton(gui, event.getListenersList());
 					if (opt.isPresent()) {
 						Button options = opt.get();
 						options.setWidth(options.getWidth() - 20 - 4);
@@ -298,7 +298,7 @@ public class SimpleConfigGUIManager {
 			  x, y, w, h, 0, 0, 20,
 			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/menu.png"),
 			  32, 64, p -> showModListGUI());
-			event.addWidget(modOptions);
+			event.addListener(modOptions);
 		}
 	}
 	

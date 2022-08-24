@@ -8,11 +8,11 @@ import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.Util;
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
 import net.minecraftforge.client.event.InputEvent.MouseScrollEvent;
 import net.minecraftforge.client.event.InputEvent.RawMouseEvent;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.event.ScreenOpenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -189,14 +189,14 @@ public class ExtendedKeyBindDispatcher {
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)
-	public void onMouseScrolledInGUI(GuiScreenEvent.MouseInputEvent.MouseScrollEvent.Pre event) {
+	public void onMouseScrolledInGUI(ScreenEvent.MouseInputEvent.MouseScrollEvent.Pre event) {
 		int key = Keys.getKeyFromScroll(event.getScrollDelta());
 		boolean preventFurther = press(key, 0);
 		preventFurther |= release(key);
 		if (preventFurther) event.setCanceled(true);
 	}
 	
-	@SubscribeEvent public void onGuiOpenEvent(GuiOpenEvent event) {
+	@SubscribeEvent public void onGuiOpenEvent(ScreenOpenEvent event) {
 		resetContext();
 	}
 	

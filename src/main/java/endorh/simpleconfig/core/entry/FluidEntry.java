@@ -98,8 +98,10 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			if (parent.getRoot().getType() != SimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
-			if (tag != null)
-				filter = tag::contains;
+			if (tag != null) {
+				Predicate<Fluid> inTag = f -> tag.getValues().contains(f);
+				filter = filter != null? filter.and(inTag) : inTag;
+			}
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Fluid entry's default value doesn't match its filter");
 			Predicate<Fluid> filter = this.filter != null ? this.filter : f -> true;

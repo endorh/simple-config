@@ -91,8 +91,8 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		return screen.getSelectedCategory() == category;
 	}
 	
-	@Override public boolean isHovered() {
-		return super.isHovered() || isSelected();
+	@Override public boolean isHoveredOrFocused() {
+		return super.isHoveredOrFocused() || isSelected();
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {

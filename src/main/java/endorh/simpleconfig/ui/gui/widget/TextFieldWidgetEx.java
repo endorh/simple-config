@@ -480,8 +480,9 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		if (isVisible()) {
 			boolean bordered = isBordered();
 			if (bordered) {
-				int borderColor = isHovered()? 0xFF000000 | this.borderColor & 0xFFFFFF
-				                             : 0xA0000000 | this.borderColor & 0xFFFFFF;
+				int borderColor = isHoveredOrFocused()
+				                  ? 0xFF000000 | this.borderColor & 0xFFFFFF
+				                  : 0xA0000000 | this.borderColor & 0xFFFFFF;
 				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, borderColor);
 				fill(mStack, x, y, x + width, y + height, 0xFF000000);
 			}

@@ -11,7 +11,7 @@ import endorh.simpleconfig.ui.api.ScissorsHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
@@ -38,13 +38,13 @@ public class OverlayInjector {
 		getOverlays(screen).add(area, overlay, priority);
 	}
 	
-	@SubscribeEvent public static void onRenderScreen(GuiScreenEvent.DrawScreenEvent.Post event) {
-		final SortedOverlayCollection sortedOverlays = getOverlays(event.getGui());
+	@SubscribeEvent public static void onRenderScreen(ScreenEvent.DrawScreenEvent.Post event) {
+		final SortedOverlayCollection sortedOverlays = getOverlays(event.getScreen());
 		if (sortedOverlays == null) return;
-		PoseStack mStack = event.getMatrixStack();
+		PoseStack mStack = event.getPoseStack();
 		int mouseX = event.getMouseX();
 		int mouseY = event.getMouseY();
-		float delta = event.getRenderPartialTicks();
+		float delta = event.getPartialTicks();
 		final List<OverlayTicket> removed = new LinkedList<>();
 		mStack.pushPose(); {
 			mStack.translate(0D, 0D, 100D);

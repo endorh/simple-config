@@ -5,7 +5,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.FileUtils;
-import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.nio.file.Path;

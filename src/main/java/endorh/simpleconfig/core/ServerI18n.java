@@ -3,9 +3,9 @@ package endorh.simpleconfig.core;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.locale.Language;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.ForgeI18n;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
-import net.minecraftforge.fmllegacy.ForgeI18n;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 import java.util.IllegalFormatException;

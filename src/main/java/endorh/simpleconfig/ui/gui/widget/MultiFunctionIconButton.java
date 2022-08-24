@@ -163,7 +163,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		RenderSystem.defaultBlendFunc();
 		
 		RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
-		int level = getYImage(isHovered());
+		int level = getYImage(isHoveredOrFocused());
 		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, x, y, width, height, level);
 		renderBg(mStack, mc, mouseX, mouseY);
 		int color = getFGColor();
@@ -199,7 +199,7 @@ public class MultiFunctionIconButton extends TintedButton {
 			}
 		} mStack.popPose();
 		
-		if (isHovered()) renderToolTip(mStack, mouseX, mouseY);
+		if (isHoveredOrFocused()) renderToolTip(mStack, mouseX, mouseY);
 	}
 	
 	private static final Component[] EMPTY_TEXT_COMPONENT_ARRAY = new Component[0];

@@ -91,8 +91,10 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			if (parent.getRoot().getType() != SimpleConfig.Type.SERVER && tag != null)
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
-			if (tag != null)
-				filter = filter != null? filter.and(tag::contains) : tag::contains;
+			if (tag != null) {
+				Predicate<Block> inTag = i -> tag.getValues().contains(i);
+				filter = filter != null? filter.and(inTag) : inTag;
+			}
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Block entry's default value doesn't match its filter");
 			Predicate<Block> filter = this.filter != null ? this.filter : b -> true;

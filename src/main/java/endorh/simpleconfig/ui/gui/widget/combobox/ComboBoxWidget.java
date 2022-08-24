@@ -1053,7 +1053,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		if (isVisible()) {
 			updateSuggestions();
 			if (shouldDrawBackground()) {
-				int color = isHovered() ? focusedBorderColor : borderColor;
+				int color = isHoveredOrFocused() ? focusedBorderColor : borderColor;
 				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, color);
 				fill(mStack, x, y, x + width, y + height, backgroundColor);
 				if (!isRestrictedToSuggestions())
@@ -1152,7 +1152,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			}
 			
 			int arrowX = x + width - arrowWidth, arrowY = y;
-			renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHovered() ? x : arrowX);
+			renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHoveredOrFocused() ? x : arrowX);
 		}
 	}
 	

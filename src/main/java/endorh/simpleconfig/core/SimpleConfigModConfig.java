@@ -7,6 +7,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Unit;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -14,7 +15,6 @@ import net.minecraftforge.fml.config.ConfigFileTypeHandler;
 import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
-import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -73,7 +73,7 @@ public class SimpleConfigModConfig extends ModConfig {
 		/**
 		 * FMLServerStartingEvent is posted after server translations have been loaded.
 		 */
-		@SubscribeEvent public static void onServerLanguageReloaded(FMLServerStartingEvent event) {
+		@SubscribeEvent public static void onServerLanguageReloaded(ServerStartingEvent event) {
 			SimpleConfigImpl.updateAllFileTranslations();
 		}
 	}
