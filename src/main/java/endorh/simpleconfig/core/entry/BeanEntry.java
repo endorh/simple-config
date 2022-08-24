@@ -27,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Java Bean entry.
@@ -269,6 +271,18 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 	
 	protected static <T> @Nullable T tryCast(Object value, Class<T> type) {
 		return type.isInstance(value)? type.cast(value) : null;
+	}
+	
+	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> comments = super.getConfigCommentTooltips();
+		comments.add(
+		  "Object: \n  " + entries.entrySet().stream().map(
+			 e -> e.getKey() + ": " +
+			      LINE_BREAK.matcher(e.getValue().getConfigCommentTooltip()).replaceAll("\n  ").trim()
+		  ).collect(Collectors.joining("\n  ")));
+		return comments;
 	}
 	
 	@Override public Optional<FieldBuilder<B, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {

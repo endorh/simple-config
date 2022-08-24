@@ -819,9 +819,10 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	public List<INavigableTarget> getNavigableTargets(boolean onlyVisible, boolean subTargets) {
+		//noinspection RedundantTypeArguments
 		return entries.stream()
 		  .filter(INavigableTarget::isNavigable)
-		  .flatMap(
+		  .<INavigableTarget>flatMap(
 			 subTargets
 			 ? e -> Stream.of(
 				Stream.of(e), e.getNavigableSubTargets().stream(),
