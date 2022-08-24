@@ -1,3 +1,6 @@
+import net.minecraftforge.gradle.common.tasks.ApplyRangeMap
+import net.minecraftforge.gradle.common.tasks.ExtractExistingFiles
+import net.minecraftforge.gradle.common.tasks.ExtractRangeMap
 import net.minecraftforge.gradle.userdev.tasks.RenameJarInPlace
 import java.text.SimpleDateFormat
 import java.util.*
@@ -121,13 +124,13 @@ sourceSets.main.get().resources {
 if (project.hasProperty("UPDATE_MAPPINGS")) {
     val dirs = HashSet(apiSourceSet.java.srcDirs)
     dirs.removeIf { it.path.contains("antlr") }
-    tasks.getByName<net.minecraftforge.gradle.common.tasks.ExtractRangeMap>("extractRangeMap") {
+    tasks.getByName<ExtractRangeMap>("extractRangeMap") {
         sources.from(dirs)
     }
-    tasks.getByName<net.minecraftforge.gradle.common.tasks.ApplyRangeMap>("applyRangeMap") {
+    tasks.getByName<ApplyRangeMap>("applyRangeMap") {
         sources.from(dirs)
     }
-    tasks.getByName<net.minecraftforge.gradle.common.tasks.ExtractExistingFiles>("extractMappedNew") {
+    tasks.getByName<ExtractExistingFiles>("extractMappedNew") {
         targets.from(dirs)
     }
 }

@@ -358,9 +358,16 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	}
 	
 	@Internal public void sync() {
-		if (FMLEnvironment.dist == Dist.CLIENT) {
-			syncToServer();
-		} else syncToClients();
+		if (type == Type.SERVER) {
+			if (FMLEnvironment.dist == Dist.CLIENT) {
+				syncToServer();
+			} else syncToClients();
+		}
+	}
+	
+	@Internal public void update() {
+		spec.save();
+		sync();
 	}
 	
 	@Internal public void syncToClients() {

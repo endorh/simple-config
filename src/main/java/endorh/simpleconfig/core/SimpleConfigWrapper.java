@@ -22,6 +22,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -84,7 +85,7 @@ public class SimpleConfigWrapper {
 	@SubscribeEvent public static void onLoadComplete(FMLLoadCompleteEvent event) {
 		event.enqueueWork(() -> {
 			wrapConfigs();
-			ConfigHotKeyManager.initHotKeyManager();
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ConfigHotKeyManager::initHotKeyManager);
 		});
 	}
 	

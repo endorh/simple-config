@@ -79,6 +79,13 @@ public class SimpleConfigGUIManager {
 	}
 	
 	/**
+	 * Check if a config GUI exists for a mod.
+	 */
+	@Internal public static boolean hasConfigGUI(String modId) {
+		return modConfigs.containsKey(modId);
+	}
+	
+	/**
 	 * Register a config in the GUI system
 	 */
 	protected static void registerConfig(SimpleConfigImpl config) {
