@@ -3,6 +3,7 @@ package endorh.simpleconfig.core.commands;
 import com.google.gson.JsonObject;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -48,7 +49,8 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 	}
 	
 	@Override public String parse(StringReader reader) throws CommandSyntaxException {
-		return reader.readUnquotedString();
+		// Some mods use spaces within paths
+		return reader.readString();
 	}
 	
 	@Override public <S> CompletableFuture<Suggestions> listSuggestions(
@@ -57,7 +59,7 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 		SimpleConfigImpl config = getConfig(context);
 		if (config == null) return Suggestions.empty();
 		Collection<String> paths = config.getPaths(includeGroups);
-		for (String path: paths) builder.suggest(path);
+		for (String path: paths) builder.suggest(StringArgumentType.escapeIfRequired(path));
 		return builder.buildFuture();
 	}
 	
