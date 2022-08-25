@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.impl.builders;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -21,12 +20,12 @@ public abstract class ListFieldBuilder<V, Entry extends AbstractListListEntry<V,
 	@NotNull protected BiFunction<Integer, V, Optional<Component>> cellErrorSupplier = (i, v) -> Optional.empty();
 	@NotNull protected Function<List<V>, @Nullable List<Optional<Component>>> multiCellErrorSupplier = l -> null;
 	protected Component[] addTooltip = new Component[] {
-	  new TranslatableComponent("simpleconfig.help.list.insert"),
-	  new TranslatableComponent("simpleconfig.help.list.insert:key")
+	  Component.translatable("simpleconfig.help.list.insert"),
+	  Component.translatable("simpleconfig.help.list.insert:key")
 	};
 	protected Component[] removeTooltip = new Component[] {
-	  new TranslatableComponent("simpleconfig.help.list.remove"),
-	  new TranslatableComponent("simpleconfig.help.list.remove:key")
+	  Component.translatable("simpleconfig.help.list.remove"),
+	  Component.translatable("simpleconfig.help.list.remove:key")
 	};
 	protected boolean expanded = false;
 	protected boolean insertInFront = false;

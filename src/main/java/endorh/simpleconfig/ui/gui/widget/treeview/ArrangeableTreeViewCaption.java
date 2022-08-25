@@ -9,7 +9,6 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 	protected List<GuiEventListener> listeners = new ArrayList<>();
 	protected List<IPositionableRenderable> controls = new ArrayList<>();
 	protected List<IPositionableRenderable> rightControls = new ArrayList<>();
-	private Component title = TextComponent.EMPTY;
+	private Component title = Component.empty();
 	private int titleColor = 0xE0E0E0E0;
 	
 	protected ArrangeableTreeViewCaption(ArrangeableTreeView<E> tree) {

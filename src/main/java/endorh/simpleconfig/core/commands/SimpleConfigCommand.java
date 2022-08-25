@@ -16,7 +16,6 @@ import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.HoverEvent.Action;
@@ -51,9 +50,9 @@ import static net.minecraft.commands.Commands.literal;
 public class SimpleConfigCommand {
 	private static final SimpleConfigCommand INSTANCE = new SimpleConfigCommand();
 	private static final DynamicCommandExceptionType UNSUPPORTED_CONFIG = new DynamicCommandExceptionType(
-	  m -> new TranslatableComponent("simpleconfig.command.error.unsupported_config", m));
+	  m -> Component.translatable("simpleconfig.command.error.unsupported_config", m));
 	private static final DynamicCommandExceptionType NO_PERMISSION = new DynamicCommandExceptionType(
-	  m -> new TranslatableComponent("simpleconfig.command.error.no_permission", m));
+	  m -> Component.translatable("simpleconfig.command.error.no_permission", m));
 	
 	@OnlyIn(Dist.CLIENT) private CommandClientTickExecutor clientTickExecutor;
 	
@@ -236,18 +235,15 @@ public class SimpleConfigCommand {
 			AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 			BaseCommand base = getBase(ctx, modId, 3);
 			String serialized = entry.getForCommand();
-			if (serialized == null) src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.get.unexpected"));
-			src.sendSuccess(new TranslatableComponent(
-			  "simpleconfig.command.msg.get",
-			  formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
+			if (serialized == null) src.sendFailure(
+			  Component.translatable("simpleconfig.command.error.get.unexpected"));
+			src.sendSuccess(Component.translatable("simpleconfig.command.msg.get",
+			                                       formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
 		}
 		return 1;
 	}
@@ -264,18 +260,15 @@ public class SimpleConfigCommand {
 			AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 			BaseCommand base = getBase(ctx, modId, 3);
 			String serialized = entry.getForCommand();
-			if (serialized == null) src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.get.unexpected"));
-			src.sendSuccess(new TranslatableComponent(
-			  "simpleconfig.command.msg.get",
-			  formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
+			if (serialized == null) src.sendFailure(
+			  Component.translatable("simpleconfig.command.error.get.unexpected"));
+			src.sendSuccess(Component.translatable("simpleconfig.command.msg.get",
+			                                       formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
 		}
 		return 1;
 	}
@@ -291,16 +284,15 @@ public class SimpleConfigCommand {
 		String value = ctx.getArgument("value", String.class);
 		Player player = src.getPlayerOrException();
 		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_permission", config.getModName()));
+			src.sendFailure(
+			  Component.translatable("simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
 		}
 		AbstractConfigEntry<Object, Object, Object> entry;
 		try {
 			entry = config.getEntry(key);
 		} catch (NoSuchConfigEntryError e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 45)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 45)));
 			return 1;
 		}
 		try {
@@ -310,8 +302,8 @@ public class SimpleConfigCommand {
 			
 			Optional<Component> error = entry.getErrorFromCommand(value);
 			if (error.isPresent()) {
-				src.sendFailure(new TranslatableComponent(
-				  "simpleconfig.command.error.set.invalid_value", error.get()));
+				src.sendFailure(
+				  Component.translatable("simpleconfig.command.error.set.invalid_value", error.get()));
 				return -1;
 			}
 			
@@ -323,24 +315,19 @@ public class SimpleConfigCommand {
 			MutableComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
-			src.sendSuccess(new TranslatableComponent(
-			  "simpleconfig.command.msg.set",
-			  formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
-			broadcastToOtherOperators(player, new TranslatableComponent(
-			  "simpleconfig.command.msg.set.remote",
+			src.sendSuccess(Component.translatable("simpleconfig.command.msg.set",
+			                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
+			broadcastToOtherOperators(player, Component.translatable("simpleconfig.command.msg.set.remote",
 			  playerName(player), formatKey(modId, key, type, 40), undoLink, formatPrev, formatvalue));
 			// The file watcher isn't always reliable
 			config.update();
 			return 0;
 		} catch (InvalidConfigValueTypeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.set.invalid_type", entry.getConfigCommentTooltip()));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_type", entry.getConfigCommentTooltip()));
 		} catch (InvalidConfigValueException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
 		}
 		return 1;
 	}
@@ -359,8 +346,7 @@ public class SimpleConfigCommand {
 		try {
 			entry = config.getEntry(key);
 		} catch (NoSuchConfigEntryError e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 45)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 45)));
 			return 1;
 		}
 		try {
@@ -371,8 +357,8 @@ public class SimpleConfigCommand {
 			
 			Optional<Component> error = entry.getErrorFromCommand(value);
 			if (error.isPresent()) {
-				src.sendFailure(new TranslatableComponent(
-				  "simpleconfig.command.error.set.invalid_value", error.get()));
+				src.sendFailure(
+				  Component.translatable("simpleconfig.command.error.set.invalid_value", error.get()));
 				return -1;
 			}
 			
@@ -385,22 +371,18 @@ public class SimpleConfigCommand {
 			MutableComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
-			src.sendSuccess(new TranslatableComponent(
-			  "simpleconfig.command.msg.set",
-			  formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
+			src.sendSuccess(Component.translatable("simpleconfig.command.msg.set",
+			                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
 			// The file watcher isn't always reliable
 			config.update();
 			// config.save();
 			return 0;
 		} catch (InvalidConfigValueTypeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.set.invalid_type", entry.getConfigCommentTooltip()));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_type", entry.getConfigCommentTooltip()));
 		} catch (InvalidConfigValueException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
 		}
 		return 1;
 	}
@@ -415,8 +397,8 @@ public class SimpleConfigCommand {
 		String key = ctx.getArgument("key", String.class);
 		Player player = src.getPlayerOrException();
 		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_permission", config.getModName()));
+			src.sendFailure(
+			  Component.translatable("simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
 		}
 		try {
@@ -434,36 +416,29 @@ public class SimpleConfigCommand {
 				  formatValue(base, type, key, prev, prevWidth);
 				MutableComponent formatValue =
 				  formatValue(base, type, key, value, valueWidth);
-				src.sendSuccess(new TranslatableComponent(
-				  "simpleconfig.command.msg.reset",
-				  formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
-				broadcastToOtherOperators(player, new TranslatableComponent(
-				  "simpleconfig.command.msg.reset.remote",
+				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset",
+				                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
+				broadcastToOtherOperators(player, Component.translatable("simpleconfig.command.msg.reset.remote",
 				  playerName(player), formatKey(modId, key, type, 40), undoLink, formatPrev, formatValue));
 				// The file watcher isn't always reliable
 				config.update();
 			} else if (config.hasChild(key)) {
 				AbstractSimpleConfigEntryHolder group = config.getChild(key);
 				group.reset();
-				MutableComponent count = new TextComponent(
-				  String.valueOf(group.getPaths(false).size())
-				).withStyle(ChatFormatting.DARK_AQUA);
-				src.sendSuccess(new TranslatableComponent(
-				  "simpleconfig.command.msg.reset_group",
-				  formatKey(modId, key, type, 45), count), false);
-				broadcastToOtherOperators(player, new TranslatableComponent(
-				  "simpleconfig.command.msg.reset_group.remote",
+				MutableComponent count = Component.literal(String.valueOf(group.getPaths(false).size()))
+				  .withStyle(ChatFormatting.DARK_AQUA);
+				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset_group",
+				                                       formatKey(modId, key, type, 45), count), false);
+				broadcastToOtherOperators(player, Component.translatable("simpleconfig.command.msg.reset_group.remote",
 				  playerName(player), formatKey(modId, key, type, 45), count));
 				// The file watcher isn't always reliable
 				config.update();
 			} else throw new NoSuchConfigEntryError(key);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
 		}
 		return 1;
 	}
@@ -492,30 +467,25 @@ public class SimpleConfigCommand {
 				  formatValue(base, type, key, prev, prevWidth);
 				MutableComponent formatValue =
 				  formatValue(base, type, key, value, valueWidth);
-				src.sendSuccess(new TranslatableComponent(
-				  "simpleconfig.command.msg.reset",
-				  formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
+				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset",
+				                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
 				// The file watcher isn't always reliable
 				config.update();
 			} else if (config.hasChild(key)) {
 				AbstractSimpleConfigEntryHolder group = config.getChild(key);
 				group.reset();
-				MutableComponent count = new TextComponent(
-				  String.valueOf(group.getPaths(false).size())
-				).withStyle(ChatFormatting.DARK_AQUA);
-				src.sendSuccess(new TranslatableComponent(
-				  "simpleconfig.command.msg.reset_group",
-				  formatKey(modId, key, type, 45), count), false);
+				MutableComponent count = Component.literal(String.valueOf(group.getPaths(false).size()))
+				  .withStyle(ChatFormatting.DARK_AQUA);
+				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset_group",
+				                                       formatKey(modId, key, type, 45), count), false);
 				// The file watcher isn't always reliable
 				config.update();
 			} else throw new NoSuchConfigEntryError(key);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
-			src.sendFailure(new TranslatableComponent(
-			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
 		}
 		return 1;
 	}
@@ -535,18 +505,17 @@ public class SimpleConfigCommand {
 	public static void broadcastToOtherOperators(Player player, Component message) {
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
 		  .filter(p -> p.hasPermissions(2) && p != player)
-		  .forEach(p -> p.sendMessage(message, Util.NIL_UUID));
+		  .forEach(p -> p.sendSystemMessage(message));
 	}
 	
 	public static MutableComponent playerName(Player player) {
-		return new TextComponent(player.getName().getString())
+		return Component.literal(player.getName().getString())
 		  .withStyle(ChatFormatting.DARK_GREEN).withStyle(style -> style
 			 .withClickEvent(new ClickEvent(
 				ClickEvent.Action.SUGGEST_COMMAND, "/msg " + player.getScoreboardName() + " "))
 			 .withHoverEvent(new HoverEvent(
 				HoverEvent.Action.SHOW_TEXT, player.getName().copy()
-			   .append("\n").append(new TextComponent(
-				  player.getUUID().toString()).withStyle(ChatFormatting.GRAY))))
+			   .append("\n").append(Component.literal(player.getStringUUID()).withStyle(ChatFormatting.GRAY))))
 			 .withInsertion(player.getScoreboardName()));
 	}
 	
@@ -559,7 +528,7 @@ public class SimpleConfigCommand {
 		if (clickEvent == null) {
 			clickEvent = new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, text);
 			if (tooltipSubtitle == null) tooltipSubtitle =
-			  new TextComponent("(").append(new TranslatableComponent("chat.copy"))
+			  Component.literal("(").append(Component.translatable("chat.copy"))
 				 .append(")").withStyle(ChatFormatting.GRAY);
 		}
 		final ClickEvent ce = clickEvent;
@@ -569,19 +538,18 @@ public class SimpleConfigCommand {
 		if (length > width) {
 			int cut = width < 23? width - 10 : 10;
 			int rightCut = cut <= 0? 3 : length - width + cut + 3;
-			MutableComponent ellipsis = new TextComponent("...")
+			MutableComponent ellipsis = Component.literal("...")
 			  .withStyle(style).withStyle(ChatFormatting.GRAY);
 			wrapped =
 			  width <= 3
-			  ? ellipsis : (cut <= 0? ellipsis : new TextComponent(
-				 text.substring(0, cut)
-			  ).withStyle(style).append(ellipsis)).append(
-				 new TextComponent(text.substring(rightCut)).withStyle(style));
-		} else wrapped = new TextComponent(text).withStyle(style);
+			  ? ellipsis : (cut <= 0? ellipsis : Component.literal(text.substring(0, cut))
+			    .withStyle(style).append(ellipsis)).append(
+				 Component.literal(text.substring(rightCut)).withStyle(style));
+		} else wrapped = Component.literal(text).withStyle(style);
 		
-		MutableComponent tooltip = new TextComponent("");
+		MutableComponent tooltip = Component.literal("");
 		if (tooltipTitle != null) tooltip.append(tooltipTitle).append("\n");
-		tooltip.append(new TextComponent(text).withStyle(style));
+		tooltip.append(Component.literal(text).withStyle(style));
 		if (tooltipSubtitle != null) tooltip.append("\n").append(tooltipSubtitle);
 		
 		wrapped.withStyle(s -> s.withHoverEvent(
@@ -592,10 +560,9 @@ public class SimpleConfigCommand {
 	}
 	
 	protected MutableComponent formatKey(String modId, String key, Type type, int width) {
-		return wrap(key, width, keyStyle, new TextComponent(
-		  getModNameOrId(modId)
-		).withStyle(modNameStyle).append(" ").append(
-		  new TextComponent(type.getAlias()).withStyle(typeStyle)
+		return wrap(key, width, keyStyle, Component.literal(getModNameOrId(modId))
+		  .withStyle(modNameStyle).append(" ").append(
+		  Component.literal(type.getAlias()).withStyle(typeStyle)
 		), null, null).withStyle(s -> s.withInsertion(key));
 	}
 	
@@ -608,11 +575,10 @@ public class SimpleConfigCommand {
 	}
 	
 	protected MutableComponent createCopyButton(String text) {
-		return new TextComponent("⧉").withStyle(s -> s
+		return Component.literal("⧉").withStyle(s -> s
 		  .applyFormat(ChatFormatting.DARK_GRAY)
-		  .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslatableComponent(
-			 "chat.copy"
-		  ).withStyle(copyStyle))).withClickEvent(
+		  .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.copy")
+		    .withStyle(copyStyle))).withClickEvent(
 			 new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, text)));
 	}
 	
@@ -620,22 +586,21 @@ public class SimpleConfigCommand {
 	  BaseCommand baseCommand, Type type, String key, String value, int width
 	) {
 		return wrap(
-		  value, width, valueStyle, new TextComponent(key).withStyle(keyStyle),
-		  new TextComponent("(").append(new TranslatableComponent(
-			 "simpleconfig.command.help.set"
-		  )).append(")").withStyle(ChatFormatting.GRAY), new ClickEvent(
+		  value, width, valueStyle, Component.literal(key).withStyle(keyStyle),
+		  Component.literal("(").append(
+			 Component.translatable("simpleconfig.command.help.set")).append(")").withStyle(ChatFormatting.GRAY), new ClickEvent(
 			 ClickEvent.Action.SUGGEST_COMMAND,
 			 baseCommand.resolve("set", type.asEditType(isRemote()).getAlias(), key, value))
 		).append(" ").append(createCopyButton(value)).withStyle(s -> s.withInsertion(value));
 	}
 	
 	protected MutableComponent genUndoLink(String undoCommand) {
-		return new TextComponent("(").append(
-		  new TranslatableComponent("simpleconfig.command.action.undo").withStyle(
+		return Component.literal("(").append(
+		  Component.translatable("simpleconfig.command.action.undo").withStyle(
 			 s -> s.applyTo(undoStyle)
 				.withHoverEvent(new HoverEvent(
-				  HoverEvent.Action.SHOW_TEXT, new TranslatableComponent(
-				  "simpleconfig.command.help.undo").withStyle(ChatFormatting.GRAY))
+				  HoverEvent.Action.SHOW_TEXT, Component.translatable("simpleconfig.command.help.undo")
+				  .withStyle(ChatFormatting.GRAY))
 				).withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, undoCommand)))
 		).append(")").withStyle(ChatFormatting.GRAY);
 	}

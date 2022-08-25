@@ -38,13 +38,13 @@ public class OverlayInjector {
 		getOverlays(screen).add(area, overlay, priority);
 	}
 	
-	@SubscribeEvent public static void onRenderScreen(ScreenEvent.DrawScreenEvent.Post event) {
+	@SubscribeEvent public static void onRenderScreen(ScreenEvent.Render.Post event) {
 		final SortedOverlayCollection sortedOverlays = getOverlays(event.getScreen());
 		if (sortedOverlays == null) return;
 		PoseStack mStack = event.getPoseStack();
 		int mouseX = event.getMouseX();
 		int mouseY = event.getMouseY();
-		float delta = event.getPartialTicks();
+		float delta = event.getPartialTick();
 		final List<OverlayTicket> removed = new LinkedList<>();
 		mStack.pushPose(); {
 			mStack.translate(0D, 0D, 100D);

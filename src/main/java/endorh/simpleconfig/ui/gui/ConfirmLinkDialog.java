@@ -5,7 +5,9 @@ import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -33,16 +35,16 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 	public ConfirmLinkDialog(
 	  String link, boolean securityWarning
 	) {
-		this(link, new TranslatableComponent("chat.link.confirmTrusted"),
+		this(link, Component.translatable("chat.link.confirmTrusted"),
 		     Lists.newArrayList(), CommonComponents.GUI_CANCEL,
-		     new TranslatableComponent("chat.copy"),
-		     new TranslatableComponent("chat.link.open"), securityWarning);
+		     Component.translatable("chat.copy"),
+		     Component.translatable("chat.link.open"), securityWarning);
 	}
 	
 	protected MutableComponent formatLink(String link) {
 		if (link.length() > 256)
 			link = link.substring(0, 253) + "...";
-		return new TextComponent(link).withStyle(ChatFormatting.GRAY);
+		return Component.literal(link).withStyle(ChatFormatting.GRAY);
 	}
 	
 	public ConfirmLinkDialog(
@@ -55,8 +57,8 @@ public class ConfirmLinkDialog extends ConfirmDialog {
 		setConfirmText(confirmText);
 		withAction(this::action);
 		if (securityWarning)
-			body.add(0, new TranslatableComponent("chat.link.warning"));
-		body.add(new TranslatableComponent("simpleconfig.ui.link.display", formatLink(link)));
+			body.add(0, Component.translatable("chat.link.warning"));
+		body.add(Component.translatable("simpleconfig.ui.link.display", formatLink(link)));
 		setBody(body);
 		this.link = link;
 		copyButton = new TintedButton(0, 0, 120, 20, copyText, p -> copy());

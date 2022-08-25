@@ -19,7 +19,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ClientRegistry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -643,7 +642,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
 	 * using {@link ExtendedKeyBindProvider#registerProvider(ExtendedKeyBindProvider)}<br><br>
 	 * <b>Consider registering regular {@link KeyMapping}s through
-	 * {@link ClientRegistry#registerKeyBinding(KeyMapping)}
+	 * {@link ClientRegis#registerKeyBinding(KeyMapping)}
 	 * </b><br>
 	 */
 	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(ExtendedKeyBind keyBind) {

@@ -14,7 +14,6 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.RangeListEntryBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -128,7 +127,7 @@ public abstract class AbstractRangeEntry<
 	
 	@Override public Optional<Component> getErrorFromGUI(R value) {
 		if (value.getMin().compareTo(value.getMax()) > 0) return Optional.of(
-		  new TranslatableComponent("simpleconfig.config.error.min_greater_than_max"));
+		  Component.translatable("simpleconfig.config.error.min_greater_than_max"));
 		return super.getErrorFromGUI(value);
 	}
 	
@@ -262,10 +261,8 @@ public abstract class AbstractRangeEntry<
 			Optional<Component> opt = super.getErrorFromGUI(value);
 			if (opt.isPresent()) return opt;
 			double size = value.getSize();
-			if (size < minSize) return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.range_too_small", minSize, size));
-			if (size > maxSize) return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.range_too_large", maxSize, size));
+			if (size < minSize) return Optional.of(Component.translatable("simpleconfig.config.error.range_too_small", minSize, size));
+			if (size > maxSize) return Optional.of(Component.translatable("simpleconfig.config.error.range_too_large", maxSize, size));
 			return Optional.empty();
 		}
 	}

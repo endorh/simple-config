@@ -4,7 +4,6 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Contract;
 
 public interface BooleanEntryBuilder
@@ -37,7 +36,7 @@ public interface BooleanEntryBuilder
 		) {
 			return new BooleanDisplayer() {
 				@Override public Component getDisplayName(boolean value) {
-					return new TranslatableComponent(translation + (value? ".true" : ".false"))
+					return Component.translatable(translation + (value? ".true" : ".false"))
 					  .withStyle(value? ChatFormatting.GREEN : ChatFormatting.RED);
 				}
 				@Override public String getSerializableName(boolean value) {

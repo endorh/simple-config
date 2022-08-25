@@ -2,7 +2,7 @@ package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Contract;
 
@@ -35,5 +35,5 @@ public interface FluidEntryBuilder
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */
-	@Contract(pure=true) FluidEntryBuilder from(Tag<Fluid> tag);
+	@Contract(pure=true) FluidEntryBuilder from(TagKey<Fluid> tag);
 }

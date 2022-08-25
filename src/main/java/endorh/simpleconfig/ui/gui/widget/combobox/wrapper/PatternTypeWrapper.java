@@ -4,7 +4,6 @@ import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,12 +31,12 @@ public class PatternTypeWrapper implements ITypeWrapper<Pattern> {
 			return Pair.of(Optional.of(Pattern.compile(text, flags)), Optional.empty());
 		} catch (PatternSyntaxException e) {
 			return Pair.of(
-			  Optional.empty(), Optional.of(new TextComponent(e.getLocalizedMessage())));
+			  Optional.empty(), Optional.of(Component.literal(e.getLocalizedMessage())));
 		}
 	}
 	
 	@Override public Component getDisplayName(@NotNull Pattern element) {
-		return new TextComponent(element.pattern());
+		return Component.literal(element.pattern());
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {

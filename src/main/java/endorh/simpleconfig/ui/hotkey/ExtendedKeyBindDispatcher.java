@@ -8,11 +8,8 @@ import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.Util;
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.client.event.InputEvent.KeyInputEvent;
-import net.minecraftforge.client.event.InputEvent.MouseScrollEvent;
-import net.minecraftforge.client.event.InputEvent.RawMouseEvent;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.event.ScreenOpenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -144,7 +141,7 @@ public class ExtendedKeyBindDispatcher {
 	
 	// Highest should probably be left for mods that remap events.
 	@SubscribeEvent(priority=EventPriority.HIGH)
-	public void onKeyInput(KeyInputEvent event) {
+	public void onKeyInput(InputEvent.Key event) {
 		int action = event.getAction();
 		int key = event.getKey();
 		int sc = event.getScanCode();
@@ -166,7 +163,7 @@ public class ExtendedKeyBindDispatcher {
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)
-	public void onMouseInput(RawMouseEvent event) {
+	public void onMouseInput(InputEvent.MouseButton.Pre event) {
 		int action = event.getAction();
 		int button = event.getButton();
 		int key = Keys.getKeyFromMouseInput(button);
@@ -178,7 +175,7 @@ public class ExtendedKeyBindDispatcher {
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)
-	public void onMouseScrolled(MouseScrollEvent event) {
+	public void onMouseScrolled(InputEvent.MouseScrollingEvent event) {
 		int key = Keys.getKeyFromScroll(event.getScrollDelta());
 		boolean preventFurther = press(key, 0);
 		// While not making much sense, having a release event could allow users
@@ -189,14 +186,14 @@ public class ExtendedKeyBindDispatcher {
 	}
 	
 	@SubscribeEvent(priority=EventPriority.HIGH)
-	public void onMouseScrolledInGUI(ScreenEvent.MouseInputEvent.MouseScrollEvent.Pre event) {
+	public void onMouseScrolledInGUI(ScreenEvent.MouseScrolled.Pre event) {
 		int key = Keys.getKeyFromScroll(event.getScrollDelta());
 		boolean preventFurther = press(key, 0);
 		preventFurther |= release(key);
 		if (preventFurther) event.setCanceled(true);
 	}
 	
-	@SubscribeEvent public void onGuiOpenEvent(ScreenOpenEvent event) {
+	@SubscribeEvent public void onGuiOpenEvent(ScreenEvent.Opening event) {
 		resetContext();
 	}
 	

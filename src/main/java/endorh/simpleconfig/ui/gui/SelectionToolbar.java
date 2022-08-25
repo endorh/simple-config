@@ -10,7 +10,7 @@ import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class SelectionToolbar extends AbstractContainerEventHandler implements N
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
 		    .filter(AbstractConfigField::isResettable)
 		    .forEach(AbstractConfigField::resetValue))
-		).tooltip(new TranslatableComponent("simpleconfig.ui.reset.selected"))
+		).tooltip(Component.translatable("simpleconfig.ui.reset.selected"))
 		  .active(() -> screen.getSelectedEntries().stream()
 		    .anyMatch(AbstractConfigField::isResettable)));
 		addButton(resetButton);
@@ -45,7 +45,7 @@ public class SelectionToolbar extends AbstractContainerEventHandler implements N
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
 		    .filter(AbstractConfigField::isRestorable)
 		    .forEach(AbstractConfigField::restoreValue))
-		).tooltip(new TranslatableComponent("simpleconfig.ui.restore.selected"))
+		).tooltip(Component.translatable("simpleconfig.ui.restore.selected"))
 		  .active(() -> screen.getSelectedEntries().stream()
 		    .anyMatch(AbstractConfigField::isRestorable)));
 		addButton(restoreButton);
@@ -53,7 +53,7 @@ public class SelectionToolbar extends AbstractContainerEventHandler implements N
 		  x, y, 20, 20, Buttons.MERGE_ACCEPT_GROUP, ButtonAction.of(
 		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries()
 			   .forEach(AbstractConfigField::isSelected))
-		).tooltip(new TranslatableComponent("simpleconfig.ui.merge.accept.selected"))
+		).tooltip(Component.translatable("simpleconfig.ui.merge.accept.selected"))
 		  .active(() -> false));
 		addButton(acceptButton);
 	}

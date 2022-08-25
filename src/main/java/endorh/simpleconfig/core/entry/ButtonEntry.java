@@ -6,8 +6,7 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ButtonFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -18,7 +17,7 @@ import java.util.function.Supplier;
 
 public class ButtonEntry extends GUIOnlyEntry<
   Consumer<ConfigEntryHolder>, Runnable, ButtonEntry> {
-	protected Supplier<Component> buttonLabelSupplier = () -> new TextComponent("");
+	protected Supplier<Component> buttonLabelSupplier = () -> Component.literal("");
 	
 	public ButtonEntry(
 	  ConfigEntryHolder parent, String name, Consumer<ConfigEntryHolder> value
@@ -30,7 +29,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 	  Consumer<ConfigEntryHolder>, Runnable, ButtonEntry, ButtonEntryBuilder, Builder
 	> implements ButtonEntryBuilder {
 		protected Supplier<Component> buttonLabelSupplier =
-		  () -> new TranslatableComponent("simpleconfig.label.run");
+		  () -> Component.translatable("simpleconfig.label.run");
 		
 		public Builder(Consumer<ConfigEntryHolder> value) {
 			super(value, Void.class);
@@ -38,7 +37,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 		
 		@Override @Contract(pure=true) public Builder label(String translation) {
 			Builder copy = copy();
-			final TranslatableComponent ttc = new TranslatableComponent(translation);
+			final MutableComponent ttc = Component.translatable(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}

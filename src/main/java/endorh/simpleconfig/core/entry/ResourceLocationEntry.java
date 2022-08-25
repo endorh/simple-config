@@ -5,7 +5,6 @@ import endorh.simpleconfig.api.entry.ResourceLocationEntryBuilder;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
@@ -44,8 +43,7 @@ public class ResourceLocationEntry
 			new ResourceLocation(value);
 			return Optional.empty();
 		} catch (ResourceLocationException e) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.invalid_resource_location", e.getMessage()));
+			return Optional.of(Component.translatable("simpleconfig.config.error.invalid_resource_location", e.getMessage()));
 		}
 	}
 	

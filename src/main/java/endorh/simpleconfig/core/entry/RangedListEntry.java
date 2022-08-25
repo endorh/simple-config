@@ -6,8 +6,6 @@ import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -80,18 +78,16 @@ public abstract class RangedListEntry<
 			return t -> {
 				if (t.compareTo(min) < 0)
 					return Optional
-					  .of(new TranslatableComponent(
-						 "simpleconfig.config.error.too_small", coloredBound(min)));
+					  .of(Component.translatable("simpleconfig.config.error.too_small", coloredBound(min)));
 				if (t.compareTo(max) > 0)
 					return Optional
-					  .of(new TranslatableComponent(
-						 "simpleconfig.config.error.too_large", coloredBound(max)));
+					  .of(Component.translatable("simpleconfig.config.error.too_large", coloredBound(max)));
 				return validator != null ? validator.apply(t) : Optional.empty();
 			};
 		}
 		
 		protected static MutableComponent coloredBound(Object bound) {
-			return new TextComponent(String.valueOf(bound))
+			return Component.literal(String.valueOf(bound))
 			  .withStyle(ChatFormatting.DARK_AQUA);
 		}
 		

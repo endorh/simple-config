@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
@@ -52,10 +53,10 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 		for (String namespace: manager.getNamespaces()) {
 			profiler.push(namespace);
 			try {
-				for (Resource index: manager.getResources(new ResourceLocation(namespace, "config-presets.json"))) {
-					profiler.push(index.getSourceName());
+				for (Resource index: manager.getResourceStack(new ResourceLocation(namespace, "config-presets.json"))) {
+					profiler.push(index.sourcePackId());
 					try (
-					  InputStream is = index.getInputStream();
+					  InputStream is = index.open();
 					  Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)
 					) {
 						profiler.push("parse");
@@ -64,7 +65,7 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 						if (map != null) map.forEach((k, v) -> l.registerPresets(namespace, k, v));
 						profiler.pop();
 					} catch (RuntimeException e) {
-						LOGGER.warn("Invalid config-presets.json in resourcepack: '{}'", index.getSourceName(), e);
+						LOGGER.warn("Invalid config-presets.json in resourcepack: '{}'", index.sourcePackId(), e);
 					}
 					profiler.pop();
 				}
@@ -90,9 +91,9 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 			m.forEach((preset, location) -> {
 				try {
 					CommentedConfig config = format.createParser(false).parse(
-					  new InputStreamReader(manager.getResource(
+					  new InputStreamReader(manager.getResourceOrThrow(
 						 new ResourceLocation(location.getNamespace(), "config-presets/" + location.getPath())
-					  ).getInputStream()));
+					  ).open()));
 					mm.put(preset, config);
 				} catch (YAMLException e) {
 					LOGGER.warn("Invalid config preset: " + location, e);
@@ -138,7 +139,7 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 		public static class Serializer
 		  implements JsonDeserializer<PresetsDescriptor>, JsonSerializer<PresetsDescriptor> {
 			@Override public PresetsDescriptor deserialize(
-			  JsonElement json, java.lang.reflect.Type type, JsonDeserializationContext ctx
+			  JsonElement json, Type type, JsonDeserializationContext ctx
 			) throws JsonParseException {
 				JsonObject obj = GsonHelper.convertToJsonObject(json, "mod config presets");
 				Optional<String> first = obj.entrySet().stream().map(Entry::getKey)
@@ -152,17 +153,17 @@ public class SimpleConfigResourcePresetHandler extends SimplePreparableReloadLis
 				Set<String> clientPresets = new HashSet<>();
 				Set<String> commonPresets = new HashSet<>();
 				Set<String> serverPresets = new HashSet<>();
-				if (client != null) for (JsonElement item: client)
+				for (JsonElement item: client)
 					clientPresets.add(GsonHelper.convertToString(item, "preset name"));
-				if (common != null) for (JsonElement item: common)
+				for (JsonElement item: common)
 					commonPresets.add(GsonHelper.convertToString(item, "preset name"));
-				if (server != null) for (JsonElement item: server)
+				for (JsonElement item: server)
 					serverPresets.add(GsonHelper.convertToString(item, "preset name"));
 				return new PresetsDescriptor(clientPresets, commonPresets, serverPresets);
 			}
 			
 			@Override public JsonElement serialize(
-			  PresetsDescriptor src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext ctx
+			  PresetsDescriptor src, Type typeOfSrc, JsonSerializationContext ctx
 			) {
 				JsonObject obj = new JsonObject();
 				List<String> clientPresets = new ArrayList<>(src.clientPresets);

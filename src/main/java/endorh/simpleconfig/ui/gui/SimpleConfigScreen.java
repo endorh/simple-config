@@ -50,6 +50,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.HoverEvent.Action;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -140,7 +141,7 @@ import static java.lang.Math.min;
 	) {
 		super(parent, modId, title, backgroundLocation,
 		      clientCategories, commonCategories, serverCommonCategories, serverCategories);
-		displayTitle = new TextComponent(getModNameOrId(modId));
+		displayTitle = Component.literal(getModNameOrId(modId));
 		for (ConfigCategory category : sortedCategories) {
 			for (AbstractConfigField<?> entry : category.getHeldEntries()) {
 				entry.setCategory(category);
@@ -157,8 +158,8 @@ import static java.lang.Math.min;
 		editedHotKeyButton.setTintColor(0x424280FF);
 		editedHotKeyNameTextField = TextFieldWidgetEx.of("");
 		editedHotKeyNameTextField.setBordered(false);
-		editedHotKeyNameTextField.setEmptyHint(new TranslatableComponent(
-		  "simpleconfig.ui.hotkey.unnamed_hotkey.hint"));
+		editedHotKeyNameTextField.setEmptyHint(
+		  Component.translatable("simpleconfig.ui.hotkey.unnamed_hotkey.hint"));
 		minecraft = Minecraft.getInstance();
 		listWidgets = new HashMap<>();
 		modeButtonMap = Util.make(new EnumMap<>(EditType.class), m -> {
@@ -173,7 +174,7 @@ import static java.lang.Math.min;
 			 () -> selectedCategory.getContainingFile().ifPresent(
 				f -> addDialog(EditConfigFileDialog.create(this, f.toAbsolutePath())))
 		  ).active(() -> selectedCategory.getContainingFile().isPresent())
-		  .tooltip(new TranslatableComponent("simpleconfig.file.open")));
+		  .tooltip(Component.translatable("simpleconfig.file.open")));
 		undoButton = MultiFunctionImageButton.of(20, 20, Buttons.UNDO, ButtonAction.of(() -> {
 			undo();
 			setFocused(listWidget);
@@ -186,7 +187,7 @@ import static java.lang.Math.min;
 		hotKeyButton = MultiFunctionIconButton.of(
 		  Buttons.KEYBOARD, 20, 20,
 		  ButtonAction.of(() -> addDialog(HotKeyListDialog.forModId(modId)))
-			 .tooltip(new TranslatableComponent("simpleconfig.ui.hotkey.edit")));
+			 .tooltip(Component.translatable("simpleconfig.ui.hotkey.edit")));
 		
 		buttonLeftTab = MultiFunctionImageButton.of(
 		  12, 18, Buttons.LEFT_TAB, ButtonAction.of(
@@ -208,21 +209,21 @@ import static java.lang.Math.min;
 		settingsButton = MultiFunctionImageButton.of(
 		  18, 18, SimpleConfigIcons.Buttons.GEAR,
 		  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
-			 .tooltip(new TranslatableComponent("simpleconfig.ui.simple_config_settings")));
+			 .tooltip(Component.translatable("simpleconfig.ui.simple_config_settings")));
 		keyboardButton = MultiFunctionImageButton.of(
 		  18, 18, SimpleConfigIcons.Buttons.KEYBOARD,
 		  ButtonAction.of(() -> addDialog(getControlsDialog()))
-			 .tooltip(new TranslatableComponent("simpleconfig.ui.controls")));
+			 .tooltip(Component.translatable("simpleconfig.ui.controls")));
 	}
 	
 	@NotNull private MultiFunctionIconButton createModeButton(EditType type) {
 		String alias = type.getAlias().replace('-', '.');
 		return MultiFunctionIconButton.of(Types.iconFor(type), 20, 70, ButtonAction.of(
 			 () -> showType(type)
-		  ).title(() -> new TranslatableComponent("simpleconfig.config.category." + alias))
+		  ).title(() -> Component.translatable("simpleconfig.config.category." + alias))
 		  .tooltip(
 			 () -> hasType(type) && getEditedType() != type
-			       ? Lists.newArrayList(new TranslatableComponent("simpleconfig.ui.switch." + alias))
+			       ? Lists.newArrayList(Component.translatable("simpleconfig.ui.switch." + alias))
 			       : Collections.emptyList()
 		  ).active(() -> hasType(type)));
 	}
@@ -408,12 +409,12 @@ import static java.lang.Math.min;
 		selectAllButton = new MultiFunctionImageButton(
 		  2, height - 22, 20, 20, SimpleConfigIcons.Buttons.SELECT_ALL,
 		  ButtonAction.of(this::selectAllEntries)
-			 .tooltip(new TranslatableComponent("simpleconfig.ui.select_all")));
+			 .tooltip(Component.translatable("simpleconfig.ui.select_all")));
 		addRenderableWidget(selectAllButton);
 		invertSelectionButton = new MultiFunctionImageButton(
 		  24, height - 22, 20, 20, SimpleConfigIcons.Buttons.INVERT_SELECTION,
 		  ButtonAction.of(this::invertEntrySelection)
-			 .tooltip(new TranslatableComponent("simpleconfig.ui.invert_selection")));
+			 .tooltip(Component.translatable("simpleconfig.ui.invert_selection")));
 		addRenderableWidget(invertSelectionButton);
 		selectAllButton.visible = invertSelectionButton.visible = false;
 		
@@ -911,9 +912,7 @@ import static java.lang.Math.min;
 			if (isSelecting()) {
 				selectionToolbar.render(mStack, smX, smY, delta);
 				drawString(
-				  mStack, font, new TranslatableComponent(
-					 "simpleconfig.ui.n_selected", new TextComponent(
-					 String.valueOf(selectedEntries.size())).withStyle(ChatFormatting.AQUA)),
+				  mStack, font, Component.translatable("simpleconfig.ui.n_selected", Component.literal(String.valueOf(selectedEntries.size())).withStyle(ChatFormatting.AQUA)),
 				  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xffffffff);
 			} else drawCenteredString(mStack, font, title, width / 2, 8, 0xffffffff);
 		}
@@ -1096,7 +1095,7 @@ import static java.lang.Math.min;
 			  } else advanced.set(SHOW_UI_TIPS, b[0]);
 		  }, CheckboxButton.of(
 		    advanced.getGUIBoolean(SHOW_UI_TIPS),
-		    new TranslatableComponent("simpleconfig.ui.controls.show_ui_tips")))
+		    Component.translatable("simpleconfig.ui.controls.show_ui_tips")))
 		  .build();
 	}
 	
@@ -1271,7 +1270,7 @@ import static java.lang.Math.min;
 		@Override protected MutableComponent getEmptyPlaceHolder() {
 			SearchBarWidget bar = screen.getSearchBar();
 			return bar.isFilter() && bar.isExpanded()
-			       ? new TranslatableComponent("simpleconfig.ui.no_matches")
+			       ? Component.translatable("simpleconfig.ui.no_matches")
 			         .withStyle(ChatFormatting.GOLD)
 			       : super.getEmptyPlaceHolder();
 		}
@@ -1388,8 +1387,8 @@ import static java.lang.Math.min;
 	
 	public static class TooltipSearchBarWidget extends SearchBarWidget {
 		protected static Component[] TOOLTIP_SEARCH_TOOLTIP = {
-		  new TranslatableComponent("simpleconfig.ui.search.tooltip"),
-		  new TranslatableComponent("key.modifier.alt").append(" + T").withStyle(ChatFormatting.GRAY)};
+		  Component.translatable("simpleconfig.ui.search.tooltip"),
+		  Component.translatable("key.modifier.alt").append(" + T").withStyle(ChatFormatting.GRAY)};
 		
 		protected ToggleImageButton tooltipButton;
 		protected boolean searchTooltips = search.search_tooltips;
@@ -1468,24 +1467,22 @@ import static java.lang.Math.min;
 		protected EditConfigFileDialog(
 		  AbstractConfigScreen screen, Path file
 		) {
-			super(new TranslatableComponent("simpleconfig.file.dialog.title"));
+			super(Component.translatable("simpleconfig.file.dialog.title"));
 			withAction(b -> {
 				if (b) open(file);
 			});
 			setBody(splitTtc(
 			  "simpleconfig.file.dialog.body",
-			  new TextComponent(file.toString()).withStyle(s -> s
-				 .withColor(ChatFormatting.DARK_AQUA).setUnderlined(true)
+			  Component.literal(file.toString()).withStyle(s -> s
+				 .withColor(ChatFormatting.DARK_AQUA).withUnderlined(true)
 				 .withHoverEvent(new HoverEvent(
-					HoverEvent.Action.SHOW_TEXT, new TranslatableComponent("chat.copy.click")))
+					Action.SHOW_TEXT, Component.translatable("chat.copy.click")))
 				 .withClickEvent(new ClickEvent(
 					ClickEvent.Action.COPY_TO_CLIPBOARD, file.toString())))));
-			setConfirmText(new TranslatableComponent(
-			  "simpleconfig.file.dialog.option.open_n_continue"));
+			setConfirmText(Component.translatable("simpleconfig.file.dialog.option.open_n_continue"));
 			setConfirmButtonTint(0xAA8000AA);
 			this.file = file;
-			openAndExit = new TintedButton(0, 0, 0, 20, new TranslatableComponent(
-			  "simpleconfig.file.dialog.option.open_n_discard"), p -> {
+			openAndExit = new TintedButton(0, 0, 0, 20, Component.translatable("simpleconfig.file.dialog.option.open_n_discard"), p -> {
 				open(file);
 				cancel(true);
 				screen.quit(true);
@@ -1516,8 +1513,7 @@ import static java.lang.Math.min;
 			boolean hasErrors = screen.hasErrors();
 			active = !hasErrors && screen.isEdited();
 			boolean editingHotKey = screen.isEditingConfigHotKey();
-			setMessage(new TranslatableComponent(
-			  hasErrors
+			setMessage(Component.translatable(hasErrors
 			  ? "simpleconfig.ui.error_cannot_save"
 			  : editingHotKey? "simpleconfig.ui.save_hotkey" : "simpleconfig.ui.save"));
 		}

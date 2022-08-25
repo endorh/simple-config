@@ -14,9 +14,10 @@ import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
-import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -28,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 	private static final DynamicCommandExceptionType UNKNOWN_TYPE =
 	  new DynamicCommandExceptionType(
-		 m -> new TranslatableComponent("simpleconfig.command.error.no_such_type", m));
+		 m -> Component.translatable("simpleconfig.command.error.no_such_type", m));
 	
 	public static SimpleConfigTypeArgumentType type(String modId, boolean isRemote) {
 		return new SimpleConfigTypeArgumentType(modId, isRemote);
@@ -73,24 +74,44 @@ public class SimpleConfigTypeArgumentType implements ArgumentType<EditType> {
 		return player == null || !permissions.permissionFor(player, modId).getLeft().canView();
 	}
 	
-	public static class Serializer implements ArgumentSerializer<SimpleConfigTypeArgumentType> {
-		@Override
-		public void serializeToNetwork(@NotNull SimpleConfigTypeArgumentType arg, @NotNull FriendlyByteBuf buf) {
-			buf.writeBoolean(arg.modId != null);
-			if (arg.modId != null) buf.writeUtf(arg.modId);
-			buf.writeBoolean(arg.isRemote);
+	public static class Info implements ArgumentTypeInfo<SimpleConfigTypeArgumentType, Info.Template> {
+		@Override public void serializeToNetwork(Template t, FriendlyByteBuf buf) {
+			buf.writeBoolean(t.modId != null);
+			if (t.modId != null) buf.writeUtf(t.modId);
+			buf.writeBoolean(t.isRemote);
 		}
 		
-		@Override public @NotNull SimpleConfigTypeArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
-			return new SimpleConfigTypeArgumentType(
+		@Override public @NotNull Template deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
+			return new Template(
 			  buf.readBoolean()? buf.readUtf(32767) : null,
 			  buf.readBoolean());
 		}
 		
-		@Override
-		public void serializeToJson(@NotNull SimpleConfigTypeArgumentType arg, @NotNull JsonObject obj) {
-			obj.addProperty("modId", arg.modId);
-			obj.addProperty("isRemote", arg.isRemote);
+		@Override public void serializeToJson(@NotNull Template t, @NotNull JsonObject obj) {
+			obj.addProperty("modId", t.modId);
+			obj.addProperty("isRemote", t.isRemote);
+		}
+		
+		@Override public @NotNull Template unpack(@NotNull SimpleConfigTypeArgumentType arg) {
+			return new Template(arg.modId, arg.isRemote);
+		}
+		
+		public class Template implements ArgumentTypeInfo.Template<SimpleConfigTypeArgumentType> {
+			private final String modId;
+			private final boolean isRemote;
+			
+			public Template(String modId, boolean isRemote) {
+				this.modId = modId;
+				this.isRemote = isRemote;
+			}
+			
+			@Override public @NotNull SimpleConfigTypeArgumentType instantiate(@NotNull CommandBuildContext ctx) {
+				return new SimpleConfigTypeArgumentType(modId, isRemote);
+			}
+			
+			@Override public @NotNull ArgumentTypeInfo<SimpleConfigTypeArgumentType, ?> type() {
+				return Info.this;
+			}
 		}
 	}
 }

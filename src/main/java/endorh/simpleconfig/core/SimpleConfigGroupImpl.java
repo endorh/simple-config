@@ -16,8 +16,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -158,48 +156,52 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 			return getDebugTitle();
 		if (!I18n.exists(title)) {
 			final String[] split = title.split("\\.");
-			return new TextComponent(split[split.length - 1]);
+			return Component.literal(split[split.length - 1]);
 		}
-		return new TranslatableComponent(title);
+		return Component.translatable(title);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	protected Component getDebugTitle() {
 		if (title != null) {
 			MutableComponent status =
-			  I18n.exists(title) ? new TextComponent("✔ ") : new TextComponent("✘ ");
+			  I18n.exists(title) ? Component.literal("✔ ") : Component.literal("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
-				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
+				  ? Component.literal("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : Component.literal("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
 			ChatFormatting format = I18n.exists(title)? ChatFormatting.DARK_GREEN : ChatFormatting.RED;
-			return new TextComponent("").append(status.append(new TextComponent(title)).withStyle(format));
-		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
+			return Component.literal("")
+			  .append(status.append(Component.literal(title)).withStyle(format));
+		} else return Component.literal("")
+		  .append(Component.literal("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<Component[]> getDebugTooltip() {
 		List<Component> lines = new ArrayList<>();
-		lines.add(new TextComponent("Group Translation key:").withStyle(ChatFormatting.GRAY));
+		lines.add(Component.literal("Group Translation key:").withStyle(ChatFormatting.GRAY));
 		if (title != null) {
 			final MutableComponent status =
 			  I18n.exists(title)
-			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-			  : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
-			lines.add(new TextComponent("   " + title + " ")
+			  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : Component.literal("(✘ missing)").withStyle(ChatFormatting.RED);
+			lines.add(Component.literal("   " + title + " ")
 			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
-		} else lines.add(new TextComponent("   Error: couldn't map translation key").withStyle(ChatFormatting.RED));
-		lines.add(new TextComponent("Tooltip key:").withStyle(ChatFormatting.GRAY));
+		} else lines.add(
+		  Component.literal("   Error: couldn't map translation key").withStyle(ChatFormatting.RED));
+		lines.add(Component.literal("Tooltip key:").withStyle(ChatFormatting.GRAY));
 		if (tooltip != null) {
 			final MutableComponent status =
 			  I18n.exists(tooltip)
-			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-			  : new TextComponent("(not present)").withStyle(ChatFormatting.GOLD);
-			lines.add(new TextComponent("   " + tooltip + " ")
+			  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : Component.literal("(not present)").withStyle(ChatFormatting.GOLD);
+			lines.add(Component.literal("   " + tooltip + " ")
 			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
-		} else lines.add(new TextComponent("   Error: couldn't map tooltip translation key").withStyle(ChatFormatting.RED));
+		} else lines.add(
+		  Component.literal("   Error: couldn't map tooltip translation key").withStyle(ChatFormatting.RED));
 		AbstractConfigEntry.addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new Component[0]));
 	}
@@ -211,7 +213,7 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 		if (tooltip != null && I18n.exists(tooltip))
 			return Optional.of(
 			  Arrays.stream(I18n.get(tooltip).split("\n"))
-				 .map(TextComponent::new).toArray(Component[]::new));
+				 .map(Component::literal).toArray(Component[]::new));
 		return Optional.empty();
 	}
 	

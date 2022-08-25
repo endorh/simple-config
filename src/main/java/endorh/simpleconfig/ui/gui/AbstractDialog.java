@@ -20,7 +20,6 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +59,7 @@ public abstract class AbstractDialog
 		this.title = title;
 		this.copyTextButton = new MultiFunctionImageButton(
 		  0, 0, 18, 18, SimpleConfigIcons.Buttons.COPY, ButtonAction.of(this::copyText)
-		  .tooltip(new TranslatableComponent("simpleconfig.ui.copy_dialog")));
+		  .tooltip(Component.translatable("simpleconfig.ui.copy_dialog")));
 		copyTextReference = new RedirectGuiEventListener(copyTextButton);
 		listeners.add(copyTextReference);
 	}

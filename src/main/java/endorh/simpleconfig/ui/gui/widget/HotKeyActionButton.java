@@ -10,7 +10,6 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +36,7 @@ public class HotKeyActionButton<T> extends MultiFunctionIconButton {
 	protected List<Component> getTypeTooltip() {
 		HotKeyActionType<T, ?> type = entry.getHotKeyActionType();
 		return Lists.newArrayList(
-		  type == null? new TranslatableComponent("simpleconfig.hotkey.type:help")
+		  type == null? Component.translatable("simpleconfig.hotkey.type:help")
 		              : type.getDisplayName());
 	}
 	

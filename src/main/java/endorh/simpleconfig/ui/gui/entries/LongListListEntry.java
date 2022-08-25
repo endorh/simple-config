@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.entries;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.LongListListEntry.LongListCell;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -59,14 +58,12 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 				long l = Long.parseLong(widget.getValue());
 				final LongListListEntry listEntry = getListEntry();
 				if (l > listEntry.maximum)
-					return Optional.of(new TranslatableComponent(
-					  "simpleconfig.config.error.too_large", listEntry.maximum));
+					return Optional.of(Component.translatable("simpleconfig.config.error.too_large", listEntry.maximum));
 				if (l < listEntry.minimum)
-					return Optional.of(new TranslatableComponent(
-					  "simpleconfig.config.error.too_small", listEntry.minimum));
+					return Optional.of(Component.translatable("simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslatableComponent("simpleconfig.config.error.invalid_integer", widget.getValue()));
+				  Component.translatable("simpleconfig.config.error.invalid_integer", widget.getValue()));
 			}
 			return Optional.empty();
 		}

@@ -20,7 +20,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -200,7 +199,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			this.button = button;
 			activationButton = SelectorButton.of(
 			  KeyBindActivation.class,
-			  t -> new TranslatableComponent("simpleconfig.keybind.activation." + t.name().toLowerCase()),
+			  t -> Component.translatable("simpleconfig.keybind.activation." + t.name().toLowerCase()),
 			  KeyBindActivation::getIcon, t -> update());
 			contextButton = SelectorButton.of(
 			  KeyBindContext.getAllContexts(), KeyBindContext::getDisplayName,
@@ -351,7 +350,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		}
 		
 		protected MutableComponent getLabel(String translationKey) {
-			return new TranslatableComponent("simpleconfig.keybind.setting." + translationKey);
+			return Component.translatable("simpleconfig.keybind.setting." + translationKey);
 		}
 		
 		protected List<Component> getTooltip(String translationKey) {

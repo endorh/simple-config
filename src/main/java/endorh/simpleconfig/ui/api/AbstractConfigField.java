@@ -28,7 +28,6 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -270,8 +269,8 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 			final String title = getUnformattedString(getTitle());
 			final int i = title.indexOf(matchedText);
 			if (i != -1) {
-				text = new TextComponent(title.substring(0, i))
-				  .append(new TextComponent(title.substring(i, i + matchedText.length()))
+				text = Component.literal(title.substring(0, i))
+				  .append(Component.literal(title.substring(i, i + matchedText.length()))
 				            .withStyle(isFocusedMatch()? ChatFormatting.GOLD : ChatFormatting.YELLOW)
 				            // .mergeStyle(ChatFormatting.BOLD)
 				            .withStyle(ChatFormatting.UNDERLINE))

@@ -45,10 +45,10 @@ public class ResourceConfigHotKeyGroupHandler extends SimplePreparableReloadList
 		for (String namespace: manager.getNamespaces()) {
 			profiler.push(namespace);
 			try {
-				for (Resource index: manager.getResources(new ResourceLocation(namespace, "config-hotkeys.json"))) {
-					profiler.push(index.getSourceName());
+				for (Resource index: manager.getResourceStack(new ResourceLocation(namespace, "config-hotkeys.json"))) {
+					profiler.push(index.sourcePackId());
 					try (
-					  InputStream is = index.getInputStream();
+					  InputStream is = index.open();
 					  Reader r = new InputStreamReader(is, StandardCharsets.UTF_8)
 					) {
 						profiler.push("parse");
@@ -57,7 +57,7 @@ public class ResourceConfigHotKeyGroupHandler extends SimplePreparableReloadList
 						if (desc != null) l.registerGroups(namespace, desc);
 						profiler.pop();
 					} catch (RuntimeException e) {
-						LOGGER.warn("Invalid config-hotkeys.json in resourcepack: '{}'", index.getSourceName(), e);
+						LOGGER.warn("Invalid config-hotkeys.json in resourcepack: '{}'", index.sourcePackId(), e);
 					}
 					profiler.pop();
 				}

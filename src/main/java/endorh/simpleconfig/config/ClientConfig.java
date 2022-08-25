@@ -16,7 +16,7 @@ import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.demo.DemoConfigCategory;
 import net.minecraft.Util;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
@@ -132,9 +132,9 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 			   .add("mod_config_hotkeys", map(
 				  key().guiError(
 					 m -> m.getSettings().context() != VanillaKeyBindContext.GAME
-					      ? Optional.of(new TranslatableComponent(
-							  "simpleconfig.config.error.unsupported_hotkey_context",
-							  m.getSettings().context().serialize())) : Optional.empty()),
+					      ? Optional.of(
+					   Component.translatable("simpleconfig.config.error.unsupported_hotkey_context",
+					                          m.getSettings().context().serialize())) : Optional.empty()),
 				  string("").suggest(modNameSupplier)).expand())
 			 // Hook here the demo category
 		  ).n(DemoConfigCategory.getDemoCategory())
@@ -215,8 +215,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				if (mapping.getSettings().context() != VanillaKeyBindContext.GAME) return null;
 				if (!SimpleConfigImpl.getConfigModIds().contains(modId)) return null;
 				return ExtendedKeyBind.of(SimpleConfigMod.MOD_ID,
-				  new TranslatableComponent(
-				    "simpleconfig.keybind.open_mod_config",
+				  Component.translatable("simpleconfig.keybind.open_mod_config",
 				    SimpleConfigImpl.getModNameOrId(modId)),
 				  mapping, () -> SimpleConfigGUIManager.showConfigGUI(modId));
 			}).filter(Objects::nonNull).collect(Collectors.toList());

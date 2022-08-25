@@ -15,7 +15,6 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
-import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.api.ui.ConfigScreen;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.confirm;
@@ -36,8 +35,11 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.ClickEvent.Action;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -329,21 +331,17 @@ public abstract class AbstractConfigScreen extends Screen
 		boolean remote = !forceOverwrite && confirm.overwrite_remote && hasConflictingRemoteChanges();
 		if (external || remote) {
 			addDialog(ConfirmDialog.create(
-			  new TranslatableComponent("simpleconfig.ui.confirm_overwrite"), d -> {
+			  Component.translatable("simpleconfig.ui.confirm_overwrite"), d -> {
 				  List<Component> body = splitTtc(
 					 "simpleconfig.ui.confirm_overwrite.msg."
 					 + (external ? remote ? "both" : "external" : "remote"));
-				  body.addAll(SimpleConfigTextUtil.splitTtc(
+				  body.addAll(splitTtc(
 					 "simpleconfig.ui.confirm_overwrite.msg.overwrite"));
 				  d.setBody(body);
 				  CheckboxButton[] checkBoxes = Stream.concat(
 					 Stream.of(
-						CheckboxButton.of(!confirm.overwrite_external, new TranslatableComponent(
-						  "simpleconfig.ui.confirm_overwrite.do_not_ask_external"
-						))).filter(p -> external),
-					 Stream.of(CheckboxButton.of(!confirm.overwrite_remote, new TranslatableComponent(
-						"simpleconfig.ui.confirm_overwrite.do_not_ask_remote"
-					 ))).filter(p -> remote)).toArray(CheckboxButton[]::new);
+						CheckboxButton.of(!confirm.overwrite_external, Component.translatable("simpleconfig.ui.confirm_overwrite.do_not_ask_external"))).filter(p -> external),
+					 Stream.of(CheckboxButton.of(!confirm.overwrite_remote, Component.translatable("simpleconfig.ui.confirm_overwrite.do_not_ask_remote"))).filter(p -> remote)).toArray(CheckboxButton[]::new);
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (external) {
@@ -364,14 +362,14 @@ public abstract class AbstractConfigScreen extends Screen
 						  doSaveAll(openOtherScreens);
 					  }
 				  }, checkBoxes);
-				  d.setConfirmText(new TranslatableComponent(
-					 "simpleconfig.ui.confirm_overwrite.overwrite"));
+				  d.setConfirmText(
+				    Component.translatable("simpleconfig.ui.confirm_overwrite.overwrite"));
 				  d.setConfirmButtonTint(0x80603070);
 			  }
 			));
 		} else if (confirmSave || forceConfirm) {
 			addDialog(ConfirmDialog.create(
-			  new TranslatableComponent("simpleconfig.ui.confirm_save"), d -> {
+			  Component.translatable("simpleconfig.ui.confirm_save"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -384,9 +382,9 @@ public abstract class AbstractConfigScreen extends Screen
 						  doSaveAll(openOtherScreens);
 					  }
 				  }, CheckboxButton.of(
-					 false, new TranslatableComponent("simpleconfig.ui.do_not_ask_again")));
+					 false, Component.translatable("simpleconfig.ui.do_not_ask_again")));
 				  d.setBody(splitTtc("simpleconfig.ui.confirm_save.msg"));
-				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.save"));
+				  d.setConfirmText(Component.translatable("simpleconfig.ui.save"));
 				  d.setConfirmButtonTint(0x8042BD42);
 			  }));
 		} else doSaveAll(openOtherScreens);
@@ -595,7 +593,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (minecraft == null) return false;
 		if (!skipConfirm && confirmUnsaved && isEdited()) {
 			addDialog(ConfirmDialog.create(
-			  new TranslatableComponent("simpleconfig.ui.discard.dialog"), d -> {
+			  Component.translatable("simpleconfig.ui.discard.dialog"), d -> {
 				  d.withCheckBoxes((b, s) -> {
 					  if (b) {
 						  if (s[0]) {
@@ -608,9 +606,9 @@ public abstract class AbstractConfigScreen extends Screen
 						  quit(true);
 					  }
 				  }, CheckboxButton.of(
-					 false, new TranslatableComponent("simpleconfig.ui.do_not_ask_again")));
+					 false, Component.translatable("simpleconfig.ui.do_not_ask_again")));
 				  d.setBody(splitTtc("simpleconfig.ui.discard.confirm"));
-				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.discard"));
+				  d.setConfirmText(Component.translatable("simpleconfig.ui.discard"));
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else {
@@ -625,7 +623,7 @@ public abstract class AbstractConfigScreen extends Screen
 		tickDialogs();
 		boolean edited = isEdited();
 		Optional.ofNullable(getQuitButton()).ifPresent(button -> button.setMessage(
-		  edited ? new TranslatableComponent("simpleconfig.ui.discard") : CommonComponents.GUI_CANCEL));
+		  edited ? Component.translatable("simpleconfig.ui.discard") : CommonComponents.GUI_CANCEL));
 	}
 	
 	@Nullable protected AbstractWidget getQuitButton() {

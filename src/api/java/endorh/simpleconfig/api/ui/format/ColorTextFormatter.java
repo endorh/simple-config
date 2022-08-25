@@ -2,10 +2,10 @@ package endorh.simpleconfig.api.ui.format;
 
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,19 +17,19 @@ public class ColorTextFormatter implements ITextFormatter {
 	@Override public MutableComponent formatText(String text) {
 		Matcher m = COLOR_PATTERN.matcher(text.toUpperCase());
 		TextColor color = TextColor.parseColor(text.length() == 9? "#" + text.substring(3) : text);
-		if (color == null || !m.matches()) return new TextComponent(text)
+		if (color == null || !m.matches()) return Component.literal(text)
 		  .withStyle(ChatFormatting.RED).withStyle(ChatFormatting.UNDERLINE);
 		String a = m.group("a");
 		String r = m.group("r");
 		String g = m.group("g");
 		String b = m.group("b");
-		MutableComponent res = new TextComponent("#")
+		MutableComponent res = Component.literal("#")
 		  .withStyle(Style.EMPTY.withColor(color));
 		if (a != null) res.append(
-		  new TextComponent(a).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xA0A0A0))));
-		res.append(new TextComponent(r).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFBDBD))));
-		res.append(new TextComponent(g).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xBDFFBD))));
-		res.append(new TextComponent(b).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xBDBDFF))));
+		  Component.literal(a).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xA0A0A0))));
+		res.append(Component.literal(r).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xFFBDBD))));
+		res.append(Component.literal(g).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xBDFFBD))));
+		res.append(Component.literal(b).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xBDBDFF))));
 		return res;
 	}
 	

@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -94,8 +93,7 @@ public abstract class AbstractConfigEntryBuilder<
 		  prev.apply(e, g),
 		  () -> {
 			  V v = e.fromGui(g);
-			  if (v == null) return Optional.of(new TranslatableComponent(
-			    "simpleconfig.config.error.missing_value"));
+			  if (v == null) return Optional.of(Component.translatable("simpleconfig.config.error.missing_value"));
 			  return errorSupplier.apply(v);
 		  });
 		return copy.castSelf();
@@ -110,8 +108,7 @@ public abstract class AbstractConfigEntryBuilder<
 		  prev.apply(e, g),
 		  () -> {
 			  V v = e.fromGui(g);
-			  if (v == null) return Optional.of(new TranslatableComponent(
-			    "simpleconfig.config.error.missing_value"));
+			  if (v == null) return Optional.of(Component.translatable("simpleconfig.config.error.missing_value"));
 			  return configErrorSupplier.apply(e.forConfig(v));
 		  });
 		return copy.castSelf();

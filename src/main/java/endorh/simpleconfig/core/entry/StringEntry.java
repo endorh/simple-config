@@ -15,8 +15,6 @@ import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -156,17 +154,15 @@ public class StringEntry
 		if (value.length() < minLength)
 			return Optional.of(
 			  minLength == 1
-			  ? new TranslatableComponent("simpleconfig.config.error.string.empty")
-			  : new TranslatableComponent(
-				 "simpleconfig.config.error.string.min_length", coloredNumber(minLength)));
+			  ? Component.translatable("simpleconfig.config.error.string.empty")
+			  : Component.translatable("simpleconfig.config.error.string.min_length", coloredNumber(minLength)));
 		if (value.length() > maxLength)
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.string.max_length", coloredNumber(maxLength)));
+			return Optional.of(Component.translatable("simpleconfig.config.error.string.max_length", coloredNumber(maxLength)));
 		return Optional.empty();
 	}
 	
 	protected static MutableComponent coloredNumber(int number) {
-		return new TextComponent(String.valueOf(number))
+		return Component.literal(String.valueOf(number))
 		  .withStyle(ChatFormatting.DARK_AQUA);
 	}
 	

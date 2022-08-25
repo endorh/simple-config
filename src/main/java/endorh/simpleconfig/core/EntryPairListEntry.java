@@ -15,7 +15,6 @@ import endorh.simpleconfig.ui.impl.builders.EntryPairListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.yaml.NonConfigMap;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -166,11 +165,11 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	Pair<KGE, AbstractConfigListEntry<G>> buildCell(ConfigFieldBuilder builder) {
 		final AbstractConfigEntry<K, KC, KG> ke = keyEntryBuilder.build(holder, holder.nextName());
 		ke.setSaver((g, h) -> {});
-		ke.setDisplayName(new TextComponent(""));
+		ke.setDisplayName(Component.literal(""));
 		ke.nonPersistent = true;
 		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
-		e.setDisplayName(new TextComponent(""));
+		e.setDisplayName(Component.literal(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;

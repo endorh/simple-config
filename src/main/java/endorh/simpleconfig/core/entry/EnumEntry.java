@@ -17,8 +17,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -125,43 +123,45 @@ public class EnumEntry<E extends Enum<E>>
 	@Override protected Component getDebugDisplayName() {
 		if (translation != null) {
 			MutableComponent status =
-			  I18n.exists(translation) ? new TextComponent("✔ ") : new TextComponent("✘ ");
+			  I18n.exists(translation) ? Component.literal("✔ ") : Component.literal("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
-				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
+				  ? Component.literal("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : Component.literal("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
 			boolean correct = defValue instanceof ITranslatedEnum
 			                  || Arrays.stream(enumClass.getEnumConstants())
 			                    .allMatch(e -> I18n.exists(getEnumTranslationKey(e)));
 			status = status.append(
-			  correct ? new TextComponent("✔ ").withStyle(ChatFormatting.LIGHT_PURPLE)
-			          : new TextComponent("✘ ").withStyle(ChatFormatting.LIGHT_PURPLE));
+			  correct ? Component.literal("✔ ").withStyle(ChatFormatting.LIGHT_PURPLE)
+			          : Component.literal("✘ ").withStyle(ChatFormatting.LIGHT_PURPLE));
 			ChatFormatting format =
 			  I18n.exists(translation)? correct? ChatFormatting.DARK_GREEN : ChatFormatting.GOLD : ChatFormatting.RED;
-			return new TextComponent("").append(status.append(new TextComponent(translation)).withStyle(format));
-		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
+			return Component.literal("")
+			  .append(status.append(Component.literal(translation)).withStyle(format));
+		} else return Component.literal("")
+		  .append(Component.literal("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT) @Override protected void addTranslationsDebugInfo(List<Component> tooltip) {
 		super.addTranslationsDebugInfo(tooltip);
 		if (parent != null) {
 			if (defValue instanceof ITranslatedEnum)
-				tooltip.add(new TextComponent(" + Enum provides its own translations").withStyle(
+				tooltip.add(Component.literal(" + Enum provides its own translations").withStyle(
 				  ChatFormatting.GRAY));
 			tooltip.add(
-			  new TextComponent(" + Enum translation keys:").withStyle(ChatFormatting.GRAY));
+			  Component.literal(" + Enum translation keys:").withStyle(ChatFormatting.GRAY));
 			for (E elem : enumClass.getEnumConstants()) {
 				final String key = getEnumTranslationKey(elem);
 				final MutableComponent status =
 				  I18n.exists(key)
-				  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+				  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
 				  : (defValue instanceof ITranslatedEnum)
-				    ? new TextComponent("(not present)").withStyle(ChatFormatting.DARK_GRAY)
-				    : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
-				tooltip.add(new TextComponent("   > ").withStyle(ChatFormatting.GRAY)
-				              .append(new TextComponent(key).withStyle(ChatFormatting.DARK_AQUA))
+				    ? Component.literal("(not present)").withStyle(ChatFormatting.DARK_GRAY)
+				    : Component.literal("(✘ missing)").withStyle(ChatFormatting.RED);
+				tooltip.add(Component.literal("   > ").withStyle(ChatFormatting.GRAY)
+				              .append(Component.literal(key).withStyle(ChatFormatting.DARK_AQUA))
 				              .append(" ").append(status));
 			}
 		}
@@ -180,8 +180,8 @@ public class EnumEntry<E extends Enum<E>>
 		final String key = getEnumTranslationKey(item);
 		// if (debugTranslations()) return new TextComponent(key);
 		if (I18n.exists(key))
-			return new TranslatableComponent(key);
-		return new TextComponent(item.name());
+			return Component.translatable(key);
+		return Component.literal(item.name());
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -221,8 +221,8 @@ public class EnumEntry<E extends Enum<E>>
 		
 		@Override public Pair<Optional<V>, Optional<Component>> parseElement(@NotNull String text) {
 			final Optional<V> opt = choices.stream().filter(c -> text.equals(nameProvider.apply(c))).findFirst();
-			Optional<Component> error = opt.isPresent()? Optional.empty() : Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.unknown_value"));
+			Optional<Component> error = opt.isPresent()? Optional.empty() : Optional.of(
+			  Component.translatable("simpleconfig.config.error.unknown_value"));
 			return Pair.of(opt, error);
 		}
 		

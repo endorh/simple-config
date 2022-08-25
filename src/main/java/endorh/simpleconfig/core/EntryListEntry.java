@@ -10,7 +10,6 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EntryListFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -148,7 +147,7 @@ public class EntryListEntry
 	) {
 		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
-		e.setDisplayName(new TextComponent("•"));
+		e.setDisplayName(Component.literal("•"));
 		e.nonPersistent = true;
 		e.actualValue = e.defValue;
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)

@@ -6,7 +6,6 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.hotkey.NestedHotKeyActionType.NestedHotKeyAction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -149,7 +148,7 @@ public class NestedHotKeyActionType<V> extends HotKeyActionType<V, NestedHotKeyA
 				});
 				Object value = action.applyValue(entry, config);
 				if (value != null) result.set(path, value);
-				return new TextComponent("Testing... blip blap blop!");
+				return Component.literal("Testing... blip blap blop!");
 			} catch (ClassCastException e) {
 				LOGGER.error("Error applying hotkey action " + path, e);
 			}

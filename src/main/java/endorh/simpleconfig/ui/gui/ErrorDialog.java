@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.gui;
 
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -44,7 +43,7 @@ public class ErrorDialog extends ProgressDialog {
 		super(title, null);
 		setError(error);
 		removeButton(cancelButton);
-		setConfirmText(new TranslatableComponent("gui.ok"));
+		setConfirmText(Component.translatable("gui.ok"));
 		setIcon(SimpleConfigIcons.Status.ERROR);
 	}
 	
@@ -54,7 +53,7 @@ public class ErrorDialog extends ProgressDialog {
 		super(title, null);
 		setError(error);
 		removeButton(cancelButton);
-		setConfirmText(new TranslatableComponent("gui.ok"));
+		setConfirmText(Component.translatable("gui.ok"));
 		setIcon(SimpleConfigIcons.Status.ERROR);
 	}
 }

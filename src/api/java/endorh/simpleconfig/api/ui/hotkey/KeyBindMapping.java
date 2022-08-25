@@ -10,7 +10,6 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -131,7 +130,7 @@ public interface KeyBindMapping {
 		}
 		
 		@Override public Component getDisplayName() {
-			return new TranslatableComponent("simpleconfig.keybind.context." + serialized);
+			return Component.translatable("simpleconfig.keybind.context." + serialized);
 		}
 		@Override public Icon getIcon() {
 			return icon;

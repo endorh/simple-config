@@ -20,7 +20,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,11 +66,11 @@ public class MultiFunctionIconButton extends TintedButton {
 	  int x, int y, int minWidth, int maxWidth, @NotNull Icon icon,
 	  ButtonActionBuilder action
 	) {
-		super(x, y, minWidth, 20, TextComponent.EMPTY, b -> {}, NO_TOOLTIP);
+		super(x, y, minWidth, 20, Component.empty(), b -> {}, NO_TOOLTIP);
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
-		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : () -> TextComponent.EMPTY;
+		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : () -> Component.empty();
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
 		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(
 		  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));

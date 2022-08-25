@@ -7,7 +7,6 @@ import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.impl.ConfigCategoryImpl;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -60,7 +59,7 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 	}
 	
 	@Override public Component getTitle() {
-		return title != null? title : new TextComponent(name);
+		return title != null? title : Component.literal(name);
 	}
 	@Override public void setTitle(Component title) {
 		this.title = title;

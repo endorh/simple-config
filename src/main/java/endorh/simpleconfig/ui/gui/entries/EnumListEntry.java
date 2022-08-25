@@ -5,7 +5,6 @@ import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -17,8 +16,7 @@ import java.util.function.Function;
 @OnlyIn(value = Dist.CLIENT)
 public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
 	public static final Function<Enum<?>, Component> DEFAULT_NAME_PROVIDER =
-	  t -> new TranslatableComponent(
-		 t instanceof SelectionListEntry.Translatable ? ((Translatable) t).getKey() : t.toString());
+	  t -> Component.translatable(t instanceof SelectionListEntry.Translatable ? ((Translatable) t).getKey() : t.toString());
 	
 	@Internal public EnumListEntry(
 	  Component fieldName, Class<E> clazz, E value,

@@ -1,7 +1,10 @@
 package endorh.simpleconfig.api.ui.format;
 
 import endorh.simpleconfig.api.ui.ITextFormatter;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import org.jetbrains.annotations.Nullable;
 
 public class NumberTextFormatter implements ITextFormatter {
@@ -23,28 +26,28 @@ public class NumberTextFormatter implements ITextFormatter {
 		int i = 0;
 		for (char c : chars) {
 			if (Character.isWhitespace(c)) {
-				res = append(res, new TextComponent(String.valueOf(c)));
+				res = append(res, Component.literal(String.valueOf(c)));
 			} else if ((c == '-' || c == '+') && !seenSign) {
-				res = append(res, new TextComponent(String.valueOf(c)).withStyle(punctuationStyle));
+				res = append(res, Component.literal(String.valueOf(c)).withStyle(punctuationStyle));
 				seenSign = true;
 			} else if (Character.isDigit(c)) {
-				res = append(res, new TextComponent(String.valueOf(c))).withStyle(numberStyle);
+				res = append(res, Component.literal(String.valueOf(c))).withStyle(numberStyle);
 				seenSign = true;
 			} else if (c == '.' && !seenDot) {
-				res = append(res, new TextComponent(".").withStyle(punctuationStyle));
+				res = append(res, Component.literal(".").withStyle(punctuationStyle));
 				seenDot = true;
 			} else if (!seenExp && c == 'e' || c == 'E') {
-				res = append(res, new TextComponent(String.valueOf(c)).withStyle(punctuationStyle));
+				res = append(res, Component.literal(String.valueOf(c)).withStyle(punctuationStyle));
 				seenExp = true;
 				seenSign = false;
 				seenDot = true;
 			} else {
-				res = append(res, new TextComponent(text.substring(i)).withStyle(errorStyle));
+				res = append(res, Component.literal(text.substring(i)).withStyle(errorStyle));
 				break;
 			}
 			i++;
 		}
-		return res != null ? res : TextComponent.EMPTY.copy();
+		return res != null ? res : Component.empty();
 	}
 	
 	public boolean isInteger() {

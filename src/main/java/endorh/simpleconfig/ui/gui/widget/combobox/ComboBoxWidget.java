@@ -33,8 +33,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -483,7 +481,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		Component msg = getMessage();
 		// This should have its own key, but I think having it untranslated
 		// is worse than reporting it as an edit box
-		return new TranslatableComponent("gui.narrate.editBox", msg, text);
+		return Component.translatable("gui.narrate.editBox", msg, text);
 	}
 	
 	/**
@@ -1132,8 +1130,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			} else if (value != null) {
 				// Render value
 				Component display = typeWrapper.getDisplayName(value);
-				if (!isEnabled()) display = new TextComponent(
-				  display.getContents()).withStyle(ChatFormatting.GRAY);
+				if (!isEnabled()) display = display.copy().withStyle(ChatFormatting.GRAY);
 				drawTextComponent(display, mStack, textX, textY, innerWidth, 10, 0xFFE0E0E0);
 			} else {
 				// Render text
@@ -1421,6 +1418,6 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	
 	@Override public void updateNarration(NarrationElementOutput out) {
 		// TODO: Narrate suggestions?
-		out.add(NarratedElementType.TITLE, new TranslatableComponent("narration.edit_box", getValue()));
+		out.add(NarratedElementType.TITLE, Component.translatable("narration.edit_box", getValue()));
 	}
 }

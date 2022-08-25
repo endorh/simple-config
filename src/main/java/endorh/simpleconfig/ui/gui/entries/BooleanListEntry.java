@@ -9,7 +9,6 @@ import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,7 +25,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	protected final List<GuiEventListener> widgets;
 	protected final List<GuiEventListener> childWidgets;
 	protected @NotNull Function<Boolean, Component> yesNoSupplier = bool ->
-	  new TranslatableComponent("simpleconfig.format.bool.yes_no." + bool);
+	  Component.translatable("simpleconfig.format.bool.yes_no." + bool);
 	
 	@Deprecated
 	@ApiStatus.Internal

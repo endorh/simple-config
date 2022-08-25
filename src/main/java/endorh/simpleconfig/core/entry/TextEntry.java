@@ -14,7 +14,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -118,7 +117,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 			LOGGER.warn("Malformed config text entry " + getGlobalPath());
 			logged = true;
 		}
-		return text != null? text : TextComponent.EMPTY;
+		return text != null? text : Component.empty();
 	}
 	
 	@Override protected List<Component> addExtraTooltip(Void value) {
@@ -132,59 +131,59 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 	@Override protected Component getDebugDisplayName() {
 		if (own) {
 			assert translationSupplier != null;
-			return new TextComponent("").append(
+			return Component.literal("").append(
 			  translationSupplier.get().plainCopy().withStyle(ChatFormatting.DARK_AQUA));
 		} else if (translation != null) {
 			MutableComponent status =
-			  I18n.exists(translation) ? new TextComponent("✔ ") : new TextComponent("✘ ");
+			  I18n.exists(translation) ? Component.literal("✔ ") : Component.literal("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
-				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
+				  ? Component.literal("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : Component.literal("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
 			ChatFormatting format = I18n.exists(translation) ? ChatFormatting.DARK_GREEN : ChatFormatting.RED;
-			return new TextComponent("")
-			  .append(status.append(new TextComponent(translation)).withStyle(format));
-		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
+			return Component.literal("")
+			  .append(status.append(Component.literal(translation)).withStyle(format));
+		} else return Component.literal("").append(Component.literal("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	@Override protected Optional<Component[]> supplyDebugTooltip(Void value) {
 		List<Component> lines = new ArrayList<>();
-		lines.add(new TextComponent("Text entry").withStyle(ChatFormatting.GRAY));
+		lines.add(Component.literal("Text entry").withStyle(ChatFormatting.GRAY));
 		if (own) {
-			lines.add(new TextComponent(" + Provides its own translation")
+			lines.add(Component.literal(" + Provides its own translation")
 			            .withStyle(ChatFormatting.GRAY));
 		} else if (translation != null) {
-			lines.add(new TextComponent("Translation key:")
+			lines.add(Component.literal("Translation key:")
 			            .withStyle(ChatFormatting.GRAY));
 			final MutableComponent status =
 			  I18n.exists(translation)
-			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-			  : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
-			lines.add(new TextComponent("   " + translation + " ")
+			  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : Component.literal("(✘ missing)").withStyle(ChatFormatting.RED);
+			lines.add(Component.literal("   " + translation + " ")
 			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
 		} else {
-			lines.add(new TextComponent("Translation key:")
+			lines.add(Component.literal("Translation key:")
 			            .withStyle(ChatFormatting.GRAY));
-			lines.add(new TextComponent("   Error: couldn't map translation key")
+			lines.add(Component.literal("   Error: couldn't map translation key")
 			            .withStyle(ChatFormatting.RED));
 		}
 		if (tooltip != null) {
 			if (!name.startsWith("_text$") || I18n.exists(tooltip)) {
-				lines.add(new TextComponent("Tooltip key:")
+				lines.add(Component.literal("Tooltip key:")
 				            .withStyle(ChatFormatting.GRAY));
 				final MutableComponent status =
 				  I18n.exists(tooltip)
-				  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-				  : new TextComponent("(not present)").withStyle(ChatFormatting.GOLD);
-				lines.add(new TextComponent("   " + tooltip + " ")
+				  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+				  : Component.literal("(not present)").withStyle(ChatFormatting.GOLD);
+				lines.add(Component.literal("   " + tooltip + " ")
 				            .withStyle(ChatFormatting.DARK_AQUA).append(status));
 			}
 		} else {
-			lines.add(new TextComponent("Tooltip key:").withStyle(ChatFormatting.GRAY));
-			lines.add(new TextComponent("   Error: couldn't map tooltip translation key")
+			lines.add(Component.literal("Tooltip key:").withStyle(ChatFormatting.GRAY));
+			lines.add(Component.literal("   Error: couldn't map tooltip translation key")
 			            .withStyle(ChatFormatting.RED));
 		}
 		addTranslationsDebugInfo(lines);

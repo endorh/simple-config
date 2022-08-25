@@ -2,7 +2,7 @@ package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Contract;
 
@@ -29,5 +29,5 @@ public interface BlockEntryBuilder
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */
-	@Contract(pure=true) BlockEntryBuilder from(Tag<Block> tag);
+	@Contract(pure=true) BlockEntryBuilder from(TagKey<Block> tag);
 }

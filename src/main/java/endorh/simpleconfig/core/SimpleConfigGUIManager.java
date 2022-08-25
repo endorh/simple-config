@@ -21,13 +21,13 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ConfigGuiHandler;
-import net.minecraftforge.client.ConfigGuiHandler.ConfigGuiFactory;
-import net.minecraftforge.client.event.ScreenEvent.InitScreenEvent;
+import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.ModListScreen;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
@@ -92,7 +92,7 @@ public class SimpleConfigGUIManager {
 		String modId = config.getModId();
 		ModContainer container = config.getModContainer();
 		Optional<BiFunction<Minecraft, Screen, Screen>> ext =
-		  ConfigGuiHandler.getGuiFactoryFor(container.getModInfo());
+		  ConfigScreenHandler.getScreenFactoryFor(container.getModInfo());
 		if (config.isWrapper() && (
 		  !CommonConfig.menu.shouldWrapConfig(modId)
 		  || ext.isPresent()
@@ -106,8 +106,8 @@ public class SimpleConfigGUIManager {
 			  config.getType(), config);
 			
 			container.registerExtensionPoint(
-			  ConfigGuiFactory.class,
-			  () -> new ConfigGuiFactory(new SimpleConfigGuiFactory(modId)));
+			  ConfigScreenFactory.class,
+			  () -> new ConfigScreenFactory(new SimpleConfigGuiFactory(modId)));
 		} else modConfigs.get(modId).put(config.getType(), config);
 	}
 	
@@ -150,8 +150,7 @@ public class SimpleConfigGUIManager {
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parentScreen)
 		  .setSavingRunnable(() -> {})
-		  .setTitle(new TranslatableComponent(
-		    "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
+		  .setTitle(Component.translatable("simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setPreviousGUIState(guiStates.get(modId))
 		  // .setSnapshotHandler(handler)
@@ -205,8 +204,7 @@ public class SimpleConfigGUIManager {
 			      && hasPermission
 			  ) new CSimpleConfigReleaseServerCommonConfigPacket(modId).send();
 			  for (SimpleConfigImpl c: orderedConfigs) c.removeGUI();
-		  }).setTitle(new TranslatableComponent(
-			 "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
+		  }).setTitle(Component.translatable("simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setSnapshotHandler(handler)
 		  .setRemoteCommonConfigProvider(handler);
@@ -268,7 +266,7 @@ public class SimpleConfigGUIManager {
 	 * another mod
 	 */
 	@SubscribeEvent
-	public static void onGuiInit(InitScreenEvent.Post event) {
+	public static void onGuiInit(ScreenEvent.Init.Post event) {
 		if (!addButton || !menu.add_pause_menu_button)
 			return;
 		final Screen gui = event.getScreen();

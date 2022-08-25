@@ -30,7 +30,9 @@ import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -331,15 +333,15 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	
 	public Component getDisplayedText() {
 		if (isCapturingModalInput()) {
-			if (startedKeys.isEmpty()) return new TextComponent(">  <").withStyle(recordStyle);
-			return new TextComponent("")
-			  .append(new TextComponent("> ").withStyle(recordStyle))
+			if (startedKeys.isEmpty()) return Component.literal(">  <").withStyle(recordStyle);
+			return Component.literal("")
+			  .append(Component.literal("> ").withStyle(recordStyle))
 			  .append(startedMapping.getDisplayName())
-			  .append(new TextComponent(" <").withStyle(recordStyle));
+			  .append(Component.literal(" <").withStyle(recordStyle));
 		} else {
 			KeyBindMapping mapping = getMapping();
 			return mapping.isUnset()
-			       ? new TranslatableComponent("key.abbrev.unset").withStyle(ChatFormatting.GRAY)
+			       ? Component.translatable("key.abbrev.unset").withStyle(ChatFormatting.GRAY)
 			       : mapping.getDisplayName(getHotKeyStyle());
 		}
 	}
@@ -350,16 +352,16 @@ public class KeyBindButton extends AbstractContainerEventHandler
 		if (overlaps.isEmpty() || isCapturingModalInput()) return tooltip != null? tooltip : Collections.emptyList();
 		if (tooltip == null) {
 			tooltip = new ArrayList<>();
-		} else tooltip.add(new TextComponent(""));
-		tooltip.add(new TranslatableComponent("simpleconfig.keybind.overlaps")
+		} else tooltip.add(Component.literal(""));
+		tooltip.add(Component.translatable("simpleconfig.keybind.overlaps")
 		              .withStyle(ChatFormatting.GOLD));
 		overlaps.stream().map(o -> {
 			MutableComponent title = o.getCandidateName().copy();
-			if (o.getModId() != null) title.append(" ").append(new TextComponent(
-			  "(" + SimpleConfigImpl.getModNameOrId(o.getModId()) + ")"
-			).withStyle(ChatFormatting.GRAY));
+			if (o.getModId() != null) title.append(" ").append(
+			  Component.literal("(" + SimpleConfigImpl.getModNameOrId(o.getModId()) + ")")
+				 .withStyle(ChatFormatting.GRAY));
 			return title
-			  .append(new TextComponent(": ").withStyle(ChatFormatting.DARK_GRAY))
+			  .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
 			  .append(o.getCandidateDefinition().getDisplayName(ChatFormatting.GRAY));
 		}).forEach(tooltip::add);
 		return tooltip;

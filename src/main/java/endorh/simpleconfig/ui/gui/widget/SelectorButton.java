@@ -9,8 +9,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -142,17 +140,13 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		private static final List<Boolean> VALUES = Arrays.asList(false, true);
 		
 		public static BooleanButton of(BooleanConsumer action) {
-			return new BooleanButton(b -> new TranslatableComponent(
-			  "simpleconfig.format.bool.yes_no." + b.toString()
-			), null, action);
+			return new BooleanButton(b -> Component.translatable("simpleconfig.format.bool.yes_no." + b.toString()), null, action);
 		}
 		
 		public static BooleanButton of(
 		  Icon trueIcon, Icon falseIcon, BooleanConsumer action
 		) {
-			return new BooleanButton(b -> new TranslatableComponent(
-			  "simpleconfig.format.bool.yes_no." + b.toString()
-			), b -> b? trueIcon : falseIcon, action);
+			return new BooleanButton(b -> Component.translatable("simpleconfig.format.bool.yes_no." + b.toString()), b -> b? trueIcon : falseIcon, action);
 		}
 		
 		public static BooleanButton of(
@@ -168,7 +162,7 @@ public class SelectorButton<T> extends MultiFunctionIconButton {
 		  Style trueStyle, Style falseStyle, Icon trueIcon, Icon falseIcon, BooleanConsumer action
 		) {
 			return of(
-			  b -> new TextComponent(SimpleConfigTextUtil.stripFormattingCodes(I18n.get(
+			  b -> Component.literal(SimpleConfigTextUtil.stripFormattingCodes(I18n.get(
 				 "simpleconfig.format.bool.yes_no." + b.toString()
 			  ))).withStyle(b? trueStyle : falseStyle),
 			  trueIcon, falseIcon, action);

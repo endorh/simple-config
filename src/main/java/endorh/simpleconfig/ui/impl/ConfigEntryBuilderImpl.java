@@ -12,7 +12,6 @@ import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -107,14 +106,14 @@ public class ConfigEntryBuilderImpl implements ConfigFieldBuilder {
 	
 	@Override public TextDescriptionBuilder startTextDescription(Component value) {
 		return new TextDescriptionBuilder(
-		  this, new TextComponent(UUID.randomUUID().toString()), () -> value);
+		  this, Component.literal(UUID.randomUUID().toString()), () -> value);
 	}
 	
 	@Override public TextDescriptionBuilder startTextDescription(
 	  Supplier<Component> textSupplier
 	) {
 		return new TextDescriptionBuilder(
-		  this, new TextComponent(UUID.randomUUID().toString()), textSupplier);
+		  this, Component.literal(UUID.randomUUID().toString()), textSupplier);
 	}
 	
 	@Override public <T extends Enum<?>> EnumSelectorBuilder<T> startEnumSelector(

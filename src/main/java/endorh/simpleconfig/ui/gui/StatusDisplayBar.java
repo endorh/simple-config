@@ -5,6 +5,8 @@ import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Status;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
@@ -24,8 +26,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.HoverEvent.Action;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +51,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 	public StatusDisplayBar(
 	  SimpleConfigScreen screen
 	) {
-		super(0, 0, screen.width, 14, TextComponent.EMPTY);
+		super(0, 0, screen.width, 14, Component.empty());
 		this.screen = screen;
 		dialogButton = new MultiFunctionImageButton(
 		  0, 0, 15, 15, SimpleConfigIcons.Status.H_DOTS, ButtonAction.of(
@@ -155,7 +160,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			}
 			
 			@Override public Component getTitle(SimpleConfigScreen screen) {
-				return new TranslatableComponent("simpleconfig.ui.read_only").withStyle(ChatFormatting.AQUA);
+				return Component.translatable("simpleconfig.ui.read_only").withStyle(ChatFormatting.AQUA);
 			}
 			
 			@Override public List<Component> getTooltip(SimpleConfigScreen screen, boolean menu) {
@@ -173,7 +178,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			}
 			
 			@Override public Component getTitle(SimpleConfigScreen screen) {
-				return new TranslatableComponent("simpleconfig.ui.status.requires_restart")
+				return Component.translatable("simpleconfig.ui.status.requires_restart")
 				  .withStyle(ChatFormatting.GOLD);
 			}
 			
@@ -196,19 +201,18 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 				final List<Component> lines = IntStream.range(0, entries.size()).mapToObj(i -> {
 					AbstractConfigField<?> entry = entries.get(i);
 					MutableComponent title = entry.getTitle().copy();
-					title.append(new TextComponent(" [" + entry.getPath() + "]")
+					title.append(Component.literal(" [" + entry.getPath() + "]")
 					               .withStyle(ChatFormatting.GRAY));
 					title.withStyle(s -> s.withColor(ChatFormatting.GOLD)
-					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslatableComponent(
-						 "simpleconfig.ui.go_to_entry")))
+					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, Component.translatable("simpleconfig.ui.go_to_entry")))
 					  .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i)));
 					return title;
 				}).collect(Collectors.toList());
 				return InfoDialog.create(
-				  new TranslatableComponent("simpleconfig.ui.status.requires_restart.all.title"),
+				  Component.translatable("simpleconfig.ui.status.requires_restart.all.title"),
 				  lines,
 				  d -> {
-					  d.setIcon(SimpleConfigIcons.Entries.REQUIRES_RESTART);
+					  d.setIcon(Entries.REQUIRES_RESTART);
 					  d.setLinkActionHandler(s -> {
 						  if (s.startsWith("goto/")) {
 							  try {
@@ -223,8 +227,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 						  }
 					  });
 					  d.addButton(TintedButton.of(
-						 new TranslatableComponent(
-							"simpleconfig.ui.action.restore.all"), 0x806480FF, b -> {
+					    Component.translatable("simpleconfig.ui.action.restore.all"), 0x806480FF, b -> {
 							 d.cancel(true);
 							 screen.runAtomicTransparentAction(
 								() -> entries.forEach(AbstractConfigField::restoreValue));
@@ -255,8 +258,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			}
 			
 			@Override public Component getTitle(SimpleConfigScreen screen) {
-				return new TranslatableComponent(
-				  "simpleconfig.ui." + getTypeKey(screen) + "_changes_detected");
+				return Component.translatable("simpleconfig.ui." + getTypeKey(screen) + "_changes_detected");
 			}
 			
 			@Override
@@ -277,18 +279,17 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 				final List<Component> lines = IntStream.range(0, conflicts.size()).mapToObj(i -> {
 					AbstractConfigField<?> entry = conflicts.get(i);
 					MutableComponent title = entry.getTitle().copy();
-					title.append(new TextComponent(" [" + entry.getPath() + "]")
+					title.append(Component.literal(" [" + entry.getPath() + "]")
 					               .withStyle(ChatFormatting.GRAY));
 					title.withStyle(s -> s.withColor(ChatFormatting.GOLD)
-					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new TranslatableComponent(
-						 "simpleconfig.ui.changes.all.link:help")))
+					  .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, Component.translatable("simpleconfig.ui.changes.all.link:help")))
 					  .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i)));
 					return title;
 				}).collect(Collectors.toList());
 				return InfoDialog.create(
-				  new TranslatableComponent("simpleconfig.ui.changes.all.title"), lines,
+				  Component.translatable("simpleconfig.ui.changes.all.title"), lines,
 				  d -> {
-					  d.setIcon(SimpleConfigIcons.Entries.MERGE_CONFLICT);
+					  d.setIcon(Entries.MERGE_CONFLICT);
 					  d.setLinkActionHandler(s -> {
 						  if (s.startsWith("goto/")) {
 							  try {
@@ -303,15 +304,13 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 						  }
 					  });
 					  d.addButton(TintedButton.of(
-					    new TranslatableComponent(
-						   "simpleconfig.ui.action.accept_all_changes"), 0x8081542F, b -> {
+					    Component.translatable("simpleconfig.ui.action.accept_all_changes"), 0x8081542F, b -> {
 						    d.cancel(true);
 						    screen.handleExternalChangeResponse(ExternalChangeResponse.ACCEPT_ALL);
 					    }
 					  ));
 					  d.addButton(Util.make(TintedButton.of(
-					    new TranslatableComponent(
-						   "simpleconfig.ui.action.accept_non_conflicting_changes"), 0x80683498, b -> {
+					    Component.translatable("simpleconfig.ui.action.accept_non_conflicting_changes"), 0x80683498, b -> {
 						    d.cancel(true);
 						    screen.handleExternalChangeResponse(
 							   ExternalChangeResponse.ACCEPT_NON_CONFLICTING);
@@ -339,10 +338,8 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			
 			@Override public Component getTitle(SimpleConfigScreen screen) {
 				List<Component> errors = screen.getErrorsMessages();
-				if (errors.isEmpty()) return TextComponent.EMPTY;
-				return (errors.size() == 1 ? errors.get(0).copy() : new TranslatableComponent(
-				  "simpleconfig.ui.errors.multiple", errors.size(), errors.get(0).copy().getString()
-				)).withStyle(ChatFormatting.RED);
+				if (errors.isEmpty()) return Component.empty();
+				return (errors.size() == 1 ? errors.get(0).copy() : Component.translatable("simpleconfig.ui.errors.multiple", errors.size(), errors.get(0).copy().getString())).withStyle(ChatFormatting.RED);
 			}
 			
 			@Override public boolean hasDialog(SimpleConfigScreen screen) {
@@ -352,26 +349,25 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 			@Override public AbstractDialog getDialog(SimpleConfigScreen screen) {
 				final List<EntryError> errors = screen.getErrors();
 				final List<Component> lines = IntStream.range(0, errors.size()).mapToObj(i -> {
-					TranslatableComponent goToError = new TranslatableComponent(
-					  "simpleconfig.ui.errors.all.link:help");
+					MutableComponent goToError = Component.translatable("simpleconfig.ui.errors.all.link:help");
 					HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, goToError);
 					ClickEvent clickEvent = new ClickEvent(ClickEvent.Action.OPEN_URL, "action:goto/" + i);
 					EntryError error = errors.get(i);
 					AbstractConfigField<?> entry = error.getEntry();
 					MutableComponent title = entry.getTitle().copy();
-					title.append(new TextComponent(" [" + entry.getPath() + "]")
+					title.append(Component.literal(" [" + entry.getPath() + "]")
 					               .withStyle(ChatFormatting.DARK_RED));
 					title.withStyle(s -> s.withColor(ChatFormatting.RED)
 					  .withHoverEvent(hoverEvent).withClickEvent(clickEvent));
-					MutableComponent err = new TextComponent("  ").append(
+					MutableComponent err = Component.literal("  ").append(
 					  error.getError().copy().withStyle(s -> s.withColor(ChatFormatting.RED)
 					    .withHoverEvent(hoverEvent).withClickEvent(clickEvent)));
 					return new Component[] {title, err};
 				}).flatMap(Arrays::stream).collect(Collectors.toList());
 				return InfoDialog.create(
-				  new TranslatableComponent("simpleconfig.ui.errors.all.title"), lines,
+				  Component.translatable("simpleconfig.ui.errors.all.title"), lines,
 				  d -> {
-					  d.setIcon(SimpleConfigIcons.Status.ERROR);
+					  d.setIcon(Status.ERROR);
 					  d.titleColor = 0xFFFF8080;
 					  d.borderColor = 0xFFFF8080;
 					  d.subBorderColor = 0xFF800000;

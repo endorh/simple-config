@@ -1,9 +1,9 @@
 package endorh.simpleconfig.api.ui.format;
 
 import endorh.simpleconfig.api.ui.ITextFormatter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 			Style style = getCharacterStyle(text, i, c, last);
 			if (style != last) {
 				MutableComponent added =
-				  new TextComponent(builder.toString()).withStyle(last);
+				  Component.literal(builder.toString()).withStyle(last);
 				last = style;
 				builder = new StringBuilder().append(c);
 				if (res == null) res = added;
@@ -37,7 +37,7 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 		}
 		if (builder.length() > 0) {
 			MutableComponent added =
-			  new TextComponent(builder.toString()).withStyle(last);
+			  Component.literal(builder.toString()).withStyle(last);
 			if (res == null) res = added;
 			else res.append(added);
 		}

@@ -13,7 +13,6 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +37,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	private @Nullable ArrangeableTreeViewCaption<E> caption = null;
 	private final RedirectGuiEventListener captionReference = new RedirectGuiEventListener(null);
 	private int indent = 12;
-	private Component placeHolder = new TranslatableComponent(
-	  "simpleconfig.ui.nothing_here_yet");
+	private Component placeHolder = Component.translatable("simpleconfig.ui.nothing_here_yet");
 	
 	protected final Rectangle area = new Rectangle();
 	protected final Rectangle overlayArea = new Rectangle();

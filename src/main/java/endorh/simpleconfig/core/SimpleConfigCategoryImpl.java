@@ -13,8 +13,6 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -191,9 +189,9 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 	
 	protected Component getTitle() {
 		if (ClientConfig.advanced.translation_debug_mode)
-			return new TextComponent(title);
+			return Component.literal(title);
 		return I18n.exists(title)
-		       ? new TranslatableComponent(title)
-		       : new TextComponent(WordUtils.capitalize(name));
+		       ? Component.translatable(title)
+		       : Component.literal(WordUtils.capitalize(name));
 	}
 }

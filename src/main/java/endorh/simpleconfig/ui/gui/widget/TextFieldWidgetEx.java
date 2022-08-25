@@ -20,8 +20,6 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -69,7 +67,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	
 	public static TextFieldWidgetEx of(String text) {
 		TextFieldWidgetEx tf = new TextFieldWidgetEx(
-		  Minecraft.getInstance().font, 0, 0, 0, 0, TextComponent.EMPTY);
+		  Minecraft.getInstance().font, 0, 0, 0, 0, Component.empty());
 		tf.setValue(text);
 		return tf;
 	}
@@ -106,7 +104,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	
 	@Override protected @NotNull MutableComponent createNarrationMessage() {
 		Component component = getMessage();
-		return new TranslatableComponent("gui.narrate.editBox", component, value);
+		return Component.translatable("gui.narrate.editBox", component, value);
 	}
 	
 	public void setValue(String value) {
@@ -693,11 +691,11 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	public void setPlainHint(@Nullable String hint) {
-		setHint(hint != null? new TextComponent(hint) : null);
+		setHint(hint != null? Component.literal(hint) : null);
 	}
 	
 	public void setPlainHint(@Nullable Function<String, Optional<String>> hintProvider) {
-		setHint(hintProvider != null? s -> hintProvider.apply(s).map(TextComponent::new) : null);
+		setHint(hintProvider != null? s -> hintProvider.apply(s).map(Component::literal) : null);
 	}
 	
 	public void setHint(@Nullable Component hint) {
@@ -709,7 +707,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	public void setEmptyHint(String hint) {
-		setEmptyHint(new TextComponent(hint));
+		setEmptyHint(Component.literal(hint));
 	}
 	
 	public void setEmptyHint(Component hint) {
@@ -729,6 +727,6 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	@Override public void updateNarration(@NotNull NarrationElementOutput out) {
-		out.add(NarratedElementType.TITLE, new TranslatableComponent("narration.edit_box", getValue()));
+		out.add(NarratedElementType.TITLE, Component.translatable("narration.edit_box", getValue()));
 	}
 }

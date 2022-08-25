@@ -13,8 +13,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -64,9 +62,8 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry {
 				  context.config, context.result, context.report
 				)) {
 					messages.addAll(context.report);
-				} else messages.add(new TranslatableComponent(
-				  "simpleconfig.hotkey.no_permission",
-				  new TextComponent(context.config.getModName())
+				} else messages.add(Component.translatable("simpleconfig.hotkey.no_permission",
+				                                           Component.literal(context.config.getModName())
 					 .withStyle(ChatFormatting.GRAY)));
 			} else {
 				context.config.loadSnapshot(context.result, false, false, null);
@@ -87,7 +84,7 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry {
 	}
 	
 	public MutableComponent getTitle() {
-		return new TextComponent(name != null? name : "")
+		return Component.literal(name != null? name : "")
 		  .withStyle(ChatFormatting.WHITE);
 	}
 	

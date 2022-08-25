@@ -8,8 +8,6 @@ import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -66,7 +64,7 @@ public class IntegerRangeEntry
 	  ConfigFieldBuilder builder, String name, Integer value
 	) {
 		//noinspection unchecked
-		return (EE) builder.startIntField(new TextComponent(name), value)
+		return (EE) builder.startIntField(Component.literal(name), value)
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
 		  .setName(name)
@@ -75,8 +73,7 @@ public class IntegerRangeEntry
 	
 	@Override public Optional<Component> getErrorFromGUI(IntRange value) {
 		if (value.getMin() == null || value.getMax() == null)
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.invalid_integer"));
+			return Optional.of(Component.translatable("simpleconfig.config.error.invalid_integer"));
 		return super.getErrorFromGUI(value);
 	}
 }

@@ -7,8 +7,6 @@ import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -158,9 +156,8 @@ public abstract class AbstractListEntry
 	
 	protected static Component addIndex(Component message, int index) {
 		if (index < 0) return message;
-		return message.plainCopy().append(", ").append(new TranslatableComponent(
-		  "simpleconfig.config.error.at_index",
-		  new TextComponent(String.format("%d", index + 1)).withStyle(ChatFormatting.DARK_AQUA)));
+		return message.plainCopy().append(", ").append(Component.translatable("simpleconfig.config.error.at_index",
+		  Component.literal(String.format("%d", index + 1)).withStyle(ChatFormatting.DARK_AQUA)));
 	}
 	
 	@Override public List<Component> getErrorsFromGUI(List<Gui> value) {
@@ -174,21 +171,18 @@ public abstract class AbstractListEntry
 	@Override public Optional<Component> getErrorFromGUI(List<Gui> value) {
 		int size = value.size();
 		if (size < minSize) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "min_size"),
-			  new TextComponent(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
+			return Optional.of(Component.translatable("simpleconfig.config.error.list." + (minSize == 1? "empty" : "min_size"),
+			  Component.literal(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		} else if (size > maxSize) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list.too_long",
-			  new TextComponent(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
+			return Optional.of(Component.translatable("simpleconfig.config.error.list.too_long",
+			  Component.literal(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		}
 		return super.getErrorFromGUI(value);
 	}
 	
 	public Optional<Component> getElementError(int index, Gui value) {
 		V elem = elemFromGui(value);
-		if (elem == null) return Optional.of(addIndex(new TranslatableComponent(
-		  "simpleconfig.config.error.missing_value"), index));
+		if (elem == null) return Optional.of(addIndex(Component.translatable("simpleconfig.config.error.missing_value"), index));
 		return elemErrorSupplier.apply(elem).map(e -> addIndex(e, index));
 	}
 	

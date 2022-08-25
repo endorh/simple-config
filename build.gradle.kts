@@ -34,9 +34,9 @@ val apiVersion = "0.1.6"
 
 val modVersion = "0.8.18"
 val mappingsChannel = "official"
-val mappingsVersion = "1.18.2"
-val mcVersion = "1.18.2"
-val forge = "40.1.0"
+val mappingsVersion = "1.19"
+val mcVersion = "1.19"
+val forge = "41.1.0"
 val forgeVersion = "$mcVersion-$forge"
 
 val apiMavenArtifact = "$modGroup:$modId-api:$apiVersion"
@@ -74,7 +74,7 @@ val apiDisplayName = "Simple Config API"
 // Dependencies
 // FIXME: Update to 1.31 when available (bitbucket.org/snakeyaml/snakeyaml/issues/518)
 val yamlVersion = "1.30"
-val jeiVersion = "9.7.1.255"
+val jeiVersion = "11.1.1.239"
 val antlrVersion: String by extra
 
 // Jar manifest attributes
@@ -250,13 +250,13 @@ dependencies {
     
     // Testing dependencies
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3803098"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3873264"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:3946495"))
+    runtimeOnly(fg.deobf("curse.maven:configured-457570:3947885"))
     
     // JEI
-    runtimeOnly(fg.deobf("mezz.jei:jei-$mcVersion:$jeiVersion"))
+    runtimeOnly(fg.deobf("mezz.jei:jei-$mcVersion-forge:$jeiVersion"))
 }
 
 tasks.withType<Test> {

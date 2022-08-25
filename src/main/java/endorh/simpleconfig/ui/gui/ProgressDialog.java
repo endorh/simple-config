@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.FormattedCharSequence;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,13 +102,14 @@ public class ProgressDialog extends ConfirmDialog {
 	protected List<Component> renderException(Throwable e) {
 		final StackTraceElement[] trace = e.getStackTrace();
 		final List<Component> l = Lists.newArrayList(
-		  new TextComponent(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage())
+		  Component.literal(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage())
 			 .withStyle(ChatFormatting.RED));
 		if (trace.length > 0)
-			l.add(new TextComponent("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber()).withStyle(ChatFormatting.RED));
+			l.add(Component.literal("  at " + trace[0].getFileName() + ":" + trace[0].getLineNumber())
+			        .withStyle(ChatFormatting.RED));
 		if (e.getCause() != null) {
 			final List<Component> c = renderException(e.getCause());
-			c.set(0, new TextComponent("caused by: ").withStyle(ChatFormatting.RED)
+			c.set(0, Component.literal("caused by: ").withStyle(ChatFormatting.RED)
 			  .append(c.get(0)));
 			l.addAll(c);
 		}

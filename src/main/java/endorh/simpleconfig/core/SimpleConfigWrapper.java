@@ -15,8 +15,6 @@ import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
@@ -302,7 +300,7 @@ public class SimpleConfigWrapper {
 			}).min().orElse(0);
 			for (String l: lines) {
 				l = l.substring(commonIndent);
-				MutableComponent ll = new TextComponent(l)
+				MutableComponent ll = Component.literal(l)
 				  .withStyle(ChatFormatting.GRAY);
 				Matcher m = EXPERIMENTAL.matcher(l);
 				if (m.find()) {
@@ -314,8 +312,8 @@ public class SimpleConfigWrapper {
 			}
 			builder = builder.tooltip(tooltip);
 		}
-		builder = builder.configError(t -> !spec.test(t)? Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.invalid_value_generic")) : Optional.empty());
+		builder = builder.configError(t -> !spec.test(t)? Optional.of(
+		  Component.translatable("simpleconfig.config.error.invalid_value_generic")) : Optional.empty());
 		//noinspection unchecked
 		return (B) builder;
 	}

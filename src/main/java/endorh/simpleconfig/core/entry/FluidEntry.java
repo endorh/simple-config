@@ -13,12 +13,13 @@ import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -29,7 +30,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -52,7 +52,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 	  implements FluidEntryBuilder {
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Fluid> filter = null;
-		protected @Nullable Tag<Fluid> tag = null;
+		protected @Nullable TagKey<Fluid> tag = null;
 		protected boolean requireGroup = true;
 		protected boolean excludeFlowing = true;
 		
@@ -88,7 +88,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Tag<Fluid> tag) {
+		@Override @Contract(pure=true) public Builder from(TagKey<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -99,7 +99,8 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
-				Predicate<Fluid> inTag = f -> tag.getValues().contains(f);
+				//noinspection ConstantConditions
+				Predicate<Fluid> inTag = f -> ForgeRegistries.FLUIDS.tags().getTag(tag).contains(f);
 				filter = filter != null? filter.and(inTag) : inTag;
 			}
 			if (filter != null && !filter.test(value))
@@ -120,7 +121,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 	
 	@Override public String forConfig(Fluid value) {
 		//noinspection ConstantConditions
-		return value.getRegistryName().toString();
+		return ForgeRegistries.FLUIDS.getKey(value).toString();
 	}
 	
 	@Override @Nullable public Fluid fromConfig(@Nullable String value) {
@@ -138,7 +139,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 	}
 	
 	protected List<Fluid> supplyOptions() {
-		return Registry.FLUID.entrySet().stream().map(Entry::getValue).filter(filter)
+		return ForgeRegistries.FLUIDS.getValues().stream().filter(filter)
 		  .collect(Collectors.toList());
 	}
 	

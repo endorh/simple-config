@@ -4,7 +4,6 @@ import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -53,17 +52,17 @@ public abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
 			return Pair.of(Optional.empty(), Optional.of(getUnknownError(name)));
 		} catch (ResourceLocationException e) {
 			return Pair.of(
-			  Optional.empty(), Optional.of(new TextComponent(e.getLocalizedMessage())));
+			  Optional.empty(), Optional.of(Component.literal(e.getLocalizedMessage())));
 		}
 	}
 	
 	@Override public Component getDisplayName(@NotNull T element) {
 		final ResourceLocation name = getRegistryName(element);
 		if (name.getNamespace().equals("minecraft"))
-			return new TextComponent(name.getPath());
-		return new TextComponent(name.getNamespace()).withStyle(ChatFormatting.GRAY)
-		  .append(new TextComponent(":").withStyle(ChatFormatting.GRAY))
-		  .append(new TextComponent(name.getPath()).withStyle(ChatFormatting.WHITE));
+			return Component.literal(name.getPath());
+		return Component.literal(name.getNamespace()).withStyle(ChatFormatting.GRAY)
+		  .append(Component.literal(":").withStyle(ChatFormatting.GRAY))
+		  .append(Component.literal(name.getPath()).withStyle(ChatFormatting.WHITE));
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {

@@ -22,7 +22,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -66,17 +65,17 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	protected EmptyPlaceholderWidget placeholder;
 	@NotNull protected Function<Self, C> cellFactory;
 	@Nullable protected Component[] addTooltip = new Component[] {
-	  new TranslatableComponent("simpleconfig.help.list.insert"),
-	  new TranslatableComponent("simpleconfig.help.list.insert:key")
+	  Component.translatable("simpleconfig.help.list.insert"),
+	  Component.translatable("simpleconfig.help.list.insert:key")
 	};
 	@Nullable protected Component[] removeTooltip = new Component[] {
-	  new TranslatableComponent("simpleconfig.help.list.remove"),
-	  new TranslatableComponent("simpleconfig.help.list.remove:key")
+	  Component.translatable("simpleconfig.help.list.remove"),
+	  Component.translatable("simpleconfig.help.list.remove:key")
 	};
 	protected Component[] moveTooltip = new Component[]{
-	  new TranslatableComponent("simpleconfig.help.list.move"),
-	  new TranslatableComponent("simpleconfig.help.list.move:drag"),
-	  new TranslatableComponent("simpleconfig.help.list.move:key")
+	  Component.translatable("simpleconfig.help.list.move"),
+	  Component.translatable("simpleconfig.help.list.move:drag"),
+	  Component.translatable("simpleconfig.help.list.move:key")
 	};
 	
 	protected int lastSelected = -1;
@@ -823,7 +822,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		protected boolean focused;
 		protected BaseListEntry<?, ?, ?> listEntry;
 		public int x, y, w, h;
-		protected Component text = new TranslatableComponent("simpleconfig.help.list.insert");
+		protected Component text = Component.translatable("simpleconfig.help.list.insert");
 		protected int textColor = 0xffa0ffa0;
 		protected int borderColor = 0xff80ff80;
 		protected int hoveredBgColor = 0x8080f080;

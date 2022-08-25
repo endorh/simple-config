@@ -27,7 +27,9 @@ import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,17 +87,16 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			  final Preset value = selector.getValue();
 			  if (value == null) return Lists.newArrayList();
 			  return Lists.newArrayList(
-			    new TranslatableComponent(
-			      "simpleconfig.preset.load." + value.getLocation().getAlias(),
-			      new TranslatableComponent("simpleconfig.preset." + value.getType().getAlias())));
-		  }), new TranslatableComponent("simpleconfig.preset.load.label"));
+			    Component.translatable("simpleconfig.preset.load." + value.getLocation().getAlias(),
+			      Component.translatable("simpleconfig.preset." + value.getType().getAlias())));
+		  }), Component.translatable("simpleconfig.preset.load.label"));
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 		  () -> save(selector.getText(), false)
 		).tooltip(() -> getSaveTooltip(false, false))
 		  .active(() -> getHandler() != null
 		                && isValidName(selector.getText())
 		                && screen.isEditable()
-		  ), new TranslatableComponent("simpleconfig.preset.save.label")
+		  ), Component.translatable("simpleconfig.preset.save.label")
 		).on(Modifier.SHIFT, ButtonAction.of(() -> save(selector.getText(), true))
 		  .icon(Buttons.SAVE_REMOTE)
 		  .active(() -> getHandler() != null
@@ -115,11 +116,11 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		  }));
 		selector = new ComboBoxWidget<>(
 		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
-		  new TranslatableComponent("simpleconfig.preset.picker.label"));
-		selector.setHint(new TranslatableComponent("simpleconfig.preset.picker.hint"));
+		  Component.translatable("simpleconfig.preset.picker.label"));
+		selector.setHint(Component.translatable("simpleconfig.preset.picker.hint"));
 		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
 		  () -> getKnownPresets(screen.getEditedType().getType()));
-		provider.setPlaceholder(new TranslatableComponent("simpleconfig.ui.no_presets_found"));
+		provider.setPlaceholder(Component.translatable("simpleconfig.ui.no_presets_found"));
 		selector.setSuggestionProvider(provider);
 		listeners = Lists.newArrayList(selector, loadButton, saveButton);
 	}
@@ -139,15 +140,15 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			return Lists.newArrayList();
 		Type type = screen.getEditedType().getType();
 		final List<Component> tt = Lists.newArrayList(
-		  new TranslatableComponent(String.format(
+		  Component.translatable(String.format(
 		    "simpleconfig.preset.%s.%s",
 		    delete? "delete" : "save",
 			 remote? "remote" : "local"
-		  ), new TranslatableComponent("simpleconfig.preset." + type.getAlias())));
+		  ), Component.translatable("simpleconfig.preset." + type.getAlias())));
 		if (!delete && !remote && handler.canSaveRemote())
-			tt.add(new TranslatableComponent("simpleconfig.preset.save.remote.shift"));
+			tt.add(Component.translatable("simpleconfig.preset.save.remote.shift"));
 		if (!delete && selector.getValue() != null)
-			tt.add(new TranslatableComponent("simpleconfig.preset.delete.alt"));
+			tt.add(Component.translatable("simpleconfig.preset.delete.alt"));
 		return tt;
 	}
 	
@@ -254,7 +255,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			final CompletableFuture<Void> future = handler.getRemote(preset.getName(), type)
 			  .thenAccept(config -> doLoad(config, preset, type, selection));
 			screen.addDialog(ProgressDialog.create(
-			  new TranslatableComponent("simpleconfig.preset.dialog.loading.title"),
+			  Component.translatable("simpleconfig.preset.dialog.loading.title"),
 			  future, d -> d.setBody(splitTtc(
 				 "simpleconfig.preset.dialog.loading.remote.body", presetName(preset.getName())))));
 		} else {
@@ -269,14 +270,13 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 	) {
 		final IConfigSnapshotHandler handler = getHandler();
 		String ll = preset.getLocation().getAlias();
-		BaseComponent tt = new TranslatableComponent("simpleconfig.preset." + type.getAlias());
+		MutableComponent tt = Component.translatable("simpleconfig.preset." + type.getAlias());
 		int matches = getMatches(snapshot, selection);
 		int total = getTotalSize(snapshot);
 		screen.runAtomicTransparentAction(
 		  () -> handler.restore(snapshot, type, selection));
-		screen.addDialog(InfoDialog.create(new TranslatableComponent(
-		  "simpleconfig.preset.dialog.load.success.title"
-		), Util.make(new ArrayList<>(), b -> {
+		screen.addDialog(InfoDialog.create(
+		  Component.translatable("simpleconfig.preset.dialog.load.success.title"), Util.make(new ArrayList<>(), b -> {
 			b.addAll(splitTtc(
 			  "simpleconfig.preset.dialog.load.success." + ll,
 			  tt, presetName(preset.getName())));
@@ -328,39 +328,38 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		final Map<String, Preset> otherMap = getKnownPresets(type, remote? Location.LOCAL : Location.REMOTE);
 		final Map<String, Preset> resourceMap = getKnownPresets(type, Location.RESOURCE);
 		String ll = remote? "remote" : "local";
-		Component tt = new TranslatableComponent("simpleconfig.preset." + type.getAlias());
+		Component tt = Component.translatable("simpleconfig.preset." + type.getAlias());
 		if (!overwrite && !userSkipOverwriteDialog && presetMap.containsKey(name)
 		    && presetMap.get(name).getType() == type) {
 			screen.addDialog(ConfirmDialog.create(
-			  new TranslatableComponent("simpleconfig.preset.dialog.overwrite.title"), d -> {
+			  Component.translatable("simpleconfig.preset.dialog.overwrite.title"), d -> {
 				  d.withCheckBoxes((b, cs) -> {
 					  if (b) {
 						  if (cs[0]) userSkipOverwriteDialog = true;
 						  save(name, remote, true);
 					  }
-				  }, CheckboxButton.of(false, new TranslatableComponent(
-				    "simpleconfig.ui.do_not_ask_again_this_session")));
+				  }, CheckboxButton.of(false, Component.translatable("simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
 				    "simpleconfig.preset.dialog.overwrite." + ll, tt, presetName(name)));
-				  d.setConfirmText(new TranslatableComponent("simpleconfig.preset.dialog.overwrite.confirm"));
+				  d.setConfirmText(
+				    Component.translatable("simpleconfig.preset.dialog.overwrite.confirm"));
 				  d.setConfirmButtonTint(0xAAAA00AA);
 			  }));
 		} else if (!overwrite && (otherMap.containsKey(name) || resourceMap.containsKey(name)) && !presetMap.containsKey(name)) {
 			boolean resource = !otherMap.containsKey(name);
 			String r = resource? "resource." : "";
 			screen.addDialog(ConfirmDialog.create(
-			  new TranslatableComponent("simpleconfig.preset.dialog.mistaken.title"), d -> {
+			  Component.translatable("simpleconfig.preset.dialog.mistaken.title"), d -> {
 				  d.withAction(b -> {
 					  if (b) save(name, remote, true);
 				  });
 				  d.setBody(splitTtc("simpleconfig.preset.dialog.mistaken." + r + ll + ".body", presetName(name)));
-				  d.setConfirmText(new TranslatableComponent(
-				    "simpleconfig.preset.dialog.mistaken.option." + ll + ".create"));
+				  d.setConfirmText(
+				    Component.translatable("simpleconfig.preset.dialog.mistaken.option." + ll + ".create"));
 				  d.setConfirmButtonTint(remote ? 0xAA429090 : 0xAA429042);
 				  if (!resource) {
 					  d.addButton(1, TintedButton.of(
-						 new TranslatableComponent(
-							"simpleconfig.preset.dialog.mistaken.option." + ll + ".overwrite"),
+						 Component.translatable("simpleconfig.preset.dialog.mistaken.option." + ll + ".overwrite"),
 						 remote? 0xAA429042 : 0xAA429090, p -> {
 							 save(name, !remote, true);
 							 d.cancel(false);
@@ -370,7 +369,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		} else if (remote) {
 			final CompletableFuture<Void> future = handler.saveRemote(name, type, preserved);
 			screen.addDialog(ProgressDialog.create(
-			  new TranslatableComponent("simpleconfig.preset.dialog.saving.title"),
+			  Component.translatable("simpleconfig.preset.dialog.saving.title"),
 			  future, d -> {
 				  d.setBody(splitTtc("simpleconfig.preset.dialog.saving.remote.body", presetName(name)));
 				  d.setCancellableByUser(false);
@@ -382,8 +381,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			Optional<Throwable> result = handler.saveLocal(name, type, preserved);
 			if (result.isPresent()) {
 				screen.addDialog(ErrorDialog.create(
-				  new TranslatableComponent(
-					 "simpleconfig.preset.dialog.saving.error.title"), result.get(), d -> d.setBody(
+				  Component.translatable("simpleconfig.preset.dialog.saving.error.title"), result.get(), d -> d.setBody(
 					 splitTtc("simpleconfig.preset.dialog.saving.error.local.body", presetName(name)))));
 			} else {
 				screen.addDialog(getSaveSuccessDialog(false, type, name, selected));
@@ -396,9 +394,9 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 	  boolean remote, Type type, String name, int selected
 	) {
 		String ll = remote? "remote" : "local";
-		Component tt = new TranslatableComponent("simpleconfig.preset." + type.getAlias());
+		Component tt = Component.translatable("simpleconfig.preset." + type.getAlias());
 		return InfoDialog.create(
-		  new TranslatableComponent("simpleconfig.preset.dialog.save.success.title"),
+		  Component.translatable("simpleconfig.preset.dialog.save.success.title"),
 		  Util.make(new ArrayList<>(), b -> {
 			  b.addAll(splitTtc("simpleconfig.preset.dialog.save.success." + ll, tt, presetName(name)));
 			  if (selected > 0) {
@@ -416,27 +414,26 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		final Type type = screen.getEditedType().getType();
 		final IConfigSnapshotHandler handler = getHandler();
 		String ll = preset.isRemote()? "remote" : "local";
-		Component tt = new TranslatableComponent("simpleconfig.preset." + preset.getType().getAlias());
+		Component tt = Component.translatable("simpleconfig.preset." + preset.getType().getAlias());
 		if (!userSkipConfirmDeleteDialog && !skipConfirm) {
 			screen.addDialog(ConfirmDialog.create(
-			  new TranslatableComponent("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
+			  Component.translatable("simpleconfig.preset.dialog.delete.confirm.title"), d -> {
 				  d.withCheckBoxes((b, cs) -> {
 					  if (b) {
 						  if (cs[0]) userSkipConfirmDeleteDialog = true;
 						  delete(preset, true);
 					  }
-				  }, CheckboxButton.of(false, new TranslatableComponent(
-				    "simpleconfig.ui.do_not_ask_again_this_session")));
+				  }, CheckboxButton.of(false, Component.translatable("simpleconfig.ui.do_not_ask_again_this_session")));
 				  d.setBody(splitTtc(
 					 "simpleconfig.preset.dialog.delete.confirm." + ll, tt, presetName(preset.getName())));
-				  d.setConfirmText(new TranslatableComponent(
-					 "simpleconfig.preset.dialog.delete.confirm.delete"));
+				  d.setConfirmText(
+				    Component.translatable("simpleconfig.preset.dialog.delete.confirm.delete"));
 				  d.setConfirmButtonTint(0x80BD2424);
 			  }));
 		} else if (preset.isRemote()) {
 			final CompletableFuture<Void> future = handler.deleteRemote(preset.getName(), type);
 			screen.addDialog(ProgressDialog.create(
-			  new TranslatableComponent("simpleconfig.preset.dialog.deleting.title"),
+			  Component.translatable("simpleconfig.preset.dialog.deleting.title"),
 			  future, d -> {
 				  d.setBody(splitTtc("simpleconfig.preset.dialog.deleting.remote.body", presetName(
 				    preset.getName())));
@@ -455,18 +452,18 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 	  Preset preset
 	) {
 		String ll = preset.isRemote()? "remote" : "local";
-		Component tt = new TranslatableComponent("simpleconfig.preset." + preset.getType().getAlias());
+		Component tt = Component.translatable("simpleconfig.preset." + preset.getType().getAlias());
 		return InfoDialog.create(
-		  new TranslatableComponent("simpleconfig.preset.dialog.delete.success.title"),
+		  Component.translatable("simpleconfig.preset.dialog.delete.success.title"),
 		  splitTtc("simpleconfig.preset.dialog.delete.success." + ll, tt, presetName(preset.getName())));
 	}
 	
 	protected MutableComponent selectedCount(int count) {
-		return new TextComponent(String.valueOf(count)).withStyle(selectedCountStyle);
+		return Component.literal(String.valueOf(count)).withStyle(selectedCountStyle);
 	}
 	
 	protected MutableComponent presetName(String name) {
-		return new TextComponent(name).withStyle(nameStyle);
+		return Component.literal(name).withStyle(nameStyle);
 	}
 	
 	public boolean isKnownPreset(String name) {
@@ -599,15 +596,15 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 					if (presets.containsKey(text))
 						return Pair.of(Optional.of(presets.get(text)), Optional.empty());
 				}
-				return Pair.of(Optional.empty(), Optional.of(new TranslatableComponent(
-				  "simpleconfig.config.error.unknown_preset")));
+				return Pair.of(Optional.empty(), Optional.of(
+				  Component.translatable("simpleconfig.config.error.unknown_preset")));
 			}
 			
 			@Override public String getName(@NotNull Preset element) {
 				return element.getName();
 			}
 			@Override public Component getDisplayName(@NotNull Preset element) {
-				return new TextComponent(element.getName()).withStyle(
+				return Component.literal(element.getName()).withStyle(
 				  element.isRemote()? ChatFormatting.AQUA : ChatFormatting.GREEN);
 			}
 			

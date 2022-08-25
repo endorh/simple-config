@@ -7,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText.StyledContentConsumer;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -43,7 +42,7 @@ import static java.lang.Math.min;
 	 * Build a translated paragraph.<br>
 	 * Accepts a list of translation keys, with optional objects following each of them,
 	 * used as arguments.<br>
-	 * To use strings as arguments, wrap them in {@link TextComponent}s.<br>
+	 * To use strings as arguments, wrap them in {@link Component}s.<br>
 	 * @param key First key, must be a translation key.
 	 */
 	public static List<Component> paragraph(String key, Object... lines) {
@@ -113,8 +112,8 @@ import static java.lang.Math.min;
 		
 		private void appendFragment(String fragment, Style style) {
 			if (result == null) {
-				result = new TextComponent(fragment).withStyle(style);
-			} else result.append(new TextComponent(fragment).withStyle(style));
+				result = Component.literal(fragment).withStyle(style);
+			} else result.append(Component.literal(fragment).withStyle(style));
 		}
 		
 		@Override public @NotNull Optional<Boolean> accept(
@@ -132,7 +131,7 @@ import static java.lang.Math.min;
 		}
 		
 		public MutableComponent getResult() {
-			return result != null? result : TextComponent.EMPTY.copy();
+			return result != null? result : Component.empty();
 		}
 	}
 	
@@ -214,13 +213,13 @@ import static java.lang.Math.min;
 		}
 		
 		public MutableComponent getResult() {
-			return result != null? result : TextComponent.EMPTY.plainCopy();
+			return result != null? result : Component.empty();
 		}
 		
 		private void appendFragment(String fragment, Style style) {
 			if (result == null) {
-				result = new TextComponent(fragment).setStyle(style);
-			} else result.append(new TextComponent(fragment).setStyle(style));
+				result = Component.literal(fragment).setStyle(style);
+			} else result.append(Component.literal(fragment).setStyle(style));
 		}
 	}
 	
@@ -240,7 +239,7 @@ import static java.lang.Math.min;
 			final List<Component> components = new ArrayList<>();
 			for (String line : lines) {
 				final Matcher m = FS_PATTERN.matcher(line);
-				final MutableComponent built = new TextComponent("");
+				final MutableComponent built = Component.literal("");
 				int cursor = 0;
 				while (m.find()) {
 					if ("%".equals(m.group("conversion"))) {
@@ -268,7 +267,7 @@ import static java.lang.Math.min;
 			return components;
 		} else {
 			List<Component> components = new ArrayList<>();
-			components.add(new TextComponent(key));
+			components.add(Component.literal(key));
 			return components;
 		}
 	}

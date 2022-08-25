@@ -13,7 +13,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -114,7 +113,7 @@ public abstract class BaseListCell<T> extends AbstractContainerEventHandler
 	  int mouseX, int mouseY, boolean isSelected, float delta
 	) {
 		Component label = getLabel();
-		if (label != TextComponent.EMPTY) {
+		if (label != Component.empty()) {
 			Font font = Minecraft.getInstance().font;
 			int textX = font.isBidirectional() ? x + cellWidth - font.width(label) : x;
 			renderLabel(
@@ -142,7 +141,7 @@ public abstract class BaseListCell<T> extends AbstractContainerEventHandler
 	}
 	
 	public Component getLabel() {
-		return new TextComponent("•").withStyle(ChatFormatting.GRAY);
+		return Component.literal("•").withStyle(ChatFormatting.GRAY);
 	}
 	
 	public void updateSelected(boolean isSelected) {

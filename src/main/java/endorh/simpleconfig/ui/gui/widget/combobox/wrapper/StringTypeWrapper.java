@@ -4,7 +4,6 @@ import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +17,7 @@ public class StringTypeWrapper implements ITypeWrapper<String> {
 	}
 	
 	@Override public Component getDisplayName(@NotNull String element) {
-		return new TextComponent(element);
+		return Component.literal(element);
 	}
 	
 	@Override public @Nullable ITextFormatter getTextFormatter() {

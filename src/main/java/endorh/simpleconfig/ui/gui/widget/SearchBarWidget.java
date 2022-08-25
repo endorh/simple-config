@@ -27,7 +27,6 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -44,14 +43,14 @@ import static java.lang.Math.min;
 
 public class SearchBarWidget extends AbstractContainerEventHandler implements IOverlayRenderer, NarratableEntry {
 	protected static Component[] CASE_SENSITIVE_TOOLTIP = {
-	  new TranslatableComponent("simpleconfig.ui.search.case_sensitive"),
-	  new TranslatableComponent("key.modifier.alt").append(" + C").withStyle(ChatFormatting.GRAY)};
+	  Component.translatable("simpleconfig.ui.search.case_sensitive"),
+	  Component.translatable("key.modifier.alt").append(" + C").withStyle(ChatFormatting.GRAY)};
 	protected static Component[] REGEX_TOOLTIP = new Component[] {
-	  new TranslatableComponent("simpleconfig.ui.search.regex"),
-	  new TranslatableComponent("key.modifier.alt").append(" + R").withStyle(ChatFormatting.GRAY)};
+	  Component.translatable("simpleconfig.ui.search.regex"),
+	  Component.translatable("key.modifier.alt").append(" + R").withStyle(ChatFormatting.GRAY)};
 	protected static Component[] FILTER_TOOLTIP = new Component[] {
-	  new TranslatableComponent("simpleconfig.ui.search.filter"),
-	  new TranslatableComponent("key.modifier.alt").append(" + F").withStyle(ChatFormatting.GRAY)};
+	  Component.translatable("simpleconfig.ui.search.filter"),
+	  Component.translatable("key.modifier.alt").append(" + F").withStyle(ChatFormatting.GRAY)};
 	
 	public int x;
 	public int y;

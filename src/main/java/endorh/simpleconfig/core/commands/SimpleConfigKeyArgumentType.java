@@ -12,13 +12,17 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigImpl;
-import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.network.FriendlyByteBuf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+
+import static endorh.simpleconfig.core.ByteBufUtils.readNullable;
+import static endorh.simpleconfig.core.ByteBufUtils.writeNullable;
 
 public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 	public static SimpleConfigKeyArgumentType entryPath(
@@ -63,26 +67,52 @@ public class SimpleConfigKeyArgumentType implements ArgumentType<String> {
 		return builder.buildFuture();
 	}
 	
-	public static class Serializer implements ArgumentSerializer<SimpleConfigKeyArgumentType> {
-		@Override public void serializeToNetwork(@NotNull SimpleConfigKeyArgumentType arg, @NotNull FriendlyByteBuf buf) {
-			buf.writeBoolean(arg.modId != null);
-			if (arg.modId != null) buf.writeUtf(arg.modId);
-			buf.writeBoolean(arg.type != null);
-			if (arg.type != null) buf.writeEnum(arg.type);
-			buf.writeBoolean(arg.includeGroups);
+	public static class Info implements ArgumentTypeInfo<SimpleConfigKeyArgumentType, Info.Template> {
+		@Override public void serializeToNetwork(@NotNull Template t, @NotNull FriendlyByteBuf buf) {
+			writeNullable(buf, FriendlyByteBuf::writeUtf, t.modId);
+			writeNullable(buf, FriendlyByteBuf::writeEnum, t.type);
+			buf.writeBoolean(t.includeGroups);
 		}
 		
-		@Override public @NotNull SimpleConfigKeyArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
-			return new SimpleConfigKeyArgumentType(
-			  buf.readBoolean()? buf.readUtf(32767) : null,
-			  buf.readBoolean()? buf.readEnum(EditType.class) : null,
-			  buf.readBoolean());
+		@Override public @NotNull Template deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
+			String modId = readNullable(buf, FriendlyByteBuf::readUtf);
+			EditType type = readNullable(buf, b -> b.readEnum(EditType.class));
+			boolean includeGroups = buf.readBoolean();
+			return new Template(modId, type, includeGroups);
+			// return new Template(
+			//   buf.readBoolean()? buf.readUtf() : null,
+			//   buf.readBoolean()? buf.readEnum(EditType.class) : null,
+			//   buf.readBoolean());
 		}
 		
-		@Override public void serializeToJson(@NotNull SimpleConfigKeyArgumentType arg, @NotNull JsonObject obj) {
-			obj.addProperty("modId", arg.modId);
-			obj.addProperty("type", arg.type != null? arg.type.getAlias() : null);
-			obj.addProperty("includeGroups", arg.includeGroups);
+		@Override public void serializeToJson(Template t, JsonObject obj) {
+			obj.addProperty("modId", t.modId);
+			obj.addProperty("type", t.type != null? t.type.getAlias() : null);
+			obj.addProperty("includeGroups", t.includeGroups);
+		}
+		
+		@Override public @NotNull Template unpack(@NotNull SimpleConfigKeyArgumentType arg) {
+			return new Template(arg.modId, arg.type, arg.includeGroups);
+		}
+		
+		public class Template implements ArgumentTypeInfo.Template<SimpleConfigKeyArgumentType> {
+			private final String modId;
+			private final EditType type;
+			private final boolean includeGroups;
+			
+			public Template(String modId, EditType type, boolean includeGroups) {
+				this.modId = modId;
+				this.type = type;
+				this.includeGroups = includeGroups;
+			}
+			
+			@Override public @NotNull SimpleConfigKeyArgumentType instantiate(@NotNull CommandBuildContext ctx) {
+				return new SimpleConfigKeyArgumentType(modId, type, includeGroups);
+			}
+			
+			@Override public @NotNull ArgumentTypeInfo<SimpleConfigKeyArgumentType, ?> type() {
+				return Info.this;
+			}
 		}
 	}
 }

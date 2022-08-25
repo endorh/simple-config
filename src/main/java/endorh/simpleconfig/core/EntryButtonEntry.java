@@ -11,8 +11,7 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.EntryButtonFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -56,7 +55,7 @@ public class EntryButtonEntry<V, Gui>
 		
 		protected B inner;
 		protected BiConsumer<V, ConfigEntryHolder> action;
-		protected Supplier<Component> buttonLabelSupplier = () -> new TextComponent("✓");
+		protected Supplier<Component> buttonLabelSupplier = () -> Component.literal("✓");
 		
 		@SuppressWarnings("unchecked") public Builder(
 		  S inner, BiConsumer<V, ConfigEntryHolder> action
@@ -74,7 +73,7 @@ public class EntryButtonEntry<V, Gui>
 		
 		@Override @Contract(pure=true) public Builder<V, Gui, S, B> label(String translation) {
 			Builder<V, Gui, S, B> copy = copy();
-			final TranslatableComponent ttc = new TranslatableComponent(translation);
+			final MutableComponent ttc = Component.translatable(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}

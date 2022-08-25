@@ -6,7 +6,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -14,6 +13,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.subText;
 import static java.lang.Math.min;
 
 public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
@@ -21,60 +21,6 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	 * Splits word parts
 	 */
 	protected static Pattern TOKEN_SPLITTER = Pattern.compile("[\\s_]++|(?<=[a-z])(?=[A-Z])");
-	
-	/**
-	 * Extract a formatted substring from an {@link Component}.<br>
-	 * Should be called on the client side only, if the component may contain translations.<br>
-	 * <br>
-	 * See {@code endorh.util.text.TextUtil} from the {@code endorh-util} mod
-	 *
-	 * @param text  Component to slice
-	 * @param start Start index of the substring.
-	 *              Negative values are corrected counting from the end.
-	 * @param end   End index of the substring.
-	 *              Negative values are corrected counting from the end.
-	 *              Defaults to the end of the component.
-	 */
-	protected static MutableComponent subText(Component text, int start, int end) {
-		final int n = text.getString().length();
-		if (start > n)
-			throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
-		if (start < 0) {
-			if (n + start < 0)
-				throw new StringIndexOutOfBoundsException("Index: " + start + ", Length: " + n);
-			start = n + start;
-		}
-		if (end > n) throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
-		if (end < 0) {
-			if (n + end < 0)
-				throw new StringIndexOutOfBoundsException("Index: " + end + ", Length: " + n);
-			end = n + end;
-		}
-		if (end <= start) return new TextComponent("");
-		boolean started = false;
-		final List<Component> siblings = text.getSiblings();
-		MutableComponent res = new TextComponent("");
-		String str = text.getContents();
-		if (start < str.length()) {
-			started = true;
-			res = res.append(new TextComponent(
-			  str.substring(start, Math.min(str.length(), end))).setStyle(text.getStyle()));
-			if (end < str.length()) return res;
-		}
-		int o = str.length();
-		for (Component sibling : siblings) {
-			str = sibling.getContents();
-			if (started || start - o < str.length()) {
-				res = res.append(new TextComponent(
-				  str.substring(started ? 0 : start - o, Math.min(str.length(), end - o))
-				).setStyle(sibling.getStyle()));
-				started = true;
-				if (end - o < str.length()) return res;
-			}
-			o += str.length();
-		}
-		return res;
-	}
 	
 	/**
 	 * Matches at word part starts
@@ -143,7 +89,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 				  final String[] sp = TOKEN_SPLITTER.split(name);
 				  final List<String> matches = t.getRight();
 				  int i = 0, o = 0;
-				  MutableComponent stc = new TextComponent("");
+				  MutableComponent stc = Component.literal("");
 				  for (final String frag : sp) {
 					  if (i >= matches.size()) break;
 					  final int s = n.indexOf(frag);
@@ -200,7 +146,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
 	  String fragment, int matchPos, String match
 	) {
-		return new TextComponent(match).setStyle(getMatchStyle());
+		return Component.literal(match).setStyle(getMatchStyle());
 	}
 	
 	protected Component getNonMatch(
@@ -208,7 +154,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	) {
 		final Component title = typeWrapper.getDisplayName(item);
 		if (!title.getString().equals(name))
-			return new TextComponent(fragment);
+			return Component.literal(fragment);
 		return subText(title, fragmentPos, fragmentPos + fragment.length());
 	}
 }

@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.hotkey;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -33,11 +32,11 @@ public abstract class HotKeyActionType<V, A extends HotKeyAction<V>> {
 		return icon;
 	}
 	public Component getDisplayName() {
-		return new TranslatableComponent("simpleconfig.hotkey.type.name." + getTranslationKey());
+		return Component.translatable("simpleconfig.hotkey.type.name." + getTranslationKey());
 	}
 	
 	public Component formatAction(A action) {
-		return new TranslatableComponent("simpleconfig.hotkey.type.action." + getTranslationKey());
+		return Component.translatable("simpleconfig.hotkey.type.action." + getTranslationKey());
 	}
 	
 	public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> A create(E entry, Object value) {

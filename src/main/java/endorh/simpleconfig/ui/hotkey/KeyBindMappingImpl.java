@@ -6,7 +6,10 @@ import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettingsBuilder;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import org.apache.commons.lang3.text.WordUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -129,11 +132,10 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	
 	@Override public Component getDisplayName(Style style) {
 		ExtendedKeyBindSettings settings = getSettings();
-		MutableComponent joiner = new TextComponent(
-		  settings.orderSensitive()? ">" : "+"
-		).withStyle(ChatFormatting.GRAY);
-		if (requiredKeys.isEmpty()) return TextComponent.EMPTY;
-		MutableComponent r = new TextComponent("");
+		MutableComponent joiner = Component.literal(settings.orderSensitive()? ">" : "+")
+		  .withStyle(ChatFormatting.GRAY);
+		if (requiredKeys.isEmpty()) return Component.empty();
+		MutableComponent r = Component.literal("");
 		int first = requiredKeys.getInt(0);
 		boolean matchByChar = settings.matchByChar();
 		String firstChar = charMap != null? charMap.get(first) : null;
@@ -261,7 +263,7 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	}
 	
 	protected MutableComponent formatKey(int key) {
-		return new TextComponent(WordUtils.capitalize(
+		return Component.literal(WordUtils.capitalize(
 		  Keys.getDisplayNameForKey(key).getString()
 		)).withStyle(s -> s.withColor(TextColor.fromRgb(
 		  Keys.isMouseKey(key) || Keys.isScrollKey(key)
@@ -269,7 +271,7 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	}
 	
 	protected MutableComponent formatKey(String key) {
-		return new TextComponent(WordUtils.capitalize(key))
+		return Component.literal(WordUtils.capitalize(key))
 		  .withStyle(ChatFormatting.ITALIC);
 	}
 	

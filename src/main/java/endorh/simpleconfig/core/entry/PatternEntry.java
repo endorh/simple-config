@@ -5,7 +5,6 @@ import endorh.simpleconfig.api.entry.PatternEntryBuilder;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
@@ -77,9 +76,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 	@Override protected List<Component> addExtraTooltip(String value) {
 		final List<Component> extra = super.addExtraTooltip(value);
 		if (flags != 0)
-			extra.add(0, new TranslatableComponent(
-			  "simpleconfig.config.help.pattern_flags", displayFlags(flags)
-			).withStyle(ChatFormatting.GRAY));
+			extra.add(0, Component.translatable("simpleconfig.config.help.pattern_flags", displayFlags(flags)).withStyle(ChatFormatting.GRAY));
 		return extra;
 	}
 	
@@ -116,8 +113,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 			Pattern.compile(value, flags);
 			return super.getErrorMessage(value);
 		} catch (PatternSyntaxException e) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.invalid_pattern",
+			return Optional.of(Component.translatable("simpleconfig.config.error.invalid_pattern",
 			  e.getMessage().trim().replace("\r\n", ": ")));
 		}
 	}

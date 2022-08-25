@@ -13,8 +13,6 @@ import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -56,14 +54,13 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			}
 			return false;
 		});
-		intEntry = new IntegerListEntry(TextComponent.EMPTY, 1);
+		intEntry = new IntegerListEntry(Component.empty(), 1);
 		intEntry.setSubEntry(true);
 		intEntry.setParentEntry(this);
 		widgetReference = new RedirectGuiEventListener(buttonWidget);
 		widgets = Lists.newArrayList(widgetReference, sideButtonReference);
 		childWidgets = Lists.newArrayList(widgetReference);
-		this.nameProvider = nameProvider == null ? t -> new TranslatableComponent(
-		  t instanceof Translatable ? ((Translatable) t).getKey() : t.toString()) : nameProvider;
+		this.nameProvider = nameProvider == null ? t -> Component.translatable(t instanceof Translatable ? ((Translatable) t).getKey() : t.toString()) : nameProvider;
 	}
 	
 	@Override public T getDisplayedValue() {

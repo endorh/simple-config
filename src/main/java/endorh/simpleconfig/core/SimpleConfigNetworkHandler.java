@@ -16,7 +16,6 @@ import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.RemoteSavedHot
 import endorh.simpleconfig.ui.hotkey.SavedHotKeyGroupPickerWidget.SavedHotKeyGroup;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
@@ -24,7 +23,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -131,7 +129,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	private static void broadcastToOperators(Component message) {
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
 		  .filter(p -> p.hasPermissions(2))
-		  .forEach(p -> p.sendMessage(message, Util.NIL_UUID));
+		  .forEach(p -> p.sendSystemMessage(message));
 	}
 	
 	public static class ConfigUpdateReflectionError extends RuntimeException {
@@ -257,7 +255,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		registerServer(SSaveRemoteHotKeyGroupPacket::new);
 		registerServer(SSimpleConfigServerCommonConfigPacket::new);
 		registerServer(SSimpleConfigPatchReportPacket::new);
-		
+
 		registerClient(CSimpleConfigSyncPacket::new);
 		registerClient(CSimpleConfigSavePresetPacket::new);
 		registerClient(CSimpleConfigRequestPresetListPacket::new);
@@ -291,7 +289,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		CHANNEL.messageBuilder(msgClass, ID_COUNT++, direction)
 		  .encoder(AbstractPacket::write)
 		  .decoder(AbstractPacket.decoder(factory))
-		  .consumer(AbstractPacket::handle)
+		  .consumerMainThread(AbstractPacket::handle)
 		  .add();
 	}
 	
@@ -307,7 +305,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		  .loginIndex(ILoginPacket::getLoginIndex, ILoginPacket::setLoginIndex)
 		  .encoder(SAbstractLoginPacket::write)
 		  .decoder(AbstractPacket.decoder(factory))
-		  .consumer(HandshakeHandler.biConsumerFor(SAbstractLoginPacket::handleWithReply))
+		  .consumerMainThread(HandshakeHandler.biConsumerFor(SAbstractLoginPacket::handleWithReply))
 		  .buildLoginPacketList(packetListBuilder)
 		  .add();
 	}
@@ -323,7 +321,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		  .loginIndex(ILoginPacket::getLoginIndex, ILoginPacket::setLoginIndex)
 		  .encoder(CAbstractLoginPacket::write)
 		  .decoder(AbstractPacket.decoder(factory))
-		  .consumer(HandshakeHandler.indexFirst(CAbstractLoginPacket::handle))
+		  .consumerMainThread(HandshakeHandler.indexFirst(CAbstractLoginPacket::handle))
 		  .add();
 	}
 	
@@ -394,7 +392,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			final LocalPlayer player = Minecraft.getInstance().player;
 			if (player == null)
 				return;
-			player.sendMessage(message, Util.NIL_UUID);
+			player.sendSystemMessage(message);
 		}
 		
 		protected void handleWithReply(Supplier<Context> ctxSupplier) {
@@ -561,7 +559,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" tried to modify " +
 				            "the server config for mod \"" + modName + "\" without privileges");
-				broadcastToOperators(new TranslatableComponent(
+				broadcastToOperators(Component.translatable(
 				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
 				).withStyle(DENIED_UPDATE_STYLE));
 				// Send back a re-sync packet
@@ -575,22 +573,20 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslatableComponent(
-				  "simpleconfig.config.msg.error_updating_by",
-				  modName, senderName, e.getMessage()
-				).withStyle(ERROR_UPDATE_STYLE));
+				broadcastToOperators(Component.translatable("simpleconfig.config.msg.error_updating_by",
+				                                            modName, senderName, e.getMessage())
+				                       .withStyle(ERROR_UPDATE_STYLE));
 			}
 			
 			LOGGER.info(
 			  "Server config for mod \"" + modName + "\" " +
 			  "has been updated by authorized player \"" + senderName + "\"");
-			MutableComponent msg = new TranslatableComponent(
-			  "simpleconfig.config.msg.updated_by",
+			MutableComponent msg = Component.translatable("simpleconfig.config.msg.updated_by",
 			  modName, senderName).withStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
-				msg = msg.append("\n").append(new TranslatableComponent(
-				  "simpleconfig.config.msg.server_changes_require_restart"
-				).withStyle(REQUIRES_RESTART_STYLE));
+				msg = msg.append("\n").append(
+				  Component.translatable("simpleconfig.config.msg.server_changes_require_restart")
+					 .withStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
 			new SSimpleConfigSyncPacket(modId, snapshot).sendExcept(sender);
 		}
@@ -631,9 +627,9 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 					tryUpdateConfig(SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER), snapshot, false);
 				} catch (ConfigUpdateReflectionError e) {
 					LOGGER.error("Error updating client config for mod \"" + modId + "\"", e);
-					sendMessage(new TranslatableComponent(
-					  "simpleconfig.config.msg.error_updating_from_server",
-					  SimpleConfigImpl.getModNameOrId(modId), e.getMessage()));
+					sendMessage(
+					  Component.translatable("simpleconfig.config.msg.error_updating_from_server",
+					                         SimpleConfigImpl.getModNameOrId(modId), e.getMessage()));
 				}
 			}
 		}
@@ -788,9 +784,9 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (!permissions.permissionFor(sender, modId).getLeft().canEdit()) {
 				LOGGER.warn("Player \"" + senderName + "\" attempted to save server common config " +
 				            "for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslatableComponent(
-				  "simpleconfig.config.msg.tried_to_update_by", senderName, modName
-				).withStyle(DENIED_UPDATE_STYLE));
+				broadcastToOperators(
+				  Component.translatable("simpleconfig.config.msg.tried_to_update_by", senderName, modName)
+					 .withStyle(DENIED_UPDATE_STYLE));
 				return;
 			}
 			try {
@@ -799,21 +795,18 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error updating server config for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslatableComponent(
-				  "simpleconfig.config.msg.error_updating_by",
-				  modName, senderName, e.getMessage()
-				).withStyle(ERROR_UPDATE_STYLE));
+				broadcastToOperators(Component.translatable("simpleconfig.config.msg.error_updating_by",
+				                                            modName, senderName, e.getMessage())
+				                       .withStyle(ERROR_UPDATE_STYLE));
 				return;
 			}
 			LOGGER.info(
 			  "Server common config for mod \"" + modName + "\" " +
 			  "has been updated by authorized player \"" + senderName + "\"");
-			MutableComponent msg = new TranslatableComponent(
-			  "simpleconfig.config.msg.updated_by",
-			  modName, senderName
-			).withStyle(ALLOWED_UPDATE_STYLE);
+			MutableComponent msg = Component.translatable("simpleconfig.config.msg.updated_by",
+			  modName, senderName).withStyle(ALLOWED_UPDATE_STYLE);
 			if (requireRestart)
-				msg = msg.append("\n").append(new TranslatableComponent(
+				msg = msg.append("\n").append(Component.translatable(
 				  "simpleconfig.config.msg.server_changes_require_restart"
 				).withStyle(REQUIRES_RESTART_STYLE));
 			broadcastToOperators(msg);
@@ -902,20 +895,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			} catch (ConfigUpdateReflectionError e) {
 				e.printStackTrace();
 				LOGGER.error("Error applying snapshot to config for mod \"" + modName + "\"");
-				broadcastToOperators(new TranslatableComponent(
-				  "simpleconfig.config.msg.error_updating_by",
-				  modName, senderName, e.getMessage()
-				).withStyle(ERROR_UPDATE_STYLE));
+				broadcastToOperators(Component.translatable("simpleconfig.config.msg.error_updating_by",
+				                                            modName, senderName, e.getMessage())
+				                       .withStyle(ERROR_UPDATE_STYLE));
 				return;
 			}
 			LOGGER.info("Snapshot applied to config for mod \"" + modName + "\" by player " + sender);
 			if (report.isEmpty()) {
-				broadcastToOperators(new TranslatableComponent(
+				broadcastToOperators(Component.translatable(
 				  "simpleconfig.config.msg.patched_by", modName, senderName
 				).withStyle(ALLOWED_UPDATE_STYLE));
 			} else {
-				new SSimpleConfigPatchReportPacket(new TranslatableComponent(
-				  "simpleconfig.hotkey.remote", sender.getName()), report
+				new SSimpleConfigPatchReportPacket(
+				  Component.translatable("simpleconfig.hotkey.remote", sender.getName()), report
 				).sendToOpsExcept(sender);
 			}
 		}
@@ -1041,15 +1033,16 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 					if (!dest.delete()) throw new IllegalStateException("Unable to delete file");
 				}
 				
-				broadcastToOperators(new TranslatableComponent(
+				broadcastToOperators(Component.translatable(
 				  "simpleconfig.config.msg.snapshot." + tt + "." + action + "d_by",
-				  this.presetName, modName, senderName).withStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
+				  this.presetName, modName, senderName
+				).withStyle(ALLOWED_SNAPSHOT_UPDATE_STYLE));
 				LOGGER.info(
 				  "Server config preset \"" + presetName + "\" for mod \"" + modName + "\" " +
 				  "has been " + action + "d by player \"" + senderName + "\"");
 				new SSimpleConfigSavedPresetPacket(modId, type, this.presetName, null).sendTo(sender);
 			} catch (RuntimeException | IOException e) {
-				broadcastToOperators(new TranslatableComponent(
+				broadcastToOperators(Component.translatable(
 				  "simpleconfig.config.msg.snapshot.error_updating_by",
 				  this.presetName, modName, senderName, e.getMessage()
 				).withStyle(ERROR_UPDATE_STYLE));
@@ -1059,7 +1052,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 				  modId, type, this.presetName, e.getClass().getSimpleName() + ": " + e.getMessage()
 				).sendTo(sender);
 			} catch (NoPermissionException e) {
-				broadcastToOperators(new TranslatableComponent(
+				broadcastToOperators(Component.translatable(
 				  "simpleconfig.config.msg.snapshot." + tt + ".tried_to_" + action,
 				  senderName, this.presetName, modName
 				).withStyle(DENIED_SNAPSHOT_UPDATE_STYLE));

@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.entries;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry.DoubleListCell;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -62,14 +61,12 @@ public class DoubleListListEntry
 				double i = Double.parseDouble(widget.getValue());
 				final DoubleListListEntry listEntry = getListEntry();
 				if (i > listEntry.maximum)
-					return Optional.of(new TranslatableComponent(
-					  "simpleconfig.config.error.too_large", listEntry.maximum));
+					return Optional.of(Component.translatable("simpleconfig.config.error.too_large", listEntry.maximum));
 				if (i < listEntry.minimum)
-					return Optional.of(new TranslatableComponent(
-					  "simpleconfig.config.error.too_small", listEntry.minimum));
+					return Optional.of(Component.translatable("simpleconfig.config.error.too_small", listEntry.minimum));
 			} catch (NumberFormatException ex) {
 				return Optional.of(
-				  new TranslatableComponent("simpleconfig.config.error.invalid_float", widget.getValue()));
+				  Component.translatable("simpleconfig.config.error.invalid_float", widget.getValue()));
 			}
 			return Optional.empty();
 		}

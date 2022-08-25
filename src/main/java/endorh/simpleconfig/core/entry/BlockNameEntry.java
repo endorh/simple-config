@@ -6,19 +6,17 @@ import endorh.simpleconfig.api.entry.BlockNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -42,16 +40,16 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 	public static class Builder extends AbstractResourceEntry.Builder<BlockNameEntry, BlockNameEntryBuilder, Builder>
 	  implements BlockNameEntryBuilder {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier;
-		protected Tag<Block> tag = null;
+		protected TagKey<Block> tag = null;
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
-			suggestionSupplier = () -> Registry.BLOCK.entrySet().stream().map(Entry::getValue)
-			  .filter(b -> b.asItem().getItemCategory() != null).map(ForgeRegistryEntry::getRegistryName)
+			suggestionSupplier = () -> ForgeRegistries.BLOCKS.getValues().stream()
+			  .filter(b -> b.asItem().getItemCategory() != null).map(ForgeRegistries.BLOCKS::getKey)
 			  .collect(Collectors.toList());
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(Tag<Block> tag) {
+		@Override @Contract(pure=true) public Builder suggest(TagKey<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -64,9 +62,10 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;
+				//noinspection ConstantConditions
 				suggestionSupplier = () -> Stream.concat(
 				  supplier != null? supplier.get().stream() : Stream.empty(),
-				  tag.getValues().stream().map(ForgeRegistryEntry::getRegistryName)
+				  ForgeRegistries.BLOCKS.tags().getTag(tag).stream().map(ForgeRegistries.BLOCKS::getKey)
 				).collect(Collectors.toList());
 			}
 			return new BlockNameEntry(parent, name, value);

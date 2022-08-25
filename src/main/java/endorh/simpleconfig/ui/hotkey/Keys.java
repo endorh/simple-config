@@ -10,8 +10,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.Util;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -132,7 +132,7 @@ public class Keys {
 	}
 	
 	public static MutableComponent getDisplayNameForKey(int key) {
-		if (key == -1) return new TranslatableComponent("key.abbrev.unknown");
+		if (key == -1) return Component.translatable("key.abbrev.unknown");
 		String translationKey;
 		Key input = null;
 		if (key == -102) {
@@ -144,10 +144,10 @@ public class Keys {
 			translationKey = input.getName();
 		}
 		if (TRANSLATION_OVERRIDES.containsKey(translationKey))
-			return new TranslatableComponent(TRANSLATION_OVERRIDES.get(translationKey));
+			return Component.translatable(TRANSLATION_OVERRIDES.get(translationKey));
 		return input != null
 		       ? input.getDisplayName().copy()
-		       : new TranslatableComponent(translationKey);
+		       : Component.translatable(translationKey);
 	}
 	
 	public static @Nullable String getCharFromKey(int key) {

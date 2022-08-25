@@ -26,7 +26,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -350,9 +349,9 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		if (anyDirtyRequiresRestart()) {
 			final LocalPlayer player = Minecraft.getInstance().player;
 			if (player != null) {
-				player.sendMessage(new TranslatableComponent(
-				  "simpleconfig.config.msg.client_changes_require_restart"
-				).withStyle(ChatFormatting.GOLD), Util.NIL_UUID);
+				player.sendSystemMessage(
+				  Component.translatable("simpleconfig.config.msg.client_changes_require_restart")
+					 .withStyle(ChatFormatting.GOLD));
 			}
 		}
 	}
@@ -454,9 +453,8 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	
 	protected Component getTitle() {
 		if (I18n.exists(defaultTitle))
-			return new TranslatableComponent(defaultTitle);
-		return new TranslatableComponent(
-		  "simpleconfig.config.category." + getType().name().toLowerCase());
+			return Component.translatable(defaultTitle);
+		return Component.translatable("simpleconfig.config.category." + getType().name().toLowerCase());
 	}
 	
 	protected String getHeaderComment() {

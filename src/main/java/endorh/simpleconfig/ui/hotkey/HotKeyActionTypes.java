@@ -14,8 +14,6 @@ import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -65,10 +63,8 @@ public class HotKeyActionTypes {
 		  AbstractConfigEntry<T, ?, Object> entry, SimpleHotKeyAction<Object, Object> action
 		) {
 			String value = entry.forCommand(entry.fromGui(action.getStorage()));
-			return new TranslatableComponent(
-			  "simpleconfig.hotkey.type.action." + getTranslationKey(), new TextComponent(
-				 value != null? value : "null"
-			).withStyle(ChatFormatting.DARK_AQUA));
+			return Component.translatable("simpleconfig.hotkey.type.action." + getTranslationKey(), Component.literal(value != null? value : "null")
+			  .withStyle(ChatFormatting.DARK_AQUA));
 		}
 		
 		@SuppressWarnings("unchecked") public <V> SimpleHotKeyActionType<V, V> cast() {
@@ -148,8 +144,8 @@ public class HotKeyActionTypes {
 		public <T, C, EE extends AbstractConfigEntry<T, C, E>> Optional<Component> getActionError(
 		  EE entry, Object value
 		) {
-			if (value == null) return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.missing_value"));
+			if (value == null) return Optional.of(
+			  Component.translatable("simpleconfig.config.error.missing_value"));
 			return Optional.empty();
 		}
 	}
@@ -278,17 +274,16 @@ public class HotKeyActionTypes {
 	}
 	
 	protected static <V, S> ISimpleHotKeyError<V, S> notNull() {
-		return (entry, v) -> v == null? Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.missing_value")) : Optional.empty();
+		return (entry, v) -> v == null? Optional.of(
+		  Component.translatable("simpleconfig.config.error.missing_value")) : Optional.empty();
 	}
 	
 	protected static <V, S> ISimpleHotKeyError<V, S> divError() {
 		return (entry, v) -> {
-			if (v == null) return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.missing_value"));
+			if (v == null) return Optional.of(
+			  Component.translatable("simpleconfig.config.error.missing_value"));
 			if (v instanceof Number && ((Number) v).doubleValue() == 0.0)
-				return Optional.of(new TranslatableComponent(
-				  "simpleconfig.config.error.zero_div"));
+				return Optional.of(Component.translatable("simpleconfig.config.error.zero_div"));
 			return Optional.empty();
 		};
 	}

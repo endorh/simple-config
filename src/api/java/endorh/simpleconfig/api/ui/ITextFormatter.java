@@ -3,9 +3,9 @@ package endorh.simpleconfig.api.ui;
 import endorh.simpleconfig.api.ui.format.*;
 import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.CharacterMapTextFormatter;
 import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.ICharacterFormatter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ public interface ITextFormatter {
 	ITextFormatter DEFAULT = plain(Style.EMPTY);
 	
 	static ITextFormatter plain(Style style) {
-		return text -> new TextComponent(text).setStyle(style);
+		return text -> Component.literal(text).setStyle(style);
 	}
 	
 	static NumberTextFormatter numeric(boolean integer) {

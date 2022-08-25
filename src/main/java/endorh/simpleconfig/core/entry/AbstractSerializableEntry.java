@@ -10,7 +10,6 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -69,8 +68,7 @@ public abstract class AbstractSerializableEntry
 	}
 	
 	protected Optional<Component> getErrorMessage(String value) {
-		return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.invalid_value_generic"));
+		return Optional.of(Component.translatable("simpleconfig.config.error.invalid_value_generic"));
 	}
 	
 	@Override

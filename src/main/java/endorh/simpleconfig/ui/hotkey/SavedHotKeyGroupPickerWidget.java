@@ -34,6 +34,7 @@ import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.HoverEvent.Action;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -91,18 +92,18 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		loadButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.LOAD, ButtonAction.of(
 		  this::load
 		).active(() -> selector.getValue() != null)
-		  .tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.load_group")));
+		  .tooltip(Component.translatable("simpleconfig.ui.saved_hotkeys.load_group")));
 		saveButton = new MultiFunctionImageButton(0, 0, 20, 20, Buttons.SAVE, ButtonAction.of(
 			 () -> saveLocal(false)
 		).active(() -> !selector.getText().isEmpty() && tree.getFocusedEntry() instanceof ConfigHotKeyTreeViewGroupEntry)
-		  .tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.save_group.local")))
+		  .tooltip(Component.translatable("simpleconfig.ui.saved_hotkeys.save_group.local")))
 		  .on(Modifier.SHIFT, ButtonAction.of(() -> saveRemote(false))
 		    .icon(Buttons.SAVE_REMOTE)
 		    .active(
 				() -> !selector.getText().isEmpty()
 				      && tree.getFocusedEntry() instanceof ConfigHotKeyTreeViewGroupEntry
 				      && permissions.canEditServerHotKeys()
-		    ).tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.save_group.remote")))
+		    ).tooltip(Component.translatable("simpleconfig.ui.saved_hotkeys.save_group.remote")))
 		  .on(Modifier.ALT, ButtonAction.of(() -> delete(true))
 		    .icon(Buttons.DELETE)
 		    .active(() -> {
@@ -110,11 +111,11 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 				 return value instanceof WritableSavedHotKeyGroup
 				        && ((WritableSavedHotKeyGroup) value).canWrite();
 			 })
-		    .tooltip(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.delete_group")));
+		    .tooltip(Component.translatable("simpleconfig.ui.saved_hotkeys.delete_group")));
 		selector = new ComboBoxWidget<>(
 		  new SavedHotKeyGroupWrapper(this), () -> overlayContainer, 0, 0, 80, 18);
 		selector.setSuggestionProvider(new SimpleComboBoxModel<>(this::getSavedGroups));
-		selector.setHint(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.hint"));
+		selector.setHint(Component.translatable("simpleconfig.ui.saved_hotkeys.hint"));
 		Stream.of(selector, loadButton, saveButton).forEach(listeners::add);
 	}
 	
@@ -157,10 +158,10 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		if (group != null) {
 			String rr = group instanceof ResourceSavedHotKeyGroup? "resource" :
 			            group instanceof RemoteSavedHotKeyGroup? "remote" : "local";
-			MutableComponent displayName = new TextComponent(group.getName())
+			MutableComponent displayName = Component.literal(group.getName())
 			  .withStyle(ChatFormatting.LIGHT_PURPLE);
 			getScreen().addDialog(ProgressDialog.create(
-			  new TranslatableComponent("simpleconfig.ui.saved_hotkeys.loading"),
+			  Component.translatable("simpleconfig.ui.saved_hotkeys.loading"),
 			  group.load().thenAccept(g -> {
 				  if (g != null) tree.tryAddEntry(
 				    new ConfigHotKeyTreeViewGroupEntry(
@@ -170,7 +171,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 					 "simpleconfig.ui.saved_hotkeys.loading." + rr, displayName
 				  ));
 				  d.setSuccessDialog(InfoDialog.create(
-					 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.loaded"),
+					 Component.translatable("simpleconfig.ui.saved_hotkeys.loaded"),
 					 paragraph(
 						 "simpleconfig.ui.saved_hotkeys.loaded." + rr, displayName)
 				  ));
@@ -192,20 +193,18 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 			body.addAll(splitTtc("simpleconfig.ui.saved_hotkeys.mistaken.question." + intent));
 		} else body.addAll(splitTtc("simpleconfig.ui.saved_hotkeys.overwrite.question"));
 		getScreen().addDialog(ConfirmDialog.create(
-		  new TranslatableComponent(
-		    "simpleconfig.ui.saved_hotkeys." + problem),
+		  Component.translatable("simpleconfig.ui.saved_hotkeys." + problem),
 		  d -> {
 			  d.setBody(body);
-			  d.setConfirmText(new TranslatableComponent(
-				 mistaken? "simpleconfig.ui.saved_hotkeys.mistaken.option.create." + intent :
-				 "simpleconfig.ui.confirm_overwrite.overwrite"));
+			  d.setConfirmText(Component.translatable(mistaken? "simpleconfig.ui.saved_hotkeys.mistaken.option.create." + intent :
+			                                          "simpleconfig.ui.confirm_overwrite.overwrite"));
 			  d.setConfirmButtonTint("remote".equals(intent)? 0x6480A0FF : 0x6480FFA0);
 			  if (mistaken) {
 				  d.withAction(b -> {
 					  if (b) action.run();
 				  });
 				  if (alternative != null && !"resource".equals(overwrite)) d.addButton(1, TintedButton.of(
-					 new TranslatableComponent("simpleconfig.ui.confirm_overwrite.overwrite"),
+					 Component.translatable("simpleconfig.ui.confirm_overwrite.overwrite"),
 					 "remote".equals(overwrite)? 0x6480A0FF : 0x6480FFA0, p -> {
 						 d.cancel(false);
 						 alternative.run();
@@ -215,9 +214,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 					  skipOverwriteDialog = c[0];
 					  action.run();
 				  }
-			  }, CheckboxButton.of(false, new TranslatableComponent(
-			    "simpleconfig.ui.do_not_ask_again_this_session"
-			  )));
+			  }, CheckboxButton.of(false, Component.translatable("simpleconfig.ui.do_not_ask_again_this_session")));
 		  }
 		));
 		return true;
@@ -228,7 +225,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		if (g == null) return;
 		LocalSavedHotKeyGroup group = SavedHotKeyGroup.local(selector.getText());
 		String name = group.getName();
-		MutableComponent displayName = new TextComponent(name)
+		MutableComponent displayName = Component.literal(name)
 		  .withStyle(ChatFormatting.LIGHT_PURPLE);
 		if (!overwrite) {
 			String oo = null;
@@ -241,21 +238,19 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		File file = group.getFile();
 		getScreen().addDialog(
 		  ProgressDialog.create(
-			 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saving"),
+			 Component.translatable("simpleconfig.ui.saved_hotkeys.saving"),
 		    group.save(g), d -> {
 				 d.setCancellableByUser(false);
 			    d.setBody(paragraph(
 				   "simpleconfig.ui.saved_hotkeys.saving.local", displayName
 				 ));
 				 d.setSuccessDialog(InfoDialog.create(
-					new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saved"),
+					Component.translatable("simpleconfig.ui.saved_hotkeys.saved"),
 					paragraph(
 					  "simpleconfig.ui.saved_hotkeys.saved.local", displayName,
 					  "simpleconfig.ui.saved_hotkeys.saved.file",
-					  new TextComponent(
-					    SimpleConfigPaths.relativize(file.toPath()).toString()
-					  ).withStyle(s -> s.setUnderlined(true).applyFormat(ChatFormatting.BLUE)
-					    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslatableComponent("chat.copy")))
+					  Component.literal(SimpleConfigPaths.relativize(file.toPath()).toString()).withStyle(s -> s.withUnderlined(true).applyFormat(ChatFormatting.BLUE)
+					    .withHoverEvent(new HoverEvent(Action.SHOW_TEXT, Component.translatable("chat.copy")))
 					    .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, file.getAbsolutePath()))))
 				 ));
 		    }));
@@ -266,7 +261,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		if (g == null) return;
 		RemoteSavedHotKeyGroup group = SavedHotKeyGroup.remote(selector.getText());
 		String name = group.getName();
-		MutableComponent displayName = new TextComponent(name)
+		MutableComponent displayName = Component.literal(name)
 		  .withStyle(ChatFormatting.LIGHT_PURPLE);
 		if (!overwrite) {
 			String oo = null;
@@ -279,14 +274,14 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		if (group.canWrite()) {
 			getScreen().addDialog(
 			  ProgressDialog.create(
-				 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saving"),
+				 Component.translatable("simpleconfig.ui.saved_hotkeys.saving"),
 				 group.save(g), d -> {
 					 d.setCancellableByUser(false);
 					 d.setBody(paragraph(
 						"simpleconfig.ui.saved_hotkeys.saving.remote", displayName
 					 ));
 					 d.setSuccessDialog(InfoDialog.create(
-						new TranslatableComponent("simpleconfig.ui.saved_hotkeys.saved"),
+						Component.translatable("simpleconfig.ui.saved_hotkeys.saved"),
 						paragraph(
 						  "simpleconfig.ui.saved_hotkeys.saved.remote", displayName)
 					 ));
@@ -298,30 +293,31 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		SavedHotKeyGroup value = selector.getValue();
 		if (value instanceof WritableSavedHotKeyGroup writable) {
 			if (writable.canWrite()) {
-				MutableComponent displayName = new TextComponent(writable.getName())
+				MutableComponent displayName = Component.literal(writable.getName())
 				  .withStyle(ChatFormatting.LIGHT_PURPLE);
 				String rr = writable instanceof RemoteSavedHotKeyGroup? "remote" : "local";
 				if (confirm) {
 					getScreen().addDialog(ConfirmDialog.create(
-					  new TranslatableComponent("simpleconfig.ui.saved_hotkeys.confirm.delete.title"), d -> {
+					  Component.translatable("simpleconfig.ui.saved_hotkeys.confirm.delete.title"), d -> {
 						  d.setBody(splitTtc(
 							 "simpleconfig.ui.saved_hotkeys.confirm.delete.body." + rr, displayName
 						  ));
-						  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.saved_hotkeys.confirm.delete"));
+						  d.setConfirmText(
+						    Component.translatable("simpleconfig.ui.saved_hotkeys.confirm.delete"));
 						  d.setConfirmButtonTint(0x80BD2424);
 						  d.withAction(b -> {
 							  if (b) delete(false);
 						  });
 					  }));
 				} else getScreen().addDialog(ProgressDialog.create(
-				  new TranslatableComponent("simpleconfig.ui.saved_hotkeys.deleting"),
+				  Component.translatable("simpleconfig.ui.saved_hotkeys.deleting"),
 				  writable.delete(), d -> {
 					  d.setCancellableByUser(false);
 					  d.setBody(paragraph(
 						 "simpleconfig.ui.saved_hotkeys.deleting." + rr, displayName
 					  ));
 					  d.setSuccessDialog(InfoDialog.create(
-						 new TranslatableComponent("simpleconfig.ui.saved_hotkeys.deleted"),
+						 Component.translatable("simpleconfig.ui.saved_hotkeys.deleted"),
 						 paragraph(
 							"simpleconfig.ui.saved_hotkeys.deleted." + rr, displayName)
 					  ));
@@ -425,11 +421,11 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 			String name = getName();
 			if (name.contains(":")) {
 				String[] split = HYPHEN.split(name, 2);
-				return new TextComponent(split[0]).withStyle(ChatFormatting.GRAY)
-				  .append(new TextComponent(":").withStyle(ChatFormatting.DARK_GRAY).withStyle(ChatFormatting.BOLD))
-				  .append(new TextComponent(split[1]).withStyle(getStyle()));
+				return Component.literal(split[0]).withStyle(ChatFormatting.GRAY)
+				  .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY).withStyle(ChatFormatting.BOLD))
+				  .append(Component.literal(split[1]).withStyle(getStyle()));
 			}
-			return new TextComponent(name).withStyle(getStyle());
+			return Component.literal(name).withStyle(getStyle());
 		}
 		public Style getStyle() {
 			return Style.EMPTY.applyFormat(ChatFormatting.WHITE);
@@ -550,7 +546,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		
 		protected InputStream getInputStream() throws IOException {
 			return Minecraft.getInstance().getResourceManager()
-			  .getResource(getLocation()).getInputStream();
+			  .getResourceOrThrow(getLocation()).open();
 		}
 		
 		@Override public CompletableFuture<byte[]> loadData() {

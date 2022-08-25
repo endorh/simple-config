@@ -20,7 +20,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -62,16 +62,14 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		  this::acceptExternalValue
 		).active(() -> hasExternalDiff() && !hasAcceptedExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
-			 new TranslatableComponent(
-				"simpleconfig.ui.merge.accept." + (getScreen().isEditingServer()? "remote" : "external"))
+			 Component.translatable("simpleconfig.ui.merge.accept." + (getScreen().isEditingServer()? "remote" : "external"))
 			   .withStyle(ChatFormatting.LIGHT_PURPLE))));
 		mergeButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Entries.MERGE_CONFLICT, ButtonAction.of(
 			 () -> setPreviewingExternal(true)
 		  ).active(() -> !isPreviewingExternal() && hasConflictingExternalDiff())
 		  .tooltip(() -> Lists.newArrayList(
-			 new TranslatableComponent(
-			   "simpleconfig.ui.view_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
+			 Component.translatable("simpleconfig.ui.view_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
 			   .withStyle(ChatFormatting.GOLD)))
 		) {
 			@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
@@ -81,8 +79,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		  .active(() -> !isPreviewingExternal() && hasAcceptedExternalDiff())
 		  .icon(SimpleConfigIcons.Entries.MERGE_ACCEPTED)
 		  .tooltip(() -> Lists.newArrayList(
-			 new TranslatableComponent(
-			   "simpleconfig.ui.accepted_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
+			 Component.translatable("simpleconfig.ui.accepted_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
 			   .withStyle(ChatFormatting.DARK_GREEN)))
 		).on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(
 		  () -> setPreviewingExternal(false)
@@ -303,7 +300,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		if (area == previewOverlayRectangle) {
 			if (!isPreviewingExternal()) return false;
 			Font font = Minecraft.getInstance().font;
-			TranslatableComponent caption = new TranslatableComponent(
+			MutableComponent caption = Component.translatable(
 			  "simpleconfig.ui." + (getScreen().isEditingServer()? "remote_changes" : "external_changes"));
 			
 			final int captionWidth = font.width(caption);

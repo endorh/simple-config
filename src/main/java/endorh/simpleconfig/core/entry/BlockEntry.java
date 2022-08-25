@@ -13,11 +13,12 @@ import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -28,7 +29,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -52,7 +52,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 	> implements BlockEntryBuilder {
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Block> filter = null;
-		protected @Nullable Tag<Block> tag = null;
+		protected @Nullable TagKey<Block> tag = null;
 		protected boolean requireGroup = true;
 		
 		public Builder(Block value) {
@@ -81,7 +81,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Tag<Block> tag) {
+		@Override @Contract(pure=true) public Builder from(TagKey<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -92,7 +92,8 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 				throw new IllegalArgumentException(
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
-				Predicate<Block> inTag = i -> tag.getValues().contains(i);
+				//noinspection ConstantConditions
+				Predicate<Block> inTag = i -> ForgeRegistries.BLOCKS.tags().getTag(tag).contains(i);
 				filter = filter != null? filter.and(inTag) : inTag;
 			}
 			if (filter != null && !filter.test(value))
@@ -113,7 +114,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 	
 	@Override public String forConfig(Block value) {
 		//noinspection ConstantConditions
-		return value.getRegistryName().toString();
+		return ForgeRegistries.BLOCKS.getKey(value).toString();
 	}
 	
 	@Override @Nullable public Block fromConfig(@Nullable String value) {
@@ -131,7 +132,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 	}
 	
 	protected List<Block> supplyOptions() {
-		return Registry.BLOCK.entrySet().stream().map(Entry::getValue).filter(filter)
+		return ForgeRegistries.BLOCKS.getValues().stream().filter(filter)
 		  .collect(Collectors.toList());
 	}
 	

@@ -10,8 +10,6 @@ import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -207,7 +205,7 @@ public class ConfigHotKeyManager {
 		
 		public ConfigHotKeyGroup() {
 			keyBind = new ExtendedKeyBindImpl(
-			  new TextComponent(getName()),
+			  Component.literal(getName()),
 			  keyMapping, this::applyHotkey);
 		}
 		
@@ -216,7 +214,7 @@ public class ConfigHotKeyManager {
 		}
 		public void setName(String name) {
 			this.name = name;
-			keyBind.setTitle(new TextComponent(name));
+			keyBind.setTitle(Component.literal(name));
 		}
 		
 		@Override public ExtendedKeyBindImpl getKeyBind() {
@@ -257,10 +255,8 @@ public class ConfigHotKeyManager {
 		}
 		
 		public Component getHotkeyReport(boolean enable) {
-			return new TranslatableComponent(
-			  "simpleconfig.hotkey.group." + (enable ? "enable" : "disable"),
-			  new TextComponent(getName()).withStyle(ChatFormatting.AQUA)
-			).withStyle(ChatFormatting.GRAY);
+			return Component.translatable("simpleconfig.hotkey.group." + (enable ? "enable" : "disable"),
+			  Component.literal(getName()).withStyle(ChatFormatting.AQUA)).withStyle(ChatFormatting.GRAY);
 		}
 		
 		@Override public Map<String, Object> serialize() {

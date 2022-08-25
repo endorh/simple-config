@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.widget.combobox;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
@@ -16,7 +15,6 @@ public interface IComboBoxModel<T> {
 	Optional<List<T>> updateSuggestions(ITypeWrapper<T> typeWrapper, String query);
 	
 	default Optional<Component> getPlaceHolder(ITypeWrapper<T> typeWrapper, String query) {
-		return Optional.of(new TranslatableComponent(
-		  "simpleconfig.ui.no_suggestions").withStyle(ChatFormatting.GRAY));
+		return Optional.of(Component.translatable("simpleconfig.ui.no_suggestions").withStyle(ChatFormatting.GRAY));
 	}
 }

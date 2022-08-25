@@ -2,7 +2,7 @@ package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.jetbrains.annotations.Contract;
@@ -31,5 +31,5 @@ public interface ItemEntryBuilder
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */
-	@Contract(pure=true) ItemEntryBuilder from(Tag<Item> tag);
+	@Contract(pure=true) ItemEntryBuilder from(TagKey<Item> tag);
 }

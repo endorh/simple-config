@@ -6,20 +6,18 @@ import endorh.simpleconfig.api.entry.FluidNameEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -43,17 +41,17 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 	public static class Builder extends AbstractResourceEntry.Builder<FluidNameEntry, FluidNameEntryBuilder, Builder>
 	  implements FluidNameEntryBuilder {
 		protected Supplier<List<ResourceLocation>> suggestionSupplier;
-		protected Tag<Fluid> tag = null;
+		protected TagKey<Fluid> tag = null;
 		
 		public Builder(ResourceLocation value) {
 			super(value, ResourceLocation.class);
-			suggestionSupplier = () -> Registry.FLUID.entrySet().stream().map(Entry::getValue)
+			suggestionSupplier = () -> ForgeRegistries.FLUIDS.getValues().stream()
 			  .filter(f -> f.getBucket().getItemCategory() != null)
 			  .filter(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getSource() == f)
-			  .map(ForgeRegistryEntry::getRegistryName).collect(Collectors.toList());
+			  .map(ForgeRegistries.FLUIDS::getKey).collect(Collectors.toList());
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(Tag<Fluid> tag) {
+		@Override @Contract(pure=true) public Builder suggest(TagKey<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;
@@ -66,9 +64,10 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 				  "Cannot use tag item filters in non-server config entry");
 			if (tag != null) {
 				final Supplier<List<ResourceLocation>> supplier = suggestionSupplier;
+				//noinspection ConstantConditions
 				suggestionSupplier = () -> Stream.concat(
 				  supplier != null? supplier.get().stream() : Stream.empty(),
-				  tag.getValues().stream().map(ForgeRegistryEntry::getRegistryName)
+				  ForgeRegistries.FLUIDS.tags().getTag(tag).stream().map(ForgeRegistries.FLUIDS::getKey)
 				).collect(Collectors.toList());
 			}
 			return new FluidNameEntry(parent, name, value);

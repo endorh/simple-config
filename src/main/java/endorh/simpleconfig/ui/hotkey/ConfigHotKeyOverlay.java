@@ -9,12 +9,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
@@ -34,7 +33,7 @@ public class ConfigHotKeyOverlay {
 	private static long toastTimestamp;
 	
 	public static void addToastMessage(String message) {
-		addToastMessage(new TextComponent(message));
+		addToastMessage(Component.literal(message));
 	}
 	
 	public static void addToastMessage(Component message) {
@@ -49,9 +48,9 @@ public class ConfigHotKeyOverlay {
 		}
 	}
 	
-	@SubscribeEvent public static void onRenderOverlay(RenderGameOverlayEvent.Post event) {
-		if (event.getType() == ElementType.ALL) {
-			PoseStack mStack = event.getMatrixStack();
+	@SubscribeEvent public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
+		if (event.getOverlay() == VanillaGuiOverlay.AIR_LEVEL.type()) {
+			PoseStack mStack = event.getPoseStack();
 			long time = System.currentTimeMillis();
 			Component msg = toastMessage;
 			if (msg != null) {

@@ -2,12 +2,10 @@ package endorh.simpleconfig.ui.hotkey;
 
 import endorh.simpleconfig.config.ClientConfig.hotkey_log;
 import endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +30,7 @@ public class ConfigHotKeyLogger {
 		int maxSize = hotkey_log.max_logged_actions;
 		if (size > maxSize) {
 			message = new ArrayList<>(message.subList(0, maxSize));
-			message.add(new TranslatableComponent("simpleconfig.hotkey.more", size - maxSize));
+			message.add(Component.translatable("simpleconfig.hotkey.more", size - maxSize));
 		}
 		switch (location) {
 			case CHAT -> {
@@ -40,7 +38,7 @@ public class ConfigHotKeyLogger {
 				if (player != null) {
 					MutableComponent msg = title.copy();
 					message.forEach(l -> msg.append("\n").append(l));
-					player.sendMessage(msg, Util.NIL_UUID);
+					player.sendSystemMessage(msg);
 				}
 			}
 			case RIGHT_OVERLAY -> ConfigHotKeyOverlay.addMessage(title, message);

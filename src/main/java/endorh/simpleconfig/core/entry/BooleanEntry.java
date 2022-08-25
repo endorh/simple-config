@@ -9,7 +9,8 @@ import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.BooleanToggleBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -49,10 +50,8 @@ public class BooleanEntry
 		
 		@Override @Contract(pure=true) public Builder text(String translation) {
 			Builder copy = copy();
-			final TranslatableComponent yes =
-			  new TranslatableComponent(translation + ".true");
-			final TranslatableComponent no =
-			  new TranslatableComponent(translation + ".false");
+			final MutableComponent yes = Component.translatable(translation + ".true");
+			final MutableComponent no = Component.translatable(translation + ".false");
 			copy.yesNoSupplier = b -> b? yes : no;
 			return copy;
 		}

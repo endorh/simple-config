@@ -10,7 +10,6 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -45,10 +44,9 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 			if (category != null) screen.setSelectedCategory(category);
 		})/*.tint(category.getColor())*/
 		  .icon(category.getIcon())
-		  .title(() -> screen.isSelecting() ? title.copy().append(new TextComponent(
-		    " [" + category.getAllMainEntries().stream().filter(
-			   AbstractConfigField::isSelected).count() + "]"
-		  ).withStyle(ChatFormatting.AQUA)) : title));
+		  .title(() -> screen.isSelecting()? title.copy().append(
+		    Component.literal(" [" + category.getAllMainEntries().stream().filter(
+			   AbstractConfigField::isSelected).count() + "]").withStyle(ChatFormatting.AQUA)) : title));
 		this.descriptionSupplier = descriptionSupplier;
 		this.category = category;
 		this.screen = screen;

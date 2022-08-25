@@ -7,8 +7,6 @@ import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,8 +77,7 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		}
 		
 		@Override @Contract(pure=true) public Self slider(String sliderTextTranslation) {
-			return slider(v -> new TranslatableComponent(
-			  sliderTextTranslation, String.format(sliderFormat, v)));
+			return slider(v -> Component.translatable(sliderTextTranslation, String.format(sliderFormat, v)));
 		}
 		
 		@Override @Contract(pure=true) public Self slider(
@@ -172,19 +169,19 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		Optional<Component> error = super.getErrorFromGUI(value);
 		if (error.isPresent()) return error;
 		V v = fromGui(value);
-		if (v == null) return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.missing_value"));
+		if (v == null) return Optional.of(
+		  Component.translatable("simpleconfig.config.error.missing_value"));
 		if (min != null && min.compareTo(v) > 0)
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.too_small", coloredBound(min)));
+			return Optional.of(
+			  Component.translatable("simpleconfig.config.error.too_small", coloredBound(min)));
 		if (max != null && max.compareTo(v) < 0)
-			return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.too_large", coloredBound(max)));
+			return Optional.of(
+			  Component.translatable("simpleconfig.config.error.too_large", coloredBound(max)));
 		return Optional.empty();
 	}
 	
 	protected static MutableComponent coloredBound(Object bound) {
-		return new TextComponent(String.valueOf(bound))
+		return Component.literal(String.valueOf(bound))
 		  .withStyle(ChatFormatting.DARK_AQUA);
 	}
 	

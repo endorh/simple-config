@@ -12,7 +12,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -197,8 +196,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		ColorValue colorValue = getColorValue(getText());
 		ColorError error = colorValue.getError();
 		if (error != null) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.invalid_color", getText()));
+			return Optional.of(Component.translatable("simpleconfig.config.error.invalid_color", getText()));
 		}
 		return super.getErrorMessage();
 	}

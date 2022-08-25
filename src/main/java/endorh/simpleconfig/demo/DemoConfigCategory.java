@@ -23,7 +23,10 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -54,11 +57,11 @@ public class DemoConfigCategory {
 	private static String prefix(String key) {
 		return SimpleConfigMod.MOD_ID + ".config." + key;
 	}
-	private static TextComponent stc(String msg, Object... args) {
-		return new TextComponent(String.format(msg, args));
+	private static MutableComponent stc(String msg, Object... args) {
+		return Component.literal(String.format(msg, args));
 	}
-	private static TranslatableComponent ttc(String key, Object... args) {
-		return new TranslatableComponent(key, args);
+	private static MutableComponent ttc(String key, Object... args) {
+		return Component.translatable(key, args);
 	}
 	
 	// This category builder is added to the config builder
@@ -478,7 +481,7 @@ public class DemoConfigCategory {
 		          //   specific builder exists as shown below
 		          .add("button_entry", button(
 		            number(2F).error(
-		              n -> abs(n) > 10 ? Optional.of(new TextComponent("> 10")) :
+		              n -> abs(n) > 10? Optional.of(Component.literal("> 10")) :
 		                   Optional.empty()
 		            ), s -> {
 		            	final String path = "demo.entries.special.button_test";
@@ -616,7 +619,7 @@ public class DemoConfigCategory {
 					EntryTag.coloredBookmark(ChatFormatting.YELLOW)))
 		       .add("enable_switch", bool(false))
 		       .add("enable_test", string("text").editable(g -> g.getGUIBoolean("enable_switch"))))
-		  .text("end", new TranslatableComponent("simpleconfig.text.wiki")
+		  .text("end", Component.translatable("simpleconfig.text.wiki")
 		    .withStyle(style -> style.withColor(ChatFormatting.AQUA)
 		      .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
 		  // Finally, we may manually set a baker method

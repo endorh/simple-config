@@ -14,7 +14,6 @@ import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -186,8 +185,8 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		if (getText().length() < minLength)
 			return Optional.of(
 			  minLength == 1
-			  ? new TranslatableComponent("simpleconfig.config.error.string.empty")
-			  : new TranslatableComponent("simpleconfig.config.error.string.min_length", minLength));
+			  ? Component.translatable("simpleconfig.config.error.string.empty")
+			  : Component.translatable("simpleconfig.config.error.string.min_length", minLength));
 		return Optional.empty();
 	}
 	

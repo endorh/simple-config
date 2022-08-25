@@ -2,30 +2,34 @@ package endorh.simpleconfig.core.commands;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import endorh.simpleconfig.SimpleConfigMod;
-import net.minecraft.commands.synchronization.ArgumentSerializer;
-import net.minecraft.commands.synchronization.ArgumentTypes;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.ArgumentTypeInfos;
+import net.minecraft.core.Registry;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.DeferredRegister;
+
+import java.util.function.Supplier;
 
 @EventBusSubscriber(modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
 public class SimpleConfigArgumentTypes {
-	
-	@SubscribeEvent public static void onInit(FMLCommonSetupEvent event) {
-		registerArgumentTypes();
-	}
+	private static final DeferredRegister<ArgumentTypeInfo<?, ?>>
+	  TYPE_INFOS = DeferredRegister.create(Registry.COMMAND_ARGUMENT_TYPE_REGISTRY, SimpleConfigMod.MOD_ID);
 	
 	public static void registerArgumentTypes() {
-		register("mod-id", SimpleConfigModIdArgumentType.class, new SimpleConfigModIdArgumentType.Serializer());
-		register("type", SimpleConfigTypeArgumentType.class, new SimpleConfigTypeArgumentType.Serializer());
-		register("key", SimpleConfigKeyArgumentType.class, new SimpleConfigKeyArgumentType.Serializer());
-		register("value", SimpleConfigValueArgumentType.class, new SimpleConfigValueArgumentType.Serializer());
+		reg("mod-id", SimpleConfigModIdArgumentType.class, SimpleConfigModIdArgumentType.Info::new);
+		reg("type", SimpleConfigTypeArgumentType.class, SimpleConfigTypeArgumentType.Info::new);
+		reg("key", SimpleConfigKeyArgumentType.class, SimpleConfigKeyArgumentType.Info::new);
+		reg("value", SimpleConfigValueArgumentType.class, SimpleConfigValueArgumentType.Info::new);
+		TYPE_INFOS.register(FMLJavaModLoadingContext.get().getModEventBus());
 	}
 	
-	private static <T extends ArgumentType<?>> void register(
-	  String name, Class<T> clazz, ArgumentSerializer<T> serializer
+	private static <T extends ArgumentType<?>, TT extends ArgumentTypeInfo.Template<T>> void reg(
+	  String name, Class<T> clazz, Supplier<ArgumentTypeInfo<T, TT>> info
 	) {
-		ArgumentTypes.register(SimpleConfigMod.MOD_ID + ":" + name, clazz, serializer);
+		ArgumentTypeInfo<T, TT> i = info.get();
+		ArgumentTypeInfos.registerByClass(clazz, i);
+		TYPE_INFOS.register(name, () -> i);
 	}
 }

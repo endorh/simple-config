@@ -11,10 +11,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.HoverEvent.Action;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.player.Player;
@@ -68,8 +68,8 @@ public class ServerConfig {
 			roles.add(1, "[op]");
 			return roles;
 		}).error(s -> roleNameSupplier.get().contains(s) || "[op]".equals(s) || "[all]".equals(s)
-		              ? Optional.empty() : Optional.of(new TranslatableComponent(
-							 "simpleconfig.config.error.unknown_role", s)));
+		              ? Optional.empty() : Optional.of(
+		  Component.translatable("simpleconfig.config.error.unknown_role", s)));
 		StringEntryBuilder modGroupOrName = string("").suggest(() -> {
 			List<Pair<String, ?>> modGroups = SimpleConfigMod.SERVER_CONFIG.getGUI("permissions.mod_groups");
 			List<String> names = modGroups.stream().map(Pair::getKey).collect(Collectors.toList());
@@ -90,13 +90,12 @@ public class ServerConfig {
 			    .add("roles", map(
 				   string("").notEmpty()
 				     .error(s -> "[op]".equals(s) || "[all]".equals(s)? Optional.of(
-					    new TranslatableComponent(
-						   "simpleconfig.config.error.role.reserved", s)) : Optional.empty()),
+					    Component.translatable("simpleconfig.config.error.role.reserved", s)) : Optional.empty()),
 				   list(playerName)))
 			    .add("mod_groups", map(
 				   string("").notEmpty()
-				     .error(s -> "[all]".equals(s)? Optional.of(new TranslatableComponent(
-					    "simpleconfig.config.error.mod_group.reserved", s)) : Optional.empty()),
+				     .error(s -> "[all]".equals(s)? Optional.of(
+				       Component.translatable("simpleconfig.config.error.mod_group.reserved", s)) : Optional.empty()),
 				   caption(option(ListType.WHITELIST), list(modName))))
 			    .add("rules", pairList(
 				   roleName, caption(
@@ -119,11 +118,11 @@ public class ServerConfig {
 	private static MutableComponent makeLink(
 	  String key, @Nullable String tooltipKey, String url, ChatFormatting... styles
 	) {
-		return new TranslatableComponent(key).withStyle(s -> {
+		return Component.translatable(key).withStyle(s -> {
 			s = s.applyFormats(styles);
 			if (tooltipKey != null)
 				s = s.withHoverEvent(new HoverEvent(
-				  Action.SHOW_TEXT, new TranslatableComponent(tooltipKey)));
+				  Action.SHOW_TEXT, Component.translatable(tooltipKey)));
 			return s.withClickEvent(new ClickEvent(
 			  ClickEvent.Action.OPEN_URL, url));
 		});

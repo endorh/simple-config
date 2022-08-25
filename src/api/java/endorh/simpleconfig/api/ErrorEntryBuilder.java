@@ -1,7 +1,6 @@
 package endorh.simpleconfig.api;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Contract;
 
 import java.util.Optional;
@@ -101,7 +100,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 */
 	@Contract(pure=true) @Deprecated default Self check(Predicate<V> validator) {
 		return error(v -> validator.test(v)? Optional.empty() : Optional.of(
-		  new TranslatableComponent("simpleconfig.config.error.invalid_value_generic")));
+		  Component.translatable("simpleconfig.config.error.invalid_value_generic")));
 	}
 	
 	/**

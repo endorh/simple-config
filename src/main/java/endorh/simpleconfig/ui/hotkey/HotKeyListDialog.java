@@ -18,7 +18,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,12 +38,12 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	public HotKeyListDialog(@Nullable String modId) {
-		super(new TranslatableComponent("simpleconfig.ui.hotkey.dialog.title"));
+		super(Component.translatable("simpleconfig.ui.hotkey.dialog.title"));
 		TintedButton cancelButton = TintedButton.of(CommonComponents.GUI_CANCEL, p -> cancel(false));
 		cancelButton.setTintColor(0x64FFA080);
 		addButton(cancelButton);
 		TintedButton saveButton = TintedButton.of(
-		  new TranslatableComponent("simpleconfig.ui.save"),
+		  Component.translatable("simpleconfig.ui.save"),
 		  p -> cancel(true));
 		saveButton.setTintColor(0x6480FFA0);
 		addButton(saveButton);
@@ -94,10 +94,10 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 		if (success) {
 			if (confirm.save_hotkeys && isEdited()) {
 				getScreen().addDialog(ConfirmDialog.create(
-				  new TranslatableComponent("simpleconfig.ui.hotkey.dialog.save.title"),
+				  Component.translatable("simpleconfig.ui.hotkey.dialog.save.title"),
 				  d -> {
 					  d.setBody(splitTtc("simpleconfig.ui.hotkey.dialog.save.body"));
-					  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.controls.general.save"));
+					  d.setConfirmText(Component.translatable("simpleconfig.ui.controls.general.save"));
 					  d.setConfirmButtonTint(0x8080FF80);
 					  d.withCheckBoxes((b, c) -> {
 						  if (b) {
@@ -107,9 +107,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 							  save();
 							  super.cancel(true);
 						  }
-					  }, CheckboxButton.of(false, new TranslatableComponent(
-						 "simpleconfig.ui.do_not_ask_again"
-					  )));
+					  }, CheckboxButton.of(false, Component.translatable("simpleconfig.ui.do_not_ask_again")));
 				  }
 				));
 			} else {
@@ -119,11 +117,10 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 			}
 		} else if (confirm.discard_hotkeys && isEdited()) {
 			getScreen().addDialog(ConfirmDialog.create(
-			  new TranslatableComponent(
-				 "simpleconfig.ui.hotkey.dialog.discard.title"),
+			  Component.translatable("simpleconfig.ui.hotkey.dialog.discard.title"),
 			  d -> {
 				  d.setBody(splitTtc("simpleconfig.ui.hotkey.dialog.discard.body"));
-				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.controls.general.discard"));
+				  d.setConfirmText(Component.translatable("simpleconfig.ui.controls.general.discard"));
 				  d.setConfirmButtonTint(0x80FF8080);
 				  d.withCheckBoxes((b, c) -> {
 					  if (b) {
@@ -132,9 +129,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 						  } else CONFIRM.set(DISCARD_HOTKEYS, !c[0]);
 						  super.cancel(false);
 					  }
-				  }, CheckboxButton.of(false, new TranslatableComponent(
-					 "simpleconfig.ui.do_not_ask_again"
-				  )));
+				  }, CheckboxButton.of(false, Component.translatable("simpleconfig.ui.do_not_ask_again")));
 			  }
 			));
 		} else {

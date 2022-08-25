@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,14 +45,14 @@ public class EntryTag implements Comparable<EntryTag> {
 		String name = toTitleCase(color.getName());
 		return TAGS.computeIfAbsent(color, c -> of(
 		  500 + color.getId(), name + " tag", Entries.TAG.withTint(color), () -> SimpleConfigTextUtil.splitTtc(
-		  "simpleconfig.config.tag.tag", new TextComponent(name)
+		  "simpleconfig.config.tag.tag", Component.literal(name)
 				.withStyle(color)), null));
 	}
 	public static EntryTag coloredBookmark(ChatFormatting color) {
 		String name = toTitleCase(color.getName());
 		return BOOKMARKS.computeIfAbsent(color, c -> of(
 		  600 + color.getId(), name + " bookmark", Entries.BOOKMARK.withTint(color), () -> SimpleConfigTextUtil.splitTtc(
-		  "simpleconfig.config.tag.bookmark", new TextComponent(name)
+		  "simpleconfig.config.tag.bookmark", Component.literal(name)
 				.withStyle(color)), null));
 	}
 	public static EntryTag coloredWrench(ChatFormatting color) {

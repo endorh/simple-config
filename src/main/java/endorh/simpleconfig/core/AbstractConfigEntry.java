@@ -25,8 +25,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -121,8 +119,9 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	
 	@OnlyIn(Dist.CLIENT)
 	protected static void addTranslationsDebugSuffix(List<Component> tooltip) {
-		tooltip.add(new TextComponent(" "));
-		tooltip.add(new TextComponent(" ⚠ Simple Config translation debug mode active").withStyle(ChatFormatting.GOLD));
+		tooltip.add(Component.literal(" "));
+		tooltip.add(
+		  Component.literal(" ⚠ Simple Config translation debug mode active").withStyle(ChatFormatting.GOLD));
 	}
 	
 	public String getPath() {
@@ -171,7 +170,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 				try {
 					return ((Supplier<?>) a).get();
 				} catch (RuntimeException e){
-					return new TextComponent("<null>").withStyle(ChatFormatting.RED);
+					return Component.literal("<null>").withStyle(ChatFormatting.RED);
 				}
 			} else return a;
 		}).toArray();
@@ -218,25 +217,27 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		if (debugTranslations())
 			return getDebugDisplayName();
 		if (translation != null && I18n.exists(translation))
-			return new TranslatableComponent(translation, formatArgs(null, nameArgs));
-		return new TextComponent(name);
+			return Component.translatable(translation, formatArgs(null, nameArgs));
+		return Component.literal(name);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
 	protected Component getDebugDisplayName() {
 		if (translation != null) {
 			MutableComponent status =
-			  I18n.exists(translation) ? new TextComponent("✔ ") : new TextComponent("✘ ");
+			  I18n.exists(translation) ? Component.literal("✔ ") : Component.literal("✘ ");
 			if (tooltip != null) {
 				status = status.append(
 				  I18n.exists(tooltip)
-				  ? new TextComponent("✔ ").withStyle(ChatFormatting.DARK_AQUA)
-				  : new TextComponent("_ ").withStyle(ChatFormatting.DARK_AQUA));
+				  ? Component.literal("✔ ").withStyle(ChatFormatting.DARK_AQUA)
+				  : Component.literal("_ ").withStyle(ChatFormatting.DARK_AQUA));
 			}
 			ChatFormatting format =
 			  I18n.exists(translation)? ChatFormatting.DARK_GREEN : ChatFormatting.RED;
-			return new TextComponent("").append(status.append(new TextComponent(translation)).withStyle(format));
-		} else return new TextComponent("").append(new TextComponent("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
+			return Component.literal("")
+			  .append(status.append(Component.literal(translation)).withStyle(format));
+		} else return Component.literal("")
+		  .append(Component.literal("⚠ " + name).withStyle(ChatFormatting.DARK_RED));
 	}
 	
 	/**
@@ -396,14 +397,13 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	public Optional<Component> getErrorFromCommand(String command) {
 		try {
 			V value = fromCommand(command);
-			if (value == null) return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.invalid_value_generic", command));
+			if (value == null) return Optional.of(
+			  Component.translatable("simpleconfig.config.error.invalid_value_generic", command));
 			return getErrorsFromGUI(forGui(value)).stream().findFirst();
 		} catch (InvalidConfigValueTypeException e) {
 			return Optional.empty();
 		} catch (InvalidConfigValueException e) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.command.error.invalid_yaml", e.getLocalizedMessage()));
+			return Optional.of(Component.translatable("simpleconfig.command.error.invalid_yaml", e.getLocalizedMessage()));
 		}
 	}
 	
@@ -797,32 +797,34 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	@OnlyIn(Dist.CLIENT)
 	protected void addTranslationsDebugInfo(List<Component> tooltip) {
 		if (tooltipSupplier != null)
-			tooltip.add(new TextComponent(" + Has tooltip supplier").withStyle(ChatFormatting.GRAY));
+			tooltip.add(Component.literal(" + Has tooltip supplier").withStyle(ChatFormatting.GRAY));
 		if (errorSupplier != null)
-			tooltip.add(new TextComponent(" + Has error supplier").withStyle(ChatFormatting.GRAY));
+			tooltip.add(Component.literal(" + Has error supplier").withStyle(ChatFormatting.GRAY));
 	}
 
 	@OnlyIn(Dist.CLIENT)
 	protected Optional<Component[]> supplyDebugTooltip(Gui value) {
 		List<Component> lines = new ArrayList<>();
-		lines.add(new TextComponent("Translation key:").withStyle(ChatFormatting.GRAY));
+		lines.add(Component.literal("Translation key:").withStyle(ChatFormatting.GRAY));
 		if (translation != null) {
 			final MutableComponent status =
 			  I18n.exists(translation)
-			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-			  : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
-			lines.add(new TextComponent("   " + translation + " ")
+			  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : Component.literal("(✘ missing)").withStyle(ChatFormatting.RED);
+			lines.add(Component.literal("   " + translation + " ")
 			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
-		} else lines.add(new TextComponent("   Error: couldn't map translation key").withStyle(ChatFormatting.RED));
-		lines.add(new TextComponent("Tooltip key:").withStyle(ChatFormatting.GRAY));
+		} else lines.add(
+		  Component.literal("   Error: couldn't map translation key").withStyle(ChatFormatting.RED));
+		lines.add(Component.literal("Tooltip key:").withStyle(ChatFormatting.GRAY));
 		if (tooltip != null) {
 			final MutableComponent status =
 			  I18n.exists(tooltip)
-			  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-			  : new TextComponent("(not present)").withStyle(ChatFormatting.GOLD);
-			lines.add(new TextComponent("   " + tooltip + " ")
+			  ? Component.literal("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
+			  : Component.literal("(not present)").withStyle(ChatFormatting.GOLD);
+			lines.add(Component.literal("   " + tooltip + " ")
 			            .withStyle(ChatFormatting.DARK_AQUA).append(status));
-		} else lines.add(new TextComponent("   Error: couldn't map tooltip translation key").withStyle(ChatFormatting.RED));
+		} else lines.add(
+		  Component.literal("   Error: couldn't map tooltip translation key").withStyle(ChatFormatting.RED));
 		addTranslationsDebugInfo(lines);
 		addTranslationsDebugSuffix(lines);
 		return Optional.of(lines.toArray(new Component[0]));

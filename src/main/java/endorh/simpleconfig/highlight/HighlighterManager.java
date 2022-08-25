@@ -7,10 +7,10 @@ import endorh.simpleconfig.highlight.HighlighterManager.HighlightRule.RuleDeseri
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.HighlighterDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.StyleDeserializer;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -122,14 +122,14 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 			}
 			
 			public MutableComponent getResult() {
-				return result != null? result : TextComponent.EMPTY.copy();
+				return result != null? result : Component.empty();
 			}
 			
 			protected void appendFragment(String fragment, Style style) {
 				if (style == null) style = defaultStyle;
 				if (result != null) {
-					result.append(new TextComponent(fragment).setStyle(style));
-				} else result = new TextComponent(fragment).setStyle(style);
+					result.append(Component.literal(fragment).setStyle(style));
+				} else result = Component.literal(fragment).setStyle(style);
 			}
 			
 			public void visitHiddenTokensUpTo(int index) {
@@ -181,7 +181,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 		}
 		
 		@Override public MutableComponent highlight(String text) {
-			if (text.isEmpty()) return TextComponent.EMPTY.copy();
+			if (text.isEmpty()) return Component.empty();
 			Lexer lexer = lexerFactory.apply(CharStreams.fromString(text));
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			P parser = parserFactory.apply(tokens);
@@ -390,7 +390,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 				).withBold(bold)
 				  .withItalic(italic)
 				  .withUnderlined(underlined)
-				  .setStrikethrough(strikethrough);
+				  .withStrikethrough(strikethrough);
 			}
 		}
 	}

@@ -1,7 +1,6 @@
 package endorh.simpleconfig.api.ui.hotkey;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,9 +40,7 @@ public interface ExtendedKeyBind {
 	static ExtendedKeyBind of(
 	  String modId, String name, KeyBindMapping keyBind, Runnable callback
 	) {
-		return of(modId, new TranslatableComponent(
-		  modId + ".keybind." + name
-		), keyBind, callback);
+		return of(modId, Component.translatable(modId + ".keybind." + name), keyBind, callback);
 	}
 	
 	@Nullable String getModId();

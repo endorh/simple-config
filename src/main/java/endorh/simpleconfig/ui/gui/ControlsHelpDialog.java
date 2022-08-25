@@ -11,7 +11,10 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.controls.ControlsScreen;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -27,7 +30,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 	}
 	
 	public static Builder of(String prefix) {
-		return of(prefix, new TranslatableComponent("simpleconfig.ui.controls"));
+		return of(prefix, Component.translatable("simpleconfig.ui.controls"));
 	}
 	
 	public static Builder of(String prefix, Component title) {
@@ -61,13 +64,13 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		}
 		
 		private MutableComponent parse(String keys) {
-			final MutableComponent comma = new TextComponent(", ").withStyle(keyStyle);
-			final MutableComponent slash = new TextComponent("/").withStyle(keyStyle);
+			final MutableComponent comma = Component.literal(", ").withStyle(keyStyle);
+			final MutableComponent slash = Component.literal("/").withStyle(keyStyle);
 			return Arrays.stream(COMMA.split(keys)).map(
 			  s -> Arrays.stream(SLASH.split(s))
 			    .map(this::parseSingle)
-				 .reduce((a, b) -> a.append(slash).append(b)).orElse(TextComponent.EMPTY.copy())
-			).reduce((a, b) -> a.append(comma).append(b)).orElse(TextComponent.EMPTY.copy());
+				 .reduce((a, b) -> a.append(slash).append(b)).orElse(Component.empty())
+			).reduce((a, b) -> a.append(comma).append(b)).orElse(Component.empty());
 		}
 		
 		private static final Pattern TITLE_CASE_PATTERN = Pattern.compile("(?<!\\w)\\w");
@@ -133,15 +136,15 @@ public class ControlsHelpDialog extends ConfirmDialog {
 		}
 		
 		public Builder category(String name, Consumer<CategoryBuilder> builder) {
-			lines.add(new TranslatableComponent(prefix + "category." + name)
+			lines.add(Component.translatable(prefix + "category." + name)
 			            .withStyle(categoryStyle));
 			builder.accept(new CategoryBuilder(name));
-			lines.add(TextComponent.EMPTY);
+			lines.add(Component.empty());
 			return this;
 		}
 		
 		public Builder text(String key) {
-			return text(new TranslatableComponent(prefix + key));
+			return text(Component.translatable(prefix + key));
 		}
 		
 		public Builder text(Component text) {
@@ -161,7 +164,7 @@ public class ControlsHelpDialog extends ConfirmDialog {
 				  SimpleConfigIcons.Buttons.KEYBOARD, -1, -1, ButtonAction.of(() -> {
 					  Minecraft.getInstance().setScreen(controlsScreenSupplier.apply(d.getScreen()));
 					  d.cancel();
-				  }).title(() -> new TranslatableComponent("simpleconfig.ui.controls.edit_controls"))
+				  }).title(() -> Component.translatable("simpleconfig.ui.controls.edit_controls"))
 					 .tint(0x80815C2E)
 				));
 			}
@@ -177,26 +180,26 @@ public class ControlsHelpDialog extends ConfirmDialog {
 			
 			public CategoryBuilder key(String help, String keys) {
 				final MutableComponent keyHelp =
-				  new TranslatableComponent(prefix + name + "." + help).withStyle(helpStyle);
+				  Component.translatable(prefix + name + "." + help).withStyle(helpStyle);
 				lines.add(
 				  parse(keys)
-					 .append(new TextComponent(": ").withStyle(ChatFormatting.DARK_GRAY))
+					 .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
 					 .append(keyHelp));
 				return this;
 			}
 			
 			public CategoryBuilder key(String help, KeyMapping key) {
-				final MutableComponent keyHelp = new TranslatableComponent(prefix + name + "." + help).withStyle(helpStyle);
+				final MutableComponent keyHelp = Component.translatable(prefix + name + "." + help).withStyle(helpStyle);
 				final String keyName = key.isUnbound()? "---" : toTitleCase(key.getTranslatedKeyMessage().getString());
 				lines.add(
-				  new TextComponent(keyName).withStyle(key.isUnbound()? unboundKeyBindStyle : keyBindStyle)
-					 .append(new TextComponent(": ").withStyle(ChatFormatting.DARK_GRAY))
+				  Component.literal(keyName).withStyle(key.isUnbound()? unboundKeyBindStyle : keyBindStyle)
+					 .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
 					 .append(keyHelp));
 				return this;
 			}
 			
 			public CategoryBuilder text(String key) {
-				return text(new TranslatableComponent(prefix + name + "." + key));
+				return text(Component.translatable(prefix + name + "." + key));
 			}
 			
 			public CategoryBuilder text(Component text) {

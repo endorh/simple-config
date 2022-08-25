@@ -3,12 +3,11 @@ package endorh.simpleconfig.ui.impl.builders;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.ButtonListEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 
 import java.util.function.Supplier;
 
 public class ButtonFieldBuilder extends FieldBuilder<Runnable, ButtonListEntry, ButtonFieldBuilder> {
-	private Supplier<Component> buttonLabelSupplier = () -> new TextComponent("");
+	private Supplier<Component> buttonLabelSupplier = () -> Component.literal("");
 	
 	public ButtonFieldBuilder(
 	  ConfigFieldBuilder builder, Component name, Runnable value

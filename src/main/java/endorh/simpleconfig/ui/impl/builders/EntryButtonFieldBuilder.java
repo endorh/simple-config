@@ -5,7 +5,6 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryButtonListEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -16,7 +15,7 @@ public class EntryButtonFieldBuilder<
 > extends FieldBuilder<V, EntryButtonListEntry<V, E>, EntryButtonFieldBuilder<V, E, B>> {
 	private final B entryBuilder;
 	private Consumer<V> action;
-	private Supplier<Component> buttonLabelSupplier = () -> new TextComponent("");
+	private Supplier<Component> buttonLabelSupplier = () -> Component.literal("");
 	
 	public EntryButtonFieldBuilder(
 	  ConfigFieldBuilder builder, Component name, B entryBuilder, Consumer<V> action

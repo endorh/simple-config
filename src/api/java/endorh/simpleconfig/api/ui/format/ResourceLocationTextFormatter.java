@@ -2,7 +2,10 @@ package endorh.simpleconfig.api.ui.format;
 
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,25 +23,25 @@ public class ResourceLocationTextFormatter implements ITextFormatter {
 	private static final Pattern UPPERCASE = Pattern.compile("[A-Z]");
 	
 	@Override public MutableComponent formatText(String text) {
-		if (text.isEmpty()) return TextComponent.EMPTY.copy();
+		if (text.isEmpty()) return Component.empty();
 		Matcher m = RESOURCE_LOCATION_PATTERN.matcher(text);
-		if (!m.matches()) return new TextComponent(text).withStyle(errorStyle);
-		MutableComponent res = new TextComponent(m.group("ls"));
+		if (!m.matches()) return Component.literal(text).withStyle(errorStyle);
+		MutableComponent res = Component.literal(m.group("ls"));
 		if (m.group("pre") != null) {
 			res.append(highlightUppercase(m.group("name"), namespaceStyle));
-			res.append(new TextComponent(":").withStyle(colonStyle));
+			res.append(Component.literal(":").withStyle(colonStyle));
 		}
 		String path = m.group("path");
 		Matcher s = SLASH.matcher(path);
 		int idx = 0;
 		while (s.find()) {
 			res.append(highlightUppercase(path.substring(idx, s.start()), pathStyle));
-			res.append(new TextComponent(s.group()).withStyle(slashStyle));
+			res.append(Component.literal(s.group()).withStyle(slashStyle));
 			idx = s.end();
 		}
 		if (idx < path.length())
 			res.append(highlightUppercase(path.substring(idx), pathStyle));
-		res.append(new TextComponent(m.group("rs")));
+		res.append(Component.literal(m.group("rs")));
 		return res;
 	}
 	
@@ -48,13 +51,13 @@ public class ResourceLocationTextFormatter implements ITextFormatter {
 		int last = 0;
 		while (m.find()) {
 			res =
-			  append(res, new TextComponent(text.substring(last, m.start())).withStyle(style));
-			res = append(res, new TextComponent(m.group()).withStyle(errorStyle));
+			  append(res, Component.literal(text.substring(last, m.start())).withStyle(style));
+			res = append(res, Component.literal(m.group()).withStyle(errorStyle));
 			last = m.end();
 		}
 		if (last < text.length())
-			res = append(res, new TextComponent(text.substring(last)).withStyle(style));
-		return res != null ? res : TextComponent.EMPTY.copy();
+			res = append(res, Component.literal(text.substring(last)).withStyle(style));
+		return res != null ? res : Component.empty();
 	}
 	
 	private MutableComponent append(MutableComponent c, Component append) {

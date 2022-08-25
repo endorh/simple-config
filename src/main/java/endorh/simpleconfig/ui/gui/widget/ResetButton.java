@@ -18,7 +18,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
@@ -34,17 +33,17 @@ import static java.util.Arrays.asList;
 public class ResetButton extends MultiFunctionImageButton
   implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
 	protected static List<Component> resetTooltip = asList(
-	  new TranslatableComponent("simpleconfig.ui.reset"),
-	  new TranslatableComponent("simpleconfig.ui.restore.alt"),
-	  new TranslatableComponent("simpleconfig.ui.hotkey.ctrl"));
+	  Component.translatable("simpleconfig.ui.reset"),
+	  Component.translatable("simpleconfig.ui.restore.alt"),
+	  Component.translatable("simpleconfig.ui.hotkey.ctrl"));
 	protected static List<Component> resetTooltipGroup = asList(
-	  new TranslatableComponent("simpleconfig.ui.reset.group"),
-	  new TranslatableComponent("simpleconfig.ui.restore.alt"),
-	  new TranslatableComponent("simpleconfig.ui.hotkey.ctrl"));
+	  Component.translatable("simpleconfig.ui.reset.group"),
+	  Component.translatable("simpleconfig.ui.restore.alt"),
+	  Component.translatable("simpleconfig.ui.hotkey.ctrl"));
 	protected static List<Component> restoreTooltip = asList(
-	  new TranslatableComponent("simpleconfig.ui.restore"));
+	  Component.translatable("simpleconfig.ui.restore"));
 	protected static List<Component> restoreTooltipGroup = asList(
-	  new TranslatableComponent("simpleconfig.ui.restore.group"));
+	  Component.translatable("simpleconfig.ui.restore.group"));
 	
 	protected AbstractConfigField<?> entry;
 	protected boolean shift = false;

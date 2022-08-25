@@ -18,8 +18,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -318,11 +316,11 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	) {
 		final AbstractConfigEntry<K, KC, KG> ke = keyEntryBuilder.build(holder, holder.nextName());
 		ke.setSaver((g, h) -> {});
-		ke.setDisplayName(new TextComponent(""));
+		ke.setDisplayName(Component.literal(""));
 		ke.nonPersistent = true;
 		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
 		e.setSaver((g, h) -> {});
-		e.setDisplayName(new TextComponent(""));
+		e.setDisplayName(Component.literal(""));
 		e.nonPersistent = true;
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
@@ -339,17 +337,16 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	
 	@Override public Optional<Component> getErrorFromGUI(List<Pair<KG, G>> value) {
 		if (value.size() < minSize) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_short"),
-			  coloredNumber(minSize)));
-		} else if (value.size() > maxSize) return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.list.too_long",
-		  coloredNumber(maxSize)));
+			return Optional.of(Component.translatable("simpleconfig.config.error.list." + (minSize == 1? "empty" : "too_short"),
+			                                          coloredNumber(minSize)));
+		} else if (value.size() > maxSize) return Optional.of(
+		  Component.translatable("simpleconfig.config.error.list.too_long",
+		                         coloredNumber(maxSize)));
 		return super.getErrorFromGUI(value);
 	}
 	
 	protected static MutableComponent coloredNumber(int minSize) {
-		return new TextComponent(String.valueOf(minSize))
+		return Component.literal(String.valueOf(minSize))
 		  .withStyle(ChatFormatting.DARK_AQUA);
 	}
 	
@@ -366,8 +363,8 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		for (Pair<KG, G> pair : value) {
 			final KG key = pair.getKey();
 			if (!set.add(key))
-				return Optional.of(new TranslatableComponent(
-				  "simpleconfig.config.error.duplicate_key", key));
+				return Optional.of(
+				  Component.translatable("simpleconfig.config.error.duplicate_key", key));
 		}
 		return Optional.empty();
 	}
@@ -375,8 +372,8 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	public Optional<Component> getCellError(int index, Pair<KG, G> p) {
 		K key = keyEntry.fromGui(p.getKey());
 		V value = entry.fromGui(p.getValue());
-		if (key == null || value == null) return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.missing_value"));
+		if (key == null || value == null) return Optional.of(
+		  Component.translatable("simpleconfig.config.error.missing_value"));
 		return elemErrorSupplier.apply(key, value);
 	}
 	
@@ -392,8 +389,8 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		List<Optional<Component>> errors = gui.stream()
 		  .map(p -> Optional.<Component>empty()).collect(Collectors.toList());
 		groups.values().stream().filter(l -> l.size() > 1).forEach(
-		  g -> g.forEach(i -> errors.set(i, Optional.of(new TranslatableComponent(
-			 "simpleconfig.config.error.duplicate_key", gui.get(i).getKey())
+		  g -> g.forEach(i -> errors.set(i, Optional.of(
+		    Component.translatable("simpleconfig.config.error.duplicate_key", gui.get(i).getKey())
 		  ))));
 		return errors;
 	}

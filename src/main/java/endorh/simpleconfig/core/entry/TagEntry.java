@@ -10,7 +10,6 @@ import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,8 +55,7 @@ public class TagEntry extends AbstractSerializableEntry<Tag, TagEntry> {
 	
 	@Override
 	protected Optional<Component> getErrorMessage(String value) {
-		return Optional.of(new TranslatableComponent(
-		  "simpleconfig.config.error.invalid_nbt"));
+		return Optional.of(Component.translatable("simpleconfig.config.error.invalid_nbt"));
 	}
 	
 	@Override protected ITextFormatter getTextFormatter() {

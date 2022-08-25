@@ -7,8 +7,6 @@ import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -47,8 +45,7 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 	}
 	
 	@Override public Component formatAction(SimpleHotKeyAction<V, S> action) {
-		return new TranslatableComponent(
-		  "simpleconfig.hotkey.type.action." + getTranslationKey(), formatStorage(action.getStorage()));
+		return Component.translatable("simpleconfig.hotkey.type.action." + getTranslationKey(), formatStorage(action.getStorage()));
 	}
 	
 	public Component formatStorage(S storage) {
@@ -60,7 +57,7 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 		} else {
 			value = String.valueOf(storage);
 		}
-		return new TextComponent(value).withStyle(ChatFormatting.DARK_AQUA);
+		return Component.literal(value).withStyle(ChatFormatting.DARK_AQUA);
 	}
 	
 	@SuppressWarnings("unchecked") @Override public @Nullable <T, C, E extends AbstractConfigEntry<T, C, V>> SimpleHotKeyAction<V, S> deserialize(
@@ -84,8 +81,8 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 			//noinspection unchecked
 			return error != null? error.getError(entry, (S) value) : Optional.empty();
 		} catch (ClassCastException e) {
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.command.error.set.invalid_type_generic"));
+			return Optional.of(
+			  Component.translatable("simpleconfig.command.error.set.invalid_type_generic"));
 		}
 	}
 	
@@ -132,19 +129,18 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 			boolean change = success && !Objects.equals(prevValue, v);
 			if (success) result.set(path, entry.apply(e -> e.forActualConfig(e.forConfig(v))));
 			MutableComponent report = formatPath(entry.getPath()).append(" ")
-			  .append(new TranslatableComponent(
-				 "simpleconfig.hotkey.type.report." + getType().getTranslationKey(),
-				 getType().formatStorage(getStorage()), prev, set)
+			  .append(Component.translatable("simpleconfig.hotkey.type.report." + getType().getTranslationKey(),
+			                                 getType().formatStorage(getStorage()), prev, set)
 				         .withStyle(change? ChatFormatting.WHITE : ChatFormatting.GRAY));
-			if (!success) report.append(" ").append(new TranslatableComponent(
-			  "simpleconfig.hotkey.report.failure").withStyle(ChatFormatting.RED));
+			if (!success) report.append(" ").append(
+			  Component.translatable("simpleconfig.hotkey.report.failure").withStyle(ChatFormatting.RED));
 			return report;
 		}
 		
 		private MutableComponent formatPath(String path) {
 			if (path.length() > 60)
 				path = path.substring(0, 10) + "..." + path.substring(path.length() - 47);
-			return new TextComponent("[" + path + "]").withStyle(ChatFormatting.LIGHT_PURPLE);
+			return Component.literal("[" + path + "]").withStyle(ChatFormatting.LIGHT_PURPLE);
 		}
 		
 		private static final Pattern FLOATING_NUMBER = Pattern.compile(
@@ -154,7 +150,7 @@ public class SimpleHotKeyActionType<V, S> extends HotKeyActionType<V, SimpleHotK
 				double v = Double.parseDouble(value);
 				value = String.format("%.3f", v);
 			}
-			return new TextComponent(value).withStyle(ChatFormatting.DARK_AQUA);
+			return Component.literal(value).withStyle(ChatFormatting.DARK_AQUA);
 		}
 		
 		public @Nullable V applyValue(V value) {

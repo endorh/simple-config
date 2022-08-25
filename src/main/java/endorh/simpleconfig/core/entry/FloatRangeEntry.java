@@ -10,8 +10,6 @@ import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
@@ -95,7 +93,7 @@ public class FloatRangeEntry
 	  ConfigFieldBuilder builder, String name, Float value
 	) {
 		//noinspection unchecked
-		return (EE) builder.startFloatField(new TextComponent(name), value)
+		return (EE) builder.startFloatField(Component.literal(name), value)
 		  .setDefaultValue(value)
 		  .setMin(min).setMax(max)
 		  .setName(name)
@@ -104,8 +102,7 @@ public class FloatRangeEntry
 	
 	@Override public Optional<Component> getErrorFromGUI(FloatRange value) {
 		if (value.getMin() == null || value.getMax() == null)
-			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.invalid_float"));
+			return Optional.of(Component.translatable("simpleconfig.config.error.invalid_float"));
 		return super.getErrorFromGUI(value);
 	}
 }

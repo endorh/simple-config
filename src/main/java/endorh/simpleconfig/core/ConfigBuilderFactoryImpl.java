@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -384,7 +385,7 @@ import java.util.regex.Pattern;
 	}
 	
 	@Override public ItemNameEntry.Builder itemName(Item value) {
-		return itemName(value.getRegistryName());
+		return itemName(ForgeRegistries.ITEMS.getKey(value));
 	}
 	
 	@Override public BlockEntry.Builder block(@Nullable Block value) {
@@ -396,7 +397,7 @@ import java.util.regex.Pattern;
 	}
 	
 	@Override public BlockNameEntry.Builder blockName(Block value) {
-		return blockName(value.getRegistryName());
+		return blockName(ForgeRegistries.BLOCKS.getKey(value));
 	}
 	
 	@Override public FluidEntry.Builder fluid(@Nullable Fluid value) {
@@ -408,7 +409,7 @@ import java.util.regex.Pattern;
 	}
 	
 	@Override public FluidNameEntry.Builder fluidName(Fluid value) {
-		return fluidName(value.getRegistryName());
+		return fluidName(ForgeRegistries.FLUIDS.getKey(value));
 	}
 	
 	// List entries

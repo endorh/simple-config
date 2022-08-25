@@ -10,7 +10,7 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.impl.builders.EntryButtonFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
@@ -112,7 +112,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 	) {
 		EntryButtonFieldBuilder<String, ?, ?> entryBuilder = makeGUIEntry(
 			 builder, inner.buildChildGUIEntry(builder), this::applyPreset)
-		  .withButtonLabel(() -> new TranslatableComponent("simpleconfig.label.preset.apply"));
+		  .withButtonLabel(() -> Component.translatable("simpleconfig.label.preset.apply"));
 		return Optional.of(entryBuilder);
 	}
 }

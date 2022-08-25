@@ -4,10 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,7 @@ public class BlockTypeWrapper extends RegistryObjectTypeWrapper<Block> {
 	}
 	
 	@Override protected ResourceLocation getRegistryName(@NotNull Block element) {
-		return element.getRegistryName();
+		return ForgeRegistries.BLOCKS.getKey(element);
 	}
 	
 	@Override protected @Nullable Block getFromRegistryName(@NotNull ResourceLocation name) {
@@ -25,7 +25,7 @@ public class BlockTypeWrapper extends RegistryObjectTypeWrapper<Block> {
 	}
 	
 	@Override protected Component getUnknownError(ResourceLocation name) {
-		return new TranslatableComponent("argument.block.id.invalid", name);
+		return Component.translatable("argument.block.id.invalid", name);
 	}
 	
 	@Override public void renderIcon(

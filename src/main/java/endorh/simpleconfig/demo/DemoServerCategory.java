@@ -11,7 +11,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.awt.Color;
 import java.util.List;
@@ -26,11 +29,11 @@ public class DemoServerCategory {
 	private static String prefix(String key) {
 		return SimpleConfigMod.MOD_ID + ".config." + key;
 	}
-	private static TextComponent stc(String msg, Object... args) {
-		return new TextComponent(String.format(msg, args));
+	private static MutableComponent stc(String msg, Object... args) {
+		return Component.literal(String.format(msg, args));
 	}
-	private static TranslatableComponent ttc(String key, Object... args) {
-		return new TranslatableComponent(key, args);
+	private static MutableComponent ttc(String key, Object... args) {
+		return Component.translatable(key, args);
 	}
 	
 	public static ConfigCategoryBuilder getDemoServerCategory() {

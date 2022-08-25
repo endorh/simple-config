@@ -13,9 +13,10 @@ import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
-import net.minecraft.commands.synchronization.ArgumentSerializer;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.Yaml;
@@ -25,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 	private static final DynamicCommandExceptionType INVALID_YAML = new DynamicCommandExceptionType(
-	  m -> new TranslatableComponent("simpleconfig.command.error.invalid_yaml", m));
+	  m -> Component.translatable("simpleconfig.command.error.invalid_yaml", m));
 	
 	public static SimpleConfigValueArgumentType entryValue(
 	  @Nullable String modId, @Nullable EditType type
@@ -77,32 +78,53 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 		String serialized = entry.getForCommand();
 		if (serialized != null)
-			builder.suggest(serialized, new TranslatableComponent(
-			  "simpleconfig.command.suggest.current"));
+			builder.suggest(serialized, Component.translatable("simpleconfig.command.suggest.current"));
 		String defSerialized = entry.forCommand(entry.defValue);
 		if (defSerialized != null && !defSerialized.equals(serialized))
-			builder.suggest(defSerialized, new TranslatableComponent(
-			  "simpleconfig.command.suggest.default"));
+			builder.suggest(defSerialized, Component.translatable("simpleconfig.command.suggest.default"));
 		return builder.buildFuture();
 	}
 	
-	public static class Serializer implements ArgumentSerializer<SimpleConfigValueArgumentType> {
-		@Override public void serializeToNetwork(@NotNull SimpleConfigValueArgumentType arg, @NotNull FriendlyByteBuf buf) {
-			buf.writeBoolean(arg.modId != null);
-			if (arg.modId != null) buf.writeUtf(arg.modId);
-			buf.writeBoolean(arg.type != null);
-			if (arg.type != null) buf.writeEnum(arg.type);
+	public static class Info implements ArgumentTypeInfo<SimpleConfigValueArgumentType, Info.Template> {
+		@Override public void serializeToNetwork(Template t, FriendlyByteBuf buf) {
+			buf.writeBoolean(t.modId != null);
+			if (t.modId != null) buf.writeUtf(t.modId);
+			buf.writeBoolean(t.type != null);
+			if (t.type != null) buf.writeEnum(t.type);
 		}
 		
-		@Override public @NotNull SimpleConfigValueArgumentType deserializeFromNetwork(@NotNull FriendlyByteBuf buf) {
-			return new SimpleConfigValueArgumentType(
-			  buf.readBoolean()? buf.readUtf(32767) : null,
+		@Override public @NotNull Template deserializeFromNetwork(FriendlyByteBuf buf) {
+			return new Template(
+			  buf.readBoolean()? buf.readUtf() : null,
 			  buf.readBoolean()? buf.readEnum(EditType.class) : null);
 		}
 		
-		@Override public void serializeToJson(@NotNull SimpleConfigValueArgumentType arg, @NotNull JsonObject obj) {
-			obj.addProperty("modId", arg.modId);
-			obj.addProperty("type", arg.type != null? arg.type.getAlias() : null);
+		@Override public void serializeToJson(@NotNull Template t, @NotNull JsonObject obj) {
+			obj.addProperty("modId", t.modId);
+			obj.addProperty("type", t.type != null? t.type.getAlias() : null);
+		}
+		
+		@Override public @NotNull Template unpack(@NotNull SimpleConfigValueArgumentType arg) {
+			return new Template(arg.modId, arg.type);
+		}
+		
+		public class Template implements ArgumentTypeInfo.Template<SimpleConfigValueArgumentType> {
+			final String modId;
+			final EditType type;
+			
+			public Template(String modId, EditType type) {
+				this.modId = modId;
+				this.type = type;
+			}
+			
+			@Override public @NotNull SimpleConfigValueArgumentType instantiate(
+			  @NotNull CommandBuildContext ctx) {
+				return new SimpleConfigValueArgumentType(modId, type);
+			}
+			
+			@Override public @NotNull ArgumentTypeInfo<SimpleConfigValueArgumentType, ?> type() {
+				return Info.this;
+			}
 		}
 	}
 }

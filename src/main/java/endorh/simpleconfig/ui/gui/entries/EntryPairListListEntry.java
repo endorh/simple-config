@@ -11,7 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -236,7 +235,7 @@ public class EntryPairListListEntry<
 		) {}
 		
 		@Override public Component getLabel() {
-			return TextComponent.EMPTY;
+			return Component.empty();
 		}
 		
 		@Override public boolean drawsLine(int mouseX, int mouseY) {

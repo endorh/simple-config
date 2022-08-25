@@ -21,7 +21,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.KeyMapping;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ClientRegistry;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -35,8 +35,8 @@ import java.util.Optional;
  * settings such as exclusivity, order sensitivity, activation on release/repeat/toggle.<br>
  * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
  * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
- * <b>Consider registering regular {@link KeyMapping}s through
- * {@link ClientRegistry#registerKeyBinding(KeyMapping)}
+ * <b>Consider registering regular {@link KeyMapping}s through the
+ * {@link RegisterKeyMappingsEvent}
  * </b><br>
  */
 @OnlyIn(Dist.CLIENT)

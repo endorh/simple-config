@@ -30,8 +30,8 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -613,7 +613,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	protected MutableComponent getEmptyPlaceHolder() {
-		return new TranslatableComponent("simpleconfig.ui.no_entries");
+		return Component.translatable("simpleconfig.ui.no_entries");
 	}
 	
 	protected void renderEmptyPlaceHolder(PoseStack mStack, int mouseX, int mouseY, float delta) {

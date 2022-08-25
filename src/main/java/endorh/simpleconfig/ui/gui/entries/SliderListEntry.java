@@ -15,7 +15,6 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -305,7 +304,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		public SliderWidget(
 		  int x, int y, int width, int height
 		) {
-			super(x, y, width, height, TextComponent.EMPTY, 0D);
+			super(x, y, width, height, Component.empty(), 0D);
 		}
 		
 		@Override protected void updateMessage() {
