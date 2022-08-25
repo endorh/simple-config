@@ -5,7 +5,7 @@ import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;

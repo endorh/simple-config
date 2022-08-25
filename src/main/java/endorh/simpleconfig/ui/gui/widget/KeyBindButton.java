@@ -1,6 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
@@ -10,11 +13,11 @@ import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePosit
 import endorh.simpleconfig.ui.gui.widget.KeyBindSettingsButton.KeyBindSettingsOverlay;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.*;
-import endorh.simpleconfig.ui.icon.AnimatedIcon;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Entries;
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.icon.AnimatedIcon;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;

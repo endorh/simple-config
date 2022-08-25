@@ -1,6 +1,10 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindRegistrar;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindRegistrar;
+import endorh.simpleconfig.api.ui.hotkey.InputMatchingContext;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.Util;

@@ -1,7 +1,11 @@
 package endorh.simpleconfig.ui.hotkey;
 
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindFactory;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindActivation;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProxy.ExtendedKeyBindFactory;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.InputMatchingContext;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;

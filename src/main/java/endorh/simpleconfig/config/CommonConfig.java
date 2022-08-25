@@ -3,7 +3,7 @@ package endorh.simpleconfig.config;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 

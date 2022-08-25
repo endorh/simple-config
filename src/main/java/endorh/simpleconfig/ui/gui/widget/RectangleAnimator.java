@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 
 import static net.minecraft.util.math.MathHelper.lerp;
 

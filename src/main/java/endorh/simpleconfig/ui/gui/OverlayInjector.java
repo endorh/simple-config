@@ -7,7 +7,7 @@ import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.OverlayTicket;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.SortedOverlayCollection;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraftforge.api.distmarker.Dist;

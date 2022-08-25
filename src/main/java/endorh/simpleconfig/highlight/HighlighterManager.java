@@ -1,11 +1,11 @@
 package endorh.simpleconfig.highlight;
 
 import com.google.gson.*;
+import endorh.simpleconfig.api.ui.IHighlighterManager;
+import endorh.simpleconfig.api.ui.ILanguageHighlighter;
 import endorh.simpleconfig.highlight.HighlighterManager.HighlightRule.RuleDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.HighlighterDeserializer;
 import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.StyleDeserializer;
-import endorh.simpleconfig.ui.api.IHighlighterManager;
-import endorh.simpleconfig.ui.api.ILanguageHighlighter;
 import net.minecraft.client.resources.JsonReloadListener;
 import net.minecraft.loot.LootSerializers;
 import net.minecraft.profiler.IProfiler;

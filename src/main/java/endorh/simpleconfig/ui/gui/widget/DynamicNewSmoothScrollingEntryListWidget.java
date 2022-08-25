@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget.ListEntry;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.impl.EasingMethod.EasingMethodImpl;
-import endorh.simpleconfig.ui.math.Rectangle;
 import endorh.simpleconfig.ui.math.impl.PointHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;

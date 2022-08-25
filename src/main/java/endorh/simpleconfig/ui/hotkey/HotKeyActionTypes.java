@@ -1,6 +1,8 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.electronwill.nightconfig.core.CommentedConfig.Entry;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Actions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.entry.AbstractRangedEntry;
 import endorh.simpleconfig.core.entry.BeanEntry;
@@ -10,8 +12,6 @@ import endorh.simpleconfig.core.entry.EntryPairEntry;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyAction;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Actions;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;

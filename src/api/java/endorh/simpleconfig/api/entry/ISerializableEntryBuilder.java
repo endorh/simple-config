@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import org.jetbrains.annotations.Contract;
 
 public interface ISerializableEntryBuilder<V>

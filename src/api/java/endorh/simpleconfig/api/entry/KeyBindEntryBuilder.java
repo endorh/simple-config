@@ -2,9 +2,9 @@ package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBind;
-import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindSettings;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 
 public interface KeyBindEntryBuilder extends ConfigEntryBuilder<
   KeyBindMapping, String, KeyBindMapping, KeyBindEntryBuilder

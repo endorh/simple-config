@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.math.Color;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.widget.ColorDisplayWidget;
 import endorh.simpleconfig.ui.gui.widget.ColorPickerWidget;
-import endorh.simpleconfig.ui.math.Color;
-import endorh.simpleconfig.ui.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;

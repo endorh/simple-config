@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.*;

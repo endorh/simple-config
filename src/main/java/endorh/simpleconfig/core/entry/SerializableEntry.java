@@ -5,7 +5,7 @@ import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.ISerializableConfigEntry;
 import endorh.simpleconfig.api.entry.ISerializableEntryBuilder;
 import endorh.simpleconfig.core.BackingField;
-import endorh.simpleconfig.ui.api.ITextFormatter;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;

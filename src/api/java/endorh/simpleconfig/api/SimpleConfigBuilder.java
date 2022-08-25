@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;

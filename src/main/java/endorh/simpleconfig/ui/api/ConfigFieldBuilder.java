@@ -1,15 +1,15 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.core.entry.BeanProxy;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.impl.ConfigEntryBuilderImpl;
 import endorh.simpleconfig.ui.impl.builders.*;
-import endorh.simpleconfig.ui.math.Color;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

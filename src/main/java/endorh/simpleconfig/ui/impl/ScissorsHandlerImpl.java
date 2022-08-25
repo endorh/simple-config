@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;

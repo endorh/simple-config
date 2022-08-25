@@ -9,12 +9,12 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
 import endorh.simpleconfig.core.SimpleConfigGroupImpl;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
-import endorh.simpleconfig.ui.hotkey.KeyBindMapping;
-import endorh.simpleconfig.ui.icon.Icon;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons.Entries;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluids;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
-import static endorh.simpleconfig.ui.hotkey.KeyBindMapping.parse;
+import static endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.parse;
 import static java.lang.Math.abs;
 import static java.util.Arrays.asList;
 

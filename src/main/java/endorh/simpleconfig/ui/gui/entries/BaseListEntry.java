@@ -2,6 +2,8 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget;
@@ -9,11 +11,9 @@ import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.EditHistory.EditRecord;
 import endorh.simpleconfig.ui.impl.EditHistory.EditRecord.ListEditRecord;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.ui.math.Rectangle;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.client.Minecraft;

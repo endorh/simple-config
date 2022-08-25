@@ -1,6 +1,9 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.base.Splitter;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
+import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettingsBuilder;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.util.text.*;
 import org.apache.commons.lang3.text.WordUtils;
@@ -13,7 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static endorh.simpleconfig.ui.hotkey.KeyBindMapping.KeyBindActivation.*;
+import static endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation.*;
 
 public class KeyBindMappingImpl implements KeyBindMapping {
 	private final IntList requiredKeys;

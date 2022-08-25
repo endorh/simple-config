@@ -6,7 +6,7 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.demo.DemoServerCategory;
-import endorh.simpleconfig.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;

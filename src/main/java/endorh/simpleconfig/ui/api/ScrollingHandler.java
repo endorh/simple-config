@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.api;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.impl.EasingMethod.EasingMethodImpl;
-import endorh.simpleconfig.ui.math.Rectangle;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.math.impl.PointHelper;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;

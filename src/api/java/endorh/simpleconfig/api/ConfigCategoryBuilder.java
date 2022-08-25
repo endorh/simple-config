@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api;
 
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.Contract;
 

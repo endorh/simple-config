@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
-import endorh.simpleconfig.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Point;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.ITextProperties;

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.ui.icon.Icon;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.Nullable;

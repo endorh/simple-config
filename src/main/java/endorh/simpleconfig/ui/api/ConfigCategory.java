@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.api.SimpleConfig.EditType;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;

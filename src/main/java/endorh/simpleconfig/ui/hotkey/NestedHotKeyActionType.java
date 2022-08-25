@@ -4,7 +4,7 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.hotkey.NestedHotKeyActionType.NestedHotKeyAction;
-import endorh.simpleconfig.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import org.apache.logging.log4j.LogManager;

@@ -2,11 +2,11 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.SerializableEntryBuilder;
+import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
-import endorh.simpleconfig.ui.api.ITextFormatter;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
 import net.minecraft.util.text.ITextComponent;

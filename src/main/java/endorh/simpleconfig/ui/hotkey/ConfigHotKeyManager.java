@@ -3,6 +3,7 @@ package endorh.simpleconfig.ui.hotkey;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.PairList;
 import endorh.simpleconfig.core.SimpleConfigPaths;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;

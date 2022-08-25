@@ -4,7 +4,7 @@ import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
-import endorh.simpleconfig.ui.api.ConfigScreen;
+import endorh.simpleconfig.api.ui.ConfigScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.loading.FMLEnvironment;
