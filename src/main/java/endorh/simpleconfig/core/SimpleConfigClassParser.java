@@ -1,7 +1,10 @@
 package endorh.simpleconfig.core;
 
 import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
+import endorh.simpleconfig.api.SimpleConfigCategory;
+import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.api.annotation.*;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
@@ -443,7 +446,7 @@ public class SimpleConfigClassParser {
 		}
 		if (builder instanceof SimpleConfigBuilderImpl) {
 			final SimpleConfigBuilderImpl b = (SimpleConfigBuilderImpl) builder;
-			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigImpl.class);
+			final Method baker = tryGetMethod(configClass, "bake", SimpleConfig.class);
 			if (baker != null) {
 				final String errorMsg = "Reflective error invoking config baker method %s";
 				if (b.baker == null) {
@@ -462,7 +465,7 @@ public class SimpleConfigClassParser {
 		} else if (builder instanceof CategoryBuilder) {
 			final CategoryBuilder b = (CategoryBuilder) builder;
 			boolean useArg = true;
-			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategoryImpl.class);
+			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategory.class);
 			if (m == null) {
 				useArg = false;
 				m = tryGetMethod(configClass, "bake");
@@ -494,7 +497,7 @@ public class SimpleConfigClassParser {
 		} else if (builder instanceof GroupBuilder) {
 			final GroupBuilder b = (GroupBuilder) builder;
 			boolean useArg = true;
-			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroupImpl.class);
+			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroup.class);
 			if (m == null) {
 				useArg = false;
 				m = tryGetMethod(configClass, "bake");

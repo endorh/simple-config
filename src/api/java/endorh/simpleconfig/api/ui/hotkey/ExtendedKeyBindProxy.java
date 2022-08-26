@@ -1,16 +1,17 @@
 package endorh.simpleconfig.api.ui.hotkey;
 
 import net.minecraft.util.text.ITextComponent;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 
-class ExtendedKeyBindProxy {
-	protected interface ExtendedKeyBindRegistrar {
+@Internal public class ExtendedKeyBindProxy {
+	public interface ExtendedKeyBindRegistrar {
 		void registerProvider(ExtendedKeyBindProvider provider);
 		void unregisterProvider(ExtendedKeyBindProvider provider);
 	}
-	protected interface ExtendedKeyBindFactory {
+	public interface ExtendedKeyBindFactory {
 		ExtendedKeyBind create(@Nullable String modId, ITextComponent title, KeyBindMapping definition, Runnable action);
 		KeyBindMapping parseMapping(String serialized);
 		KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings);

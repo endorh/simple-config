@@ -25,6 +25,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	private boolean pressed = false;
 	private boolean pressedToggle = false;
 	
+	@SuppressWarnings("unused")
 	protected static final ExtendedKeyBindFactory FACTORY = new ExtendedKeyBindFactory() {
 		@Override public ExtendedKeyBind create(
 		  @Nullable String modId, ITextComponent title, KeyBindMapping definition, Runnable action

@@ -7,13 +7,13 @@ import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
+import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
-import endorh.simpleconfig.core.SimpleConfigGroupImpl;
 import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
@@ -803,7 +803,7 @@ public class DemoConfigCategory {
 			// The bake method must receive either a SimpleConfig, a
 			//   SimpleConfigCategory or a SimpleConfigGroup depending
 			//   on where it is defined
-			static void bake(SimpleConfigGroupImpl g) {
+			static void bake(SimpleConfigGroup g) {
 				// Since int_value has been already updated, we may
 				//   use its value for other computations
 				// It's sometimes useful to precompute certain values

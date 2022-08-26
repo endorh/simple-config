@@ -1,10 +1,8 @@
 package endorh.simpleconfig.api.ui;
 
-import endorh.simpleconfig.api.ui.api.format.*;
 import endorh.simpleconfig.api.ui.format.*;
 import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.CharacterMapTextFormatter;
 import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.ICharacterFormatter;
-import endorh.simpleconfig.ui.api.format.*;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
