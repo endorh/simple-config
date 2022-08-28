@@ -30,14 +30,13 @@ plugins {
 
 val modGroup = "endorh.simpleconfig"
 val modId = "simpleconfig"
-val apiVersion = "0.1.6"
-
-val modVersion = "0.8.18"
-val mappingsChannel = "official"
-val mappingsVersion = "1.17.1"
+val apiVersion = "1.0.0"
+val modVersion = "1.0.0"
 val mcVersion = "1.17.1"
 val forge = "37.1.1"
 val forgeVersion = "$mcVersion-$forge"
+val mappingsChannel = "official"
+val mappingsVersion = "1.17.1"
 
 val apiMavenArtifact = "$modGroup:$modId-api:$apiVersion"
 val modMavenArtifact = "$modGroup:$modId:$modVersion"
@@ -63,7 +62,7 @@ val modDescription = """
 val license = "LGPL"
 
 group = modGroup
-version = "$mcVersion-$modVersion"
+version = modVersion
 val groupSlashed = modGroup.replace(".", "/")
 val classname = "SimpleConfigMod"
 
@@ -257,11 +256,11 @@ dependencies {
     runtimeOnly(fg.deobf("mezz.jei:jei-$mcVersion:$jeiVersion"))
 }
 
+// Tasks -----------------------------------------------------------------------
+
 tasks.withType<Test> {
     useJUnitPlatform()
 }
-
-// Tasks -----------------------------------------------------------------------
 
 tasks.classes {
     dependsOn(tasks.extractNatives.get())
@@ -295,6 +294,7 @@ tasks.classes {
 // Jars ------------------------------------------------------------------------
 
 tasks.shadowJar {
+    archiveBaseName.set("$modId-$mcVersion")
     archiveClassifier.set("") // Replace default jar
     
     from(apiSourceSet.output)
@@ -322,25 +322,27 @@ tasks.shadowJar {
 
 val apiJarTask = tasks.register<Jar>("apiJar") {
     group = "build"
-    archiveClassifier.set("api")
+    archiveBaseName.set("$modId-$mcVersion-api")
+    archiveClassifier.set("")
     
     from(apiSourceSet.output)
     
     manifest {
         attributes(jarAttributes)
-        attributes(mapOf("Maven-Artifact" to "$modMavenArtifact:${archiveClassifier.get()}"))
+        attributes(mapOf("Maven-Artifact" to apiMavenArtifact))
     }
 }
 
 val apiSourcesJarTask = tasks.register<Jar>("apiSourcesJar") {
     group = "build"
-    archiveClassifier.set("api-src")
+    archiveBaseName.set("$modId-$mcVersion-api")
+    archiveClassifier.set("src")
     
     from(apiSourceSet.allJava)
     
     manifest {
         attributes(jarAttributes)
-        attributes(mapOf("Maven-Artifact" to "$modMavenArtifact:${archiveClassifier.get()}"))
+        attributes(mapOf("Maven-Artifact" to "$apiMavenArtifact:${archiveClassifier.get()}"))
     }
 }
 
@@ -409,6 +411,9 @@ publishing {
     
     publications {
         register<MavenPublication>("mod") {
+            artifactId = "$modId-$mcVersion"
+            version = modVersion
+            
             artifact(tasks.shadowJar.get())
             artifact(sourcesJarTask.get())
             
@@ -420,6 +425,9 @@ publishing {
         }
         
         register<MavenPublication>("api") {
+            artifactId = "$modId-$mcVersion-api"
+            version = apiVersion
+            
             artifact(apiJarTask.get())
             artifact(apiSourcesJarTask.get())
             
