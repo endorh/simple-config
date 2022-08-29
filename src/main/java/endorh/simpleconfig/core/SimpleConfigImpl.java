@@ -50,6 +50,7 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -59,7 +60,6 @@ import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
-import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -68,10 +68,8 @@ import static java.util.Collections.unmodifiableMap;
  * or {@link ConfigBuilderFactoryProxy#config(String, Type, Class)}
  */
 public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements SimpleConfig {
-	private static final Map<Pair<String, Type>, SimpleConfigImpl> INSTANCES =
-	  synchronizedMap(new HashMap<>());
+	private static final Map<Pair<String, Type>, SimpleConfigImpl> INSTANCES = new ConcurrentHashMap<>();
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
-	private static int TEXT_ENTRY_ID_GEN = 0;
 
 	static {
 		SimpleConfigNetworkHandler.registerPackets();
@@ -126,12 +124,10 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		root = this;
 		
 		Pair<String, Type> key = Pair.of(modId, type);
-		synchronized (INSTANCES) {
-			if (!INSTANCES.containsKey(key))
-				INSTANCES.put(key, this);
-			else throw new IllegalStateException(
-			  "Cannot create more than one config per type per mod");
-		}
+		if (!INSTANCES.containsKey(key)) {
+			INSTANCES.put(key, this);
+		} else throw new IllegalStateException(
+		  "Cannot create more than one config per type per mod");
 	}
 	
 	@Internal public static SimpleConfigImpl getConfigOrNull(String modId, Type type) {
@@ -155,10 +151,6 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	
 	@Internal public static Collection<SimpleConfigImpl> getAllConfigs() {
 		return INSTANCES.values();
-	}
-	
-	@Internal public static String nextTextID() {
-		return "_text$" + TEXT_ENTRY_ID_GEN++;
 	}
 	
 	/**
