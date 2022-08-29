@@ -9,7 +9,7 @@ import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionButton;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -42,7 +42,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		if (displayedIndex == -1) displayedIndex = 0;
 		setOriginal(value);
 		setValue(value);
-		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, NarratorChatListener.NO_TITLE, (w, b) -> {
+		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, GameNarrator.NO_TITLE, (w, b) -> {
 			if (b != 2 && !isFocused()) {
 				preserveState();
 				setFocused(true);

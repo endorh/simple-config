@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -37,7 +37,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		setOriginal(value);
 		displayedValue = value;
 		buttonWidget = new Button(
-		  0, 0, 150, 20, NarratorChatListener.NO_TITLE, widget -> {
+		  0, 0, 150, 20, GameNarrator.NO_TITLE, widget -> {
 			  if (!isFocused()) {
 				  preserveState();
 				  setFocused(true);

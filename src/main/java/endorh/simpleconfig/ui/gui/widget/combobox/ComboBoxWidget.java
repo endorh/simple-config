@@ -22,10 +22,10 @@ import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -120,7 +120,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	public ComboBoxWidget(
 	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  int x, int y, int width, int height
-	) { this(typeWrapper, screen, x, y, width, height, NarratorChatListener.NO_TITLE); }
+	) { this(typeWrapper, screen, x, y, width, height, GameNarrator.NO_TITLE); }
 	
 	public ComboBoxWidget(
 	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,

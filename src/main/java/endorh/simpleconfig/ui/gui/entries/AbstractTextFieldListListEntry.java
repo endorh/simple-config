@@ -5,9 +5,9 @@ import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -41,7 +41,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			// T finalValue = this.substituteDefault(value);
 			widget = new TextFieldWidgetEx(
 			  Minecraft.getInstance().font, 0, 0, 100, 18,
-			  NarratorChatListener.NO_TITLE
+			  GameNarrator.NO_TITLE
 			) {
 				@Override
 				public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {

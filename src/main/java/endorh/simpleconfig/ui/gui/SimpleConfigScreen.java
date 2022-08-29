@@ -42,8 +42,8 @@ import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState.
 import endorh.simpleconfig.ui.impl.EasingMethod;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -1500,7 +1500,7 @@ import static java.lang.Math.min;
 		private final SimpleConfigScreen screen;
 		
 		public SaveButton(SimpleConfigScreen screen) {
-			super(0, 0, 80, 20, NarratorChatListener.NO_TITLE, button -> {
+			super(0, 0, 80, 20, GameNarrator.NO_TITLE, button -> {
 				if (screen.isEditingConfigHotKey()) {
 					screen.saveHotkey();
 				} else screen.saveAll(true);

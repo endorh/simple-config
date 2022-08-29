@@ -9,8 +9,8 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -45,7 +45,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		super(fieldName);
 		expandable = canExpand;
 		textFieldWidget = new TextFieldWidgetEx(
-		  Minecraft.getInstance().font, 0, 0, 150, 18, NarratorChatListener.NO_TITLE);
+		  Minecraft.getInstance().font, 0, 0, 150, 18, GameNarrator.NO_TITLE);
 		textFieldWidget.setMaxLength(999999);
 		textFieldWidget.setFormatter(ITextFormatter.cached(textFormatter));
 		setOriginal(original);

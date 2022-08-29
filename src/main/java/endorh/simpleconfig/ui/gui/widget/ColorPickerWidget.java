@@ -8,7 +8,7 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.config.ClientConfig.advanced;
-import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.util.Mth;
@@ -77,7 +77,7 @@ public class ColorPickerWidget extends AbstractWidget {
 	public ColorPickerWidget(
 	  Color initial, int x, int y, int width, int height, @Nullable Consumer<Color> onChange
 	) {
-		super(x, y, width, height, NarratorChatListener.NO_TITLE);
+		super(x, y, width, height, GameNarrator.NO_TITLE);
 		this.initial = initial;
 		this.value = initial;
 		this.onChange = onChange;

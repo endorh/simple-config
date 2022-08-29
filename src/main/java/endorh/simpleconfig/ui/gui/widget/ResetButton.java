@@ -12,8 +12,8 @@ import endorh.simpleconfig.ui.api.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -59,7 +59,7 @@ public class ResetButton extends MultiFunctionImageButton
 	public ResetButton(AbstractConfigField<?> entry) {
 		super(
 		  0, 0, 20, 20, Buttons.RESET, ButtonAction.of(b -> {}),
-		  NarratorChatListener.NO_TITLE);
+		  GameNarrator.NO_TITLE);
 		this.entry = entry;
 		defaultActivePredicate = this::shouldBeActive;
 	}

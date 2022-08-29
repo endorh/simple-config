@@ -5,14 +5,11 @@ import endorh.simpleconfig.SimpleConfigMod;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.core.Registry;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
-@EventBusSubscriber(modid = SimpleConfigMod.MOD_ID, bus = Bus.MOD)
 public class SimpleConfigArgumentTypes {
 	private static final DeferredRegister<ArgumentTypeInfo<?, ?>>
 	  TYPE_INFOS = DeferredRegister.create(Registry.COMMAND_ARGUMENT_TYPE_REGISTRY, SimpleConfigMod.MOD_ID);

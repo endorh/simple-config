@@ -25,6 +25,7 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	protected boolean requireRestart = false;
 	protected final Map<String, BackingField<?, ?>> backingFields = new HashMap<>();
 	protected final Map<String, List<BackingField<?, ?>>> secondaryBackingFields = new HashMap<>();
+	private int textIDGen = 0;
 	
 	protected abstract void addEntry(int order, String name, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entry);
 	protected abstract AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> getEntry(String name);
@@ -101,11 +102,11 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	}
 	
 	@Override @Contract("_ -> this") public Builder text(Component text) {
-		add(SimpleConfigImpl.nextTextID(), new TextEntry.Builder(() -> text));
+		add("_text$" + textIDGen++, new TextEntry.Builder(() -> text));
 		return self();
 	}
 	@Override @Contract("_ -> this") public Builder text(Supplier<Component> textSupplier) {
-		add(SimpleConfigImpl.nextTextID(), new TextEntry.Builder(textSupplier));
+		add("_text$" + textIDGen++, new TextEntry.Builder(textSupplier));
 		return self();
 	}
 	

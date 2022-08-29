@@ -7,8 +7,8 @@ import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -39,7 +39,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	public static MultiFunctionImageButton of(
 	  @NotNull Icon icon, ButtonActionBuilder action
 	) {
-		return of(NarratorChatListener.NO_TITLE, icon, action);
+		return of(GameNarrator.NO_TITLE, icon, action);
 	}
 	
 	public static MultiFunctionImageButton of(
@@ -51,7 +51,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	public static MultiFunctionImageButton of(
 	  int width, int height, @NotNull Icon icon, ButtonActionBuilder action
 	) {
-		return of(NarratorChatListener.NO_TITLE, width, height, icon, action);
+		return of(GameNarrator.NO_TITLE, width, height, icon, action);
 	}
 	
 	public static MultiFunctionImageButton of(
@@ -63,7 +63,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	public MultiFunctionImageButton(
 	  int x, int y, int width, int height, @NotNull Icon icon, ButtonActionBuilder action
 	) {
-		this(x, y, width, height, icon, action, NarratorChatListener.NO_TITLE);
+		this(x, y, width, height, icon, action, GameNarrator.NO_TITLE);
 	}
 	
 	public MultiFunctionImageButton(

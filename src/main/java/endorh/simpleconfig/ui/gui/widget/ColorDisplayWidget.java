@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import net.minecraft.client.gui.chat.NarratorChatListener;
+import net.minecraft.client.GameNarrator;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +16,7 @@ public class ColorDisplayWidget extends AbstractWidget {
 	@Nullable public Runnable onClick = null;
 	
 	public ColorDisplayWidget(TextFieldWidgetEx textFieldWidget, int x, int y, int size, int color) {
-		super(x, y, size, size, NarratorChatListener.NO_TITLE);
+		super(x, y, size, size, GameNarrator.NO_TITLE);
 		this.textFieldWidget = textFieldWidget;
 		this.color = color;
 		this.size = size;
