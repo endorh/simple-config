@@ -123,9 +123,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		root = this;
 		
 		Pair<String, Type> key = Pair.of(modId, type);
-		if (!INSTANCES.containsKey(key)) {
-			INSTANCES.put(key, this);
-		} else throw new IllegalStateException(
+		if (INSTANCES.put(key, this) != null) throw new IllegalStateException(
 		  "Cannot create more than one config per type per mod");
 	}
 	
