@@ -70,10 +70,6 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	private static final Map<Pair<String, Type>, SimpleConfigImpl> INSTANCES = new ConcurrentHashMap<>();
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 
-	static {
-		SimpleConfigNetworkHandler.registerPackets();
-	}
-
 	protected final String defaultTitle;
 	protected final String tooltip;
 	protected final @Nullable Consumer<SimpleConfigImpl> saver;

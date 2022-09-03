@@ -244,7 +244,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	
 	// Registering ----------------------------------------------------
 	
-	protected static void registerPackets() {
+	@Internal public static void registerPackets() {
 		if (ID_COUNT != 0) throw new IllegalStateException("Packets registered twice!");
 		registerServer(SSimpleConfigSyncPacket::new);
 		registerServer(SSimpleConfigSavedPresetPacket::new);
