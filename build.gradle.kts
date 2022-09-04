@@ -31,7 +31,7 @@ plugins {
 val modGroup = "endorh.simpleconfig"
 val modId = "simpleconfig"
 val apiVersion = "1.0.0"
-val modVersion = "1.0.2"
+val modVersion = "1.0.3"
 val mcVersion = "1.18.2"
 val forge = "40.1.0"
 val forgeVersion = "$mcVersion-$forge"
@@ -160,6 +160,8 @@ minecraft {
     runs {
         val client = create("client") {
             workingDirectory(file("run/client"))
+    
+            jvmArg("-XX:+AllowEnhancedClassRedefinition")
             
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
             property("forge.logging.markers", "REGISTRIES")
@@ -176,6 +178,8 @@ minecraft {
         
         create("server") {
             workingDirectory(file("run/server"))
+    
+            jvmArg("-XX:+AllowEnhancedClassRedefinition")
             
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
             property("forge.logging.markers", "REGISTRIES")

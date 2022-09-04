@@ -71,10 +71,6 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	private static final Map<Pair<String, Type>, SimpleConfigImpl> INSTANCES = new ConcurrentHashMap<>();
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 
-	static {
-		SimpleConfigNetworkHandler.registerPackets();
-	}
-
 	protected final String defaultTitle;
 	protected final String tooltip;
 	protected final @Nullable Consumer<SimpleConfigImpl> saver;
@@ -124,9 +120,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		root = this;
 		
 		Pair<String, Type> key = Pair.of(modId, type);
-		if (!INSTANCES.containsKey(key)) {
-			INSTANCES.put(key, this);
-		} else throw new IllegalStateException(
+		if (INSTANCES.put(key, this) != null) throw new IllegalStateException(
 		  "Cannot create more than one config per type per mod");
 	}
 	

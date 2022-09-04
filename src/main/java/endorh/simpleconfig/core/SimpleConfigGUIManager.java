@@ -3,6 +3,7 @@ package endorh.simpleconfig.core;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.config.ClientConfig.menu;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
@@ -12,6 +13,7 @@ import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.DialogScreen;
+import endorh.simpleconfig.ui.gui.InfoDialog;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import net.minecraft.client.Minecraft;
@@ -33,6 +35,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -116,8 +119,18 @@ public class SimpleConfigGUIManager {
 	 */
 	public record SimpleConfigGuiFactory(String modId) implements BiFunction<Minecraft, Screen, Screen> {
 		@Override public Screen apply(Minecraft minecraft, Screen screen) {
-			return getConfigGUI(modId, screen);
+			Screen gui = getConfigGUI(modId, screen);
+			return gui != null? gui : screen;
 		}
+	}
+	
+	public static Screen getNoServerDialogScreen(Screen parent) {
+		return new DialogScreen(parent, InfoDialog.create(
+		  new TranslatableComponent("simpleconfig.error.no_server.dialog.title"),
+		  SimpleConfigTextUtil.splitTtc("simpleconfig.error.no_server.dialog.body"), d -> {
+			  d.setConfirmText(new TranslatableComponent("gui.ok"));
+		  }
+		));
 	}
 	
 	public static Screen getConfigGUIForHotKey(
@@ -146,7 +159,7 @@ public class SimpleConfigGUIManager {
 		final List<SimpleConfigImpl> orderedConfigs = configs.values().stream()
 		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
 		  .sorted(typeOrder).toList();
-		// final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
+		if (orderedConfigs.isEmpty()) return getNoServerDialogScreen(parentScreen);
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parentScreen)
 		  .setSavingRunnable(() -> {})
@@ -154,7 +167,6 @@ public class SimpleConfigGUIManager {
 		    "simpleconfig.config.title", SimpleConfigImpl.getModNameOrId(modId)))
 		  .setDefaultBackgroundTexture(defaultBackground)
 		  .setPreviousGUIState(guiStates.get(modId))
-		  // .setSnapshotHandler(handler)
 		  .setEditedConfigHotKey(hotkey, r -> {
 			  AbstractConfigScreen removed = activeScreens.remove(modId);
 			  guiStates.put(modId, removed.saveConfigScreenGUIState());
@@ -179,7 +191,7 @@ public class SimpleConfigGUIManager {
 	 * Build a config gui for the specified mod id
 	 * @param parent Parent screen to return to
 	 */
-	public static Screen getConfigGUI(String modId, Screen parent) {
+	public static @Nullable Screen getConfigGUI(String modId, Screen parent) {
 		Map<Type, SimpleConfigImpl> configs = modConfigs.get(modId);
 		if (configs == null || configs.isEmpty())
 			throw new IllegalArgumentException(
@@ -190,6 +202,7 @@ public class SimpleConfigGUIManager {
 		final List<SimpleConfigImpl> orderedConfigs = configs.values().stream()
 		  .filter(c -> c.getType() != Type.SERVER || hasPermission)
 		  .sorted(typeOrder).toList();
+		if (orderedConfigs.isEmpty()) return getNoServerDialogScreen(parent);
 		final SimpleConfigSnapshotHandler handler = new SimpleConfigSnapshotHandler(configs);
 		final ConfigScreenBuilder builder = ConfigScreenBuilder.create(modId)
 		  .setParentScreen(parent)
@@ -227,7 +240,7 @@ public class SimpleConfigGUIManager {
 	/**
 	 * Build a config GUI for the specified mod id, using the current screen as parent
 	 */
-	public static Screen getConfigGUI(String modId) {
+	public static @Nullable Screen getConfigGUI(String modId) {
 		return getConfigGUI(modId, Minecraft.getInstance().screen);
 	}
 	
@@ -236,7 +249,8 @@ public class SimpleConfigGUIManager {
 	 */
 	@SuppressWarnings("unused")
 	public static void showConfigGUI(String modId) {
-		Minecraft.getInstance().setScreen(getConfigGUI(modId));
+		Screen screen = getConfigGUI(modId);
+		if (screen != null) Minecraft.getInstance().setScreen(screen);
 	}
 	
 	public static void showConfigGUIForHotKey(
