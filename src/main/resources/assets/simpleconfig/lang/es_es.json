@@ -493,6 +493,9 @@
   "simpleconfig.file.dialog.option.open_n_discard": "Abrir y Descartar",
   "simpleconfig.file.dialog.option.open_n_continue": "Solo Abrir",
 
+  "simpleconfig.error.no_server.dialog.title": "Se Requiere un Mundo/Servidor para Editar",
+  "simpleconfig.error.no_server.dialog.body": "Este mod no tiene ningún ajuste específico de cliente, solo ajustes relativos al mundo/servidor\nActualmente, la configuración de servidor/mundo solo puede editarse desde un servidor/mundo.\n\nAbre un mundo local/conéctate a un servidor para editar la configuración de este mod.",
+
   "simpleconfig.command.error.no_such_entry": "Entrada desconocida: %s",
   "simpleconfig.command.error.get.unexpected": "Error inesperado leyendo entrada %s",
   "simpleconfig.command.error.set.unexpected": "Error inesperado asignando entrada %s",

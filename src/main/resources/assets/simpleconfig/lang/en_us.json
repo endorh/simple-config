@@ -527,6 +527,9 @@
   "simpleconfig.file.dialog.option.open_n_discard": "Open & Discard",
   "simpleconfig.file.dialog.option.open_n_continue": "Just Open",
 
+  "simpleconfig.error.no_server.dialog.title": "Server/World Required to Edit Configuration",
+  "simpleconfig.error.no_server.dialog.body": "This mod doesn't have any client configuration, only server/world related configuration.\nCurrently, server/world configuration can only be edited while in the server/world.\n\nSelect a singleplayer world/multiplayer server to edit this mod's configuration.",
+
   "simpleconfig.command.error.no_permission": "No permission to edit config of %s",
   "simpleconfig.command.error.unsupported_config": "Unsupported config: %s",
   "simpleconfig.command.error.no_such_config": "No such config: %s",

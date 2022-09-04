@@ -29,7 +29,7 @@ plugins {
 val modGroup = "endorh.simpleconfig"
 val modId = "simpleconfig"
 val apiVersion = "1.0.2"
-val modVersion = "1.0.3"
+val modVersion = "1.0.4"
 val mcVersion = "1.16.5"
 val forge = "36.1.0"
 val forgeVersion = "$mcVersion-$forge"
