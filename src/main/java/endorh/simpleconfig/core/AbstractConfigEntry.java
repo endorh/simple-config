@@ -418,11 +418,6 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		if (!configComment.isEmpty()) Arrays.stream(LINE_BREAK.split(configComment))
 		  .map(line -> commentLine("# " + line))
 		  .forEach(blockComments::add);
-		// FIXME: Remove once snakeyaml is updated to 1.31 (see bitbucket.org/snakeyaml/snakeyaml/issues/518)
-		if (blockComments.size() > 90) {
-			LOGGER.warn("Entry " + getGlobalPath() + " has too many comments [BUG]. Trimmed to the last 90");
-			blockComments.subList(0, blockComments.size() - 90).clear();
-		}
 		if (blockComments.isEmpty()) blockComments = null;
 		previous.setBlockComments(blockComments);
 		return previous.isNotEmpty()? previous : null;

@@ -71,8 +71,7 @@ val displayName = "Simple Config"
 val apiDisplayName = "Simple Config API"
 
 // Dependencies
-// FIXME: Update to 1.31 when available (bitbucket.org/snakeyaml/snakeyaml/issues/518)
-val yamlVersion = "1.30"
+val yamlVersion = "1.31"
 val jeiVersion = "11.2.0.256"
 val antlrVersion: String by extra
 
