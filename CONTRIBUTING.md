@@ -6,6 +6,13 @@ You may want to check the existing ones as reference.
 Other contributions are also welcome in general, but may take me more time to review,
 as this project is quite convoluted and I'm not always actively maintaining it.
 
+If you intend to contribute to the grammars, read first the comment in the
+`buildSrc/src/main/kotlin/antlr.conventions.gradle.kts` file, which explains the
+grammar source generation process.
+
+In particular, do not use the `src/main/antlr` directory, since it's removed
+after each generation.
+
 ### Development
 
 I only recommend using IntelliJ IDEA to edit this project.
