@@ -28,8 +28,9 @@ plugins {
 
 // Mod info --------------------------------------------------------------------
 
-val modGroup = "endorh.simpleconfig"
 val modId = "simpleconfig"
+val modGroup = "endorh.simpleconfig"
+val githubRepo = "endorh/simpleconfig"
 val apiVersion = "1.0.0"
 val modVersion = "1.0.2"
 val mcVersion = "1.17.1"
@@ -407,6 +408,14 @@ artifacts {
 
 publishing {
     repositories {
+        maven("https://maven.pkg.github.com/$githubRepo") {
+            name = "GitHubPackages"
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+        
         maven(rootProject.projectDir.parentFile.resolve("maven")) {
             name = "LocalMods"
         }
