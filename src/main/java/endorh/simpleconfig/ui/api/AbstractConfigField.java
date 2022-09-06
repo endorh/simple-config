@@ -599,7 +599,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 			if (prev.getType() != type) return true;
 			return !prev.equals(createHotKeyAction());
 		}
-		return hasError() || !areEqual(getValue(), getOriginal()) || hasConflictingExternalDiff();
+		return hasError() || !areEqual(getValue(), getOriginal());
 	}
 	
 	public boolean isResettable() {

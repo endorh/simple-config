@@ -407,12 +407,12 @@ import static java.lang.Math.min;
 		
 		// Left controls
 		selectAllButton = new MultiFunctionImageButton(
-		  2, height - 22, 20, 20, SimpleConfigIcons.Buttons.SELECT_ALL,
+		  3, height - 21, 18, 18, SimpleConfigIcons.Buttons.SELECT_ALL,
 		  ButtonAction.of(this::selectAllEntries)
 			 .tooltip(Component.translatable("simpleconfig.ui.select_all")));
 		addRenderableWidget(selectAllButton);
 		invertSelectionButton = new MultiFunctionImageButton(
-		  24, height - 22, 20, 20, SimpleConfigIcons.Buttons.INVERT_SELECTION,
+		  25, height - 21, 18, 18, SimpleConfigIcons.Buttons.INVERT_SELECTION,
 		  ButtonAction.of(this::invertEntrySelection)
 			 .tooltip(Component.translatable("simpleconfig.ui.invert_selection")));
 		addRenderableWidget(invertSelectionButton);
@@ -918,12 +918,13 @@ import static java.lang.Math.min;
 		}
 		if (isShowingTabs()) {
 			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
+			boolean suppressHoverTabs = suppressHover || !r.contains(smX, smY);
+			int smtX = suppressHoverTabs? -1 : smX;
+			int smtY = suppressHoverTabs? -1 : smY;
 			ScissorsHandler.INSTANCE.pushScissor(r); {
-				if (isTransparentBackground()) {
-					fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
-				} else overlayBackground(mStack, r, 32, 32, 32);
-				tabButtons.forEach(widget -> widget.render(mStack, smX, smY, delta));
+				fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
 				drawTabsShades(mStack, 0, isTransparentBackground() ? 120 : 255);
+				tabButtons.forEach(widget -> widget.render(mStack, smtX, smtY, delta));
 			} ScissorsHandler.INSTANCE.popScissor();
 			buttonLeftTab.render(mStack, smX, smY, delta);
 			buttonRightTab.render(mStack, smX, smY, delta);

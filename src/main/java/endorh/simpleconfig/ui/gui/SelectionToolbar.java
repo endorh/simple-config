@@ -51,10 +51,12 @@ public class SelectionToolbar extends AbstractContainerEventHandler implements N
 		addButton(restoreButton);
 		acceptButton = new MultiFunctionImageButton(
 		  x, y, 20, 20, Buttons.MERGE_ACCEPT_GROUP, ButtonAction.of(
-		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries()
-			   .forEach(AbstractConfigField::isSelected))
+		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
+		    .filter(AbstractConfigField::hasConflictingExternalDiff)
+		    .forEach(AbstractConfigField::acceptExternalValue))
 		).tooltip(Component.translatable("simpleconfig.ui.merge.accept.selected"))
-		  .active(() -> false));
+		  .active(() -> screen.getSelectedEntries().stream()
+		    .anyMatch(AbstractConfigField::hasConflictingExternalDiff)));
 		addButton(acceptButton);
 	}
 	
