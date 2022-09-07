@@ -15,19 +15,21 @@ The mod includes example configs, declared using both ways.
 
 Check out the `endorh.simpleconfig.demo` package
 
-You may also check the Aerobatic Elytra and Aerobatic Elytra Jetpack mods,
+You may also check the [Aerobatic Elytra](https://github.com/endorh/aerobaticelytra) and
+[Aerobatic Elytra Jetpack](https://github.com/endorh/aerobaticelytrajetpack) mods,
 which use this library.
 
 [//]: # (TODO: Add usage example once available through maven)
 
-## Guide? Quickstart? Wiki? FAQ?
-Not there yet.
+## Help and Documentation
+Whether you're a player or a mod developer, you can check out the
+[wiki](https://github.com/endorh/simpleconfig/wiki) if you need any help using this mod.
 
-### Kotlin API
+## Kotlin API
 There are plans to create a better Kotlin API based on property delegates,
 and maybe redesign the Java reflection API to use non-static members.
 
-### Hard dependency
+## Hard dependency
 Unfortunately, at least for now there's no way to shade the non-UI part of the library,
 requiring mods using the library to have a non-optional dependency on the Simple Config
 mod.
