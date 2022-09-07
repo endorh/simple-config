@@ -310,14 +310,16 @@ public class SimpleConfigCommand {
 			entry.setFromCommand(value);
 			value = entry.getForCommand();
 			
-			int valueWidth = min(40, value.length());
-			int prevWidth = min(60 - valueWidth, prev.length());
+			int valueWidth = min(55, value.length());
+			int prevWidth = min(35 - valueWidth, prev.length());
 			MutableComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
-			src.sendSuccess(Component.translatable("simpleconfig.command.msg.set",
-			                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
-			broadcastToOtherOperators(player, Component.translatable("simpleconfig.command.msg.set.remote",
+			src.sendSuccess(Component.translatable(
+			  "simpleconfig.command.msg.set",
+			  formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
+			broadcastToOtherOperators(player, Component.translatable(
+			  "simpleconfig.command.msg.set.remote",
 			  playerName(player), formatKey(modId, key, type, 40), undoLink, formatPrev, formatvalue));
 			// The file watcher isn't always reliable
 			config.update();

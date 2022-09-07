@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.AbstractRange;
 import endorh.simpleconfig.api.AbstractRange.AbstractSizedRange;
 import endorh.simpleconfig.api.ConfigEntryHolder;
@@ -196,6 +197,15 @@ public abstract class AbstractRangeEntry<
 		  .withMinExclusivenessEditable(canEditMinExclusiveness)
 		  .withMaxExclusivenessEditable(canEditMaxExclusiveness);
 		return Optional.of(decorate(entryBuilder));
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		R value = get();
+		R maxSize = value.create(min, max, value.isExclusiveMin(), value.isExclusiveMax());
+		if (isValidValue(maxSize)) builder.suggest(
+		  forCommand(maxSize), Component.translatable("simpleconfig.command.suggest.largest"));
+		return true;
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected abstract <EE extends AbstractConfigListEntry<V> & IChildListEntry>

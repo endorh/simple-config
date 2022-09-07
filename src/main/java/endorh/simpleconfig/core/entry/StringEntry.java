@@ -1,6 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
 import com.google.common.collect.Lists;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
@@ -203,4 +204,15 @@ public class StringEntry
 		}
 	}
 	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		Optional<List<String>> opt = suggestionProvider.updateSuggestions(ofString(), "");
+		if (opt.isPresent()) {
+			List<String> suggestions = opt.get();
+			String current = get();
+			for (String s: suggestions) if (!current.equals(s) && !defValue.equals(s))
+				builder.suggest(s);
+		}
+		return true;
+	}
 }

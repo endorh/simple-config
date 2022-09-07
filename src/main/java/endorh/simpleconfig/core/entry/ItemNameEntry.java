@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.ItemNameEntryBuilder;
@@ -96,5 +97,14 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofItemName(), forGui(get()));
 		return Optional.of(decorate(entryBuilder));
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		ResourceLocation current = get();
+		for (ResourceLocation o: ForgeRegistries.ITEMS.getKeys())
+			if (!o.equals(current) && !o.equals(defValue) && isValidValue(o))
+				builder.suggest(forCommand(o));
+		return true;
 	}
 }

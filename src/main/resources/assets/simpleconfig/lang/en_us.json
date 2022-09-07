@@ -128,6 +128,8 @@
   "simpleconfig.config.client.confirm.discard_hotkeys:help": "Request confirmation before closing config hotkeys with unsaved changes",
   "simpleconfig.config.client.advanced": "Advanced",
   "simpleconfig.config.client.advanced:help": "Advanced Options",
+  "simpleconfig.config.client.advanced.max_undo": "Max Undoable Actions",
+  "simpleconfig.config.client.advanced.max_undo:help": "Maximum number of actions which can be undone.\n§7Set to 0 to disable the limit.",
   "simpleconfig.config.client.advanced.show_ui_tips": "Show UI tips",
   "simpleconfig.config.client.advanced.show_ui_tips:help": "Display UI tips (description for list controls and reset buttons)\n§7Can be toggled from the controls dialog.",
   "simpleconfig.config.client.advanced.allow_over_scroll": "Allow Over Scroll",
@@ -555,6 +557,9 @@
   "simpleconfig.command.help.set": "Set this value",
   "simpleconfig.command.suggest.current": "Current value",
   "simpleconfig.command.suggest.default": "Default value",
+  "simpleconfig.command.suggest.min": "Min value",
+  "simpleconfig.command.suggest.max": "Max value",
+  "simpleconfig.command.suggest.largest": "Largest value",
 
   "simpleconfig.format.bool.true_false.true": "§aTrue",
   "simpleconfig.format.bool.true_false.false": "§cFalse",

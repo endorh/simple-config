@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.ConfigSpec;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfig;
@@ -747,6 +748,16 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	
 	@Internal public void setFromCommand(String value) {
 		set(fromCommand(value));
+	}
+	
+	@Internal public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		String serialized = getForCommand();
+		if (serialized != null) builder.suggest(
+		  serialized, Component.translatable("simpleconfig.command.suggest.current"));
+		String defSerialized = forCommand(defValue);
+		if (defSerialized != null) builder.suggest(
+		  defSerialized, Component.translatable("simpleconfig.command.suggest.default"));
+		return true;
 	}
 	
 	protected void setBackingField(V value) throws IllegalAccessException {

@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.FluidNameEntryBuilder;
@@ -87,5 +88,14 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		final ComboBoxFieldBuilder<ResourceLocation> entryBuilder =
 		  builder.startComboBox(getDisplayName(), ofFluidName(), forGui(get()));
 		return Optional.of(decorate(entryBuilder));
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		ResourceLocation current = get();
+		for (ResourceLocation o: ForgeRegistries.FLUIDS.getKeys())
+			if (!o.equals(current) && !o.equals(defValue) && isValidValue(o))
+				builder.suggest(forCommand(o));
+		return true;
 	}
 }

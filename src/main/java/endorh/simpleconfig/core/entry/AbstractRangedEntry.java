@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -208,5 +209,16 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 			}
 			return super.createConfigValidator().test(o);
 		};
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		String minSerialized = forCommand(getMin());
+		String maxSerialized = forCommand(getMax());
+		if (minSerialized != null) builder.suggest(
+		  minSerialized, Component.translatable("simpleconfig.command.suggest.min"));
+		if (maxSerialized != null) builder.suggest(
+		  maxSerialized, Component.translatable("simpleconfig.command.suggest.max"));
+		return true;
 	}
 }
