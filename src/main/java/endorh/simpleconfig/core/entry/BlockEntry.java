@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core.entry;
 
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.BlockEntryBuilder;
@@ -149,5 +150,14 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 		    .setSuggestionProvider(new SimpleComboBoxModel<>(this::supplyOptions))
 			 .setSuggestionMode(false);
 		return Optional.of(decorate(entryBuilder));
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		Block current = get();
+		for (Block o: supplyOptions())
+			if (!o.equals(current) && !o.equals(defValue) && isValidValue(o))
+				builder.suggest(forCommand(o));
+		return true;
 	}
 }

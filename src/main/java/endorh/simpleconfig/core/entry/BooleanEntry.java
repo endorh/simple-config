@@ -1,5 +1,7 @@
 package endorh.simpleconfig.core.entry;
 
+import com.mojang.brigadier.Message;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.BooleanEntryBuilder;
 import endorh.simpleconfig.api.entry.BooleanEntryBuilder.BooleanDisplayer;
@@ -131,5 +133,24 @@ public class BooleanEntry
 	
 	@Override public @Nullable String forCommand(Boolean value) {
 		return value == null? null : value? "true" : "false";
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		boolean current = get();
+		Message msg = null;
+		if (defValue) {
+			msg = new TranslatableComponent("simpleconfig.command.suggest.default");
+		} else if (current) msg = new TranslatableComponent("simpleconfig.command.suggest.current");
+		if (msg != null) {
+			builder.suggest("true", msg);
+		} else builder.suggest("true");
+		msg = null;
+		if (!defValue) {
+			msg = new TranslatableComponent("simpleconfig.command.suggest.default");
+		} else if (!current) msg = new TranslatableComponent("simpleconfig.command.suggest.current");
+		if (msg != null) {
+			builder.suggest("false", msg);
+		} else builder.suggest("false");
+		return true;
 	}
 }

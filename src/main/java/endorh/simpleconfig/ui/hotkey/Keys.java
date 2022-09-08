@@ -152,7 +152,7 @@ public class Keys {
 	
 	public static @Nullable String getCharFromKey(int key) {
 		Key input = getInputFromKey(key);
-		if (input.getType() == Type.MOUSE) return null;
+		if (input.getType() == Type.MOUSE || input.getValue() == -1) return null;
 		if (input.getType() == Type.KEYSYM)
 			return GLFW.glfwGetKeyName(input.getValue(), -1);
 		return GLFW.glfwGetKeyName(-1, input.getValue());
@@ -160,7 +160,7 @@ public class Keys {
 	
 	public static int getKeyFromChar(String ch) {
 		Optional<Key> opt = getInputMap(Type.KEYSYM).values().stream()
-		  .filter(i -> ch.equals(GLFW.glfwGetKeyName(i.getValue(), -1)))
+		  .filter(i -> i.getValue() != -1 && ch.equals(GLFW.glfwGetKeyName(i.getValue(), -1)))
 		  .findFirst();
 		if (opt.isPresent()) return opt.get().getValue();
 		opt = getInputMap(Type.SCANCODE).values().stream()

@@ -3,15 +3,16 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
-import endorh.simpleconfig.ui.gui.widget.MultiFunctionButton;
+import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
+import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
-import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -28,7 +29,7 @@ import java.util.function.Function;
 public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChildListEntry {
 	protected final ImmutableList<T> values;
 	protected int displayedIndex;
-	protected final Button buttonWidget;
+	protected final MultiFunctionIconButton buttonWidget;
 	protected final IntegerListEntry intEntry;
 	protected final RedirectGuiEventListener widgetReference;
 	protected final Function<T, Component> nameProvider;
@@ -44,18 +45,18 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		if (displayedIndex == -1) displayedIndex = 0;
 		setOriginal(value);
 		setValue(value);
-		buttonWidget = new MultiFunctionButton(0, 0, 150, 20, NarratorChatListener.NO_TITLE, (w, b) -> {
-			if (b != 2 && !isFocused()) {
-				preserveState();
-				setFocused(true);
-			}
-			final int s = values.size();
-			if (0 <= b && b <= 1) {
-				displayedIndex = (displayedIndex + (b == 0 ? 1 : -1) + s) % s;
-				return true;
-			}
-			return false;
-		});
+		buttonWidget = MultiFunctionIconButton.of(
+		  Icon.EMPTY, ButtonAction.of(b -> {
+			  if (b != 2 && !isFocused()) {
+				  preserveState();
+				  setFocused(true);
+			  }
+			  final int s = values.size();
+			  if (0 <= b && b <= 1) {
+				  int step = b == 0 ^ Screen.hasShiftDown()? 1 : -1;
+				  displayedIndex = (displayedIndex + step + s) % s;
+			  }
+		}).title(() -> nameProvider.apply(getDisplayedValue())));
 		intEntry = new IntegerListEntry(TextComponent.EMPTY, 1);
 		intEntry.setSubEntry(true);
 		intEntry.setParentEntry(this);
@@ -95,9 +96,8 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		buttonWidget.active = shouldRenderEditable();
 		buttonWidget.x = x;
 		buttonWidget.y = y;
-		buttonWidget.setWidth(w);
+		buttonWidget.setExactWidth(w);
 		buttonWidget.setHeight(h);
-		buttonWidget.setMessage(nameProvider.apply(getDisplayedValue()));
 		buttonWidget.render(mStack, mouseX, mouseY, delta);
 	}
 	

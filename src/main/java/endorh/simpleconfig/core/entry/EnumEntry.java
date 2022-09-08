@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EnumEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
@@ -203,6 +204,15 @@ public class EnumEntry<E extends Enum<E>>
 			valBuilder.setEnumNameProvider(e -> enumName((E) e));
 			return Optional.of(decorate(valBuilder));
 		}
+	}
+	
+	@Override public boolean addCommandSuggestions(SuggestionsBuilder builder) {
+		super.addCommandSuggestions(builder);
+		E current = get();
+		E[] values = enumClass.getEnumConstants();
+		for (E value: values) if (value != current && value != defValue && isValidValue(value))
+			builder.suggest(forCommand(value));
+		return true;
 	}
 	
 	public static class ChoicesTypeWrapper<V> implements ITypeWrapper<V> {

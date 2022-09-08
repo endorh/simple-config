@@ -24,6 +24,8 @@ public interface ScissorsHandler {
 		popScissor();
 	}
 	
+	void withSingleScissor(Rectangle clipArea, Runnable runnable);
+	
 	void withoutScissors(Runnable runnable);
 }
 

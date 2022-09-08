@@ -661,31 +661,6 @@ public abstract class AbstractConfigScreen extends Screen
 		return tooltips.removeAll(removed);
 	}
 	
-	protected void overlayBackground(
-	  PoseStack mStack, Rectangle rect, int r, int g, int b
-	) {
-		overlayBackground(mStack, rect, r, g, b, 255, 255);
-	}
-	
-	@SuppressWarnings("SameParameterValue") protected void overlayBackground(
-	  PoseStack mStack, Rectangle rect, int r, int g, int b, int startAlpha, int endAlpha
-	) {
-		if (minecraft == null || isTransparentBackground()) return;
-		Tesselator tessellator = Tesselator.getInstance();
-		BufferBuilder buffer = tessellator.getBuilder();
-		RenderSystem.setShaderTexture(0, getBackgroundLocation());
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		final Matrix4f m = mStack.last().pose();
-		// @formatter:off
-		buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
-		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMaxY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMaxY() / 32.0f).color(r, g, b, endAlpha).endVertex();
-		buffer.vertex(m, (float) rect.getMaxX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMaxX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
-		buffer.vertex(m, (float) rect.getMinX(), (float) rect.getMinY(), 0.0f).uv((float) rect.getMinX() / 32.0f, (float) rect.getMinY() / 32.0f).color(r, g, b, startAlpha).endVertex();
-		// @formatter:on
-		tessellator.end();
-	}
-	
 	@Override public void renderComponentHoverEffect(
 	  @NotNull PoseStack matrices, Style style, int x, int y
 	) {

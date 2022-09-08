@@ -117,6 +117,8 @@
   "simpleconfig.config.client.confirm.group_restore:help": "Requerir un deslizamiento de ratón para restaurar un grupo de entradas",
   "simpleconfig.config.client.advanced": "Avanzado",
   "simpleconfig.config.client.advanced:help": "Opciones avanzadas",
+  "simpleconfig.config.client.advanced.max_undo": "Máx Acciones Deshacibles",
+  "simpleconfig.config.client.advanced.max_undo:help": "Máximo número de acciones que se pueden deshacer.\n§7Asignar 0 permite deshacer sin límite.",
   "simpleconfig.config.client.advanced.show_ui_tips": "Mostrar consejos de interfaz",
   "simpleconfig.config.client.advanced.show_ui_tips:help": "Display UI tips (description for list controls)\n§7Can be toggled from the controls dialog.",
   "simpleconfig.config.client.advanced.allow_over_scroll": "No Ajustar Desplazamiento",
@@ -519,6 +521,9 @@
   "simpleconfig.command.help.set": "Asignar este valor",
   "simpleconfig.command.suggest.current": "Valor actual",
   "simpleconfig.command.suggest.default": "Valor por defecto",
+  "simpleconfig.command.suggest.min": "Valor mínimo",
+  "simpleconfig.command.suggest.max": "Valor máximo",
+  "simpleconfig.command.suggest.largest": "Valor más grande",
 
   "simpleconfig.format.bool.true_false.true": "§aTrue",
   "simpleconfig.format.bool.true_false.false": "§cFalse",
