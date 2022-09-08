@@ -1,14 +1,14 @@
 modLoader="javafml"
 loaderVersion="[41,)"
 license="${license}"
-#issueTrackerURL="${issue_tracker}"
+issueTrackerURL="${issue_tracker}"
 
 [[mods]]
     modId="simpleconfig"
     version="${version}"
     displayName="${display}"
-    #updateJSONURL="${update_json}"
-    #displayURL="${page}"
+    updateJSONURL="${update_json}"
+    displayURL="${page}"
     logoFile="${logo_file}"
     credits="${credits}"
     authors="${authors}"
