@@ -225,8 +225,8 @@ public class SimpleConfigCommand {
 			entry.setFromCommand(value);
 			value = entry.getForCommand();
 			
-			int valueWidth = min(40, value.length());
-			int prevWidth = min(60 - valueWidth, prev.length());
+			int valueWidth = min(55, value.length());
+			int prevWidth = min(35 - valueWidth, prev.length());
 			MutableComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
@@ -448,6 +448,7 @@ public class SimpleConfigCommand {
 		if (hasModId) b.delete(
 		  nodes.get(nodes.size() - ++i - 1).getRange().getEnd(),
 		  nodes.get(nodes.size() - i).getRange().getEnd());
+		b.insert(0, '/');
 		return new BaseCommand(b.toString(), hasModId? modId : null);
 	}
 	

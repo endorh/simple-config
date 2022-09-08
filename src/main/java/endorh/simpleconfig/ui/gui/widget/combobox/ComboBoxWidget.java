@@ -951,7 +951,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				if (hasIcon()) {
 					relX -= getIconWidth() + 1;
 				} else if (shouldDrawBackground()) relX -= 4;
-				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 				if (lastInteraction - lastClick < 250) { // Double click;
 					int left = getWordPosFromPos(-1, clickedPos);
 					int right = getWordPosFromPos(1, clickedPos);
@@ -991,7 +991,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				relX -= getIconWidth() + 1;
 			} else if (shouldDrawBackground()) relX -= 4;
 			int prevAnchor = anchorPos;
-			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 			if (lastClickWordPos != -1) {
 				int left = getWordPosFromPos(-1, lastClickWordPos);
 				int right = getWordPosFromPos(1, lastClickWordPos);

@@ -358,14 +358,15 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 			bx += b.getWidth() + 2;
 			b.y = y + 12 - b.getHeight() / 2;
 		}
-		int comboWidth = w - bx - 2 - max(42, textW);
-		this.comboBox.setWidth(comboWidth);
+		int comboWidth = w - bx - 42 - (filter? 0 : max(42, textW));
+		comboBox.setWidth(comboWidth);
 		regexComboBox.setWidth(comboWidth);
-		this.comboBox.x = bx + 2;
-		this.comboBox.y = y + 3;
+		comboBox.x = bx + 2;
+		comboBox.y = y + 3;
 		regexComboBox.x = bx + 2;
 		regexComboBox.y = y + 3;
-		font.drawShadow(mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
+		if (!filter) font.drawShadow(
+		  mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
 	}
 	
 	protected void positionNotExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {

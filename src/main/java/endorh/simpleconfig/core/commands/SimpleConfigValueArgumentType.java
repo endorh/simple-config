@@ -74,16 +74,8 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		String key = context.getArgument("key", String.class);
 		SimpleConfigImpl config = getConfig(context);
 		if (config == null) return Suggestions.empty();
-		AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
-		String serialized = entry.getForCommand();
-		if (serialized != null)
-			builder.suggest(serialized, new TranslatableComponent(
-			  "simpleconfig.command.suggest.current"));
-		String defSerialized = entry.forCommand(entry.defValue);
-		if (defSerialized != null && !defSerialized.equals(serialized))
-			builder.suggest(defSerialized, new TranslatableComponent(
-			  "simpleconfig.command.suggest.default"));
-		return builder.buildFuture();
+		AbstractConfigEntry<?, ?, ?> entry = config.getEntry(key);
+		return entry.addCommandSuggestions(builder)? builder.buildFuture() : Suggestions.empty();
 	}
 	
 	public static class Serializer implements ArgumentSerializer<SimpleConfigValueArgumentType> {

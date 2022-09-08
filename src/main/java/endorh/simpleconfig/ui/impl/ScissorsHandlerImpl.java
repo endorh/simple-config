@@ -45,6 +45,12 @@ public final class ScissorsHandlerImpl
 		applyScissors();
 	}
 	
+	@Override public void withSingleScissor(Rectangle clipArea, Runnable runnable) {
+		applyScissor(clipArea);
+		runnable.run();
+		applyScissors();
+	}
+	
 	@Override public void withoutScissors(Runnable runnable) {
 		applyScissor(null);
 		runnable.run();
