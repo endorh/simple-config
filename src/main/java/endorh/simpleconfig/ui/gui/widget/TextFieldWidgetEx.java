@@ -408,7 +408,7 @@ public class TextFieldWidgetEx extends Widget {
 				draggingText = true;
 				double relX = mouseX - x;
 				if (isBordered()) relX -= 4;
-				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 				lastInteraction = System.currentTimeMillis();
 				if (lastInteraction - lastClick < 250) { // Double click
 					int left = getWordPosFromPos(-1, clickedPos);
@@ -441,7 +441,7 @@ public class TextFieldWidgetEx extends Widget {
 			double relX = mouseX - x;
 			if (isBordered()) relX -= 4;
 			int prevAnchor = anchorPos;
-			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 			if (lastClickWordPos != -1) {
 				int left = getWordPosFromPos(-1, lastClickWordPos);
 				int right = getWordPosFromPos(1, lastClickWordPos);

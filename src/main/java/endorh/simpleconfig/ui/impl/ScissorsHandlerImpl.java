@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
-import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.ScissorsHandler;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
@@ -42,6 +42,12 @@ public final class ScissorsHandlerImpl
 	@Override public void popScissor() {
 		if (!scissorsAreas.isEmpty())
 			scissorsAreas.remove(scissorsAreas.size() - 1);
+		applyScissors();
+	}
+	
+	@Override public void withSingleScissor(Rectangle clipArea, Runnable runnable) {
+		applyScissor(clipArea);
+		runnable.run();
 		applyScissors();
 	}
 	

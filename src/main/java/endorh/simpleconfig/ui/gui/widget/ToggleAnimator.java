@@ -40,6 +40,16 @@ public class ToggleAnimator {
 		lastChange = System.currentTimeMillis();
 	}
 	
+	public void stopAndSet(float target) {
+		this.target = target;
+		lastProgress = 1F;
+		lastChange = System.currentTimeMillis() - length;
+	}
+	
+	public void stopAndSet(boolean target) {
+		stopAndSet(target? 1F : 0F);
+	}
+	
 	public void setEaseOutTarget(boolean onOff) {
 		setEaseOutTarget(onOff? 1F : 0F);
 	}

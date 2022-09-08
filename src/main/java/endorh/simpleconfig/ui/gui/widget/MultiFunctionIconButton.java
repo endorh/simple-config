@@ -2,18 +2,17 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Backgrounds;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
-import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.OverlayInjector;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Backgrounds;
-import endorh.simpleconfig.api.ui.math.Point;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.SimpleSound;
@@ -48,8 +47,6 @@ public class MultiFunctionIconButton extends TintedButton {
 	protected int maxWidth;
 	protected int minWidth;
 	protected int defaultTint = 0;
-	protected Rectangle overlayArea;
-	protected ButtonOverlay overlay = new ButtonOverlay(this);
 	
 	public static MultiFunctionIconButton of(
 	  @NotNull Icon icon,   ButtonActionBuilder builder
@@ -79,6 +76,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		this.defaultAction = activeAction = defaultAction;
 		this.minWidth = minWidth;
 		this.maxWidth = maxWidth;
+		overlay = new ButtonOverlay(this);
 	}
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -167,6 +165,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, x, y, width, height, level);
 		renderBg(mStack, mc, mouseX, mouseY);
 		int color = getFGColor();
+		contentArea.setBounds(area.x + 2, area.y + 2, area.width - 4, area.height - 4);
 		mStack.push(); {
 			if (contentWidth < width) mStack.translate((width - contentWidth) / 2.0, 0.0, 0.0);
 			if (icon != Icon.EMPTY) {
@@ -180,22 +179,25 @@ public class MultiFunctionIconButton extends TintedButton {
 			if (width > iconWidth) {
 				if (contentWidth > width) {
 					ScissorsHandler.INSTANCE.withScissor(
-					  new Rectangle(x + 2, y, width - 4, height), () -> drawString(
+					  contentArea, () -> drawString(
 						 mStack, font, title, x + iconWidth, y + (height - 8) / 2,
 						 color | MathHelper.ceil(alpha * 255.0F) << 24));
-					if (overlayArea == null) {
-						overlayArea = new Rectangle(x, y, contentWidth + 4, height + 1);
-						Screen screen = Minecraft.getInstance().currentScreen;
-						if (screen != null && overlayArea.getMaxX() > screen.width)
-							overlayArea.x = max(4, screen.width - 4 - overlayArea.getWidth());
-						OverlayInjector.injectVisualOverlay(overlayArea, overlay, 10);
-					} else {
+					if (isMouseOver(mouseX, mouseY) && !overlay.isRendering()) {
+						Screen screen = mc.currentScreen;
+						if (overlayArea == null) {
+							overlayArea = new Rectangle();
+							OverlayInjector.injectVisualOverlay(overlayArea, overlay, 10);
+						}
 						overlayArea.setBounds(x, y, contentWidth + 4, height + 1);
-						Screen screen = Minecraft.getInstance().currentScreen;
 						if (screen != null && overlayArea.getMaxX() > screen.width)
 							overlayArea.x = max(4, screen.width - 4 - overlayArea.getWidth());
 					}
-				} else drawString(mStack, font, title, x + iconWidth, y + (height - 8) / 2, color | MathHelper.ceil(alpha * 255.0F) << 24);
+				} else {
+					if (overlayArea != null) overlayArea.setBounds(x, y, width, height + 1);
+					drawString(
+					  mStack, font, title, x + iconWidth, y + (height - 8) / 2,
+					  color | MathHelper.ceil(alpha * 255.0F) << 24);
+				}
 			}
 		} mStack.pop();
 		
@@ -313,10 +315,11 @@ public class MultiFunctionIconButton extends TintedButton {
 		return max(minWidth, min(maxWidth, (contentWidth + 1) / 2 * 2));
 	}
 	
-	public static class ButtonOverlay implements IOverlayRenderer {
+	public static class ButtonOverlay extends TintedButton.ButtonOverlay {
 		private final MultiFunctionIconButton button;
 		
 		public ButtonOverlay(MultiFunctionIconButton button) {
+			super(button);
 			this.button = button;
 		}
 		
@@ -325,22 +328,36 @@ public class MultiFunctionIconButton extends TintedButton {
 		) {
 			if (!button.isMouseOver(mouseX, mouseY)) {
 				button.overlayArea = null;
+				animator.stopAndSet(0F);
 				return false;
 			}
+			if (animator.getTarget() == 0F) {
+				animator.resetTarget();
+				animator.setOutputRange(button.maxWidth, area.width);
+			}
+			if (lastWidth != area.width) {
+				animator.setOutputRange(animator.getEaseOut(), area.width);
+				animator.resetTarget();
+				lastWidth = area.width;
+			}
+			rendering = true;
 			int x = button.x;
 			int y = button.y;
 			int minW = button.minWidth;
 			int maxW = button.maxWidth;
 			int h = button.height;
-			pos(button, area.x, area.y);
-			button.setExactWidth(area.width);
-			button.setHeight(area.height);
-			button.render(mStack, mouseX, mouseY, delta);
+			int w = (int) animator.getEaseOut();
+			pos(button, area.x, area.y, w, area.height);
+			button.setExactWidth(w);
+			this.area.setBounds(area.x, area.y, w, area.height);
+			ScissorsHandler.INSTANCE.withSingleScissor(
+			  this.area, () -> button.render(mStack, mouseX, mouseY, delta));
 			button.x = x;
 			button.y = y;
 			button.minWidth = minW;
 			button.maxWidth = maxW;
 			button.height = h;
+			rendering = false;
 			return true;
 		}
 	}

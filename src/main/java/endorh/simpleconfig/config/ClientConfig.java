@@ -95,6 +95,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				.add("discard_hotkeys", yesNo(true))
 		  ).n(
 			 group("advanced")
+			   .add("max_undo", number(256).min(0))
 				.add("show_ui_tips", yesNo(true))
 			   .add("allow_over_scroll", yesNo(false))
 				.add("tooltip_max_width", percent(60F))
@@ -185,6 +186,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	}
 	
 	@Bind public static class advanced {
+		@Bind public static int max_undo;
 		@Bind public static boolean show_ui_tips;
 		@Bind public static boolean allow_over_scroll;
 		@Bind public static float tooltip_max_width;
@@ -202,6 +204,10 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 			@Bind public static List<Pattern> regex_search_history;
 		}
 		@Bind public static boolean translation_debug_mode;
+		
+		@Bind public static void bake() {
+			if (max_undo == 0) max_undo = Integer.MAX_VALUE;
+		}
 	}
 	
 	@Bind public static class hotkeys {

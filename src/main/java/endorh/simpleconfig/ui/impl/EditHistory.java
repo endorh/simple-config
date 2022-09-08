@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.impl;
 
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.IEntryHolder;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 public class EditHistory {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected AbstractConfigScreen owner;
-	protected int maxSize = 100;
+	protected int maxSize = advanced.max_undo;
 	protected List<EditRecord> records;
 	protected @Nullable EditRecord preservedState;
 	protected @Nullable EditRecord collector;

@@ -4,6 +4,10 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.SearchBar;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
@@ -14,10 +18,6 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.PatternTypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.StringTypeWrapper;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.SearchBar;
-import endorh.simpleconfig.api.ui.math.Point;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.FontRenderer;
@@ -356,14 +356,15 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 			bx += b.getWidth() + 2;
 			b.y = y + 12 - b.getHeightRealms() / 2;
 		}
-		int comboWidth = w - bx - 2 - max(42, textW);
-		this.comboBox.setWidth(comboWidth);
+		int comboWidth = w - bx - 42 - (filter? 0 : max(42, textW));
+		comboBox.setWidth(comboWidth);
 		regexComboBox.setWidth(comboWidth);
-		this.comboBox.x = bx + 2;
-		this.comboBox.y = y + 3;
+		comboBox.x = bx + 2;
+		comboBox.y = y + 3;
 		regexComboBox.x = bx + 2;
 		regexComboBox.y = y + 3;
-		font.drawStringWithShadow(mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
+		if (!filter) font.drawStringWithShadow(
+		  mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
 	}
 	
 	protected void positionNotExpanded(MatrixStack mStack, int mouseX, int mouseY, float delta) {

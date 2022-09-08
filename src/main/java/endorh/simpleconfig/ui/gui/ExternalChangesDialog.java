@@ -42,7 +42,7 @@ public class ExternalChangesDialog extends ConfirmDialog {
 		  type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		  "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;
-		this.responseAction = action;
+		responseAction = action;
 		setPersistent(true);
 		setBody(Stream.concat(
 		  splitTtc(type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :

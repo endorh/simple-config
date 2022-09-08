@@ -10,6 +10,10 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfigGroup;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Types;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
@@ -24,13 +28,9 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Types;
 import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState;
 import endorh.simpleconfig.ui.impl.ConfigScreenBuilderImpl.ConfigScreenGUIState.ConfigCategoryGUIState;
 import endorh.simpleconfig.ui.impl.EasingMethod;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.DialogTexts;
@@ -405,12 +405,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		
 		// Left controls
 		selectAllButton = new MultiFunctionImageButton(
-		  2, height - 22, 20, 20, SimpleConfigIcons.Buttons.SELECT_ALL,
+		  3, height - 21, 18, 18, SimpleConfigIcons.Buttons.SELECT_ALL,
 		  ButtonAction.of(this::selectAllEntries)
 			 .tooltip(new TranslationTextComponent("simpleconfig.ui.select_all")));
 		addButton(selectAllButton);
 		invertSelectionButton = new MultiFunctionImageButton(
-		  24, height - 22, 20, 20, SimpleConfigIcons.Buttons.INVERT_SELECTION,
+		  25, height - 21, 18, 18, SimpleConfigIcons.Buttons.INVERT_SELECTION,
 		  ButtonAction.of(this::invertEntrySelection)
 			 .tooltip(new TranslationTextComponent("simpleconfig.ui.invert_selection")));
 		addButton(invertSelectionButton);
@@ -918,12 +918,13 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		}
 		if (isShowingTabs()) {
 			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
+			boolean suppressHoverTabs = suppressHover || !r.contains(smX, smY);
+			int smtX = suppressHoverTabs? -1 : smX;
+			int smtY = suppressHoverTabs? -1 : smY;
 			ScissorsHandler.INSTANCE.pushScissor(r); {
-				if (isTransparentBackground()) {
-					fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
-				} else overlayBackground(mStack, r, 32, 32, 32);
-				tabButtons.forEach(widget -> widget.render(mStack, smX, smY, delta));
+				fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
 				drawTabsShades(mStack, 0, isTransparentBackground() ? 120 : 255);
+				tabButtons.forEach(widget -> widget.render(mStack, smtX, smtY, delta));
 			} ScissorsHandler.INSTANCE.popScissor();
 			buttonLeftTab.render(mStack, smX, smY, delta);
 			buttonRightTab.render(mStack, smX, smY, delta);
@@ -1531,8 +1532,8 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			  : editingHotKey? "simpleconfig.ui.save_hotkey" : "simpleconfig.ui.save"));
 		}
 		
-		@Override public void render(@NotNull MatrixStack matrices, int mouseX, int mouseY, float delta) {
-			super.render(matrices, mouseX, mouseY, delta);
+		@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
+			super.render(mStack, mouseX, mouseY, delta);
 		}
 	}
 }

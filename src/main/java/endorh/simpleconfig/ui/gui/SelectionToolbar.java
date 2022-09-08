@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.widget.Widget;
@@ -49,10 +49,12 @@ public class SelectionToolbar extends FocusableGui {
 		addButton(restoreButton);
 		acceptButton = new MultiFunctionImageButton(
 		  x, y, 20, 20, Buttons.MERGE_ACCEPT_GROUP, ButtonAction.of(
-		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries()
-			   .forEach(AbstractConfigField::isSelected))
+		  () -> screen.runAtomicTransparentAction(() -> screen.getSelectedEntries().stream()
+		    .filter(AbstractConfigField::hasConflictingExternalDiff)
+		    .forEach(AbstractConfigField::acceptExternalValue))
 		).tooltip(new TranslationTextComponent("simpleconfig.ui.merge.accept.selected"))
-		  .active(() -> false));
+		  .active(() -> screen.getSelectedEntries().stream()
+		    .anyMatch(AbstractConfigField::hasConflictingExternalDiff)));
 		addButton(acceptButton);
 	}
 	
