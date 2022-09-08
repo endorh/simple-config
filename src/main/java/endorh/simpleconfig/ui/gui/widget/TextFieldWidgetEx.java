@@ -206,7 +206,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 					String s = new StringBuilder(text).delete(start, stop).toString();
 					
 					if (filter.test(s)) {
-						this.value = s;
+						value = s;
 						moveCaretWithAnchor(start);
 					}
 				}
@@ -408,7 +408,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 				draggingText = true;
 				double relX = mouseX - x;
 				if (isBordered()) relX -= 4;
-				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 				lastInteraction = System.currentTimeMillis();
 				if (lastInteraction - lastClick < 250) { // Double click
 					int left = getWordPosFromPos(-1, clickedPos);
@@ -441,7 +441,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 			double relX = mouseX - x;
 			if (isBordered()) relX -= 4;
 			int prevAnchor = anchorPos;
-			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX);
+			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 			if (lastClickWordPos != -1) {
 				int left = getWordPosFromPos(-1, lastClickWordPos);
 				int right = getWordPosFromPos(1, lastClickWordPos);
@@ -641,7 +641,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	public int getMaxHScroll() {
-		String text = this.value;
+		String text = value;
 		String reversed = new StringBuilder(text).reverse().toString();
 		return text.length() - font.plainSubstrByWidth(reversed, getInnerWidth()).length();
 	}

@@ -525,7 +525,7 @@
 
   "simpleconfig.file.open": "Open Config File",
   "simpleconfig.file.dialog.title": "Edit config file manually",
-  "simpleconfig.file.dialog.body": "Open file §8\"§7%s§8\"§r\n§6External changes can be detected and merged, but current changes in the GUI aren't synced to the file!§r\nIf you're planning on editing this config file directly it might be best to discard/save external changes before.\n§7Sometimes, Minecraft may take a while to detect config file changes. You can try to save the file multiple times with spacing changes until the changes are picked here.",
+  "simpleconfig.file.dialog.body": "Open file §8\"§7%s§8\"§r\n§6External changes can be detected and merged, but current changes in the GUI aren't synced to the file!§r\nIf you're planning to edit this config file directly it might be best to discard/save any pending changes.\n§7Sometimes, Minecraft may take a while to detect config file changes. You can try to save the file multiple times with spacing changes until the changes are picked here.",
   "simpleconfig.file.dialog.option.open_n_discard": "Open & Discard",
   "simpleconfig.file.dialog.option.open_n_continue": "Just Open",
 

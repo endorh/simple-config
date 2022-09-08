@@ -40,7 +40,7 @@ public class ExternalChangesDialog extends ConfirmDialog {
 		super(Component.translatable(type == EditType.SERVER? "simpleconfig.ui.remote_changes_detected.title" :
 		                             "simpleconfig.ui.external_changes_detected.title"));
 		this.type = type;
-		this.responseAction = action;
+		responseAction = action;
 		setPersistent(true);
 		setBody(Stream.concat(
 		  splitTtc(type == SimpleConfig.EditType.SERVER? "simpleconfig.ui.remote_changes_detected.body" :
@@ -64,8 +64,7 @@ public class ExternalChangesDialog extends ConfirmDialog {
 		withAction(this::action);
 		
 		setCancelText(Component.translatable("simpleconfig.ui.action.reject_changes"));
-		setConfirmText(
-		  Component.translatable("simpleconfig.ui.action.accept_non_conflicting_changes"));
+		setConfirmText(Component.translatable("simpleconfig.ui.action.accept_non_conflicting_changes"));
 	}
 	
 	public void action(boolean acceptUnedited) {

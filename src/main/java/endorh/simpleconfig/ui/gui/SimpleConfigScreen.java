@@ -1519,8 +1519,8 @@ import static java.lang.Math.min;
 			  : editingHotKey? "simpleconfig.ui.save_hotkey" : "simpleconfig.ui.save"));
 		}
 		
-		@Override public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
-			super.render(matrices, mouseX, mouseY, delta);
+		@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+			super.render(mStack, mouseX, mouseY, delta);
 		}
 	}
 }
