@@ -630,6 +630,7 @@ public class SimpleConfigCommand {
 		if (hasModId) b.delete(
 		  nodes.get(nodes.size() - ++i - 1).getRange().getEnd(),
 		  nodes.get(nodes.size() - i).getRange().getEnd());
+		b.insert(0, '/');
 		return new BaseCommand(b.toString(), hasModId? modId : null);
 	}
 	
