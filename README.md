@@ -19,11 +19,49 @@ You may also check the [Aerobatic Elytra](https://github.com/endorh/aerobaticely
 [Aerobatic Elytra Jetpack](https://github.com/endorh/aerobaticelytrajetpack) mods,
 which use this library.
 
-[//]: # (TODO: Add usage example once available through maven)
-
 ## Help and Documentation
 Whether you're a player or a mod developer, you can check out the
 [wiki](https://github.com/endorh/simpleconfig/wiki) if you need any help using this mod.
+
+## Usage
+Add the following dependencies and repository to your `build.gradle` script:
+
+```Groovy
+def mcVersion = "1.19.2"
+def simpleConfigApiVersion = "1.0.0",
+    simpleConfigVersion = "1.0.+"
+
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/endorh/simpleconfig")
+        name = "SimpleConfig"
+    }
+}
+
+dependencies {
+    compileOnly "endorh.simpleconfig:simpleconfig-$mcVersion-api:$simpleConfigApiVersion"
+    runtimeOnly fg.deobf("endorh.simpleconfig:simpleconfig-$mcVersion:$simpleConfigVersion")
+}
+```
+
+Or, if you made the effort to update your build script to the Kotlin DSL:
+
+```Kotlin
+val mcVersion = "1.19.2"
+val simpleConfigApiVersion = "1.0.0"
+val simpleConfigVersion = "1.0.+"
+
+repositories {
+    maven("https://maven.pkg.github.com/endorh/simpleconfig") {
+        name = "SimpleConfig"
+    }
+}
+
+dependencies {
+    compileOnly("endorh.simpleconfig:simpleconfig-$mcVersion-api:$simpleConfigApiVersion")
+    runtimeOnly(fg.deobf("endorh.simpleconfig:simpleconfig-$mcVersion:$simpleConfigVersion"))
+}
+```
 
 ## Kotlin API
 There are plans to create a better Kotlin API based on property delegates,
