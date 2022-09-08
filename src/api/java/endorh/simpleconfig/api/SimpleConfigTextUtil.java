@@ -18,7 +18,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
- * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+ * <b>Internal utils</b>, see LazuLib mod for an updated version of these methods.
  */
 @Internal public class SimpleConfigTextUtil {
 	protected static final Pattern NEW_LINE = Pattern.compile("\\R");
@@ -57,7 +57,7 @@ import static java.lang.Math.min;
 	
 	/**
     * Extract formatted subText from {@link ITextComponent}.<br>
-    * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+    * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods.
     *
     * @param component {@link ITextComponent} to extract from
     * @param start     Inclusive index to start from
@@ -76,7 +76,7 @@ import static java.lang.Math.min;
 	
 	/**
 	 * Extract formatted subText from {@link ITextComponent}.<br>
-	 * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods.
 	 * @param component {@link ITextComponent} to extract from
 	 * @param start Inclusive index to start from
 	 * @param end Exclusive index to end at
@@ -133,7 +133,7 @@ import static java.lang.Math.min;
 	
 	/**
 	 * Apply a style to a specific range of a component.<br>
-	 * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods.
 	 *
 	 * @param component Component to style
 	 * @param style Style to apply
@@ -150,7 +150,7 @@ import static java.lang.Math.min;
 	
 	/**
 	 * Apply a style to a specific range of a component.<br>
-	 * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods.
+	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods.
 	 *
 	 * @param component Component to style
 	 * @param style Style to apply
@@ -223,7 +223,7 @@ import static java.lang.Math.min;
 	 * Separate a translation text component on each line break<br>
 	 * Line breaks added by format arguments aren't considered<br>
 	 * Only works on the client side<br>
-	 * <b>Internal utils</b>, see Endorh Util mod for an updated version of these methods
+	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Internal public static List<ITextComponent> splitTtc(String key, Object... args) {
