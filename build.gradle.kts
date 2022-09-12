@@ -30,7 +30,7 @@ plugins {
 
 val modId = "simpleconfig"
 val modGroup = "endorh.simpleconfig"
-val githubRepo = "endorh/simpleconfig"
+val githubRepo = "endorh/simple-config"
 val apiVersion = "1.0.0"
 val modVersion = "1.0.2"
 val mcVersion = "1.19.2"
@@ -121,6 +121,7 @@ sourceSets.main.get().resources {
 }
 
 if (project.hasProperty("UPDATE_MAPPINGS")) {
+    // Update mappings also in API source set
     val dirs = HashSet(apiSourceSet.java.srcDirs)
     dirs.removeIf { it.path.contains("antlr") }
     tasks.getByName<ExtractRangeMap>("extractRangeMap") {
@@ -159,13 +160,18 @@ minecraft {
     // Run configurations
     runs {
         val client = create("client") {
+            // Separate client and server run configurations,
+            //   to debug different common config files
             workingDirectory(file("run/client"))
     
+            // JetBrains Runtime HotSwap (run with vanilla JBR 17 without fast-debug, see CONTRIBUTING.md)
             jvmArg("-XX:+AllowEnhancedClassRedefinition")
             
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
+            
+            // Configure mixins for deobf environment
             property("mixin.env.disableRefMap", "true")
             
             mods {
@@ -177,15 +183,21 @@ minecraft {
         }
         
         create("server") {
+            // Separate client and server run configurations,
+            //   to debug different common config files
             workingDirectory(file("run/server"))
     
+            // JetBrains Runtime HotSwap (run with vanilla JBR 17 without fast-debug, see CONTRIBUTING.md)
             jvmArg("-XX:+AllowEnhancedClassRedefinition")
             
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
+    
+            // Configure mixins for deobf environment
             property("mixin.env.disableRefMap", "true")
             
+            // The integrated IDE console is enough
             arg("nogui")
             
             mods {
@@ -196,6 +208,7 @@ minecraft {
             }
         }
         
+        // Second client, for multiplayer tests
         create("client2") {
             parent(client)
             args("--username", "Dev2")
@@ -225,6 +238,7 @@ repositories {
 lateinit var apiImplementation: Configuration
 lateinit var copiedForRuntime: Configuration
 configurations {
+    // Snake YAML isn't loaded by Forge in dev environment for unknown reasons
     copiedForRuntime = create("copiedForRuntime")
     apiImplementation = getByName(apiSourceSet.implementationConfigurationName).apply {
         extendsFrom(minecraft.get())

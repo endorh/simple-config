@@ -15,13 +15,13 @@ The mod includes example configs, declared using both ways.
 
 Check out the `endorh.simpleconfig.demo` package
 
-You may also check the [Aerobatic Elytra](https://github.com/endorh/aerobaticelytra) and
-[Aerobatic Elytra Jetpack](https://github.com/endorh/aerobaticelytrajetpack) mods,
+You may also check the [Aerobatic Elytra](https://github.com/endorh/aerobatic-elytra) and
+[Aerobatic Elytra Jetpack](https://github.com/endorh/aerobatic-elytra-jetpack) mods,
 which use this library.
 
 ## Help and Documentation
 Whether you're a player or a mod developer, you can check out the
-[wiki](https://github.com/endorh/simpleconfig/wiki) if you need any help using this mod.
+[wiki](https://github.com/endorh/simple-config/wiki) if you need any help using this mod.
 
 ## Usage
 Add the following dependencies and repository to your `build.gradle` script:
@@ -33,7 +33,7 @@ def simpleConfigApiVersion = "1.0.0",
 
 repositories {
     maven {
-        url = uri("https://maven.pkg.github.com/endorh/simpleconfig")
+        url = uri("https://maven.pkg.github.com/endorh/simple-config")
         name = "SimpleConfig"
     }
 }
@@ -52,7 +52,7 @@ val simpleConfigApiVersion = "1.0.0"
 val simpleConfigVersion = "1.0.+"
 
 repositories {
-    maven("https://maven.pkg.github.com/endorh/simpleconfig") {
+    maven("https://maven.pkg.github.com/endorh/simple-config") {
         name = "SimpleConfig"
     }
 }
