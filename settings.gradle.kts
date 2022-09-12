@@ -1,1 +1,1 @@
-rootProject.name = "simpleconfig"
+rootProject.name = "simple-config"

@@ -23,7 +23,9 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -618,7 +620,7 @@ public class DemoConfigCategory {
 		       .add("enable_test", string("text").editable(g -> g.getGUIBoolean("enable_switch"))))
 		  .text("end", new TranslatableComponent("simpleconfig.text.wiki")
 		    .withStyle(style -> style.withColor(ChatFormatting.AQUA)
-		      .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
+		      .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://github.com/endorh/simple-config/wiki"))))
 		  // Finally, we may manually set a baker method
 		  //   for this config/category/group
 		  // The baker method will receive the built config/category/group
