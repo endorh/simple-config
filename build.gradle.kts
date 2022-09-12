@@ -28,7 +28,7 @@ plugins {
 
 val modId = "simpleconfig"
 val modGroup = "endorh.simpleconfig"
-val githubRepo = "endorh/simpleconfig"
+val githubRepo = "endorh/simple-config"
 val apiVersion = "1.0.2"
 val modVersion = "1.0.4"
 val mcVersion = "1.16.5"
@@ -119,6 +119,7 @@ sourceSets.main.get().resources {
 }
 
 if (project.hasProperty("UPDATE_MAPPINGS")) {
+    // Update mappings also in API source set
     tasks.getByName<ExtractRangeMap>("extractRangeMap") {
         sources.from(apiSourceSet.java.srcDirs)
     }
@@ -155,11 +156,15 @@ minecraft {
     // Run configurations
     runs {
         val client = create("client") {
+            // Separate client and server run configurations,
+            //   to debug different common config files
             workingDirectory(file("run/client"))
             
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
+            
+            // Configure mixins for deobf environment
             property("mixin.env.disableRefMap", "true")
             
             mods {
@@ -171,13 +176,18 @@ minecraft {
         }
         
         create("server") {
+            // Separate client and server run configurations,
+            //   to debug different common config files
             workingDirectory(file("run/server"))
             
             // Allowed flags: SCAN, REGISTRIES, REGISTRYDUMP
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
+    
+            // Configure mixins for deobf environment
             property("mixin.env.disableRefMap", "true")
             
+            // The integrated IDE console is enough
             arg("nogui")
             
             mods {
@@ -188,6 +198,7 @@ minecraft {
             }
         }
         
+        // Second client, for multiplayer tests
         create("client2") {
             parent(client)
             args("--username", "Dev2")

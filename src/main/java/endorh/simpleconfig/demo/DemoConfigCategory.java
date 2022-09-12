@@ -622,7 +622,7 @@ public class DemoConfigCategory {
 		       .add("enable_test", string("text").editable(g -> g.getGUIBoolean("enable_switch"))))
 		  .text("end", new TranslationTextComponent("simpleconfig.text.wiki")
 		    .modifyStyle(style -> style.setFormatting(TextFormatting.AQUA)
-		      .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://www.example.com"))))
+		      .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://github.com/endorh/simple-config/wiki"))))
 		  // Finally, we may manually set a baker method
 		  //   for this config/category/group
 		  // The baker method will receive the built config/category/group
