@@ -24,6 +24,7 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Types;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.*;
@@ -1507,24 +1508,36 @@ import static java.lang.Math.min;
 			super(0, 0, 80, 20, NarratorChatListener.NO_TITLE, button -> {
 				if (screen.isEditingConfigHotKey()) {
 					screen.saveHotkey();
-				} else screen.saveAll(true);
+				} else {
+					boolean hasErrors = screen.hasErrors();
+					if (hasErrors && !advanced.allow_save_with_errors) return;
+					if (hasErrors) {
+						screen.addDialog(ConfirmDialog.create(new TranslatableComponent(
+						  "simpleconfig.ui.save_with_errors.dialog.title"), d -> {
+							d.setBody(splitTtc("simpleconfig.ui.save_with_errors.dialog.body"));
+							d.setConfirmText(new TranslatableComponent("simpleconfig.ui.save_with_errors"));
+							d.setConfirmButtonTint(0x80FF8000);
+							d.withAction(s -> {
+								// Skip redundant confirmation after errors confirmation
+								if (s) screen.saveAll(true, true, false, true);
+							});
+						}));
+					} else screen.saveAll(true);
+				}
 			});
 			this.screen = screen;
-			setTintColor(0x8042BD42);
 		}
 		
 		public void tick() {
 			boolean hasErrors = screen.hasErrors();
-			active = !hasErrors && screen.isEdited();
+			active = (!hasErrors || advanced.allow_save_with_errors) && screen.isEdited();
 			boolean editingHotKey = screen.isEditingConfigHotKey();
-			setMessage(new TranslatableComponent(
-			  hasErrors
-			  ? "simpleconfig.ui.error_cannot_save"
+			setTintColor(hasErrors && advanced.allow_save_with_errors? 0x80FF0000 : 0x8042BD42);
+			setMessage(new TranslatableComponent(hasErrors
+			  ? advanced.allow_save_with_errors
+			    ? "simpleconfig.ui.save_with_errors"
+			    : "simpleconfig.ui.error_cannot_save"
 			  : editingHotKey? "simpleconfig.ui.save_hotkey" : "simpleconfig.ui.save"));
-		}
-		
-		@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-			super.render(mStack, mouseX, mouseY, delta);
 		}
 	}
 }
