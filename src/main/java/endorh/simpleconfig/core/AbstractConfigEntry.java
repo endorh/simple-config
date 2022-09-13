@@ -13,6 +13,7 @@ import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.config.ClientConfig;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
@@ -194,12 +195,14 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		toggle(builtInTags, EntryTag.EXPERIMENTAL, experimental);
 		toggle(builtInTags, EntryTag.NON_PERSISTENT, nonPersistent);
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			String path = getPath();
 			builtInTags.remove(copyTag);
-			List<ITextComponent> tooltip = splitTtc("simpleconfig.config.tag.copy_path", path)
-			  .stream().map(l -> l.deepCopy().mergeStyle(TextFormatting.GRAY))
-			  .collect(Collectors.toList());
-			builtInTags.add(copyTag = EntryTag.copyTag(-1000, path, () -> tooltip));
+			if (advanced.show_copy_path_button) {
+				String path = getPath();
+				List<ITextComponent> tooltip = splitTtc("simpleconfig.config.tag.copy_path", path)
+				  .stream().map(l -> l.deepCopy().mergeStyle(TextFormatting.GRAY))
+				  .collect(Collectors.toList());
+				builtInTags.add(copyTag = EntryTag.copyTag(-1000, path, () -> tooltip));
+			}
 		});
 		return allTags;
 	}

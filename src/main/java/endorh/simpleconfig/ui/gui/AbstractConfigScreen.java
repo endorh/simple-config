@@ -323,11 +323,14 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public void saveAll(boolean openOtherScreens) {
-		saveAll(openOtherScreens, false, false);
+		saveAll(openOtherScreens, false, false, false);
 	}
 	
-	public void saveAll(boolean openOtherScreens, boolean forceConfirm, boolean forceOverwrite) {
-		if (hasErrors() || !isEdited()) return;
+	public void saveAll(
+	  boolean openOtherScreens, boolean skipConfirm,
+	  boolean forceOverwrite, boolean forceSaveWithErrors
+	) {
+		if (hasErrors() && !forceSaveWithErrors || !isEdited()) return;
 		boolean external = !forceOverwrite && confirm.overwrite_external && hasConflictingExternalChanges();
 		boolean remote = !forceOverwrite && confirm.overwrite_remote && hasConflictingRemoteChanges();
 		if (external || remote) {
@@ -364,7 +367,7 @@ public abstract class AbstractConfigScreen extends Screen
 								  confirm.overwrite_external = c;
 							  } else CLIENT_CONFIG.set(CONFIRM_OVERWRITE_REMOTE, c);
 						  }
-						  doSaveAll(openOtherScreens);
+						  saveAll(openOtherScreens, true, true, forceSaveWithErrors);
 					  }
 				  }, checkBoxes);
 				  d.setConfirmText(new TranslationTextComponent(
@@ -372,7 +375,7 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setConfirmButtonTint(0x80603070);
 			  }
 			));
-		} else if (confirmSave || forceConfirm) {
+		} else if (confirmSave && !skipConfirm) {
 			addDialog(ConfirmDialog.create(
 			  new TranslationTextComponent("simpleconfig.ui.confirm_save"), d -> {
 				  d.withCheckBoxes((b, s) -> {
@@ -384,7 +387,7 @@ public abstract class AbstractConfigScreen extends Screen
 								  confirm.save = false;
 							  } else CLIENT_CONFIG.set(CONFIRM_SAVE, false);
 						  }
-						  doSaveAll(openOtherScreens);
+						  saveAll(openOtherScreens, true, true, forceSaveWithErrors);
 					  }
 				  }, CheckboxButton.of(
 					 false, new TranslationTextComponent("simpleconfig.ui.do_not_ask_again")));
@@ -392,11 +395,11 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setConfirmText(new TranslationTextComponent("simpleconfig.ui.save"));
 				  d.setConfirmButtonTint(0x8042BD42);
 			  }));
-		} else doSaveAll(openOtherScreens);
+		} else doSaveAll(openOtherScreens, forceSaveWithErrors);
 	}
 	
-	protected void doSaveAll(boolean openOtherScreens) {
-		if (hasErrors()) return;
+	protected void doSaveAll(boolean openOtherScreens, boolean allowErrors) {
+		if (hasErrors() && !allowErrors) return;
 		for (ConfigCategory cat : sortedCategories)
 			for (AbstractConfigField<?> entry : cat.getHeldEntries())
 				entry.save();
@@ -583,7 +586,7 @@ public abstract class AbstractConfigScreen extends Screen
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
 			if (isEditingConfigHotKey()) {
 				saveHotkey();
-			} else if (canSave()) saveAll(true, false, false);
+			} else if (canSave()) saveAll(true);
 			playFeedbackTap(1F);
 			return true;
 		}
@@ -651,11 +654,9 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void renderTooltips(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
-		for (Tooltip tooltip : tooltips) {
-			int ty = tooltip.getY();
-			if (ty <= 24) ty += 16;
-			renderTooltip(mStack, tooltip.getText(), tooltip.getX(), ty);
-		}
+		for (Tooltip tooltip : tooltips)
+			if (!tooltip.isFromKeyboard() || tooltips.size() == 1)
+				tooltip.render(this, mStack);
 		tooltips.clear();
 	}
 	

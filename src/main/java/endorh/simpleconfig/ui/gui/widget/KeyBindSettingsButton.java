@@ -1,11 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
-import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
-import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
-import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.widget.SelectorButton.BooleanButton;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettingsBuilder;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
@@ -14,6 +9,11 @@ import endorh.simpleconfig.api.ui.icon.KeyBindSettingsIcon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Hotkeys;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
+import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
+import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
+import endorh.simpleconfig.ui.api.Tooltip;
+import endorh.simpleconfig.ui.gui.widget.SelectorButton.BooleanButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.Screen;
@@ -89,6 +89,9 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 	public void setParentRectangle(Rectangle parentRectangle) {
 		this.parentRectangle = parentRectangle;
 	}
+	public Rectangle getParentRectangle() {
+		return parentRectangle;
+	}
 	
 	public ExtendedKeyBindSettings getSettings() {
 		return settings;
@@ -156,7 +159,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 	
 	@Override public void render(@NotNull MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		if (overlayShown) positionOverlay();
-		icon.setHighlight(isMouseOver(mouseX, mouseY) || overlayShown);
+		icon.setHighlight(isFocused() || isMouseOver(mouseX, mouseY) || overlayShown);
 		if (icon.getSettings() != settings) icon.setSettings(settings);
 		super.render(mStack, mouseX, mouseY, delta);
 	}

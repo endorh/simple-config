@@ -1,12 +1,13 @@
 package endorh.simpleconfig.ui.api;
 
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import net.minecraft.client.gui.screen.Screen;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Screen supporting the queuing of tooltips.
+ * {@link Screen} supporting the queuing of tooltips.
  */
 public interface IMultiTooltipScreen {
 	/**

@@ -322,7 +322,6 @@ public class SearchBarWidget extends FocusableGui implements IOverlayRenderer {
 		positionExpanded(mStack, mouseX, mouseY, delta);
 		renderExpanded(mStack, mouseX, mouseY, delta);
 		final Optional<ITextComponent[]> tt = getTooltip(mouseX, mouseY);
-		//noinspection OptionalIsPresent
 		if (tt.isPresent())
 			screen.addTooltip(Tooltip.of(Point.of(mouseX, mouseY + 16), tt.get()));
 		return true;

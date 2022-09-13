@@ -18,6 +18,7 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.ImageButton;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -423,18 +424,26 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	  MatrixStack mStack, ITextComponent title, float textX, int index, int x, int y,
 	  int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		final FontRenderer font = Minecraft.getInstance().fontRenderer;
-		font.func_238407_a_(
-		  mStack, title.func_241878_f(), textX, (float) y + 6, getPreferredTextColor());
-		final NavigableSet<EntryTag> entryFlags = getEntryTags();
+		FontRenderer font = Minecraft.getInstance().fontRenderer;
+		NavigableSet<EntryTag> entryFlags = getEntryTags();
+		int flagsW = 14 * entryFlags.size();
+		int textW = entryWidth - getFieldWidth() - flagsW - 4;
+		boolean hoveredTitle = mouseY >= y + 4 && mouseY < y + 16 && mouseX > textX && mouseX < textX + textW;
+		if (hoveredTitle) textW = font.getStringPropertyWidth(title);
+		IReorderingProcessor text = font.trimStringToWidth(title, textW).get(0);
+		font.func_238407_a_(mStack, text, textX, (float) y + 6, getPreferredTextColor());
 		if (!entryFlags.isEmpty()) {
-			final int textW = font.getStringPropertyWidth(title);
-			int flagsX =
-			  font.getBidiFlag()
-			  ? max((int) textX - textW - 4 - 14 * entryFlags.size(), x + getFieldWidth() + 16)
-			  : min((int) textX + textW + 4, x + entryWidth - getFieldWidth() - 16);
+			int tW = font.func_243245_a(text);
+			int flagsX;
+			if (font.getBidiFlag()) {
+				flagsX = (int) textX - tW - 4 - flagsW;
+				if (!hoveredTitle) flagsX = max(flagsX, x + getFieldWidth() + flagsW + 2);
+			} else {
+				flagsX = (int) textX + tW + 4;
+				if (!hoveredTitle) flagsX = min(flagsX, x + entryWidth - getFieldWidth() - flagsW - 2);
+			}
 			int flagsY = y + 6 + font.FONT_HEIGHT / 2 - 7;
-			flagsRectangle.setBounds(flagsX, flagsY, 14 * entryFlags.size(), 14);
+			flagsRectangle.setBounds(flagsX, flagsY, flagsW, 14);
 			int xx = flagsX;
 			for (EntryTag entryFlag : font.getBidiFlag()? entryFlags.descendingSet() : entryFlags) {
 				entryFlag.getIcon().renderCentered(mStack, xx, flagsY, 14, 14);

@@ -582,8 +582,8 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	public void save() {
 		setPreviewingExternal(false);
 		updateValue(true);
-		final Consumer<T> saveConsumer = getSaveConsumer();
-		if (!isIgnoreEdits() && !isSubEntry() && saveConsumer != null && isEditable())
+		Consumer<T> saveConsumer = getSaveConsumer();
+		if (!isIgnoreEdits() && !isSubEntry() && saveConsumer != null && isEditable() && !hasError())
 			saveConsumer.accept(getValue());
 	}
 	

@@ -9,6 +9,10 @@ public class Rectangle {
 	public int width;
 	public int height;
 	
+	public static Rectangle of(int x, int y, int width, int height) {
+		return new Rectangle(x, y, width, height);
+	}
+	
 	public Rectangle() {
 		this(0, 0, 0, 0);
 	}

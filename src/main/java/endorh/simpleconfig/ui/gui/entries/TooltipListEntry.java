@@ -4,16 +4,17 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.SimpleConfigScreen.TooltipSearchBarWidget;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.api.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.math.MathHelper;
@@ -37,6 +38,7 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	protected String matchedTooltipText = null;
 	protected EntryTag helpEntryFlag;
 	protected EntryTag matchedHelpEntryFlag;
+	protected EntryTag errorEntryFlag;
 	protected MultiFunctionImageButton matchedHelpButton;
 	private @Nullable ITextComponent[] lastTooltip = null;
 	
@@ -48,6 +50,17 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		matchedHelpEntryFlag = new EntryTag(
 		  -200, null, SimpleConfigIcons.Entries.HELP_SEARCH_MATCH,
 		  () -> getTooltip().map(Arrays::asList).orElse(Collections.emptyList()), null);
+		errorEntryFlag = new EntryTag(
+		  -1000, null, SimpleConfigIcons.Entries.ERROR,
+		  () -> getErrors().stream().map(
+			 e -> e.getError().deepCopy().mergeStyle(TextFormatting.RED)
+		  ).collect(Collectors.toList()), b -> {
+			List<EntryError> errors = getErrors();
+			if (!errors.isEmpty()) {
+				AbstractConfigField<?> entry = errors.get(0).getEntry();
+				if (entry != null) entry.navigate();
+			}
+		});
 		matchedHelpButton = new MultiFunctionImageButton(
 		  0, 0, 20, 20, SimpleConfigIcons.Entries.HELP_SEARCH_MATCH, ButtonAction.of(() -> {})
 		  .active(() -> false).sound(Optional::empty)
@@ -61,19 +74,25 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 		if (tooltipSupplier != null) {
 			lastTooltip = tooltipSupplier.get().map(this::decorateTooltip).orElse(null);
 		} else lastTooltip = null;
-		NavigableSet<EntryTag> flags = getEntryTags();
+		NavigableSet<EntryTag> tags = getEntryTags();
 		if (lastTooltip != null) {
-			if (matchesTooltipSearch()) {
-				flags.remove(helpEntryFlag);
-				flags.add(matchedHelpEntryFlag);
-			} else {
-				flags.remove(matchedHelpEntryFlag);
-				flags.add(helpEntryFlag);
+			boolean matches = matchesTooltipSearch();
+			boolean matchedAdded = tags.contains(matchedHelpEntryFlag);
+			if (matches && !matchedAdded) {
+				tags.remove(helpEntryFlag);
+				tags.add(matchedHelpEntryFlag);
+			} else if (!matches) {
+				if (matchedAdded)
+					tags.remove(matchedHelpEntryFlag);
+				tags.add(helpEntryFlag);
 			}
 		} else {
-			flags.remove(helpEntryFlag);
-			flags.remove(matchedHelpEntryFlag);
+			tags.remove(helpEntryFlag);
+			tags.remove(matchedHelpEntryFlag);
 		}
+		if (getErrors().isEmpty()) {
+			tags.remove(errorEntryFlag);
+		} else tags.add(errorEntryFlag);
 	}
 	
 	protected boolean shouldUseHelpButton() {
@@ -108,9 +127,9 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	protected IReorderingProcessor[] postProcessTooltip(ITextComponent[] tooltip) {
 		// Trim tooltip to readable width
 		return Arrays.stream(tooltip).flatMap(
-			 component -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
-            component, (int) (getScreen().width * advanced.tooltip_max_width)).stream())
-		  .toArray(IReorderingProcessor[]::new);
+		  c -> Minecraft.getInstance().fontRenderer.trimStringToWidth(
+			 c, (int) (getScreen().width * advanced.tooltip_max_width)).stream()
+		).toArray(IReorderingProcessor[]::new);
 	}
 	
 	public Optional<ITextComponent[]> getTooltip() {

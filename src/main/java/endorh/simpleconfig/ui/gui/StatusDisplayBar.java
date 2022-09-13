@@ -3,6 +3,10 @@ package endorh.simpleconfig.ui.gui;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.INavigableTarget;
@@ -13,10 +17,6 @@ import endorh.simpleconfig.ui.gui.StatusDisplayBar.StatusState.StatusStyle;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.api.ui.math.Point;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.Screen;
@@ -138,10 +138,8 @@ public class StatusDisplayBar extends Widget implements IOverlayRenderer {
 		
 		if (isMouseOver(mouseX, mouseY) && !dialogButton.isMouseOver(mouseX, mouseY)) {
 			List<ITextComponent> tooltip = activeState.getTooltip(screen, false);
-			if (!tooltip.isEmpty()) {
-				screen.addTooltip(Tooltip.of(
-				  Point.of(mouseX, mouseY), tooltip.toArray(new ITextComponent[0])));
-			}
+			if (!tooltip.isEmpty()) screen.addTooltip(Tooltip.of(
+			  area, Point.of(mouseX, mouseY), tooltip));
 		}
 		return true;
 	}

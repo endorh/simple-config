@@ -119,6 +119,8 @@
   "simpleconfig.config.client.advanced:help": "Opciones avanzadas",
   "simpleconfig.config.client.advanced.max_undo": "Máx Acciones Deshacibles",
   "simpleconfig.config.client.advanced.max_undo:help": "Máximo número de acciones que se pueden deshacer.\n§7Asignar 0 permite deshacer sin límite.",
+  "simpleconfig.config.client.advanced.show_copy_path_button": "Botones de Copiar Ruta",
+  "simpleconfig.config.client.advanced.show_copy_path_button:help": "Muestra un botón junto al nombre de cada entrada para copiar su ruta",
   "simpleconfig.config.client.advanced.show_ui_tips": "Mostrar consejos de interfaz",
   "simpleconfig.config.client.advanced.show_ui_tips:help": "Display UI tips (description for list controls)\n§7Can be toggled from the controls dialog.",
   "simpleconfig.config.client.advanced.allow_over_scroll": "No Ajustar Desplazamiento",
@@ -227,6 +229,9 @@
   "simpleconfig.ui.discard.dialog": "Descartar Cambios",
   "simpleconfig.ui.discard.confirm": "¿Estás seguro de que quieres dejar de editar esta configuración?\nTodos los cambios serán descartados",
   "simpleconfig.ui.discard": "Descartar Cambios",
+  "simpleconfig.ui.save_with_errors": "Guardar con Errores",
+  "simpleconfig.ui.save_with_errors.dialog.title": "Confirmar Guardar Con Errores",
+  "simpleconfig.ui.save_with_errors.dialog.body": "Las entradas con errores no serán guardadas.\n§7Guardar cambios con errores solo se permite para poder lidiar con mods rotos que reportan valores inválidos cuando no deberían.\n§7Aunque guardes la configuración con errores, no serás capaz de asignar valores inválidos capaces de romper el mod.\n\n§7Si un mod está causando este tipo de problemas, o crees que un valor reportado como inválido debería ser válido, repórtalo en su bug tracker.",
 
   "simpleconfig.ui.search": "Buscar",
   "simpleconfig.ui.search.case_sensitive": "Forzar Mayúsculas",

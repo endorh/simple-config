@@ -2,11 +2,12 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.math.Point;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.SimpleSound;
@@ -153,7 +154,6 @@ public class MultiFunctionImageButton extends ImageButton {
 			renderToolTip(mStack, mouseX, mouseY);
 	}
 	
-	private static final ITextComponent[] EMPTY_TEXT_COMPONENT_ARRAY = new ITextComponent[0];
 	@Override public void renderToolTip(@NotNull MatrixStack mStack, int mouseX, int mouseY) {
 		final List<ITextComponent> ls = getTooltip();
 		if (!ls.isEmpty()) {
@@ -163,9 +163,10 @@ public class MultiFunctionImageButton extends ImageButton {
 			int tooltipY = hovered? mouseY : y < 64? y + height : y;
 			if (screen instanceof IMultiTooltipScreen) {
 				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
-				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
-			} else if (screen != null)
-				screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().fontRenderer);
+				  Rectangle.of(x, y, width, height),
+				  Point.of(tooltipX, tooltipY), ls
+				).asKeyboardTooltip(!hovered));
+			} else if (screen != null) screen.renderWrappedToolTip(mStack, ls, tooltipX, tooltipY, Minecraft.getInstance().fontRenderer);
 		}
 	}
 	
