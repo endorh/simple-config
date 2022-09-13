@@ -138,10 +138,8 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		
 		if (isMouseOver(mouseX, mouseY) && !dialogButton.isMouseOver(mouseX, mouseY)) {
 			List<Component> tooltip = activeState.getTooltip(screen, false);
-			if (!tooltip.isEmpty()) {
-				screen.addTooltip(Tooltip.of(
-				  Point.of(mouseX, mouseY), tooltip.toArray(new Component[0])));
-			}
+			if (!tooltip.isEmpty()) screen.addTooltip(Tooltip.of(
+			  area, Point.of(mouseX, mouseY), tooltip));
 		}
 		return true;
 	}

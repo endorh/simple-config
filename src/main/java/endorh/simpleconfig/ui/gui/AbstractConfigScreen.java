@@ -172,6 +172,24 @@ public abstract class AbstractConfigScreen extends Screen
 		tessellator.end();
 	}
 	
+	public static void fillGradient(
+	  @NotNull Matrix4f m, BufferBuilder bb, int minX, int minY,
+	  int maxX, int maxY, int blitOffset, int from, int to
+	) {
+		float fA = (from >> 24 & 255) / 255F;
+		float fR = (from >> 16 & 255) / 255F;
+		float fG = (from >> 8 & 255) / 255F;
+		float fB = (from & 255) / 255F;
+		float tA = (to >> 24 & 255) / 255F;
+		float tR = (to >> 16 & 255) / 255F;
+		float tG = (to >> 8 & 255) / 255F;
+		float tB = (to & 255) / 255F;
+		bb.vertex(m, maxX, minY, blitOffset).color(fR, fG, fB, fA).endVertex();
+		bb.vertex(m, minX, minY, blitOffset).color(fR, fG, fB, fA).endVertex();
+		bb.vertex(m, minX, maxY, blitOffset).color(tR, tG, tB, tA).endVertex();
+		bb.vertex(m, maxX, maxY, blitOffset).color(tR, tG, tB, tA).endVertex();
+	}
+	
 	public static void drawBorderRect(
 	  PoseStack mStack, Rectangle area, int w, int color, int innerColor
 	) {
@@ -320,11 +338,14 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	@Override public void saveAll(boolean openOtherScreens) {
-		saveAll(openOtherScreens, false, false);
+		saveAll(openOtherScreens, false, false, false);
 	}
 	
-	public void saveAll(boolean openOtherScreens, boolean forceConfirm, boolean forceOverwrite) {
-		if (hasErrors() || !isEdited()) return;
+	public void saveAll(
+	  boolean openOtherScreens, boolean skipConfirm,
+	  boolean forceOverwrite, boolean forceSaveWithErrors
+	) {
+		if (hasErrors() && !forceSaveWithErrors || !isEdited()) return;
 		boolean external = !forceOverwrite && confirm.overwrite_external && hasConflictingExternalChanges();
 		boolean remote = !forceOverwrite && confirm.overwrite_remote && hasConflictingRemoteChanges();
 		if (external || remote) {
@@ -361,7 +382,7 @@ public abstract class AbstractConfigScreen extends Screen
 								  confirm.overwrite_external = c;
 							  } else CLIENT_CONFIG.set(CONFIRM_OVERWRITE_REMOTE, c);
 						  }
-						  doSaveAll(openOtherScreens);
+						  saveAll(openOtherScreens, true, true, forceSaveWithErrors);
 					  }
 				  }, checkBoxes);
 				  d.setConfirmText(new TranslatableComponent(
@@ -369,7 +390,7 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setConfirmButtonTint(0x80603070);
 			  }
 			));
-		} else if (confirmSave || forceConfirm) {
+		} else if (confirmSave && !skipConfirm) {
 			addDialog(ConfirmDialog.create(
 			  new TranslatableComponent("simpleconfig.ui.confirm_save"), d -> {
 				  d.withCheckBoxes((b, s) -> {
@@ -381,7 +402,7 @@ public abstract class AbstractConfigScreen extends Screen
 								  confirm.save = false;
 							  } else CLIENT_CONFIG.set(CONFIRM_SAVE, false);
 						  }
-						  doSaveAll(openOtherScreens);
+						  saveAll(openOtherScreens, true, true, forceSaveWithErrors);
 					  }
 				  }, CheckboxButton.of(
 					 false, new TranslatableComponent("simpleconfig.ui.do_not_ask_again")));
@@ -389,11 +410,11 @@ public abstract class AbstractConfigScreen extends Screen
 				  d.setConfirmText(new TranslatableComponent("simpleconfig.ui.save"));
 				  d.setConfirmButtonTint(0x8042BD42);
 			  }));
-		} else doSaveAll(openOtherScreens);
+		} else doSaveAll(openOtherScreens, forceSaveWithErrors);
 	}
 	
-	protected void doSaveAll(boolean openOtherScreens) {
-		if (hasErrors()) return;
+	protected void doSaveAll(boolean openOtherScreens, boolean allowErrors) {
+		if (hasErrors() && !allowErrors) return;
 		for (ConfigCategory cat : sortedCategories)
 			for (AbstractConfigField<?> entry : cat.getHeldEntries())
 				entry.save();
@@ -580,7 +601,7 @@ public abstract class AbstractConfigScreen extends Screen
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
 			if (isEditingConfigHotKey()) {
 				saveHotkey();
-			} else if (canSave()) saveAll(true, false, false);
+			} else if (canSave()) saveAll(true);
 			playFeedbackTap(1F);
 			return true;
 		}
@@ -643,11 +664,9 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void renderTooltips(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-		for (Tooltip tooltip : tooltips) {
-			int ty = tooltip.getY();
-			if (ty <= 24) ty += 16;
-			renderTooltip(mStack, tooltip.getText(), tooltip.getX(), ty);
-		}
+		for (Tooltip tooltip : tooltips)
+			if (!tooltip.isFromKeyboard() || tooltips.size() == 1)
+				tooltip.render(this, mStack);
 		tooltips.clear();
 	}
 	

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.math.Point;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
@@ -153,7 +154,6 @@ public class MultiFunctionImageButton extends ImageButton {
 			renderToolTip(mStack, mouseX, mouseY);
 	}
 	
-	private static final Component[] EMPTY_TEXT_COMPONENT_ARRAY = new Component[0];
 	@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
 		final List<Component> ls = getTooltip();
 		if (!ls.isEmpty()) {
@@ -161,9 +161,11 @@ public class MultiFunctionImageButton extends ImageButton {
 			boolean hovered = isMouseOver(mouseX, mouseY);
 			int tooltipX = hovered? mouseX : x + width / 2;
 			int tooltipY = hovered? mouseY : y < 64? y + height : y;
-			if (screen instanceof IMultiTooltipScreen) {
-				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
-				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
+			if (screen instanceof IMultiTooltipScreen ts) {
+				ts.addTooltip(Tooltip.of(
+				  Rectangle.of(x, y, width, height),
+				  Point.of(tooltipX, tooltipY), ls
+				).asKeyboardTooltip(!hovered));
 			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
 		}
 	}

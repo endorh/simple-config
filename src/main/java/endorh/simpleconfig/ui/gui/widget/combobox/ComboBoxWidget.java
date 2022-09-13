@@ -269,12 +269,9 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		final int iconHeight = getIconHeight();
 		final int iconWidth = getIconWidth();
 		if (typeWrapper.hasIcon()) {
-			// mStack.push(); {
-			// 	// mStack.translate(0D, 0D, CLIENT_CONFIG.getGUIDouble("demo.entries.serializable.z_test"));
-				typeWrapper.renderIcon(
-				  suggestion, typeWrapper.getName(suggestion), mStack, x, y, iconWidth,
-				  min(iconHeight, h), mouseX, mouseY, delta);
-			// } mStack.pop();
+			typeWrapper.renderIcon(
+			  suggestion, typeWrapper.getName(suggestion), mStack, x, y,
+			  iconWidth, min(iconHeight, h), 200, mouseX, mouseY, delta);
 			textX += iconWidth;
 			textY += (iconHeight - 10) / 2;
 		}
@@ -1147,7 +1144,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				RenderSystem.setShaderColor(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
 				typeWrapper.renderIcon(
 				  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
-				  iconX, iconY, iconWidth, iconHeight, mouseX, mouseY, delta);
+				  iconX, iconY, iconWidth, iconHeight, 0, mouseX, mouseY, delta);
 				RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			}
 			
