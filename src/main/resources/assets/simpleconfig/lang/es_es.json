@@ -229,6 +229,9 @@
   "simpleconfig.ui.discard.dialog": "Descartar Cambios",
   "simpleconfig.ui.discard.confirm": "¿Estás seguro de que quieres dejar de editar esta configuración?\nTodos los cambios serán descartados",
   "simpleconfig.ui.discard": "Descartar Cambios",
+  "simpleconfig.ui.save_with_errors": "Guardar con Errores",
+  "simpleconfig.ui.save_with_errors.dialog.title": "Confirmar Guardar Con Errores",
+  "simpleconfig.ui.save_with_errors.dialog.body": "Las entradas con errores no serán guardadas.\n§7Guardar cambios con errores solo se permite para poder lidiar con mods rotos que reportan valores inválidos cuando no deberían.\n§7Aunque guardes la configuración con errores, no serás capaz de asignar valores inválidos capaces de romper el mod.\n\n§7Si un mod está causando este tipo de problemas, o crees que un valor reportado como inválido debería ser válido, repórtalo en su bug tracker.",
 
   "simpleconfig.ui.search": "Buscar",
   "simpleconfig.ui.search.case_sensitive": "Forzar Mayúsculas",

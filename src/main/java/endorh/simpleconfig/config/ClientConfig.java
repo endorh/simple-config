@@ -95,6 +95,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				.add("discard_hotkeys", yesNo(true))
 		  ).n(
 			 group("advanced")
+			   .add("allow_save_with_errors", yesNo(false))
 			   .add("max_undo", number(256).min(0))
 			   .add("show_copy_path_button", yesNo(false))
 				.add("show_ui_tips", yesNo(true))
@@ -187,6 +188,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	}
 	
 	@Bind public static class advanced {
+		@Bind public static boolean allow_save_with_errors;
 		@Bind public static int max_undo;
 		@Bind public static boolean show_copy_path_button;
 		@Bind public static boolean show_ui_tips;
