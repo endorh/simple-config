@@ -174,6 +174,24 @@ public abstract class AbstractConfigScreen extends Screen
 		tessellator.end();
 	}
 	
+	public static void fillGradient(
+	  @NotNull Matrix4f m, BufferBuilder bb, int minX, int minY,
+	  int maxX, int maxY, int blitOffset, int from, int to
+	) {
+		float fA = (from >> 24 & 255) / 255F;
+		float fR = (from >> 16 & 255) / 255F;
+		float fG = (from >> 8 & 255) / 255F;
+		float fB = (from & 255) / 255F;
+		float tA = (to >> 24 & 255) / 255F;
+		float tR = (to >> 16 & 255) / 255F;
+		float tG = (to >> 8 & 255) / 255F;
+		float tB = (to & 255) / 255F;
+		bb.vertex(m, maxX, minY, blitOffset).color(fR, fG, fB, fA).endVertex();
+		bb.vertex(m, minX, minY, blitOffset).color(fR, fG, fB, fA).endVertex();
+		bb.vertex(m, minX, maxY, blitOffset).color(tR, tG, tB, tA).endVertex();
+		bb.vertex(m, maxX, maxY, blitOffset).color(tR, tG, tB, tA).endVertex();
+	}
+	
 	public static void drawBorderRect(
 	  PoseStack mStack, Rectangle area, int w, int color, int innerColor
 	) {
@@ -641,11 +659,9 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	protected void renderTooltips(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-		for (Tooltip tooltip : tooltips) {
-			int ty = tooltip.getY();
-			if (ty <= 24) ty += 16;
-			renderTooltip(mStack, tooltip.getText(), tooltip.getX(), ty);
-		}
+		for (Tooltip tooltip : tooltips)
+			if (!tooltip.isFromKeyboard() || tooltips.size() == 1)
+				tooltip.render(this, mStack);
 		tooltips.clear();
 	}
 	

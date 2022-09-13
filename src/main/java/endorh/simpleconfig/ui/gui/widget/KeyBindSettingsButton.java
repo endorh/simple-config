@@ -89,6 +89,9 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 	public void setParentRectangle(Rectangle parentRectangle) {
 		this.parentRectangle = parentRectangle;
 	}
+	public Rectangle getParentRectangle() {
+		return parentRectangle;
+	}
 	
 	public ExtendedKeyBindSettings getSettings() {
 		return settings;
@@ -166,7 +169,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 	
 	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (overlayShown) positionOverlay();
-		icon.setHighlight(isMouseOver(mouseX, mouseY) || overlayShown);
+		icon.setHighlight(isFocused() || isMouseOver(mouseX, mouseY) || overlayShown);
 		if (icon.getSettings() != settings) icon.setSettings(settings);
 		super.render(mStack, mouseX, mouseY, delta);
 	}
@@ -336,9 +339,8 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		
 		protected void renderTooltip(List<Component> tooltip, int mouseX, int mouseY) {
 			Screen screen = Minecraft.getInstance().screen;
-			if (screen instanceof IMultiTooltipScreen)
-				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
-				  Point.of(mouseX, mouseY), tooltip));
+			if (screen instanceof IMultiTooltipScreen ts) ts.addTooltip(Tooltip.of(
+			  Point.of(mouseX, mouseY), tooltip));
 		}
 		
 		protected int getEditedTint() {

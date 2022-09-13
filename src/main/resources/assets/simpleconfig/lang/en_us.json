@@ -130,6 +130,8 @@
   "simpleconfig.config.client.advanced:help": "Advanced Options",
   "simpleconfig.config.client.advanced.max_undo": "Max Undoable Actions",
   "simpleconfig.config.client.advanced.max_undo:help": "Maximum number of actions which can be undone.\n§7Set to 0 to disable the limit.",
+  "simpleconfig.config.client.advanced.show_copy_path_button": "Show Copy Path Button",
+  "simpleconfig.config.client.advanced.show_copy_path_button:help": "Display a button next to all entry names to copy their path",
   "simpleconfig.config.client.advanced.show_ui_tips": "Show UI tips",
   "simpleconfig.config.client.advanced.show_ui_tips:help": "Display UI tips (description for list controls and reset buttons)\n§7Can be toggled from the controls dialog.",
   "simpleconfig.config.client.advanced.allow_over_scroll": "Allow Over Scroll",

@@ -46,6 +46,7 @@ public class MultiFunctionIconButton extends TintedButton {
 	protected int maxWidth;
 	protected int minWidth;
 	protected int defaultTint = 0;
+	protected boolean suppressHoverPeek = false;
 	
 	public static MultiFunctionIconButton of(
 	  @NotNull Icon icon,   ButtonActionBuilder builder
@@ -176,7 +177,7 @@ public class MultiFunctionIconButton extends TintedButton {
 			}
 			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			if (width > iconWidth) {
-				if (contentWidth > width) {
+				if (contentWidth > width && !suppressHoverPeek) {
 					ScissorsHandler.INSTANCE.withScissor(
 					  contentArea, () -> drawString(
 						 mStack, font, title, x + iconWidth, y + (height - 8) / 2,
@@ -203,7 +204,15 @@ public class MultiFunctionIconButton extends TintedButton {
 		if (isHoveredOrFocused()) renderToolTip(mStack, mouseX, mouseY);
 	}
 	
-	private static final Component[] EMPTY_TEXT_COMPONENT_ARRAY = new Component[0];
+	public boolean isSuppressHoverPeek() {
+		return suppressHoverPeek;
+	}
+	
+	public void setSuppressHoverPeek(boolean suppressHoverPeek) {
+		this.suppressHoverPeek = suppressHoverPeek;
+		if (suppressHoverPeek) overlayArea = null;
+	}
+	
 	@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
 		final List<Component> ls = getTooltip();
 		if (!ls.isEmpty()) {
@@ -211,9 +220,10 @@ public class MultiFunctionIconButton extends TintedButton {
 			boolean hovered = isMouseOver(mouseX, mouseY);
 			int tooltipX = hovered? mouseX : x + width / 2;
 			int tooltipY = hovered? mouseY : y < 64? y + height : y;
-			if (screen instanceof IMultiTooltipScreen) {
-				((IMultiTooltipScreen) screen).addTooltip(Tooltip.of(
-				  Point.of(tooltipX, tooltipY), ls.toArray(EMPTY_TEXT_COMPONENT_ARRAY)));
+			if (screen instanceof IMultiTooltipScreen ts) {
+				ts.addTooltip(Tooltip.of(
+				  area, Point.of(tooltipX, tooltipY), ls
+				).asKeyboardTooltip(!hovered));
 			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
 		}
 	}
@@ -324,7 +334,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		@Override public boolean renderOverlay(
 		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 		) {
-			if (!button.isMouseOver(mouseX, mouseY)) {
+			if (!button.isMouseOver(mouseX, mouseY) || button.overlayArea == null) {
 				button.overlayArea = null;
 				animator.stopAndSet(0F);
 				return false;

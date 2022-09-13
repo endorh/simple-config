@@ -323,9 +323,7 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 		positionExpanded(mStack, mouseX, mouseY, delta);
 		renderExpanded(mStack, mouseX, mouseY, delta);
 		final Optional<Component[]> tt = getTooltip(mouseX, mouseY);
-		//noinspection OptionalIsPresent
-		if (tt.isPresent())
-			screen.addTooltip(Tooltip.of(Point.of(mouseX, mouseY + 16), tt.get()));
+		tt.ifPresent(t -> screen.addTooltip(Tooltip.of(Point.of(mouseX, mouseY), t)));
 		return true;
 	}
 	

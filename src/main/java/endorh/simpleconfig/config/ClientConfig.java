@@ -96,6 +96,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		  ).n(
 			 group("advanced")
 			   .add("max_undo", number(256).min(0))
+			   .add("show_copy_path_button", yesNo(false))
 				.add("show_ui_tips", yesNo(true))
 			   .add("allow_over_scroll", yesNo(false))
 				.add("tooltip_max_width", percent(60F))
@@ -187,6 +188,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	
 	@Bind public static class advanced {
 		@Bind public static int max_undo;
+		@Bind public static boolean show_copy_path_button;
 		@Bind public static boolean show_ui_tips;
 		@Bind public static boolean allow_over_scroll;
 		@Bind public static float tooltip_max_width;

@@ -51,10 +51,13 @@ public interface ITypeWrapper<T> {
 	 */
 	default void renderIcon(
 	  @Nullable T element, String text, @NotNull PoseStack mStack, int x, int y, int w, int h,
-	  int mouseX, int mouseY, float delta
+	  int blitOffset, int mouseX, int mouseY, float delta
 	) {
-		final Optional<Icon> opt = getIcon(element, text);
-		opt.ifPresent(icon -> icon.renderCentered(mStack, x, y, w, h));
+		mStack.pushPose(); {
+			mStack.translate(0D, 0D, blitOffset);
+			final Optional<Icon> opt = getIcon(element, text);
+			opt.ifPresent(icon -> icon.renderCentered(mStack, x, y, w, h));
+		} mStack.popPose();
 	}
 	
 	/**

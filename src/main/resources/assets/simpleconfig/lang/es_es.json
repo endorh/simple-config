@@ -119,6 +119,8 @@
   "simpleconfig.config.client.advanced:help": "Opciones avanzadas",
   "simpleconfig.config.client.advanced.max_undo": "Máx Acciones Deshacibles",
   "simpleconfig.config.client.advanced.max_undo:help": "Máximo número de acciones que se pueden deshacer.\n§7Asignar 0 permite deshacer sin límite.",
+  "simpleconfig.config.client.advanced.show_copy_path_button": "Botones de Copiar Ruta",
+  "simpleconfig.config.client.advanced.show_copy_path_button:help": "Muestra un botón junto al nombre de cada entrada para copiar su ruta",
   "simpleconfig.config.client.advanced.show_ui_tips": "Mostrar consejos de interfaz",
   "simpleconfig.config.client.advanced.show_ui_tips:help": "Display UI tips (description for list controls)\n§7Can be toggled from the controls dialog.",
   "simpleconfig.config.client.advanced.allow_over_scroll": "No Ajustar Desplazamiento",
