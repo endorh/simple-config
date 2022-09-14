@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.subText;
 import static java.lang.Math.*;
 
 @OnlyIn(value = Dist.CLIENT)
@@ -420,18 +421,26 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	  PoseStack mStack, Component title, float textX, int index, int x, int y,
 	  int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		final Font font = Minecraft.getInstance().font;
-		font.drawShadow(
-		  mStack, title.getVisualOrderText(), textX, (float) y + 6, getPreferredTextColor());
-		final NavigableSet<EntryTag> entryFlags = getEntryTags();
+		Font font = Minecraft.getInstance().font;
+		NavigableSet<EntryTag> entryFlags = getEntryTags();
+		int flagsW = 14 * entryFlags.size();
+		int textW = entryWidth - getFieldWidth() - flagsW - 4;
+		boolean hoveredTitle = mouseY >= y + 4 && mouseY < y + 16 && mouseX > textX && mouseX < textX + textW;
+		if (hoveredTitle) textW = font.width(title);
+		MutableComponent text = subText(title, 0, font.substrByWidth(title, textW).getString().length());
+		font.drawShadow(mStack, text, textX, (float) y + 6, getPreferredTextColor());
 		if (!entryFlags.isEmpty()) {
-			final int textW = font.width(title);
-			int flagsX =
-			  font.isBidirectional()
-			  ? max((int) textX - textW - 4 - 14 * entryFlags.size(), x + getFieldWidth() + 16)
-			  : min((int) textX + textW + 4, x + entryWidth - getFieldWidth() - 16);
+			int tW = font.width(text);
+			int flagsX;
+			if (font.isBidirectional()) {
+				flagsX = (int) textX - tW - 4 - flagsW;
+				if (!hoveredTitle) flagsX = max(flagsX, x + getFieldWidth() + flagsW + 2);
+			} else {
+				flagsX = (int) textX + tW + 4;
+				if (!hoveredTitle) flagsX = min(flagsX, x + entryWidth - getFieldWidth() - flagsW - 2);
+			}
 			int flagsY = y + 6 + font.lineHeight / 2 - 7;
-			flagsRectangle.setBounds(flagsX, flagsY, 14 * entryFlags.size(), 14);
+			flagsRectangle.setBounds(flagsX, flagsY, flagsW, 14);
 			int xx = flagsX;
 			for (EntryTag entryFlag : font.isBidirectional()? entryFlags.descendingSet() : entryFlags) {
 				entryFlag.getIcon().renderCentered(mStack, xx, flagsY, 14, 14);
