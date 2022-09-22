@@ -35,11 +35,24 @@ repositories {
     maven {
         url = uri("https://maven.pkg.github.com/endorh/simple-config")
         name = "SimpleConfig"
+        credentials {
+            username = "gradle" // Not important, must not be empty
+            // read:packages only GitHub token published by Endor H
+            // You may as well use your own, until GitHub supports unauthenticated maven read access
+            //   https://github.com/orgs/community/discussions/26634#discussioncomment-3252637
+            password = "\u0067hp_SjEzHOWgAWIKVczipKZzLPPJcCMHHd1LILfK"
+        }
+        content {
+            // Improve dependency resolution speed, by explicitly declaring the only hosted group
+            includeGroup("endorh.simpleconfig")
+        }
     }
 }
 
 dependencies {
+    // Compile against the API for stability
     compileOnly "endorh.simpleconfig:simpleconfig-$mcVersion-api:$simpleConfigApiVersion"
+    // Run with the deobfuscated mod
     runtimeOnly fg.deobf("endorh.simpleconfig:simpleconfig-$mcVersion:$simpleConfigVersion")
 }
 ```
@@ -54,11 +67,24 @@ val simpleConfigVersion = "1.0.+"
 repositories {
     maven("https://maven.pkg.github.com/endorh/simple-config") {
         name = "SimpleConfig"
+        credentials {
+            username = "gradle" // Not important, must not be empty
+            // read:packages only GitHub token published by Endor H
+            // You may as well use your own, until GitHub supports unauthenticated maven read access
+            //   https://github.com/orgs/community/discussions/26634#discussioncomment-3252637
+            password = "\u0067hp_SjEzHOWgAWIKVczipKZzLPPJcCMHHd1LILfK"
+        }
+        content {
+            // Improve dependency resolution speed, by explicitly declaring the only hosted group
+            includeGroup("endorh.simpleconfig")
+        }
     }
 }
 
 dependencies {
+    // Compile against the API for stability
     compileOnly("endorh.simpleconfig:simpleconfig-$mcVersion-api:$simpleConfigApiVersion")
+    // Run with the deobfuscated mod
     runtimeOnly(fg.deobf("endorh.simpleconfig:simpleconfig-$mcVersion:$simpleConfigVersion"))
 }
 ```
