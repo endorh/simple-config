@@ -26,11 +26,12 @@ Whether you're a player or a mod developer, you can check out the
 [wiki](https://github.com/endorh/simple-config/wiki) if you need any help using this mod.
 
 ## Usage
+Add the following dependencies and repository to your buildscript:
 
-Add the following dependencies and repository to your `build.gradle` script:
+<details><summary>Groovy Gradle</summary>
 
 ```Groovy
-def mcVersion = "1.19.2"
+def mcVersion = "1.16.5"
 def simpleConfigApiVersion = "1.0.0",
     simpleConfigVersion = "1.0.+"
 
@@ -45,12 +46,13 @@ dependencies {
     compileOnly "endorh.simpleconfig:simpleconfig-$mcVersion-api:$simpleConfigApiVersion"
     runtimeOnly fg.deobf("endorh.simpleconfig:simpleconfig-$mcVersion:$simpleConfigVersion")
 }
-```
 
-Or, if you made the effort to update your build script to the Kotlin DSL:
+```
+</details>
+<details><summary>Kotlin DSL</summary>
 
 ```Kotlin
-val mcVersion = "1.19.2"
+val mcVersion = "1.16.5"
 val simpleConfigApiVersion = "1.0.0"
 val simpleConfigVersion = "1.0.+"
 
@@ -65,6 +67,7 @@ dependencies {
     runtimeOnly(fg.deobf("endorh.simpleconfig:simpleconfig-$mcVersion:$simpleConfigVersion"))
 }
 ```
+</details>
 
 ## Kotlin API
 
