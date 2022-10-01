@@ -19,19 +19,19 @@ public class WidgetUtils {
 	
 	// IGuiEventListener could use a public setFocused() or unFocus() method
 	public static void forceUnFocus(GuiEventListener listener) {
-		if (listener instanceof AbstractWidget && !((AbstractWidget) listener).isFocused()) return;
+		if (listener == null || listener instanceof AbstractWidget widget && !widget.isFocused()) return;
 		for (int i = 0; i < 1000; i++) // Hanging here would be awkward
 			if (!listener.changeFocus(true)) break;
 	}
 	
 	public static void forceFocus(GuiEventListener listener) {
-		if (listener instanceof AbstractWidget && ((AbstractWidget) listener).isFocused()) return;
+		if (listener == null || listener instanceof AbstractWidget widget && widget.isFocused()) return;
 		forceUnFocus(listener);
 		listener.changeFocus(true);
 	}
 	
 	public static void forceSetFocus(GuiEventListener listener, boolean focus) {
-		if (listener instanceof AbstractWidget && ((AbstractWidget) listener).isFocused() == focus) return;
+		if (listener == null || listener instanceof AbstractWidget widget && widget.isFocused() == focus) return;
 		if (focus) forceFocus(listener); else forceUnFocus(listener);
 	}
 	
