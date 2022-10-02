@@ -139,7 +139,9 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	}
 	
 	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {
-		if (button == 2 && buttonWidget.isMouseOver(mouseX, mouseY) && isEditable()) {
+		if ((button == 2 || button == 0 && Screen.hasAltDown())
+		    && buttonWidget.isMouseOver(mouseX, mouseY) && isEditable()
+		) {
 			preserveState();
 			setFocused(true);
 			setDragging(true);
