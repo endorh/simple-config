@@ -1,19 +1,17 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.ui.api.EntryError;
-import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Function;
 
-@OnlyIn(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
 	public static final Function<Enum<?>, Component> DEFAULT_NAME_PROVIDER =
 	  t -> Component.translatable(t instanceof SelectionListEntry.Translatable ? ((Translatable) t).getKey() : t.toString());
@@ -31,11 +29,6 @@ public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
 		if (type == HotKeyActionTypes.ENUM_ADD) errors.addAll(intEntry.getErrors());
 		errors.addAll(intEntry.getEntryErrors());
 		return errors;
-	}
-	
-	@Override
-	public void setHotKeyActionType(HotKeyActionType<E, ?> type, @Nullable HotKeyAction<E> prev) {
-		super.setHotKeyActionType(type, prev);
 	}
 	
 	@Override public void setHotKeyActionType(HotKeyActionType<E, ?> type) {
