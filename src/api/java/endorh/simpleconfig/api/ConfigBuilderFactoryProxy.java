@@ -1081,9 +1081,9 @@ public abstract class ConfigBuilderFactoryProxy {
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
-	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
 	) {
-		return getFactory().triple(leftEntry, middleEntry, rightEntry, value); 
+		return getFactory().triple(leftEntry, middleEntry, rightEntry, value);
 	}
 }

@@ -1,0 +1,28 @@
+# Make sure this is set to "kotlinforforge"
+modLoader="kotlinforforge"
+# Make sure this is set to the appropriate version range
+loaderVersion="[2,)" # Require at least 2.x
+# License is REQUIRED after 1.16
+license='LGPL'
+
+[[mods]]
+modId="simplekonfig"
+version="${file.jarVersion}"
+displayName="simplekonfig"
+credits=""
+authors=""
+description='''
+Example mod that uses Kotlin for Forge with the Simple Konfig API.
+'''
+[[dependencies.simplekonfig]]
+    modId="forge"
+    mandatory=true
+    versionRange="[37,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.simplekonfig]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.17,1.18)"
+    ordering="NONE"
+    side="BOTH"
