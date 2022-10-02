@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
@@ -35,13 +36,13 @@ import java.util.stream.Collectors;
  */
 public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B> {
 	private static final Logger LOGGER = LogManager.getLogger();
-	private final BeanProxy<B> proxy;
+	private final BeanProxyImpl<B> proxy;
 	private final Map<String, AbstractConfigEntry<?, ?, ?>> entries;
 	private @Nullable String caption;
 	private @Nullable Function<B, Icon> iconProvider;
 	
 	public BeanEntry(
-	  ConfigEntryHolder parent, String name, B defValue, BeanProxy<B> proxy,
+	  ConfigEntryHolder parent, String name, B defValue, BeanProxyImpl<B> proxy,
 	  Map<String, AbstractConfigEntry<?,?,?>> entries
 	) {
 		super(parent, name, defValue);
@@ -81,7 +82,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		@Override protected BeanEntry<B> buildEntry(ConfigEntryHolder parent, String name) {
 			Map<String, AbstractConfigEntry<?, ?, ?>> entries = new LinkedHashMap<>();
 			this.entries.forEach((n, e) -> entries.put(n, DummyEntryHolder.build(parent, e)));
-			BeanProxy<B> proxy = new BeanProxy<>(type, Util.make(
+			BeanProxyImpl<B> proxy = new BeanProxyImpl<>(type, Util.make(
 			  new HashMap<>(), m -> entries.forEach((n, e) -> m.put(n, createAdapter(e)))));
 			String prefix = entries.values().stream().map(e -> e.getRoot().getModId()).findFirst().orElse("")
 			                + ".config.bean." + proxy.getTypeTranslation() + ".";
@@ -181,19 +182,11 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 	
 	@Override public @Nullable B fromConfig(@Nullable Map<String, Object> value) {
 		if (value == null) return null;
-		B bean = proxy.createFrom(defValue);
-		for (String name: proxy.getPropertyNames()) {
-			try {
-				//noinspection unchecked
-				AbstractConfigEntry<Object, Object, Object> entry =
-				  (AbstractConfigEntry<Object, Object, Object>) entries.get(name);
-				if (entry != null) proxy.set(bean, name, entry.fromConfigOrDefault(value.get(name)));
-			} catch (ClassCastException e) {
-				throw new ConfigBeanAccessException(
-				  "Error creating Java Bean for config entry " + getGlobalPath(), e);
-			}
-		}
-		return bean;
+		//noinspection unchecked
+		return proxy.createFrom(defValue, Maps.transformEntries(
+		  Maps.filterKeys(entries, proxy.getPropertyNames()::contains),
+		  (n, v) -> ((AbstractConfigEntry<?, Object, ?>) v).fromConfigOrDefault(value.get(n))
+		));
 	}
 	
 	@Override public Object forActualConfig(@Nullable Map<String, Object> value) {

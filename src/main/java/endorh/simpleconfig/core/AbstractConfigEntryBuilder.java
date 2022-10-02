@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -38,6 +39,7 @@ public abstract class AbstractConfigEntryBuilder<
 > implements ConfigEntryBuilder<V, Config, Gui, Self> {
 	protected V value;
 	
+	protected @Nullable Consumer<AbstractConfigEntry<V, Config, Gui>> buildListener = null;
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<ITextComponent>> errorSupplier = null;
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<ITextComponent>> tooltipSupplier = null;
 	protected @Nullable Function<ConfigEntryHolder, Boolean> editableSupplier = null;
@@ -59,6 +61,14 @@ public abstract class AbstractConfigEntryBuilder<
 		backingFieldBuilder = typeClass != null? BackingFieldBuilder.<V, V>of(
 		  Function.identity(), typeClass
 		).withCommitter(Function.identity()) : null;
+	}
+	
+	@Contract(pure=true) @Internal public SelfImpl withBuildListener(
+	  Consumer<AbstractConfigEntry<V, Config, Gui>> buildListener
+	) {
+		SelfImpl copy = copy();
+		copy.buildListener = buildListener;
+		return copy;
 	}
 	
 	@Contract(pure=true) protected abstract Entry buildEntry(ConfigEntryHolder parent, String name);
@@ -304,6 +314,7 @@ public abstract class AbstractConfigEntryBuilder<
 		e.tags.addAll(tags);
 		// if (!e.isValidValue(value))
 		// 	throw new InvalidDefaultConfigValueException(e.getGlobalPath(), value);
+		if (buildListener != null) buildListener.accept(e);
 		return e;
 	}
 	
@@ -335,14 +346,5 @@ public abstract class AbstractConfigEntryBuilder<
 		copy.backingFieldBindings = new ArrayList<>(backingFieldBindings);
 		copy.tags = new HashSet<>(tags);
 		return copy;
-	}
-	
-	// Accessor
-	protected static <
-	  V, C, G, E extends AbstractConfigEntry<V, C, G>,
-	  S extends ConfigEntryBuilder<V, C, G, S>,
-	  B extends AbstractConfigEntryBuilder<V, C, G, E, S, B>
-	> B copyBuilder(B builder) {
-		return builder.copy();
 	}
 }
