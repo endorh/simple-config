@@ -180,7 +180,7 @@ public class HotKeyActionTypes {
 				  B bean = proxy.createFrom(e.get());
 				  for (Entry ee: values.entrySet()) {
 					  try {
-						  proxy.set(bean, ee.getKey(), ee.getValue());
+						  // bean = proxy.set(bean, ee.getKey(), ee.getValue());
 					  } catch (ConfigBeanAccessException ignored) {}
 				  }
 				  return e.forActualConfig(e.forConfig(bean));

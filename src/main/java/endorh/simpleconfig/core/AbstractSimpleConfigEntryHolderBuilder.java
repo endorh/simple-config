@@ -87,7 +87,7 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	 * Add an entry with order argument.<br>
 	 * Used by the class parser to specify the order with annotations.
 	 */
-	@Contract("_, _, _ -> this") protected Builder add(
+	@Contract("_, _, _ -> this") @Internal public Builder add(
 	  int order, String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder
 	) {
 		if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
@@ -115,7 +115,7 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	/**
 	 * Add a config group
 	 */
-	@Contract("_, _ -> this") protected abstract Builder n(ConfigGroupBuilder group, int index);
+	@Contract("_, _ -> this") @Internal public abstract Builder n(ConfigGroupBuilder group, int index);
 	
 	@Override @Contract("_ -> this") public Builder n(ConfigGroupBuilder group) {
 		return n(group, 0);
