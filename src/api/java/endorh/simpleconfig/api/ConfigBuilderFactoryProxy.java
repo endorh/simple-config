@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -642,7 +643,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
 	 * using {@link ExtendedKeyBindProvider#registerProvider(ExtendedKeyBindProvider)}<br><br>
 	 * <b>Consider registering regular {@link KeyMapping}s through
-	 * {@link ClientRegis#registerKeyBinding(KeyMapping)}
+	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
 	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(ExtendedKeyBind keyBind) {
@@ -657,7 +658,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
 	 * using {@link ExtendedKeyBindProvider#registerProvider(ExtendedKeyBindProvider)}<br><br>
 	 * <b>Consider registering regular {@link KeyMapping}s through
-	 * {@link ClientRegistry#registerKeyBinding(KeyMapping)}}
+	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
 	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(KeyBindMapping key) {
@@ -672,7 +673,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
 	 * using {@link ExtendedKeyBindProvider#registerProvider(ExtendedKeyBindProvider)}<br><br>
 	 * <b>Consider registering regular {@link KeyMapping}s through
-	 * {@link ClientRegistry#registerKeyBinding(KeyMapping)}}
+	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
 	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(String key) {
@@ -687,7 +688,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
 	 * using {@link ExtendedKeyBindProvider#registerProvider(ExtendedKeyBindProvider)}<br><br>
 	 * <b>Consider registering regular {@link KeyMapping}s through
-	 * {@link ClientRegistry#registerKeyBinding(KeyMapping)}}
+	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
 	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key() {
@@ -1083,6 +1084,6 @@ public abstract class ConfigBuilderFactoryProxy {
 	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
 	) {
-		return getFactory().triple(leftEntry, middleEntry, rightEntry, value); 
+		return getFactory().triple(leftEntry, middleEntry, rightEntry, value);
 	}
 }

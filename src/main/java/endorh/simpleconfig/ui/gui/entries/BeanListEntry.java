@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
@@ -87,9 +88,8 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public B getDisplayedValue() {
-		B bean = proxy.createFrom(getDefaultValue());
-		entries.forEach((name, entry) -> proxy.setGUI(bean, name, entry.getDisplayedValue()));
-		return bean;
+		return proxy.createFromGUI(getDefaultValue(), Maps.transformValues(
+		  entries, AbstractConfigField::getDisplayedValue));
 	}
 	
 	@Override public void setDisplayedValue(B value) {

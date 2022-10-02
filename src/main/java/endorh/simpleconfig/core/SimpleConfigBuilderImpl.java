@@ -459,8 +459,7 @@ public class SimpleConfigBuilderImpl
 		
 		@Override @Contract("_, _ -> this")
 		public <
-		  V, C, G,
-		  B extends ConfigEntryBuilder<V, C, G, B>
+		  V, C, G, B extends ConfigEntryBuilder<V, C, G, B>
 		> GroupBuilder caption(String name, B entry) {
 			if (heldEntryBuilder != null)
 				throw new IllegalArgumentException("Attempt to declare two caption entries for the same config group: " + path);
