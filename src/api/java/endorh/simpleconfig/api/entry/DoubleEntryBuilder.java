@@ -2,23 +2,24 @@ package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface DoubleEntryBuilder
   extends RangedEntryBuilder<Double, Number, Double, DoubleEntryBuilder>, KeyEntryBuilder<Double> {
 	/**
 	 * Set min (inclusive)
 	 */
-	@Contract(pure=true) DoubleEntryBuilder min(double min);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder min(double min);
 	
 	/**
 	 * Set max (inclusive)
 	 */
-	@Contract(pure=true) DoubleEntryBuilder max(double max);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder max(double max);
 	
 	/**
 	 * Set inclusive range
 	 */
-	@Contract(pure=true) DoubleEntryBuilder range(double min, double max);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder range(double min, double max);
 	
 	/**
 	 * Scale the backing field of this entry by the given scale.<br>
@@ -33,7 +34,7 @@ public interface DoubleEntryBuilder
 	 * @see #addFieldScale(String, double)
 	 * @see #add_field_scale(String, double)
 	 */
-	@Contract(pure=true) DoubleEntryBuilder fieldScale(double scale);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder fieldScale(double scale);
 	
 	/**
 	 * Add a secondary backing field with the given name, whose value is pre-multiplied
@@ -46,7 +47,7 @@ public interface DoubleEntryBuilder
 	 * @see #addFieldScale(String, double)
 	 * @see #add_field_scale(String, double)
 	 */
-	@Contract(pure=true) DoubleEntryBuilder fieldScale(String name, double scale);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder fieldScale(String name, double scale);
 	
 	/**
 	 * Add a secondary backing field with the given camelCase suffix, whose value
@@ -59,7 +60,7 @@ public interface DoubleEntryBuilder
 	 * @see #fieldScale(String, double)
 	 * @see #add_field_scale(String, double)
 	 */
-	@Contract(pure=true) DoubleEntryBuilder addFieldScale(String suffix, double scale);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder addFieldScale(String suffix, double scale);
 	
 	/**
 	 * Add a secondary backing field with the given snake_case suffix, whose value
@@ -72,5 +73,5 @@ public interface DoubleEntryBuilder
 	 * @see #fieldScale(String, double)
 	 * @see #addFieldScale(String, double)
 	 */
-	@Contract(pure=true) DoubleEntryBuilder add_field_scale(String suffix, double scale);
+	@Contract(pure=true) @NotNull DoubleEntryBuilder add_field_scale(String suffix, double scale);
 }

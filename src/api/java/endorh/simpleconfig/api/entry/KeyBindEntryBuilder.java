@@ -5,6 +5,8 @@ import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface KeyBindEntryBuilder extends ConfigEntryBuilder<
   KeyBindMapping, String, KeyBindMapping, KeyBindEntryBuilder
@@ -12,25 +14,25 @@ public interface KeyBindEntryBuilder extends ConfigEntryBuilder<
 	/**
 	 * Configure the default keybind settings for this entry.
 	 */
-	KeyBindEntryBuilder withDefaultSettings(ExtendedKeyBindSettings settings);
+	@Contract(pure=true) @NotNull KeyBindEntryBuilder withDefaultSettings(ExtendedKeyBindSettings settings);
 	
 	/**
 	 * Set the associated keybind for this entry, used for overlap reporting.
 	 */
-	KeyBindEntryBuilder bakeTo(ExtendedKeyBind keyBind);
+	@Contract(pure=true) @NotNull KeyBindEntryBuilder bakeTo(ExtendedKeyBind keyBind);
 	
 	/**
 	 * Configure if the entry should report global overlaps with other keybinds.
 	 */
-	KeyBindEntryBuilder reportOverlaps(boolean reportOverlaps);
+	@Contract(pure=true) @NotNull KeyBindEntryBuilder reportOverlaps(boolean reportOverlaps);
 	
 	/**
 	 * Replace this keybind's title with the title of this entry.
 	 */
-	KeyBindEntryBuilder inheritTitle();
+	@Contract(pure=true) @NotNull KeyBindEntryBuilder inheritTitle();
 	
 	/**
 	 * Replace this keybind's title with the title of this entry.
 	 */
-	KeyBindEntryBuilder inheritTitle(boolean inheritTitle);
+	@Contract(pure=true) @NotNull KeyBindEntryBuilder inheritTitle(boolean inheritTitle);
 }

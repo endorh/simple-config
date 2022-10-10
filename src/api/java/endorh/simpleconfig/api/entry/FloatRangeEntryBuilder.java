@@ -3,14 +3,15 @@ package endorh.simpleconfig.api.entry;
 import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface FloatRangeEntryBuilder
   extends SizedRangeEntryBuilder<Float, FloatRange, FloatRangeEntryBuilder>, KeyEntryBuilder<FloatRange> {
-	@Contract(pure=true) FloatRangeEntryBuilder min(float min);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder min(float min);
 	
-	@Contract(pure=true) FloatRangeEntryBuilder max(float max);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder max(float max);
 	
-	@Contract(pure=true) FloatRangeEntryBuilder withBounds(float min, float max);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder withBounds(float min, float max);
 	
 	/**
 	 * Scale the backing field of this entry by the given scale.<br>
@@ -25,7 +26,7 @@ public interface FloatRangeEntryBuilder
 	 * @see #addFieldScale(String, float)
 	 * @see #add_field_scale(String, float)
 	 */
-	@Contract(pure=true) FloatRangeEntryBuilder fieldScale(float scale);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder fieldScale(float scale);
 	
 	/**
 	 * Add a secondary backing field with the given name, whose value is pre-multiplied
@@ -38,7 +39,7 @@ public interface FloatRangeEntryBuilder
 	 * @see #addFieldScale(String, float)
 	 * @see #add_field_scale(String, float)
 	 */
-	@Contract(pure=true) FloatRangeEntryBuilder fieldScale(String name, float scale);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder fieldScale(String name, float scale);
 	
 	/**
 	 * Add a secondary backing field with the given camelCase suffix, whose value
@@ -51,7 +52,7 @@ public interface FloatRangeEntryBuilder
 	 * @see #fieldScale(String, float)
 	 * @see #add_field_scale(String, float)
 	 */
-	@Contract(pure=true) FloatRangeEntryBuilder addFieldScale(String suffix, float scale);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder addFieldScale(String suffix, float scale);
 	
 	/**
 	 * Add a secondary backing field with the given snake_case suffix, whose value
@@ -64,5 +65,5 @@ public interface FloatRangeEntryBuilder
 	 * @see #fieldScale(String, float)
 	 * @see #addFieldScale(String, float)
 	 */
-	@Contract(pure=true) FloatRangeEntryBuilder add_field_scale(String suffix, float scale);
+	@Contract(pure=true) @NotNull FloatRangeEntryBuilder add_field_scale(String suffix, float scale);
 }

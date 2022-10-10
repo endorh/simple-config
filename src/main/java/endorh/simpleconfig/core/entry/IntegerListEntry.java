@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,15 +31,15 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 			super(value, Integer.class);
 		}
 		
-		@Override @Contract(pure=true) public IntegerListEntryBuilder min(int min) {
+		@Override @Contract(pure=true) public @NotNull IntegerListEntryBuilder min(int min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public IntegerListEntryBuilder max(int max) {
+		@Override @Contract(pure=true) public @NotNull IntegerListEntryBuilder max(int max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public IntegerListEntryBuilder range(int min, int max) {
+		@Override @Contract(pure=true) public @NotNull IntegerListEntryBuilder range(int min, int max) {
 			return super.range(min, max);
 		}
 		

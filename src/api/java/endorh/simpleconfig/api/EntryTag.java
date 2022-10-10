@@ -42,58 +42,58 @@ public class EntryTag implements Comparable<EntryTag> {
 	public static final EntryTag NON_PERSISTENT = translated(
 	  400, null, Entries.NOT_PERSISTENT, "simpleconfig.config.tag.not_persistent", null);
 	
-	public static EntryTag coloredTag(ChatFormatting color) {
+	public static @NotNull EntryTag coloredTag(ChatFormatting color) {
 		String name = toTitleCase(color.getName());
 		return TAGS.computeIfAbsent(color, c -> of(
 		  500 + color.getId(), name + " tag", Entries.TAG.withTint(color), () -> SimpleConfigTextUtil.splitTtc(
 		  "simpleconfig.config.tag.tag", new TextComponent(name)
 				.withStyle(color)), null));
 	}
-	public static EntryTag coloredBookmark(ChatFormatting color) {
+	public static @NotNull EntryTag coloredBookmark(ChatFormatting color) {
 		String name = toTitleCase(color.getName());
 		return BOOKMARKS.computeIfAbsent(color, c -> of(
 		  600 + color.getId(), name + " bookmark", Entries.BOOKMARK.withTint(color), () -> SimpleConfigTextUtil.splitTtc(
 		  "simpleconfig.config.tag.bookmark", new TextComponent(name)
 				.withStyle(color)), null));
 	}
-	public static EntryTag coloredWrench(ChatFormatting color) {
+	public static @NotNull EntryTag coloredWrench(ChatFormatting color) {
 		return WRENCHES.computeIfAbsent(color, c -> translated(
 		  100 + color.getId(), "Advanced!", Entries.WRENCH.withTint(color),
 		  "simpleconfig.config.tag.advanced", null));
 	}
 	
-	public static EntryTag copyTag(int order, String text, String tooltipTranslationKey) {
+	public static @NotNull EntryTag copyTag(int order, String text, String tooltipTranslationKey) {
 		return copyTag(order, text, () -> SimpleConfigTextUtil.splitTtc(tooltipTranslationKey));
 	}
 	
-	public static EntryTag copyTag(int order, String text, Supplier<List<Component>> tooltip) {
+	public static @NotNull EntryTag copyTag(int order, String text, Supplier<List<Component>> tooltip) {
 		return of(
 		  order, null, Entries.COPY, tooltip,
 		  b -> Minecraft.getInstance().keyboardHandler.setClipboard(text));
 	}
 	
-	public static EntryTag translated(
+	public static @NotNull EntryTag translated(
 	  @Nullable String comment, Icon icon, String tooltipTranslationKey,
 	  @Nullable Consumer<Integer> clickAction
 	) {
 		return translated(0, comment, icon, tooltipTranslationKey, clickAction);
 	}
 	
-	public static EntryTag translated(
+	public static @NotNull EntryTag translated(
 	  int order, @Nullable String comment, Icon icon, String tooltipTranslationKey,
 	  @Nullable Consumer<Integer> clickAction
 	) {
 		return of(order, comment, icon, () -> SimpleConfigTextUtil.splitTtc(tooltipTranslationKey), clickAction);
 	}
 	
-	public static EntryTag of(
+	public static @NotNull EntryTag of(
 	  @Nullable String comment, Icon icon, @Nullable Supplier<List<Component>> tooltip,
 	  @Nullable Consumer<Integer> clickAction
 	) {
 		return of(0, comment, icon, tooltip, clickAction);
 	}
 	
-	public static EntryTag of(
+	public static @NotNull EntryTag of(
 	  int order, @Nullable String comment, Icon icon,
 	  @Nullable Supplier<List<Component>> tooltip, @Nullable Consumer<Integer> clickAction
 	) {

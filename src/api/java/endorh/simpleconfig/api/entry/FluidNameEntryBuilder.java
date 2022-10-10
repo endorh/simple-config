@@ -3,6 +3,7 @@ package endorh.simpleconfig.api.entry;
 import net.minecraft.tags.Tag;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface FluidNameEntryBuilder
   extends ResourceEntryBuilder<FluidNameEntryBuilder> {
@@ -11,5 +12,5 @@ public interface FluidNameEntryBuilder
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */
-	@Contract(pure=true) FluidNameEntryBuilder suggest(Tag<Fluid> tag);
+	@Contract(pure=true) @NotNull FluidNameEntryBuilder suggest(Tag<Fluid> tag);
 }

@@ -16,6 +16,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -72,20 +73,20 @@ public class EntryButtonEntry<V, Gui>
 			this.action = action;
 		}
 		
-		@Override @Contract(pure=true) public Builder<V, Gui, S, B> label(String translation) {
+		@Override @Contract(pure=true) public @NotNull Builder<V, Gui, S, B> label(String translation) {
 			Builder<V, Gui, S, B> copy = copy();
 			final TranslatableComponent ttc = new TranslatableComponent(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<V, Gui, S, B> label(Component label) {
+		@Override @Contract(pure=true) public @NotNull Builder<V, Gui, S, B> label(Component label) {
 			Builder<V, Gui, S, B> copy = copy();
 			copy.buttonLabelSupplier = () -> label;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<V, Gui, S, B> label(
+		@Override @Contract(pure=true) public @NotNull Builder<V, Gui, S, B> label(
 		  Supplier<Component> label
 		) {
 			Builder<V, Gui, S, B> copy = copy();

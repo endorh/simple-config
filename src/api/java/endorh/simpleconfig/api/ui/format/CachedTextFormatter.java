@@ -2,6 +2,7 @@ package endorh.simpleconfig.api.ui.format;
 
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.network.chat.MutableComponent;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -22,7 +23,7 @@ public class CachedTextFormatter implements ITextFormatter {
 		return lastFormattedText;
 	}
 	
-	@Override public String stripInsertText(String text) {
+	@Override public @NotNull String stripInsertText(@NotNull String text) {
 		return delegate.stripInsertText(text);
 	}
 	

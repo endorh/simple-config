@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ public interface EntryMapEntryBuilder<
 	 *
 	 * @see #expand(boolean)
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> expand();
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> expand();
 	
 	/**
 	 * Display this entry expanded in the GUI by default.
@@ -29,7 +30,7 @@ public interface EntryMapEntryBuilder<
 	 * @param expand Whether to expand this entry by default.
 	 * @see #expand()
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> expand(boolean expand);
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> expand(boolean expand);
 	
 	/**
 	 * Use a linked map to preserve the order of the entries.<br>
@@ -39,7 +40,7 @@ public interface EntryMapEntryBuilder<
 	 *
 	 * @see #linked(boolean)
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> linked();
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> linked();
 	
 	/**
 	 * Use a linked map to preserve the order of the entries.<br>
@@ -50,7 +51,7 @@ public interface EntryMapEntryBuilder<
 	 * @param linked Whether to use a linked map.
 	 * @see #linked()
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> linked(boolean linked);
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> linked(boolean linked);
 	
 	/**
 	 * Set an error supplier for each entry instead of the whole map.<br>
@@ -58,7 +59,7 @@ public interface EntryMapEntryBuilder<
 	 *
 	 * @param supplier The supplier for the error.
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> entryError(
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> entryError(
 	  BiFunction<K, V, Optional<Component>> supplier);
 	
 	/**
@@ -66,12 +67,12 @@ public interface EntryMapEntryBuilder<
 	 *
 	 * @param minSize The inclusive minimum size of the map.
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> minSize(int minSize);
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> minSize(int minSize);
 	
 	/**
 	 * Set the maximum (inclusive) size of the map.
 	 *
 	 * @param maxSize The inclusive maximum size of the map.
 	 */
-	@Contract(pure=true) EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> maxSize(int maxSize);
+	@Contract(pure=true) @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> maxSize(int maxSize);
 }

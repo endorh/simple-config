@@ -6,32 +6,33 @@ import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.ICharacterF
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.function.Predicate;
 
 public interface ITextFormatter {
-	static CachedTextFormatter cached(ITextFormatter formatter) {
+	static @NotNull CachedTextFormatter cached(ITextFormatter formatter) {
 		return new CachedTextFormatter(formatter);
 	}
 	
-	static CharacterMapTextFormatter characterBased(Map<Character, Style> map) {
+	static @NotNull CharacterMapTextFormatter characterBased(Map<Character, Style> map) {
 		return new CharacterMapTextFormatter(map);
 	}
 	
-	static CharacterBasedTextFormatter characterBased(ICharacterFormatter formatter) {
+	static @NotNull CharacterBasedTextFormatter characterBased(ICharacterFormatter formatter) {
 		return new CharacterBasedTextFormatter(formatter);
 	}
 	
-	static ILanguageHighlighter forLanguage(String language) {
+	static @NotNull ILanguageHighlighter forLanguage(String language) {
 		ILanguageHighlighter highlighter = IHighlighterManager.getInstance().getHighlighter(language);
 		if (highlighter == null) throw new IllegalArgumentException(
 		  "Missing highlighter for language: \"" + language + "\"");
 		return highlighter;
 	}
 	
-	static ITextFormatter forLanguageOrDefault(String language, ITextFormatter def) {
+	static @NotNull ITextFormatter forLanguageOrDefault(String language, ITextFormatter def) {
 		ILanguageHighlighter highlighter = IHighlighterManager.getInstance().getHighlighter(language);
 		if (highlighter == null) return def;
 		return highlighter;
@@ -39,23 +40,23 @@ public interface ITextFormatter {
 	
 	ITextFormatter DEFAULT = plain(Style.EMPTY);
 	
-	static ITextFormatter plain(Style style) {
+	static @NotNull ITextFormatter plain(Style style) {
 		return text -> new TextComponent(text).setStyle(style);
 	}
 	
-	static NumberTextFormatter numeric(boolean integer) {
+	static @NotNull NumberTextFormatter numeric(boolean integer) {
 		return new NumberTextFormatter(integer);
 	}
 	
-	static ColorTextFormatter forColor() {
+	static @NotNull ColorTextFormatter forColor() {
 		return new ColorTextFormatter();
 	}
 	
-	static ResourceLocationTextFormatter forResourceLocation() {
+	static @NotNull ResourceLocationTextFormatter forResourceLocation() {
 		return new ResourceLocationTextFormatter();
 	}
 	
-	static String filterCharacters(String text, Predicate<Character> filter) {
+	static @NotNull String filterCharacters(String text, Predicate<Character> filter) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
@@ -65,7 +66,7 @@ public interface ITextFormatter {
 	}
 	
 	MutableComponent formatText(String text);
-	default String stripInsertText(String text) {
+	default @NotNull String stripInsertText(@NotNull String text) {
 		return text;
 	}
 	default @Nullable String closingPair(char typedChar, String context, int caretPos) {

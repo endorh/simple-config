@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -50,8 +51,8 @@ public class Icon {
 	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/empty"),
 	  0, 0, 0, 0, 0, 0
 	) { // @formatter:off
-		@Override public void renderCentered(PoseStack m, int x, int y, int w, int h, int level) {}
-		@Override public void renderStretch(PoseStack m, int x, int y, int w, int h, int level) {}
+		@Override public void renderCentered(@NotNull PoseStack m, int x, int y, int w, int h, int level) {}
+		@Override public void renderStretch(@NotNull PoseStack m, int x, int y, int w, int h, int level) {}
 		@Override public void bindTexture() {}
 	}; // @formatter:on
 	
@@ -102,7 +103,7 @@ public class Icon {
 	 * <b>Ensure the tint has a non-zero alpha value, or the icon will be invisible.</b>
 	 * @param tint Color to use, in ARGB format.
 	 */
-	@Contract(pure=true) public Icon withTint(int tint) {
+	@Contract(pure=true) public @NotNull Icon withTint(int tint) {
 		return new Icon(getTexture(), u, v, w, h, levelOffsetX, levelOffsetY, tw, th, isTwoLevel(), tint);
 	}
 	
@@ -110,7 +111,7 @@ public class Icon {
 	 * Obtain a tinted version of this icon.<br>
 	 * @param tint Color to use.
 	 */
-	@Contract(pure=true) public Icon withTint(ChatFormatting tint) {
+	@Contract(pure=true) public @NotNull Icon withTint(ChatFormatting tint) {
 		Integer color = tint.getColor();
 		if (color == null) throw new IllegalArgumentException("Not a valid color style: " + tint);
 		return withTint(color | 0xFF000000);
@@ -120,7 +121,7 @@ public class Icon {
 	 * Obtain a tinted version of this icon, using the color of a given style.<br>
 	 * If the style has no color, defaults to white color.
 	 */
-	@Contract(pure=true) public Icon withTint(Style style) {
+	@Contract(pure=true) public @NotNull Icon withTint(Style style) {
 		TextColor color = style.getColor();
 		int c;
 		if (color != null) {
@@ -148,22 +149,22 @@ public class Icon {
 		return level;
 	}
 	
-	public void renderCentered(PoseStack mStack, Rectangle rect) {
+	public void renderCentered(@NotNull PoseStack mStack, @NotNull Rectangle rect) {
 		renderCentered(mStack, rect, 0);
 	}
 	
 	public void renderCentered(
-	  PoseStack mStack, int x, int y, int w, int h
+	  @NotNull PoseStack mStack, int x, int y, int w, int h
 	) {
 		renderCentered(mStack, x, y, w, h, 0);
 	}
 	
-	public void renderCentered(PoseStack mStack, Rectangle rect, int level) {
+	public void renderCentered(@NotNull PoseStack mStack, @NotNull Rectangle rect, int level) {
 		renderCentered(mStack, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderCentered(
-	  PoseStack mStack, int x, int y, int w, int h, int level
+	  @NotNull PoseStack mStack, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		int xx = x + w / 2 - this.w / 2;
@@ -180,22 +181,22 @@ public class Icon {
 		afterRender(level);
 	}
 	
-	public void renderStretch(PoseStack mStack, Rectangle rect) {
+	public void renderStretch(@NotNull PoseStack mStack, @NotNull Rectangle rect) {
 		renderStretch(mStack, rect, 0);
 	}
 	
 	public void renderStretch(
-	  PoseStack mStack, int x, int y, int w, int h
+	  @NotNull PoseStack mStack, int x, int y, int w, int h
 	) {
 		renderStretch(mStack, x, y, w, h, 0);
 	}
 	
-	public void renderStretch(PoseStack mStack, Rectangle rect, int level) {
+	public void renderStretch(@NotNull PoseStack mStack, @NotNull Rectangle rect, int level) {
 		renderStretch(mStack, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderStretch(
-	  PoseStack mStack, int x, int y, int w, int h, int level
+	  @NotNull PoseStack mStack, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		final int l = translateLevel(level);
@@ -204,22 +205,22 @@ public class Icon {
 		afterRender(level);
 	}
 	
-	public void renderFill(PoseStack mStack, Rectangle rect) {
+	public void renderFill(@NotNull PoseStack mStack, @NotNull Rectangle rect) {
 		renderFill(mStack, rect, 0);
 	}
 	
 	public void renderFill(
-	  PoseStack mStack, int x, int y, int w, int h
+	  @NotNull PoseStack mStack, int x, int y, int w, int h
 	) {
 		renderFill(mStack, x, y, w, h, 0);
 	}
 	
-	public void renderFill(PoseStack mStack, Rectangle rect, int level) {
+	public void renderFill(@NotNull PoseStack mStack, @NotNull Rectangle rect, int level) {
 		renderFill(mStack, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderFill(
-	  PoseStack mStack, int x, int y, int w, int h, int level
+	  @NotNull PoseStack mStack, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		final int l = translateLevel(level);
@@ -308,8 +309,8 @@ public class Icon {
 		
 		private boolean twoLevel = false;
 		
-		public static IconBuilder ofTexture(
-		  ResourceLocation location, int width, int height
+		public static @NotNull IconBuilder ofTexture(
+		  @NotNull ResourceLocation location, int width, int height
 		) {
 			return new IconBuilder(location).texture(location, width, height);
 		}
@@ -321,7 +322,7 @@ public class Icon {
 		/**
 		 * Change the texture of the icons.
 		 */
-		public IconBuilder texture(ResourceLocation location, int width, int height) {
+		public @NotNull IconBuilder texture(ResourceLocation location, int width, int height) {
 			texture = location;
 			tw = width;
 			th = height;
@@ -331,7 +332,7 @@ public class Icon {
 		/**
 		 * Change the size of the icons.
 		 */
-		public IconBuilder size(int w, int h) {
+		public @NotNull IconBuilder size(int w, int h) {
 			this.w = w;
 			this.h = h;
 			return this;
@@ -342,7 +343,7 @@ public class Icon {
 		 * If both offsets are set to null, the offset defaults to a vertical offset
 		 * equal to the height.
 		 */
-		public IconBuilder level(Integer lX, Integer lY) {
+		public @NotNull IconBuilder level(Integer lX, Integer lY) {
 			this.lX = lX != null? lX : Integer.MAX_VALUE;
 			this.lY = lY != null? lY : Integer.MAX_VALUE;
 			return this;
@@ -351,7 +352,7 @@ public class Icon {
 		/**
 		 * Mark icons as only having two levels, for button rendering.
 		 */
-		public IconBuilder twoLevel(boolean twoLevel) {
+		public @NotNull IconBuilder twoLevel(boolean twoLevel) {
 			this.twoLevel = twoLevel;
 			return this;
 		}
@@ -359,7 +360,7 @@ public class Icon {
 		/**
 		 * Change the offset applied to all created icons
 		 */
-		public IconBuilder offset(int ox, int oy) {
+		public @NotNull IconBuilder offset(int ox, int oy) {
 			ou = ox;
 			ov = oy;
 			return this;
@@ -369,7 +370,7 @@ public class Icon {
 		 * Consider texture coordinates as reversed from the offset.<br>
 		 * Convenient for icons arranged from right to left (at the right edge of the texture).
 		 */
-		public IconBuilder reverseOffset(boolean reverseX, boolean reverseY) {
+		public @NotNull IconBuilder reverseOffset(boolean reverseX, boolean reverseY) {
 			revU = reverseX;
 			revV = reverseY;
 			return this;
@@ -380,7 +381,7 @@ public class Icon {
 		 * {@link #crop(int, int, int, int)}, to generate cropped icons from the same position.
 		 * @see #cropArea(int, int, int, int)
 		 */
-		public IconBuilder cropPos(int baseU, int baseV) {
+		public @NotNull IconBuilder cropPos(int baseU, int baseV) {
 			u = baseU;
 			v = baseV;
 			return this;
@@ -390,7 +391,7 @@ public class Icon {
 		 * Define a crop area to be used in subsequent calls to {@link #cropAt(int, int)}, to generate
 		 * icons with the same crop area at different positions.
 		 */
-		public IconBuilder cropArea(int uOffset, int vOffset, int cropW, int cropH) {
+		public @NotNull IconBuilder cropArea(int uOffset, int vOffset, int cropW, int cropH) {
 			cropU = uOffset;
 			cropV = vOffset;
 			this.cropW = cropW;
@@ -404,7 +405,7 @@ public class Icon {
 		 * @see #crop(int, int, int, int)
 		 * @see #cropPos(int, int)
 		 */
-		public CropIcon cropAt(int baseU, int baseV) {
+		public @NotNull CropIcon cropAt(int baseU, int baseV) {
 			return new CropIcon(
 			  texture, revU? ou - baseU - w : ou + baseU, revV? ov - baseV - h : ov + baseV, w, h,
 			  lX, lY, tw, th, twoLevel, 0, cropU, cropV, cropW, cropH);
@@ -418,7 +419,7 @@ public class Icon {
 		 * variant is convenient when multiple variants of a crop icon do not fit in the same
 		 * crop position.
 		 */
-		public CropIcon cropFor(int cropU, int cropV) {
+		public @NotNull CropIcon cropFor(int cropU, int cropV) {
 			return cropAt(cropU  - this.cropU, cropV - this.cropV);
 		}
 		
@@ -429,7 +430,7 @@ public class Icon {
 		 * @see #cropAt(int, int)
 		 * @see #cropArea(int, int, int, int)
 		 */
-		public CropIcon crop(int uOffset, int vOffset, int cropW, int cropH) {
+		public @NotNull CropIcon crop(int uOffset, int vOffset, int cropW, int cropH) {
 			return new CropIcon(
 			  texture, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h, lX, lY,
 			  tw, th, twoLevel, 0, uOffset, vOffset, cropW, cropH);
@@ -438,7 +439,7 @@ public class Icon {
 		/**
 		 * Configure margin sizes to create 9 patch icons with {@link #patchAt(int, int)}.
 		 */
-		public IconBuilder patchSize(int left, int top, int right, int bottom) {
+		public @NotNull IconBuilder patchSize(int left, int top, int right, int bottom) {
 			patchL = left;
 			patchT = top;
 			patchR = right;
@@ -450,7 +451,7 @@ public class Icon {
 		 * Create a 9 patch icon, using the margin sizes defined by
 		 * a previous call to {@link #patchSize(int, int, int, int)}
 		 */
-		public NinePatchIcon patchAt(int u, int v) {
+		public @NotNull NinePatchIcon patchAt(int u, int v) {
 			return new NinePatchIcon(
 			  texture, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h,
 			  patchL, patchT, w - patchL - patchR, h - patchT - patchB,
@@ -461,7 +462,7 @@ public class Icon {
 		 * Create an icon at the given coordinates.<br>
 		 * The coordinates are relative to the current {@link #offset}
 		 */
-		public Icon at(int u, int v) {
+		public @NotNull Icon at(int u, int v) {
 			return new Icon(
 			  texture, revU? ou - u - w : ou + u, revV? ov - v - h : ov + v, w, h,
 			  lX, lY, tw, th, twoLevel, 0);

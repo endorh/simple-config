@@ -210,19 +210,19 @@ public class ExtendedKeyBindDispatcher {
 		private boolean preventFurther = false;
 		private boolean cancelled = false;
 		
-		@Override public IntList getSortedPressedKeys() {
+		@Override public @NotNull IntList getSortedPressedKeys() {
 			return sortedPressedKeys;
 		}
-		@Override public IntSet getPressedKeys() {
+		@Override public @NotNull IntSet getPressedKeys() {
 			return pressedKeys;
 		}
-		@Override public Int2ObjectMap<String> getCharMap() {
+		@Override public @NotNull Int2ObjectMap<String> getCharMap() {
 			return charMap;
 		}
-		@Override public Set<String> getPressedChars() {
+		@Override public @NotNull Set<String> getPressedChars() {
 			return pressedChars;
 		}
-		@Override public Set<ExtendedKeyBind> getRepeatableKeyBinds() {
+		@Override public @NotNull Set<ExtendedKeyBind> getRepeatableKeyBinds() {
 			return repeatableKeyBinds;
 		}
 		

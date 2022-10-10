@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TranslatableComponent;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -26,33 +27,34 @@ import java.util.*;
  * depending on the keyboard layout.
  */
 public interface KeyBindMapping {
-	static KeyBindMapping unset() {
+	static @NotNull KeyBindMapping unset() {
 		return unset(ExtendedKeyBindSettings.ingame().build());
 	}
 	
-	static KeyBindMapping unset(ExtendedKeyBindSettings settings) {
+	static @NotNull KeyBindMapping unset(ExtendedKeyBindSettings settings) {
 		return ExtendedKeyBindProxy.getFactory().unsetMapping(settings);
 	}
 	
-	IntList getRequiredKeys();
+	@NotNull IntList getRequiredKeys();
 	@Nullable Int2ObjectMap<String> getCharMap();
-	ExtendedKeyBindSettings getSettings();
+	@NotNull ExtendedKeyBindSettings getSettings();
+	
 	boolean isUnset();
 	boolean overlaps(KeyBindMapping other);
 	
-	default Component getDisplayName() {
+	default @NotNull Component getDisplayName() {
 		return getDisplayName(Style.EMPTY);
 	}
-	default Component getDisplayName(ChatFormatting style) {
+	default @NotNull Component getDisplayName(ChatFormatting style) {
 		return getDisplayName(Style.EMPTY.applyFormat(style));
 	}
-	Component getDisplayName(Style style);
-	KeyBindMapping copy();
+	@NotNull Component getDisplayName(Style style);
+	@NotNull KeyBindMapping copy();
 	
-	static KeyBindMapping parse(String serialized) {
+	static @NotNull KeyBindMapping parse(String serialized) {
 		return ExtendedKeyBindProxy.getFactory().parseMapping(serialized);
 	}
-	String serialize();
+	@NotNull String serialize();
 	
 	enum KeyBindActivation {
 		PRESS(Hotkeys.ACTIVATION_PRESS),
@@ -62,17 +64,17 @@ public interface KeyBindMapping {
 		TOGGLE_RELEASE(Hotkeys.ACTIVATION_TOGGLE_RELEASE),
 		REPEAT(Hotkeys.ACTIVATION_REPEAT);
 		
-		private final Icon icon;
+		private final @NotNull Icon icon;
 		
 		private static final Map<String, KeyBindActivation> NAME_MAP = Util.make(new HashMap<>(4), m -> {
 			for (KeyBindActivation value: values()) m.put(value.serialize(), value);
 		});
 		
-		KeyBindActivation(Icon icon) {
+		KeyBindActivation(@NotNull Icon icon) {
 			this.icon = icon;
 		}
 		
-		public Icon getIcon() {
+		public @NotNull Icon getIcon() {
 			return icon;
 		}
 		
@@ -80,7 +82,7 @@ public interface KeyBindMapping {
 			return NAME_MAP.get(type);
 		}
 		
-		public String serialize() {
+		public @NotNull String serialize() {
 			return name().toLowerCase();
 		}
 	}
@@ -102,9 +104,9 @@ public interface KeyBindMapping {
 		boolean isActive();
 		boolean conflictsWith(KeyBindContext other);
 		Component getDisplayName();
-		Icon getIcon();
-		Icon getCropIcon();
-		String serialize();
+		@NotNull Icon getIcon();
+		@NotNull Icon getCropIcon();
+		@NotNull String serialize();
 	}
 	
 	enum VanillaKeyBindContext implements KeyBindContext {
@@ -112,11 +114,11 @@ public interface KeyBindMapping {
 		MENU(Hotkeys.CONTEXT_MENU, KeyBindSettingsIcon.CONTEXT_MENU),
 		ALL(Hotkeys.CONTEXT_ALL, KeyBindSettingsIcon.CONTEXT_ALL);
 		
-		private final Icon icon;
-		private final Icon cropIcon;
+		private final @NotNull Icon icon;
+		private final @NotNull Icon cropIcon;
 		private final String serialized;
 		
-		VanillaKeyBindContext(Icon icon, Icon cropIcon) {
+		VanillaKeyBindContext(@NotNull Icon icon, @NotNull Icon cropIcon) {
 			this.icon = icon;
 			serialized = name().toLowerCase();
 			this.cropIcon = cropIcon;
@@ -130,16 +132,16 @@ public interface KeyBindMapping {
 			return this == ALL || this == other;
 		}
 		
-		@Override public Component getDisplayName() {
+		@Override public @NotNull Component getDisplayName() {
 			return new TranslatableComponent("simpleconfig.keybind.context." + serialized);
 		}
-		@Override public Icon getIcon() {
+		@Override public @NotNull Icon getIcon() {
 			return icon;
 		}
-		@Override public Icon getCropIcon() {
+		@Override public @NotNull Icon getCropIcon() {
 			return cropIcon;
 		}
-		@Override public String serialize() {
+		@Override public @NotNull String serialize() {
 			return serialized;
 		}
 	}

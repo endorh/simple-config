@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.ui.math;
 
+import org.jetbrains.annotations.NotNull;
+
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -9,7 +11,7 @@ public class Rectangle {
 	public int width;
 	public int height;
 	
-	public static Rectangle of(int x, int y, int width, int height) {
+	public static @NotNull Rectangle of(int x, int y, int width, int height) {
 		return new Rectangle(x, y, width, height);
 	}
 	
@@ -17,7 +19,7 @@ public class Rectangle {
 		this(0, 0, 0, 0);
 	}
 	
-	public Rectangle(Rectangle r) {
+	public Rectangle(@NotNull Rectangle r) {
 		this(r.x, r.y, r.width, r.height);
 	}
 	
@@ -25,15 +27,15 @@ public class Rectangle {
 		this(0, 0, width, height);
 	}
 	
-	public Rectangle(Point p, Dimension d) {
+	public Rectangle(@NotNull Point p, @NotNull Dimension d) {
 		this(p.x, p.y, d.width, d.height);
 	}
 	
-	public Rectangle(Point p) {
+	public Rectangle(@NotNull Point p) {
 		this(p.x, p.y, 0, 0);
 	}
 	
-	public Rectangle(Dimension d) {
+	public Rectangle(@NotNull Dimension d) {
 		this(0, 0, d.width, d.height);
 	}
 	
@@ -77,10 +79,10 @@ public class Rectangle {
 		return height;
 	}
 	
-	public Rectangle getBounds() {
+	public @NotNull Rectangle getBounds() {
 		return new Rectangle(x, y, width, height);
 	}
-	public void setBounds(Rectangle r) {
+	public void setBounds(@NotNull Rectangle r) {
 		setBounds(r.x, r.y, r.width, r.height);
 	}
 	public void setBounds(int x, int y, int width, int height) {
@@ -90,10 +92,10 @@ public class Rectangle {
 		this.height = height;
 	}
 	
-	public Point getLocation() {
+	public @NotNull Point getLocation() {
 		return Point.of(x, y);
 	}
-	public void setLocation(Point p) {
+	public void setLocation(@NotNull Point p) {
 		setLocation(p.x, p.y);
 	}
 	public void setLocation(int x, int y) {
@@ -106,14 +108,14 @@ public class Rectangle {
 		y += dy;
 	}
 	
-	public Rectangle copy() {
+	public @NotNull Rectangle copy() {
 		return getBounds();
 	}
 	
-	public Dimension getSize() {
+	public @NotNull Dimension getSize() {
 		return new Dimension(width, height);
 	}
-	public void setSize(Dimension d) {
+	public void setSize(@NotNull Dimension d) {
 		setSize(d.width, d.height);
 	}
 	public void setSize(int width, int height) {
@@ -121,7 +123,7 @@ public class Rectangle {
 		this.height = height;
 	}
 	
-	public boolean contains(Point p) {
+	public boolean contains(@NotNull Point p) {
 		return contains(p.x, p.y);
 	}
 	public boolean contains(int xx, int yy) {
@@ -131,7 +133,7 @@ public class Rectangle {
 	public boolean contains(double x, double y) {
 		return contains((int) x, (int) y);
 	}
-	public boolean contains(Rectangle r) {
+	public boolean contains(@NotNull Rectangle r) {
 		return contains(r.x, r.y, r.width, r.height);
 	}
 	public boolean contains(int xx, int yy, int ww, int hh) {
@@ -141,19 +143,19 @@ public class Rectangle {
 		       && yy + hh <= y + height;
 	}
 	
-	public boolean intersects(Rectangle r) {
+	public boolean intersects(@NotNull Rectangle r) {
 		return (r.width | r.height | width | height) >= 0
 		       && r.x + r.width > x && r.y + r.height > y
 		       && x + width > r.x && y + height > r.y;
 	}
-	public int horizontalIntersection(Rectangle r) {
+	public int horizontalIntersection(@NotNull Rectangle r) {
 		return min(getMaxX(), r.getMaxX()) - max(x, r.x);
 	}
-	public int verticalIntersection(Rectangle r) {
+	public int verticalIntersection(@NotNull Rectangle r) {
 		return min(getMaxY(), r.getMaxY()) - max(y, r.y);
 	}
 	
-	public Rectangle intersection(Rectangle r) {
+	public @NotNull Rectangle intersection(@NotNull Rectangle r) {
 		int x = this.x;
 		int y = this.y;
 		int rx = r.x;
@@ -171,7 +173,7 @@ public class Rectangle {
 		return new Rectangle(x, y, (int) w, (int) h);
 	}
 	
-	public Rectangle union(Rectangle r) {
+	public @NotNull Rectangle union(@NotNull Rectangle r) {
 		long w = width;
 		long h = height;
 		if ((w | h) < 0L) return new Rectangle(r);
@@ -215,10 +217,10 @@ public class Rectangle {
 		if ((h -= y) > Integer.MAX_VALUE) h = Integer.MAX_VALUE;
 		setBounds(x, y, (int) w, (int) h);
 	}
-	public void add(Point pt) {
+	public void add(@NotNull Point pt) {
 		add(pt.x, pt.y);
 	}
-	public void add(Rectangle r) {
+	public void add(@NotNull Rectangle r) {
 		long w = width;
 		long h = height;
 		if ((w | h) < 0L) setBounds(r.x, r.y, r.width, r.height);
@@ -242,7 +244,7 @@ public class Rectangle {
 		setBounds(x, y, (int) w, (int) h);
 	}
 	
-	public Rectangle grow(int left, int up, int right, int down) {
+	public @NotNull Rectangle grow(int left, int up, int right, int down) {
 		return new Rectangle(x - left, y - up, width + left + right, height + up + down);
 	}
 	public void grow(int h, int v) {

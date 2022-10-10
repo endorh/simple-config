@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class BooleanEntry
 			super(value, Boolean.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder text(BooleanDisplayer displayAdapter) {
+		@Override @Contract(pure=true) public @NotNull Builder text(BooleanDisplayer displayAdapter) {
 			Builder copy = copy();
 			String trueS = displayAdapter.getSerializableName(true).trim().toLowerCase();
 			String falseS = displayAdapter.getSerializableName(false).trim().toLowerCase();
@@ -49,7 +50,7 @@ public class BooleanEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder text(String translation) {
+		@Override @Contract(pure=true) public @NotNull Builder text(String translation) {
 			Builder copy = copy();
 			final TranslatableComponent yes =
 			  new TranslatableComponent(translation + ".true");

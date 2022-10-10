@@ -41,7 +41,7 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			super(value, typeClass);
 		}
 		
-		@Override @Contract(pure=true) public Self suggest(
+		@Override @Contract(pure=true) public @NotNull Self suggest(
 		  Supplier<List<ResourceLocation>> suggestionSupplier
 		) {
 			SelfImpl copy = copy();
@@ -49,7 +49,7 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self suggest(List<ResourceLocation> suggestions) {
+		@Override @Contract(pure=true) public @NotNull Self suggest(List<ResourceLocation> suggestions) {
 			SelfImpl copy = copy();
 			copy.suggestionSupplier = () -> suggestions;
 			return copy.castSelf();
