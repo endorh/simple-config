@@ -7,6 +7,7 @@ import endorh.simpleconfig.api.ui.icon.Icon.IconBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
 	public static final ResourceLocation TEXTURE = new ResourceLocation(
@@ -23,14 +24,14 @@ import net.minecraft.resources.ResourceLocation;
 		  COMMON_CLIENT = b.at(48, 0),
 		  COMMON_SERVER = b.at(64, 0);
 		
-		public static Icon iconFor(Type type) {
+		public static @NotNull Icon iconFor(Type type) {
 			return switch (type) {
 				case CLIENT -> CLIENT;
 				case SERVER -> SERVER;
 				case COMMON -> COMMON;
 			};
 		}
-		public static Icon iconFor(EditType type) {
+		public static @NotNull Icon iconFor(EditType type) {
 			return switch (type) {
 				case CLIENT -> CLIENT;
 				case SERVER -> SERVER;

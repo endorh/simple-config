@@ -2,6 +2,7 @@ package endorh.simpleconfig.api.ui.icon;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Math.*;
 
@@ -31,13 +32,13 @@ public class CropIcon extends Icon {
 		this.cH = cH;
 	}
 	
-	@Override public Icon withTint(int tint) {
+	@Override public @NotNull Icon withTint(int tint) {
 		return new CropIcon(
 		  getTexture(), u, v, w, h, levelOffsetX, levelOffsetY,
 		  tw, th, twoLevel, tint, cU, cV, cW, cH);
 	}
 	
-	@Override public void renderCentered(PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderCentered(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		int xx = x + w / 2 - this.w / 2;
 		int yy = y + h / 2 - this.h / 2;
@@ -55,7 +56,7 @@ public class CropIcon extends Icon {
 		afterRender(level);
 	}
 	
-	@Override public void renderStretch(PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderStretch(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		int l = translateLevel(level);
 		int u = getU() + l * levelOffsetX;
@@ -71,7 +72,7 @@ public class CropIcon extends Icon {
 		afterRender(level);
 	}
 	
-	@Override public void renderFill(PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderFill(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		// Overridden to compute crop only once
 		beforeRender(level);
 		int l = translateLevel(level);

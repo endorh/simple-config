@@ -1,20 +1,21 @@
 package endorh.simpleconfig.api.ui.math;
 
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.NotNull;
 
 public class Point implements Cloneable {
 	public int x;
 	public int y;
 	
-	public static Point of(int x, int y) {
+	public static @NotNull Point of(int x, int y) {
 		return new Point(x, y);
 	}
 	
-	public static Point of(double x, double y) {
+	public static @NotNull Point of(double x, double y) {
 		return new Point((int) x, (int) y);
 	}
 	
-	public static Point origin() {
+	public static @NotNull Point origin() {
 		return new Point(0, 0);
 	}
 	
@@ -31,11 +32,11 @@ public class Point implements Cloneable {
 		return y;
 	}
 	
-	public Point getPos() {
+	public @NotNull Point getPos() {
 		return Point.of(x, y);
 	}
 	
-	@Override @SuppressWarnings("MethodDoesntCallSuperMethod") public Point clone() {
+	@Override @SuppressWarnings("MethodDoesntCallSuperMethod") public @NotNull Point clone() {
 		return getPos();
 	}
 	

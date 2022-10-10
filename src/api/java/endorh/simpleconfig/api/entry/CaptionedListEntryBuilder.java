@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public interface CaptionedListEntryBuilder<
 	 * @see #listField()
 	 * @see #splitFields(String)
 	 */
-	@Contract(pure=true) CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> captionField(String name);
+	@Contract(pure=true) @NotNull CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> captionField(String name);
 	
 	/**
 	 * Bind a field to the list entry.<br>
@@ -28,7 +29,7 @@ public interface CaptionedListEntryBuilder<
 	 * @see #listField()
 	 * @see #splitFields(String)
 	 */
-	@Contract(pure=true) CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> listField(String name);
+	@Contract(pure=true) @NotNull CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> listField(String name);
 	
 	/**
 	 * Replace the default field with a field for the list value.
@@ -37,7 +38,7 @@ public interface CaptionedListEntryBuilder<
 	 * @see #listField(String)
 	 * @see #splitFields(String)
 	 */
-	@Contract(pure=true) CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> listField();
+	@Contract(pure=true) @NotNull CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> listField();
 	
 	/**
 	 * Bind a field to the caption entry and replace the default field with a field
@@ -47,7 +48,7 @@ public interface CaptionedListEntryBuilder<
 	 * @see #listField(String)
 	 * @see #listField()
 	 */
-	@Contract(pure=true) CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> splitFields(
+	@Contract(pure=true) @NotNull CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> splitFields(
 	  String captionSuffix
 	);
 	
@@ -62,7 +63,7 @@ public interface CaptionedListEntryBuilder<
 	 * @see #listField(String)
 	 * @see #listField()
 	 */
-	@Contract(pure=true) CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> splitFields(
+	@Contract(pure=true) @NotNull CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> splitFields(
 	  String captionField, boolean fullFieldName
 	);
 	
@@ -74,7 +75,7 @@ public interface CaptionedListEntryBuilder<
 	 * @see #listField(String)
 	 * @see #listField()
 	 */
-	@Contract(pure=true) CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> split_fields(
+	@Contract(pure=true) @NotNull CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> split_fields(
 	  String caption_suffix
 	);
 }

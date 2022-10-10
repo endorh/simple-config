@@ -65,9 +65,9 @@ public class EnumEntry<E extends Enum<E>>
 			this.enumClass = enumClass;
 		}
 		
-		@Override @Contract(pure=true) public Builder<E> useComboBox() { return useComboBox(true); }
+		@Override @Contract(pure=true) public @NotNull Builder<E> useComboBox() { return useComboBox(true); }
 		
-		@Override @Contract(pure=true) public Builder<E> useComboBox(Boolean useComboBox) {
+		@Override @Contract(pure=true) public @NotNull Builder<E> useComboBox(Boolean useComboBox) {
 			Builder<E> copy = copy();
 			copy.useComboBox = useComboBox;
 			return copy;

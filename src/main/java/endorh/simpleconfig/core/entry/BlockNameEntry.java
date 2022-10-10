@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -50,7 +51,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 			  .collect(Collectors.toList());
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(TagKey<Block> tag) {
+		@Override @Contract(pure=true) public @NotNull Builder suggest(TagKey<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

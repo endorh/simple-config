@@ -1,6 +1,7 @@
 package endorh.simpleconfig.api.ui.hotkey;
 
 import com.google.common.collect.Lists;
+import org.jetbrains.annotations.NotNull;
 
 public interface ExtendedKeyBindProvider {
 	static void registerKeyBinds(ExtendedKeyBind... keyBinds) {
@@ -22,7 +23,7 @@ public interface ExtendedKeyBindProvider {
 	 * <b>All returned keybinds must be instances of {@code ExtendedKeyBindImpl}</b>.
 	 * Do not implement {@link ExtendedKeyBind} directly.
 	 */
-	Iterable<ExtendedKeyBind> getActiveKeyBinds();
+	@NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds();
 	
 	/**
 	 * Provide a collection of all potential keybinds that could be
@@ -30,7 +31,7 @@ public interface ExtendedKeyBindProvider {
 	 * <b>All returned keybinds must be instances of {@code ExtendedKeyBindImpl}</b>.
 	 * Do not implement {@link ExtendedKeyBind} directly.
 	 */
-	default Iterable<ExtendedKeyBind> getAllKeyBinds() {
+	default @NotNull Iterable<ExtendedKeyBind> getAllKeyBinds() {
 		return getActiveKeyBinds();
 	}
 	

@@ -2,6 +2,7 @@ package endorh.simpleconfig.api;
 
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -27,7 +28,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * @param guiErrorSupplier Error message supplier. Empty return values indicate
 	 *                         correct values
 	 */
-	@Contract(pure=true) Self guiError(Function<Gui, Optional<Component>> guiErrorSupplier);
+	@Contract(pure=true) @NotNull Self guiError(Function<Gui, Optional<Component>> guiErrorSupplier);
 	
 	/**
 	 * Provide error messages for invalid values<br>
@@ -39,7 +40,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * @param errorSupplier Error message supplier. null return values
 	 *                         indicate correct values
 	 */
-	@Contract(pure=true) default Self guiErrorNullable(Function<Gui, Component> errorSupplier) {
+	@Contract(pure=true) default @NotNull Self guiErrorNullable(Function<Gui, Component> errorSupplier) {
 		return guiError(v -> Optional.ofNullable(errorSupplier.apply(v)));
 	}
 	
@@ -54,7 +55,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * @param errorSupplier Error message supplier. null return values
 	 *   indicate correct values
 	 */
-	@Contract(pure=true) default Self configErrorNullable(Function<Gui, Component> errorSupplier) {
+	@Contract(pure=true) default @NotNull Self configErrorNullable(Function<Gui, Component> errorSupplier) {
 		return guiError(v -> Optional.ofNullable(errorSupplier.apply(v)));
 	}
 	
@@ -67,7 +68,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * use a function returning nullable values instead of {@link Optional}
 	 * @param errorSupplier Error message supplier. Empty return values indicate correct values
 	 */
-	@Contract(pure=true) Self error(Function<V, Optional<Component>> errorSupplier);
+	@Contract(pure=true) @NotNull Self error(Function<V, Optional<Component>> errorSupplier);
 	
 	/**
 	 * Provide error messages for invalid values.<br>
@@ -78,14 +79,14 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * values instead of {@link Optional}
 	 * @param errorSupplier Error message supplier. Empty return values indicate correct values
 	 */
-	@Contract(pure=true) Self configError(Function<Config, Optional<Component>> errorSupplier);
+	@Contract(pure=true) @NotNull Self configError(Function<Config, Optional<Component>> errorSupplier);
 	
 	/**
 	 * Remove error checks from this entry previously added with
 	 * {@link #guiError(Function)}, {@link #error(Function)}, {@link #configError(Function)}
 	 * or their variants.
 	 */
-	@Contract(pure=true) Self withoutError();
+	@Contract(pure=true) @NotNull Self withoutError();
 	
 	/**
 	 * Restrict the values of this entry<br>
@@ -98,7 +99,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * @deprecated Use {@link #error(Function)}
 	 *             to provide users with clearer error messages
 	 */
-	@Contract(pure=true) @Deprecated default Self check(Predicate<V> validator) {
+	@Contract(pure=true) @Deprecated default @NotNull Self check(Predicate<V> validator) {
 		return error(v -> validator.test(v)? Optional.empty() : Optional.of(
 		  Component.translatable("simpleconfig.config.error.invalid_value_generic")));
 	}
@@ -113,7 +114,7 @@ public interface ErrorEntryBuilder<V, Config, Gui, Self extends TooltipEntryBuil
 	 * @param errorSupplier Error message supplier. null return values indicate
 	 *                      correct values
 	 */
-	@Contract(pure=true) default Self errorNullable(Function<V, Component> errorSupplier) {
+	@Contract(pure=true) default @NotNull Self errorNullable(Function<V, Component> errorSupplier) {
 		return error(v -> Optional.ofNullable(errorSupplier.apply(v)));
 	}
 }

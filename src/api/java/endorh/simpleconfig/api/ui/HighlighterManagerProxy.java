@@ -1,10 +1,12 @@
 package endorh.simpleconfig.api.ui;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.reflect.Field;
 
 class HighlighterManagerProxy {
 	private static IHighlighterManager manager;
-	public static IHighlighterManager getHighlighterManager() {
+	public static @NotNull IHighlighterManager getHighlighterManager() {
 		if (manager != null) return manager;
 		try {
 			Class<?> cls = Class.forName("endorh.simpleconfig.highlight.HighlighterManager");

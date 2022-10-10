@@ -3,6 +3,7 @@ package endorh.simpleconfig.api.entry;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface BlockNameEntryBuilder
   extends ResourceEntryBuilder<BlockNameEntryBuilder> {
@@ -11,5 +12,5 @@ public interface BlockNameEntryBuilder
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */
-	@Contract(pure=true) BlockNameEntryBuilder suggest(TagKey<Block> tag);
+	@Contract(pure=true) @NotNull BlockNameEntryBuilder suggest(TagKey<Block> tag);
 }

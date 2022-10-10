@@ -1,6 +1,7 @@
 package endorh.simpleconfig.api.ui.icon;
 
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 public class AnimatedIcon extends Icon {
 	public final int rows;
@@ -35,7 +36,7 @@ public class AnimatedIcon extends Icon {
 		frames = rows * cols;
 	}
 	
-	@Override public AnimatedIcon withTint(int tint) {
+	@Override public @NotNull AnimatedIcon withTint(int tint) {
 		return new AnimatedIcon(
 		  getTexture(), u, v, w, h, levelOffsetX, levelOffsetY, tw, th,
 		  twoLevel, tint, rows, cols, delay);

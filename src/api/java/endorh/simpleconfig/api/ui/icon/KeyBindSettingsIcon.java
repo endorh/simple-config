@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindContext;
 import endorh.simpleconfig.api.ui.icon.LayeredIcon.SimpleIconLayer;
 import net.minecraft.Util;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -120,7 +121,7 @@ public class KeyBindSettingsIcon extends LayeredIcon<SimpleIconLayer> {
 		setHighlight(level == 2);
 	}
 	
-	@Override public Icon withTint(int tint) {
+	@Override public @NotNull Icon withTint(int tint) {
 		return new KeyBindSettingsIcon(tint);
 	}
 	@Override public List<SimpleIconLayer> getRenderedLayers() {

@@ -180,7 +180,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 			}
 		}
 		
-		@Override public MutableComponent highlight(String text) {
+		@Override public @NotNull MutableComponent highlight(@NotNull String text) {
 			if (text.isEmpty()) return Component.empty();
 			Lexer lexer = lexerFactory.apply(CharStreams.fromString(text));
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -231,7 +231,7 @@ public class HighlighterManager extends SimpleJsonResourceReloadListener impleme
 			return highlighter.getClosingPairs().contains(String.valueOf(typedChar));
 		}
 		
-		@Override public String getLanguage() {
+		@Override public @NotNull String getLanguage() {
 			return language;
 		}
 		

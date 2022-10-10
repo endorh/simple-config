@@ -13,6 +13,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -34,38 +35,38 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 			super(value, Double.class, "%.2f");
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder min(double min) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder min(double min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder max(double max) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder max(double max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder range(double min, double max) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder range(double min, double max) {
 			return super.range(min, max);
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder fieldScale(double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder fieldScale(double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return field(d -> d * scale, d -> d / scale, Double.class);
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder fieldScale(String name, double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder fieldScale(String name, double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return addField(BackingFieldBinding.withName(
 			  name, BackingFieldBuilder.of(f -> f * scale, Double.class)));
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder addFieldScale(String suffix, double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder addFieldScale(String suffix, double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return addField(suffix, f -> f * scale, Double.class);
 		}
 		
-		@Override @Contract(pure=true) public DoubleEntryBuilder add_field_scale(String suffix, double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder add_field_scale(String suffix, double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return add_field(suffix, f -> f * scale, Double.class);

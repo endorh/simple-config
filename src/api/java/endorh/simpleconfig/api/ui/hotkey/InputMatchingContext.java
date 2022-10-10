@@ -3,17 +3,18 @@ package endorh.simpleconfig.api.ui.hotkey;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
 public interface InputMatchingContext {
-	IntList getSortedPressedKeys();
-	IntSet getPressedKeys();
+	@NotNull IntList getSortedPressedKeys();
+	@NotNull IntSet getPressedKeys();
 	
-	Int2ObjectMap<String> getCharMap();
-	Set<String> getPressedChars();
+	@NotNull Int2ObjectMap<String> getCharMap();
+	@NotNull Set<String> getPressedChars();
 	
-	Set<ExtendedKeyBind> getRepeatableKeyBinds();
+	@NotNull Set<ExtendedKeyBind> getRepeatableKeyBinds();
 	
 	boolean isTriggered();
 	void setTriggered(boolean triggered);

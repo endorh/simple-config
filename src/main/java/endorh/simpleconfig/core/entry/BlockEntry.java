@@ -60,29 +60,29 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			super(value, Block.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
+		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Predicate<Block> filter) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Predicate<Block> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder from(List<Block> choices) {
+		@Override @Contract(pure=true) public @NotNull Builder from(List<Block> choices) {
 			List<Block> listCopy = new ArrayList<>(choices);
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Block... choices) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Block... choices) {
 			List<Block> listCopy = Arrays.asList(choices);
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(TagKey<Block> tag) {
+		@Override @Contract(pure=true) public @NotNull Builder from(TagKey<Block> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

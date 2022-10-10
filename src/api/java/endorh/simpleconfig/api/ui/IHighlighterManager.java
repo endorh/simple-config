@@ -1,9 +1,10 @@
 package endorh.simpleconfig.api.ui;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface IHighlighterManager {
-	static IHighlighterManager getInstance() {
+	@NotNull static IHighlighterManager getInstance() {
 		return HighlighterManagerProxy.getHighlighterManager();
 	}
 	

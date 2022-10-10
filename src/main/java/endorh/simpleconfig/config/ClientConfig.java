@@ -240,10 +240,10 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		    "right.alt>\"h\"", SimpleConfigGUIManager::showConfigHotkeysGUI);
 		
 		public static class ModExtendedKeyBindProvider implements ExtendedKeyBindProvider {
-			@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+			@Override public @NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds() {
 				return hotkeys.mod_config_keybinds;
 			}
-			@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
+			@Override public @NotNull Iterable<ExtendedKeyBind> getAllKeyBinds() {
 				return Collections.emptyList();
 			}
 		}

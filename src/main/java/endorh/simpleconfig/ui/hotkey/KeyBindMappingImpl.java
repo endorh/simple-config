@@ -11,6 +11,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import org.apache.commons.lang3.text.WordUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
@@ -24,35 +25,35 @@ import static endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation
 
 @SuppressWarnings("ClassCanBeRecord")
 public class KeyBindMappingImpl implements KeyBindMapping {
-	private final IntList requiredKeys;
+	private final @NotNull IntList requiredKeys;
 	private final @Nullable Int2ObjectMap<String> charMap;
-	private final ExtendedKeyBindSettings settings;
+	private final @NotNull ExtendedKeyBindSettings settings;
 	
-	public static KeyBindMappingImpl unset() {
+	public static @NotNull KeyBindMappingImpl unset() {
 		return new KeyBindMappingImpl(
 		  new IntArrayList(), null, ExtendedKeyBindSettings.ingame().build());
 	}
 	
-	public static KeyBindMappingImpl unset(ExtendedKeyBindSettings settings) {
+	public static @NotNull KeyBindMappingImpl unset(ExtendedKeyBindSettings settings) {
 		return new KeyBindMappingImpl(new IntArrayList(), null, settings);
 	}
 	
 	public KeyBindMappingImpl(
-	  IntList requiredKeys, @Nullable Int2ObjectMap<String> charMap,
-	  ExtendedKeyBindSettings settings
+	  @NotNull IntList requiredKeys, @Nullable Int2ObjectMap<String> charMap,
+	  @NotNull ExtendedKeyBindSettings settings
 	) {
 		this.requiredKeys = requiredKeys;
 		this.charMap = charMap;
 		this.settings = settings;
 	}
 	
-	@Override public IntList getRequiredKeys() {
+	@Override public @NotNull IntList getRequiredKeys() {
 		return requiredKeys;
 	}
 	@Override public @Nullable Int2ObjectMap<String> getCharMap() {
 		return charMap;
 	}
-	@Override public ExtendedKeyBindSettings getSettings() {
+	@Override public @NotNull ExtendedKeyBindSettings getSettings() {
 		return settings;
 	}
 	
@@ -114,23 +115,23 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 			if (compareByChar) {
 				Set<String> charSet =
 				  charMap != null? new HashSet<>(charMap.values())
-				                 : keys.stream().map(Keys::getCharFromKey).filter(Objects::nonNull).collect(Collectors.toSet());
-				return otherKeys.stream().allMatch(otherKey -> {
-					String otherChar = otherMatchByChar? otherCharMap.get((int) otherKey) : Keys.getCharFromKey(otherKey);
-					return otherChar != null? charSet.contains(otherChar) : set.contains((int) otherKey);
+				                 : keys.intStream().mapToObj(Keys::getCharFromKey).filter(Objects::nonNull).collect(Collectors.toSet());
+				return otherKeys.intStream().allMatch(otherKey -> {
+					String otherChar = otherMatchByChar? otherCharMap.get(otherKey) : Keys.getCharFromKey(otherKey);
+					return otherChar != null? charSet.contains(otherChar) : set.contains(otherKey);
 				});
 			} else return set.containsAll(otherKeys);
 		}
 	}
 	
-	@Override public KeyBindMapping copy() {
+	@Override public @NotNull KeyBindMapping copy() {
 		return new KeyBindMappingImpl(
 		  new IntArrayList(requiredKeys),
 		  charMap == null ? null : new Int2ObjectOpenHashMap<>(charMap),
 		  settings.copy());
 	}
 	
-	@Override public Component getDisplayName(Style style) {
+	@Override public @NotNull Component getDisplayName(Style style) {
 		ExtendedKeyBindSettings settings = getSettings();
 		MutableComponent joiner = Component.literal(settings.orderSensitive()? ">" : "+")
 		  .withStyle(ChatFormatting.GRAY);
@@ -148,7 +149,7 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		return r;
 	}
 	
-	@Override public String serialize() {
+	@Override public @NotNull String serialize() {
 		ExtendedKeyBindSettings settings = getSettings();
 		String joiner = settings.orderSensitive()? ">" : "+";
 		boolean matchByChar = settings.matchByChar();
@@ -156,12 +157,12 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 		  requiredKeys.isEmpty()
 		  ? "unset"
 		  : matchByChar
-		    ? requiredKeys.stream().map(k -> {
-				 String ch = charMap != null? charMap.get((int) k) : null;
+		    ? requiredKeys.intStream().mapToObj(k -> {
+				 String ch = charMap != null? charMap.get(k) : null;
 				 return ch != null? serializeKey(ch) : serializeKey(k);
 			 }).collect(Collectors.joining(joiner))
-		    : requiredKeys.stream()
-		      .map(KeyBindMappingImpl::serializeKey)
+		    : requiredKeys.intStream()
+		      .mapToObj(KeyBindMappingImpl::serializeKey)
 		      .collect(Collectors.joining(joiner));
 		KeyBindActivation activation = settings.activation();
 		KeyBindContext context = settings.context();
@@ -199,7 +200,7 @@ public class KeyBindMappingImpl implements KeyBindMapping {
 	  "^\\w++(?:\\.\\w++)*+(?:\\+\\w++(?:\\.\\w++)*+)*+$");
 	private static final Splitter UNORDERED_SPLITTER = Splitter.on('+');
 	private static final Splitter ORDERED_SPLITTER = Splitter.on('>');
-	public static KeyBindMappingImpl parse(String serialized) {
+	public static @NotNull KeyBindMappingImpl parse(String serialized) {
 		Matcher m = KeyBindMappingImpl.KEY_BIND_PATTERN.matcher(serialized);
 		ExtendedKeyBindSettingsBuilder settings = new ExtendedKeyBindSettingsBuilder();
 		if (!m.matches()) return new KeyBindMappingImpl(new IntArrayList(), null, settings.build());

@@ -3,6 +3,7 @@ package endorh.simpleconfig.api.ui.icon;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.LayeredIcon.IIconLayer;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +28,7 @@ public abstract class LayeredIcon<L extends IIconLayer> extends Icon {
 		super(new ResourceLocation("dummy"), 0, 0, w, h, 0, 0, 0, 0, false, tint);
 	}
 	
-	@Override public abstract Icon withTint(int tint);
+	@Override public abstract @NotNull Icon withTint(int tint);
 	
 	public abstract List<L> getRenderedLayers();
 	
@@ -35,7 +36,7 @@ public abstract class LayeredIcon<L extends IIconLayer> extends Icon {
 		return level;
 	}
 	
-	@Override public void renderCentered(PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderCentered(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		for (L layer : getRenderedLayers()) if (layer.isVisible()) {
 			beforeRenderLayer(layer);
@@ -45,7 +46,7 @@ public abstract class LayeredIcon<L extends IIconLayer> extends Icon {
 		afterRender(level);
 	}
 	
-	@Override public void renderStretch(PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderStretch(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		for (L layer : getRenderedLayers()) if (layer.isVisible()) {
 			beforeRenderLayer(layer);
@@ -55,7 +56,7 @@ public abstract class LayeredIcon<L extends IIconLayer> extends Icon {
 		afterRender(level);
 	}
 	
-	@Override public void renderFill(PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderFill(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		for (L layer : getRenderedLayers()) if (layer.isVisible()) {
 			beforeRenderLayer(layer);
@@ -121,7 +122,7 @@ public abstract class LayeredIcon<L extends IIconLayer> extends Icon {
 			this.layers = layers.stream().map(SimpleIconLayer::new).collect(Collectors.toList());
 		}
 		
-		@Override public Icon withTint(int tint) {
+		@Override public @NotNull Icon withTint(int tint) {
 			return new SimpleLayeredIcon(
 			  layers.stream().map(SimpleIconLayer::getIcon).collect(Collectors.toList()),
 			  w, h, tint);

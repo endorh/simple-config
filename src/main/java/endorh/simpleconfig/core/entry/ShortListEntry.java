@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -32,15 +33,15 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 			super(value, Short.class);
 		}
 		
-		@Override @Contract(pure=true) public ShortListEntryBuilder min(short min) {
+		@Override @Contract(pure=true) public @NotNull ShortListEntryBuilder min(short min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public ShortListEntryBuilder max(short max) {
+		@Override @Contract(pure=true) public @NotNull ShortListEntryBuilder max(short max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public ShortListEntryBuilder range(short min, short max) {
+		@Override @Contract(pure=true) public @NotNull ShortListEntryBuilder range(short min, short max) {
 			return super.range(min, max);
 		}
 		

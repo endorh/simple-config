@@ -18,14 +18,14 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 * and it will be set automatically as the baker (but you
 	 * may not define it and also call this method)
 	 */
-	@Contract("_ -> this") SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker);
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withBaker(Consumer<SimpleConfig> baker);
 	
 	/**
 	 * Set the default background for all categories
 	 *
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") SimpleConfigBuilder withBackground(String resourceName);
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withBackground(String resourceName);
 	
 	/**
 	 * Set the default background for all categories
@@ -34,7 +34,7 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 * @see #withIcon(Icon)
 	 * @see #withColor(int)
 	 */
-	@Contract("_ -> this") SimpleConfigBuilder withBackground(ResourceLocation background);
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withBackground(ResourceLocation background);
 	
 	/**
 	 * Set the icon for the default category.<br>
@@ -46,7 +46,7 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 * @see #withColor(int)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") SimpleConfigBuilder withIcon(Icon icon);
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withIcon(Icon icon);
 	
 	/**
 	 * Set the color for the default category.<br>
@@ -60,28 +60,28 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 * @see #withColor(int)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") SimpleConfigBuilder withColor(int tint);
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withColor(int tint);
 	
 	/**
 	 * Use the solid background too when in-game<br>
 	 * By default, config GUIs are transparent when in-game
 	 */
-	@Contract("-> this") SimpleConfigBuilder withSolidInGameBackground();
+	@Contract("-> this") @NotNull SimpleConfigBuilder withSolidInGameBackground();
 	
 	/**
 	 * Register the config command at the given command root<br>
 	 * The config command will still be accessible at {@code /config ⟨sub⟩ ⟨modid⟩}<br>
 	 */
-	@Contract("_ -> this") SimpleConfigBuilder withCommandRoot(
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withCommandRoot(
 	  LiteralArgumentBuilder<CommandSourceStack> root);
 	
-	@Contract("-> this") @Override SimpleConfigBuilder restart();
+	@Contract("-> this") @NotNull @Override SimpleConfigBuilder restart();
 	
-	@Contract("_ -> this") SimpleConfigBuilder n(ConfigCategoryBuilder cat);
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder n(ConfigCategoryBuilder cat);
 	
-	@Contract("_, _ -> this") SimpleConfigBuilder n(ConfigCategoryBuilder cat, int index);
+	@Contract("_, _ -> this") @NotNull SimpleConfigBuilder n(ConfigCategoryBuilder cat, int index);
 	
-	@Contract("_, _ -> this") SimpleConfigBuilder n(ConfigGroupBuilder group, int index);
+	@Contract("_, _ -> this") @NotNull SimpleConfigBuilder n(ConfigGroupBuilder group, int index);
 	
 	/**
 	 * Build the actual config and register it within the Forge system<br><br>
@@ -91,7 +91,7 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 *
 	 * @return The built config, which is also received by the baker
 	 */
-	SimpleConfig buildAndRegister();
+	@NotNull SimpleConfig buildAndRegister();
 	
 	/**
 	 * Build the actual config and register it within the Forge system<br><br>
@@ -101,5 +101,5 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 * @param modEventBus Your mod's language provider's mod event bus
 	 * @return The built config, which is also received by the baker
 	 */
-	SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus);
+	@NotNull SimpleConfig buildAndRegister(@NotNull IEventBus modEventBus);
 }

@@ -8,6 +8,7 @@ import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.core.BackingField;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -57,13 +58,13 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 			this.formatter = serializer.getConfigTextFormatter();
 		}
 		
-		@Override @Contract(pure=true) public Builder<V> fieldClass(Class<?> fieldClass) {
+		@Override @Contract(pure=true) public @NotNull Builder<V> fieldClass(Class<?> fieldClass) {
 			Builder<V> copy = copy();
 			copy.typeClass = fieldClass;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<V> setTextFormatter(ITextFormatter formatter) {
+		@Override @Contract(pure=true) public @NotNull Builder<V> setTextFormatter(ITextFormatter formatter) {
 			Builder<V> copy = copy();
 			copy.formatter = formatter;
 			return copy;

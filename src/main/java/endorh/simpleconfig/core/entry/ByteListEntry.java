@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,15 +31,15 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 			super(value, Byte.class);
 		}
 		
-		@Override @Contract(pure=true) public ByteListEntryBuilder min(byte min) {
+		@Override @Contract(pure=true) public @NotNull ByteListEntryBuilder min(byte min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public ByteListEntryBuilder max(byte max) {
+		@Override @Contract(pure=true) public @NotNull ByteListEntryBuilder max(byte max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public ByteListEntryBuilder range(byte min, byte max) {
+		@Override @Contract(pure=true) public @NotNull ByteListEntryBuilder range(byte min, byte max) {
 			return super.range(min, max);
 		}
 		

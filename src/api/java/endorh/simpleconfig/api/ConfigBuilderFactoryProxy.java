@@ -22,6 +22,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.Color;
@@ -67,7 +68,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param modId Your mod id
 	 * @param type A {@link Type}, usually either CLIENT or SERVER
 	 */
-	public static SimpleConfigBuilder config(String modId, Type type) {
+	@NotNull public static SimpleConfigBuilder config(String modId, Type type) {
 		return getFactory().builder(modId, type);
 	}
 	
@@ -83,7 +84,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param configClass Backing class for the config. It will be parsed
 	 *   for static backing fields and config annotations
 	 */
-	public static SimpleConfigBuilder config(String modId, Type type, Class<?> configClass) {
+	@NotNull public static SimpleConfigBuilder config(String modId, Type type, Class<?> configClass) {
 		return getFactory().builder(modId, type, configClass);
 	}
 	
@@ -92,7 +93,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @param name Group name, suitable for the config file (without spaces)
 	 */
-	public static ConfigGroupBuilder group(String name) {
+	@NotNull public static ConfigGroupBuilder group(String name) {
 		return getFactory().group(name);
 	}
 	
@@ -102,7 +103,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param name Group name, suitable for the config file (without spaces)
 	 * @param expand Whether to expand this group in the GUI automatically (default: no)
 	 */
-	public static ConfigGroupBuilder group(String name, boolean expand) {
+	@NotNull public static ConfigGroupBuilder group(String name, boolean expand) {
 		return getFactory().group(name, expand);
 	}
 	
@@ -111,7 +112,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @param name Category name, suitable for the config file (without spaces)
 	 */
-	public static ConfigCategoryBuilder category(String name) {
+	@NotNull public static ConfigCategoryBuilder category(String name) {
 		return getFactory().category(name);
 	}
 	
@@ -122,7 +123,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param configClass Backing class for the category, which will be parsed
 	 *   for static backing fields and config annotations
 	 */
-	public static ConfigCategoryBuilder category(String name, Class<?> configClass) {
+	@NotNull public static ConfigCategoryBuilder category(String name, Class<?> configClass) {
 		return getFactory().category(name, configClass);
 	}
 	
@@ -133,7 +134,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * You may change the text that appears in the button using
 	 * {@link BooleanEntryBuilder#text}
 	 */
-	public static BooleanEntryBuilder bool(boolean value) {
+	@NotNull public static BooleanEntryBuilder bool(boolean value) {
 		return getFactory().bool(value);
 	}
 	
@@ -142,7 +143,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Uses the labels "Yes" and "No" instead of the usual "true" and "false"<br>
 	 * You may also provide your own labels using {@link BooleanEntryBuilder#text}
 	 */
-	public static BooleanEntryBuilder yesNo(boolean value) {
+	@NotNull public static BooleanEntryBuilder yesNo(boolean value) {
 		return getFactory().yesNo(value);
 	}
 	
@@ -151,7 +152,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Uses the labels "Enabled" and "Disabled" instead of the usual "true" and "false"<br>
 	 * You may also provide your own labels using {@link BooleanEntryBuilder#text}
 	 */
-	public static BooleanEntryBuilder enable(boolean value) {
+	@NotNull public static BooleanEntryBuilder enable(boolean value) {
 		return getFactory().enable(value);
 	}
 	
@@ -160,14 +161,14 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Uses the labels "ON" and "OFF" instead of the usual "true" and "false"<br>
 	 * You may also provide your own labels using {@link BooleanEntryBuilder#text}
 	 */
-	public static BooleanEntryBuilder onOff(boolean value) {
+	@NotNull public static BooleanEntryBuilder onOff(boolean value) {
 		return getFactory().onOff(value);
 	}
 	
 	/**
 	 * String entry
 	 */
-	public static StringEntryBuilder string(String value) {
+	@NotNull public static StringEntryBuilder string(String value) {
 		return getFactory().string(value);
 	}
 	
@@ -176,14 +177,14 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use {@link #option} instead
 	 */
-	public static @Deprecated <E extends Enum<E>> EnumEntryBuilder<E> enum_(E value) {
+	@NotNull public static @Deprecated <E extends Enum<E>> EnumEntryBuilder<E> enum_(E value) {
 		return getFactory().enum_(value);
 	}
 	
 	/**
 	 * Enum entry
 	 */
-	public static <E extends Enum<E>> EnumEntryBuilder<E> option(E value) {
+	@NotNull public static <E extends Enum<E>> EnumEntryBuilder<E> option(E value) {
 		return getFactory().option(value);
 	}
 	
@@ -192,7 +193,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Displays a button in the GUI that can trigger an arbitrary action.<br>
 	 * The action may receive the immediate parent of the entry as parameter.
 	 */
-	public static ButtonEntryBuilder button(Runnable action) {
+	@NotNull public static ButtonEntryBuilder button(Runnable action) {
 		return getFactory().button(action);
 	}
 	
@@ -201,7 +202,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Displays a button in the GUI that can trigger an arbitrary action.<br>
 	 * The action may receive the immediate parent of the entry as parameter.
 	 */
-	public static ButtonEntryBuilder button(Consumer<ConfigEntryHolder> action) {
+	@NotNull public static ButtonEntryBuilder button(Consumer<ConfigEntryHolder> action) {
 		return getFactory().button(action);
 	}
 	
@@ -209,7 +210,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
+	@NotNull public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
 	EntryButtonEntryBuilder<V, Gui, B> button(B inner, Consumer<V> action) {
 		return getFactory().button(inner, action);
 	}
@@ -218,7 +219,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
+	@NotNull public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
 	EntryButtonEntryBuilder<V, Gui, B> button(
 	  B inner, BiConsumer<V, ConfigEntryHolder> action
 	) {
@@ -231,7 +232,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * {@link #preset(String)}
 	 * or just create a map your way.
 	 */
-	public static PresetSwitcherEntryBuilder globalPresetSwitcher(
+	@NotNull public static PresetSwitcherEntryBuilder globalPresetSwitcher(
 	  Map<String, Map<String, Object>> presets, String path
 	) {
 		return getFactory().globalPresetSwitcher(presets, path);
@@ -244,7 +245,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * {@link #preset(String)}
 	 * or just create a map your way.
 	 */
-	public static PresetSwitcherEntryBuilder localPresetSwitcher(
+	@NotNull public static PresetSwitcherEntryBuilder localPresetSwitcher(
 	  Map<String, Map<String, Object>> presets, String path
 	) {
 		return getFactory().localPresetSwitcher(presets, path);
@@ -253,14 +254,14 @@ public abstract class ConfigBuilderFactoryProxy {
 	/**
 	 * Create a preset map from a collection of preset builders
 	 */
-	public static Map<String, Map<String, Object>> presets(PresetBuilder... presets) {
+	@NotNull public static Map<String, Map<String, Object>> presets(PresetBuilder... presets) {
 		return getFactory().presets(presets);
 	}
 	
 	/**
 	 * Preset map builder
 	 */
-	public static PresetBuilder preset(String name) {
+	@NotNull public static PresetBuilder preset(String name) {
 		return getFactory().preset(name);
 	}
 	
@@ -269,7 +270,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ByteEntryBuilder number(byte value) {
+	@NotNull public static @Deprecated ByteEntryBuilder number(byte value) {
 		return getFactory().number(value);
 	}
 	
@@ -278,7 +279,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ByteEntryBuilder number(byte value, byte max) {
+	@NotNull public static @Deprecated ByteEntryBuilder number(byte value, byte max) {
 		return getFactory().number(value, max);
 	}
 	
@@ -287,7 +288,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ByteEntryBuilder number(byte value, byte min, byte max) {
+	@NotNull public static @Deprecated ByteEntryBuilder number(byte value, byte min, byte max) {
 		return getFactory().number(value, min, max);
 	}
 	
@@ -296,7 +297,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ShortEntryBuilder number(short value) {
+	@NotNull public static @Deprecated ShortEntryBuilder number(short value) {
 		return getFactory().number(value);
 	}
 	
@@ -305,7 +306,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ShortEntryBuilder number(short value, short max) {
+	@NotNull public static @Deprecated ShortEntryBuilder number(short value, short max) {
 		return getFactory().number(value, max);
 	}
 	
@@ -314,28 +315,28 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use a bound int entry
 	 */
-	public static @Deprecated ShortEntryBuilder number(short value, short min, short max) {
+	@NotNull public static @Deprecated ShortEntryBuilder number(short value, short min, short max) {
 		return getFactory().number(value, min, max);
 	}
 	
 	/**
 	 * Unbound integer value
 	 */
-	public static IntegerEntryBuilder number(int value) {
+	@NotNull public static IntegerEntryBuilder number(int value) {
 		return getFactory().number(value); 
 	}
 	
 	/**
 	 * Non-negative integer between 0 and {@code max} (inclusive)
 	 */
-	public static IntegerEntryBuilder number(int value, int max) {
+	@NotNull public static IntegerEntryBuilder number(int value, int max) {
 		return getFactory().number(value, max); 
 	}
 	
 	/**
 	 * Integer value between {@code min} and {@code max} (inclusive)
 	 */
-	public static IntegerEntryBuilder number(int value, int min, int max) {
+	@NotNull public static IntegerEntryBuilder number(int value, int min, int max) {
 		return getFactory().number(value, min, max); 
 	}
 	
@@ -343,49 +344,49 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Integer percentage, between 0 and 100 (inclusive)<br>
 	 * Displayed as a slider
 	 */
-	public static IntegerEntryBuilder percent(int value) {
+	@NotNull public static IntegerEntryBuilder percent(int value) {
 		return getFactory().percent(value); 
 	}
 	
 	/**
 	 * Unbound long value
 	 */
-	public static LongEntryBuilder number(long value) {
+	@NotNull public static LongEntryBuilder number(long value) {
 		return getFactory().number(value); 
 	}
 	
 	/**
 	 * Non-negative long between 0 and {@code max} (inclusive)
 	 */
-	public static LongEntryBuilder number(long value, long max) {
+	@NotNull public static LongEntryBuilder number(long value, long max) {
 		return getFactory().number(value, max); 
 	}
 	
 	/**
 	 * Long value between {@code min} and {@code max} (inclusive)
 	 */
-	public static LongEntryBuilder number(long value, long min, long max) {
+	@NotNull public static LongEntryBuilder number(long value, long min, long max) {
 		return getFactory().number(value, min, max); 
 	}
 	
 	/**
 	 * Unbound float value
 	 */
-	public static FloatEntryBuilder number(float value) {
+	@NotNull public static FloatEntryBuilder number(float value) {
 		return getFactory().number(value); 
 	}
 	
 	/**
 	 * Non-negative float value between 0 and {@code max} (inclusive)
 	 */
-	public static FloatEntryBuilder number(float value, float max) {
+	@NotNull public static FloatEntryBuilder number(float value, float max) {
 		return getFactory().number(value, max); 
 	}
 	
 	/**
 	 * Float value between {@code min} and {@code max} inclusive
 	 */
-	public static FloatEntryBuilder number(float value, float min, float max) {
+	@NotNull public static FloatEntryBuilder number(float value, float min, float max) {
 		return getFactory().number(value, min, max); 
 	}
 	
@@ -394,28 +395,28 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * between 0.0 and 1.0 in the backing field (not the config file).<br>
 	 * Displayed as a slider
 	 */
-	public static FloatEntryBuilder percent(float value) {
+	@NotNull public static FloatEntryBuilder percent(float value) {
 		return getFactory().percent(value); 
 	}
 	
 	/**
 	 * Unbound double value
 	 */
-	public static DoubleEntryBuilder number(double value) {
+	@NotNull public static DoubleEntryBuilder number(double value) {
 		return getFactory().number(value); 
 	}
 	
 	/**
 	 * Non-negative double value between 0 and {@code max} (inclusive)
 	 */
-	public static DoubleEntryBuilder number(double value, double max) {
+	@NotNull public static DoubleEntryBuilder number(double value, double max) {
 		return getFactory().number(value, max); 
 	}
 	
 	/**
 	 * Double value between {@code min} and {@code max} inclusive
 	 */
-	public static DoubleEntryBuilder number(double value, double min, double max) {
+	@NotNull public static DoubleEntryBuilder number(double value, double min, double max) {
 		return getFactory().number(value, min, max); 
 	}
 	
@@ -424,21 +425,21 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * between 0.0 and 1.0 in the backing field (not the config file).<br>
 	 * Displayed as a slider
 	 */
-	public static DoubleEntryBuilder percent(double value) {
+	@NotNull public static DoubleEntryBuilder percent(double value) {
 		return getFactory().percent(value); 
 	}
 	
 	/**
 	 * Float value between 0 and 1 (inclusive)
 	 */
-	public static FloatEntryBuilder fraction(float value) {
+	@NotNull public static FloatEntryBuilder fraction(float value) {
 		return getFactory().fraction(value); 
 	}
 	
 	/**
 	 * Double value between 0 and 1 (inclusive)
 	 */
-	public static DoubleEntryBuilder fraction(double value) {
+	@NotNull public static DoubleEntryBuilder fraction(double value) {
 		return getFactory().fraction(value); 
 	}
 	
@@ -446,7 +447,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Float entry between 0 and 1 (inclusive)<br>
 	 * Displays a volume label in the slider instead of the usual "Value: %s"
 	 */
-	public static FloatEntryBuilder volume(float value) {
+	@NotNull public static FloatEntryBuilder volume(float value) {
 		return getFactory().volume(value); 
 	}
 	
@@ -454,7 +455,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Float entry between 0 and 1 (inclusive) with default value of 1.<br>
 	 * Displays a volume label in the slider instead of the usual "Value: %s"
 	 */
-	public static FloatEntryBuilder volume() {
+	@NotNull public static FloatEntryBuilder volume() {
 		return getFactory().volume(); 
 	}
 	
@@ -462,7 +463,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Double entry between 0 and 1 (inclusive)<br>
 	 * Displays a volume label in the slider instead of the usual "Value: %s"
 	 */
-	public static DoubleEntryBuilder volume(double value) {
+	@NotNull public static DoubleEntryBuilder volume(double value) {
 		return getFactory().volume(value); 
 	}
 	
@@ -472,7 +473,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see DoubleRange
 	 */
-	public static DoubleRangeEntryBuilder range(DoubleRange range) {
+	@NotNull public static DoubleRangeEntryBuilder range(DoubleRange range) {
 		return getFactory().range(range); 
 	}
 	
@@ -482,7 +483,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see DoubleRange
 	 */
-	public static DoubleRangeEntryBuilder range(double min, double max) {
+	@NotNull public static DoubleRangeEntryBuilder range(double min, double max) {
 		return getFactory().range(min, max); 
 	}
 	
@@ -492,7 +493,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see FloatRange
 	 */
-	public static FloatRangeEntryBuilder range(FloatRange range) {
+	@NotNull public static FloatRangeEntryBuilder range(FloatRange range) {
 		return getFactory().range(range); 
 	}
 	
@@ -502,7 +503,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see FloatRange
 	 */
-	public static FloatRangeEntryBuilder range(float min, float max) {
+	@NotNull public static FloatRangeEntryBuilder range(float min, float max) {
 		return getFactory().range(min, max); 
 	}
 	
@@ -512,7 +513,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see LongRange
 	 */
-	public static LongRangeEntryBuilder range(LongRange range) {
+	@NotNull public static LongRangeEntryBuilder range(LongRange range) {
 		return getFactory().range(range); 
 	}
 	
@@ -522,7 +523,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see LongRange
 	 */
-	public static LongRangeEntryBuilder range(long min, long max) {
+	@NotNull public static LongRangeEntryBuilder range(long min, long max) {
 		return getFactory().range(min, max); 
 	}
 	
@@ -532,7 +533,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see IntRange
 	 */
-	public static IntegerRangeEntryBuilder range(IntRange range) {
+	@NotNull public static IntegerRangeEntryBuilder range(IntRange range) {
 		return getFactory().range(range); 
 	}
 	
@@ -542,7 +543,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @see IntRange
 	 */
-	public static IntegerRangeEntryBuilder range(int min, int max) {
+	@NotNull public static IntegerRangeEntryBuilder range(int min, int max) {
 		return getFactory().range(min, max); 
 	}
 	
@@ -550,7 +551,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Color entry<br>
 	 * Use {@link ColorEntryBuilder#alpha()} to allow alpha values
 	 */
-	public static ColorEntryBuilder color(Color value) {
+	@NotNull public static ColorEntryBuilder color(Color value) {
 		return getFactory().color(value); 
 	}
 	
@@ -558,28 +559,28 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Regex Pattern entry<br>
 	 * Will use the flags of the passed regex to compile user input<br>
 	 */
-	public static PatternEntryBuilder pattern(Pattern pattern) {
+	@NotNull public static PatternEntryBuilder pattern(Pattern pattern) {
 		return getFactory().pattern(pattern); 
 	}
 	
 	/**
 	 * Regex pattern entry with default flags
 	 */
-	public static PatternEntryBuilder pattern(String pattern) {
+	@NotNull public static PatternEntryBuilder pattern(String pattern) {
 		return getFactory().pattern(pattern); 
 	}
 	
 	/**
 	 * Regex pattern
 	 */
-	public static PatternEntryBuilder pattern(String pattern, int flags) {
+	@NotNull public static PatternEntryBuilder pattern(String pattern, int flags) {
 		return getFactory().pattern(pattern, flags); 
 	}
 	
 	/**
 	 * Entry of a String serializable object
 	 */
-	public static <V> SerializableEntryBuilder<V, ?> entry(
+	@NotNull public static <V> SerializableEntryBuilder<V, ?> entry(
 	  V value, Function<V, String> serializer, Function<String, Optional<V>> deserializer
 	) {
 		return getFactory().entry(value, serializer, deserializer); 
@@ -588,14 +589,14 @@ public abstract class ConfigBuilderFactoryProxy {
 	/**
 	 * Entry of a String serializable object
 	 */
-	public static <V> ISerializableEntryBuilder<V> entry(V value, IConfigEntrySerializer<V> serializer) {
+	@NotNull public static <V> ISerializableEntryBuilder<V> entry(V value, IConfigEntrySerializer<V> serializer) {
 		return getFactory().entry(value, serializer); 
 	}
 	
 	/**
 	 * Entry of a String serializable object
 	 */
-	public static <V extends ISerializableConfigEntry<V>> ISerializableEntryBuilder<V> entry(V value) {
+	@NotNull public static <V extends ISerializableConfigEntry<V>> ISerializableEntryBuilder<V> entry(V value) {
 		return getFactory().entry(value); 
 	}
 	
@@ -605,35 +606,35 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Most useful for bean lists or maps, rather than as singleton entries.
 	 * @param <B> Class of the bean. Must conform to the {@code JavaBean} specification.
 	 */
-	public static <B> BeanEntryBuilder<B> bean(B value) {
+	@NotNull public static <B> BeanEntryBuilder<B> bean(B value) {
 		return getFactory().bean(value);
 	}
 	
 	/**
 	 * NBT entry that accepts any kind of NBT, either values or compounds
 	 */
-	public static TagEntryBuilder tag(Tag value) {
+	@NotNull public static TagEntryBuilder tag(Tag value) {
 		return getFactory().tag(value);
 	}
 	
 	/**
 	 * NBT entry that accepts NBT compounds
 	 */
-	public static CompoundTagEntryBuilder compoundTag(CompoundTag value) {
+	@NotNull public static CompoundTagEntryBuilder compoundTag(CompoundTag value) {
 		return getFactory().compoundTag(value);
 	}
 	
 	/**
 	 * Generic resource location entry
 	 */
-	public static ResourceLocationEntryBuilder resource(String resourceName) {
+	@NotNull public static ResourceLocationEntryBuilder resource(String resourceName) {
 		return getFactory().resource(resourceName); 
 	}
 	
 	/**
 	 * Generic resource location entry
 	 */
-	public static ResourceLocationEntryBuilder resource(ResourceLocation value) {
+	@NotNull public static ResourceLocationEntryBuilder resource(ResourceLocation value) {
 		return getFactory().resource(value); 
 	}
 	
@@ -646,7 +647,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
-	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(ExtendedKeyBind keyBind) {
+	@NotNull public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(ExtendedKeyBind keyBind) {
 		return getFactory().key(keyBind);
 	}
 	
@@ -661,7 +662,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
-	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(KeyBindMapping key) {
+	@NotNull public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(KeyBindMapping key) {
 		return getFactory().key(key); 
 	}
 	
@@ -676,7 +677,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
-	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(String key) {
+	@NotNull public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key(String key) {
 		return getFactory().key(key); 
 	}
 	
@@ -691,7 +692,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * {@link RegisterKeyMappingsEvent}
 	 * </b><br>
 	 */
-	public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key() {
+	@NotNull public static @OnlyIn(Dist.CLIENT) KeyBindEntryBuilder key() {
 		return getFactory().key(); 
 	}
 	
@@ -700,7 +701,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Use {@link #itemName} instead to use ResourceLocations as value,
 	 * to allow unknown items.
 	 */
-	public static ItemEntryBuilder item(@Nullable Item value) {
+	@NotNull public static ItemEntryBuilder item(@Nullable Item value) {
 		return getFactory().item(value); 
 	}
 	
@@ -708,7 +709,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Item name entry<br>
 	 * Use {@link #item} instead to use Item objects as value.
 	 */
-	public static ItemNameEntryBuilder itemName(@Nullable ResourceLocation value) {
+	@NotNull public static ItemNameEntryBuilder itemName(@Nullable ResourceLocation value) {
 		return getFactory().itemName(value); 
 	}
 	
@@ -716,7 +717,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Item name entry<br>
 	 * Use {@link #item} instead to use Item objects as value.
 	 */
-	public static ItemNameEntryBuilder itemName(Item value) {
+	@NotNull public static ItemNameEntryBuilder itemName(Item value) {
 		return getFactory().itemName(value); 
 	}
 	
@@ -725,7 +726,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Use {@link #blockName} instead to use ResourceLocations as value,
 	 * to allow unknown blocks.
 	 */
-	public static BlockEntryBuilder block(@Nullable Block value) {
+	@NotNull public static BlockEntryBuilder block(@Nullable Block value) {
 		return getFactory().block(value); 
 	}
 	
@@ -733,7 +734,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Block name entry<br>
 	 * Use {@link #block} instead to use Block objects as value.
 	 */
-	public static BlockNameEntryBuilder blockName(@Nullable ResourceLocation value) {
+	@NotNull public static BlockNameEntryBuilder blockName(@Nullable ResourceLocation value) {
 		return getFactory().blockName(value); 
 	}
 	
@@ -741,7 +742,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Block name entry<br>
 	 * Use {@link #block} instead to use Block objects as value.
 	 */
-	public static BlockNameEntryBuilder blockName(Block value) {
+	@NotNull public static BlockNameEntryBuilder blockName(Block value) {
 		return getFactory().blockName(value); 
 	}
 	
@@ -750,7 +751,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Use {@link #fluidName} instead to use ResourceLocations as value,
 	 * to allow unknown fluids.
 	 */
-	public static FluidEntryBuilder fluid(@Nullable Fluid value) {
+	@NotNull public static FluidEntryBuilder fluid(@Nullable Fluid value) {
 		return getFactory().fluid(value); 
 	}
 	
@@ -758,7 +759,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Fluid name entry<br>
 	 * Use {@link #fluid} instead to use Fluid objects as value.
 	 */
-	public static FluidNameEntryBuilder fluidName(@Nullable ResourceLocation value) {
+	@NotNull public static FluidNameEntryBuilder fluidName(@Nullable ResourceLocation value) {
 		return getFactory().fluidName(value); 
 	}
 	
@@ -766,14 +767,14 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Fluid name entry<br>
 	 * Use {@link #fluid} instead to use Fluid objects as value.
 	 */
-	public static FluidNameEntryBuilder fluidName(Fluid value) {
+	@NotNull public static FluidNameEntryBuilder fluidName(Fluid value) {
 		return getFactory().fluidName(value); 
 	}
 	
 	/**
 	 * String list
 	 */
-	public static StringListEntryBuilder stringList(List<String> value) {
+	@NotNull public static StringListEntryBuilder stringList(List<String> value) {
 		return getFactory().stringList(value); 
 	}
 	
@@ -783,7 +784,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use bound Integer lists
 	 */
-	public static @SuppressWarnings("DeprecatedIsStillUsed")
+	@NotNull public static @SuppressWarnings("DeprecatedIsStillUsed")
 	@Deprecated ByteListEntryBuilder byteList(
 	  List<Byte> value
 	) {
@@ -796,7 +797,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *
 	 * @deprecated Use bound Integer lists
 	 */
-	public static @SuppressWarnings("DeprecatedIsStillUsed")
+	@NotNull public static @SuppressWarnings("DeprecatedIsStillUsed")
 	@Deprecated ShortListEntryBuilder shortList(
 	  List<Short> value
 	) {
@@ -807,7 +808,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Integer list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static IntegerListEntryBuilder intList(List<Integer> value) {
+	@NotNull public static IntegerListEntryBuilder intList(List<Integer> value) {
 		return getFactory().intList(value); 
 	}
 	
@@ -815,7 +816,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Long list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static LongListEntryBuilder longList(List<Long> value) {
+	@NotNull public static LongListEntryBuilder longList(List<Long> value) {
 		return getFactory().longList(value);
 	}
 	
@@ -823,7 +824,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Float list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static FloatListEntryBuilder floatList(List<Float> value) {
+	@NotNull public static FloatListEntryBuilder floatList(List<Float> value) {
 		return getFactory().floatList(value); 
 	}
 	
@@ -831,7 +832,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Double list with elements between {@code min} and {@code max} (inclusive)<br>
 	 * Null bounds are unbound
 	 */
-	public static DoubleListEntryBuilder doubleList(List<Double> value) {
+	@NotNull public static DoubleListEntryBuilder doubleList(List<Double> value) {
 		return getFactory().doubleList(value); 
 	}
 	
@@ -839,7 +840,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Attach an entry as the caption of a list entry<br>
 	 * Changes the value to a {@link Pair} of the caption's value and the list's value
 	 */
-	public static <V, C, G, B extends ListEntryBuilder<V, C, G, B>,
+	@NotNull public static <V, C, G, B extends ListEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & KeyEntryBuilder<CG>>
 	CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> caption(
 	  CB caption, B list
@@ -851,7 +852,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Attach an entry as the caption of a map entry<br>
 	 * Changes the value to a {@link Pair} of the caption's value and the map's value
 	 */
-	public static <K, V, KC, C, KG, G,
+	@NotNull public static <K, V, KC, C, KG, G,
 	  MB extends EntryMapEntryBuilder<K, V, KC, C, KG, G, ?, ?>,
 	  CV, CC, CG,
 	  CB extends ConfigEntryBuilder<CV, CC, CG, CB> & KeyEntryBuilder<CG>>
@@ -865,7 +866,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
 	EntryListEntryBuilder<V, C, G, Builder> list(Builder entry) {
 		return getFactory().list(entry); 
 	}
@@ -875,7 +876,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
 	EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, List<V> value) {
 		return getFactory().list(entry, value); 
 	}
@@ -885,7 +886,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	public static @SuppressWarnings("unchecked") <V, C, G,
+	@NotNull public static @SuppressWarnings("unchecked") <V, C, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>>
 	EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, V... values) {
 		return getFactory().list(entry, values); 
@@ -902,7 +903,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param entry The entry to be used as value, which may be another map
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <K, V, KC, C, KG, G,
+	@NotNull public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>>
 	EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
@@ -923,7 +924,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value
 	 */
-	public static <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>,
+	@NotNull public static <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>>
 	EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
@@ -941,7 +942,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param entry The entry to be used as value, which may be other
 	 *   map entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
 	EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
 	  Builder entry
 	) {
@@ -959,7 +960,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *   map entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value (default: empty map)
 	 */
-	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
 	EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
 	  Builder entry, Map<String, V> value
 	) {
@@ -977,7 +978,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param entry The entry to be used as value, which may be another map
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 */
-	public static <K, V, KC, C, KG, G,
+	@NotNull public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>
 	  > EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
@@ -998,7 +999,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value
 	 */
-	public static <K, V, KC, C, KG, G,
+	@NotNull public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>>
 	EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
@@ -1017,7 +1018,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param leftEntry The entry for the left
 	 * @param rightEntry The entry for the right
 	 */
-	public static <L, R, LC, RC, LG, RG,
+	@NotNull public static <L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
 	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
@@ -1036,7 +1037,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param rightEntry The entry for the right
 	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
-	public static <L, R, LC, RC, LG, RG,
+	@NotNull public static <L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
 	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
@@ -1056,7 +1057,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param middleEntry The entry for the middle
 	 * @param rightEntry The entry for the right
 	 */
-	public static <L, M, R, LC, MC, RC, LG, MG, RG,
+	@NotNull public static <L, M, R, LC, MC, RC, LG, MG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
@@ -1077,7 +1078,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param rightEntry The entry for the right
 	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
-	public static <L, M, R, LC, MC, RC, LG, MG, RG,
+	@NotNull public static <L, M, R, LC, MC, RC, LG, MG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>

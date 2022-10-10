@@ -12,6 +12,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.Color;
@@ -38,11 +39,11 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
 			super(value, Color.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder alpha() {
+		@Override @Contract(pure=true) public @NotNull Builder alpha() {
 			return alpha(true);
 		}
 		
-		@Override @Contract(pure=true) public Builder alpha(boolean hasAlpha) {
+		@Override @Contract(pure=true) public @NotNull Builder alpha(boolean hasAlpha) {
 			Builder copy = copy();
 			copy.alpha = hasAlpha;
 			return copy;

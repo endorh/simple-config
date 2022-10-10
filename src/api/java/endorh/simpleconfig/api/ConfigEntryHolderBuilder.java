@@ -2,6 +2,7 @@ package endorh.simpleconfig.api;
 
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
@@ -9,12 +10,12 @@ public interface ConfigEntryHolderBuilder<Builder extends ConfigEntryHolderBuild
 	/**
 	 * Flag this config section as requiring a restart to be effective
 	 */
-	@Contract("-> this") Builder restart();
+	@Contract("-> this") @NotNull Builder restart();
 	
 	/**
 	 * Add an entry to the config
 	 */
-	@Contract("_, _ -> this") Builder add(
+	@Contract("_, _ -> this") @NotNull Builder add(
 	  String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder
 	);
 	
@@ -26,20 +27,20 @@ public interface ConfigEntryHolderBuilder<Builder extends ConfigEntryHolderBuild
 	 *   As a special case, {@code Supplier} args will be
 	 *   called before being filled in
 	 */
-	@Contract("_, _ -> this") Builder text(String name, Object... args);
+	@Contract("_, _ -> this") @NotNull Builder text(String name, Object... args);
 	
 	/**
 	 * Create a text entry in the config
 	 */
-	@Contract("_ -> this") Builder text(Component text);
+	@Contract("_ -> this") @NotNull Builder text(Component text);
 	
 	/**
 	 * Create a text entry in the config
 	 */
-	@Contract("_ -> this") Builder text(Supplier<Component> textSupplier);
+	@Contract("_ -> this") @NotNull Builder text(Supplier<Component> textSupplier);
 	
 	/**
 	 * Add a config group
 	 */
-	@Contract("_ -> this") Builder n(ConfigGroupBuilder group);
+	@Contract("_ -> this") @NotNull Builder n(ConfigGroupBuilder group);
 }

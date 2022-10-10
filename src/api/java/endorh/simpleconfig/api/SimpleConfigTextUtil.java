@@ -30,11 +30,11 @@ import static java.lang.Math.min;
 	  "%(?:(?<index>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)?(?<width>\\d+)?(?<precision>\\.\\d+)?(?<t>[tT])?(?<conversion>[a-zA-Z%])");
 	protected static final Pattern FORMATTING_CODE_PATTERN = Pattern.compile("§[\\da-fklmnor]");
 	
-	public static String stripFormattingCodes(String text) {
+	public static @NotNull String stripFormattingCodes(@NotNull String text) {
 		return FORMATTING_CODE_PATTERN.matcher(text).replaceAll("");
 	}
 	
-	public static String toTitleCase(String s) {
+	public static @NotNull String toTitleCase(@NotNull String s) {
 		return s.substring(0, 1).toUpperCase() + s.substring(1);
 	}
 	
@@ -45,7 +45,7 @@ import static java.lang.Math.min;
 	 * To use strings as arguments, wrap them in {@link Component}s.<br>
 	 * @param key First key, must be a translation key.
 	 */
-	public static List<Component> paragraph(String key, Object... lines) {
+	public static @NotNull List<Component> paragraph(@NotNull String key, Object... lines) {
 		List<Component> result = new ArrayList<>();
 		List<Object> args = new ArrayList<>();
 		for (Object line: lines) {
@@ -70,7 +70,7 @@ import static java.lang.Math.min;
     * @throws StringIndexOutOfBoundsException if start is out of bounds
     */
 	@OnlyIn(Dist.CLIENT)
-	public static MutableComponent subText(Component component, int start) {
+	public static @NotNull MutableComponent subText(@NotNull Component component, int start) {
 		int length = component.getString().length();
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
 		SubTextVisitor visitor = new SubTextVisitor(start, Integer.MAX_VALUE);
@@ -89,7 +89,7 @@ import static java.lang.Math.min;
 	 *         returned by a call to substring on its contents.
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public static MutableComponent subText(Component component, int start, int end) {
+	public static @NotNull MutableComponent subText(@NotNull Component component, int start, int end) {
 		int length = component.getString().length();
 		if (start < 0 || start > length) throw new StringIndexOutOfBoundsException(start);
 		if (end < 0 || end > length) throw new StringIndexOutOfBoundsException(end);
@@ -146,8 +146,8 @@ import static java.lang.Math.min;
 	 * @return A new component with the style applied to the specified range
 	 * @throws StringIndexOutOfBoundsException if start or end are out of bounds
 	 */
-	@OnlyIn(Dist.CLIENT) public static MutableComponent applyStyle(
-	  Component component, ChatFormatting style, int start, int end
+	@OnlyIn(Dist.CLIENT) public static @NotNull MutableComponent applyStyle(
+	  @NotNull Component component, ChatFormatting style, int start, int end
 	) {
 		return applyStyle(component, Style.EMPTY.applyFormat(style), start, end);
 	}
@@ -163,8 +163,8 @@ import static java.lang.Math.min;
 	 * @return A new component with the style applied to the specified range
 	 * @throws StringIndexOutOfBoundsException if start or end are out of bounds
 	 */
-	@OnlyIn(Dist.CLIENT) public static MutableComponent applyStyle(
-	  Component component, Style style, int start, int end
+	@OnlyIn(Dist.CLIENT) public static @NotNull MutableComponent applyStyle(
+	  @NotNull Component component, Style style, int start, int end
 	) {
 		int length = component.getString().length();
 		checkBounds(start, length);
@@ -230,7 +230,7 @@ import static java.lang.Math.min;
 	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods
 	 */
 	@OnlyIn(Dist.CLIENT)
-	@Internal public static List<Component> splitTtc(String key, Object... args) {
+	@Internal public static @NotNull List<Component> splitTtc(@NotNull String key, Object... args) {
 		if (I18n.exists(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting

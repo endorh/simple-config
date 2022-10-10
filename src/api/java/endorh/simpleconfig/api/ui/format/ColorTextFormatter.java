@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +34,7 @@ public class ColorTextFormatter implements ITextFormatter {
 		return res;
 	}
 	
-	@Override public String stripInsertText(String text) {
+	@Override public @NotNull String stripInsertText(@NotNull String text) {
 		return ITextFormatter.filterCharacters(
 		  text.toUpperCase(),
 		  c -> c == '#' || Character.isDigit(c) || c >= 'A' && c <= 'F');

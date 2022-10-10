@@ -32,6 +32,7 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.fml.ModList;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -485,10 +486,10 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 	
 	private static class CandidateHotKeyProvider implements ExtendedKeyBindProvider {
 		private final Set<ExtendedKeyBind> hotKeys = new HashSet<>();
-		@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+		@Override public @NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds() {
 			return Collections.emptyList();
 		}
-		@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
+		@Override public @NotNull Iterable<ExtendedKeyBind> getAllKeyBinds() {
 			return hotKeys;
 		}
 		
