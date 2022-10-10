@@ -42,30 +42,30 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 			this.sliderFormat = sliderFormat;
 		}
 		
-		@Override @Contract(pure=true) public Self min(V min) {
+		@Override @Contract(pure=true) public @NotNull Self min(V min) {
 			SelfImpl copy = copy();
 			copy.min = min;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self max(V max) {
+		@Override @Contract(pure=true) public @NotNull Self max(V max) {
 			SelfImpl copy = copy();
 			copy.max = max;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self range(V min, V max) {
+		@Override @Contract(pure=true) public @NotNull Self range(V min, V max) {
 			SelfImpl copy = copy();
 			copy.min = min;
 			copy.max = max;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self slider() {
+		@Override @Contract(pure=true) public @NotNull Self slider() {
 			return slider(true);
 		}
 		
-		@Override @Contract(pure=true) public Self slider(boolean asSlider) {
+		@Override @Contract(pure=true) public @NotNull Self slider(boolean asSlider) {
 			if (asSlider) {
 				return slider("simpleconfig.format.slider");
 			} else {
@@ -75,12 +75,12 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 			}
 		}
 		
-		@Override @Contract(pure=true) public Self slider(String sliderTextTranslation) {
+		@Override @Contract(pure=true) public @NotNull Self slider(String sliderTextTranslation) {
 			return slider(v -> new TranslationTextComponent(
 			  sliderTextTranslation, String.format(sliderFormat, v)));
 		}
 		
-		@Override @Contract(pure=true) public Self slider(
+		@Override @Contract(pure=true) public @NotNull Self slider(
 		  Function<V, ITextComponent> sliderTextSupplier
 		) {
 			SelfImpl copy = copy();

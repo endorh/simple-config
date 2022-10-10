@@ -34,6 +34,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 import java.beans.Transient;
@@ -747,7 +748,7 @@ public class DemoConfigCategory {
 		}
 		// If we do not explicitly return Pair.class, the reflection
 		//   API will match fields with type ImmutablePair instead
-		@Override public Class<?> getClass(Pair<String, Integer> value) {
+		@Override public @NotNull Class<?> getClass(Pair<String, Integer> value) {
 			return Pair.class;
 		}
 	}

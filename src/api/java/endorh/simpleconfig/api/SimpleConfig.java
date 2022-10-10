@@ -3,6 +3,7 @@ package endorh.simpleconfig.api;
 import net.minecraft.util.Util;
 import net.minecraftforge.fml.config.ModConfig;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -25,7 +26,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	 * @param name Name of the category
 	 * @throws NoSuchConfigCategoryError if the category is not found
 	 */
-	SimpleConfigCategory getCategory(String name);
+	@NotNull SimpleConfigCategory getCategory(String name);
 	
 	/**
 	 * Get a config group
@@ -33,7 +34,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	 * @param path Name or dot-separated path to the group
 	 * @throws NoSuchConfigGroupError if the group is not found
 	 */
-	SimpleConfigGroup getGroup(String path);
+	@NotNull SimpleConfigGroup getGroup(String path);
 	
 	boolean canEdit();
 	
@@ -77,12 +78,12 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			return BY_CONFIG_TYPE.get(type);
 		}
 		
-		private final ModConfig.Type type;
+		private final @NotNull ModConfig.Type type;
 		private final boolean isLocal;
 		private final boolean isRemote;
-		private final String alias;
+		private final @NotNull String alias;
 		
-		Type(ModConfig.Type type, boolean isLocal, boolean isRemote) {
+		Type(@NotNull ModConfig.Type type, boolean isLocal, boolean isRemote) {
 			this.type = type;
 			this.isLocal = isLocal;
 			this.isRemote = isRemote;
@@ -97,7 +98,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			return isRemote;
 		}
 		
-		public ModConfig.Type asConfigType() {
+		public @NotNull ModConfig.Type asConfigType() {
 			return type;
 		}
 		public EditType asEditType(boolean remote) {
@@ -107,7 +108,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			  t -> t.getType() == this
 			).findFirst().orElse(null));
 		}
-		public String getAlias() {
+		public @NotNull String getAlias() {
 			return alias;
 		}
 	}
@@ -140,18 +141,18 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			return BY_ALIAS.get(extension);
 		}
 		
-		private final Type type;
+		private final @NotNull Type type;
 		private final boolean isRemote;
 		private final boolean onlyRemote;
-		private final String alias;
-		EditType(Type type, boolean isRemote, boolean onlyRemote) {
+		private final @NotNull String alias;
+		EditType(@NotNull Type type, boolean isRemote, boolean onlyRemote) {
 			this.type = type;
 			this.isRemote = isRemote;
 			this.onlyRemote = onlyRemote;
 			alias = name().toLowerCase().replace('_', '-');
 		}
 		
-		public Type getType() {
+		public @NotNull Type getType() {
 			return type;
 		}
 		public boolean isRemote() {
@@ -160,7 +161,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 		public boolean isOnlyRemote() {
 			return onlyRemote;
 		}
-		public String getAlias() {
+		public @NotNull String getAlias() {
 			return alias;
 		}
 	}

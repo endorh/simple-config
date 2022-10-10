@@ -3,6 +3,7 @@ package endorh.simpleconfig.api;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
@@ -14,7 +15,7 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 * and it will be set automatically as the baker (but you
 	 * may not define it and also call this method)
 	 */
-	@Contract("_ -> this") ConfigCategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker);
+	@Contract("_ -> this") @NotNull ConfigCategoryBuilder withBaker(Consumer<SimpleConfigCategory> baker);
 	
 	/**
 	 * Set the background texture to be used
@@ -23,7 +24,7 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 * @see #withIcon(Icon)
 	 * @see #withColor(int)
 	 */
-	@Contract("_ -> this") ConfigCategoryBuilder withBackground(String resourceName);
+	@Contract("_ -> this") @NotNull ConfigCategoryBuilder withBackground(String resourceName);
 	
 	/**
 	 * Set the background texture to be used
@@ -32,7 +33,7 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 * @see #withIcon(Icon)
 	 * @see #withColor(int)
 	 */
-	@Contract("_ -> this") ConfigCategoryBuilder withBackground(ResourceLocation background);
+	@Contract("_ -> this") @NotNull ConfigCategoryBuilder withBackground(ResourceLocation background);
 	
 	/**
 	 * Set the icon of this category.<br>
@@ -42,7 +43,7 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 * @see #withColor(int)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ConfigCategoryBuilder withIcon(Icon icon);
+	@Contract("_ -> this") @NotNull ConfigCategoryBuilder withIcon(Icon icon);
 	
 	/**
 	 * Set the color of this category.<br>
@@ -55,7 +56,7 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 * @see #withIcon(Icon)
 	 * @see #withBackground(ResourceLocation)
 	 */
-	@Contract("_ -> this") ConfigCategoryBuilder withColor(int tint);
+	@Contract("_ -> this") @NotNull ConfigCategoryBuilder withColor(int tint);
 	
-	@Contract("_, _ -> this") ConfigCategoryBuilder n(ConfigGroupBuilder group, int index);
+	@Contract("_, _ -> this") @NotNull ConfigCategoryBuilder n(ConfigGroupBuilder group, int index);
 }

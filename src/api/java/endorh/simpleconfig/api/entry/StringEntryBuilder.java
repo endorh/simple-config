@@ -17,7 +17,7 @@ public interface StringEntryBuilder
 	 * For suggestions, it's possible to provide instead a suggestion supplier,
 	 * to provide dynamic suggestions instead. This is not possible with restrictions.
 	 */
-	@Contract(pure=true) StringEntryBuilder suggest(String... suggestions);
+	@Contract(pure=true) @NotNull StringEntryBuilder suggest(String... suggestions);
 	
 	/**
 	 * Suggest possible values in a combo-box.<br>
@@ -25,14 +25,14 @@ public interface StringEntryBuilder
 	 * For suggestions, it's possible to provide instead a suggestion supplier,
 	 * to provide dynamic suggestions instead. This is not possible with restrictions.
 	 */
-	@Contract(pure=true) StringEntryBuilder suggest(@NotNull List<String> suggestions);
+	@Contract(pure=true) @NotNull StringEntryBuilder suggest(@NotNull List<String> suggestions);
 	
 	/**
 	 * Suggest possible values in a combo-box dynamically.<br>
 	 * To restrict values to the suggestions, use {@link #restrict},
 	 * although this method can only supply a fixed set of choices.
 	 */
-	@Contract(pure=true) StringEntryBuilder suggest(Supplier<List<String>> suggestionSupplier);
+	@Contract(pure=true) @NotNull StringEntryBuilder suggest(Supplier<List<String>> suggestionSupplier);
 	
 	/**
 	 * Restrict the values of this entry to a finite set
@@ -44,7 +44,7 @@ public interface StringEntryBuilder
 	 * suggestions instead when they cannot be determined at
 	 * start-up time
 	 */
-	@Contract(pure=true) StringEntryBuilder restrict(String first, String... choices);
+	@Contract(pure=true) @NotNull StringEntryBuilder restrict(String first, String... choices);
 	
 	/**
 	 * Restrict the values of this entry to a finite set
@@ -56,11 +56,11 @@ public interface StringEntryBuilder
 	 * suggestions instead when they cannot be determined at
 	 * start-up time
 	 */
-	@Contract(pure=true) StringEntryBuilder restrict(@NotNull List<String> choices);
+	@Contract(pure=true) @NotNull StringEntryBuilder restrict(@NotNull List<String> choices);
 	
-	@Contract(pure=true) StringEntryBuilder maxLength(@Range(from=0, to=Integer.MAX_VALUE) int maxLength);
+	@Contract(pure=true) @NotNull StringEntryBuilder maxLength(@Range(from=0, to=Integer.MAX_VALUE) int maxLength);
 	
-	@Contract(pure=true) StringEntryBuilder minLength(@Range(from=0, to=Integer.MAX_VALUE) int minLength);
+	@Contract(pure=true) @NotNull StringEntryBuilder minLength(@Range(from=0, to=Integer.MAX_VALUE) int minLength);
 	
-	@Contract(pure=true) StringEntryBuilder notEmpty();
+	@Contract(pure=true) @NotNull StringEntryBuilder notEmpty();
 }

@@ -2,6 +2,7 @@ package endorh.simpleconfig.api.ui.hotkey;
 
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -49,7 +50,7 @@ class ExtendedKeyBindSettingsImpl implements ExtendedKeyBindSettings {
 		return preventFurther;
 	}
 	
-	@Override public ExtendedKeyBindSettings copy() {
+	@Override public @NotNull ExtendedKeyBindSettings copy() {
 		return new ExtendedKeyBindSettingsBuilder(this).build();
 	}
 	

@@ -2,6 +2,7 @@ package endorh.simpleconfig.api.ui.hotkey;
 
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -12,9 +13,9 @@ import java.lang.reflect.Field;
 		void unregisterProvider(ExtendedKeyBindProvider provider);
 	}
 	public interface ExtendedKeyBindFactory {
-		ExtendedKeyBind create(@Nullable String modId, ITextComponent title, KeyBindMapping definition, Runnable action);
-		KeyBindMapping parseMapping(String serialized);
-		KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings);
+		@NotNull ExtendedKeyBind create(@Nullable String modId, ITextComponent title, KeyBindMapping definition, Runnable action);
+		@NotNull KeyBindMapping parseMapping(String serialized);
+		@NotNull KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings);
 	}
 	
 	private static ExtendedKeyBindFactory factory;

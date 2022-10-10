@@ -11,6 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -31,15 +32,15 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
 			super(value, Byte.class);
 		}
 		
-		@Override @Contract(pure=true) public ByteEntryBuilder min(byte min) {
+		@Override @Contract(pure=true) public @NotNull ByteEntryBuilder min(byte min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public ByteEntryBuilder max(byte max) {
+		@Override @Contract(pure=true) public @NotNull ByteEntryBuilder max(byte max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public ByteEntryBuilder range(byte min, byte max) {
+		@Override @Contract(pure=true) public @NotNull ByteEntryBuilder range(byte min, byte max) {
 			return super.range(min, max);
 		}
 		

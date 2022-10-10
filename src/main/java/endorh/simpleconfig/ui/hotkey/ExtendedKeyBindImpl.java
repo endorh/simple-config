@@ -11,14 +11,15 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
 public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	private final String modId;
-	private ITextComponent title;
-	private KeyBindMapping keyBind;
+	private @NotNull ITextComponent title;
+	private @NotNull KeyBindMapping keyBind;
 	private @Nullable ITextComponent candidateName;
 	private @Nullable KeyBindMapping candidateDefinition;
 	private final Runnable callback;
@@ -27,17 +28,17 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	
 	@SuppressWarnings("unused")
 	protected static final ExtendedKeyBindFactory FACTORY = new ExtendedKeyBindFactory() {
-		@Override public ExtendedKeyBind create(
+		@Override public @NotNull ExtendedKeyBind create(
 		  @Nullable String modId, ITextComponent title, KeyBindMapping definition, Runnable action
 		) {
 			return new ExtendedKeyBindImpl(modId, title, definition, action);
 		}
 		
-		@Override public KeyBindMapping parseMapping(String serialized) {
+		@Override public @NotNull KeyBindMapping parseMapping(String serialized) {
 			return KeyBindMappingImpl.parse(serialized);
 		}
 		
-		@Override public KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings) {
+		@Override public @NotNull KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings) {
 			return KeyBindMappingImpl.unset(settings);
 		}
 	};
@@ -47,7 +48,7 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	}
 	
 	public ExtendedKeyBindImpl(
-	  @Nullable String modId, ITextComponent title,
+	  @Nullable String modId, @NotNull ITextComponent title,
 	  KeyBindMapping keyBind, Runnable callback
 	) {
 		this.modId = modId;
@@ -59,16 +60,16 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	@Override public @Nullable String getModId() {
 		return modId;
 	}
-	@Override public ITextComponent getTitle() {
+	@Override public @NotNull ITextComponent getTitle() {
 		return title;
 	}
-	@Override public void setTitle(ITextComponent title) {
+	@Override public void setTitle(@NotNull ITextComponent title) {
 		this.title = title;
 	}
-	@Override public KeyBindMapping getDefinition() {
+	@Override public @NotNull KeyBindMapping getDefinition() {
 		return keyBind;
 	}
-	@Override public void setDefinition(KeyBindMapping keyBind) {
+	@Override public void setDefinition(@NotNull KeyBindMapping keyBind) {
 		this.keyBind = keyBind;
 	}
 	

@@ -15,6 +15,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -34,32 +35,32 @@ public class DoubleRangeEntry
 			super(value, DoubleRange.class);
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder min(double min) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder min(double min) {
 			return min((Double) min);
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder max(double max) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder max(double max) {
 			return max((Double) max);
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder withBounds(double min, double max) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder withBounds(double min, double max) {
 			return withBounds((Double) min, (Double) max);
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder fieldScale(double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder fieldScale(double scale) {
 			return field(scale(scale), scale(1F / scale), DoubleRange.class);
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder fieldScale(String name, double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder fieldScale(String name, double scale) {
 			return addField(BackingFieldBinding.withName(
 			  name, BackingFieldBuilder.of(scale(scale), DoubleRange.class)));
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder addFieldScale(String suffix, double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder addFieldScale(String suffix, double scale) {
 			return addField(suffix, scale(scale), DoubleRange.class);
 		}
 		
-		@Override @Contract(pure=true) public DoubleRangeEntryBuilder add_field_scale(String suffix, double scale) {
+		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder add_field_scale(String suffix, double scale) {
 			return add_field(suffix, scale(scale), DoubleRange.class);
 		}
 		

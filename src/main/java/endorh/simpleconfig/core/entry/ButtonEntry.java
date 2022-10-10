@@ -11,6 +11,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -36,20 +37,20 @@ public class ButtonEntry extends GUIOnlyEntry<
 			super(value, Void.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder label(String translation) {
+		@Override @Contract(pure=true) public @NotNull Builder label(String translation) {
 			Builder copy = copy();
 			final TranslationTextComponent ttc = new TranslationTextComponent(translation);
 			copy.buttonLabelSupplier = () -> ttc;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder label(ITextComponent label) {
+		@Override @Contract(pure=true) public @NotNull Builder label(ITextComponent label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = () -> label;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder label(Supplier<ITextComponent> label) {
+		@Override @Contract(pure=true) public @NotNull Builder label(Supplier<ITextComponent> label) {
 			Builder copy = copy();
 			copy.buttonLabelSupplier = label;
 			return copy;

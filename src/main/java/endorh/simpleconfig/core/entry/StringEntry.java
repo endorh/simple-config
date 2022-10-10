@@ -55,11 +55,11 @@ public class StringEntry
 			super(value, String.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(String... suggestions) {
+		@Override @Contract(pure=true) public @NotNull Builder suggest(String... suggestions) {
 			return suggest(Arrays.stream(suggestions).collect(Collectors.toList()));
 		}
 		
-		@Override @Contract(pure=true)public Builder suggest(@NotNull List<String> suggestions) {
+		@Override @Contract(pure=true)public @NotNull Builder suggest(@NotNull List<String> suggestions) {
 			Builder copy = copy();
 			Objects.requireNonNull(suggestions);
 			copy.choiceSupplier = () -> suggestions;
@@ -67,7 +67,7 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(
+		@Override @Contract(pure=true) public @NotNull Builder suggest(
 		  Supplier<List<String>> suggestionSupplier
 		) {
 			Builder copy = copy();
@@ -76,14 +76,14 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder restrict(String first, String... choices) {
+		@Override @Contract(pure=true) public @NotNull Builder restrict(String first, String... choices) {
 			List<String> list = new ArrayList<>(choices.length + 1);
 			list.add(first);
 			list.addAll(Arrays.asList(choices));
 			return restrict(list);
 		}
 		
-		@Override @Contract(pure=true) public Builder restrict(@NotNull List<String> choices) {
+		@Override @Contract(pure=true) public @NotNull Builder restrict(@NotNull List<String> choices) {
 			Builder copy = copy();
 			if (choices.isEmpty())
 				throw new IllegalArgumentException("At least one choice must be specified");
@@ -93,7 +93,7 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder maxLength(
+		@Override @Contract(pure=true) public @NotNull Builder maxLength(
 		  @Range(from=0, to=Integer.MAX_VALUE) int maxLength
 		) {
 			Builder copy = copy();
@@ -101,7 +101,7 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder minLength(
+		@Override @Contract(pure=true) public @NotNull Builder minLength(
 		  @Range(from=0, to=Integer.MAX_VALUE) int minLength
 		) {
 			Builder copy = copy();
@@ -109,7 +109,7 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder notEmpty() {
+		@Override @Contract(pure=true) public @NotNull Builder notEmpty() {
 			return minLength(1);
 		}
 		

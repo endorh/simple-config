@@ -2,6 +2,7 @@ package endorh.simpleconfig.api.ui.format;
 
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.util.text.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class NumberTextFormatter implements ITextFormatter {
@@ -87,7 +88,7 @@ public class NumberTextFormatter implements ITextFormatter {
 		return tc.append(fragment);
 	}
 	
-	@Override public String stripInsertText(String text) {
+	@Override public @NotNull String stripInsertText(@NotNull String text) {
 		return ITextFormatter.filterCharacters(
 		  text, c -> Character.isDigit(c) || c == '-' || c == '+' || c == '_'
 		             || !integer && (c == '.' || c == 'e' || c == 'E'));

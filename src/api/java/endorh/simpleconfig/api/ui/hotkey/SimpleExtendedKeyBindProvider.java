@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.ui.hotkey;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 
 public class SimpleExtendedKeyBindProvider implements ExtendedKeyBindProvider {
@@ -15,7 +17,7 @@ public class SimpleExtendedKeyBindProvider implements ExtendedKeyBindProvider {
 		this.keyBinds = keyBinds;
 	}
 	
-	@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+	@Override public @NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds() {
 		return keyBinds;
 	}
 	

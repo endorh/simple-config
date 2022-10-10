@@ -7,6 +7,7 @@ import endorh.simpleconfig.api.ui.icon.Icon.IconBuilder;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
 	public static final ResourceLocation TEXTURE = new ResourceLocation(
@@ -23,7 +24,7 @@ import net.minecraft.util.text.TextFormatting;
 		  COMMON_CLIENT = b.at(48, 0),
 		  COMMON_SERVER = b.at(64, 0);
 		
-		public static Icon iconFor(Type type) {
+		public static @NotNull Icon iconFor(Type type) {
 			switch (type) {
 				case CLIENT: return CLIENT;
 				case SERVER: return SERVER;
@@ -31,7 +32,7 @@ import net.minecraft.util.text.TextFormatting;
 				default: throw new IllegalArgumentException("Unknown type: " + type);
 			}
 		}
-		public static Icon iconFor(EditType type) {
+		public static @NotNull Icon iconFor(EditType type) {
 			switch (type) {
 				case CLIENT: return CLIENT;
 				case SERVER: return SERVER;

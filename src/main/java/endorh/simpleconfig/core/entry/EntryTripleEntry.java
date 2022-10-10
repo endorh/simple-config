@@ -19,6 +19,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
@@ -123,7 +124,7 @@ public class EntryTripleEntry<
 		}
 		
 		@Override @Contract(pure=true)
-		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withRightIcon(
+		public @NotNull Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withRightIcon(
 		  @Nullable Icon rightIcon
 		) {
 			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = copy();
@@ -132,7 +133,7 @@ public class EntryTripleEntry<
 		}
 		
 		@Override @Contract(pure=true)
-		public Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withIcons(
+		public @NotNull Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> withIcons(
 		  @Nullable Icon leftIcon, @Nullable Icon rightIcon
 		) {
 			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = copy();

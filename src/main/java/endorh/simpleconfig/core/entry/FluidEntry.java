@@ -61,35 +61,35 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			super(value, Fluid.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
+		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder setExcludeFlowing(boolean excludeFlowing) {
+		@Override @Contract(pure=true) public @NotNull Builder setExcludeFlowing(boolean excludeFlowing) {
 			Builder copy = copy();
 			copy.excludeFlowing = excludeFlowing;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Predicate<Fluid> filter) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Predicate<Fluid> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder from(List<Fluid> choices) {
+		@Override @Contract(pure=true) public @NotNull Builder from(List<Fluid> choices) {
 			List<Fluid> listCopy = new ArrayList<>(choices);
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Fluid... choices) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Fluid... choices) {
 			List<Fluid> listCopy = Arrays.asList(choices);
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(ITag<Fluid> tag) {
+		@Override @Contract(pure=true) public @NotNull Builder from(ITag<Fluid> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

@@ -60,51 +60,51 @@ public abstract class AbstractRangeEntry<
 			super(value, typeClass);
 		}
 		
-		@Override @Contract(pure=true) public Self min(V min) {
+		@Override @Contract(pure=true) public @NotNull Self min(V min) {
 			SelfImpl copy = copy();
 			copy.min = min;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self max(V max) {
+		@Override @Contract(pure=true) public @NotNull Self max(V max) {
 			SelfImpl copy = copy();
 			copy.max = max;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self withBounds(V min, V max) {
+		@Override @Contract(pure=true) public @NotNull Self withBounds(V min, V max) {
 			return min(min).max(max);
 		}
 		
-		@Override @Contract(pure=true) public Self canEditMinExclusive() {
+		@Override @Contract(pure=true) public @NotNull Self canEditMinExclusive() {
 			return canEditMinExclusive(true);
 		}
 		
-		@Override @Contract(pure=true) public Self canEditMinExclusive(boolean exclusive) {
+		@Override @Contract(pure=true) public @NotNull Self canEditMinExclusive(boolean exclusive) {
 			SelfImpl copy = copy();
 			copy.canEditMinExclusiveness = exclusive;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self canEditMaxExclusive() {
+		@Override @Contract(pure=true) public @NotNull Self canEditMaxExclusive() {
 			return canEditMaxExclusive(true);
 		}
 		
-		@Override @Contract(pure=true) public Self canEditMaxExclusive(boolean exclusive) {
+		@Override @Contract(pure=true) public @NotNull Self canEditMaxExclusive(boolean exclusive) {
 			SelfImpl copy = copy();
 			copy.canEditMaxExclusiveness = exclusive;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self canEditExclusiveness(boolean min, boolean max) {
+		@Override @Contract(pure=true) public @NotNull Self canEditExclusiveness(boolean min, boolean max) {
 			return canEditMinExclusive(min).canEditMaxExclusive(max);
 		}
 		
-		@Override @Contract(pure=true) public Self canEditExclusiveness() {
+		@Override @Contract(pure=true) public @NotNull Self canEditExclusiveness() {
 			return canEditExclusiveness(true);
 		}
 		
-		@Override @Contract(pure=true) public Self canEditExclusiveness(boolean canEdit) {
+		@Override @Contract(pure=true) public @NotNull Self canEditExclusiveness(boolean canEdit) {
 			return canEditExclusiveness(canEdit, canEdit);
 		}
 		
@@ -237,17 +237,17 @@ public abstract class AbstractRangeEntry<
 				super(value, typeClass);
 			}
 			
-			@Override @Contract(pure=true) public Self allowEmpty(boolean empty) {
+			@Override @Contract(pure=true) public @NotNull Self allowEmpty(boolean empty) {
 				return minSize(empty? Double.NEGATIVE_INFINITY : 0D);
 			}
 			
-			@Override @Contract(pure=true) public Self minSize(double size) {
+			@Override @Contract(pure=true) public @NotNull Self minSize(double size) {
 				SelfImpl copy = copy();
 				copy.minSize = size;
 				return copy.castSelf();
 			}
 			
-			@Override @Contract(pure=true) public Self maxSize(double size) {
+			@Override @Contract(pure=true) public @NotNull Self maxSize(double size) {
 				SelfImpl copy = copy();
 				copy.maxSize = size;
 				return copy.castSelf();

@@ -8,6 +8,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 			this(Pattern.compile(pattern, flags));
 		}
 		
-		@Override @Contract(pure=true) public Builder flags(int flags) {
+		@Override @Contract(pure=true) public @NotNull Builder flags(int flags) {
 			Builder copy = copy();
 			try {
 				copy.value = Pattern.compile(value.pattern(), flags);

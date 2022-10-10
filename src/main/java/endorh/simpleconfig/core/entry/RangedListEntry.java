@@ -45,19 +45,19 @@ public abstract class RangedListEntry<
 			super(value, innerType);
 		}
 		
-		@Override @Contract(pure=true) public Self min(@NotNull V min) {
+		@Override @Contract(pure=true) public @NotNull Self min(@NotNull V min) {
 			SelfImpl copy = copy();
 			copy.min = min;
 			return copy.elemError(clamp(elemErrorSupplier));
 		}
 		
-		@Override @Contract(pure=true) public Self max(@NotNull V max) {
+		@Override @Contract(pure=true) public @NotNull Self max(@NotNull V max) {
 			SelfImpl copy = copy();
 			copy.max = max;
 			return copy.elemError(clamp(elemErrorSupplier));
 		}
 		
-		@Override @Contract(pure=true) public Self range(V min, V max) {
+		@Override @Contract(pure=true) public @NotNull Self range(V min, V max) {
 			SelfImpl copy = copy();
 			copy.min = min;
 			copy.max = max;
@@ -65,7 +65,7 @@ public abstract class RangedListEntry<
 		}
 		
 		@Contract(pure=true)
-		@Override public Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
+		@Override public @NotNull Self elemError(Function<V, Optional<ITextComponent>> errorSupplier) {
 			return super.elemError(clamp(errorSupplier));
 		}
 		

@@ -18,6 +18,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -55,7 +56,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 			  .collect(Collectors.toList());
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(Ingredient ingredient) {
+		@Override @Contract(pure=true) public @NotNull Builder suggest(Ingredient ingredient) {
 			Builder copy = copy();
 			copy.suggestionSupplier =
 			  () -> Arrays.stream(ingredient.getMatchingStacks()).map(
@@ -64,7 +65,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder suggest(ITag<Item> tag) {
+		@Override @Contract(pure=true) public @NotNull Builder suggest(ITag<Item> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

@@ -11,10 +11,10 @@ public abstract class AbstractRange<
   > implements Map.Entry<V, V> {
 	private final boolean exclusiveMin;
 	private final boolean exclusiveMax;
-	private final V min;
-	private final V max;
+	private final @NotNull V min;
+	private final @NotNull V max;
 	
-	protected AbstractRange(V min, V max, boolean exclusiveMin, boolean exclusiveMax) {
+	protected AbstractRange(@NotNull V min, @NotNull V max, boolean exclusiveMin, boolean exclusiveMax) {
 		this.min = min;
 		this.max = max;
 		this.exclusiveMin = exclusiveMin;
@@ -27,9 +27,9 @@ public abstract class AbstractRange<
 		return (isExclusiveMin() ? l < 0 : l <= 0) && (isExclusiveMax() ? r > 0 : r >= 0);
 	}
 	
-	public abstract Self create(V min, V max, boolean exclusiveMin, boolean exclusiveMax);
+	public abstract @NotNull Self create(@NotNull V min, @NotNull V max, boolean exclusiveMin, boolean exclusiveMax);
 	
-	public Self intersect(Self range) {
+	public @NotNull Self intersect(@NotNull Self range) {
 		V mn = getMin(), rmn = range.getMin(), mx = getMax(), rmx = range.getMax();
 		int l = mn.compareTo(range.getMin());
 		int r = mx.compareTo(range.getMax());
@@ -47,19 +47,19 @@ public abstract class AbstractRange<
 		return exclusiveMax;
 	}
 	
-	public V getMin() {
+	public @NotNull V getMin() {
 		return min;
 	}
 	
-	public V getMax() {
+	public @NotNull V getMax() {
 		return max;
 	}
 	
-	@Override public V getKey() {
+	@Override public @NotNull V getKey() {
 		return getMin();
 	}
 	
-	@Override public V getValue() {
+	@Override public @NotNull V getValue() {
 		return getMax();
 	}
 	
@@ -107,7 +107,7 @@ public abstract class AbstractRange<
 	
 	public static abstract class AbstractNumberRange<
 	  N extends Number & Comparable<N>, Self extends AbstractNumberRange<N, Self>
-	  > extends AbstractSizedRange<N, Self> {
+	> extends AbstractSizedRange<N, Self> {
 		protected AbstractNumberRange(N min, N max, boolean exclusiveMin, boolean exclusiveMax) {
 			super(min, max, exclusiveMin, exclusiveMax);
 		}
@@ -137,22 +137,22 @@ public abstract class AbstractRange<
 			return getSize() * 0.5D;
 		}
 		
-		public abstract Self translate(N translation);
-		public abstract Self growRelative(N left, N right);
-		public Self growRelative(N both) {
+		public abstract @NotNull Self translate(@NotNull N translation);
+		public abstract @NotNull Self growRelative(@NotNull N left, @NotNull N right);
+		public @NotNull Self growRelative(@NotNull N both) {
 			return growRelative(both, both);
 		}
-		public abstract Self grow(N left, N right);
-		public Self grow(N both) {
+		public abstract @NotNull Self grow(@NotNull N left, @NotNull N right);
+		public @NotNull Self grow(@NotNull N both) {
 			return grow(both, both);
 		}
 		
-		public abstract Self shrinkRelative(N left, N right);
-		public Self shrinkRelative(N both) {
+		public abstract @NotNull Self shrinkRelative(@NotNull N left, @NotNull N right);
+		public @NotNull Self shrinkRelative(@NotNull N both) {
 			return shrinkRelative(both, both);
 		}
-		public abstract Self shrink(N left, N right);
-		public Self shrink(N both) {
+		public abstract @NotNull Self shrink(@NotNull N left, @NotNull N right);
+		public @NotNull Self shrink(@NotNull N both) {
 			return shrink(both, both);
 		}
 		
@@ -170,37 +170,37 @@ public abstract class AbstractRange<
 		public static final DoubleRange OPEN_UNIT = new DoubleRange(0D, 1D, true, true);
 		public static final DoubleRange UNITARY = new DoubleRange(-1D, 1D, false, false);
 		
-		public static DoubleRange inclusive(double min, double max) {
+		public static @NotNull DoubleRange inclusive(double min, double max) {
 			return new DoubleRange(min, max, false, false);
 		}
 		
-		public static DoubleRange exclusive(double min, double max) {
+		public static @NotNull DoubleRange exclusive(double min, double max) {
 			return new DoubleRange(min, max, true, true);
 		}
 		
-		public static DoubleRange of(
+		public static @NotNull DoubleRange of(
 		  double min, boolean exclusiveMin, double max, boolean exclusiveMax
 		) {
 			return new DoubleRange(min, max, exclusiveMin, exclusiveMax);
 		}
 		
-		public static DoubleRange minimum(double min) {
+		public static @NotNull DoubleRange minimum(double min) {
 			return minimum(min, false);
 		}
 		
-		public static DoubleRange minimum(double min, boolean exclusive) {
+		public static @NotNull DoubleRange minimum(double min, boolean exclusive) {
 			return new DoubleRange(min, Double.POSITIVE_INFINITY, exclusive, false);
 		}
 		
-		public static DoubleRange maximum(double max) {
+		public static @NotNull DoubleRange maximum(double max) {
 			return maximum(max, false);
 		}
 		
-		public static DoubleRange maximum(double max, boolean exclusive) {
+		public static @NotNull DoubleRange maximum(double max, boolean exclusive) {
 			return new DoubleRange(Double.NEGATIVE_INFINITY, max, false, exclusive);
 		}
 		
-		public static DoubleRange exactly(double value) {
+		public static @NotNull DoubleRange exactly(double value) {
 			return new DoubleRange(value, value, false, false);
 		}
 		
@@ -228,7 +228,7 @@ public abstract class AbstractRange<
 		 * density of floating point numbers for big ranges.<br>
 		 * IF this range is empty, {@code null} is returned.
 		 */
-		@Override public Double randomUniform(Random random) {
+		@Override public @NotNull Double randomUniform(Random random) {
 			double min = Math.max(getMin(), -Double.MAX_VALUE);
 			double max = Math.min(getMax(), Double.MAX_VALUE);
 			if (max > min || max == min && isExclusiveMin() || isExclusiveMax()) return null;
@@ -240,76 +240,66 @@ public abstract class AbstractRange<
 			return v;
 		}
 		
-		@Override public Double randomGaussian(Random random) {
+		@Override public @NotNull Double randomGaussian(Random random) {
 			double min = Math.max(getMin(), -Double.MAX_VALUE);
 			double max = Math.min(getMax(), Double.MAX_VALUE);
 			if (max < min) return null;
 			return (min + max) * 0.5D + random.nextGaussian() * (max - min) * 0.5D;
 		}
 		
-		@Override public DoubleRange create(
-		  Double min, Double max, boolean exclusiveMin, boolean exclusiveMax
+		@Override public @NotNull DoubleRange create(
+		  @NotNull Double min, @NotNull Double max, boolean exclusiveMin, boolean exclusiveMax
 		) {
 			return new DoubleRange(min, max, exclusiveMin, exclusiveMax);
 		}
 		
-		public DoubleRange translate(double translation) {
+		public @NotNull DoubleRange translate(double translation) {
 			return translate((Double) translation);
 		}
 		
-		@Override public DoubleRange translate(Double translation) {
+		@Override public @NotNull DoubleRange translate(@NotNull Double translation) {
 			return create(getMin() + translation, getMax() + translation, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public DoubleRange growRelative(double left, double right) {
+		public @NotNull DoubleRange growRelative(double left, double right) {
 			return growRelative((Double) left, (Double) right);
 		}
-		
-		public DoubleRange growRelative(double both) {
+		public @NotNull DoubleRange growRelative(double both) {
 			return growRelative((Double) both);
 		}
-		
-		@Override public DoubleRange growRelative(Double left, Double right) {
+		@Override public @NotNull DoubleRange growRelative(@NotNull Double left, @NotNull Double right) {
 			double size = getSize();
 			return create(
 			  getMin() - left * size, getMax() + right * size,
 			  isExclusiveMin(), isExclusiveMax());
 		}
-		
-		public DoubleRange grow(double left, double right) {
+		public @NotNull DoubleRange grow(double left, double right) {
 			return grow((Double) left, (Double) right);
 		}
-		
-		public DoubleRange grow(double both) {
+		public @NotNull DoubleRange grow(double both) {
 			return grow((Double) both);
 		}
-		
-		@Override public DoubleRange grow(Double left, Double right) {
+		@Override public @NotNull DoubleRange grow(@NotNull Double left, @NotNull Double right) {
 			return create(getMin() - left, getMax() + right, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public DoubleRange shrinkRelative(double left, double right) {
+		public @NotNull DoubleRange shrinkRelative(double left, double right) {
 			return shrinkRelative((Double) left, (Double) right);
 		}
-		
-		public DoubleRange shrinkRelative(double both) {
+		public @NotNull DoubleRange shrinkRelative(double both) {
 			return shrinkRelative((Double) both);
 		}
-		
-		@Override public DoubleRange shrinkRelative(Double left, Double right) {
+		@Override public @NotNull DoubleRange shrinkRelative(@NotNull Double left, @NotNull Double right) {
 			double size = getSize();
 			return create(getMin() + left * size, getMax() - right * size, isExclusiveMin(), isExclusiveMax());
 		}
-		
-		public DoubleRange shrink(double left, double right) {
+		public @NotNull DoubleRange shrink(double left, double right) {
 			return shrink((Double) left, (Double) right);
 		}
-		
-		public DoubleRange shrink(double both) {
+		public @NotNull DoubleRange shrink(double both) {
 			return shrink((Double) both);
 		}
-		
-		@Override public DoubleRange shrink(Double left, Double right) {
+		@Override public @NotNull DoubleRange shrink(@NotNull Double left, @NotNull Double right) {
 			return create(getMin() + left, getMax() - right, isExclusiveMin(), isExclusiveMax());
 		}
 		
@@ -333,37 +323,37 @@ public abstract class AbstractRange<
 		public static final FloatRange OPEN_UNIT = new FloatRange(0F, 1F, true, true);
 		public static final FloatRange UNITARY = new FloatRange(-1F, 1F, false, false);
 		
-		public static FloatRange inclusive(float min, float max) {
+		public static @NotNull FloatRange inclusive(float min, float max) {
 			return new FloatRange(min, max, false, false);
 		}
 		
-		public static FloatRange exclusive(float min, float max) {
+		public static @NotNull FloatRange exclusive(float min, float max) {
 			return new FloatRange(min, max, true, true);
 		}
 		
-		public static FloatRange of(
+		public static @NotNull FloatRange of(
 		  float min, boolean exclusiveMin, float max, boolean exclusiveMax
 		) {
 			return new FloatRange(min, max, exclusiveMin, exclusiveMax);
 		}
 		
-		public static FloatRange minimum(float min) {
+		public static @NotNull FloatRange minimum(float min) {
 			return minimum(min, false);
 		}
 		
-		public static FloatRange minimum(float min, boolean exclusive) {
+		public static @NotNull FloatRange minimum(float min, boolean exclusive) {
 			return new FloatRange(min, Float.POSITIVE_INFINITY, exclusive, false);
 		}
 		
-		public static FloatRange maximum(float max) {
+		public static @NotNull FloatRange maximum(float max) {
 			return maximum(max, false);
 		}
 		
-		public static FloatRange maximum(float max, boolean exclusive) {
+		public static @NotNull FloatRange maximum(float max, boolean exclusive) {
 			return new FloatRange(Float.NEGATIVE_INFINITY, max, false, exclusive);
 		}
 		
-		public static FloatRange exactly(float value) {
+		public static @NotNull FloatRange exactly(float value) {
 			return new FloatRange(value, value, false, false);
 		}
 		
@@ -410,8 +400,8 @@ public abstract class AbstractRange<
 			return (min + max) * 0.5F + (float) random.nextGaussian() * (max - min) * 0.5F;
 		}
 		
-		@Override public FloatRange create(
-		  Float min, Float max, boolean exclusiveMin, boolean exclusiveMax
+		@Override public @NotNull FloatRange create(
+		  @NotNull Float min, @NotNull Float max, boolean exclusiveMin, boolean exclusiveMax
 		) {
 			return new FloatRange(min, max, exclusiveMin, exclusiveMax);
 		}
@@ -420,66 +410,66 @@ public abstract class AbstractRange<
 			return (float) getSize();
 		}
 		
-		public FloatRange translate(float translation) {
+		public @NotNull FloatRange translate(float translation) {
 			return translate((Float) translation);
 		}
 		
-		@Override public FloatRange translate(Float translation) {
+		@Override public @NotNull FloatRange translate(@NotNull Float translation) {
 			return create(
 			  getMin() + translation, getMax() + translation,
 			  isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public FloatRange growRelative(float left, float right) {
+		public @NotNull FloatRange growRelative(float left, float right) {
 			return growRelative((Float) left, (Float) right);
 		}
 		
-		public FloatRange growRelative(float both) {
+		public @NotNull FloatRange growRelative(float both) {
 			return growRelative((Float) both);
 		}
 		
-		@Override public FloatRange growRelative(Float left, Float right) {
+		@Override public @NotNull FloatRange growRelative(@NotNull Float left, @NotNull Float right) {
 			float size = getFloatSize();
 			return create(
 			  getMin() - left * size, getMax() + right * size,
 			  isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public FloatRange grow(float left, float right) {
+		public @NotNull FloatRange grow(float left, float right) {
 			return grow((Float) left, (Float) right);
 		}
 		
-		public FloatRange grow(float both) {
+		public @NotNull FloatRange grow(float both) {
 			return grow((Float) both);
 		}
 		
-		@Override public FloatRange grow(Float left, Float right) {
+		@Override public @NotNull FloatRange grow(@NotNull Float left, @NotNull Float right) {
 			return create(getMin() - left, getMax() + right, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public FloatRange shrinkRelative(float left, float right) {
+		public @NotNull FloatRange shrinkRelative(float left, float right) {
 			return shrinkRelative((Float) left, (Float) right);
 		}
 		
-		public FloatRange shrinkRelative(float both) {
+		public @NotNull FloatRange shrinkRelative(float both) {
 			return shrinkRelative((Float) both);
 		}
 		
-		@Override public FloatRange shrinkRelative(Float left, Float right) {
+		@Override public @NotNull FloatRange shrinkRelative(@NotNull Float left, @NotNull Float right) {
 			float size = getFloatSize();
 			return create(
 			  getMin() + left * size, getMax() - right * size, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public FloatRange shrink(float left, float right) {
+		public @NotNull FloatRange shrink(float left, float right) {
 			return shrink((Float) left, (Float) right);
 		}
 		
-		public FloatRange shrink(float both) {
+		public @NotNull FloatRange shrink(float both) {
 			return shrink((Float) both);
 		}
 		
-		@Override public FloatRange shrink(Float left, Float right) {
+		@Override public @NotNull FloatRange shrink(@NotNull Float left, @NotNull Float right) {
 			return create(getMin() + left, getMax() - right, isExclusiveMin(), isExclusiveMax());
 		}
 		
@@ -504,23 +494,23 @@ public abstract class AbstractRange<
 		public static final LongRange FULL = new LongRange(Long.MIN_VALUE, Long.MAX_VALUE, false, false);
 		public static final LongRange UNIT = new LongRange(0, 1, false, false);
 		
-		public static LongRange inclusive(long min, long max) {
+		public static @NotNull LongRange inclusive(long min, long max) {
 			return new LongRange(min, max, false, false);
 		}
 		
-		public static LongRange exclusive(long min, long max) {
+		public static @NotNull LongRange exclusive(long min, long max) {
 			return new LongRange(min, max, true, true);
 		}
 		
-		public static LongRange exactly(long value) {
+		public static @NotNull LongRange exactly(long value) {
 			return new LongRange(value, value, false, false);
 		}
 		
-		public static LongRange range(long upToExclusive) {
+		public static @NotNull LongRange range(long upToExclusive) {
 			return new LongRange(0, upToExclusive, false, true);
 		}
 		
-		public static LongRange rangeFrom1(long upToInclusive) {
+		public static @NotNull LongRange rangeFrom1(long upToInclusive) {
 			return new LongRange(0, upToInclusive, true, false);
 		}
 		
@@ -549,23 +539,23 @@ public abstract class AbstractRange<
 			return Math.round((min + max) * 0.5D + random.nextGaussian() * (max - min));
 		}
 		
-		public LongRange translate(long translation) {
+		public @NotNull LongRange translate(long translation) {
 			return translate((Long) translation);
 		}
 		
-		@Override public LongRange translate(Long translation) {
+		@Override public @NotNull LongRange translate(@NotNull Long translation) {
 			return create(getMin() + translation, getMax() + translation, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public LongRange growRelative(long left, long right) {
+		public @NotNull LongRange growRelative(long left, long right) {
 			return growRelative((Long) left, (Long) right);
 		}
 		
-		public LongRange growRelative(long both) {
+		public @NotNull LongRange growRelative(long both) {
 			return growRelative((Long) both);
 		}
 		
-		@Override public LongRange growRelative(Long left, Long right) {
+		@Override public @NotNull LongRange growRelative(@NotNull Long left, @NotNull Long right) {
 			double size = getSize();
 			return create(
 			  (long) Math.floor(getMin() - left * size),
@@ -573,27 +563,27 @@ public abstract class AbstractRange<
 			  isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public LongRange grow(long left, long right) {
+		public @NotNull LongRange grow(long left, long right) {
 			return grow((Long) left, (Long) right);
 		}
 		
-		public LongRange grow(long both) {
+		public @NotNull LongRange grow(long both) {
 			return grow((Long) both);
 		}
 		
-		@Override public LongRange grow(Long left, Long right) {
+		@Override public @NotNull LongRange grow(@NotNull Long left, @NotNull Long right) {
 			return create(getMin() - left, getMax() + right, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public LongRange shrinkRelative(long left, long right) {
+		public @NotNull LongRange shrinkRelative(long left, long right) {
 			return shrinkRelative((Long) left, (Long) right);
 		}
 		
-		public LongRange shrinkRelative(long both) {
+		public @NotNull LongRange shrinkRelative(long both) {
 			return shrinkRelative((Long) both);
 		}
 		
-		@Override public LongRange shrinkRelative(Long left, Long right) {
+		@Override public @NotNull LongRange shrinkRelative(@NotNull Long left, @NotNull Long right) {
 			double size = getSize();
 			return create(
 			  (long) Math.ceil(getMin() + left * size),
@@ -601,20 +591,20 @@ public abstract class AbstractRange<
 			  isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public LongRange shrink(long left, long right) {
+		public @NotNull LongRange shrink(long left, long right) {
 			return shrink((Long) left, (Long) right);
 		}
 		
-		public LongRange shrink(long both) {
+		public @NotNull LongRange shrink(long both) {
 			return shrink((Long) both);
 		}
 		
-		@Override public LongRange shrink(Long left, Long right) {
+		@Override public @NotNull LongRange shrink(@NotNull Long left, @NotNull Long right) {
 			return create(getMin() + left, getMax() - right, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		@Override public LongRange create(
-		  Long min, Long max, boolean exclusiveMin, boolean exclusiveMax
+		@Override public @NotNull LongRange create(
+		  @NotNull Long min, @NotNull Long max, boolean exclusiveMin, boolean exclusiveMax
 		) {
 			return new LongRange(min, max, exclusiveMin, exclusiveMax);
 		}
@@ -646,23 +636,23 @@ public abstract class AbstractRange<
 		public static final IntRange FULL = new IntRange(Integer.MIN_VALUE, Integer.MAX_VALUE, false, false);
 		public static final IntRange UNIT = new IntRange(0, 1, false, false);
 		
-		public static IntRange inclusive(int min, int max) {
+		public static @NotNull IntRange inclusive(int min, int max) {
 			return new IntRange(min, max, false, false);
 		}
 		
-		public static IntRange exclusive(int min, int max) {
+		public static @NotNull IntRange exclusive(int min, int max) {
 			return new IntRange(min, max, true, true);
 		}
 		
-		public static IntRange exactly(int value) {
+		public static @NotNull IntRange exactly(int value) {
 			return new IntRange(value, value, false, false);
 		}
 		
-		public static IntRange range(int upToExclusive) {
+		public static @NotNull IntRange range(int upToExclusive) {
 			return new IntRange(0, upToExclusive, false, true);
 		}
 		
-		public static IntRange rangeFrom1(int upToInclusive) {
+		public static @NotNull IntRange rangeFrom1(int upToInclusive) {
 			return new IntRange(0, upToInclusive, true, false);
 		}
 		
@@ -677,38 +667,38 @@ public abstract class AbstractRange<
 			  exclusiveMin, exclusiveMax);
 		}
 		
-		@Override public Integer randomUniform(Random random) {
+		@Override public @NotNull Integer randomUniform(Random random) {
 			int min = isExclusiveMin()? getMin() + 1 : getMin(),
 			  max = isExclusiveMax()? getMax() - 1 : getMax();
 			if (max < min) return null;
 			return Math.min((int) Math.floor(min + random.nextFloat() * (max - min + 1)), max);
 		}
 		
-		@Override public Integer randomGaussian(Random random) {
+		@Override public @NotNull Integer randomGaussian(Random random) {
 			int min = isExclusiveMin()? getMin() + 1 : getMin(),
 			  max = isExclusiveMax()? getMax() - 1 : getMax();
 			if (max < min) return null;
 			return Math.round((min + max) * 0.5F + (float) random.nextGaussian() * (max - min));
 		}
 		
-		public IntRange translate(int translation) {
+		public @NotNull IntRange translate(int translation) {
 			return translate((Integer) translation);
 		}
 		
-		@Override public IntRange translate(Integer translation) {
+		@Override public @NotNull IntRange translate(@NotNull Integer translation) {
 			return create(
 			  getMin() + translation, getMax() + translation, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public IntRange growRelative(int left, int right) {
+		public @NotNull IntRange growRelative(int left, int right) {
 			return growRelative((Integer) left, (Integer) right);
 		}
 		
-		public IntRange growRelative(int both) {
+		public @NotNull IntRange growRelative(int both) {
 			return growRelative((Integer) both);
 		}
 		
-		@Override public IntRange growRelative(Integer left, Integer right) {
+		@Override public @NotNull IntRange growRelative(@NotNull Integer left, @NotNull Integer right) {
 			double size = getSize();
 			return create(
 			  (int) Math.floor(getMin() - left * size),
@@ -716,27 +706,27 @@ public abstract class AbstractRange<
 			  isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public IntRange grow(int left, int right) {
+		public @NotNull IntRange grow(int left, int right) {
 			return grow((Integer) left, (Integer) right);
 		}
 		
-		public IntRange grow(int both) {
+		public @NotNull IntRange grow(int both) {
 			return grow((Integer) both);
 		}
 		
-		@Override public IntRange grow(Integer left, Integer right) {
+		@Override public @NotNull IntRange grow(@NotNull Integer left, @NotNull Integer right) {
 			return create(getMin() - left, getMax() + right, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public IntRange shrinkRelative(int left, int right) {
+		public @NotNull IntRange shrinkRelative(int left, int right) {
 			return shrinkRelative((Integer) left, (Integer) right);
 		}
 		
-		public IntRange shrinkRelative(int both) {
+		public @NotNull IntRange shrinkRelative(int both) {
 			return shrinkRelative((Integer) both);
 		}
 		
-		@Override public IntRange shrinkRelative(Integer left, Integer right) {
+		@Override public @NotNull IntRange shrinkRelative(@NotNull Integer left, @NotNull Integer right) {
 			double size = getSize();
 			return create(
 			  (int) Math.ceil(getMin() + left * size),
@@ -744,20 +734,20 @@ public abstract class AbstractRange<
 			  isExclusiveMin(), isExclusiveMax());
 		}
 		
-		public IntRange shrink(int left, int right) {
+		public @NotNull IntRange shrink(int left, int right) {
 			return shrink((Integer) left, (Integer) right);
 		}
 		
-		public IntRange shrink(int both) {
+		public @NotNull IntRange shrink(int both) {
 			return shrink((Integer) both);
 		}
 		
-		@Override public IntRange shrink(Integer left, Integer right) {
+		@Override public @NotNull IntRange shrink(@NotNull Integer left, @NotNull Integer right) {
 			return create(getMin() + left, getMax() - right, isExclusiveMin(), isExclusiveMax());
 		}
 		
-		@Override public IntRange create(
-		  Integer min, Integer max, boolean exclusiveMin, boolean exclusiveMax
+		@Override public @NotNull IntRange create(
+		  @NotNull Integer min, @NotNull Integer max, boolean exclusiveMin, boolean exclusiveMax
 		) {
 			return new IntRange(min, max, exclusiveMin, exclusiveMax);
 		}

@@ -120,11 +120,11 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			this.keyEntryBuilder = keyEntryBuilder.copy();
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> expand() {
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> expand() {
 			return expand(true);
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> expand(
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> expand(
 		  boolean expand
 		) {
 			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
@@ -132,11 +132,11 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> linked() {
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> linked() {
 			return linked(true);
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> linked(
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> linked(
 		  boolean linked
 		) {
 			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
@@ -144,7 +144,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> entryError(
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> entryError(
 		  BiFunction<K, V, Optional<ITextComponent>> supplier
 		) {
 			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
@@ -152,7 +152,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> minSize(
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> minSize(
 		  int minSize
 		) {
 			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();
@@ -160,7 +160,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder<K, V, KC, C, KG, G, S, B, KS, KB> maxSize(
+		@Override @Contract(pure=true) public @NotNull Builder<K, V, KC, C, KG, G, S, B, KS, KB> maxSize(
 		  int maxSize
 		) {
 			Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy = copy();

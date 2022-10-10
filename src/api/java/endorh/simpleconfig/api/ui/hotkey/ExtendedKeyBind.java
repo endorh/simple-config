@@ -3,6 +3,7 @@ package endorh.simpleconfig.api.ui.hotkey;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -12,33 +13,33 @@ import org.jetbrains.annotations.Nullable;
  * have to implement the dispatching as well.
  */
 public interface ExtendedKeyBind {
-	static ExtendedKeyBind of(String modId, ITextComponent title, Runnable callback) {
+	static @NotNull ExtendedKeyBind of(String modId, ITextComponent title, Runnable callback) {
 		return of(modId, title, KeyBindMapping.unset(), callback);
 	}
 	
-	static ExtendedKeyBind of(
+	static @NotNull ExtendedKeyBind of(
 	  String modId, ITextComponent title, String definition, Runnable callback
 	) {
 		return of(modId, title, KeyBindMapping.parse(definition), callback);
 	}
 	
-	static ExtendedKeyBind of(
+	static @NotNull ExtendedKeyBind of(
 	  String modId, ITextComponent title, KeyBindMapping keyBind, Runnable callback
 	) {
 		return ExtendedKeyBindProxy.getFactory().create(modId, title, keyBind, callback);
 	}
 	
-	public static ExtendedKeyBind of(String modId, String name, Runnable callback) {
+	public static @NotNull ExtendedKeyBind of(String modId, String name, Runnable callback) {
 		return of(modId, name, KeyBindMapping.unset(), callback);
 	}
 	
-	public static ExtendedKeyBind of(
+	public static @NotNull ExtendedKeyBind of(
 	  String modId, String name, String definition, Runnable callback
 	) {
 		return of(modId, name, KeyBindMapping.parse(definition), callback);
 	}
 	
-	public static ExtendedKeyBind of(
+	public static @NotNull ExtendedKeyBind of(
 	  String modId, String name, KeyBindMapping keyBind, Runnable callback
 	) {
 		return of(modId, new TranslationTextComponent(
@@ -48,11 +49,11 @@ public interface ExtendedKeyBind {
 	
 	@Nullable String getModId();
 	
-	ITextComponent getTitle();
-	void setTitle(ITextComponent title);
+	@NotNull ITextComponent getTitle();
+	void setTitle(@NotNull ITextComponent title);
 	
-	KeyBindMapping getDefinition();
-	void setDefinition(KeyBindMapping keyBind);
+	@NotNull KeyBindMapping getDefinition();
+	void setDefinition(@NotNull KeyBindMapping keyBind);
 	
 	boolean isPressed();
 	boolean isPhysicallyPressed();

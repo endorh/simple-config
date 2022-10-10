@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.ui.math;
 
+import org.jetbrains.annotations.NotNull;
+
 public class Dimension {
 	public int width;
 	public int height;
@@ -30,11 +32,11 @@ public class Dimension {
 		this.height = (int) Math.ceil(height);
 	}
 	
-	public Dimension getSize() {
+	public @NotNull Dimension getSize() {
 		return new Dimension(width, height);
 	}
 	
-	public void setSize(Dimension d) {
+	public void setSize(@NotNull Dimension d) {
 		setSize(d.width, d.height);
 	}
 	
@@ -43,7 +45,7 @@ public class Dimension {
 		this.height = height;
 	}
 	
-	public Dimension copy() {
+	public @NotNull Dimension copy() {
 		return getSize();
 	}
 	

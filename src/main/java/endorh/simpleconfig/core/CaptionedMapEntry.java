@@ -22,6 +22,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ConcurrentModificationException;
@@ -103,7 +104,7 @@ public class CaptionedMapEntry<K, V, KC, C, KG, G, CV, CC, CG>
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> mapField(String name) {
+		public @NotNull CaptionedMapEntryBuilder<K, V, KC, C, KG, G, EntryMapEntry.Builder<K, V, KC, C, KG, G, ?, ?, ?, ?>, CV, CC, CG, CS> mapField(String name) {
 			return field(name, Pair::getValue, mapEntryBuilder.typeClass);
 		}
 		

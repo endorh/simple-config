@@ -2,6 +2,7 @@ package endorh.simpleconfig.api.ui.icon;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.util.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -29,11 +30,11 @@ public class NinePatchIcon extends Icon {
 		this.ih = ih;
 	}
 	
-	@Override public void renderCentered(MatrixStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderCentered(@NotNull MatrixStack mStack, int x, int y, int w, int h, int level) {
 		renderStretch(mStack, x, y, w, h, level);
 	}
 	
-	@Override public void renderStretch(MatrixStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderStretch(@NotNull MatrixStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		final int l = translateLevel(level);
 		int u = getU() + l * levelOffsetX;
@@ -71,7 +72,7 @@ public class NinePatchIcon extends Icon {
 		afterRender(level);
 	}
 	
-	@Override public void renderFill(MatrixStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderFill(@NotNull MatrixStack mStack, int x, int y, int w, int h, int level) {
 		renderStretch(mStack, x, y, w, h, level);
 	}
 	
@@ -92,7 +93,7 @@ public class NinePatchIcon extends Icon {
 		blit(mStack, xx, yy, xw, yh, u, v, xw, yh, tw, th);
 	}
 	
-	@Override public Icon withTint(int tint) {
+	@Override public @NotNull Icon withTint(int tint) {
 		return new NinePatchIcon(
 		  getTexture(), u, v, w, h, iu, iv, iw, ih,
 		  levelOffsetX, levelOffsetY, tw, th, isTwoLevel(), tint);

@@ -22,6 +22,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ConcurrentModificationException;
@@ -77,28 +78,28 @@ public class CaptionedListEntry<
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> captionField(String name) {
+		public @NotNull CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> captionField(String name) {
 			return field(name, Pair::getKey, captionEntryBuilder.typeClass);
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> listField(String name) {
+		public @NotNull CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> listField(String name) {
 			return field(name, Pair::getValue, listEntryBuilder.typeClass);
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> listField() {
+		public @NotNull CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> listField() {
 			return addField(BackingFieldBinding.sameName(BackingFieldBuilder.of(
 			  Pair::getValue, listEntryBuilder.typeClass)));
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> splitFields(String captionSuffix) {
+		public @NotNull CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> splitFields(String captionSuffix) {
 			return addField(captionSuffix, Pair::getKey, captionEntryBuilder.typeClass).listField();
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> splitFields(
+		public @NotNull CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> splitFields(
 		  String captionField, boolean fullFieldName
 		) {
 			if (!fullFieldName) return splitFields(captionField);
@@ -106,7 +107,7 @@ public class CaptionedListEntry<
 		}
 		
 		@Override @Contract(pure=true)
-		public CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> split_fields(String caption_suffix) {
+		public @NotNull CaptionedListEntryBuilder<V, C, G, S, CV, CC, CG, CS> split_fields(String caption_suffix) {
 			return add_field(caption_suffix, Pair::getKey, captionEntryBuilder.typeClass).listField();
 		}
 		

@@ -42,58 +42,58 @@ public class EntryTag implements Comparable<EntryTag> {
 	public static final EntryTag NON_PERSISTENT = translated(
 	  400, null, Entries.NOT_PERSISTENT, "simpleconfig.config.tag.not_persistent", null);
 	
-	public static EntryTag coloredTag(TextFormatting color) {
+	public static @NotNull EntryTag coloredTag(TextFormatting color) {
 		String name = toTitleCase(color.getFriendlyName());
 		return TAGS.computeIfAbsent(color, c -> of(
 		  500 + color.getColorIndex(), name + " tag", Entries.TAG.withTint(color), () -> SimpleConfigTextUtil.splitTtc(
 		  "simpleconfig.config.tag.tag", new StringTextComponent(name)
 				.mergeStyle(color)), null));
 	}
-	public static EntryTag coloredBookmark(TextFormatting color) {
+	public static @NotNull EntryTag coloredBookmark(TextFormatting color) {
 		String name = toTitleCase(color.getFriendlyName());
 		return BOOKMARKS.computeIfAbsent(color, c -> of(
 		  600 + color.getColorIndex(), name + " bookmark", Entries.BOOKMARK.withTint(color), () -> SimpleConfigTextUtil.splitTtc(
 		  "simpleconfig.config.tag.bookmark", new StringTextComponent(name)
 				.mergeStyle(color)), null));
 	}
-	public static EntryTag coloredWrench(TextFormatting color) {
+	public static @NotNull EntryTag coloredWrench(TextFormatting color) {
 		return WRENCHES.computeIfAbsent(color, c -> translated(
 		  100 + color.getColorIndex(), "Advanced!", Entries.WRENCH.withTint(color),
 		  "simpleconfig.config.tag.advanced", null));
 	}
 	
-	public static EntryTag copyTag(int order, String text, String tooltipTranslationKey) {
+	public static @NotNull EntryTag copyTag(int order, String text, String tooltipTranslationKey) {
 		return copyTag(order, text, () -> SimpleConfigTextUtil.splitTtc(tooltipTranslationKey));
 	}
 	
-	public static EntryTag copyTag(int order, String text, Supplier<List<ITextComponent>> tooltip) {
+	public static @NotNull EntryTag copyTag(int order, String text, Supplier<List<ITextComponent>> tooltip) {
 		return of(
 		  order, null, Entries.COPY, tooltip,
 		  b -> Minecraft.getInstance().keyboardListener.setClipboardString(text));
 	}
 	
-	public static EntryTag translated(
+	public static @NotNull EntryTag translated(
 	  @Nullable String comment, Icon icon, String tooltipTranslationKey,
 	  @Nullable Consumer<Integer> clickAction
 	) {
 		return translated(0, comment, icon, tooltipTranslationKey, clickAction);
 	}
 	
-	public static EntryTag translated(
+	public static @NotNull EntryTag translated(
 	  int order, @Nullable String comment, Icon icon, String tooltipTranslationKey,
 	  @Nullable Consumer<Integer> clickAction
 	) {
 		return of(order, comment, icon, () -> SimpleConfigTextUtil.splitTtc(tooltipTranslationKey), clickAction);
 	}
 	
-	public static EntryTag of(
+	public static @NotNull EntryTag of(
 	  @Nullable String comment, Icon icon, @Nullable Supplier<List<ITextComponent>> tooltip,
 	  @Nullable Consumer<Integer> clickAction
 	) {
 		return of(0, comment, icon, tooltip, clickAction);
 	}
 	
-	public static EntryTag of(
+	public static @NotNull EntryTag of(
 	  int order, @Nullable String comment, Icon icon,
 	  @Nullable Supplier<List<ITextComponent>> tooltip, @Nullable Consumer<Integer> clickAction
 	) {

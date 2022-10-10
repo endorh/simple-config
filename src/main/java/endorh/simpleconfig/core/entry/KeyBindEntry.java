@@ -12,7 +12,8 @@ import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
-import endorh.simpleconfig.ui.hotkey.*;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.KeyBindFieldBuilder;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -20,6 +21,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -50,10 +52,10 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		return UNBOUND.computeIfAbsent(session, s -> new ArrayList<>());
 	}
 	private static final ExtendedKeyBindProvider UNBOUND_PROVIDER = new ExtendedKeyBindProvider() {
-		@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+		@Override public @NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds() {
 			return Collections.emptyList();
 		}
-		@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
+		@Override public @NotNull Iterable<ExtendedKeyBind> getAllKeyBinds() {
 			return getUnbound();
 		}
 		@Override public int getPriority() {
@@ -91,13 +93,13 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			super(value, KeyBindMapping.class);
 		}
 		
-		@Override public Builder withDefaultSettings(ExtendedKeyBindSettings settings) {
+		@Override public @NotNull Builder withDefaultSettings(ExtendedKeyBindSettings settings) {
 			Builder copy = copy();
 			copy.defaultSettings = settings;
 			return copy;
 		}
 		
-		@Override public Builder bakeTo(ExtendedKeyBind keyBind) {
+		@Override public @NotNull Builder bakeTo(ExtendedKeyBind keyBind) {
 			Builder copy = copy();
 			if (!(keyBind instanceof ExtendedKeyBindImpl)) throw new IllegalArgumentException(
 			  "Keybind is not instance of ExtendedKeyBindImpl");
@@ -105,17 +107,17 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			return copy;
 		}
 		
-		@Override public Builder reportOverlaps(boolean reportOverlaps) {
+		@Override public @NotNull Builder reportOverlaps(boolean reportOverlaps) {
 			Builder copy = copy();
 			copy.reportOverlaps = reportOverlaps;
 			return copy;
 		}
 		
-		@Override public Builder inheritTitle() {
+		@Override public @NotNull Builder inheritTitle() {
 			return inheritTitle(true);
 		}
 		
-		@Override public Builder inheritTitle(boolean inheritTitle) {
+		@Override public @NotNull Builder inheritTitle(boolean inheritTitle) {
 			Builder copy = copy();
 			copy.inheritTitle = inheritTitle;
 			return copy;

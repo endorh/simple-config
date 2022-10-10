@@ -22,13 +22,13 @@ public interface ConfigEntryHolder {
 	/**
 	 * Get the root config of this entry holder
 	 */
-	SimpleConfig getRoot();
+	@NotNull SimpleConfig getRoot();
 	
 	/**
 	 * Get the parent of this entry holder.
 	 * Will throw {@link NoSuchConfigGroupError} if it has no parent.
 	 */
-	default ConfigEntryHolder getParent() {
+	default @NotNull ConfigEntryHolder getParent() {
 		throw new NoSuchConfigGroupError("");
 	}
 	

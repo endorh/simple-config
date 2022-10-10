@@ -11,6 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -33,15 +34,15 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long>
 			super(value, Long.class);
 		}
 		
-		@Override @Contract(pure=true) public LongEntryBuilder min(long min) {
+		@Override @Contract(pure=true) public @NotNull LongEntryBuilder min(long min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public LongEntryBuilder max(long max) {
+		@Override @Contract(pure=true) public @NotNull LongEntryBuilder max(long max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public LongEntryBuilder range(long min, long max) {
+		@Override @Contract(pure=true) public @NotNull LongEntryBuilder range(long min, long max) {
 			return super.range(min, max);
 		}
 		

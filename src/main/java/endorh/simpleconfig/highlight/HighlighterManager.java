@@ -176,7 +176,7 @@ public class HighlighterManager extends JsonReloadListener implements IHighlight
 			}
 		}
 		
-		@Override public IFormattableTextComponent highlight(String text) {
+		@Override public @NotNull IFormattableTextComponent highlight(@NotNull String text) {
 			if (text.isEmpty()) return StringTextComponent.EMPTY.deepCopy();
 			Lexer lexer = lexerFactory.apply(CharStreams.fromString(text));
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -227,7 +227,7 @@ public class HighlighterManager extends JsonReloadListener implements IHighlight
 			return highlighter.getClosingPairs().contains(String.valueOf(typedChar));
 		}
 		
-		@Override public String getLanguage() {
+		@Override public @NotNull String getLanguage() {
 			return language;
 		}
 		

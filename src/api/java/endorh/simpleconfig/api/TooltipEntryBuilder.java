@@ -2,6 +2,7 @@ package endorh.simpleconfig.api;
 
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.function.Function;
@@ -28,7 +29,7 @@ public interface TooltipEntryBuilder<V, Gui, Self extends TooltipEntryBuilder<V,
 	 * @see #tooltip(Function)
 	 * @see #withoutTooltip()
 	 */
-	@Contract(pure=true) Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier);
+	@Contract(pure=true) @NotNull Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier);
 	
 	/**
 	 * Set a tooltip supplier for this entry<br>
@@ -46,7 +47,7 @@ public interface TooltipEntryBuilder<V, Gui, Self extends TooltipEntryBuilder<V,
 	 * @see #guiTooltip(Function)
 	 * @see #withoutTooltip()
 	 */
-	@Contract(pure=true) Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier);
+	@Contract(pure=true) @NotNull Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier);
 	
 	/**
 	 * Set an optional tooltip supplier for this entry.<br>
@@ -61,7 +62,7 @@ public interface TooltipEntryBuilder<V, Gui, Self extends TooltipEntryBuilder<V,
 	 * @see #guiTooltip(Function)
 	 * @see #withoutTooltip()
 	 */
-	@Contract(pure=true) default Self tooltip(Supplier<List<ITextComponent>> tooltipSupplier) {
+	@Contract(pure=true) default @NotNull Self tooltip(Supplier<List<ITextComponent>> tooltipSupplier) {
 		return tooltip(v -> tooltipSupplier.get());
 	}
 	
@@ -78,7 +79,7 @@ public interface TooltipEntryBuilder<V, Gui, Self extends TooltipEntryBuilder<V,
 	 * @see #guiTooltip(Function)
 	 * @see #withoutTooltip()
 	 */
-	@Contract(pure=true) default Self tooltip(List<ITextComponent> tooltip) {
+	@Contract(pure=true) default @NotNull Self tooltip(List<ITextComponent> tooltip) {
 		return tooltip(v -> tooltip);
 	}
 	
@@ -89,5 +90,5 @@ public interface TooltipEntryBuilder<V, Gui, Self extends TooltipEntryBuilder<V,
 	 * @see #tooltip(Function)
 	 * @see #guiTooltip(Function)
 	 */
-	@Contract(pure=true) Self withoutTooltip();
+	@Contract(pure=true) @NotNull Self withoutTooltip();
 }
