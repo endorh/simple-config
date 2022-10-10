@@ -20,6 +20,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
@@ -87,14 +88,14 @@ public class EntryPairEntry<
 		}
 		
 		@Override @Contract(pure=true)
-		public Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> withMiddleIcon(@Nullable Icon icon) {
+		public @NotNull Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> withMiddleIcon(@Nullable Icon icon) {
 			final Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> copy = copy();
 			copy.middleIcon = icon;
 			return copy;
 		}
 		
 		@Override
-		@Contract(pure=true) public Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> withSplitPosition(
+		@Contract(pure=true) public @NotNull Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> withSplitPosition(
 		  @Range(from=0, to=1) double splitPosition
 		) {
 			if (splitPosition < 0 || splitPosition > 1) throw new IllegalArgumentException(

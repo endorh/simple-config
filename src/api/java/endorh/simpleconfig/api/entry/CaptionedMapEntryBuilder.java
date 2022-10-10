@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public interface CaptionedMapEntryBuilder<
 	 * @see #mapField()
 	 * @see #splitFields(String)
 	 */
-	@Contract(pure=true) CaptionedMapEntryBuilder<K, V, KC, C, KG, G, MB, CV, CC, CG, CB> mapField(
+	@Contract(pure=true) @NotNull CaptionedMapEntryBuilder<K, V, KC, C, KG, G, MB, CV, CC, CG, CB> mapField(
 	  String name
 	);
 	

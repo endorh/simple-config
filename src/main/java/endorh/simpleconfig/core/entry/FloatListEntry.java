@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -29,15 +30,15 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 			super(value, Float.class);
 		}
 		
-		@Override @Contract(pure=true) public FloatListEntryBuilder min(float min) {
+		@Override @Contract(pure=true) public @NotNull FloatListEntryBuilder min(float min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public FloatListEntryBuilder max(float max) {
+		@Override @Contract(pure=true) public @NotNull FloatListEntryBuilder max(float max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public FloatListEntryBuilder range(float min, float max) {
+		@Override @Contract(pure=true) public @NotNull FloatListEntryBuilder range(float min, float max) {
 			return super.range(min, max);
 		}
 		

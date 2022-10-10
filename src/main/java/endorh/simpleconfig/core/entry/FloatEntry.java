@@ -13,6 +13,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -34,34 +35,34 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 			super(value, Float.class, "%.2f");
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder min(float min) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder min(float min) {
 			return super.min(min);
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder max(float max) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder max(float max) {
 			return super.max(max);
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder range(float min, float max) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder range(float min, float max) {
 			return super.range(min, max);
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder fieldScale(float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder fieldScale(float scale) {
 			if (scale == 0F || !Float.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return field(f -> f * scale, f -> f / scale, Float.class);
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder fieldScale(String name, float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder fieldScale(String name, float scale) {
 			return addField(BackingFieldBinding.withName(
 			  name, BackingFieldBuilder.of(f -> f * scale, Float.class)));
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder addFieldScale(String suffix, float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder addFieldScale(String suffix, float scale) {
 			return addField(suffix, f -> f * scale, Float.class);
 		}
 		
-		@Override @Contract(pure=true) public FloatEntryBuilder add_field_scale(String suffix, float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder add_field_scale(String suffix, float scale) {
 			return add_field(suffix, f -> f * scale, Float.class);
 		}
 		

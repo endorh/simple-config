@@ -11,14 +11,15 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
 public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	private final String modId;
-	private Component title;
-	private KeyBindMapping keyBind;
+	private @NotNull Component title;
+	private @NotNull KeyBindMapping keyBind;
 	private @Nullable Component candidateName;
 	private @Nullable KeyBindMapping candidateDefinition;
 	private final Runnable callback;
@@ -26,17 +27,17 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	private boolean pressedToggle = false;
 	
 	protected static final ExtendedKeyBindFactory FACTORY = new ExtendedKeyBindFactory() {
-		@Override public ExtendedKeyBind create(
+		@Override public @NotNull ExtendedKeyBind create(
 		  @Nullable String modId, Component title, KeyBindMapping definition, Runnable action
 		) {
 			return new ExtendedKeyBindImpl(modId, title, definition, action);
 		}
 		
-		@Override public KeyBindMapping parseMapping(String serialized) {
+		@Override public @NotNull KeyBindMapping parseMapping(String serialized) {
 			return KeyBindMappingImpl.parse(serialized);
 		}
 		
-		@Override public KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings) {
+		@Override public @NotNull KeyBindMapping unsetMapping(ExtendedKeyBindSettings settings) {
 			return KeyBindMappingImpl.unset(settings);
 		}
 	};
@@ -46,8 +47,8 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	}
 	
 	public ExtendedKeyBindImpl(
-	  @Nullable String modId, Component title,
-	  KeyBindMapping keyBind, Runnable callback
+	  @Nullable String modId, @NotNull Component title,
+	  @NotNull KeyBindMapping keyBind, Runnable callback
 	) {
 		this.modId = modId;
 		this.title = title;
@@ -58,16 +59,16 @@ public class ExtendedKeyBindImpl implements ExtendedKeyBind {
 	@Override public @Nullable String getModId() {
 		return modId;
 	}
-	@Override public Component getTitle() {
+	@Override public @NotNull Component getTitle() {
 		return title;
 	}
-	@Override public void setTitle(Component title) {
+	@Override public void setTitle(@NotNull Component title) {
 		this.title = title;
 	}
-	@Override public KeyBindMapping getDefinition() {
+	@Override public @NotNull KeyBindMapping getDefinition() {
 		return keyBind;
 	}
-	@Override public void setDefinition(KeyBindMapping keyBind) {
+	@Override public void setDefinition(@NotNull KeyBindMapping keyBind) {
 		this.keyBind = keyBind;
 	}
 	

@@ -55,29 +55,29 @@ public abstract class AbstractListEntry
 			this.innerType = innerType;
 		}
 		
-		@Override @Contract(pure=true) public Self expand() {
+		@Override @Contract(pure=true) public @NotNull Self expand() {
 			return expand(true);
 		}
 		
-		@Override @Contract(pure=true) public Self expand(boolean expand) {
+		@Override @Contract(pure=true) public @NotNull Self expand(boolean expand) {
 			SelfImpl copy = copy();
 			copy.expand = expand;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self minSize(int minSize) {
+		@Override @Contract(pure=true) public @NotNull Self minSize(int minSize) {
 			SelfImpl copy = copy();
 			copy.minSize = minSize;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self maxSize(int maxSize) {
+		@Override @Contract(pure=true) public @NotNull Self maxSize(int maxSize) {
 			SelfImpl copy = copy();
 			copy.maxSize = maxSize;
 			return copy.castSelf();
 		}
 		
-		@Override @Contract(pure=true) public Self elemError(
+		@Override @Contract(pure=true) public @NotNull Self elemError(
 		  Function<V, Optional<Component>> errorSupplier
 		) {
 			SelfImpl copy = copy();

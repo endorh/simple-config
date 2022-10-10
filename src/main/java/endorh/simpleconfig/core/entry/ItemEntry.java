@@ -60,32 +60,32 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			super(value, Item.class);
 		}
 		
-		@Override @Contract(pure=true) public Builder setRequireGroup(boolean requireGroup) {
+		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {
 			Builder copy = copy();
 			copy.requireGroup = requireGroup;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Ingredient filter) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Ingredient filter) {
 			return from(i -> filter.test(new ItemStack(i)));
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Predicate<Item> filter) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Predicate<Item> filter) {
 			Builder copy = copy();
 			copy.filter = filter;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder from(List<Item> items) {
+		@Override @Contract(pure=true) public @NotNull Builder from(List<Item> items) {
 			List<Item> listCopy = new ArrayList<>(items);
 			return from(listCopy::contains);
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Item... items) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Item... items) {
 			return from(Ingredient.of(items));
 		}
 		
-		@Override @Contract(pure=true) public Builder from(Tag<Item> tag) {
+		@Override @Contract(pure=true) public @NotNull Builder from(Tag<Item> tag) {
 			Builder copy = copy();
 			copy.tag = tag;
 			return copy;

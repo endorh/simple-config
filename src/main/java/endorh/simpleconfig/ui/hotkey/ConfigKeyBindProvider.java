@@ -14,10 +14,10 @@ public class ConfigKeyBindProvider implements ExtendedKeyBindProvider {
 	public static final ConfigKeyBindProvider INSTANCE = new ConfigKeyBindProvider();
 	private final ConfigHotKeyManager manager = ConfigHotKeyManager.INSTANCE;
 	
-	@Override public Iterable<ExtendedKeyBind> getActiveKeyBinds() {
+	@Override public @NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds() {
 		return new ConfigKeyBindIterable(manager.getHotKeys().getEntries(), false);
 	}
-	@Override public Iterable<ExtendedKeyBind> getAllKeyBinds() {
+	@Override public @NotNull Iterable<ExtendedKeyBind> getAllKeyBinds() {
 		return new ConfigKeyBindIterable(manager.getHotKeys().getEntries(), true);
 	}
 	

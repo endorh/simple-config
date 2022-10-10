@@ -3,10 +3,11 @@ package endorh.simpleconfig.api.ui.hotkey;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindContext;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.VanillaKeyBindContext;
+import org.jetbrains.annotations.NotNull;
 
 public class ExtendedKeyBindSettingsBuilder {
-	private KeyBindActivation activation = KeyBindActivation.PRESS;
-	private KeyBindContext context = VanillaKeyBindContext.GAME;
+	private @NotNull KeyBindActivation activation = KeyBindActivation.PRESS;
+	private @NotNull KeyBindContext context = VanillaKeyBindContext.GAME;
 	private boolean allowExtraKeys = true;
 	private boolean orderSensitive = false;
 	private boolean exclusive = false;
@@ -25,7 +26,7 @@ public class ExtendedKeyBindSettingsBuilder {
 		preventFurther = settings.preventFurther();
 	}
 	
-	public KeyBindActivation getActivation() {
+	public @NotNull KeyBindActivation getActivation() {
 		return activation;
 	}
 	
@@ -34,7 +35,7 @@ public class ExtendedKeyBindSettingsBuilder {
 		return this;
 	}
 	
-	public KeyBindContext getContext() {
+	public @NotNull KeyBindContext getContext() {
 		return context;
 	}
 	public ExtendedKeyBindSettingsBuilder withContext(KeyBindContext context) {

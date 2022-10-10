@@ -13,6 +13,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
@@ -31,15 +32,15 @@ public class LongRangeEntry
 			super(value, LongRange.class);
 		}
 		
-		@Override @Contract(pure=true) public LongRangeEntryBuilder min(long min) {
+		@Override @Contract(pure=true) public @NotNull LongRangeEntryBuilder min(long min) {
 			return min((Long) min);
 		}
 		
-		@Override @Contract(pure=true) public LongRangeEntryBuilder max(long max) {
+		@Override @Contract(pure=true) public @NotNull LongRangeEntryBuilder max(long max) {
 			return max((Long) max);
 		}
 		
-		@Override @Contract(pure=true) public LongRangeEntryBuilder withBounds(long min, long max) {
+		@Override @Contract(pure=true) public @NotNull LongRangeEntryBuilder withBounds(long min, long max) {
 			return withBounds((Long) min, (Long) max);
 		}
 		

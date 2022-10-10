@@ -2,23 +2,24 @@ package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.KeyEntryBuilder;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface FloatEntryBuilder
   extends RangedEntryBuilder<Float, Number, Float, FloatEntryBuilder>, KeyEntryBuilder<Float> {
 	/**
 	 * Set min (inclusive)
 	 */
-	@Contract(pure=true) FloatEntryBuilder min(float min);
+	@Contract(pure=true) @NotNull FloatEntryBuilder min(float min);
 	
 	/**
 	 * Set max (inclusive)
 	 */
-	@Contract(pure=true) FloatEntryBuilder max(float max);
+	@Contract(pure=true) @NotNull FloatEntryBuilder max(float max);
 	
 	/**
 	 * Set inclusive range
 	 */
-	@Contract(pure=true) FloatEntryBuilder range(float min, float max);
+	@Contract(pure=true) @NotNull FloatEntryBuilder range(float min, float max);
 	
 	/**
 	 * Scale the backing field of this entry by the given scale.<br>
@@ -33,7 +34,7 @@ public interface FloatEntryBuilder
 	 * @see #addFieldScale(String, float)
 	 * @see #add_field_scale(String, float)
 	 */
-	@Contract(pure=true) FloatEntryBuilder fieldScale(float scale);
+	@Contract(pure=true) @NotNull FloatEntryBuilder fieldScale(float scale);
 	
 	/**
 	 * Add a secondary backing field with the given name, whose value is pre-multiplied
@@ -46,7 +47,7 @@ public interface FloatEntryBuilder
 	 * @see #addFieldScale(String, float)
 	 * @see #add_field_scale(String, float)
 	 */
-	@Contract(pure=true) FloatEntryBuilder fieldScale(String name, float scale);
+	@Contract(pure=true) @NotNull FloatEntryBuilder fieldScale(String name, float scale);
 	
 	/**
 	 * Add a secondary backing field with the given camelCase suffix, whose value
@@ -59,7 +60,7 @@ public interface FloatEntryBuilder
 	 * @see #fieldScale(String, float)
 	 * @see #add_field_scale(String, float)
 	 */
-	@Contract(pure=true) FloatEntryBuilder addFieldScale(String suffix, float scale);
+	@Contract(pure=true) @NotNull FloatEntryBuilder addFieldScale(String suffix, float scale);
 	
 	/**
 	 * Add a secondary backing field with the given snake_case suffix, whose value
@@ -72,5 +73,5 @@ public interface FloatEntryBuilder
 	 * @see #fieldScale(String, float)
 	 * @see #addFieldScale(String, float)
 	 */
-	@Contract(pure=true) FloatEntryBuilder add_field_scale(String suffix, float scale);
+	@Contract(pure=true) @NotNull FloatEntryBuilder add_field_scale(String suffix, float scale);
 }

@@ -23,6 +23,7 @@ import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -73,7 +74,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			type = (Class<B>) value.getClass();
 		}
 		
-		@Override public BeanEntryBuilder<B> allowUneditableProperties(boolean allowUneditable) {
+		@Override public @NotNull BeanEntryBuilder<B> allowUneditableProperties(boolean allowUneditable) {
 			Builder<B> copy = copy();
 			copy.allowUneditableProperties = allowUneditable;
 			return copy;
@@ -123,7 +124,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			}, entry::fromGui);
 		}
 		
-		@Override public Builder<B> add(String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder) {
+		@Override public @NotNull Builder<B> add(String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder) {
 			Builder<B> copy = copy();
 			if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
 			  "ConfigEntryBuilder not instance of AbstractConfigEntryBuilder");
@@ -132,19 +133,19 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		}
 		
 		@Override public <CB extends ConfigEntryBuilder<?, ?, ?, ?> & KeyEntryBuilder<?>>
-		BeanEntryBuilder<B> caption(String name, CB entryBuilder) {
+		@NotNull BeanEntryBuilder<B> caption(String name, CB entryBuilder) {
 			Builder<B> copy = add(name, entryBuilder);
 			copy.caption = name;
 			return copy;
 		}
 		
-		@Override public BeanEntryBuilder<B> withoutCaption() {
+		@Override public @NotNull BeanEntryBuilder<B> withoutCaption() {
 			Builder<B> copy = copy();
 			copy.caption = null;
 			return copy;
 		}
 		
-		@Override public BeanEntryBuilder<B> withIcon(Function<B, Icon> icon) {
+		@Override public @NotNull BeanEntryBuilder<B> withIcon(Function<B, Icon> icon) {
 			Builder<B> copy = copy();
 			copy.iconProvider = icon;
 			return copy;

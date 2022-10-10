@@ -22,6 +22,7 @@ import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -54,22 +55,22 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 			translationSupplier = supplier;
 		}
 		
-		@Override @Contract(pure=true) public Builder text(Supplier<Component> supplier) {
+		@Override @Contract(pure=true) public @NotNull Builder text(Supplier<Component> supplier) {
 			Builder copy = copy();
 			copy.translationSupplier = supplier;
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public Builder text(Component text) {
+		@Override @Contract(pure=true) public @NotNull Builder text(Component text) {
 			return text(() -> text);
 		}
 		
 		
-		@Contract(pure=true) @Override @Deprecated public TextEntryBuilder nameArgs(Object... args) {
+		@Contract(pure=true) @Override @Deprecated public @NotNull TextEntryBuilder nameArgs(Object... args) {
 			return super.nameArgs(args);
 		}
 		
-		@Override @Contract(pure=true) public TextEntryBuilder args(Object... args) {
+		@Override @Contract(pure=true) public @NotNull TextEntryBuilder args(Object... args) {
 			return nameArgs(args);
 		}
 		

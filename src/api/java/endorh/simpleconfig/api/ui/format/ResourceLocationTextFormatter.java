@@ -3,6 +3,7 @@ package endorh.simpleconfig.api.ui.format;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,7 +82,7 @@ public class ResourceLocationTextFormatter implements ITextFormatter {
 		this.errorStyle = errorStyle;
 	}
 	
-	@Override public String stripInsertText(String text) {
+	@Override public @NotNull String stripInsertText(@NotNull String text) {
 		return ITextFormatter.filterCharacters(
 		  text.toLowerCase(),
 		  c -> c >= 'a' && c <= 'z' || c == '/' || c == '_' || c == '-' || c == ':');

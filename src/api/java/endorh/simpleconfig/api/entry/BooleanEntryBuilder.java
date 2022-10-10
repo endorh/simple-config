@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 public interface BooleanEntryBuilder
   extends ConfigEntryBuilder<Boolean, Boolean, Boolean, BooleanEntryBuilder>, KeyEntryBuilder<Boolean> {
@@ -14,7 +15,7 @@ public interface BooleanEntryBuilder
 	 * You may also pass a translation key to which '.true' and '.false'
 	 * would be appended if you use {@link #text(String)}
 	 */
-	@Contract(pure=true) BooleanEntryBuilder text(BooleanDisplayer displayAdapter);
+	@Contract(pure=true) @NotNull BooleanEntryBuilder text(BooleanDisplayer displayAdapter);
 	
 	/**
 	 * Change the text displayed in the entry's button<br>
@@ -22,7 +23,7 @@ public interface BooleanEntryBuilder
 	 * are appended to retrieve the actual text that will be used.
 	 * You may also provide your own logic using {@link #text(BooleanDisplayer)}
 	 */
-	@Contract(pure=true) BooleanEntryBuilder text(String translation);
+	@Contract(pure=true) @NotNull BooleanEntryBuilder text(String translation);
 	
 	/**
 	 * Determines how a boolean value is displayed, both in the interface and in the config file

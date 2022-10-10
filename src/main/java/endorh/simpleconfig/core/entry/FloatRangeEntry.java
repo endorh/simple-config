@@ -15,6 +15,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -34,32 +35,32 @@ public class FloatRangeEntry
 			super(value, FloatRange.class);
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder min(float min) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder min(float min) {
 			return min((Float) min);
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder max(float max) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder max(float max) {
 			return max((Float) max);
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder withBounds(float min, float max) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder withBounds(float min, float max) {
 			return withBounds((Float) min, (Float) max);
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder fieldScale(float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder fieldScale(float scale) {
 			return field(scale(scale), scale(1F / scale), FloatRange.class);
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder fieldScale(String name, float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder fieldScale(String name, float scale) {
 			return addField(BackingFieldBinding.withName(
 			  name, BackingFieldBuilder.of(scale(scale), FloatRange.class)));
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder addFieldScale(String suffix, float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder addFieldScale(String suffix, float scale) {
 			return addField(suffix, scale(scale), FloatRange.class);
 		}
 		
-		@Override @Contract(pure=true) public FloatRangeEntryBuilder add_field_scale(String suffix, float scale) {
+		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder add_field_scale(String suffix, float scale) {
 			return add_field(suffix, scale(scale), FloatRange.class);
 		}
 		

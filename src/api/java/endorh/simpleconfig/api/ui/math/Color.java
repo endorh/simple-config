@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.ui.math;
 
+import org.jetbrains.annotations.NotNull;
+
 public final class Color {
 	private final int color;
 	private final float h;
@@ -14,37 +16,37 @@ public final class Color {
 		b = hsb[2];
 	}
 	
-	public static Color ofTransparent(int color) {
+	public static @NotNull Color ofTransparent(int color) {
 		return new Color(color);
 	}
 	
-	public static Color ofOpaque(int color) {
+	public static @NotNull Color ofOpaque(int color) {
 		return new Color(0xFF000000 | color);
 	}
 	
-	public static Color ofRGB(float r, float g, float b) {
+	public static @NotNull Color ofRGB(float r, float g, float b) {
 		return Color.ofRGBA(r, g, b, 1.0f);
 	}
 	
-	public static Color ofRGB(int r, int g, int b) {
+	public static @NotNull Color ofRGB(int r, int g, int b) {
 		return Color.ofRGBA(r, g, b, 255);
 	}
 	
-	public static Color ofRGBA(float r, float g, float b, float a) {
+	public static @NotNull Color ofRGBA(float r, float g, float b, float a) {
 		return Color.ofRGBA(
 		  (int) ((double) (r * 255.0f) + 0.5), (int) ((double) (g * 255.0f) + 0.5),
 		  (int) ((double) (b * 255.0f) + 0.5), (int) ((double) (a * 255.0f) + 0.5));
 	}
 	
-	public static Color ofRGBA(int r, int g, int b, int a) {
+	public static @NotNull Color ofRGBA(int r, int g, int b, int a) {
 		return new Color((a & 0xFF) << 24 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | b & 0xFF);
 	}
 	
-	public static Color ofHSB(float h, float s, float b) {
+	public static @NotNull Color ofHSB(float h, float s, float b) {
 		return Color.ofOpaque(java.awt.Color.HSBtoRGB(h, s, b));
 	}
 	
-	public static Color ofHSBA(float h, float s, float b, int a) {
+	public static @NotNull Color ofHSBA(float h, float s, float b, int a) {
 		return Color.ofTransparent(java.awt.Color.HSBtoRGB(h, s, b) & 0xFFFFFF | a << 24);
 	}
 	
@@ -76,7 +78,7 @@ public final class Color {
 		return color & 0xFF;
 	}
 	
-	public Color brighter(double factor) {
+	public @NotNull Color brighter(double factor) {
 		int r = getRed();
 		int g = getGreen();
 		int b = getBlue();
@@ -93,7 +95,7 @@ public final class Color {
 		  Math.min((int) ((double) b / (1.0 / factor)), 255), getAlpha());
 	}
 	
-	public Color darker(double factor) {
+	public @NotNull Color darker(double factor) {
 		return Color.ofRGBA(
 		  Math.max((int) ((double) getRed() * (1.0 / factor)), 0),
 		  Math.max((int) ((double) getGreen() * (1.0 / factor)), 0),
