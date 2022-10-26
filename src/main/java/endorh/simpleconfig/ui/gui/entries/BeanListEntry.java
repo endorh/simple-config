@@ -172,16 +172,6 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 		return heldEntries;
 	}
 	
-	@Override public void resetValue() {
-		getScreen().runAtomicTransparentAction(this, () ->
-		  entries.values().forEach(AbstractConfigField::resetValue));
-	}
-	
-	@Override public void restoreValue() {
-		getScreen().runAtomicTransparentAction(this, () ->
-		  entries.values().forEach(AbstractConfigField::restoreValue));
-	}
-	
 	@Override protected List<EntryError> computeErrors() {
 		List<EntryError> errors = super.computeErrors();
 		errors.addAll(IEntryHolder.super.getErrors());
@@ -249,42 +239,6 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 		if (entry instanceof IEntryHolder)
 			return ((IEntryHolder) entry).getEntry(split[1]);
 		return null;
-	}
-	
-	@Override public @Nullable AbstractConfigField<?> getSingleResettableEntry() {
-		return captionEntry;
-	}
-	
-	@Override public @Nullable AbstractConfigField<?> getSingleRestorableEntry() {
-		return captionEntry;
-	}
-	
-	@Override public void resetSingleEntry(AbstractConfigField<?> entry) {
-		if (captionEntry != null) captionEntry.resetValue();
-	}
-	
-	@Override public void restoreSingleEntry(AbstractConfigField<?> entry) {
-		if (captionEntry != null) captionEntry.restoreValue();
-	}
-	
-	@Override public boolean isResettable() {
-		if (!isEditable() || isSubEntry()) return false;
-		return captionEntry != null && captionEntry.isResettable();
-	}
-	
-	@Override public boolean isRestorable() {
-		if (!isEditable() || isSubEntry()) return false;
-		return captionEntry != null && captionEntry.isRestorable();
-	}
-	
-	@Override public boolean canResetGroup() {
-		return entries.values().stream().anyMatch(
-		  e -> e != captionEntry && e.isResettable());
-	}
-	
-	@Override public boolean canRestoreGroup() {
-		return entries.values().stream().anyMatch(
-		  e -> e != captionEntry && e.isRestorable());
 	}
 	
 	@Override public void tick() {
