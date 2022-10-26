@@ -313,7 +313,7 @@ class DataClassProxy<B: Any>(
     private fun createFrom(def: B, properties: Map<String, Any?>?, skipBake: Boolean = false, transform: (String, Any?) -> Any?) =
       klass.primaryConstructor!!.run {
           call(*parameters.map { p ->
-              properties?.get(name)?.let { transform(name, it) } ?: get(def, p.name!!)
+              properties?.get(p.name!!)?.let { transform(p.name!!, it) } ?: get(def, p.name!!)
           }.toTypedArray())
       }.also {
           properties?.forEach { (key, value) ->
