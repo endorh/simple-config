@@ -1,19 +1,11 @@
-import net.minecraftforge.gradle.userdev.tasks.RenameJarInPlace
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
-    repositories {
-        maven("https://files.minecraftforge.net/maven")
-        mavenCentral()
-    }
+    // ForgeGradle is declared in buildSrc, only Kotlin needs to be declared here
     dependencies {
-        classpath("net.minecraftforge.gradle:ForgeGradle:5.1.+") {
-            isChanging = true
-        }
-        // Make sure this version matches the one included in Kotlin for Forge
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
-        // OPTIONAL Gradle plugin for Kotlin Serialization
-        classpath("org.jetbrains.kotlin:kotlin-serialization:1.7.10")
+        // Kotlin For Forge Gradle plugin dependencies
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10") // Must match KFF version
+        classpath("org.jetbrains.kotlin:kotlin-serialization:1.7.10") // Optional
     }
 }
 
@@ -21,7 +13,6 @@ plugins {
     kotlin("jvm") version "1.7.10"
     id("net.minecraftforge.gradle")
     id("com.github.johnrengelman.shadow") version "7.1.2"
-    // `maven-publish`
 }
 
 apply(from = "https://raw.githubusercontent.com/thedarkcolour/KotlinForForge/site/thedarkcolour/kotlinforforge/gradle/kff-3.7.1.gradle")
@@ -69,7 +60,7 @@ java {
     }
 }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().all {
     options.encoding = "UTF-8"
 }
 
@@ -126,25 +117,16 @@ sourceSets {
 
 // Dependencies ----------------------------------------------------------------
 
-val explicitGroups: MutableSet<String> = mutableSetOf()
-fun MavenArtifactRepository.includeOnly(vararg groups: String) {
-    content {
-        groups.forEach {
-            // Include subgroups as well
-            val regex = "${it.replace(".", "\\.")}(\\..*)?"
-            includeGroupByRegex(regex)
-            explicitGroups.add(regex)
-        }
-    }
+// The `exclusiveContent` Gradle API breaks with ForgeGradle dependency
+// remapping, so instead we use an includeOnly/excludeExplicit approach
+val explicitDependencyGroups = mutableSetOf<String>()
+fun MavenArtifactRepository.includeOnly(vararg groups: String) = content {
+    groups.map { """${Regex.escape(it)}(\..*)?""" } // Include subgroups as well
+      .forEach { includeGroupByRegex(it.also(explicitDependencyGroups::add)) }
 }
 
-fun MavenArtifactRepository.excludeExplicit() {
-    content {
-        explicitGroups.forEach {
-            excludeGroupByRegex(it)
-        }
-    }
-}
+fun MavenArtifactRepository.excludeExplicit() =
+  content { explicitDependencyGroups.forEach { excludeGroupByRegex(it) } }
 
 repositories {
     maven("https://www.cursemaven.com") {
@@ -192,8 +174,9 @@ dependencies {
     minecraft("net.minecraftforge:forge:${V.minecraftForge}")
     
     // Simple Config
-    compileOnly("endorh.simpleconfig:simplekonfig-${V.minecraft}-api:${V.simpleKonfigApi}")
-    runtimeOnly(fg.deobf("endorh.simpleconfig:simpleconfig-${V.minecraft}:${V.simpleConfig}"))
+    compileOnly(rootProject.sourceSets["api"].output)
+    compileOnly(rootProject.sourceSets["kotlinApi"].output)
+    runtimeOnly(project(rootProject.path, configuration = "deobfShadowJar"))
     
     // Testing dependencies
     // Catalogue
@@ -208,22 +191,25 @@ dependencies {
 
 // Tasks -----------------------------------------------------------------------
 
-tasks.withType<Test> {
+tasks.withType<Test>().all {
     useJUnitPlatform()
 }
 
 tasks.classes {
     dependsOn(tasks.extractNatives.get())
+    
+    // It seems the IntelliJ run configuration doesn't understand
+    //   inter-project dependencies' Gradle task dependencies, so we
+    //   need to manually depend on the shadowJar task here, as
+    //   we don't run Minecraft from Gradle
+    // The `prepareRuns` and `prepareRunKotlinTestClient` tasks are
+    //   dynamically created by the ForgeGradle plugin even after
+    //   `afterEvaluate`, so the only way to make them depend on the
+    //   `shadowJar` task is to either use `tasks.all` and manually
+    //   filter by name (ugh), or create the dependency from one of
+    //   the other tasks they depend on, like `classes`
+    dependsOn(rootProject.tasks.shadowJar)
 }
 
-// lateinit var reobfShadowJar: RenameJarInPlace
-lateinit var reobfJar: RenameJarInPlace
-reobf {
-    // reobfShadowJar = create("shadowJar")
-    reobfJar = create("jar")
-}
-
-// Jar attributes
-tasks.jar {
-    finalizedBy(reobfJar)
-}
+val reobfJar = reobf.create("jar")
+tasks.jar { finalizedBy(reobfJar) }
