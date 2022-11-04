@@ -22,7 +22,7 @@ import java.util.function.Supplier;
  * An {@link AbstractConfigEntry} builder.<br>
  * Immutable. All methods return modified copies, so reusing is possible.<br>
  * All subclasses must follow this contract and implement the
- * {@link AbstractConfigEntryBuilder#createCopy()} method copying their state.
+ * {@link AbstractConfigEntryBuilder#createCopy(Object)} method copying their state.
  * @param <V> The type of the value held by the entry
  * @param <Config> The type of the associated config entry
  * @param <Gui> The type of the associated GUI entry
@@ -86,7 +86,12 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self guiError(Function<Gui, Optional<Component>> guiErrorSupplier) {
+	@Override public @NotNull Self withValue(V value) {
+		return copy(value).castSelf();
+	}
+	
+	@Contract(pure=true)
+	@Override public @NotNull Self guiError(Function<Gui, Optional<Component>> guiErrorSupplier) {
 		final SelfImpl copy = copy();
 		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
@@ -95,7 +100,7 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self error(Function<V, Optional<Component>> errorSupplier) {
+	@Override public @NotNull Self error(Function<V, Optional<Component>> errorSupplier) {
 		final SelfImpl copy = copy();
 		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
@@ -110,7 +115,7 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self configError(Function<Config, Optional<Component>> configErrorSupplier) {
+	@Override public @NotNull Self configError(Function<Config, Optional<Component>> configErrorSupplier) {
 		final SelfImpl copy = copy();
 		BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> prev =
 		  copy.errorSupplier == null? (e, g) -> Optional.empty() : copy.errorSupplier;
@@ -125,21 +130,21 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Override public Self withoutError() {
+	@Override public @NotNull Self withoutError() {
 		final SelfImpl copy = copy();
 		copy.errorSupplier = null;
 		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
-	@Override public Self guiTooltip(Function<Gui, List<Component>> tooltipSupplier) {
+	@Override public @NotNull Self guiTooltip(Function<Gui, List<Component>> tooltipSupplier) {
 		final SelfImpl copy = copy();
 		copy.tooltipSupplier = (e, g) -> tooltipSupplier.apply(g);
 		return copy.castSelf();
 	}
 	
 	@Contract(pure=true)
-	@Override public Self tooltip(Function<V, List<Component>> tooltipSupplier) {
+	@Override public @NotNull Self tooltip(Function<V, List<Component>> tooltipSupplier) {
 		final SelfImpl copy = copy();
 		copy.tooltipSupplier = (e, g) -> {
 			V v = e.fromGui(g);
@@ -149,14 +154,14 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy.castSelf();
 	}
 	
-	@Contract(pure=true) @Override public Self withoutTooltip() {
+	@Contract(pure=true) @Override public @NotNull Self withoutTooltip() {
 		SelfImpl copy = copy();
 		copy.tooltipSupplier = null;
 		return copy.castSelf();
 	}
 	
 	@Override @Contract(pure=true)
-	public Self tooltipArgs(Object... args) {
+	public @NotNull Self tooltipArgs(Object... args) {
 		SelfImpl copy = copy();
 		copy.tooltipArgs.clear();
 		copy.tooltipArgs.addAll(Arrays.asList(args));
@@ -164,12 +169,12 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Override @Contract(pure=true)
-	@SafeVarargs public final Self tooltipArgs(Supplier<Object>... args) {
+	@SafeVarargs public final @NotNull Self tooltipArgs(Supplier<Object>... args) {
 		return tooltipArgs((Object[]) args);
 	}
 	
 	@Override @Contract(pure=true)
-	public Self nameArgs(Object... args) {
+	public @NotNull Self nameArgs(Object... args) {
 		SelfImpl copy = copy();
 		copy.nameArgs.clear();
 		copy.nameArgs.addAll(Arrays.asList(args));
@@ -177,28 +182,28 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Override @Contract(pure=true)
-	public <F> Self addField(String suffix, Function<V, F> mapper, Class<?> type) {
+	public <F> @NotNull Self addField(String suffix, Function<V, F> mapper, Class<?> type) {
 		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, type)));
 	}
 	
 	@Override @Contract(pure=true)
-	public <F> Self add_field(String suffix, Function<V, F> mapper, Class<?> type) {
+	public <F> @NotNull Self add_field(String suffix, Function<V, F> mapper, Class<?> type) {
 		return addField("_" + suffix, mapper, type);
 	}
 	
 	@Override @Contract(pure=true)
-	public <F> Self field(Function<V, F> mapper, Function<F, V> reader, Class<?> type) {
+	public <F> @NotNull Self field(Function<V, F> mapper, Function<F, V> reader, Class<?> type) {
 		SelfImpl copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type).withCommitter(reader);
 		return copy.castSelf();
 	}
 	
-	@Override public <F> Self field(String name, Function<V, F> mapper, Class<?> type) {
+	@Override public <F> @NotNull Self field(String name, Function<V, F> mapper, Class<?> type) {
 		return addField(BackingFieldBinding.withName(name, BackingFieldBuilder.of(mapper, type)));
 	}
 	
 	@Override @Contract(pure=true)
-	public <F> Self field(Function<V, F> mapper, Class<?> type) {
+	public <F> @NotNull Self field(Function<V, F> mapper, Class<?> type) {
 		SelfImpl copy = copy();
 		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type);
 		return copy.castSelf();
@@ -211,43 +216,43 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self restart() {
+	@Override @Contract(pure=true) public @NotNull Self restart() {
 		return restart(true);
 	}
 	
-	@Override @Contract(pure=true) public Self restart(boolean requireRestart) {
+	@Override @Contract(pure=true) public @NotNull Self restart(boolean requireRestart) {
 		SelfImpl copy = copy();
 		copy.requireRestart = requireRestart;
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self experimental() {
+	@Override @Contract(pure=true) public @NotNull Self experimental() {
 		return experimental(true);
 	}
 	
-	@Override @Contract(pure=true) public Self experimental(boolean experimental) {
+	@Override @Contract(pure=true) public @NotNull Self experimental(boolean experimental) {
 		SelfImpl copy = copy();
 		copy.experimental = experimental;
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self editable(Supplier<Boolean> editable) {
+	@Override @Contract(pure=true) public @NotNull Self editable(Supplier<Boolean> editable) {
 		SelfImpl copy = copy();
 		copy.editableSupplier = h -> editable.get();
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self editable(Function<ConfigEntryHolder, Boolean> editable) {
+	@Override @Contract(pure=true) public @NotNull Self editable(Function<ConfigEntryHolder, Boolean> editable) {
 		SelfImpl copy = copy();
 		copy.editableSupplier = editable;
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self temp() {
+	@Override @Contract(pure=true) public @NotNull Self temp() {
 		return temp(true);
 	}
 	
-	@Override @Contract(pure=true) public Self temp(boolean nonPersistent) {
+	@Override @Contract(pure=true) public @NotNull Self temp(boolean nonPersistent) {
 		SelfImpl copy = copy();
 		copy.nonPersistent = nonPersistent;
 		if (!nonPersistent)
@@ -255,11 +260,11 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self ignored() {
+	@Override @Contract(pure=true) public @NotNull Self ignored() {
 		return ignored(true);
 	}
 	
-	@Override @Contract(pure=true) public Self ignored(boolean ignored) {
+	@Override @Contract(pure=true) public @NotNull Self ignored(boolean ignored) {
 		SelfImpl copy = copy();
 		copy.ignored = ignored;
 		if (ignored) copy.nonPersistent = true;
@@ -273,13 +278,13 @@ public abstract class AbstractConfigEntryBuilder<
 		return copy;
 	}
 	
-	@Override @Contract(pure=true) public Self withTags(EntryTag... tags) {
+	@Override @Contract(pure=true) public @NotNull Self withTags(EntryTag... tags) {
 		SelfImpl copy = copy();
 		copy.tags.addAll(Arrays.asList(tags));
 		return copy.castSelf();
 	}
 	
-	@Override @Contract(pure=true) public Self withoutTags(EntryTag... tags) {
+	@Override @Contract(pure=true) public @NotNull Self withoutTags(EntryTag... tags) {
 		SelfImpl copy = copy();
 		Arrays.stream(tags).forEach(copy.tags::remove);
 		return copy.castSelf();
@@ -320,14 +325,22 @@ public abstract class AbstractConfigEntryBuilder<
 	 * Do not call directly, instead use {@link AbstractConfigEntryBuilder#copy()}<br>
 	 * Subclasses should implement this method copying all of their fields.
 	 */
-	@Contract(value="-> new", pure=true) protected abstract SelfImpl createCopy();
+	@Contract(value="_ -> new", pure=true) protected abstract SelfImpl createCopy(V value);
 	
 	/**
 	 * Creates a copy of this builder
 	 */
 	@Contract(value="-> new", pure=true) @MustBeInvokedByOverriders
 	@Internal public SelfImpl copy() {
-		final SelfImpl copy = createCopy();
+		return copy(value);
+	}
+	
+	/**
+	 * Creates a copy of this builder
+	 */
+	@Contract(value="_ -> new", pure=true) @MustBeInvokedByOverriders
+	@Internal public SelfImpl copy(V value) {
+		final SelfImpl copy = createCopy(value);
 		copy.value = value;
 		copy.translation = translation;
 		copy.errorSupplier = errorSupplier;

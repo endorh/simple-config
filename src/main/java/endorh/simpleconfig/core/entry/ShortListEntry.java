@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.entry.ShortListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -56,8 +57,8 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 			return new ShortListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
-			return new Builder(value);
+		@Override protected Builder createCopy(List<Short> value) {
+			return new Builder(new ShortArrayList(value));
 		}
 	}
 	

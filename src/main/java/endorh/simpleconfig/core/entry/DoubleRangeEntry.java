@@ -75,7 +75,7 @@ public class DoubleRangeEntry
 			return new DoubleRangeEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(DoubleRange value) {
 			return new Builder(value);
 		}
 	}

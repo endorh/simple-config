@@ -7,7 +7,7 @@ import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -33,7 +33,7 @@ import static java.lang.Math.min;
 
 public class StringEntry
   extends AbstractConfigEntry<String, String, String>
-  implements IKeyEntry<String> {
+  implements AtomicEntry<String> {
 	protected Supplier<List<String>> choiceSupplier;
 	protected SimpleComboBoxModel<String> suggestionProvider;
 	protected boolean restrict;
@@ -57,11 +57,21 @@ public class StringEntry
 			super(value, String.class);
 		}
 		
+		@Override public @NotNull StringEntryBuilder withValue(String value) {
+			if (restrict && choiceSupplier != null) {
+				List<String> choices = choiceSupplier.get();
+				if (!choices.contains(value)) throw new IllegalArgumentException(
+				  "New value for String entry (\"" + value + "\") is not in the choice list: [" +
+				  choices.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")) + "]");
+			}
+			return super.withValue(value);
+		}
+		
 		@Override @Contract(pure=true) public @NotNull Builder suggest(String... suggestions) {
 			return suggest(Arrays.stream(suggestions).collect(Collectors.toList()));
 		}
 		
-		@Override @Contract(pure=true)public @NotNull Builder suggest(@NotNull List<String> suggestions) {
+		@Override @Contract(pure=true) public @NotNull Builder suggest(@NotNull List<String> suggestions) {
 			Builder copy = copy();
 			Objects.requireNonNull(suggestions);
 			copy.choiceSupplier = () -> suggestions;
@@ -78,18 +88,21 @@ public class StringEntry
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public @NotNull Builder restrict(String first, String... choices) {
+		@Override @Contract(pure=true) public @NotNull StringEntryBuilder restrict(String first, String... choices) {
 			List<String> list = new ArrayList<>(choices.length + 1);
 			list.add(first);
 			list.addAll(Arrays.asList(choices));
+			if (!list.contains(value)) return withValue(first).restrict(list);
 			return restrict(list);
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder restrict(@NotNull List<String> choices) {
 			Builder copy = copy();
-			if (choices.isEmpty())
-				throw new IllegalArgumentException("At least one choice must be specified");
+			if (choices.isEmpty()) throw new IllegalArgumentException(
+			  "At least one choice must be specified");
 			Objects.requireNonNull(choices);
+			if (!choices.contains(value)) throw new IllegalArgumentException(
+			  "Default value is not included in choice list for String entry");
 			copy.choiceSupplier = () -> choices;
 			copy.restrict = true;
 			return copy;
@@ -124,7 +137,7 @@ public class StringEntry
 			return entry;
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(String value) {
 			final Builder copy = new Builder(value);
 			copy.choiceSupplier = choiceSupplier;
 			copy.restrict = restrict;

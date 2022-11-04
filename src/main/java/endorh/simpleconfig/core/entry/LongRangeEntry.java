@@ -47,7 +47,7 @@ public class LongRangeEntry
 			return new LongRangeEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(LongRange value) {
 			return new Builder(value);
 		}
 	}

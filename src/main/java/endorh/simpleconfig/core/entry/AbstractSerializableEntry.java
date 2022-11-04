@@ -5,7 +5,7 @@ import endorh.simpleconfig.api.entry.SerializableEntryBuilder;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public abstract class AbstractSerializableEntry
   <V, Self extends AbstractSerializableEntry<V, Self>>
   extends AbstractConfigEntry<V, String, String>
-  implements IKeyEntry<String> {
+  implements AtomicEntry<String> {
 	
 	protected AbstractSerializableEntry(
 	  ConfigEntryHolder parent, String name, V value, Class<?> typeClass

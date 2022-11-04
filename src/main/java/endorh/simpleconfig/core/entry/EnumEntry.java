@@ -8,7 +8,7 @@ import endorh.simpleconfig.api.entry.EnumEntryBuilder;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -34,7 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class EnumEntry<E extends Enum<E>>
-  extends AbstractConfigEntry<E, E, E> implements IKeyEntry<E> {
+  extends AbstractConfigEntry<E, E, E> implements AtomicEntry<E> {
 	protected final Class<E> enumClass;
 	protected final Map<String, E> nameMap;
 	protected final Map<String, E> lowerCaseNameMap;
@@ -79,7 +79,7 @@ public class EnumEntry<E extends Enum<E>>
 			return entry;
 		}
 		
-		@Override protected Builder<E> createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder<E> createCopy(E value) {
 			final Builder<E> copy = new Builder<>(value);
 			copy.useComboBox = useComboBox;
 			return copy;

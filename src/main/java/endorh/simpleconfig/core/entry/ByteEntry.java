@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ByteEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @Deprecated
 public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
-  implements IKeyEntry<Byte> {
+  implements AtomicEntry<Byte> {
 	@Internal public ByteEntry(
 	  ConfigEntryHolder parent, String name, byte value
 	) {
@@ -56,7 +56,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
 			return new ByteEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Byte value) {
 			return new Builder(value);
 		}
 	}

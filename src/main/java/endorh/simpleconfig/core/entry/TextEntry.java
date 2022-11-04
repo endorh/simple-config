@@ -82,7 +82,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 			return e;
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Void value) {
 			final Builder copy = new Builder();
 			copy.translationSupplier = translationSupplier;
 			return copy;

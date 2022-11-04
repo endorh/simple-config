@@ -7,6 +7,7 @@ import net.minecraft.ResourceLocationException;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -32,7 +33,7 @@ public class ResourceLocationEntry
 			return new ResourceLocationEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(ResourceLocation value) {
 			return new Builder(value);
 		}
 	}

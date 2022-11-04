@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ShortEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @Deprecated
 public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer>
-  implements IKeyEntry<Short> {
+  implements AtomicEntry<Short> {
 	@Internal public ShortEntry(
 	  ConfigEntryHolder parent, String name, short value
 	) {
@@ -54,7 +54,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer>
 			return new ShortEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Short value) {
 			return new Builder(value);
 		}
 	}

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public interface ItemEntryBuilder
-  extends ConfigEntryBuilder<Item, String, Item, ItemEntryBuilder>, KeyEntryBuilder<Item> {
+  extends ConfigEntryBuilder<@NotNull Item, String, Item, ItemEntryBuilder>, AtomicEntryBuilder {
 	/**
 	 * When true (the default), items without an item group are not accepted.<br>
 	 * This excludes the AIR and BARRIER item blocks, as well as other special blocks.

@@ -4,7 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ColorEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
-  implements IKeyEntry<Integer> {
+  implements AtomicEntry<Integer> {
 	protected final boolean alpha;
 	@Internal public ColorEntry(
 	  ConfigEntryHolder parent, String name, Color value, boolean alpha
@@ -54,7 +54,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
 			return new ColorEntry(parent, name, value, alpha);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Color value) {
 			final Builder copy = new Builder(value);
 			copy.alpha = alpha;
 			return copy;

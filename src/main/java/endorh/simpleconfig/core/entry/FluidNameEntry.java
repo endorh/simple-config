@@ -75,7 +75,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 			return new FluidNameEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(ResourceLocation value) {
 			final Builder copy = new Builder(value);
 			copy.tag = tag;
 			return copy;

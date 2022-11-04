@@ -75,7 +75,7 @@ public class FloatRangeEntry
 			return new FloatRangeEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(FloatRange value) {
 			return new Builder(value);
 		}
 	}

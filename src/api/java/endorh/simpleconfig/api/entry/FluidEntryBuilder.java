@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Contract;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public interface FluidEntryBuilder
-  extends ConfigEntryBuilder<Fluid, String, Fluid, FluidEntryBuilder>, KeyEntryBuilder<Fluid> {
+  extends ConfigEntryBuilder<@NotNull Fluid, String, Fluid, FluidEntryBuilder>, AtomicEntryBuilder {
 	/**
 	 * When true (the default), requires the filled bucket item to have an item group.<br>
 	 * This excludes the empty fluid.

@@ -12,6 +12,6 @@ public interface ConfigGroupBuilder extends ConfigEntryHolderBuilder<ConfigGroup
 	
 	@Contract("_, _ -> this") <
 	  V, C, G,
-	  B extends ConfigEntryBuilder<V, C, G, B>
+	  B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder
 	> @NotNull ConfigGroupBuilder caption(String name, B entry);
 }

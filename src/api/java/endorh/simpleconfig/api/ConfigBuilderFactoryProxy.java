@@ -30,16 +30,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-public abstract class ConfigBuilderFactoryProxy {
+public final class ConfigBuilderFactoryProxy {
 	private ConfigBuilderFactoryProxy() {}
 	
-	protected static ConfigBuilderFactory factory = null;
-	protected static ConfigBuilderFactory getFactory() {
+	private static ConfigBuilderFactory factory = null;
+	private static ConfigBuilderFactory getFactory() {
 		if (factory != null) return factory;
 		try {
 			return factory = (ConfigBuilderFactory) Class.forName(
@@ -210,7 +211,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	@NotNull public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
+	@NotNull public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & AtomicEntryBuilder>
 	EntryButtonEntryBuilder<V, Gui, B> button(B inner, Consumer<V> action) {
 		return getFactory().button(inner, action);
 	}
@@ -219,7 +220,7 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * Add a button to another entry.<br>
 	 * Not persistent. Useful for GUI screen interaction.
 	 */
-	@NotNull public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>>
+	@NotNull public static <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & AtomicEntryBuilder>
 	EntryButtonEntryBuilder<V, Gui, B> button(
 	  B inner, BiConsumer<V, ConfigEntryHolder> action
 	) {
@@ -610,6 +611,8 @@ public abstract class ConfigBuilderFactoryProxy {
 		return getFactory().bean(value);
 	}
 	
+	// Minecraft specific types
+	
 	/**
 	 * NBT entry that accepts any kind of NBT, either values or compounds
 	 */
@@ -771,103 +774,82 @@ public abstract class ConfigBuilderFactoryProxy {
 		return getFactory().fluidName(value); 
 	}
 	
+	// Specific lists (for `String`s and `Number` types)
+	
 	/**
-	 * String list
+	 * String list<br>
+	 * You should use instead general {@link #list}s with a {@link #string} entry,
+	 * which provides better control over allowed values.
 	 */
-	@NotNull public static StringListEntryBuilder stringList(List<String> value) {
+	public static @NotNull StringListEntryBuilder stringList(List<String> value) {
 		return getFactory().stringList(value); 
 	}
 	
 	/**
-	 * Byte list with elements between {@code min} and {@code max} (inclusive)<br>
-	 * Null bounds are unbound
-	 *
-	 * @deprecated Use bound Integer lists
+	 * Byte list<br>
+	 * You should use instead general {@link #list}s with a byte/int {@link #number} entry,
+	 * which provides better control over allowed values.
+	 * @deprecated Use bound {@link #intList}s or general {@link #list}s
 	 */
-	@NotNull public static @SuppressWarnings("DeprecatedIsStillUsed")
-	@Deprecated ByteListEntryBuilder byteList(
-	  List<Byte> value
-	) {
+	@Deprecated public static @NotNull ByteListEntryBuilder byteList(List<Byte> value) {
 		return getFactory().byteList(value); 
 	}
 	
 	/**
-	 * Short list with elements between {@code min} and {@code max} (inclusive)<br>
-	 * Null bounds are unbound
-	 *
-	 * @deprecated Use bound Integer lists
+	 * Short list<br>
+	 * You should use instead general {@link #list}s with a short/int {@link #number} entry,
+	 * which provides better control over allowed values.
+	 * @deprecated Use bound {@link #intList}s, or general {@link #list}s
 	 */
-	@NotNull public static @SuppressWarnings("DeprecatedIsStillUsed")
-	@Deprecated ShortListEntryBuilder shortList(
-	  List<Short> value
-	) {
+	@Deprecated public static @NotNull ShortListEntryBuilder shortList(List<Short> value) {
 		return getFactory().shortList(value); 
 	}
 	
 	/**
-	 * Integer list with elements between {@code min} and {@code max} (inclusive)<br>
-	 * Null bounds are unbound
+	 * Integer list<br>
+	 * You should use instead general {@link #list}s with an int {@link #number} entry,
+	 * which provides better control over allowed values.
 	 */
-	@NotNull public static IntegerListEntryBuilder intList(List<Integer> value) {
+	public static @NotNull IntegerListEntryBuilder intList(List<Integer> value) {
 		return getFactory().intList(value); 
 	}
 	
 	/**
-	 * Long list with elements between {@code min} and {@code max} (inclusive)<br>
-	 * Null bounds are unbound
+	 * Long list<br>
+	 * You should use instead general {@link #list}s with a long {@link #number} entry,
+	 * which provides better control over allowed values.
 	 */
-	@NotNull public static LongListEntryBuilder longList(List<Long> value) {
+	public static @NotNull LongListEntryBuilder longList(List<Long> value) {
 		return getFactory().longList(value);
 	}
 	
 	/**
-	 * Float list with elements between {@code min} and {@code max} (inclusive)<br>
-	 * Null bounds are unbound
+	 * Float list<br>
+	 * You should use instead general {@link #list}s with a float {@link #number} entry,
+	 * which provides better control over allowed values.
 	 */
-	@NotNull public static FloatListEntryBuilder floatList(List<Float> value) {
+	public static @NotNull FloatListEntryBuilder floatList(List<Float> value) {
 		return getFactory().floatList(value); 
 	}
 	
 	/**
-	 * Double list with elements between {@code min} and {@code max} (inclusive)<br>
-	 * Null bounds are unbound
+	 * Double list<br>
+	 * You should use instead general {@link #list}s with a double {@link #number} entry,
+	 * which provides better control over allowed values.
 	 */
-	@NotNull public static DoubleListEntryBuilder doubleList(List<Double> value) {
+	public static @NotNull DoubleListEntryBuilder doubleList(List<Double> value) {
 		return getFactory().doubleList(value); 
 	}
 	
-	/**
-	 * Attach an entry as the caption of a list entry<br>
-	 * Changes the value to a {@link Pair} of the caption's value and the list's value
-	 */
-	@NotNull public static <V, C, G, B extends ListEntryBuilder<V, C, G, B>,
-	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & KeyEntryBuilder<CG>>
-	CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> caption(
-	  CB caption, B list
-	) {
-		return getFactory().caption(caption, list); 
-	}
-	
-	/**
-	 * Attach an entry as the caption of a map entry<br>
-	 * Changes the value to a {@link Pair} of the caption's value and the map's value
-	 */
-	@NotNull public static <K, V, KC, C, KG, G,
-	  MB extends EntryMapEntryBuilder<K, V, KC, C, KG, G, ?, ?>,
-	  CV, CC, CG,
-	  CB extends ConfigEntryBuilder<CV, CC, CG, CB> & KeyEntryBuilder<CG>>
-	CaptionedMapEntryBuilder<K, V, KC, C, KG, G, MB, CV, CC, CG, CB>
-	caption(CB caption, MB map) {
-		return getFactory().caption(caption, map); 
-	}
+	// General lists
 	
 	/**
 	 * List of other entries. Defaults to an empty list<br>
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	EntryListEntryBuilder<V, C, G, Builder> list(Builder entry) {
+	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry) {
 		return getFactory().list(entry); 
 	}
 	
@@ -876,8 +858,8 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, List<V> value) {
+	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, List<V> value) {
 		return getFactory().list(entry, value); 
 	}
 	
@@ -886,11 +868,46 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * The nested entry may be other list entry, or even a map entry.<br>
 	 * Non-persistent entries cannot be nested
 	 */
-	@NotNull public static @SuppressWarnings("unchecked") <V, C, G,
-	  Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, V... values) {
+	public static @SuppressWarnings("unchecked") <
+	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
+	> @NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, V... values) {
 		return getFactory().list(entry, values); 
 	}
+	
+	// General sets
+	
+	/**
+	 * Set of other entries. Defaults to an empty set<br>
+	 * The nested entry may be other set/list entry, or even a map entry.<br>
+	 * Non-persistent entries cannot be nested
+	 */
+	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry) {
+		return getFactory().set(entry);
+	}
+	
+	/**
+	 * Set of other entries<br>
+	 * The nested entry may be other set/list entry, or even a map entry.<br>
+	 * Non-persistent entries cannot be nested
+	 */
+	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry, Set<V> value) {
+		return getFactory().set(entry, value);
+	}
+	
+	/**
+	 * Set of other entries<br>
+	 * The nested entry may be other set/list entry, or even a map entry.<br>
+	 * Non-persistent entries cannot be nested
+	 */
+	public static @SuppressWarnings("unchecked") <
+	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
+	> @NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry, V... values) {
+		return getFactory().set(entry, values);
+	}
+	
+	// General maps
 	
 	/**
 	 * Map of other entries<br>
@@ -903,10 +920,10 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param entry The entry to be used as value, which may be another map
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 */
-	@NotNull public static <K, V, KC, C, KG, G,
+	public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>>
-	EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return getFactory().map(keyEntry, entry); 
@@ -924,9 +941,9 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value
 	 */
-	@NotNull public static <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>>
-	EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	public static <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>,
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
 	) {
 		return getFactory().map(keyEntry, entry, value); 
@@ -942,8 +959,8 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param entry The entry to be used as value, which may be other
 	 *   map entry, or a list entry. Not persistent entries cannot be used
 	 */
-	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
+	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
 	  Builder entry
 	) {
 		return getFactory().map(entry); 
@@ -960,12 +977,14 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *   map entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value (default: empty map)
 	 */
-	@NotNull public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
+	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
 	  Builder entry, Map<String, V> value
 	) {
 		return getFactory().map(entry, value); 
 	}
+	
+	// Lists of pairs (non-unique maps)
 	
 	/**
 	 * List of pairs of other entries, like a linked map, but with duplicates<br>
@@ -978,10 +997,10 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param entry The entry to be used as value, which may be another map
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 */
-	@NotNull public static <K, V, KC, C, KG, G,
+	public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>
-	  > EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return getFactory().pairList(keyEntry, entry); 
@@ -999,14 +1018,73 @@ public abstract class ConfigBuilderFactoryProxy {
 	 *   entry, or a list entry. Not persistent entries cannot be used
 	 * @param value Entry value
 	 */
-	@NotNull public static <K, V, KC, C, KG, G,
+	public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>>
-	EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
 	) {
 		return getFactory().pairList(keyEntry, entry, value); 
 	}
+	
+	// Collection captions
+	
+	/**
+	 * Attach an entry as the caption of a list entry<br>
+	 * Changes the value to a {@link Pair} of the caption's value and the list's value
+	 */
+	public static <V, C, G, B extends ListEntryBuilder<V, C, G, B>,
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
+	  > @NotNull CaptionedCollectionEntryBuilder<
+	  List<V>, List<C>, G, B, CV, CC, CG, CB
+	> caption(CB caption, B list) {
+		return getFactory().caption(caption, list);
+	}
+	
+	/**
+	 * Attach an entry as the caption of a set entry<br>
+	 * Changes the value to a {@link Pair} of the caption's value and the set's value
+	 */
+	public static <V, C, G, B extends ConfigEntryBuilder<V, C, G, B>,
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
+	  > @NotNull CaptionedCollectionEntryBuilder<
+	  Set<V>, Set<C>, G, EntrySetEntryBuilder<V, C, G, B>, CV, CC, CG, CB
+	> caption(CB caption, EntrySetEntryBuilder<V, C, G, B> set) {
+		return getFactory().caption(caption, set);
+	}
+	
+	/**
+	 * Attach an entry as the caption of a map entry<br>
+	 * Changes the value to a {@link Pair} of the caption's value and the map's value
+	 */
+	public static <K, V, KC, C, KG, G,
+	  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
+	  B extends ConfigEntryBuilder<V, C, G, B>,
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
+	  > @NotNull CaptionedCollectionEntryBuilder<
+	  Map<K, V>, Map<KC, C>, Pair<KG, G>, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>,
+	  CV, CC, CG, CB
+	> caption(CB caption, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> map) {
+		return getFactory().caption(caption, map);
+	}
+	
+	/**
+	 * Attach an entry as the caption of a pairList entry<br>
+	 * Changes the value to a {@link Pair} of the caption's value and the pairList's value
+	 */
+	public static <K, V, KC, C, KG, G,
+	  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
+	  B extends ConfigEntryBuilder<V, C, G, B>,
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
+	  > @NotNull CaptionedCollectionEntryBuilder<
+	  List<Pair<K, V>>, List<Pair<KC, C>>, Pair<KG, G>,
+	  EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>,
+	  CV, CC, CG, CB
+	> caption(CB caption, EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB> pairList) {
+		return getFactory().caption(caption, pairList);
+	}
+	
+	// General pairs
 	
 	/**
 	 * Pair of other two entries.<br>
@@ -1019,8 +1097,8 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param rightEntry The entry for the right
 	 */
 	@NotNull public static <L, R, LC, RC, LG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
 	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
 	  LB leftEntry, RB rightEntry
 	) {
@@ -1038,13 +1116,15 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
 	@NotNull public static <L, R, LC, RC, LG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
 	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
 	  LB leftEntry, RB rightEntry, Pair<L, R> value
 	) {
 		return getFactory().pair(leftEntry, rightEntry, value); 
 	}
+	
+	// General triples
 	
 	/**
 	 * Triple of other three entries.<br>
@@ -1058,9 +1138,9 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param rightEntry The entry for the right
 	 */
 	@NotNull public static <L, M, R, LC, MC, RC, LG, MG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
 	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry
 	) {
@@ -1079,9 +1159,9 @@ public abstract class ConfigBuilderFactoryProxy {
 	 * @param value Entry value (if omitted, it's inferred from the values of the entries)
 	 */
 	@NotNull public static <L, M, R, LC, MC, RC, LG, MG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
 	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
 	) {

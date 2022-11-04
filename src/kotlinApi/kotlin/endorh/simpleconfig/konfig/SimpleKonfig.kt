@@ -4,14 +4,15 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import endorh.simpleconfig.api.*
 import endorh.simpleconfig.api.AbstractRange.*
 import endorh.simpleconfig.api.SimpleConfig.Type
-import endorh.simpleconfig.api.entry.EntryPairEntryBuilder
-import endorh.simpleconfig.api.entry.EntryPairListEntryBuilder
-import endorh.simpleconfig.api.entry.EntryTripleEntryBuilder
+import endorh.simpleconfig.api.entry.*
 import endorh.simpleconfig.api.ui.icon.Icon
 import endorh.simpleconfig.core.AbstractConfigEntry
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolderBuilder
-import endorh.simpleconfig.konfig.SimpleKonfig.Companion.buildAndRegister
+import endorh.simpleconfig.konfig.builders.*
+import endorh.simpleconfig.konfig.commons.toCommonsPair
+import endorh.simpleconfig.konfig.commons.toCommonsTriple
+import endorh.simpleconfig.konfig.commons.toTriple
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.resources.ResourceLocation
 import net.minecraftforge.fml.ModLoadingContext
@@ -25,6 +26,8 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 import endorh.simpleconfig.api.ConfigBuilderFactoryProxy as F
 import endorh.simpleconfig.api.ConfigEntryBuilder as Builder
+import org.apache.commons.lang3.tuple.Pair as CPair
+import org.apache.commons.lang3.tuple.Triple as CTriple
 
 private fun getLineNumber() = Thread.currentThread().stackTrace.first {
     it.methodName != "getStackTrace" && it.fileName != "SimpleKonfig.kt"
@@ -37,10 +40,10 @@ private fun ConfigEntryHolderBuilder<*>.add(order: Int, name: String, builder: B
  * Base class for [SimpleKonfig], [category]s and [group]s.
  *
  * Exposes many protected methods to inheritors so they can conveniently
- * define config properties using config entry builders from [SimpleKonfigBuilders]
+ * define config properties using config entry builders from [endorh.simpleconfig.konfig.builders]
  * as delegates.
  */
-abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal constructor(): SimpleKonfigBuilders() {
+abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal constructor() {
     internal abstract val builder: B
     internal val bakedProperties = mutableListOf<BakedPropertyDelegate<*>>()
     
@@ -66,23 +69,85 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
      */
     protected open fun onBake() {}
     
+    private fun checkBuilder(builder: Builder<*, *, *, *>) {
+        if (builder !is AbstractConfigEntryBuilder<*, *, *, *, *, *>)
+            throw IllegalArgumentException("Entry builder not instance of AbstractConfigEntryBuilder")
+    }
+    
+    // Kotlin type adapters
+    /**
+     * Adapt this entry to use Kotlin [Pair]s rather than Apache Commons [CPair]s
+     */
+    protected fun <L, R, LC, RC, LG, RG> EntryPairEntryBuilder<L, R, LC, RC, LG, RG>.toKotlin() =
+      baked { it.toPair() } writer { it.toCommonsPair() }
+    /**
+     * Adapt this entry to use Kotlin [Triple]s rather than Apache Commons [CTriple]s
+     */
+    protected fun <L, M, R, LC, MC, RC, LG, MG, RG> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>.toKotlin() =
+      baked { it.toTriple() } writer { it.toCommonsTriple() }
+    /**
+     * Adapt this entry to use Kotlin [Pair]s rather than Apache Commons [CPair]s
+     */
+    protected fun <K, V, KC, C, KG, G> EntryPairListEntryBuilder<K, V, KC, C, KG, G, *, *>.toKotlin() =
+      baked { l -> l.map { it.toPair() } } writer { l -> l.map { it.toCommonsPair() } }
+    
     // Make entry builders delegate providers
     protected operator fun <V, C, G, B: Builder<V, C, G, B>> B.provideDelegate(
       thisRef: Any, property: KProperty<*>
+    ): EntryDelegate<V, C, G, B> = createEntryDelegate(property)
+    
+    private fun <V, C, G, B : Builder<V, C, G, *>> B.createEntryDelegate(
+      property: KProperty<*>
     ): EntryDelegate<V, C, G, B> {
-        if (this@provideDelegate !is AbstractConfigEntryBuilder<*, *, *, *, *, *>)
-            throw IllegalArgumentException("Entry builder not instance of AbstractConfigEntryBuilder")
-        return EntryDelegate(this as B) {
+        checkBuilder(this)
+        return EntryDelegate(this) {
             builder.add(getLineNumber() ?: 0, property.name, it)
         }
     }
     
-    protected fun <L, R> EntryPairEntryBuilder<L, R, *, *, *, *>.toKotlin() =
-      baked { it.toPair() }.writer { it.toCommonsPair() }
-    protected fun <L, M, R> EntryTripleEntryBuilder<L, M, R, *, *, *, *, *, *>.toKotlin() =
-      baked { it.toTriple() }.writer { it.toCommonsTriple() }
-    protected fun <K, V> EntryPairListEntryBuilder<K, V, *, *, *, *, *, *>.toKotlin() =
-      baked { l -> l.map { it.toPair() } }.writer { l -> l.map { it.toCommonsPair() } }
+    // Specific delegate providers for collection types to prevent delegate type inference
+    //   from depending on a platform call, which would produce a warning in the config
+    //   declaration, suggesting to specify the type explicitly
+    protected operator fun <V, C, G> EntryListEntryBuilder<V, C, G, *>.provideDelegate(
+      thisRef: Any, property: KProperty<*>
+    ): EntryDelegate<List<V>, List<C>, List<G>, *> = createEntryDelegate(property)
+    protected operator fun <V, C, G> EntrySetEntryBuilder<V, C, G, *>.provideDelegate(
+      thisRef: Any, property: KProperty<*>
+    ): EntryDelegate<Set<V>, Set<C>, List<G>, *> = createEntryDelegate(property)
+    protected operator fun <K, V, KC, C, KG, G> EntryMapEntryBuilder<K, V, KC, C, KG, G, *, *>.provideDelegate(
+      thisRef: Any, property: KProperty<*>
+    ): EntryDelegate<Map<K, V>, Map<KC, C>, List<CPair<KG, G>>, *> = createEntryDelegate(property)
+    // Pair lists are automatically transformed to Kotlin pairs
+    protected operator fun <K, V, KC, C, KG, G> EntryPairListEntryBuilder<K, V, KC, C, KG, G, *, *>.provideDelegate(
+      thisRef: Any, property: KProperty<*>
+    ): WritableTransformingEntryDelegate<
+      List<Pair<K, V>>, List<CPair<K, V>>, List<CPair<KC, C>>, List<CPair<KG, G>>, *
+    > = toKotlin().provideDelegate(thisRef, property)
+    
+    protected operator fun ByteListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<Byte>, List<Number>, List<Int>, *> = createEntryDelegate(property)
+    protected operator fun ShortListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<Short>, List<Number>, List<Int>, *> = createEntryDelegate(property)
+    protected operator fun IntegerListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<Int>, List<Number>, List<Int>, *> = createEntryDelegate(property)
+    protected operator fun LongListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<Long>, List<Number>, List<Long>, *> = createEntryDelegate(property)
+    protected operator fun FloatListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<Float>, List<Number>, List<Float>, *> = createEntryDelegate(property)
+    protected operator fun DoubleListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<Double>, List<Number>, List<Double>, *> = createEntryDelegate(property)
+    protected operator fun StringListEntryBuilder.provideDelegate(thisRef: Any, property: KProperty<*>):
+      EntryDelegate<List<String>, List<String>, List<String>, *> = createEntryDelegate(property)
+    
+    // Automatic transformation to Kotlin types
+    protected operator fun <L, R, LC, RC, LG, RG> EntryPairEntryBuilder<L, R, LC, RC, LG, RG>.provideDelegate(
+      thisRef: Any, property: KProperty<*>
+    ): WritableTransformingEntryDelegate<Pair<L, R>, CPair<L, R>, CPair<LC, RC>, CPair<LG, RG>, *> =
+      toKotlin().provideDelegate(thisRef, property)
+    protected operator fun <L, M, R, LC, MC, RC, LG, MG, RG> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>.provideDelegate(
+      thisRef: Any, property: KProperty<*>
+    ): WritableTransformingEntryDelegate<Triple<L, M, R>, CTriple<L, M, R>, CTriple<LC, MC, RC>, CTriple<LG, MG, RG>, *> =
+      toKotlin().provideDelegate(thisRef, property)
     
     /**
      * Create a baked property, which can depend on the values of bound properties and prior
@@ -120,23 +185,23 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
      * the cache.
      */
     @Suppress("UNCHECKED_CAST")
-    class EntryDelegate<V, Config, Gui, B : Builder<V, Config, Gui, B>>(
+    class EntryDelegate<V, Config, Gui, B : Builder<V, Config, Gui, *>>(
       entryBuilder: B, registrar: (B) -> Unit
-    ) : ReadWriteProperty<Any, V>, IEntryDelegate {
+    ) : ReadWriteProperty<Any, V & Any>, IEntryDelegate {
         lateinit var entry: AbstractConfigEntry<V, Config, Gui>
         var cachedValue: V = entryBuilder.value
         
         init {
             val abstractBuilder = (
-              entryBuilder as? AbstractConfigEntryBuilder<V, Config, Gui, *, B, *>
+              entryBuilder as? AbstractConfigEntryBuilder<V, Config, Gui, *, *, *>
               ?: throw IllegalArgumentException(
                   "EntryBuilder must be an instance of AbstractConfigEntryBuilder"
               )).withBuildListener { entry = it }
             registrar(abstractBuilder as B)
         }
         
-        override fun getValue(thisRef: Any, property: KProperty<*>): V = cachedValue
-        override fun setValue(thisRef: Any, property: KProperty<*>, value: V) {
+        override fun getValue(thisRef: Any, property: KProperty<*>): V & Any = cachedValue!!
+        override fun setValue(thisRef: Any, property: KProperty<*>, value: V & Any) {
             entry.set(value)
             bake()
         }
@@ -235,23 +300,38 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
 }
 
 /**
- * Simple Konfig base class.
+ * Base class for Simple Konfig objects.
  *
- * Extend this class to declare a config file for your mod.
- * Then register said config file using [buildAndRegister] from your mod constructor.
+ * Should only be subclassed by `object`s, one per Konfig [Type] per mod.
+ *
+ * Register a [SimpleKonfig] object by passing it to [SimpleKonfig.buildAndRegister]
+ * from your mod's constructor. (see the sample below)
  *
  * Define subcategories by declaring nested objects that extend [category], or
- * config groups extending [group]. Nested categories are not allowed, but groups
- * can nest without limit.
+ * config groups extending [group].
+ * Categories must be top level, but groups can contain other groups without limit.
+ * It's up to you to judge which way of organizing the config entries is *simple*r
+ * for the players.
  *
- * Define config entries using [delegated properties](https://kotlinlang.org/docs/delegated-properties.html)
- * and the entry builders from [SimpleKonfigBuilders].
+ * Within your config object, categories and groups, define config entries using
+ * [delegated properties](https://kotlinlang.org/docs/delegated-properties.html)
+ * and the entry builders from [endorh.simpleconfig.konfig.builders].
  *
- * You may also use [baked] to define baked properties, computed from others after
- * any configuration changes, or to adapt an entry's value every time it's changed
+ * You may also use [baked] to define baked properties, computed from others (and
+ * updated on any config changes).
+ *
+ * You may also call [baked] on an entry to adapt its value
  * (for example, converting units, or wrapping it with a different type).
+ * The user will be able to edit the original entry, but your code will access
+ * the adapted value, which is updated after any config changes.
+ *
+ * All [SimpleConfig] entries are baked on config changes, so you don't need
+ * to perform your own caching of them, unless you need to use a specific value
+ * for an operation spanning multiple ticks without the risk of the config being
+ * changed halfway through.
  *
  * ## Sample Usage
+ * ### Declaring the config file
  * ```
  * object ClientKonfig : SimpleKonfig(Type.CLIENT) {
  *     // Simple entries
@@ -267,20 +347,45 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
  *     ))
  *     val itemBlockPair by pair(item(Items.OAK_PLANKS), block(Blocks.OAK_PLANKS))
  *
- *     // Subcategory with its own tab in the menu
+ *     // Subgroup, displayed as a collapsible list of entries
+ *     object Times : group(expand=true) {
+ *         // Simple entry
+ *         val time by double(1.0) // In seconds
+ *         // Computed entry (updated on any config change)
+ *         val timeInTicks by baked { (time * 20).toInt() }
+ *         // Transformed entry (stored/displayed as seconds, directly available as ticks)
+ *         val timeInTicks2 by double(1.0) baked { (it * 20).toInt() }
+ *     }
+ *
+ *     // Subcategory, displayed as a tab in the menu (must be top level)
  *     object Items : category(color=0x8080A0A0) {
  *         val apple by item(Items.APPLE)
- *     }
  *
- *     // Subgroup, displayed as an expandable entry
- *     object Times : group(expand=true) {
- *         val time by double(1.0) // In seconds
- *         val timeInTicks by baked { (time * 20).toInt() }
- *
- *         // Editable in seconds, directly available in ticks
- *         val time2 by double(1.0) baked { (it * 20).toInt() }
+ *         // Categories may contain groups
+ *         object SubGroup : group(expand=true) {
+ *             // Groups may contain other groups, without any limitation
+ *             object NestedSubGroup : group() {
+ *                 val fluid by fluid(Fluids.WATER)
+ *             }
+ *         }
  *     }
  * }
+ * ```
+ * ### Registering the config file
+ * ```
+ * @Mod(MyMod.MOD_ID)
+ * object MyMod {
+ *     const val MOD_ID = "mymod"
+ *     init {
+ *         SimpleKonfig.buildAndRegister(ClientKonfig)
+ *     }
+ * }
+ * ```
+ * ### Tips
+ * You may use a shorter name instead of `ClientKonfig`, since config entries may
+ * be used from all over your code. You may also use a typealias to achieve this.
+ * ```
+ * typealias C = ClientKonfig
  * ```
  */
 open class SimpleKonfig protected constructor(
@@ -323,6 +428,8 @@ open class SimpleKonfig protected constructor(
     
     /**
      * Define a [SimpleKonfig] object, which declares a config file for your mod.
+     *
+     * See [SimpleKonfig] for an example usage.
      *
      * @param type The [Type] of the config file declared by this object.
      * @param modId The mod ID of your mod. If omitted, it is inferred from the thread this object
@@ -368,6 +475,8 @@ open class SimpleKonfig protected constructor(
  * Otherwise, the background defaults to the config's one.
  *
  * You may define config entries within categories, just as within a [SimpleKonfig] object.
+ *
+ * See [SimpleKonfig] for an usage sample.
  *
  * @see SimpleKonfig
  * @see group
@@ -416,15 +525,21 @@ open class KonfigCategory protected constructor(
         icon?.let { withIcon(it) }
     })
     
+    /**
+     * Called when the config is baked.
+     *
+     * You will rarely ever need the [category] parameter, from the Java
+     * Simple Config API, so you should instead override [AbstractKonfig.onBake].
+     */
     protected open fun onBake(category: SimpleConfigCategory) {}
 }
 
 /**
- * Define a [KonfigGroup] object, which declares a config group under a [SimpleKonfig], [category] or
- * another [KonfigGroup] object.
+ * Define a [KonfigGroup] object, which declares a config group under a
+ * [SimpleKonfig], [category] or another [KonfigGroup] object.
  *
- * Config group do not have their own tab, like categories. They appear as expandable entries in the
- * menu, containing sub entries. Groups can be made expanded by default.
+ * Config groups do not have their own tab, like categories. They appear as
+ * collapsible lists of entries in the menu. Groups can be made expanded by default.
  *
  * You may define config entries within groups, just as within a [SimpleKonfig] object.
  *
@@ -433,10 +548,15 @@ open class KonfigCategory protected constructor(
  * called the group's caption entry, and you may mark it using [KonfigGroup.caption] to
  * wrap an entry builder.
  *
+ * See [SimpleKonfig] for an usage sample.
+ *
  * @see SimpleKonfig
  * @see category
  */
 typealias group = KonfigGroup
+/**
+ * @see group
+ */
 open class KonfigGroup protected constructor(
   expand: Boolean = false, configure: (ConfigGroupBuilder.() -> Unit)? = null
 ): AbstractKonfig<ConfigGroupBuilder>() {
@@ -457,22 +577,93 @@ open class KonfigGroup protected constructor(
         (konfig.builder as AbstractSimpleConfigEntryHolderBuilder<*>).n(builder, lineNumber)
     }
     
+    /**
+     * Called when the config is baked.
+     *
+     * You will rarely ever need the [group] parameter, from the Java
+     * Simple Config API, so you should instead override [AbstractKonfig.onBake].
+     */
     protected open fun onBake(group: SimpleConfigGroup) {}
     
-    protected fun <V, C, G, B: Builder<V, C, G, B>> caption(entryBuilder: B) =
-      CaptionWrapperDelegateProvider(builder, entryBuilder)
-    protected fun <T, V, C, G, B: Builder<V, C, G, B>> caption(
-      provider: TransformingEntryDelegate.Provider<T, V, C, G, B>
-    ) = TransformingCaptionWrapperDelegateProvider(
-        builder, provider.entryBuilder, provider.transform)
-    protected fun <T, V, C, G, B: Builder<V, C, G, B>> caption(
-      provider: WritableTransformingEntryDelegate.Provider<T, V, C, G, B>
-    ) = WritableTransformingCaptionWrapperDelegateProvider(
-        builder, provider.entryBuilder, provider.transform, provider.inverse)
+    // Caption entries
     
-    class CaptionWrapperDelegateProvider<V, C, G, B: Builder<V, C, G, B>>(
+    /**
+     * Wrap an entry as the caption of a [KonfigGroup]
+     * 
+     * The entry will be displayed besides the group's title in the menu,
+     * visible even when the group is collapsed.
+     * 
+     * Only one entry within a group may be marked as a caption entry.
+     * Only entry builders marked as [AtomicEntryBuilder] can be used.
+     */
+    protected fun <V, C, G, B> caption(entryBuilder: B)
+    where B : Builder<V, C, G, B>, B: AtomicEntryBuilder =
+      CaptionWrapperDelegateProvider(builder, entryBuilder)
+    
+    /**
+     * Wrap an entry as the caption of a [KonfigGroup]
+     *
+     * The entry will be displayed besides the group's title in the menu,
+     * visible even when the group is collapsed.
+     *
+     * Only one entry within a group may be marked as a caption entry.
+     * Only entry builders marked as [AtomicEntryBuilder] can be used.
+     */
+    protected fun <T, V, C, G, B> caption(
+      provider: TransformingEntryDelegate.Provider<T, V, C, G, B>
+    ) where B : Builder<V, C, G, B>, B: AtomicEntryBuilder =
+      TransformingCaptionWrapperDelegateProvider(
+          builder, provider.entryBuilder, provider.transform)
+    
+    /**
+     * Wrap an entry as the caption of a [KonfigGroup]
+     *
+     * The entry will be displayed besides the group's title in the menu,
+     * visible even when the group is collapsed.
+     *
+     * Only one entry within a group may be marked as a caption entry.
+     * Only entry builders marked as [AtomicEntryBuilder] can be used.
+     */
+    protected fun <T, V, C, G, B> caption(
+      provider: WritableTransformingEntryDelegate.Provider<T, V, C, G, B>
+    ) where B : Builder<V, C, G, B>, B: AtomicEntryBuilder =
+      WritableTransformingCaptionWrapperDelegateProvider(
+          builder, provider.entryBuilder, provider.transform, provider.inverse)
+    
+    // Perform automatic transformation to Kotlin types also on caption entries
+    
+    /**
+     * Wrap an entry as the caption of a [KonfigGroup]
+     *
+     * The entry will be displayed besides the group's title in the menu,
+     * visible even when the group is collapsed.
+     *
+     * Only one entry within a group may be marked as a caption entry.
+     * Only entry builders marked as [AtomicEntryBuilder] can be used.
+     */
+    protected fun <L, R, LC, RC, LG, RG> caption(
+      entryBuilder: EntryPairEntryBuilder<L, R, LC, RC, LG, RG>
+    ) = caption(entryBuilder.toKotlin())
+    
+    /**
+     * Wrap an entry as the caption of a [KonfigGroup]
+     *
+     * The entry will be displayed besides the group's title in the menu,
+     * visible even when the group is collapsed.
+     *
+     * Only one entry within a group may be marked as a caption entry.
+     * Only entry builders marked as [AtomicEntryBuilder] can be used.
+     */
+    protected fun <L, M, R, LC, MC, RC, LG, MG, RG> caption(
+      entryBuilder: EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>
+    ) = caption(entryBuilder.toKotlin())
+    
+    // Caption delegate providers
+    
+    class CaptionWrapperDelegateProvider<V, C, G, B>(
       internal val builder: ConfigGroupBuilder, internal val entryBuilder: B,
-    ): PropertyDelegateProvider<Any, EntryDelegate<V, C, G, B>> {
+    ): PropertyDelegateProvider<Any, EntryDelegate<V, C, G, B>>
+      where B : Builder<V, C, G, B>, B: AtomicEntryBuilder {
         override fun provideDelegate(thisRef: Any, property: KProperty<*>) =
           EntryDelegate(entryBuilder) { builder.caption(property.name, it) }
     
@@ -484,10 +675,11 @@ open class KonfigGroup protected constructor(
           TransformingCaptionWrapperDelegateProvider(builder, entryBuilder, transform)
     }
     
-    class TransformingCaptionWrapperDelegateProvider<T, V, C, G, B: Builder<V, C, G, B>>(
+    class TransformingCaptionWrapperDelegateProvider<T, V, C, G, B>(
       internal val builder: ConfigGroupBuilder, internal val entryBuilder: B,
       internal val transform: (V) -> T
-    ): PropertyDelegateProvider<Any, TransformingEntryDelegate<T, V, C, G, B>> {
+    ): PropertyDelegateProvider<Any, TransformingEntryDelegate<T, V, C, G, B>>
+      where B : Builder<V, C, G, B>, B: AtomicEntryBuilder {
         override fun provideDelegate(thisRef: Any, property: KProperty<*>) =
           TransformingEntryDelegate(entryBuilder, transform) { builder.caption(property.name, it) }
     
@@ -499,10 +691,11 @@ open class KonfigGroup protected constructor(
           WritableTransformingCaptionWrapperDelegateProvider(builder, entryBuilder, transform, writer)
     }
     
-    class WritableTransformingCaptionWrapperDelegateProvider<T, V, C, G, B: Builder<V, C, G, B>>(
+    class WritableTransformingCaptionWrapperDelegateProvider<T, V, C, G, B>(
       internal val builder: ConfigGroupBuilder, internal val entryBuilder: B,
       internal val transform: (V) -> T, internal val inverse: (T) -> V
-    ): PropertyDelegateProvider<Any, WritableTransformingEntryDelegate<T, V, C, G, B>> {
+    ): PropertyDelegateProvider<Any, WritableTransformingEntryDelegate<T, V, C, G, B>>
+      where B : Builder<V, C, G, B>, B: AtomicEntryBuilder {
         override fun provideDelegate(thisRef: Any, property: KProperty<*>) =
           WritableTransformingEntryDelegate(entryBuilder, transform, inverse) { builder.caption(property.name, it) }
     

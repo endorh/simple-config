@@ -174,7 +174,7 @@ public abstract class AbstractListEntry
 			return Optional.of(Component.translatable("simpleconfig.config.error.list." + (minSize == 1? "empty" : "min_size"),
 			  Component.literal(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		} else if (size > maxSize) {
-			return Optional.of(Component.translatable("simpleconfig.config.error.list.too_long",
+			return Optional.of(Component.translatable("simpleconfig.config.error.list.max_size",
 			  Component.literal(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		}
 		return super.getErrorFromGUI(value);

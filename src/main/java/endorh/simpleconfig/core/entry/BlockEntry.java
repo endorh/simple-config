@@ -6,7 +6,7 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.BlockEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofBlock;
 
 public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
-  implements IKeyEntry<Block> {
+  implements AtomicEntry<Block> {
 	protected @NotNull Predicate<Block> filter;
 	
 	@Internal public BlockEntry(
@@ -104,7 +104,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			return new BlockEntry(parent, name, value, filter);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Block value) {
 			final Builder copy = new Builder(value);
 			copy.filter = filter;
 			copy.tag = tag;

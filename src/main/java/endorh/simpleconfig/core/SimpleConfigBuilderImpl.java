@@ -82,35 +82,35 @@ public class SimpleConfigBuilderImpl
 		defaultCategory.title = modId + ".config.category." + path;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withBaker(
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl withBaker(
 	  Consumer<SimpleConfig> baker
 	) {
 		this.baker = baker;
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withBackground(String resourceName) {
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl withBackground(String resourceName) {
 		return withBackground(new ResourceLocation(resourceName));
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withBackground(
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl withBackground(
 	  ResourceLocation background
 	) {
 		this.background = background;
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withIcon(Icon icon) {
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl withIcon(Icon icon) {
 		defaultCategory.withIcon(icon);
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withColor(int tint) {
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl withColor(int tint) {
 		defaultCategory.withColor(tint);
 		return this;
 	}
 	
-	@Override @Contract("-> this") public SimpleConfigBuilderImpl withSolidInGameBackground() {
+	@Override @Contract("-> this") public @NotNull SimpleConfigBuilderImpl withSolidInGameBackground() {
 		transparent = false;
 		return this;
 	}
@@ -123,7 +123,7 @@ public class SimpleConfigBuilderImpl
 		return this;
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl withCommandRoot(
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl withCommandRoot(
 	  LiteralArgumentBuilder<CommandSourceStack> root
 	) {
 		commandRoot = root;
@@ -136,7 +136,7 @@ public class SimpleConfigBuilderImpl
 		  "Duplicate config entry name: " + name);
 	}
 	
-	@Contract("-> this") @Override public SimpleConfigBuilderImpl restart() {
+	@Contract("-> this") @Override public @NotNull SimpleConfigBuilderImpl restart() {
 		super.restart();
 		categories.values().forEach(CategoryBuilder::restart);
 		return this;
@@ -176,11 +176,11 @@ public class SimpleConfigBuilderImpl
 			entry.setTooltipKey(tooltip(entry.name));
 	}
 	
-	@Override @Contract("_ -> this") public SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat) {
+	@Override @Contract("_ -> this") public @NotNull SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat) {
 		return n(cat, 0);
 	}
 	
-	@Override @Contract("_, _ -> this") public SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat, int index) {
+	@Override @Contract("_, _ -> this") public @NotNull SimpleConfigBuilderImpl n(ConfigCategoryBuilder cat, int index) {
 		if (!(cat instanceof CategoryBuilder c)) throw new IllegalArgumentException(
 		  "Category must be a CategoryBuilder");
 		checkName(c.name);
@@ -192,7 +192,7 @@ public class SimpleConfigBuilderImpl
 	}
 	
 	@Contract("_, _ -> this")
-	@Override public SimpleConfigBuilderImpl n(ConfigGroupBuilder group, int index) {
+	@Override public @NotNull SimpleConfigBuilderImpl n(ConfigGroupBuilder group, int index) {
 		if (!(group instanceof GroupBuilder g)) throw new IllegalArgumentException(
 		  "Group must be a GroupBuilder");
 		checkName(g.name);
@@ -251,30 +251,30 @@ public class SimpleConfigBuilderImpl
 				group.setParent(this);
 		}
 		
-		@Override @Contract("_ -> this") public CategoryBuilder withBaker(
+		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withBaker(
 		  Consumer<SimpleConfigCategory> baker
 		) {
 			this.baker = baker;
 			return this;
 		}
 		
-		@Override @Contract("_ -> this") public CategoryBuilder withBackground(String resourceName) {
+		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withBackground(String resourceName) {
 			return withBackground(new ResourceLocation(resourceName));
 		}
 		
-		@Override @Contract("_ -> this") public CategoryBuilder withBackground(
+		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withBackground(
 		  ResourceLocation background
 		) {
 			this.background = background;
 			return this;
 		}
 		
-		@Override @Contract("_ -> this") public CategoryBuilder withIcon(Icon icon) {
+		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withIcon(Icon icon) {
 			this.icon = icon;
 			return this;
 		}
 		
-		@Override @Contract("_ -> this") public CategoryBuilder withColor(int tint) {
+		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withColor(int tint) {
 			this.tint = tint;
 			return this;
 		}
@@ -322,7 +322,7 @@ public class SimpleConfigBuilderImpl
 		}
 		
 		@Contract("_, _ -> this")
-		@Override public CategoryBuilder n(ConfigGroupBuilder group, int index) {
+		@Override public @NotNull CategoryBuilder n(ConfigGroupBuilder group, int index) {
 			if (!(group instanceof GroupBuilder g)) throw new IllegalArgumentException(
 			  "Group must be a GroupBuilder");
 			if (groups.containsKey(g.name))
@@ -436,7 +436,7 @@ public class SimpleConfigBuilderImpl
 		}
 		
 		@Contract("_, _ -> this")
-		@Override public GroupBuilder n(ConfigGroupBuilder nested, int index) {
+		@Override public @NotNull GroupBuilder n(ConfigGroupBuilder nested, int index) {
 			if (!(nested instanceof GroupBuilder n)) throw new IllegalArgumentException(
 			  "Group must be a GroupBuilder");
 			if (groups.containsKey(n.name))
@@ -450,7 +450,7 @@ public class SimpleConfigBuilderImpl
 			return this;
 		}
 		
-		@Override @Contract("_ -> this") public GroupBuilder withBaker(
+		@Override @Contract("_ -> this") public @NotNull GroupBuilder withBaker(
 		  Consumer<SimpleConfigGroup> baker
 		) {
 			this.baker = baker;
@@ -459,8 +459,8 @@ public class SimpleConfigBuilderImpl
 		
 		@Override @Contract("_, _ -> this")
 		public <
-		  V, C, G, B extends ConfigEntryBuilder<V, C, G, B>
-		> GroupBuilder caption(String name, B entry) {
+		  V, C, G, B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder
+		> @NotNull GroupBuilder caption(String name, B entry) {
 			if (heldEntryBuilder != null)
 				throw new IllegalArgumentException("Attempt to declare two caption entries for the same config group: " + path);
 			if (!(entry instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
@@ -593,7 +593,7 @@ public class SimpleConfigBuilderImpl
 		SimpleConfigClassParser.decorateBuilder(this);
 	}
 	
-	@Override public SimpleConfigImpl buildAndRegister() {
+	@Override public @NotNull SimpleConfigImpl buildAndRegister() {
 		try {
 			return buildAndRegister(FMLJavaModLoadingContext.get().getModEventBus());
 		} catch (ClassCastException e) {
@@ -603,7 +603,7 @@ public class SimpleConfigBuilderImpl
 		}
 	}
 	
-	@Override public SimpleConfigImpl buildAndRegister(@NotNull IEventBus modEventBus) {
+	@Override public @NotNull SimpleConfigImpl buildAndRegister(@NotNull IEventBus modEventBus) {
 		return buildAndRegister(modEventBus, new ForgeConfigSpecConfigValueBuilder());
 	}
 	

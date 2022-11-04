@@ -8,7 +8,7 @@ import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -22,6 +22,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,7 +44,7 @@ import java.util.Optional;
 @OnlyIn(Dist.CLIENT)
 public class KeyBindEntry extends AbstractConfigEntry<
   KeyBindMapping, String, KeyBindMapping
-> implements IKeyEntry<KeyBindMapping> {
+> implements AtomicEntry<KeyBindMapping> {
 	// Give entries without an assigned keybind a fallback keybind that can be used
 	//   to identify them for overlap detection.
 	private static final Int2ObjectMap<List<ExtendedKeyBind>> UNBOUND = new Int2ObjectOpenHashMap<>();
@@ -134,7 +135,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			return entry;
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(KeyBindMapping value) {
 			final Builder copy = new Builder(value.copy());
 			copy.defaultSettings = defaultSettings;
 			copy.keyBind = keyBind;

@@ -47,7 +47,7 @@ public class IntegerRangeEntry
 			return new IntegerRangeEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(IntRange value) {
 			return new Builder(value);
 		}
 	}
