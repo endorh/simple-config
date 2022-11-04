@@ -1,6 +1,7 @@
 package endorh.simpleconfig.core;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import endorh.simpleconfig.api.AbstractRange.DoubleRange;
 import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.AbstractRange.IntRange;
@@ -24,6 +25,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.Color;
@@ -36,103 +38,89 @@ import java.util.regex.Pattern;
 @Internal public class ConfigBuilderFactoryImpl implements ConfigBuilderFactory {
 	@Internal public ConfigBuilderFactoryImpl() {}
 	
-	@Override public SimpleConfigBuilder builder(String modId, Type type) {
+	@Override public @NotNull SimpleConfigBuilder builder(String modId, Type type) {
 		return new SimpleConfigBuilderImpl(modId, type);
 	}
-	@Override public SimpleConfigBuilder builder(String modId, Type type, Class<?> configClass) {
+	@Override public @NotNull SimpleConfigBuilder builder(String modId, Type type, Class<?> configClass) {
 		return new SimpleConfigBuilderImpl(modId, type, configClass);
 	}
 	
-	@Override public ConfigGroupBuilder group(String name) {
+	@Override public @NotNull ConfigGroupBuilder group(String name) {
 		return group(name, false);
 	}
-	@Override public ConfigGroupBuilder group(String name, boolean expand) {
+	@Override public @NotNull ConfigGroupBuilder group(String name, boolean expand) {
 		return new GroupBuilder(name, expand);
 	}
 	
-	@Override public ConfigCategoryBuilder category(String name) {
+	@Override public @NotNull ConfigCategoryBuilder category(String name) {
 		return new CategoryBuilder(name);
 	}
-	@Override public ConfigCategoryBuilder category(String name, Class<?> configClass) {
+	@Override public @NotNull ConfigCategoryBuilder category(String name, Class<?> configClass) {
 		return new CategoryBuilder(name, configClass);
 	}
 	
 	// Entries
 	
 	// Basic types
-	@Override public BooleanEntry.Builder bool(boolean value) {
+	@Override public @NotNull BooleanEntry.Builder bool(boolean value) {
 		return new BooleanEntry.Builder(value);
 	}
 	
-	@Override public BooleanEntry.Builder yesNo(boolean value) {
+	@Override public @NotNull BooleanEntry.Builder yesNo(boolean value) {
 		return new BooleanEntry.Builder(value).text(BooleanEntryBuilder.BooleanDisplayer.YES_NO);
 	}
 	
-	@Override public BooleanEntry.Builder enable(boolean value) {
+	@Override public @NotNull BooleanEntry.Builder enable(boolean value) {
 		return bool(value).text(BooleanEntryBuilder.BooleanDisplayer.ENABLED_DISABLED);
 	}
 	
-	@Override public BooleanEntry.Builder onOff(boolean value) {
+	@Override public @NotNull BooleanEntry.Builder onOff(boolean value) {
 		return bool(value).text(BooleanEntryBuilder.BooleanDisplayer.ON_OFF);
 	}
 	
-	@Override public StringEntry.Builder string(String value) {
+	@Override public @NotNull StringEntry.Builder string(String value) {
 		return new StringEntry.Builder(value);
 	}
 	
-	@Override @Deprecated public <E extends Enum<E>> EnumEntry.Builder<E> enum_(E value) {
+	@Override @Deprecated public <E extends Enum<E>> EnumEntry.@NotNull Builder<E> enum_(E value) {
 		return new EnumEntry.Builder<>(value);
 	}
 	
-	@Override public <E extends Enum<E>> EnumEntry.Builder<E> option(E value) {
+	@Override public <E extends Enum<E>> EnumEntry.@NotNull Builder<E> option(E value) {
 		return new EnumEntry.Builder<>(value);
 	}
 	
 	
-	@Override public ButtonEntry.Builder button(Runnable action) {
+	@Override public @NotNull ButtonEntry.Builder button(Runnable action) {
 		return new ButtonEntry.Builder(h -> action.run());
 	}
 	
-	@Override public ButtonEntry.Builder button(Consumer<ConfigEntryHolder> action) {
+	@Override public @NotNull ButtonEntry.Builder button(Consumer<ConfigEntryHolder> action) {
 		return new ButtonEntry.Builder(action);
 	}
 	
 	@Override
-	public <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>> EntryButtonEntryBuilder<V, Gui, B> button(
+	public <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & AtomicEntryBuilder> @NotNull EntryButtonEntryBuilder<V, Gui, B> button(
 	  B inner, Consumer<V> action
 	) {
 		return button(inner, (v, h) -> action.accept(v));
 	}
 	
 	@Override
-	public <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & KeyEntryBuilder<Gui>> EntryButtonEntryBuilder<V, Gui, B> button(
+	public <V, Gui, B extends ConfigEntryBuilder<V, ?, Gui, B> & AtomicEntryBuilder> @NotNull EntryButtonEntryBuilder<V, Gui, B> button(
 	  B inner, BiConsumer<V, ConfigEntryHolder> action
 	) {
 		return new EntryButtonEntry.Builder<>(inner, action);
 	}
 	
-	@SuppressWarnings("unchecked") private static <
-	  V, G, E extends AbstractConfigEntry<V, ?, G> & IKeyEntry<G>,
-	  BB extends ConfigEntryBuilder<V, ?, G, BB> & KeyEntryBuilder<G>,
-	  B extends AbstractConfigEntryBuilder<V, ?, G, E, BB, B> & KeyEntryBuilder<G>
-	  > B cast3(BB builder) {
-		checkBuilder(builder);
-		return (B) builder;
-	}
-	
-	private static void checkBuilder(ConfigEntryBuilder<?, ?, ?, ?> builder) {
-		if (!(builder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
-		  "Mixed API use: Builder is not subclass of AbstractConfigEntryBuilder");
-	}
-	
-	@Override public PresetSwitcherEntry.Builder globalPresetSwitcher(
+	@Override public @NotNull PresetSwitcherEntry.Builder globalPresetSwitcher(
 	  Map<String, Map<String, Object>> presets, String path
 	) {
 		return new PresetSwitcherEntry.Builder(presets, path, true);
 	}
 	
 	
-	@Override public PresetSwitcherEntry.Builder localPresetSwitcher(
+	@Override public @NotNull PresetSwitcherEntry.Builder localPresetSwitcher(
 	  Map<String, Map<String, Object>> presets, String path
 	) {
 		return new PresetSwitcherEntry.Builder(presets, path, false);
@@ -140,80 +128,80 @@ import java.util.regex.Pattern;
 	
 	// Byte
 	
-	@Override public @Deprecated ByteEntry.Builder number(byte value) {
+	@Override public @Deprecated @NotNull ByteEntry.Builder number(byte value) {
 		return new ByteEntry.Builder(value);
 	}
 	
-	@Override public @Deprecated ByteEntryBuilder number(byte value, byte max) {
+	@Override public @Deprecated @NotNull ByteEntryBuilder number(byte value, byte max) {
 		return number(value, (byte) 0, max);
 	}
 	
-	@Override public @Deprecated ByteEntryBuilder number(byte value, byte min, byte max) {
+	@Override public @Deprecated @NotNull ByteEntryBuilder number(byte value, byte min, byte max) {
 		return new ByteEntry.Builder(value).range(min, max);
 	}
 	
 	// Short
 	
-	@Override public @Deprecated ShortEntry.Builder number(short value) {
+	@Override public @Deprecated @NotNull ShortEntry.Builder number(short value) {
 		return new ShortEntry.Builder(value);
 	}
 	
-	@Override public @Deprecated ShortEntryBuilder number(short value, short max) {
+	@Override public @Deprecated @NotNull ShortEntryBuilder number(short value, short max) {
 		return number(value, (short) 0, max);
 	}
 	
-	@Override public @Deprecated ShortEntryBuilder number(short value, short min, short max) {
+	@Override public @Deprecated @NotNull ShortEntryBuilder number(short value, short min, short max) {
 		return new ShortEntry.Builder(value).range(min, max);
 	}
 	
 	// Int
 	
-	@Override public IntegerEntry.Builder number(int value) {
+	@Override public @NotNull IntegerEntry.Builder number(int value) {
 		return new IntegerEntry.Builder(value);
 	}
 	
-	@Override public IntegerEntryBuilder number(int value, int max) {
+	@Override public @NotNull IntegerEntryBuilder number(int value, int max) {
 		return number(value, 0, max);
 	}
 	
-	@Override public IntegerEntryBuilder number(int value, int min, int max) {
+	@Override public @NotNull IntegerEntryBuilder number(int value, int min, int max) {
 		return new IntegerEntry.Builder(value).range(min, max);
 	}
 	
-	@Override public IntegerEntryBuilder percent(int value) {
+	@Override public @NotNull IntegerEntryBuilder percent(int value) {
 		return number(value, 0, 100)
 		  .slider("simpleconfig.format.slider.percentage");
 	}
 	
 	// Long
 	
-	@Override public LongEntry.Builder number(long value) {
+	@Override public @NotNull LongEntry.Builder number(long value) {
 		return new LongEntry.Builder(value);
 	}
 	
-	@Override public LongEntryBuilder number(long value, long max) {
+	@Override public @NotNull LongEntryBuilder number(long value, long max) {
 		return number(value, 0L, max);
 	}
 	
-	@Override public LongEntryBuilder number(long value, long min, long max) {
+	@Override public @NotNull LongEntryBuilder number(long value, long min, long max) {
 		return new LongEntry.Builder(value).range(min, max);
 	}
 	
 	// Float
 	
-	@Override public FloatEntry.Builder number(float value) {
+	@Override public @NotNull FloatEntry.Builder number(float value) {
 		return new FloatEntry.Builder(value);
 	}
 	
-	@Override public FloatEntryBuilder number(float value, float max) {
+	@Override public @NotNull FloatEntryBuilder number(float value, float max) {
 		return number(value, 0F, max);
 	}
 	
-	@Override public FloatEntryBuilder number(float value, float min, float max) {
+	@Override public @NotNull FloatEntryBuilder number(float value, float min, float max) {
 		return new FloatEntry.Builder(value).range(min, max);
 	}
 	
-	@Override public FloatEntryBuilder percent(float value) {
+	@Override public @NotNull FloatEntryBuilder percent(float value) {
 		return number(value, 0F, 100F)
 		  .slider("simpleconfig.format.slider.percentage.float")
 		  .fieldScale(0.01F);
@@ -221,113 +209,113 @@ import java.util.regex.Pattern;
 	
 	// Double
 	
-	@Override public DoubleEntry.Builder number(double value) {
+	@Override public @NotNull DoubleEntry.Builder number(double value) {
 		return new DoubleEntry.Builder(value);
 	}
 	
-	@Override public DoubleEntryBuilder number(double value, double max) {
+	@Override public @NotNull DoubleEntryBuilder number(double value, double max) {
 		return number(value, 0D, max);
 	}
 	
-	@Override public DoubleEntryBuilder number(double value, double min, double max) {
+	@Override public @NotNull DoubleEntryBuilder number(double value, double min, double max) {
 		return new DoubleEntry.Builder(value).range(min, max);
 	}
 	
-	@Override public DoubleEntryBuilder percent(double value) {
+	@Override public @NotNull DoubleEntryBuilder percent(double value) {
 		return number(value, 0D, 100D)
 		  .slider("simpleconfig.format.slider.percentage.float")
 		  .fieldScale(0.01);
 	}
 	
-	@Override public FloatEntryBuilder fraction(float value) {
+	@Override public @NotNull FloatEntryBuilder fraction(float value) {
 		if (0F > value || value > 1F)
 			throw new IllegalArgumentException(
 			  "Fraction values must be within [0, 1], passed " + value);
 		return number(value).range(0, 1).slider();
 	}
 	
-	@Override public DoubleEntryBuilder fraction(double value) {
+	@Override public @NotNull DoubleEntryBuilder fraction(double value) {
 		if (0D > value || value > 1D)
 			throw new IllegalArgumentException(
 			  "Fraction values must be within [0, 1], passed " + value);
 		return number(value).range(0, 1).slider();
 	}
 	
-	@Override public FloatEntryBuilder volume(float value) {
+	@Override public @NotNull FloatEntryBuilder volume(float value) {
 		return fraction(value).slider("simpleconfig.format.slider.volume");
 	}
 	
-	@Override public FloatEntryBuilder volume() {
+	@Override public @NotNull FloatEntryBuilder volume() {
 		return volume(1F);
 	}
 	
-	@Override public DoubleEntryBuilder volume(double value) {
+	@Override public @NotNull DoubleEntryBuilder volume(double value) {
 		return fraction(value).slider("simpleconfig.format.slider.volume");
 	}
 	
-	@Override public DoubleRangeEntry.Builder range(DoubleRange range) {
+	@Override public @NotNull DoubleRangeEntry.Builder range(DoubleRange range) {
 		return new DoubleRangeEntry.Builder(range);
 	}
 	
-	@Override public DoubleRangeEntry.Builder range(double min, double max) {
+	@Override public @NotNull DoubleRangeEntry.Builder range(double min, double max) {
 		return range(DoubleRange.inclusive(min, max));
 	}
 	
-	@Override public FloatRangeEntry.Builder range(FloatRange range) {
+	@Override public @NotNull FloatRangeEntry.Builder range(FloatRange range) {
 		return new FloatRangeEntry.Builder(range);
 	}
 	
-	@Override public FloatRangeEntry.Builder range(float min, float max) {
+	@Override public @NotNull FloatRangeEntry.Builder range(float min, float max) {
 		return range(FloatRange.inclusive(min, max));
 	}
 	
-	@Override public LongRangeEntry.Builder range(LongRange range) {
+	@Override public @NotNull LongRangeEntry.Builder range(LongRange range) {
 		return new LongRangeEntry.Builder(range);
 	}
 	
-	@Override public LongRangeEntry.Builder range(long min, long max) {
+	@Override public @NotNull LongRangeEntry.Builder range(long min, long max) {
 		return range(LongRange.inclusive(min, max));
 	}
 	
-	@Override public IntegerRangeEntry.Builder range(IntRange range) {
+	@Override public @NotNull IntegerRangeEntry.Builder range(IntRange range) {
 		return new IntegerRangeEntry.Builder(range);
 	}
 	
-	@Override public IntegerRangeEntry.Builder range(int min, int max) {
+	@Override public @NotNull IntegerRangeEntry.Builder range(int min, int max) {
 		return range(IntRange.inclusive(min, max));
 	}
 	
-	@Override public ColorEntry.Builder color(Color value) {
+	@Override public @NotNull ColorEntry.Builder color(Color value) {
 		return new ColorEntry.Builder(value);
 	}
 	
-	@Override public PatternEntry.Builder pattern(Pattern pattern) {
+	@Override public @NotNull PatternEntry.Builder pattern(Pattern pattern) {
 		return new PatternEntry.Builder(pattern);
 	}
 	
-	@Override public PatternEntry.Builder pattern(String pattern) {
+	@Override public @NotNull PatternEntry.Builder pattern(String pattern) {
 		return new PatternEntry.Builder(pattern);
 	}
 	
-	@Override public PatternEntry.Builder pattern(String pattern, int flags) {
+	@Override public @NotNull PatternEntry.Builder pattern(String pattern, int flags) {
 		return new PatternEntry.Builder(pattern, flags);
 	}
 	
 	// String serializable entries
 	
-	@Override public <V> SerializableEntry.Builder<V> entry(
+	@Override public <V> SerializableEntry.@NotNull Builder<V> entry(
 	  V value, Function<V, String> serializer, Function<String, Optional<V>> deserializer
 	) {
 		return new SerializableEntry.Builder<>(value, serializer, deserializer);
 	}
 	
-	@Override public <V> SerializableEntry.Builder<V> entry(
+	@Override public <V> SerializableEntry.@NotNull Builder<V> entry(
 	  V value, IConfigEntrySerializer<V> serializer
 	) {
 		return new SerializableEntry.Builder<>(value, serializer);
 	}
 	
-	@Override public <V extends ISerializableConfigEntry<V>> SerializableEntry.Builder<V> entry(
+	@Override public <V extends ISerializableConfigEntry<V>> SerializableEntry.@NotNull Builder<V> entry(
 	  V value
 	) {
 		return new SerializableEntry.Builder<>(value, value.getConfigSerializer());
@@ -335,169 +323,157 @@ import java.util.regex.Pattern;
 	
 	// Java Beans
 	
-	@Override public <B> BeanEntryBuilder<B> bean(B value) {
+	@Override public <B> @NotNull BeanEntryBuilder<B> bean(B value) {
 		return new BeanEntry.Builder<>(value);
 	}
 	
 	// Convenience Minecraft entries
 	
-	@Override public TagEntry.Builder tag(Tag value) {
+	@Override public @NotNull TagEntry.Builder tag(Tag value) {
 		return new TagEntry.Builder(value);
 	}
 	
-	@Override public CompoundTagEntry.Builder compoundTag(CompoundTag value) {
+	@Override public @NotNull CompoundTagEntry.Builder compoundTag(CompoundTag value) {
 		return new CompoundTagEntry.Builder(value);
 	}
 	
-	@Override public ResourceLocationEntry.Builder resource(String resourceName) {
+	@Override public @NotNull ResourceLocationEntry.Builder resource(String resourceName) {
 		return new ResourceLocationEntry.Builder(new ResourceLocation(resourceName));
 	}
 	
-	@Override public ResourceLocationEntry.Builder resource(ResourceLocation value) {
+	@Override public @NotNull ResourceLocationEntry.Builder resource(ResourceLocation value) {
 		return new ResourceLocationEntry.Builder(value);
 	}
 	
-	@Override @OnlyIn(Dist.CLIENT) public KeyBindEntry.Builder key(ExtendedKeyBind keyBind) {
+	@Override @OnlyIn(Dist.CLIENT) public @NotNull KeyBindEntry.Builder key(ExtendedKeyBind keyBind) {
 		return key(keyBind.getDefinition())
 		  .bakeTo(keyBind)
 		  .withDefaultSettings(keyBind.getDefinition().getSettings());
 	}
 	
-	@Override @OnlyIn(Dist.CLIENT) public KeyBindEntry.Builder key(KeyBindMapping key) {
+	@Override @OnlyIn(Dist.CLIENT) public @NotNull KeyBindEntry.Builder key(KeyBindMapping key) {
 		return new KeyBindEntry.Builder(key);
 	}
 	
-	@Override @OnlyIn(Dist.CLIENT) public KeyBindEntry.Builder key(String key) {
+	@Override @OnlyIn(Dist.CLIENT) public @NotNull KeyBindEntry.Builder key(String key) {
 		return new KeyBindEntry.Builder(key);
 	}
 	
-	@Override @OnlyIn(Dist.CLIENT) public KeyBindEntry.Builder key() {
+	@Override @OnlyIn(Dist.CLIENT) public @NotNull KeyBindEntry.Builder key() {
 		return new KeyBindEntry.Builder();
 	}
 	
-	@Override public ItemEntry.Builder item(@Nullable Item value) {
+	@Override public @NotNull ItemEntry.Builder item(@Nullable Item value) {
 		return new ItemEntry.Builder(value);
 	}
 	
-	@Override public ItemNameEntry.Builder itemName(@Nullable ResourceLocation value) {
+	@Override public @NotNull ItemNameEntry.Builder itemName(@Nullable ResourceLocation value) {
 		return new ItemNameEntry.Builder(value);
 	}
 	
-	@Override public ItemNameEntry.Builder itemName(Item value) {
+	@Override public @NotNull ItemNameEntry.Builder itemName(Item value) {
 		return itemName(value.getRegistryName());
 	}
 	
-	@Override public BlockEntry.Builder block(@Nullable Block value) {
+	@Override public @NotNull BlockEntry.Builder block(@Nullable Block value) {
 		return new BlockEntry.Builder(value);
 	}
 	
-	@Override public BlockNameEntry.Builder blockName(@Nullable ResourceLocation value) {
+	@Override public @NotNull BlockNameEntry.Builder blockName(@Nullable ResourceLocation value) {
 		return new BlockNameEntry.Builder(value);
 	}
 	
-	@Override public BlockNameEntry.Builder blockName(Block value) {
+	@Override public @NotNull BlockNameEntry.Builder blockName(Block value) {
 		return blockName(value.getRegistryName());
 	}
 	
-	@Override public FluidEntry.Builder fluid(@Nullable Fluid value) {
+	@Override public @NotNull FluidEntry.Builder fluid(@Nullable Fluid value) {
 		return new FluidEntry.Builder(value);
 	}
 	
-	@Override public FluidNameEntry.Builder fluidName(@Nullable ResourceLocation value) {
+	@Override public @NotNull FluidNameEntry.Builder fluidName(@Nullable ResourceLocation value) {
 		return new FluidNameEntry.Builder(value);
 	}
 	
-	@Override public FluidNameEntry.Builder fluidName(Fluid value) {
+	@Override public @NotNull FluidNameEntry.Builder fluidName(Fluid value) {
 		return fluidName(value.getRegistryName());
 	}
 	
 	// List entries
 	
-	@Override public StringListEntry.Builder stringList(List<String> value) {
+	@Override public @NotNull StringListEntry.Builder stringList(List<String> value) {
 		return new StringListEntry.Builder(value);
 	}
 	
 	@Override @Deprecated
-	public ByteListEntry.Builder byteList(List<Byte> value) {
+	public @NotNull ByteListEntry.Builder byteList(List<Byte> value) {
 		return new ByteListEntry.Builder(value);
 	}
 	
 	@Override @Deprecated
-	public ShortListEntry.Builder shortList(List<Short> value) {
+	public @NotNull ShortListEntry.Builder shortList(List<Short> value) {
 		return new ShortListEntry.Builder(value);
 	}
 	
-	@Override public IntegerListEntry.Builder intList(List<Integer> value) {
+	@Override public @NotNull IntegerListEntry.Builder intList(List<Integer> value) {
 		return new IntegerListEntry.Builder(value);
 	}
 	
-	@Override public LongListEntry.Builder longList(List<Long> value) {
+	@Override public @NotNull LongListEntry.Builder longList(List<Long> value) {
 		return new LongListEntry.Builder(value);
 	}
 	
-	@Override public FloatListEntry.Builder floatList(List<Float> value) {
+	@Override public @NotNull FloatListEntry.Builder floatList(List<Float> value) {
 		return new FloatListEntry.Builder(value);
 	}
 	
-	@Override public DoubleListEntry.Builder doubleList(List<Double> value) {
+	@Override public @NotNull DoubleListEntry.Builder doubleList(List<Double> value) {
 		return new DoubleListEntry.Builder(value);
 	}
 	
-	// Caption
+	// General lists
 	
-	@Override public <
-	  V, C, G, B extends ListEntryBuilder<V, C, G, B>,
-	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & KeyEntryBuilder<CG>
-	  > CaptionedListEntryBuilder<V, C, G, B, CV, CC, CG, CB> caption(CB caption, B list) {
-		return new CaptionedListEntry.Builder<>(
-		  Pair.of(caption.getValue(), list.getValue()), list, caption);
-	}
-	
-	@Override
-	public <
-	  K, V, KC, C, KG, G,
-	  MB extends EntryMapEntryBuilder<K, V, KC, C, KG, G, ?, ?>,
-	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & KeyEntryBuilder<CG>
-	  > CaptionedMapEntryBuilder<K, V, KC, C, KG, G, MB, CV, CC, CG, CB> caption(
-	  CB caption, MB map
-	) {
-		// noinspection unchecked
-		return (CaptionedMapEntryBuilder<K, V, KC, C, KG, G, MB, CV, CC, CG, CB>)
-		  new CaptionedMapEntry.Builder<>(
-			 Pair.of(caption.getValue(), map.getValue()), map, caption);
-	}
-	
-	// List entry
-	
-	
-	@Override public <
-	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
-	  > EntryListEntryBuilder<V, C, G, Builder> list(Builder entry) {
+	@Override public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry) {
 		return list(entry, Collections.emptyList());
 	}
 	
-	@Override
-	public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>> EntryListEntryBuilder<V, C, G, Builder> list(
-	  Builder entry, List<V> value
-	) {
+	@Override public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, List<V> value) {
 		return new EntryListEntry.Builder<>(value, entry);
 	}
 	
 	@SafeVarargs
-	@Override public final <
-	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
-	  > EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, V... values) {
+	@Override public final <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, V... values) {
 		return list(entry, Lists.newArrayList(values));
 	}
 	
-	// Map entry
+	// General sets
 	
+	@Override public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry) {
+		return set(entry, Collections.emptySet());
+	}
+	
+	@Override public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry, Set<V> value) {
+		return new EntrySetEntry.Builder<>(value, entry);
+	}
+	
+	@SafeVarargs
+	@Override public final <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
+	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry, V... values) {
+		return set(entry, Sets.newHashSet(values));
+	}
+	
+	// General maps
 	
 	@Override public <
 	  K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>
-	  > EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return map(keyEntry, entry, new LinkedHashMap<>());
@@ -506,8 +482,8 @@ import java.util.regex.Pattern;
 	@Override public <
 	  K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>
-	  > EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
 	) {
 		return new EntryMapEntry.Builder<>(value, keyEntry, entry);
@@ -515,14 +491,14 @@ import java.util.regex.Pattern;
 	
 	@Override public <
 	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
-	  > EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
+	> @NotNull EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
 	  Builder entry
 	) {
 		return map(entry, new LinkedHashMap<>());
 	}
 	
 	@Override
-	public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>> EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
+	public <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>> @NotNull EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
 	  Builder entry, Map<String, V> value
 	) {
 		return map(string(""), entry, value);
@@ -530,40 +506,74 @@ import java.util.regex.Pattern;
 	
 	// Pair list
 	
-	
 	@Override public <
 	  K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
-	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>
-	  > EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
+	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return pairList(keyEntry, entry, new ArrayList<>());
 	}
 	
 	@Override
-	public <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>, KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & KeyEntryBuilder<KG>> EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	public <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>, KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder> @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
 	) {
 		return new EntryPairListEntry.Builder<>(value, keyEntry, entry);
 	}
 	
-	// Pairs
+	// Collection captions
 	
+	@Override public <
+	  V, C, G, B extends ListEntryBuilder<V, C, G, B>,
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
+	  > @NotNull CaptionedCollectionEntryBuilder<List<V>, List<C>, G, B, CV, CC, CG, CB> caption(
+	  CB caption, B list
+	) {
+		return new CaptionedCollectionEntry.Builder<>(
+		  Pair.of(caption.getValue(), list.getValue()), list, caption);
+	}
+	
+	@Override
+	public @NotNull <V, C, G, B extends ConfigEntryBuilder<V, C, G, B>, CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder> CaptionedCollectionEntryBuilder<Set<V>, Set<C>, G, EntrySetEntryBuilder<V, C, G, B>, CV, CC, CG, CB> caption(
+	  CB caption, EntrySetEntryBuilder<V, C, G, B> set
+	) {
+		return new CaptionedCollectionEntry.Builder<>(
+		  Pair.of(caption.getValue(), set.getValue()), set, caption);
+	}
+	
+	@Override
+	public @NotNull <K, V, KC, C, KG, G, KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder, B extends ConfigEntryBuilder<V, C, G, B>, CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder> CaptionedCollectionEntryBuilder<Map<K, V>, Map<KC, C>, Pair<KG, G>, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>, CV, CC, CG, CB> caption(
+	  CB caption, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> map
+	) {
+		return new CaptionedCollectionEntry.Builder<>(
+		  Pair.of(caption.getValue(), map.getValue()), map, caption);
+	}
+	
+	@Override
+	public @NotNull <K, V, KC, C, KG, G, KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder, B extends ConfigEntryBuilder<V, C, G, B>, CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder> CaptionedCollectionEntryBuilder<List<Pair<K, V>>, List<Pair<KC, C>>, Pair<KG, G>, EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>, CV, CC, CG, CB> caption(
+	  CB caption, EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB> pairList
+	) {
+		return new CaptionedCollectionEntry.Builder<>(
+		  Pair.of(caption.getValue(), pairList.getValue()), pairList, caption);
+	}
+	
+	// Pairs
 	
 	@Override public <
 	  L, R, LC, RC, LG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
-	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry) {
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
+	  > @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry) {
 		return pair(leftEntry, rightEntry, Pair.of(leftEntry.getValue(), rightEntry.getValue()));
 	}
 	
 	@Override public <
 	  L, R, LC, RC, LG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
-	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
+	  > @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
 	  LB leftEntry, RB rightEntry, Pair<L, R> value
 	) {
 		return new EntryPairEntry.Builder<>(value, leftEntry, rightEntry);
@@ -574,10 +584,10 @@ import java.util.regex.Pattern;
 	
 	@Override public <
 	  L, M, R, LC, MC, RC, LG, MG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
-	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
+	  > @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry
 	) {
 		return triple(leftEntry, middleEntry, rightEntry, Triple.of(
@@ -586,10 +596,10 @@ import java.util.regex.Pattern;
 	
 	@Override public <
 	  L, M, R, LC, MC, RC, LG, MG, RG,
-	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & KeyEntryBuilder<LG>,
-	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & KeyEntryBuilder<MG>,
-	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & KeyEntryBuilder<RG>
-	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
+	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
+	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
+	  > @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
 	) {
 		return new EntryTripleEntry.Builder<>(

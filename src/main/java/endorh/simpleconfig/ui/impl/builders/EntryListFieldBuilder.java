@@ -12,6 +12,7 @@ public class EntryListFieldBuilder<V, E extends AbstractConfigListEntry<V>>
   extends ListFieldBuilder<V, NestedListListEntry<V, E>, EntryListFieldBuilder<V, E>> {
 	
 	protected Function<NestedListListEntry<V, E>, E> cellFactory;
+	protected boolean ignoreOrder = false;
 	
 	public EntryListFieldBuilder(
 	  ConfigFieldBuilder builder, Component name, List<V> value,
@@ -21,7 +22,12 @@ public class EntryListFieldBuilder<V, E extends AbstractConfigListEntry<V>>
 		this.cellFactory = cellFactory;
 	}
 	
+	public EntryListFieldBuilder<V, E> setIgnoreOrder(boolean ignoreOrder) {
+		this.ignoreOrder = ignoreOrder;
+		return self();
+	}
+	
 	@Override protected NestedListListEntry<V, E> buildEntry() {
-		return new NestedListListEntry<>(fieldNameKey, value, cellFactory);
+		return new NestedListListEntry<>(fieldNameKey, value, cellFactory, ignoreOrder);
 	}
 }

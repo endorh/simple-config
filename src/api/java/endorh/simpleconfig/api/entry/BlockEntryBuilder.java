@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.tags.Tag;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Contract;
@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public interface BlockEntryBuilder
-  extends ConfigEntryBuilder<Block, String, Block, BlockEntryBuilder>,
-          KeyEntryBuilder<Block> {
+  extends ConfigEntryBuilder<@NotNull Block, String, Block, BlockEntryBuilder>,
+          AtomicEntryBuilder {
 	/**
 	 * When true (the default), requires the block item to have a group.<br>
 	 * This excludes the AIR and BARRIER blocks, as well as other special blocks.

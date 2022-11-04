@@ -1,12 +1,13 @@
 package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.AbstractRange.FloatRange;
-import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface FloatRangeEntryBuilder
-  extends SizedRangeEntryBuilder<Float, FloatRange, FloatRangeEntryBuilder>, KeyEntryBuilder<FloatRange> {
+  extends SizedRangeEntryBuilder<@NotNull Float, FloatRange, FloatRangeEntryBuilder>,
+          AtomicEntryBuilder {
 	@Contract(pure=true) @NotNull FloatRangeEntryBuilder min(float min);
 	
 	@Contract(pure=true) @NotNull FloatRangeEntryBuilder max(float max);

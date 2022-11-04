@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -9,7 +9,8 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface BooleanEntryBuilder
-  extends ConfigEntryBuilder<Boolean, Boolean, Boolean, BooleanEntryBuilder>, KeyEntryBuilder<Boolean> {
+  extends ConfigEntryBuilder<@NotNull Boolean, Boolean, Boolean, BooleanEntryBuilder>,
+          AtomicEntryBuilder {
 	/**
 	 * Change the text displayed in the entry's button<br>
 	 * You may also pass a translation key to which '.true' and '.false'

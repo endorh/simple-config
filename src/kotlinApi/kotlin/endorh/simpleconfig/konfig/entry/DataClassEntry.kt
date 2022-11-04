@@ -3,15 +3,15 @@ package endorh.simpleconfig.konfig.entry
 import com.electronwill.nightconfig.core.Config
 import com.google.common.base.CaseFormat
 import com.google.common.collect.Maps
+import endorh.simpleconfig.api.AtomicEntryBuilder
 import endorh.simpleconfig.api.ConfigEntryBuilder
 import endorh.simpleconfig.api.ConfigEntryHolder
 import endorh.simpleconfig.api.EntryTag
-import endorh.simpleconfig.api.KeyEntryBuilder
 import endorh.simpleconfig.api.ui.icon.Icon
 import endorh.simpleconfig.core.AbstractConfigEntry
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder
+import endorh.simpleconfig.core.AtomicEntry
 import endorh.simpleconfig.core.DummyEntryHolder
-import endorh.simpleconfig.core.IKeyEntry
 import endorh.simpleconfig.core.entry.BeanProxy
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder
@@ -37,7 +37,7 @@ interface DataClassEntryBuilder<D> : ConfigEntryBuilder<D, Map<String, Any>, D, 
     infix fun <T> KProperty<T>.by(builder: ConfigEntryBuilder<T, *, *, *>)
     infix fun <T> KProperty<T>.by(builder: (T) -> ConfigEntryBuilder<T, *, *, *>)
     infix fun <T, G, CB> KProperty<T>.caption(builder: CB) where
-      CB : ConfigEntryBuilder<T, *, G, *>, CB : KeyEntryBuilder<G>
+      CB : ConfigEntryBuilder<T, *, G, *>, CB : AtomicEntryBuilder
     fun <T> D.baked(baker: D.() -> T) = BakedDataClassBinding<D, T> { baker() }
     infix fun <T> KProperty<T>.by(binding: BakedDataClassBinding<D, T>)
 }
@@ -84,7 +84,7 @@ internal class DataClassEntry<D : Any>(
           this by builder(getter.call())
     
         override infix fun <T, G, CB> KProperty<T>.caption(builder: CB)
-        where CB : ConfigEntryBuilder<T, *, G, *>, CB : KeyEntryBuilder<G> {
+        where CB : ConfigEntryBuilder<T, *, G, *>, CB : AtomicEntryBuilder {
             if (caption != null) throw IllegalStateException("caption already set for this data class: $caption")
             by(builder)
             caption = name
@@ -137,7 +137,7 @@ internal class DataClassEntry<D : Any>(
             } catch (e: ClassCastException) { null }
         }, entry::fromGui)
         
-        override fun createCopy() = Builder(value).also {
+        override fun createCopy(value: B) = Builder(value).also {
             it.entries.putAll(entries)
             it.bakedEntries.putAll(bakedEntries)
             it.caption = caption
@@ -249,7 +249,7 @@ internal class DataClassEntry<D : Any>(
           .withIcon(iconProvider)
         entries.forEach { (name, entry) ->
             if (name == caption) {
-                (entry as? IKeyEntry<*>)?.let { keyEntry ->
+                (entry as? AtomicEntry<*>)?.let { keyEntry ->
                     addCaption(
                         builder, fieldBuilder.withoutTags(EntryTag.NON_PERSISTENT, entry.copyTag), name, keyEntry)
                     return@forEach
@@ -263,9 +263,9 @@ internal class DataClassEntry<D : Any>(
     }
     
     private fun <B, KG, E> addCaption(
-      builder: ConfigFieldBuilder, fieldBuilder: BeanFieldBuilder<B>, name: String, keyEntry: IKeyEntry<KG>
+      builder: ConfigFieldBuilder, fieldBuilder: BeanFieldBuilder<B>, name: String, keyEntry: AtomicEntry<KG>
     ) where E : AbstractConfigListEntry<KG>, E : IChildListEntry {
-        fieldBuilder.caption<KG, E, Nothing>(name, keyEntry.buildChildGUIEntry<E, Nothing>(builder))
+        fieldBuilder.caption<KG, E, Nothing>(name, keyEntry.buildAtomicChildGUIEntry<E, Nothing>(builder))
     }
     
     class DataClassIntrospectionException : RuntimeException {

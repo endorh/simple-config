@@ -2,9 +2,9 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.FloatEntryBuilder;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatFieldBuilder;
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
-  implements IKeyEntry<Float> {
+  implements AtomicEntry<Float> {
 	@Internal public FloatEntry(
 	  ConfigEntryHolder parent, String name, float value
 	) {
@@ -82,7 +82,7 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 			return new FloatEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(Float value) {
 			return new Builder(value);
 		}
 	}

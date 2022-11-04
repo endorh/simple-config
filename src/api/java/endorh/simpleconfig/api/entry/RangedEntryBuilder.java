@@ -10,7 +10,7 @@ import java.util.function.Function;
 public interface RangedEntryBuilder<
   V extends Comparable<V>, Config, Gui,
   Self extends RangedEntryBuilder<V, Config, Gui, Self>
-> extends ConfigEntryBuilder<V, Config, Gui, Self> {
+> extends ConfigEntryBuilder<@NotNull V, Config, Gui, Self> {
 	/**
 	 * Set min (inclusive)
 	 */

@@ -2,9 +2,9 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleEntryBuilder;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleSliderBuilder;
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
-  implements IKeyEntry<Double> {
+  implements AtomicEntry<Double> {
 	@Internal public DoubleEntry(
 	  ConfigEntryHolder parent, String name, double value
 	) {
@@ -88,7 +88,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 			return new DoubleEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Double value) {
 			return new Builder(value);
 		}
 	}

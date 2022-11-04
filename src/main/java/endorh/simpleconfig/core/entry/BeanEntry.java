@@ -4,16 +4,16 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.BeanEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.DummyEntryHolder;
-import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.core.entry.BeanProxy.IBeanGuiAdapter;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -132,7 +132,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			return copy;
 		}
 		
-		@Override public <CB extends ConfigEntryBuilder<?, ?, ?, ?> & KeyEntryBuilder<?>>
+		@Override public <CB extends ConfigEntryBuilder<?, ?, ?, ?> & AtomicEntryBuilder>
 		@NotNull BeanEntryBuilder<B> caption(String name, CB entryBuilder) {
 			Builder<B> copy = add(name, entryBuilder);
 			copy.caption = name;
@@ -151,7 +151,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			return copy;
 		}
 		
-		@Override protected Builder<B> createCopy() {
+		@Override protected Builder<B> createCopy(B value) {
 			Builder<B> copy = new Builder<>(value);
 			copy.entries.putAll(entries);
 			copy.caption = caption;
@@ -281,7 +281,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		  .withIcon(iconProvider);
 		entries.forEach((name, entry) -> {
 			if (name.equals(caption)) {
-				if (!(entry instanceof IKeyEntry<?> keyEntry)) {
+				if (!(entry instanceof AtomicEntry<?> keyEntry)) {
 					LOGGER.debug("Caption for Bean entry is not a key entry: " + getGlobalPath());
 				} else {
 					addCaption(
@@ -300,9 +300,9 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 	  B, KG, E extends AbstractConfigListEntry<KG> & IChildListEntry,
 	  FB extends FieldBuilder<KG, E, FB>
 	> void addCaption(
-	  ConfigFieldBuilder builder, BeanFieldBuilder<B> fieldBuilder, String name, IKeyEntry<KG> keyEntry
+	  ConfigFieldBuilder builder, BeanFieldBuilder<B> fieldBuilder, String name, AtomicEntry<KG> keyEntry
 	) {
-		fieldBuilder.caption(name, keyEntry.<E, FB>buildChildGUIEntry(builder));
+		fieldBuilder.caption(name, keyEntry.<E, FB>buildAtomicChildGUIEntry(builder));
 	}
 	
 	public static class ConfigBeanIntrospectionException extends RuntimeException {

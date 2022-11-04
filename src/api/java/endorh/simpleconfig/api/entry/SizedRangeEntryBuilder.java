@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 public interface SizedRangeEntryBuilder<
   V extends Comparable<V>, R extends AbstractSizedRange<V, R>,
   Self extends SizedRangeEntryBuilder<V, R, Self>
-> extends RangeEntryBuilder<V, R, Self> {
+> extends RangeEntryBuilder<@NotNull V, R, Self> {
 	/**
 	 * Allow empty ranges.<br>
 	 * By default, empty ranges are not allowed.<br>

@@ -1,11 +1,12 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface DoubleEntryBuilder
-  extends RangedEntryBuilder<Double, Number, Double, DoubleEntryBuilder>, KeyEntryBuilder<Double> {
+  extends RangedEntryBuilder<@NotNull Double, Number, Double, DoubleEntryBuilder>,
+          AtomicEntryBuilder {
 	/**
 	 * Set min (inclusive)
 	 */

@@ -1,12 +1,13 @@
 package endorh.simpleconfig.api.entry;
 
 import endorh.simpleconfig.api.AbstractRange.DoubleRange;
-import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public interface DoubleRangeEntryBuilder extends SizedRangeEntryBuilder<Double, DoubleRange, DoubleRangeEntryBuilder>,
-                                                 KeyEntryBuilder<DoubleRange> {
+public interface DoubleRangeEntryBuilder extends SizedRangeEntryBuilder<
+  @NotNull Double, DoubleRange, DoubleRangeEntryBuilder
+>, AtomicEntryBuilder {
 	@Contract(pure=true) @NotNull DoubleRangeEntryBuilder min(double min);
 	
 	@Contract(pure=true) @NotNull DoubleRangeEntryBuilder max(double max);
