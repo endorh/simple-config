@@ -75,7 +75,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 			return new BlockNameEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(ResourceLocation value) {
 			final Builder copy = new Builder(value);
 			copy.tag = tag;
 			return copy;

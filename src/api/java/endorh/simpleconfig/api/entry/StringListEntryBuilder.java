@@ -1,5 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface StringListEntryBuilder extends ListEntryBuilder<
-  String, String, String, StringListEntryBuilder
+  @NotNull String, String, String, StringListEntryBuilder
 > {}

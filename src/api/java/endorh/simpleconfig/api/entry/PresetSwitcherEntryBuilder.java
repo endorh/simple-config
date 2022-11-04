@@ -1,6 +1,8 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public interface PresetSwitcherEntryBuilder
-  extends GUIOnlyEntryBuilder<String, String, PresetSwitcherEntryBuilder>, KeyEntryBuilder<String> {}
+  extends GUIOnlyEntryBuilder<@NotNull String, String, PresetSwitcherEntryBuilder>,
+          AtomicEntryBuilder {}

@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,8 +35,8 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 			return new StringListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
-			return new Builder(value);
+		@Override protected Builder createCopy(List<String> value) {
+			return new Builder(new ArrayList<>(value));
 		}
 	}
 	

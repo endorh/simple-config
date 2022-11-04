@@ -77,6 +77,7 @@ public class EntryPairListListEntry<
 			  HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
 			final Map<K, V> oMap = other.stream().collect(
 			  HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+			if (vMap.size() != oMap.size()) return false;
 			for (K key : vMap.keySet())
 				if (!dummy.valueEntry.areEqual(vMap.get(key), oMap.get(key))) return false;
 		} else {

@@ -1,11 +1,11 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface FloatEntryBuilder
-  extends RangedEntryBuilder<Float, Number, Float, FloatEntryBuilder>, KeyEntryBuilder<Float> {
+  extends RangedEntryBuilder<@NotNull Float, Number, Float, FloatEntryBuilder>, AtomicEntryBuilder {
 	/**
 	 * Set min (inclusive)
 	 */

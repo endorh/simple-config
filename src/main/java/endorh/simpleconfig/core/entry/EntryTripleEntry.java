@@ -1,14 +1,14 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryTripleEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.DummyEntryHolder;
-import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -30,7 +30,7 @@ public class EntryTripleEntry<
   L, M, R, LC, MC, RC, LG, MG, RG
 > extends AbstractConfigEntry<
   Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>
-  > implements IKeyEntry<Triple<LG, MG, RG>> {
+  > implements AtomicEntry<Triple<LG, MG, RG>> {
 	protected final AbstractConfigEntry<L, LC, LG> leftEntry;
 	protected final AbstractConfigEntry<M, MC, MG> middleEntry;
 	protected final AbstractConfigEntry<R, RC, RG> rightEntry;
@@ -53,29 +53,29 @@ public class EntryTripleEntry<
 	}
 	
 	@SuppressWarnings("unchecked") protected
-	<E extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>> E getLeftEntry() {
+	<E extends AbstractConfigEntry<L, LC, LG> & AtomicEntry<LG>> E getLeftEntry() {
 		return (E) leftEntry;
 	}
 	
 	@SuppressWarnings("unchecked") protected
-	<E extends AbstractConfigEntry<M, MC, MG> & IKeyEntry<MG>> E getMiddleEntry() {
+	<E extends AbstractConfigEntry<M, MC, MG> & AtomicEntry<MG>> E getMiddleEntry() {
 		return (E) middleEntry;
 	}
 	
 	@SuppressWarnings("unchecked") protected
-	<E extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>> E getRightEntry() {
+	<E extends AbstractConfigEntry<R, RC, RG> & AtomicEntry<RG>> E getRightEntry() {
 		return (E) rightEntry;
 	}
 	
 	public static class Builder<
 	  L, M, R, LC, MC, RC, LG, MG, RG,
-	  LS extends ConfigEntryBuilder<L, LC, LG, LS> & KeyEntryBuilder<LG>,
-	  MS extends ConfigEntryBuilder<M, MC, MG, MS> & KeyEntryBuilder<MG>,
-	  RS extends ConfigEntryBuilder<R, RC, RG, RS> & KeyEntryBuilder<RG>,
-	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & KeyEntryBuilder<LG>,
-	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ?, MS, MB> & KeyEntryBuilder<MG>,
-	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & KeyEntryBuilder<RG>
-	> extends AbstractConfigEntryBuilder<
+	  LS extends ConfigEntryBuilder<L, LC, LG, LS> & AtomicEntryBuilder,
+	  MS extends ConfigEntryBuilder<M, MC, MG, MS> & AtomicEntryBuilder,
+	  RS extends ConfigEntryBuilder<R, RC, RG, RS> & AtomicEntryBuilder,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & AtomicEntryBuilder,
+	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ?, MS, MB> & AtomicEntryBuilder,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & AtomicEntryBuilder
+	  > extends AbstractConfigEntryBuilder<
 	  Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>,
 	  EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG>,
 	  EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>,
@@ -162,11 +162,11 @@ public class EntryTripleEntry<
 			AbstractConfigEntry<L, LC, LG> leftEntry = DummyEntryHolder.build(parent, leftBuilder);
 			AbstractConfigEntry<M, MC, MG> middleEntry = DummyEntryHolder.build(parent, middleBuilder);
 			AbstractConfigEntry<R, RC, RG> rightEntry = DummyEntryHolder.build(parent, rightBuilder);
-			if (!(leftEntry instanceof IKeyEntry)) throw new IllegalStateException(
+			if (!(leftEntry instanceof AtomicEntry)) throw new IllegalStateException(
 			  "KeyEntryBuilder produced a non-key entry, violating its contract: " + leftBuilder.getClass().getSimpleName());
-			if (!(middleEntry instanceof IKeyEntry)) throw new IllegalStateException(
+			if (!(middleEntry instanceof AtomicEntry)) throw new IllegalStateException(
 			  "KeyEntryBuilder produced a non-key entry, violating its contract: " + middleBuilder.getClass().getSimpleName());
-			if (!(rightEntry instanceof IKeyEntry)) throw new IllegalStateException(
+			if (!(rightEntry instanceof AtomicEntry)) throw new IllegalStateException(
 			  "KeyEntryBuilder produced a non-key entry, violating its contract: " + rightBuilder.getClass().getSimpleName());
 			final EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG> entry =
 			  new EntryTripleEntry<>(parent, name, value, leftEntry, middleEntry, rightEntry);
@@ -177,10 +177,13 @@ public class EntryTripleEntry<
 			return entry;
 		}
 		
-		@Override
-		protected Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> createCopy() {
-			final Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy =
-			  new Builder<>(value, leftBuilder, middleBuilder, rightBuilder);
+		@Contract(value="_ -> new", pure=true) @Override
+		protected Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> createCopy(
+		  Triple<L, M, R> value
+		) {
+			Builder<L, M, R, LC, MC, RC, LG, MG, RG, LS, MS, RS, LB, MB, RB> copy = new Builder<>(
+			  Triple.of(value.getLeft(), value.getMiddle(), value.getRight()),
+			  leftBuilder, middleBuilder, rightBuilder);
 			copy.leftIcon = leftIcon;
 			copy.rightIcon = rightIcon;
 			copy.leftWeight = leftWeight;
@@ -288,9 +291,9 @@ public class EntryTripleEntry<
 	  ConfigFieldBuilder builder
 	) {
 		TripleListEntryBuilder<LG, MG, RG, ?, ?, ?, ?, ?, ?> entryBuilder = makeGUIBuilder(
-		  builder, getLeftEntry().buildChildGUIEntry(builder),
-		  getMiddleEntry().buildChildGUIEntry(builder),
-		  getRightEntry().buildChildGUIEntry(builder))
+		  builder, getLeftEntry().buildAtomicChildGUIEntry(builder),
+		  getMiddleEntry().buildAtomicChildGUIEntry(builder),
+		  getRightEntry().buildAtomicChildGUIEntry(builder))
 		  .withIcons(leftIcon, rightIcon)
 		  .withWeights(leftWeight, rightWeight);
 		return Optional.of(decorate(entryBuilder));

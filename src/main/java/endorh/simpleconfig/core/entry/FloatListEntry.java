@@ -53,7 +53,7 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 			return new FloatListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(List<Float> value) {
 			return new Builder(value);
 		}
 	}

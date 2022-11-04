@@ -33,7 +33,7 @@ public class CompoundTagEntry extends AbstractSerializableEntry<CompoundTag, Com
 			return new CompoundTagEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(CompoundTag value) {
 			return new Builder(value);
 		}
 	}

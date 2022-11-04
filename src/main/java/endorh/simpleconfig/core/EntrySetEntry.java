@@ -1,0 +1,302 @@
+package endorh.simpleconfig.core;
+
+import endorh.simpleconfig.api.ConfigEntryBuilder;
+import endorh.simpleconfig.api.ConfigEntryHolder;
+import endorh.simpleconfig.api.EntryTag;
+import endorh.simpleconfig.api.entry.EntrySetEntryBuilder;
+import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
+import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.EntryListFieldBuilder;
+import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+public class EntrySetEntry<
+  V, C, G, B extends AbstractConfigEntryBuilder<V, C, G, ?, ?, B>
+> extends AbstractConfigEntry<Set<V>, Set<C>, List<G>> {
+	protected static final String TOOLTIP_KEY_SUFFIX = ":help";
+	protected static final String SUB_ELEMENTS_KEY_SUFFIX = ":sub";
+	
+	protected Class<?> innerType;
+	protected Function<V, Optional<Component>> elemErrorSupplier;
+	protected boolean expand;
+	protected int minSize = 0;
+	protected int maxSize = Integer.MAX_VALUE;
+	protected final AbstractConfigEntry<V, C, G> entry;
+	protected final B entryBuilder;
+	protected CollectionEntryHolder holder;
+	
+	@Internal public EntrySetEntry(
+	  ConfigEntryHolder parent, String name,
+	  @Nullable Set<V> value, B entryBuilder
+	) {
+		super(parent, name, value);
+		holder = new CollectionEntryHolder(parent.getRoot());
+		this.entryBuilder = entryBuilder;
+		entry = entryBuilder.build(holder, name);
+		if (!entry.canBeNested())
+			throw new IllegalArgumentException(
+			  "Entry of type " + entry.getClass().getSimpleName() + " can not be " +
+			  "nested in a set entry");
+		if (translation != null)
+			setTranslation(translation);
+		if (tooltip != null)
+			setTooltipKey(tooltip);
+	}
+	
+	public static class Builder<
+	  V, C, G,
+	  S extends ConfigEntryBuilder<V, C, G, S>,
+	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>
+	> extends AbstractConfigEntryBuilder<
+	  Set<V>, Set<C>, List<G>, EntrySetEntry<V, C, G, B>,
+	  EntrySetEntryBuilder<V, C, G, S>,
+	  Builder<V, C, G, S, B>
+	> implements EntrySetEntryBuilder<V, C, G, S> {
+		protected B builder;
+		protected Class<?> innerType;
+		protected Function<V, Optional<Component>> elemErrorSupplier;
+		protected boolean expand;
+		protected int minSize = 0;
+		protected int maxSize = Integer.MAX_VALUE;
+		
+		@SuppressWarnings("unchecked")
+		public Builder(Set<V> value, ConfigEntryBuilder<V, C, G, ?> builder) {
+			this(value, (B) builder);
+		}
+		
+		public Builder(Set<V> value, B builder) {
+			super(new HashSet<>(value), Set.class);
+			innerType = builder.typeClass;
+			this.builder = builder.copy();
+		}
+		
+		@Override public @NotNull EntrySetEntryBuilder<V, C, G, S> expand() {
+			return expand(true);
+		}
+		
+		@Override public @NotNull EntrySetEntryBuilder<V, C, G, S> expand(boolean expand) {
+			Builder<V, C, G, S, B> copy = copy();
+			copy.expand = true;
+			return copy;
+		}
+		
+		@Override public @NotNull EntrySetEntryBuilder<V, C, G, S> minSize(int minSize) {
+			Builder<V, C, G, S, B> copy = copy();
+			copy.minSize = minSize;
+			return copy;
+		}
+		
+		@Override public @NotNull EntrySetEntryBuilder<V, C, G, S> maxSize(int maxSize) {
+			Builder<V, C, G, S, B> copy = copy();
+			copy.maxSize = maxSize;
+			return copy;
+		}
+		
+		@Override public @NotNull EntrySetEntryBuilder<V, C, G, S> elemError(
+		  Function<V, Optional<Component>> errorSupplier
+		) {
+			Builder<V, C, G, S, B> copy = copy();
+			copy.elemErrorSupplier = errorSupplier;
+			return copy;
+		}
+		
+		@Override protected EntrySetEntry<V, C, G, B> buildEntry(
+		  ConfigEntryHolder parent, String name
+		) {
+			EntrySetEntry<V, C, G, B> entry = new EntrySetEntry<>(parent, name, value, builder);
+			entry.innerType = innerType;
+			entry.elemErrorSupplier = elemErrorSupplier;
+			entry.expand = expand;
+			entry.minSize = minSize;
+			entry.maxSize = maxSize;
+			return entry;
+		}
+		
+		@Override protected Builder<V, C, G, S, B> createCopy(Set<V> value) {
+			Builder<V, C, G, S, B> copy = new Builder<>(new HashSet<>(value), builder);
+			copy.elemErrorSupplier = elemErrorSupplier;
+			copy.expand = expand;
+			copy.minSize = minSize;
+			copy.maxSize = maxSize;
+			return copy;
+		}
+	}
+	
+	@Override public void setTranslation(String translation) {
+		super.setTranslation(translation);
+		if (translation != null)
+			entry.setTranslation(translation + SUB_ELEMENTS_KEY_SUFFIX);
+	}
+	
+	@Override public void setTooltipKey(String translation) {
+		super.setTooltipKey(translation);
+		if (tooltip != null)
+			if (tooltip.endsWith(TOOLTIP_KEY_SUFFIX)) {
+				entry.setTooltipKey(tooltip.substring(0, tooltip.length() - TOOLTIP_KEY_SUFFIX.length())
+				                    + SUB_ELEMENTS_KEY_SUFFIX + TOOLTIP_KEY_SUFFIX);
+			} else entry.setTooltipKey(tooltip + SUB_ELEMENTS_KEY_SUFFIX);
+	}
+	
+	@Override public Object forActualConfig(@Nullable Set<C> value) {
+		if (value == null) return null;
+		return value.stream().map(entry::forActualConfig).collect(Collectors.toSet());
+	}
+	
+	@Override @Nullable public Set<C> fromActualConfig(@Nullable Object value) {
+		if (!(value instanceof Collection<?>)) return null;
+		Set<C> set = new HashSet<>();
+		for (Object elem: (Collection<?>) value) {
+			C c = entry.fromActualConfig(elem);
+			if (c == null) return null;
+			set.add(c);
+		}
+		return set;
+	}
+	
+	@Override public List<G> forGui(Set<V> set) {
+		return set.stream().map(this::elemForGui).collect(Collectors.toList());
+	}
+	
+	@Override public @Nullable Set<V> fromGui(@Nullable List<G> list) {
+		if (list == null) return null;
+		Set<V> res = new HashSet<>();
+		for (G g: list) {
+			V v = elemFromGui(g);
+			if (v == null) return null;
+			res.add(v);
+		}
+		return res;
+	}
+	
+	@Override public Set<C> forConfig(Set<V> set) {
+		return set.stream().map(this::elemForConfig).collect(Collectors.toSet());
+	}
+	
+	@Override public @Nullable Set<V> fromConfig(@Nullable Set<C> set) {
+		if (set == null) return null;
+		Set<V> res = new HashSet<>();
+		for (C c: set) {
+			V v = elemFromConfig(c);
+			if (v == null) return null;
+			res.add(v);
+		}
+		return res;
+	}
+	
+	protected C elemForConfig(V value) {
+		return entry.forConfig(value);
+	}
+	
+	protected @Nullable V elemFromConfig(C value) {
+		return entry.fromConfig(value);
+	}
+	
+	protected G elemForGui(V value) {
+		return entry.forGui(value);
+	}
+	
+	protected @Nullable V elemFromGui(G value) {
+		return entry.fromGui(value);
+	}
+	
+	protected static Component addIndex(Component message, int index) {
+		if (index < 0) return message;
+		return message.plainCopy().append(", ").append(new TranslatableComponent(
+		  "simpleconfig.config.error.at_index",
+		  new TextComponent(String.format("%d", index + 1)).withStyle(ChatFormatting.DARK_AQUA)));
+	}
+	
+	@Override public List<Component> getErrorsFromGUI(List<G> value) {
+		return Stream.concat(
+		  Stream.of(getErrorFromGUI(value)).filter(Optional::isPresent).map(Optional::get),
+		  IntStream.range(0, value.size()).boxed()
+			 .flatMap(i -> getElementErrors(i, value.get(i)).stream())
+		).collect(Collectors.toList());
+	}
+	
+	@Override public Optional<Component> getErrorFromGUI(List<G> value) {
+		int size = value.size();
+		if (size < minSize) {
+			return Optional.of(new TranslatableComponent(
+			  "simpleconfig.config.error.set." + (minSize == 1? "empty" : "min_size"),
+			  new TextComponent(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
+		} else if (size > maxSize) {
+			return Optional.of(new TranslatableComponent(
+			  "simpleconfig.config.error.set.max_size",
+			  new TextComponent(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
+		}
+		return super.getErrorFromGUI(value);
+	}
+	
+	public Optional<Component> getElementError(int index, G value) {
+		V elem = elemFromGui(value);
+		if (elem == null) return Optional.of(
+		  addIndex(new TranslatableComponent("simpleconfig.config.error.missing_value"), index));
+		return elemErrorSupplier.apply(elem).map(e -> addIndex(e, index));
+	}
+	
+	public List<Component> getElementErrors(int index, G value) {
+		return Stream.concat(
+		  Stream.of(getElementError(index, value)).filter(Optional::isPresent).map(Optional::get),
+		  entry.getErrorsFromGUI(value).stream()
+		).toList();
+	}
+	
+	@OnlyIn(Dist.CLIENT) protected AbstractConfigListEntry<G> buildCell(
+	  ConfigFieldBuilder builder
+	) {
+		final AbstractConfigEntry<V, C, G> e = entryBuilder.build(holder, holder.nextName());
+		e.setSaver((g, h) -> {});
+		e.setDisplayName(new TextComponent("•"));
+		e.nonPersistent = true;
+		e.actualValue = e.defValue;
+		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
+		  .orElseThrow(() -> new IllegalStateException(
+			 "Set config entry's sub-entry did not produce a GUI entry"));
+		g.removeTag(EntryTag.NON_PERSISTENT);
+		e.setGuiEntry(g);
+		return g;
+	}
+	
+	@Override public List<String> getConfigCommentTooltips() {
+		List<String> tooltips = super.getConfigCommentTooltips();
+		String typeComment = entry.getConfigCommentTooltip();
+		if (typeComment != null) tooltips.add("Set: " + typeComment);
+		return tooltips;
+	}
+	
+	@Override protected Consumer<List<G>> createSaveConsumer() {
+		return super.createSaveConsumer().andThen(l -> holder.clear());
+	}
+	
+	@OnlyIn(Dist.CLIENT) @Override
+	public Optional<FieldBuilder<List<G>, ?, ?>> buildGUIEntry(
+	  ConfigFieldBuilder builder
+	) {
+		holder.clear();
+		final EntryListFieldBuilder<G, AbstractConfigListEntry<G>>
+		  entryBuilder = builder
+		  .startEntryList(getDisplayName(), forGui(get()), en -> buildCell(builder))
+		  .setIgnoreOrder(true)
+		  .setCellErrorSupplier(this::getElementError)
+		  .setExpanded(expand)
+		  .setCaptionControlsEnabled(false)
+		  .setInsertInFront(false);
+		return Optional.of(decorate(entryBuilder));
+	}
+}

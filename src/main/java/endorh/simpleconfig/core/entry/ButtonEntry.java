@@ -62,7 +62,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 			return entry;
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(Consumer<ConfigEntryHolder> value) {
 			final Builder copy = new Builder(value);
 			copy.buttonLabelSupplier = buttonLabelSupplier;
 			return copy;

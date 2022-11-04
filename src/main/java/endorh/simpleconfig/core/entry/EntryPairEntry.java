@@ -1,14 +1,14 @@
 package endorh.simpleconfig.core.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryPairEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.DummyEntryHolder;
-import endorh.simpleconfig.core.IKeyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -31,7 +31,7 @@ public class EntryPairEntry<
   L, R, LC, RC, LG, RG
   > extends AbstractConfigEntry<
   Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>
-  > implements IKeyEntry<Pair<LG, RG>> {
+  > implements AtomicEntry<Pair<LG, RG>> {
 	@Internal public final AbstractConfigEntry<L, LC, LG> leftEntry;
 	@Internal public final AbstractConfigEntry<R, RC, RG> rightEntry;
 	protected float splitPos = 0.5F;
@@ -46,20 +46,20 @@ public class EntryPairEntry<
 		this.rightEntry = rightEntry;
 	}
 	
-	@SuppressWarnings("unchecked") @Internal public <E extends AbstractConfigEntry<L, LC, LG> & IKeyEntry<LG>> E getLeftEntry() {
+	@SuppressWarnings("unchecked") @Internal public <E extends AbstractConfigEntry<L, LC, LG> & AtomicEntry<LG>> E getLeftEntry() {
 		return (E) leftEntry;
 	}
-	@SuppressWarnings("unchecked") @Internal public <E extends AbstractConfigEntry<R, RC, RG> & IKeyEntry<RG>> E getRightEntry() {
+	@SuppressWarnings("unchecked") @Internal public <E extends AbstractConfigEntry<R, RC, RG> & AtomicEntry<RG>> E getRightEntry() {
 		return (E) rightEntry;
 	}
 	
 	public static class Builder<
 	  L, R, LC, RC, LG, RG,
-	  LS extends ConfigEntryBuilder<L, LC, LG, LS> & KeyEntryBuilder<LG>,
-	  RS extends ConfigEntryBuilder<R, RC, RG, RS> & KeyEntryBuilder<RG>,
-	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & KeyEntryBuilder<LG>,
-	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & KeyEntryBuilder<RG>
-	> extends AbstractConfigEntryBuilder<
+	  LS extends ConfigEntryBuilder<L, LC, LG, LS> & AtomicEntryBuilder,
+	  RS extends ConfigEntryBuilder<R, RC, RG, RS> & AtomicEntryBuilder,
+	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & AtomicEntryBuilder,
+	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & AtomicEntryBuilder
+	  > extends AbstractConfigEntryBuilder<
 	  Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>,
 	  EntryPairEntry<L, R, LC, RC, LG, RG>,
 	  EntryPairEntryBuilder<L, R, LC, RC, LG, RG>,
@@ -73,9 +73,9 @@ public class EntryPairEntry<
 		protected @Nullable Icon middleIcon;
 		
 		@SuppressWarnings("unchecked") public <
-		  LCB extends ConfigEntryBuilder<L, LC, LG, LCB> & KeyEntryBuilder<LG>,
-		  RCB extends ConfigEntryBuilder<R, RC, RG, RCB> & KeyEntryBuilder<RG>
-		> Builder(
+		  LCB extends ConfigEntryBuilder<L, LC, LG, LCB> & AtomicEntryBuilder,
+		  RCB extends ConfigEntryBuilder<R, RC, RG, RCB> & AtomicEntryBuilder
+		  > Builder(
 		  Pair<L, R> value, LCB leftBuilder, RCB rightBuilder
 		) {
 			this(value, (LB) leftBuilder, (RB) rightBuilder);
@@ -110,7 +110,7 @@ public class EntryPairEntry<
 		) {
 			AbstractConfigEntry<L, LC, LG> leftEntry = DummyEntryHolder.build(parent, leftBuilder);
 			AbstractConfigEntry<R, RC, RG> rightEntry = DummyEntryHolder.build(parent, rightBuilder);
-			if (!(leftEntry instanceof IKeyEntry)) throw new IllegalArgumentException(
+			if (!(leftEntry instanceof AtomicEntry)) throw new IllegalArgumentException(
 			  "KeyEntryBuilder produced non-key entry, violating its contract: " + leftBuilder.getClass().getSimpleName());
 			final EntryPairEntry<L, R, LC, RC, LG, RG> entry =
 			  new EntryPairEntry<>(parent, name, value, leftEntry, rightEntry);
@@ -119,9 +119,10 @@ public class EntryPairEntry<
 			return entry;
 		}
 		
-		@Override protected Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> createCopy() {
-			final Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> copy =
-			  new Builder<>(value, leftBuilder.copy(), rightBuilder.copy());
+		@Override protected Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> createCopy(Pair<L, R> value) {
+			final Builder<L, R, LC, RC, LG, RG, LS, RS, LB, RB> copy = new Builder<>(
+			  Pair.of(value.getLeft(), value.getRight()),
+			  leftBuilder.copy(), rightBuilder.copy());
 			copy.middleIcon = middleIcon;
 			copy.splitPos = splitPos;
 			return copy;
@@ -207,8 +208,8 @@ public class EntryPairEntry<
 	  ConfigFieldBuilder builder
 	) {
 		PairListEntryBuilder<LG, RG, ?, ?, ?, ?> entryBuilder = makeGUIBuilder(
-		  builder, getLeftEntry().buildChildGUIEntry(builder),
-		  getRightEntry().buildChildGUIEntry(builder))
+		  builder, getLeftEntry().buildAtomicChildGUIEntry(builder),
+		  getRightEntry().buildAtomicChildGUIEntry(builder))
 		  .withMiddleIcon(middleIcon)
 		  .withSplitPos(splitPos);
 		return Optional.of(decorate(entryBuilder));

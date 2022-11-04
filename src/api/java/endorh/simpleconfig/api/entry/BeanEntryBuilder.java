@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public interface BeanEntryBuilder<B> extends ConfigEntryBuilder<
-  B, Map<String, Object>, B, BeanEntryBuilder<B>
+  @NotNull B, Map<String, Object>, B, BeanEntryBuilder<B>
 > {
 	@Contract(pure=true) @NotNull default BeanEntryBuilder<B> allowUneditableProperties() {
 		return allowUneditableProperties(true);
@@ -27,7 +27,7 @@ public interface BeanEntryBuilder<B> extends ConfigEntryBuilder<
 	 * Add an editable entry for a bean property as a caption for this bean entry.<br>
 	 * Only one property can be the caption. The last set is used.
 	 */
-	@Contract(pure=true) @NotNull <CB extends ConfigEntryBuilder<?, ?, ?, ?> & KeyEntryBuilder<?>>
+	@Contract(pure=true) @NotNull <CB extends ConfigEntryBuilder<?, ?, ?, ?> & AtomicEntryBuilder>
 	BeanEntryBuilder<B> caption(String name, CB entryBuilder);
 	
 	/**

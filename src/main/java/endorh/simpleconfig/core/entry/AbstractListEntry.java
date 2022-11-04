@@ -179,7 +179,7 @@ public abstract class AbstractListEntry
 			  new TextComponent(String.valueOf(minSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		} else if (size > maxSize) {
 			return Optional.of(new TranslatableComponent(
-			  "simpleconfig.config.error.list.too_long",
+			  "simpleconfig.config.error.list.max_size",
 			  new TextComponent(String.valueOf(maxSize)).withStyle(ChatFormatting.DARK_AQUA)));
 		}
 		return super.getErrorFromGUI(value);

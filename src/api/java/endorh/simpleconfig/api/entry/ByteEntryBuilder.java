@@ -1,11 +1,11 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.KeyEntryBuilder;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface ByteEntryBuilder
-  extends RangedEntryBuilder<Byte, Number, Integer, ByteEntryBuilder>, KeyEntryBuilder<Integer> {
+  extends RangedEntryBuilder<@NotNull Byte, Number, Integer, ByteEntryBuilder>, AtomicEntryBuilder {
 	/**
 	 * Set min (inclusive)
 	 */

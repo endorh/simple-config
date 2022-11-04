@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryButtonEntryBuilder;
 import endorh.simpleconfig.core.entry.GUIOnlyEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -37,20 +37,20 @@ public class EntryButtonEntry<V, Gui>
 	  Class<?> typeClass
 	) {
 		super(parent, name, value, false, typeClass);
-		if (!(inner instanceof IKeyEntry)) throw new IllegalArgumentException(
+		if (!(inner instanceof AtomicEntry)) throw new IllegalArgumentException(
 		  "Inner entry must be a key entry");
 		this.inner = inner;
 		this.action = action;
 	}
 	
-	@SuppressWarnings("unchecked") protected <E extends AbstractConfigEntry<V, ?, Gui> & IKeyEntry<Gui>> E getInner() {
+	@SuppressWarnings("unchecked") protected <E extends AbstractConfigEntry<V, ?, Gui> & AtomicEntry<Gui>> E getInner() {
 		return (E) inner;
 	}
 	
 	public static class Builder<
-	  V, Gui, S extends ConfigEntryBuilder<V, ?, Gui, S> & KeyEntryBuilder<Gui>,
-	  B extends AbstractConfigEntryBuilder<V, ?, Gui, ?, S, B> & KeyEntryBuilder<Gui>
-	> extends GUIOnlyEntry.Builder<
+	  V, Gui, S extends ConfigEntryBuilder<V, ?, Gui, S> & AtomicEntryBuilder,
+	  B extends AbstractConfigEntryBuilder<V, ?, Gui, ?, S, B> & AtomicEntryBuilder
+	  > extends GUIOnlyEntry.Builder<
 	  V, Gui, EntryButtonEntry<V, Gui>,
 	  EntryButtonEntryBuilder<V, Gui, S>, Builder<V, Gui, S, B>
 	> implements EntryButtonEntryBuilder<V, Gui, S> {
@@ -71,6 +71,15 @@ public class EntryButtonEntry<V, Gui>
 			super(inner.value, inner.typeClass);
 			this.inner = inner;
 			this.action = action;
+		}
+		
+		@Override @Contract(pure=true) public @NotNull Builder<V, Gui, S, B> withAction(BiConsumer<V, ConfigEntryHolder> action) {
+			this.action = action;
+			return this;
+		}
+		
+		@Override @Contract(pure=true) public @NotNull Builder<V, Gui, S, B> withAction(Consumer<V> action) {
+			return withAction((v, h) -> action.accept(v));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder<V, Gui, S, B> label(String translation) {
@@ -103,8 +112,8 @@ public class EntryButtonEntry<V, Gui>
 			return entry;
 		}
 		
-		@Override protected Builder<V, Gui, S, B> createCopy() {
-			final Builder<V, Gui, S, B> copy = new Builder<>(inner, action);
+		@Override protected Builder<V, Gui, S, B> createCopy(V value) {
+			final Builder<V, Gui, S, B> copy = new Builder<>(inner.copy(value), action);
 			copy.buttonLabelSupplier = buttonLabelSupplier;
 			return copy;
 		}
@@ -132,7 +141,7 @@ public class EntryButtonEntry<V, Gui>
 	  ConfigFieldBuilder builder
 	) {
 		EntryButtonFieldBuilder<Gui, ?, ?> entryBuilder = makeGUIEntry(
-		  builder, getInner().buildChildGUIEntry(builder),
+		  builder, getInner().buildAtomicChildGUIEntry(builder),
 		  g -> action.accept(fromGuiOrDefault(g), parent))
 		  .withButtonLabel(buttonLabelSupplier)
 		  .setIgnoreEdits(true);

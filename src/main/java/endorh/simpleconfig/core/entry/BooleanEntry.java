@@ -7,7 +7,7 @@ import endorh.simpleconfig.api.entry.BooleanEntryBuilder;
 import endorh.simpleconfig.api.entry.BooleanEntryBuilder.BooleanDisplayer;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.BooleanToggleBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class BooleanEntry
-  extends AbstractConfigEntry<Boolean, Boolean, Boolean> implements IKeyEntry<Boolean> {
+  extends AbstractConfigEntry<Boolean, Boolean, Boolean> implements AtomicEntry<Boolean> {
 	protected BooleanDisplayer yesNoSupplier = BooleanEntryBuilder.BooleanDisplayer.TRUE_FALSE;
 	
 	@Internal public BooleanEntry(ConfigEntryHolder parent, String name, boolean value) {
@@ -67,7 +67,7 @@ public class BooleanEntry
 			return e;
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Boolean value) {
 			final Builder copy = new Builder(value);
 			copy.yesNoSupplier = yesNoSupplier;
 			return copy;

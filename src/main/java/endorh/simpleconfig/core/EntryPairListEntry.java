@@ -2,10 +2,10 @@ package endorh.simpleconfig.core;
 
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryPairListEntryBuilder;
 import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -54,7 +54,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		keyEntryTypeClass = keyEntryBuilder.typeClass;
 		entry = entryBuilder.build(holder, name + "$ v");
 		keyEntry = keyEntryBuilder.build(holder, name + "$ k");
-		if (!(keyEntry instanceof IKeyEntry)) throw new IllegalStateException(
+		if (!(keyEntry instanceof AtomicEntry)) throw new IllegalStateException(
 		  "KeyEntryBuilder created non-key entry: " + keyEntryBuilder.getClass().getCanonicalName());
 		if (!entry.canBeNested())
 			throw new IllegalArgumentException(
@@ -69,9 +69,9 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	public static class Builder<K, V, KC, C, KG, G,
 	  S extends ConfigEntryBuilder<V, C, G, S>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>,
-	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & KeyEntryBuilder<KG>,
-	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & KeyEntryBuilder<KG>
-	> extends AbstractListEntry.Builder<
+	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & AtomicEntryBuilder,
+	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & AtomicEntryBuilder
+	  > extends AbstractListEntry.Builder<
 	  Pair<K, V>, Pair<KC, C>, Pair<KG, G>,
 	  EntryPairListEntry<K, V, KC, C, KG, G, B, KB>,
 	  EntryPairListEntryBuilder<K, V, KC, C, KG, G, S, KS>,
@@ -80,7 +80,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		protected final KB keyEntryBuilder;
 		protected B entryBuilder;
 		
-		@SuppressWarnings("unchecked") public <KBB extends ConfigEntryBuilder<K, KC, KG, KBB> & KeyEntryBuilder<KG>> Builder(
+		@SuppressWarnings("unchecked") public <KBB extends ConfigEntryBuilder<K, KC, KG, KBB> & AtomicEntryBuilder> Builder(
 		  List<Pair<K, V>> value, KBB keyEntryBuilder, ConfigEntryBuilder<V, C, G, ?> entryBuilder
 		) {
 			this(value, (KB) keyEntryBuilder, (B) entryBuilder);
@@ -98,8 +98,14 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 			return new EntryPairListEntry<>(parent, name, value, entryBuilder, keyEntryBuilder);
 		}
 		
-		@Override protected Builder<K, V, KC, C, KG, G, S, B, KS, KB> createCopy() {
-			return new Builder<>(value, keyEntryBuilder.copy(), entryBuilder.copy());
+		@Override protected Builder<K, V, KC, C, KG, G, S, B, KS, KB> createCopy(
+		  List<Pair<K, V>> value
+		) {
+			return new Builder<>(
+			  value.stream().map(p -> Pair.of(p.getLeft(), p.getRight()))
+			    .collect(Collectors.toCollection(ArrayList::new)),
+			  keyEntryBuilder.copy(),
+			  entryBuilder.copy());
 		}
 	}
 	
@@ -175,7 +181,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
 		//noinspection unchecked
-		KGE kg = (KGE) ((IKeyEntry<KG>) ke).buildChildGUIEntry(builder).build();
+		KGE kg = (KGE) ((AtomicEntry<KG>) ke).buildAtomicChildGUIEntry(builder).build();
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));

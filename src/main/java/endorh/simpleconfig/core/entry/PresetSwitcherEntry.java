@@ -66,7 +66,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 			return new PresetSwitcherEntry(parent, name, presets, path, global);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(String value) {
 			return new Builder(new HashMap<>(presets), path, global);
 		}
 	}
@@ -111,7 +111,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 	  ConfigFieldBuilder builder
 	) {
 		EntryButtonFieldBuilder<String, ?, ?> entryBuilder = makeGUIEntry(
-			 builder, inner.buildChildGUIEntry(builder), this::applyPreset)
+		  builder, inner.buildAtomicChildGUIEntry(builder), this::applyPreset)
 		  .withButtonLabel(() -> new TranslatableComponent("simpleconfig.label.preset.apply"));
 		return Optional.of(entryBuilder);
 	}

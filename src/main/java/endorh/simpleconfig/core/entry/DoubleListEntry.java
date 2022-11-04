@@ -53,7 +53,7 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 			return new DoubleListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(List<Double> value) {
 			return new Builder(value);
 		}
 	}

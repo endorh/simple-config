@@ -12,6 +12,7 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -32,7 +33,7 @@ public class TagEntry extends AbstractSerializableEntry<Tag, TagEntry> {
 			return new TagEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(Tag value) {
 			return new Builder(value);
 		}
 	}

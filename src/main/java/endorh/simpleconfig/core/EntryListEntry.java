@@ -82,8 +82,8 @@ public class EntryListEntry
 			return new EntryListEntry<>(parent, name, value, builder);
 		}
 		
-		@Override protected Builder<V, C, G, S, B> createCopy() {
-			return new Builder<>(value, builder);
+		@Override protected Builder<V, C, G, S, B> createCopy(List<V> value) {
+			return new Builder<>(new ArrayList<>(value), builder);
 		}
 	}
 	

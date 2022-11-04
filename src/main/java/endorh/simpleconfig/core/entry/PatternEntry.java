@@ -56,7 +56,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntr
 			return new PatternEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Pattern value) {
 			return new Builder(value);
 		}
 	}

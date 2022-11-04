@@ -85,7 +85,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 			return new ItemNameEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(ResourceLocation value) {
 			final Builder copy = new Builder(value);
 			copy.tag = tag;
 			return copy;

@@ -6,7 +6,7 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.FluidEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder.ofFluid;
 
 public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
-  implements IKeyEntry<Fluid> {
+  implements AtomicEntry<Fluid> {
 	protected @NotNull Predicate<Fluid> filter;
 	
 	@Internal public FluidEntry(
@@ -109,7 +109,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			return new FluidEntry(parent, name, value, filter);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Fluid value) {
 			final Builder copy = new Builder(value);
 			copy.filter = filter;
 			copy.tag = tag;
