@@ -3,10 +3,10 @@ package endorh.simpleconfig.core;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.ConfigSpec;
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.entry.EntryMapEntryBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -38,7 +38,7 @@ import static java.util.Collections.singletonList;
  * Special config entry containing a map of values of which the values
  * are managed by another entry, as long as it's serializable to NBT,
  * and the keys by yet another that also implements
- * {@link IKeyEntry}. This excludes using as key entries other lists,
+ * {@link AtomicEntry}. This excludes using as key entries other lists,
  * maps and GUI only entries, since their rendering or serialization
  * is not supported.<br>
  * Currently, serializes in the config file as a {@link CompoundNBT}
@@ -74,7 +74,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		keyEntryTypeClass = keyEntryBuilder.typeClass;
 		entry = entryBuilder.build(holder, name + "$ v");
 		keyEntry = keyEntryBuilder.build(holder, name + "$ k");
-		if (!(keyEntry instanceof IKeyEntry)) throw new IllegalStateException(
+		if (!(keyEntry instanceof AtomicEntry)) throw new IllegalStateException(
 		  "KeyEntryBuilder created a non-key entry: " + keyEntryBuilder.getClass().getCanonicalName());
 		if (!entry.canBeNested())
 			throw new IllegalArgumentException(
@@ -89,9 +89,9 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	public static class Builder<K, V, KC, C, KG, G,
 	  S extends ConfigEntryBuilder<V, C, G, S>,
 	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>,
-	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & KeyEntryBuilder<KG>,
-	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & KeyEntryBuilder<KG>
-	> extends AbstractConfigEntryBuilder<
+	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & AtomicEntryBuilder,
+	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & AtomicEntryBuilder
+	  > extends AbstractConfigEntryBuilder<
 	  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
 	  EntryMapEntry<K, V, KC, C, KG, G, B, KB>,
 	  EntryMapEntryBuilder<K, V, KC, C, KG, G, S, KS>,
@@ -107,7 +107,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		protected int minSize = 0;
 		protected int maxSize = Integer.MAX_VALUE;
 		
-		@SuppressWarnings("unchecked") public <KBB extends ConfigEntryBuilder<K, KC, KG, KBB> & KeyEntryBuilder<KG>> Builder(
+		@SuppressWarnings("unchecked") public <KBB extends ConfigEntryBuilder<K, KC, KG, KBB> & AtomicEntryBuilder> Builder(
 		  Map<K, V> value, KBB keyEntryBuilder,
 		  ConfigEntryBuilder<V, C, G, ?> entryBuilder
 		) {
@@ -181,7 +181,8 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 			return e;
 		}
 		
-		@Override protected Builder<K, V, KC, C, KG, G, S, B, KS, KB> createCopy() {
+		@Contract(value="_ -> new", pure=true)
+		@Override protected Builder<K, V, KC, C, KG, G, S, B, KS, KB> createCopy(Map<K, V> value) {
 			final Builder<K, V, KC, C, KG, G, S, B, KS, KB> copy =
 			  new Builder<>(new LinkedHashMap<>(value), keyEntryBuilder, entryBuilder);
 			copy.expand = expand;
@@ -326,7 +327,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		ke.actualValue = ke.defValue;
 		e.actualValue = e.defValue;
 		//noinspection unchecked
-		KGE kg = (KGE) ((IKeyEntry<KG>) ke).buildChildGUIEntry(builder).build();
+		KGE kg = (KGE) ((AtomicEntry<KG>) ke).buildAtomicChildGUIEntry(builder).build();
 		final AbstractConfigListEntry<G> g = e.buildGUIEntry(builder).map(FieldBuilder::build)
 		  .orElseThrow(() -> new IllegalStateException(
 			 "Map config entry's sub-entry did not produce a GUI entry"));

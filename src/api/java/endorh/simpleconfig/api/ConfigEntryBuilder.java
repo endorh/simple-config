@@ -15,6 +15,9 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	@Internal V getValue();
 	
 	@Contract(pure=true)
+	@NotNull Self withValue(V value);
+	
+	@Contract(pure=true)
 	@Override @NotNull Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier);
 	
 	@Contract(pure=true)

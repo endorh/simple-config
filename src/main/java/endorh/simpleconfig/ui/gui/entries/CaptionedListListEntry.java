@@ -23,9 +23,9 @@ import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class CaptionedListListEntry<
-    V, E extends AbstractListListEntry<V, ?, E>,
-    C, CE extends AbstractConfigListEntry<C> & IChildListEntry
-  > extends TooltipListEntry<Pair<C, List<V>>> implements IExpandable, IEntryHolder {
+  V, E extends AbstractListListEntry<V, ?, E>,
+  C, CE extends AbstractConfigListEntry<C> & IChildListEntry
+> extends TooltipListEntry<Pair<C, List<V>>> implements IExpandable, IEntryHolder {
 	protected final ListCaptionWidget label;
 	private final E listEntry;
 	private final CE captionEntry;

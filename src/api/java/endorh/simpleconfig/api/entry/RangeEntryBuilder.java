@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 public interface RangeEntryBuilder<
   V extends Comparable<V>, R extends AbstractRange<V, R>,
   Self extends RangeEntryBuilder<V, R, Self>
-> extends ConfigEntryBuilder<R, String, R, Self> {
+> extends ConfigEntryBuilder<@NotNull R, String, R, Self> {
 	
 	@Contract(pure=true) @NotNull Self min(V min);
 	

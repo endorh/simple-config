@@ -54,7 +54,7 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 			return new ByteListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(List<Byte> value) {
 			return new Builder(value);
 		}
 	}

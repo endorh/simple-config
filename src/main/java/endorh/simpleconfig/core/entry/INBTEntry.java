@@ -30,7 +30,7 @@ public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
 			return new INBTEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(INBT value) {
 			return new Builder(value);
 		}
 	}

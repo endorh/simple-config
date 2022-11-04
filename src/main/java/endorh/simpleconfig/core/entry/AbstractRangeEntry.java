@@ -8,7 +8,7 @@ import endorh.simpleconfig.api.entry.RangeEntryBuilder;
 import endorh.simpleconfig.api.entry.SizedRangeEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 public abstract class AbstractRangeEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>
-  > extends AbstractConfigEntry<R, String, R> implements IKeyEntry<R> {
+  > extends AbstractConfigEntry<R, String, R> implements AtomicEntry<R> {
 	protected @Nullable V min = null;
 	protected @Nullable V max = null;
 	protected boolean canEditMinExclusiveness = false;

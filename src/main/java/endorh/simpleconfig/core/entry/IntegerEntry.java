@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IntegerEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer>
-  implements IKeyEntry<Integer> {
+  implements AtomicEntry<Integer> {
 	@Internal public IntegerEntry(
 	  ConfigEntryHolder parent, String name, int value
 	) {
@@ -55,7 +55,7 @@ public class IntegerEntry extends AbstractRangedEntry<Integer, Number, Integer>
 			return new IntegerEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(Integer value) {
 			return new Builder(value);
 		}
 	}

@@ -5,7 +5,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ResourceEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.util.ResourceLocation;
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 
 public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<Self>>
   extends AbstractConfigEntry<ResourceLocation, String, ResourceLocation>
-  implements IKeyEntry<ResourceLocation> {
+  implements AtomicEntry<ResourceLocation> {
 	protected SimpleComboBoxModel<ResourceLocation> suggestionProvider;
 	
 	public AbstractResourceEntry(

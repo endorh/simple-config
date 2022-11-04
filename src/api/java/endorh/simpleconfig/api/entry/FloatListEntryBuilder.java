@@ -3,7 +3,8 @@ package endorh.simpleconfig.api.entry;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public interface FloatListEntryBuilder extends RangedListEntryBuilder<Float, Number, Float, FloatListEntryBuilder> {
+public interface FloatListEntryBuilder
+  extends RangedListEntryBuilder<@NotNull Float, Number, Float, FloatListEntryBuilder> {
 	/**
 	 * Set the minimum allowed value for the elements of this list entry (inclusive)
 	 */

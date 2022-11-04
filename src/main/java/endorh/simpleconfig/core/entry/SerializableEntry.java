@@ -75,7 +75,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V, Serializa
 			return new SerializableEntry<>(parent, name, value, serializer, deserializer, typeClass);
 		}
 		
-		@Override protected Builder<V> createCopy() {
+		@Override protected Builder<V> createCopy(V value) {
 			return new Builder<>(value, serializer, deserializer);
 		}
 	}

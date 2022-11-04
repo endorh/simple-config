@@ -8,7 +8,7 @@ import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.IKeyEntry;
+import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -21,6 +21,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,13 +38,13 @@ import java.util.Optional;
  * Register extended keybinds by registering an {@link ExtendedKeyBindProvider} for them
  * using {@link ExtendedKeyBindDispatcher#registerProvider(ExtendedKeyBindProvider)}<br><br>
  * <b>Consider registering regular {@link KeyBinding}s through
- * {@link net.minecraftforge.fml.client.registry.ClientRegistry#registerKeyBinding(KeyBinding)}
+ * {@link ClientRegistry#registerKeyBinding(KeyBinding)}
  * </b><br>
  */
 @OnlyIn(Dist.CLIENT)
 public class KeyBindEntry extends AbstractConfigEntry<
   KeyBindMapping, String, KeyBindMapping
-> implements IKeyEntry<KeyBindMapping> {
+> implements AtomicEntry<KeyBindMapping> {
 	// Give entries without an assigned keybind a fallback keybind that can be used
 	//   to identify them for overlap detection.
 	private static final Int2ObjectMap<List<ExtendedKeyBind>> UNBOUND = new Int2ObjectOpenHashMap<>();
@@ -133,7 +135,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 			return entry;
 		}
 		
-		@Override protected Builder createCopy() {
+		@Contract(value="_ -> new", pure=true) @Override protected Builder createCopy(KeyBindMapping value) {
 			final Builder copy = new Builder(value.copy());
 			copy.defaultSettings = defaultSettings;
 			copy.keyBind = keyBind;

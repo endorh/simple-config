@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.entry.IntegerListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -54,8 +55,8 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 			return new IntegerListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
-			return new Builder(value);
+		@Override protected Builder createCopy(List<Integer> value) {
+			return new Builder(new IntArrayList(value));
 		}
 	}
 	

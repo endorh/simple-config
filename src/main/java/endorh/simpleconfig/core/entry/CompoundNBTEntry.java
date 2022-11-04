@@ -34,7 +34,7 @@ public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, Com
 			return new CompoundNBTEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
+		@Override protected Builder createCopy(CompoundNBT value) {
 			return new Builder(value);
 		}
 	}

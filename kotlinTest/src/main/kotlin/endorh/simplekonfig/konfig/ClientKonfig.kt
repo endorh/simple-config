@@ -3,11 +3,17 @@ package endorh.simplekonfig.konfig
 import endorh.simpleconfig.api.SimpleConfig.Type
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons
 import endorh.simpleconfig.konfig.SimpleKonfig
+import endorh.simpleconfig.konfig.builders.*
 import endorh.simpleconfig.konfig.category
 import endorh.simpleconfig.konfig.group
 import net.minecraft.item.Items
 import java.awt.Color
 
+// Entry builders are immutable, that is, all their methods return modified
+//   copies, se you can reuse them without fear
+private val letter = string().restrict("a", "b", "c", "d")
+
+typealias C = ClientKonfig
 object ClientKonfig : SimpleKonfig(
     Type.CLIENT, background = "textures/block/warped_planks.png"
 ) {
@@ -22,14 +28,16 @@ object ClientKonfig : SimpleKonfig(
     val data by data(Data("<unnamed>", Color.BLUE, 10)) { bind {
         ::name caption string()
         ::color by color()
-        // ::number by number()
         ::number by baked { color.rgb }
         ::variable by string()
     }}
-
+    
     object SubGroup : group(expand = true) {
         val caption by caption(number(0))
         val bool by yesNo(true)
+        
+        val letter1 by letter.withValue("b")
+        val letter2 by letter.withValue("d")
         
         object SubSubGroup : group() {
             val item by item(Items.GOLDEN_APPLE)

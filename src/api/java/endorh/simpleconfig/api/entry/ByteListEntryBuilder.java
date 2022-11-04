@@ -3,7 +3,8 @@ package endorh.simpleconfig.api.entry;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-public interface ByteListEntryBuilder extends RangedListEntryBuilder<Byte, Number, Integer, ByteListEntryBuilder> {
+public interface ByteListEntryBuilder
+  extends RangedListEntryBuilder<@NotNull Byte, Number, Integer, ByteListEntryBuilder> {
 	/**
 	 * Set the minimum allowed value for the elements of this list entry (inclusive)
 	 */

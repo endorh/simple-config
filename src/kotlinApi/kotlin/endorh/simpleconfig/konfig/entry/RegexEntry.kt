@@ -43,7 +43,7 @@ internal class RegexEntry(
             it.options = copySet(options)
         }
     
-        override fun createCopy(): Builder = Builder(value).also {
+        override fun createCopy(value: Regex): Builder = Builder(value).also {
             it.options = copySet(options)
         }
     }

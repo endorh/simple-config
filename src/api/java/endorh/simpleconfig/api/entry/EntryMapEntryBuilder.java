@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
@@ -15,8 +15,11 @@ import java.util.function.BiFunction;
 public interface EntryMapEntryBuilder<
   K, V, KC, C, KG, G,
   B extends ConfigEntryBuilder<V, C, G, B>,
-  KB extends ConfigEntryBuilder<K, KC, KG, KB> & KeyEntryBuilder<KG>
-  > extends ConfigEntryBuilder<Map<K, V>, Map<KC, C>, List<Pair<KG, G>>, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>> {
+  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder
+> extends ConfigEntryBuilder<
+  @NotNull Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
+  EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>
+> {
 	/**
 	 * Display this entry expanded in the GUI by default.
 	 *

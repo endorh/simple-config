@@ -11,15 +11,16 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.Optional;
 
 /**
- * Marker interface for {@link endorh.simpleconfig.core.AbstractConfigEntry}s
- * that produce {@link IChildListEntry}
- * gui entries and thus can be used as keys in map entries
+ * Marker interface for {@link AbstractConfigEntry}s that produce
+ * {@link IChildListEntry} gui entries and thus can be used as
+ * keys in map/pairList entries, and as captions for collection
+ * entries/entry groups.
  */
-public interface IKeyEntry<KG> {
+public interface AtomicEntry<KG> {
 	@OnlyIn(Dist.CLIENT) default <
 	  KGE extends AbstractConfigListEntry<KG> & IChildListEntry,
 	  KGEB extends FieldBuilder<KG, KGE, KGEB>
-	> KGEB buildChildGUIEntry(
+	> KGEB buildAtomicChildGUIEntry(
 	  ConfigFieldBuilder builder
 	) {
 		if (this instanceof AbstractConfigEntry) {

@@ -87,7 +87,7 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
-		if (heldEntry != null && !(heldEntry instanceof IKeyEntry<?>))
+		if (heldEntry != null && !(heldEntry instanceof AtomicEntry<?>))
 			throw new IllegalArgumentException(
 			  "Held entry for group " + getPath() + " doesn't implement IKeyEntry");
 		this.entries = entries;
@@ -234,13 +234,13 @@ public class SimpleConfigGroupImpl extends AbstractSimpleConfigEntryHolder
 	}
 	
 	@OnlyIn(Dist.CLIENT) private <
-	  T, CE extends AbstractConfigEntry<?, ?, T> & IKeyEntry<T>
+	  T, CE extends AbstractConfigEntry<?, ?, T> & AtomicEntry<T>
 	> CaptionedSubCategoryBuilder<T, ?, ?> createAndDecorateGUI(
 	  ConfigFieldBuilder entryBuilder, AbstractConfigEntry<?, ?, T> heldEntry, boolean forRemote
 	) {
 		//noinspection unchecked
 		final CE cast = (CE) heldEntry;
-		FieldBuilder<T, ?, ?> builder = cast.buildChildGUIEntry(entryBuilder);
+		FieldBuilder<T, ?, ?> builder = cast.buildAtomicChildGUIEntry(entryBuilder);
 		cast.decorateGUIBuilder(builder, forRemote);
 		return makeGUI(entryBuilder, builder)
 		  .withSaveConsumer(cast.createSaveConsumer());

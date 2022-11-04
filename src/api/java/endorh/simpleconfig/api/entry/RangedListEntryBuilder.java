@@ -10,7 +10,7 @@ import java.util.function.Function;
 public interface RangedListEntryBuilder<
   V extends Comparable<V>, Config, Gui extends Comparable<Gui>,
   Self extends RangedListEntryBuilder<V, Config, Gui, Self>
-> extends ListEntryBuilder<V, Config, Gui, Self> {
+> extends ListEntryBuilder<@NotNull V, Config, Gui, Self> {
 	/**
 	 * Set the minimum allowed value for the elements of this list entry (inclusive)
 	 */

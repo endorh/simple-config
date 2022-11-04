@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
+import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.KeyEntryBuilder;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
@@ -9,8 +9,8 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface KeyBindEntryBuilder extends ConfigEntryBuilder<
-  KeyBindMapping, String, KeyBindMapping, KeyBindEntryBuilder
->, KeyEntryBuilder<KeyBindMapping> {
+  @NotNull KeyBindMapping, String, KeyBindMapping, KeyBindEntryBuilder
+>, AtomicEntryBuilder {
 	/**
 	 * Configure the default keybind settings for this entry.
 	 */

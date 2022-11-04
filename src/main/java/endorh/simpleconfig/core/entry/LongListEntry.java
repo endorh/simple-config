@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.entry.LongListEntryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongListBuilder;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -53,8 +54,8 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 			return new LongListEntry(parent, name, value);
 		}
 		
-		@Override protected Builder createCopy() {
-			return new Builder(value);
+		@Override protected Builder createCopy(List<Long> value) {
+			return new Builder(new LongArrayList(value));
 		}
 	}
 	

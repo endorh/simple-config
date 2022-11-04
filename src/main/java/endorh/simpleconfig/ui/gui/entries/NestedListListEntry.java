@@ -2,10 +2,10 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry.NestedListCell;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,10 +14,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,24 +23,45 @@ import java.util.stream.Stream;
 public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
   extends AbstractListListEntry<T, NestedListCell<T, Inner>, NestedListListEntry<T, Inner>>
   implements IEntryHolder {
-	// protected final List<ReferenceProvider> referencableEntries = Lists.newArrayList();
+	protected boolean ignoreOrder;
 	
 	public NestedListListEntry(
 	  ITextComponent fieldName, List<T> value,
-	  Function<NestedListListEntry<T, Inner>, Inner> createInner
+	  Function<NestedListListEntry<T, Inner>, Inner> createInner,
+	  boolean ignoreOrder
 	) {
 		super(fieldName, value,
 		      l -> new NestedListListEntry.NestedListCell<>(l, createInner.apply(l)));
+		this.ignoreOrder = ignoreOrder;
 	}
 	
 	@Override public boolean areEqual(List<T> value, List<T> other) {
 		if (value == null || other == null) return value == other;
 		if (value.isEmpty() && other.isEmpty()) return true;
 		if (value.size() != other.size()) return false;
-		Inner dummy = !cells.isEmpty() ? cells.get(0).nestedEntry
-		                               : createCellWithValue(value.get(0)).nestedEntry;
-		final Iterator<T> iter = other.iterator();
-		for (T t : value) if (!dummy.areEqual(t, iter.next())) return false;
+		Inner dummy =
+		  !cells.isEmpty()? cells.get(0).nestedEntry : createCellWithValue(value.get(0)).nestedEntry;
+		if (ignoreOrder) {
+			// We cannot convert to set directly, because we must use the `areEquals` method of the
+			//   inner entry rather than the `equals` method.
+			// Creating a container class that wraps the value and implements `equals` is not a
+			//   solution, since we'd have no way to implement `hashCode`.
+			List<T> o = new ArrayList<>(other);
+			check:for (T t: value) {
+				Iterator<T> iter = o.iterator();
+				while (iter.hasNext()) {
+					T e = iter.next();
+					if (dummy.areEqual(t, e)) {
+						iter.remove();
+						continue check;
+					}
+				}
+				return false;
+			}
+		} else {
+			final Iterator<T> iter = other.iterator();
+			for (T t: value) if (!dummy.areEqual(t, iter.next())) return false;
+		}
 		return true;
 	}
 	
