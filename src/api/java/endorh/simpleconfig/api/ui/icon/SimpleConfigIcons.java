@@ -9,6 +9,9 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Built-in icons used by the Simple Config mod in its GUIs.
+ */
 @SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
 	public static final ResourceLocation TEXTURE = new ResourceLocation(
 	  SimpleConfig.MOD_ID, "textures/gui/simpleconfig/config_menu.png");

@@ -18,7 +18,7 @@ public class TripleListEntryBuilder<
   LEB extends FieldBuilder<L, LE, LEB>,
   MEB extends FieldBuilder<M, ME, MEB>,
   REB extends FieldBuilder<R, RE, REB>
-  > extends FieldBuilder<Triple<L, M, R>, TripleListEntry<L, M, R, LE, ME, RE>,
+> extends FieldBuilder<Triple<L, M, R>, TripleListEntry<L, M, R, LE, ME, RE>,
   TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB>> {
 	protected final LEB leftEntry;
 	protected final MEB middleEntry;

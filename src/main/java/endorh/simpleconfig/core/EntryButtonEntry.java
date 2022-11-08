@@ -49,7 +49,7 @@ public class EntryButtonEntry<V, Gui>
 	public static class Builder<
 	  V, Gui, S extends ConfigEntryBuilder<V, ?, Gui, S> & AtomicEntryBuilder,
 	  B extends AbstractConfigEntryBuilder<V, ?, Gui, ?, S, B> & AtomicEntryBuilder
-	  > extends GUIOnlyEntry.Builder<
+	> extends GUIOnlyEntry.Builder<
 	  V, Gui, EntryButtonEntry<V, Gui>,
 	  EntryButtonEntryBuilder<V, Gui, S>, Builder<V, Gui, S, B>
 	> implements EntryButtonEntryBuilder<V, Gui, S> {
@@ -130,7 +130,7 @@ public class EntryButtonEntry<V, Gui>
 	public <
 	  E extends AbstractConfigListEntry<Gui> & IChildListEntry,
 	  B extends FieldBuilder<Gui, E, B>
-	  > EntryButtonFieldBuilder<Gui, E, B> makeGUIEntry(
+	> EntryButtonFieldBuilder<Gui, E, B> makeGUIEntry(
 	  ConfigFieldBuilder builder, FieldBuilder<Gui, ?, ?> entryBuilder, Consumer<Gui> action
 	) {
 		return builder.startButton(getDisplayName(), (B) entryBuilder, action);

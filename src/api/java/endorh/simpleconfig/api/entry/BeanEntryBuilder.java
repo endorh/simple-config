@@ -13,9 +13,20 @@ import java.util.function.Function;
 public interface BeanEntryBuilder<B> extends ConfigEntryBuilder<
   @NotNull B, Map<String, Object>, B, BeanEntryBuilder<B>
 > {
+	/**
+	 * Allow the entry to not define entries for all bean properties.<br>
+	 * By default, a start-up error will be thrown if the bean has properties
+	 * without assigned entries, as this is probably the result of a mistake.
+	 */
 	@Contract(pure=true) @NotNull default BeanEntryBuilder<B> allowUneditableProperties() {
 		return allowUneditableProperties(true);
 	}
+	
+	/**
+	 * Allow the entry to not define entries for all bean properties.<br>
+	 * By default, a start-up error will be thrown if the bean has properties
+	 * without assigned entries, as this is probably the result of a mistake.
+	 */
 	@Contract(pure=true) @NotNull BeanEntryBuilder<B> allowUneditableProperties(boolean allowUneditable);
 	
 	/**

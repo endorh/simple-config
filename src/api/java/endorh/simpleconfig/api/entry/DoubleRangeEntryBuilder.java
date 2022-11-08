@@ -8,10 +8,19 @@ import org.jetbrains.annotations.NotNull;
 public interface DoubleRangeEntryBuilder extends SizedRangeEntryBuilder<
   @NotNull Double, DoubleRange, DoubleRangeEntryBuilder
 >, AtomicEntryBuilder {
+	/**
+	 * Set min (inclusive)
+	 */
 	@Contract(pure=true) @NotNull DoubleRangeEntryBuilder min(double min);
 	
+	/**
+	 * Set max (inclusive)
+	 */
 	@Contract(pure=true) @NotNull DoubleRangeEntryBuilder max(double max);
 	
+	/**
+	 * Set bounds (inclusive)
+	 */
 	@Contract(pure=true) @NotNull DoubleRangeEntryBuilder withBounds(double min, double max);
 	
 	/**

@@ -70,7 +70,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>,
 	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & AtomicEntryBuilder,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & AtomicEntryBuilder
-	  > extends AbstractListEntry.Builder<
+	> extends AbstractListEntry.Builder<
 	  Pair<K, V>, Pair<KC, C>, Pair<KG, G>,
 	  EntryPairListEntry<K, V, KC, C, KG, G, B, KB>,
 	  EntryPairListEntryBuilder<K, V, KC, C, KG, G, S, KS>,

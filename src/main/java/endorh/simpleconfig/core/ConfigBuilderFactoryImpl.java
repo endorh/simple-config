@@ -474,7 +474,7 @@ import java.util.regex.Pattern;
 	  K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	> @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return map(keyEntry, entry, new LinkedHashMap<>());
@@ -484,7 +484,7 @@ import java.util.regex.Pattern;
 	  K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	> @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
 	) {
 		return new EntryMapEntry.Builder<>(value, keyEntry, entry);
@@ -511,7 +511,7 @@ import java.util.regex.Pattern;
 	  K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	> @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return pairList(keyEntry, entry, new ArrayList<>());
@@ -529,7 +529,7 @@ import java.util.regex.Pattern;
 	@Override public <
 	  V, C, G, B extends ListEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<List<V>, List<C>, G, B, CV, CC, CG, CB> caption(
+	> @NotNull CaptionedCollectionEntryBuilder<List<V>, List<C>, G, B, CV, CC, CG, CB> caption(
 	  CB caption, B list
 	) {
 		return new CaptionedCollectionEntry.Builder<>(
@@ -566,7 +566,7 @@ import java.util.regex.Pattern;
 	  L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry) {
+	> @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry) {
 		return pair(leftEntry, rightEntry, Pair.of(leftEntry.getValue(), rightEntry.getValue()));
 	}
 	
@@ -574,7 +574,7 @@ import java.util.regex.Pattern;
 	  L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
+	> @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
 	  LB leftEntry, RB rightEntry, Pair<L, R> value
 	) {
 		return new EntryPairEntry.Builder<>(value, leftEntry, rightEntry);
@@ -588,7 +588,7 @@ import java.util.regex.Pattern;
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	> @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry
 	) {
 		return triple(leftEntry, middleEntry, rightEntry, Triple.of(
@@ -600,7 +600,7 @@ import java.util.regex.Pattern;
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	> @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
 	) {
 		return new EntryTripleEntry.Builder<>(

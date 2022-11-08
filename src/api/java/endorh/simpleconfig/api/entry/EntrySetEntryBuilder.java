@@ -13,7 +13,9 @@ import java.util.function.Function;
 
 public interface EntrySetEntryBuilder<
   V, C, G, B extends ConfigEntryBuilder<V, C, G, B>
-> extends ConfigEntryBuilder<@NotNull Set<V>, Set<C>, List<G>, EntrySetEntryBuilder<V, C, G, B>> {
+> extends ConfigEntryBuilder<
+  @NotNull Set<@NotNull V>, Set<C>, List<G>, EntrySetEntryBuilder<V, C, G, B>
+> {
 	/**
 	 * Expand this entry by default in the config menu.
 	 */

@@ -19,16 +19,26 @@ public interface BlockEntryBuilder
 	 */
 	@Contract(pure=true) @NotNull BlockEntryBuilder setRequireGroup(boolean requireGroup);
 	
+	/**
+	 * Restrict the selectable blocks with an arbitrary predicate.<br>
+	 */
 	@Contract(pure=true) @NotNull BlockEntryBuilder from(Predicate<Block> filter);
 	
+	/**
+	 * Restrict the selectable blocks to those of a list.
+	 */
 	@Contract(pure=true) @NotNull BlockEntryBuilder from(List<Block> choices);
 	
+	/**
+	 * Restrict the selectable blocks.
+	 */
 	@Contract(pure=true) @NotNull BlockEntryBuilder from(Block... choices);
 	
 	/**
 	 * Restrict the selectable items to those of a tag<br>
 	 * This can only be done on server configs, since tags
-	 * are server-dependant
+	 * are server-dependant.<br>
+	 * A tag filter is compatible
 	 */
 	@Contract(pure=true) @NotNull BlockEntryBuilder from(TagKey<Block> tag);
 }

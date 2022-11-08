@@ -4,14 +4,25 @@ import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
 
 public interface ExtendedKeyBindProvider {
+	/**
+	 * Register a set of keybinds directly, if you only have a finite
+	 * amount of them.
+	 */
 	static void registerKeyBinds(ExtendedKeyBind... keyBinds) {
 		registerProvider(new SimpleExtendedKeyBindProvider(Lists.newArrayList(keyBinds)));
 	}
 	
+	/**
+	 * Register a keybind provider, if you have a dynamic amount of
+	 * keybinds.
+	 */
 	static void registerProvider(ExtendedKeyBindProvider provider) {
 		ExtendedKeyBindProxy.getRegistrar().registerProvider(provider);
 	}
 	
+	/**
+	 * Unregister an already registered keybind provider.
+	 */
 	static void unregisterProvider(ExtendedKeyBindProvider provider) {
 		ExtendedKeyBindProxy.getRegistrar().unregisterProvider(provider);
 	}

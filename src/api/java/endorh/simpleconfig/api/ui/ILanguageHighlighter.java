@@ -4,6 +4,9 @@ import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Text formatter for a language.<br>
+ */
 public interface ILanguageHighlighter extends ITextFormatter {
 	@NotNull MutableComponent highlight(@NotNull String text);
 	

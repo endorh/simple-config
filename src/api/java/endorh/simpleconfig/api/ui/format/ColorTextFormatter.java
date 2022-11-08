@@ -11,6 +11,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Color text formatter in {@code #AARRGGBB} or {@code #RRGGBB} format.
+ */
 public class ColorTextFormatter implements ITextFormatter {
 	private static final Pattern COLOR_PATTERN = Pattern.compile(
 	  "^#(?<a>[\\da-fA-F]{2})?(?<r>[\\da-fA-F]{2})(?<g>[\\da-fA-F]{2})(?<b>[\\da-fA-F]{2})$");

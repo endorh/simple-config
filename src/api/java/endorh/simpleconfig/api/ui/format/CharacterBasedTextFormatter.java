@@ -18,6 +18,11 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 		return characterFormatter.getCharacterStyle(text, pos, chr, last);
 	}
 	
+	/**
+	 * Format a text using the formatting rules.<br>
+	 * Merges adjacent characters with the same style under the same
+	 * component.
+	 */
 	@Override public MutableComponent formatText(String text) {
 		MutableComponent res = null;
 		Style last = Style.EMPTY;
@@ -44,14 +49,25 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 		return res;
 	}
 	
+	/**
+	 * Character-based formatter.<br>
+	 * For each character computes a style.
+	 */
 	@FunctionalInterface public interface ICharacterFormatter {
 		ICharacterFormatter DEFAULT = plain(Style.EMPTY);
+		
+		/**
+		 * Create a character-based format that assigns the same style to all characters.
+		 */
 		static ICharacterFormatter plain(Style style) {
 			return (text, pos, chr, last) -> style;
 		}
 		Style getCharacterStyle(String text, int pos, char chr, Style last);
 	}
 	
+	/**
+	 * Character-based formatter implemented with a map of styles.
+	 */
 	public static class CharacterMapTextFormatter extends CharacterBasedTextFormatter {
 		private final Map<Character, Style> charMap;
 		

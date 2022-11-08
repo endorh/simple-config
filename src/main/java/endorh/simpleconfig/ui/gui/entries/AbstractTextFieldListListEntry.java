@@ -31,9 +31,9 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 	
 	@Internal
 	public static abstract class AbstractTextFieldListCell<
-	    T, Self extends AbstractTextFieldListCell<T, Self, ListEntry>,
-	    ListEntry extends AbstractTextFieldListListEntry<T, Self, ListEntry>
-	  > extends AbstractListListEntry.AbstractListCell<T, Self, ListEntry> {
+	  T, Self extends AbstractTextFieldListCell<T, Self, ListEntry>,
+	  ListEntry extends AbstractTextFieldListListEntry<T, Self, ListEntry>
+	> extends AbstractListListEntry.AbstractListCell<T, Self, ListEntry> {
 		protected TextFieldWidgetEx widget;
 		
 		public AbstractTextFieldListCell(ListEntry listListEntry) {

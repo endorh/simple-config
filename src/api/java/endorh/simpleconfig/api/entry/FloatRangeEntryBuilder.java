@@ -8,10 +8,19 @@ import org.jetbrains.annotations.NotNull;
 public interface FloatRangeEntryBuilder
   extends SizedRangeEntryBuilder<@NotNull Float, FloatRange, FloatRangeEntryBuilder>,
           AtomicEntryBuilder {
+	/**
+	 * Set min (inclusive)
+	 */
 	@Contract(pure=true) @NotNull FloatRangeEntryBuilder min(float min);
 	
+	/**
+	 * Set max (inclusive)
+	 */
 	@Contract(pure=true) @NotNull FloatRangeEntryBuilder max(float max);
 	
+	/**
+	 * Set bounds (inclusive)
+	 */
 	@Contract(pure=true) @NotNull FloatRangeEntryBuilder withBounds(float min, float max);
 	
 	/**

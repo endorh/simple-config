@@ -8,8 +8,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Supplier;
 
 public interface TextEntryBuilder extends ConfigEntryBuilder<Void, Void, Void, TextEntryBuilder> {
+	/**
+	 * Set the text displayed by this entry
+	 */
 	@Contract(pure=true) @NotNull TextEntryBuilder text(Supplier<Component> supplier);
 	
+	/**
+	 * Set the text displayed by this entry
+	 */
 	@Contract(pure=true) @NotNull TextEntryBuilder text(Component text);
 	
 	/**
