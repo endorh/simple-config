@@ -12,7 +12,7 @@ public interface CaptionedCollectionEntryBuilder<
   V, C, G, B extends ConfigEntryBuilder<V, C, List<G>, B>,
   CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
 > extends ConfigEntryBuilder<
-  @NotNull Pair<CV, V>, Pair<CC, C>, Pair<CG, List<G>>,
+  @NotNull Pair<@NotNull CV, @NotNull V>, Pair<CC, C>, Pair<CG, List<G>>,
   CaptionedCollectionEntryBuilder<V, C, G, B, CV, CC, CG, CB>
 > {
 	/**

@@ -849,7 +849,7 @@ public final class ConfigBuilderFactoryProxy {
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry) {
+	@NotNull EntryListEntryBuilder<@NotNull V, C, G, Builder> list(Builder entry) {
 		return getFactory().list(entry); 
 	}
 	
@@ -859,7 +859,7 @@ public final class ConfigBuilderFactoryProxy {
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	@NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, List<V> value) {
+	@NotNull EntryListEntryBuilder<@NotNull V, C, G, Builder> list(Builder entry, List<V> value) {
 		return getFactory().list(entry, value); 
 	}
 	
@@ -870,7 +870,7 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	public static @SuppressWarnings("unchecked") <
 	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
-	> @NotNull EntryListEntryBuilder<V, C, G, Builder> list(Builder entry, V... values) {
+	> @NotNull EntryListEntryBuilder<@NotNull V, C, G, Builder> list(Builder entry, V... values) {
 		return getFactory().list(entry, values); 
 	}
 	
@@ -882,7 +882,7 @@ public final class ConfigBuilderFactoryProxy {
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry) {
+	@NotNull EntrySetEntryBuilder<@NotNull V, C, G, Builder> set(Builder entry) {
 		return getFactory().set(entry);
 	}
 	
@@ -892,7 +892,7 @@ public final class ConfigBuilderFactoryProxy {
 	 * Non-persistent entries cannot be nested
 	 */
 	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	@NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry, Set<V> value) {
+	@NotNull EntrySetEntryBuilder<@NotNull V, C, G, Builder> set(Builder entry, Set<V> value) {
 		return getFactory().set(entry, value);
 	}
 	
@@ -903,7 +903,7 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	public static @SuppressWarnings("unchecked") <
 	  V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>
-	> @NotNull EntrySetEntryBuilder<V, C, G, Builder> set(Builder entry, V... values) {
+	> @NotNull EntrySetEntryBuilder<@NotNull V, C, G, Builder> set(Builder entry, V... values) {
 		return getFactory().set(entry, values);
 	}
 	
@@ -923,7 +923,7 @@ public final class ConfigBuilderFactoryProxy {
 	public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	> @NotNull EntryMapEntryBuilder<@NotNull K, @NotNull V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry
 	) {
 		return getFactory().map(keyEntry, entry); 
@@ -943,7 +943,7 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	public static <K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	> @NotNull EntryMapEntryBuilder<@NotNull K, @NotNull V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry, Map<K, V> value
 	) {
 		return getFactory().map(keyEntry, entry, value); 
@@ -960,9 +960,9 @@ public final class ConfigBuilderFactoryProxy {
 	 *   map entry, or a list entry. Not persistent entries cannot be used
 	 */
 	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	@NotNull EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
-	  Builder entry
-	) {
+	@NotNull EntryMapEntryBuilder<
+	  @NotNull String, @NotNull V, String, C, String, G, Builder, StringEntryBuilder
+	> map(Builder entry) {
 		return getFactory().map(entry); 
 	}
 	
@@ -978,7 +978,9 @@ public final class ConfigBuilderFactoryProxy {
 	 * @param value Entry value (default: empty map)
 	 */
 	public static <V, C, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>>
-	@NotNull EntryMapEntryBuilder<String, V, String, C, String, G, Builder, StringEntryBuilder> map(
+	@NotNull EntryMapEntryBuilder<
+	  @NotNull String, @NotNull V, String, C, String, G, Builder, StringEntryBuilder
+	> map(
 	  Builder entry, Map<String, V> value
 	) {
 		return getFactory().map(entry, value); 
@@ -1000,9 +1002,9 @@ public final class ConfigBuilderFactoryProxy {
 	public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
-	  KeyBuilder keyEntry, Builder entry
-	) {
+	> @NotNull EntryPairListEntryBuilder<
+	  @NotNull K, @NotNull V, KC, C, KG, G, Builder, KeyBuilder
+	> pairList(KeyBuilder keyEntry, Builder entry) {
 		return getFactory().pairList(keyEntry, entry); 
 	}
 	
@@ -1021,7 +1023,9 @@ public final class ConfigBuilderFactoryProxy {
 	public static <K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	> @NotNull EntryPairListEntryBuilder<
+	  @NotNull K, @NotNull V, KC, C, KG, G, Builder, KeyBuilder
+	> pairList(
 	  KeyBuilder keyEntry, Builder entry, List<Pair<K, V>> value
 	) {
 		return getFactory().pairList(keyEntry, entry, value); 
@@ -1035,8 +1039,8 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	public static <V, C, G, B extends ListEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
-	  List<V>, List<C>, G, B, CV, CC, CG, CB
+	> @NotNull CaptionedCollectionEntryBuilder<
+	  @NotNull List< @NotNull V>, List<C>, G, B, CV, CC, CG, CB
 	> caption(CB caption, B list) {
 		return getFactory().caption(caption, list);
 	}
@@ -1047,8 +1051,8 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	public static <V, C, G, B extends ConfigEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
-	  Set<V>, Set<C>, G, EntrySetEntryBuilder<V, C, G, B>, CV, CC, CG, CB
+	> @NotNull CaptionedCollectionEntryBuilder<
+	  @NotNull Set<@NotNull V>, Set<C>, G, EntrySetEntryBuilder<V, C, G, B>, CV, CC, CG, CB
 	> caption(CB caption, EntrySetEntryBuilder<V, C, G, B> set) {
 		return getFactory().caption(caption, set);
 	}
@@ -1061,8 +1065,9 @@ public final class ConfigBuilderFactoryProxy {
 	  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
 	  B extends ConfigEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
-	  Map<K, V>, Map<KC, C>, Pair<KG, G>, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>,
+	> @NotNull CaptionedCollectionEntryBuilder<
+	  @NotNull Map<@NotNull K, @NotNull V>, Map<KC, C>, Pair<KG, G>,
+	  EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>,
 	  CV, CC, CG, CB
 	> caption(CB caption, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> map) {
 		return getFactory().caption(caption, map);
@@ -1076,8 +1081,8 @@ public final class ConfigBuilderFactoryProxy {
 	  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
 	  B extends ConfigEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
-	  List<Pair<K, V>>, List<Pair<KC, C>>, Pair<KG, G>,
+	> @NotNull CaptionedCollectionEntryBuilder<
+	  @NotNull List<@NotNull Pair<@NotNull K, @NotNull V>>, List<Pair<KC, C>>, Pair<KG, G>,
 	  EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>,
 	  CV, CC, CG, CB
 	> caption(CB caption, EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB> pairList) {
@@ -1099,7 +1104,7 @@ public final class ConfigBuilderFactoryProxy {
 	@NotNull public static <L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
+	> EntryPairEntryBuilder<@NotNull L, @NotNull R, LC, RC, LG, RG> pair(
 	  LB leftEntry, RB rightEntry
 	) {
 		return getFactory().pair(leftEntry, rightEntry); 
@@ -1118,7 +1123,7 @@ public final class ConfigBuilderFactoryProxy {
 	@NotNull public static <L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(
+	> EntryPairEntryBuilder<@NotNull L, @NotNull R, LC, RC, LG, RG> pair(
 	  LB leftEntry, RB rightEntry, Pair<L, R> value
 	) {
 		return getFactory().pair(leftEntry, rightEntry, value); 
@@ -1141,9 +1146,9 @@ public final class ConfigBuilderFactoryProxy {
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
-	  LB leftEntry, MB middleEntry, RB rightEntry
-	) {
+	> EntryTripleEntryBuilder<
+	  @NotNull L, @NotNull M, @NotNull R, LC, MC, RC, LG, MG, RG
+	> triple(LB leftEntry, MB middleEntry, RB rightEntry) {
 		return getFactory().triple(leftEntry, middleEntry, rightEntry);
 	}
 	
@@ -1162,9 +1167,9 @@ public final class ConfigBuilderFactoryProxy {
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
-	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value
-	) {
+	> EntryTripleEntryBuilder<
+	  @NotNull L, @NotNull M, @NotNull R, LC, MC, RC, LG, MG, RG
+	> triple(LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value) {
 		return getFactory().triple(leftEntry, middleEntry, rightEntry, value);
 	}
 }

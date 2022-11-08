@@ -29,9 +29,9 @@ import java.util.Optional;
 
 public class EntryPairEntry<
   L, R, LC, RC, LG, RG
-  > extends AbstractConfigEntry<
+> extends AbstractConfigEntry<
   Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>
-  > implements AtomicEntry<Pair<LG, RG>> {
+> implements AtomicEntry<Pair<LG, RG>> {
 	@Internal public final AbstractConfigEntry<L, LC, LG> leftEntry;
 	@Internal public final AbstractConfigEntry<R, RC, RG> rightEntry;
 	protected float splitPos = 0.5F;
@@ -59,7 +59,7 @@ public class EntryPairEntry<
 	  RS extends ConfigEntryBuilder<R, RC, RG, RS> & AtomicEntryBuilder,
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & AtomicEntryBuilder,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & AtomicEntryBuilder
-	  > extends AbstractConfigEntryBuilder<
+	> extends AbstractConfigEntryBuilder<
 	  Pair<L, R>, Pair<LC, RC>, Pair<LG, RG>,
 	  EntryPairEntry<L, R, LC, RC, LG, RG>,
 	  EntryPairEntryBuilder<L, R, LC, RC, LG, RG>,
@@ -75,7 +75,7 @@ public class EntryPairEntry<
 		@SuppressWarnings("unchecked") public <
 		  LCB extends ConfigEntryBuilder<L, LC, LG, LCB> & AtomicEntryBuilder,
 		  RCB extends ConfigEntryBuilder<R, RC, RG, RCB> & AtomicEntryBuilder
-		  > Builder(
+		> Builder(
 		  Pair<L, R> value, LCB leftBuilder, RCB rightBuilder
 		) {
 			this(value, (LB) leftBuilder, (RB) rightBuilder);

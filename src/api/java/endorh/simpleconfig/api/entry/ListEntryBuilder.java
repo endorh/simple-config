@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public interface ListEntryBuilder<V, Config, Gui, Self extends ListEntryBuilder<V, Config, Gui, Self>>
-  extends ConfigEntryBuilder<@NotNull List<V>, List<Config>, List<Gui>, Self> {
+  extends ConfigEntryBuilder<@NotNull List<@NotNull V>, List<Config>, List<Gui>, Self> {
 	/**
 	 * Expand this entry by default in the config menu.
 	 */

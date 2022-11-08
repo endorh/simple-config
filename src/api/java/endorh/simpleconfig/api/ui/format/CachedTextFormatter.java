@@ -7,6 +7,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
+/**
+ * Wrapper for a text formatter that caches the last formatted result.
+ */
 public class CachedTextFormatter implements ITextFormatter {
 	private final ITextFormatter delegate;
 	private String lastText;

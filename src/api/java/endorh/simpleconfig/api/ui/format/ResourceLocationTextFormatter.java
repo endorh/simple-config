@@ -8,6 +8,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Resource location formatter, with different styles for
+ * the namespace, colon, path, slashes in the path and errors.<br>
+ * Also prevents the user from inputting invalid characters, and
+ * forces inputted characters to be lowercase.
+ */
 public class ResourceLocationTextFormatter implements ITextFormatter {
 	private Style namespaceStyle = Style.EMPTY.withColor(TextColor.fromRgb(0xA0A0A0));
 	private Style colonStyle = Style.EMPTY.withColor(TextColor.fromRgb(0x808080));

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 public interface FluidNameEntryBuilder
   extends ResourceEntryBuilder<FluidNameEntryBuilder> {
 	/**
-	 * Restrict the selectable items to those of a tag<br>
+	 * Suggest selectable items from a tag<br>
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */

@@ -9,6 +9,6 @@ public interface EntryPairListEntryBuilder<K, V, KC, C, KG, G,
   B extends ConfigEntryBuilder<V, C, G, B>,
   KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder
 > extends ListEntryBuilder<
-  @NotNull Pair<K, V>, Pair<KC, C>, Pair<KG, G>,
+  @NotNull Pair<@NotNull K, @NotNull V>, Pair<KC, C>, Pair<KG, G>,
   EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>
 > {}
