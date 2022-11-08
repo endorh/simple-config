@@ -10,7 +10,7 @@ public interface ItemNameEntryBuilder extends ResourceEntryBuilder<ItemNameEntry
 	@Contract(pure=true) @NotNull ItemNameEntryBuilder suggest(Ingredient ingredient);
 	
 	/**
-	 * Restrict the selectable items to those of a tag<br>
+	 * Suggest selectable items from a tag<br>
 	 * This can only be done on server configs, since tags
 	 * are server-dependant
 	 */

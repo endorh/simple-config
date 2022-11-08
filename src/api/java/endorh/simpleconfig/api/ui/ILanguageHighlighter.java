@@ -4,6 +4,9 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Text formatter for a language.<br>
+ */
 public interface ILanguageHighlighter extends ITextFormatter {
 	@NotNull IFormattableTextComponent highlight(@NotNull String text);
 	

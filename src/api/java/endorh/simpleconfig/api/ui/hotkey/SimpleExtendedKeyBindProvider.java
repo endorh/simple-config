@@ -4,6 +4,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
+/**
+ * Simple keybind provider, using a collection of keybinds as backend,
+ * and implementing priority as a property.<br>
+ */
 public class SimpleExtendedKeyBindProvider implements ExtendedKeyBindProvider {
 	private final Collection<ExtendedKeyBind> keyBinds;
 	private int priority;

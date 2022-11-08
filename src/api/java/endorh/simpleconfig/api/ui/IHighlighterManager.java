@@ -8,5 +8,9 @@ public interface IHighlighterManager {
 		return HighlighterManagerProxy.getHighlighterManager();
 	}
 	
+	/**
+	 * Get the highlighter for a language.<br>
+	 * The only built-in languages are {@code "regex"} and {@code "snbt"}.
+	 */
 	@Nullable ILanguageHighlighter getHighlighter(String language);
 }

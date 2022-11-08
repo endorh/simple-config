@@ -25,16 +25,26 @@ public interface FluidEntryBuilder
 	 */
 	@Contract(pure=true) @NotNull FluidEntryBuilder setExcludeFlowing(boolean excludeFlowing);
 	
+	/**
+	 * Restrict the selectable fluids with an arbitrary predicate.
+	 */
 	@Contract(pure=true) @NotNull FluidEntryBuilder from(Predicate<Fluid> filter);
 	
+	/**
+	 * Restrict the selectable fluids to the given choices.
+	 */
 	@Contract(pure=true) @NotNull FluidEntryBuilder from(List<Fluid> choices);
 	
+	/**
+	 * Restrict the selectable fluids to the given choices.
+	 */
 	@Contract(pure=true) @NotNull FluidEntryBuilder from(Fluid... choices);
 	
 	/**
 	 * Restrict the selectable items to those of a tag<br>
 	 * This can only be done on server configs, since tags
-	 * are server-dependant
+	 * are server-dependant<br>
+	 * This filter can be combined with other filters.
 	 */
 	@Contract(pure=true) @NotNull FluidEntryBuilder from(ITag<Fluid> tag);
 }

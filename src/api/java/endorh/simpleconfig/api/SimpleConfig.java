@@ -11,6 +11,10 @@ import java.util.*;
 public interface SimpleConfig extends ConfigEntryHolder {
 	@Internal String MOD_ID = "simpleconfig";
 	
+	/**
+	 * Whether this config is a wrapper for a mod that
+	 * doesn't use the Simple Config API.
+	 */
 	boolean isWrapper();
 	
 	/**
@@ -36,17 +40,71 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	 */
 	@NotNull SimpleConfigGroup getGroup(String path);
 	
+	/**
+	 * Whether this config can be edited by the player.<br>
+	 * Will be false for remote configs for which the player doesn't
+	 * have edit permission.
+	 */
 	boolean canEdit();
 	
+	/**
+	 * Type of this config.
+	 */
 	Type getType();
 	
+	/**
+	 * Mod ID of this config.
+	 */
 	String getModId();
 	
+	/**
+	 * Mod name of this config.
+	 */
 	String getModName();
 	
+	/**
+	 * Type of config files:
+	 * <ul>
+	 *    <li>{@link #CLIENT}</li>
+	 *    <li>{@link #COMMON}</li>
+	 *    <li>{@link #SERVER}</li>
+	 * </ul>
+	 */
 	enum Type {
+		/**
+		 * <b>Client config</b>, exclusive for the client side.<br>
+		 * Stored locally in the client's {@code config} folder.<br>
+		 * Different for each player, missing in the server, shared
+		 * for all worlds a player plays in.<br>
+		 */
 		CLIENT(ModConfig.Type.CLIENT, true, false),
+		/**
+		 * <b>Common config</b><br>
+		 * Stored locally in the client's {@code config} folder, and
+		 * in the server's {@code serverconfig} folder.<br>
+		 * Different for each player and the server (each has their
+		 * own version).<br>
+		 * Shared for all worlds a player plays in, but each world has its
+		 * own version as well.<br>
+		 * All players can edit their own version, and players with permissions
+		 * on a server can see/edit the server's version remotely.<br>
+		 * <br>
+		 * <b>Strongly discouraged</b>. The only encouraged use case is for server
+		 * configuration that is needed before the world loads, as
+		 * {@link #SERVER} configs are not loaded until the world is being
+		 * loaded, which is sometimes too late.<br>
+		 * Most mods only ever need {@link #CLIENT} and {@link #SERVER} configs.
+		 */
 		COMMON(ModConfig.Type.COMMON, true, true),
+		/**
+		 * <b>Server config</b>, exclusive for the server side, but known by clients.<br>
+		 * Stored remotely in the server's {@code serverconfig} folder only.<br>
+		 * A copy is sent to clients when they join the server, or when the config
+		 * changes.<br>
+		 * Same for all players in the server.<br>
+		 * Only players with permission on the server can see/edit the config
+		 * remotely.<br>
+		 */
 		SERVER(ModConfig.Type.SERVER, false, true);
 		
 		private static final Map<String, Type> BY_ALIAS = Util.make(
@@ -64,9 +122,15 @@ public interface SimpleConfig extends ConfigEntryHolder {
 		  Collections.newSetFromMap(new EnumMap<>(Type.class)),
 		  s -> Arrays.stream(values()).filter(Type::isRemote).forEach(s::add));
 		
+		/**
+		 * {@link #CLIENT} and {@link #COMMON}
+		 */
 		public static Set<Type> localTypes() {
 			return LOCAL_TYPES;
 		}
+		/**
+		 * {@link #COMMON} and {@link #SERVER}
+		 */
 		public static Set<Type> remoteTypes() {
 			return REMOTE_TYPES;
 		}
@@ -74,6 +138,10 @@ public interface SimpleConfig extends ConfigEntryHolder {
 		public static Type fromAlias(String alias) {
 			return BY_ALIAS.get(alias);
 		}
+		
+		/**
+		 * From equivalent Forge config type.
+		 */
 		public static Type fromConfigType(ModConfig.Type type) {
 			return BY_CONFIG_TYPE.get(type);
 		}
@@ -90,17 +158,31 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			alias = type.extension();
 		}
 		
+		/**
+		 * Whether this type has a version stored locally.
+		 */
 		public boolean isLocal() {
 			return isLocal;
 		}
 		
+		/**
+		 * Whether this type has a version stored remotely.
+		 */
 		public boolean isRemote() {
 			return isRemote;
 		}
 		
+		/**
+		 * Equivalent Forge config type.
+		 */
 		public @NotNull ModConfig.Type asConfigType() {
 			return type;
 		}
+		
+		/**
+		 * {@link EditType} for remote/local origin as specified, or null
+		 * if this type doesn't have a version for that origin.
+		 */
 		public EditType asEditType(boolean remote) {
 			return Arrays.stream(EditType.values()).filter(
 			  t -> t.getType() == this && t.isOnlyRemote() == remote
@@ -108,15 +190,40 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			  t -> t.getType() == this
 			).findFirst().orElse(null));
 		}
+		
+		/**
+		 * Alias used for file names (lowercase name).
+		 */
 		public @NotNull String getAlias() {
 			return alias;
 		}
 	}
 	
+	/**
+	 * Type of edited config from the player perspective:<br>
+	 * <ul>
+	 *    <li>{@link #CLIENT} - local client config</li>
+	 *    <li>{@link #COMMON} - local common config</li>
+	 *    <li>{@link #SERVER_COMMON} - remote common config</li>
+	 *    <li>{@link #SERVER} - remote server config</li>
+	 * </ul>
+	 */
 	enum EditType {
+		/**
+		 * Local client config
+		 */
 		CLIENT(Type.CLIENT, false, false),
+		/**
+		 * Local common config
+		 */
 		COMMON(Type.COMMON, false, false),
+		/**
+		 * Remote common config
+		 */
 		SERVER_COMMON(Type.COMMON, true, true),
+		/**
+		 * Remote server config
+		 */
 		SERVER(Type.SERVER, true, false);
 		
 		private final static Map<String, EditType> BY_ALIAS = Util.make(
@@ -129,10 +236,16 @@ public interface SimpleConfig extends ConfigEntryHolder {
 		private static final EditType[] REMOTE_TYPES = Arrays.stream(values())
 		  .filter(EditType::isRemote).toArray(EditType[]::new);
 		
+		/**
+		 * {@link #CLIENT} and {@link #COMMON}
+		 */
 		public static EditType[] localTypes() {
 			return LOCAL_TYPES;
 		}
 		
+		/**
+		 * {@link #SERVER_COMMON} and {@link #SERVER}
+		 */
 		public static EditType[] remoteTypes() {
 			return REMOTE_TYPES;
 		}
@@ -152,15 +265,30 @@ public interface SimpleConfig extends ConfigEntryHolder {
 			alias = name().toLowerCase().replace('_', '-');
 		}
 		
+		/**
+		 * Associated {@link Type}.
+		 */
 		public @NotNull Type getType() {
 			return type;
 		}
+		
+		/**
+		 * Whether this type is stored remotely.
+		 */
 		public boolean isRemote() {
 			return isRemote;
 		}
+		
+		/**
+		 * Whether this type is only stored remotely.
+		 */
 		public boolean isOnlyRemote() {
 			return onlyRemote;
 		}
+		
+		/**
+		 * Alias used for serialization (hyphenated lowercase name).
+		 */
 		public @NotNull String getAlias() {
 			return alias;
 		}

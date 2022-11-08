@@ -10,7 +10,13 @@ import java.awt.Color;
 public interface ColorEntryBuilder
   extends ConfigEntryBuilder<@NotNull Color, String, Integer, ColorEntryBuilder>,
           AtomicEntryBuilder {
+	/**
+	 * Allow transparent colors.
+	 */
 	@Contract(pure=true) @NotNull ColorEntryBuilder alpha();
 	
+	/**
+	 * Configure if transparent colors are allowed.
+	 */
 	@Contract(pure=true) @NotNull ColorEntryBuilder alpha(boolean hasAlpha);
 }

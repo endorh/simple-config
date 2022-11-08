@@ -1,41 +1,24 @@
 package endorh.simpleconfig.api;
 
-import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuilder<V, Config, Gui, Self>>
   extends TooltipEntryBuilder<V, Gui, Self>, ErrorEntryBuilder<V, Config, Gui, Self> {
+	/**
+	 * Get the default value of this entry builder.<br>
+	 */
 	@Internal V getValue();
 	
-	@Contract(pure=true)
-	@NotNull Self withValue(V value);
-	
-	@Contract(pure=true)
-	@Override @NotNull Self guiError(Function<Gui, Optional<ITextComponent>> guiErrorSupplier);
-	
-	@Contract(pure=true)
-	@Override @NotNull Self error(Function<V, Optional<ITextComponent>> errorSupplier);
-	
-	@Contract(pure=true)
-	@Override @NotNull Self configError(Function<Config, Optional<ITextComponent>> configErrorSupplier);
-	
-	@Contract(pure=true)
-	@Override @NotNull Self withoutError();
-	
-	@Contract(pure=true)
-	@Override @NotNull Self guiTooltip(Function<Gui, List<ITextComponent>> tooltipSupplier);
-	
-	@Contract(pure=true)
-	@Override @NotNull Self tooltip(Function<V, List<ITextComponent>> tooltipSupplier);
-	
-	@Contract(pure=true) @Override @NotNull Self withoutTooltip();
+	/**
+	 * Change the default value of this entry.<br>
+	 * Mainly useful when reusing an entry builder for multiple entries.
+	 */
+	@Contract(pure=true) @NotNull Self withValue(V value);
 	
 	/**
 	 * Set the arguments that will be passed to the tooltip translation key<br>
@@ -44,8 +27,10 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	 */
 	@Contract(pure=true) @NotNull Self tooltipArgs(Object... args);
 	
-	@Contract(pure=true)
-	@NotNull Self tooltipArgs(Supplier<Object>... args);
+	/**
+	 * Set the arguments that will be passed to the tooltip translation key<br>
+	 */
+	@Contract(pure=true) @NotNull Self tooltipArgs(Supplier<Object>... args);
 	
 	/**
 	 * Set the arguments that will be passed to the name translation key<br>

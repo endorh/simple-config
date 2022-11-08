@@ -91,7 +91,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 	  B extends AbstractConfigEntryBuilder<V, C, G, ?, S, B>,
 	  KS extends ConfigEntryBuilder<K, KC, KG, KS> & AtomicEntryBuilder,
 	  KB extends AbstractConfigEntryBuilder<K, KC, KG, ?, KS, KB> & AtomicEntryBuilder
-	  > extends AbstractConfigEntryBuilder<
+	> extends AbstractConfigEntryBuilder<
 	  Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
 	  EntryMapEntry<K, V, KC, C, KG, G, B, KB>,
 	  EntryMapEntryBuilder<K, V, KC, C, KG, G, S, KS>,

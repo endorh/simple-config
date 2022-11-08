@@ -30,10 +30,28 @@ public interface BooleanEntryBuilder
 	 * Determines how a boolean value is displayed, both in the interface and in the config file
 	 */
 	interface BooleanDisplayer {
+		/**
+		 * Creates a {@link BooleanDisplayer} that uses the given translation key
+		 * as base for the true and false values.<br>
+		 * The translation key is appended with '.true' and '.false' to get the actual
+		 * translation keys used.<br>
+		 * @param translation The translation key to use as base
+		 */
 		static BooleanDisplayer forTranslation(String translation) {
 			return forTranslation(translation, "true", "false");
 		}
 		
+		/**
+		 * Creates a {@link BooleanDisplayer} that uses the given translation key
+		 * as base for the true and false values.<br>
+		 * The translation key is appended with '.true' and '.false' to get the actual
+		 * translation keys used.<br>
+		 * @param translation The translation key to use as base
+		 * @param serialTrue The value to use in the config file when the boolean
+		 * is true (default: "true")
+		 * @param serialFalse The value to use in the config file when the boolean
+		 * is false (default: "false")
+		 */
 		static BooleanDisplayer forTranslation(
 		  String translation, String serialTrue, String serialFalse
 		) {
@@ -48,11 +66,24 @@ public interface BooleanEntryBuilder
 			};
 		}
 		
+		/**
+		 * Default boolean displayer<br>
+		 * Uses "True"/"False" as display names and "true"/"false" as serial names.
+		 */
 		BooleanDisplayer TRUE_FALSE = forTranslation("simpleconfig.format.bool.true_false");
+		/**
+		 * Uses "Yes"/"No" as display names and "yes"/"no" as serial names.
+		 */
 		BooleanDisplayer YES_NO = forTranslation(
 		  "simpleconfig.format.bool.yes_no", "yes", "no");
+		/**
+		 * Uses "Enabled"/"Disabled" as display names and "enabled"/"disabled" as serial names.
+		 */
 		BooleanDisplayer ENABLED_DISABLED = forTranslation(
 		  "simpleconfig.format.bool.enabled_disabled", "enabled", "disabled");
+		/**
+		 * Uses "On"/"Off" as display names and "on"/"off" as serial names.
+		 */
 		BooleanDisplayer ON_OFF = forTranslation(
 		  "simpleconfig.format.bool.on_off", "on", "off");
 		

@@ -215,7 +215,7 @@ public interface ConfigBuilderFactory {
 	<K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
+	> @NotNull EntryMapEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> map(
 	  KeyBuilder keyEntry, Builder entry);
 	<K, V, KC, C, KG, G, Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder>
@@ -233,7 +233,7 @@ public interface ConfigBuilderFactory {
 	<K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
 	  KeyBuilder extends ConfigEntryBuilder<K, KC, KG, KeyBuilder> & AtomicEntryBuilder
-	  > @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
+	> @NotNull EntryPairListEntryBuilder<K, V, KC, C, KG, G, Builder, KeyBuilder> pairList(
 	  KeyBuilder keyEntry, Builder entry);
 	<K, V, KC, C, KG, G,
 	  Builder extends ConfigEntryBuilder<V, C, G, Builder>,
@@ -245,13 +245,13 @@ public interface ConfigBuilderFactory {
 	
 	<V, C, G, B extends ListEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<List<V>, List<C>, G, B, CV, CC, CG, CB> caption(
+	> @NotNull CaptionedCollectionEntryBuilder<List<V>, List<C>, G, B, CV, CC, CG, CB> caption(
 	  CB caption, B list
 	);
 	
 	<V, C, G, B extends ConfigEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
+	> @NotNull CaptionedCollectionEntryBuilder<
 	  Set<V>, Set<C>, G, EntrySetEntryBuilder<V, C, G, B>, CV, CC, CG, CB
 	> caption(CB caption, EntrySetEntryBuilder<V, C, G, B> set);
 	
@@ -259,7 +259,7 @@ public interface ConfigBuilderFactory {
 	  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
 	  B extends ConfigEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
+	> @NotNull CaptionedCollectionEntryBuilder<
 	  Map<K, V>, Map<KC, C>, Pair<KG, G>, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>,
 	  CV, CC, CG, CB
 	> caption(CB caption, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB> map);
@@ -268,7 +268,7 @@ public interface ConfigBuilderFactory {
 	  KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
 	  B extends ConfigEntryBuilder<V, C, G, B>,
 	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder
-	  > @NotNull CaptionedCollectionEntryBuilder<
+	> @NotNull CaptionedCollectionEntryBuilder<
 	  List<Pair<K, V>>, List<Pair<KC, C>>, Pair<KG, G>,
 	  EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>,
 	  CV, CC, CG, CB
@@ -279,11 +279,11 @@ public interface ConfigBuilderFactory {
 	<L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry);
+	> @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry);
 	<L, R, LC, RC, LG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry, Pair<L, R> value);
+	> @NotNull EntryPairEntryBuilder<L, R, LC, RC, LG, RG> pair(LB leftEntry, RB rightEntry, Pair<L, R> value);
 	
 	// Triples
 	
@@ -291,13 +291,13 @@ public interface ConfigBuilderFactory {
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	> @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry);
 	<L, M, R, LC, MC, RC, LG, MG, RG,
 	  LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  MB extends ConfigEntryBuilder<M, MC, MG, MB> & AtomicEntryBuilder,
 	  RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
-	  > @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
+	> @NotNull EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG> triple(
 	  LB leftEntry, MB middleEntry, RB rightEntry, Triple<L, M, R> value);
 	
 	class PresetBuilder {

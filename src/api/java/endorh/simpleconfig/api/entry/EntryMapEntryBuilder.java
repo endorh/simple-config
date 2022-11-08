@@ -17,7 +17,7 @@ public interface EntryMapEntryBuilder<
   B extends ConfigEntryBuilder<V, C, G, B>,
   KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder
 > extends ConfigEntryBuilder<
-  @NotNull Map<K, V>, Map<KC, C>, List<Pair<KG, G>>,
+  @NotNull Map<@NotNull K, @NotNull V>, Map<KC, C>, List<Pair<KG, G>>,
   EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>
 > {
 	/**

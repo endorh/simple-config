@@ -76,19 +76,35 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	  LiteralArgumentBuilder<CommandSource> root
 	);
 	
-	@Contract("-> this") @NotNull @Override SimpleConfigBuilder restart();
-	
+	/**
+	 * Add a config category<br>
+	 * Create a category with {@link ConfigBuilderFactoryProxy#category}.<br>
+	 * Categories have their own tab in the config menu.
+	 */
 	@Contract("_ -> this") @NotNull SimpleConfigBuilder n(ConfigCategoryBuilder cat);
 	
+	/**
+	 * Add a config category at the given index.<br>
+	 * Create a category with {@link ConfigBuilderFactoryProxy#category}.<br>
+	 * Categories have their own tab in the config menu.<br><br>
+	 * You shouldn't need to specify the index under normal circumstances.
+	 */
 	@Contract("_, _ -> this") @NotNull SimpleConfigBuilder n(ConfigCategoryBuilder cat, int index);
 	
+	/**
+	 * Add a config group at the given index.<br>
+	 * Create a group with {@link ConfigBuilderFactoryProxy#group}.<br>
+	 * Groups are displayed as collapsible lists of entries in the menu.
+	 */
 	@Contract("_, _ -> this") @NotNull SimpleConfigBuilder n(ConfigGroupBuilder group, int index);
 	
 	/**
 	 * Build the actual config and register it within the Forge system<br><br>
 	 * <b>If your mod uses a different language than Java</b> you will need to
 	 * also pass in your mod event bus as an argument to
-	 * {@link #buildAndRegister(IEventBus)}
+	 * {@link #buildAndRegister(IEventBus)}<br><br>
+	 * <b>If your mod uses Kotlin</b>, you should be using the Simple Konfig API
+	 * instead.
 	 *
 	 * @return The built config, which is also received by the baker
 	 */

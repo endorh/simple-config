@@ -58,5 +58,12 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 */
 	@Contract("_ -> this") @NotNull ConfigCategoryBuilder withColor(int tint);
 	
+	/**
+	 * Add a config group at the given index.<br>
+	 * You shouldn't need to specify the index under normal circumstances.
+	 * @param index Index used to sort entries in the menu. Lower values,
+	 * untied by addition order are displayed first.
+	 * @see ConfigEntryHolderBuilder#n(ConfigGroupBuilder)
+	 */
 	@Contract("_, _ -> this") @NotNull ConfigCategoryBuilder n(ConfigGroupBuilder group, int index);
 }

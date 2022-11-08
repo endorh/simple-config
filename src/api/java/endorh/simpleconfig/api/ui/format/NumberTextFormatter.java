@@ -5,6 +5,12 @@ import net.minecraft.util.text.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Number text formatter which uses a different style for the numeric characters,
+ * punctuation, and errors.<br>
+ * It also prevents the user from inputting any non-numeric characters,
+ * or decimal points if the number should be an integer.
+ */
 public class NumberTextFormatter implements ITextFormatter {
 	private Style numberStyle = Style.EMPTY.setColor(Color.fromInt(0xA0BDFF));
 	private Style punctuationStyle = Style.EMPTY.setColor(Color.fromInt(0xBDA0FF));

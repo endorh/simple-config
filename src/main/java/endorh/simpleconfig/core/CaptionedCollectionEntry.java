@@ -55,7 +55,7 @@ public class CaptionedCollectionEntry<
 	  S extends ConfigEntryBuilder<V, C, List<G>, S>,
 	  CV, CC, CG,
 	  CS extends ConfigEntryBuilder<CV, CC, CG, CS> & AtomicEntryBuilder
-	  > extends AbstractConfigEntryBuilder<Pair<CV, V>, Pair<CC, C>, Pair<CG, List<G>>,
+	> extends AbstractConfigEntryBuilder<Pair<CV, V>, Pair<CC, C>, Pair<CG, List<G>>,
 	  CaptionedCollectionEntry<V, C, G, CV, CC, CG>,
 	  CaptionedCollectionEntryBuilder<V, C, G, S, CV, CC, CG, CS>,
 	  Builder<V, C, G, S, CV, CC, CG, CS>

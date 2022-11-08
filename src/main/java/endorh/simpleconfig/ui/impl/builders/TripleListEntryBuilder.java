@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.impl.builders;
 
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.TripleListEntry;
-import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.util.text.ITextComponent;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,7 @@ public class TripleListEntryBuilder<
   LEB extends FieldBuilder<L, LE, LEB>,
   MEB extends FieldBuilder<M, ME, MEB>,
   REB extends FieldBuilder<R, RE, REB>
-  > extends FieldBuilder<Triple<L, M, R>, TripleListEntry<L, M, R, LE, ME, RE>,
+> extends FieldBuilder<Triple<L, M, R>, TripleListEntry<L, M, R, LE, ME, RE>,
   TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB>> {
 	protected final LEB leftEntry;
 	protected final MEB middleEntry;

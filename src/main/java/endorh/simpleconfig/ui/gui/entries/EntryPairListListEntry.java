@@ -28,11 +28,11 @@ import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class EntryPairListListEntry<
-    K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
-    E extends AbstractConfigListEntry<V>
-  > extends AbstractListListEntry<
-    Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
-  > implements IEntryHolder {
+  K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
+  E extends AbstractConfigListEntry<V>
+> extends AbstractListListEntry<
+  Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
+> implements IEntryHolder {
 	protected boolean ignoreOrder;
 	protected boolean selectKey;
 	
@@ -127,11 +127,11 @@ public class EntryPairListListEntry<
 	}
 	
 	public static class EntryPairCell<
-	    K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
-	    E extends AbstractConfigListEntry<V>
-	  > extends AbstractListListEntry.AbstractListCell<
-	    Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
-	  > {
+	  K, V, KE extends AbstractConfigListEntry<K> & IChildListEntry,
+	  E extends AbstractConfigListEntry<V>
+	> extends AbstractListListEntry.AbstractListCell<
+	  Pair<K, V>, EntryPairCell<K, V, KE, E>, EntryPairListListEntry<K, V, KE, E>
+	> {
 		protected final KE keyEntry;
 		protected final E valueEntry;
 		protected final List<IGuiEventListener> widgets;

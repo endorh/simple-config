@@ -30,7 +30,7 @@ public class EntryTripleEntry<
   L, M, R, LC, MC, RC, LG, MG, RG
 > extends AbstractConfigEntry<
   Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>
-  > implements AtomicEntry<Triple<LG, MG, RG>> {
+> implements AtomicEntry<Triple<LG, MG, RG>> {
 	protected final AbstractConfigEntry<L, LC, LG> leftEntry;
 	protected final AbstractConfigEntry<M, MC, MG> middleEntry;
 	protected final AbstractConfigEntry<R, RC, RG> rightEntry;
@@ -75,7 +75,7 @@ public class EntryTripleEntry<
 	  LB extends AbstractConfigEntryBuilder<L, LC, LG, ?, LS, LB> & AtomicEntryBuilder,
 	  MB extends AbstractConfigEntryBuilder<M, MC, MG, ?, MS, MB> & AtomicEntryBuilder,
 	  RB extends AbstractConfigEntryBuilder<R, RC, RG, ?, RS, RB> & AtomicEntryBuilder
-	  > extends AbstractConfigEntryBuilder<
+	> extends AbstractConfigEntryBuilder<
 	  Triple<L, M, R>, Triple<LC, MC, RC>, Triple<LG, MG, RG>,
 	  EntryTripleEntry<L, M, R, LC, MC, RC, LG, MG, RG>,
 	  EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>,
@@ -277,7 +277,7 @@ public class EntryTripleEntry<
 	  LGEB extends FieldBuilder<LG, LGE, LGEB>,
 	  MGEB extends FieldBuilder<MG, MGE, MGEB>,
 	  RGEB extends FieldBuilder<RG, RGE, RGEB>
-	  > TripleListEntryBuilder<LG, MG, RG, LGE, MGE, RGE, LGEB, MGEB, RGEB> makeGUIBuilder(
+	> TripleListEntryBuilder<LG, MG, RG, LGE, MGE, RGE, LGEB, MGEB, RGEB> makeGUIBuilder(
 	  ConfigFieldBuilder builder,
 	  FieldBuilder<LG, LGE, ?> leftBuilder,
 	  FieldBuilder<MG, MGE, ?> middleBuilder,

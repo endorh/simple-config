@@ -12,7 +12,13 @@ import java.util.function.Supplier;
 public interface ResourceEntryBuilder<Self extends ResourceEntryBuilder<Self>>
   extends ConfigEntryBuilder<@NotNull ResourceLocation, String, ResourceLocation, Self>,
           AtomicEntryBuilder {
+	/**
+	 * Suggest resource locations.
+	 */
 	@Contract(pure=true) @NotNull Self suggest(Supplier<List<ResourceLocation>> suggestionSupplier);
 	
+	/**
+	 * Suggest resource locations.
+	 */
 	@Contract(pure=true) @NotNull Self suggest(List<ResourceLocation> suggestions);
 }
