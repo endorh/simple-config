@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 public abstract class AbstractRangeEntry<
   V extends Comparable<V>, R extends AbstractRange<V, R>
-  > extends AbstractConfigEntry<R, String, R> implements AtomicEntry<R> {
+> extends AbstractConfigEntry<R, String, R> implements AtomicEntry<R> {
 	protected @Nullable V min = null;
 	protected @Nullable V max = null;
 	protected boolean canEditMinExclusiveness = false;

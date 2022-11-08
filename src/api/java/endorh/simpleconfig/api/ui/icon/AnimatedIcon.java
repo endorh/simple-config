@@ -3,6 +3,13 @@ package endorh.simpleconfig.api.ui.icon;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Animated icon using a stripe of frames in a texture file.<br>
+ * The stripe is read from left to right, top to bottom using the given
+ * size and number of rowsand columns.<br>
+ * The delay parameter controls the delay in ms between frames.<br>
+ * The animation can be reset.<br>
+ */
 public class AnimatedIcon extends Icon {
 	public final int rows;
 	public final int cols;

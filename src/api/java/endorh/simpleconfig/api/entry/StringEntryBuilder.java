@@ -71,9 +71,22 @@ public interface StringEntryBuilder
 	 */
 	@Contract(pure=true) @NotNull StringEntryBuilder restrict(@NotNull List<String> choices);
 	
+	/**
+	 * Set the maximum (inclusive) allowed length for this entry.<br>
+	 * By default there is no limit.
+	 */
 	@Contract(pure=true) @NotNull StringEntryBuilder maxLength(@Range(from=0, to=Integer.MAX_VALUE) int maxLength);
 	
+	/**
+	 * Set the minimum (inclusive) allowed length for this entry.<br>
+	 * By default the limit is 0.<br>
+	 * Set to 1 or use {@link #notEmpty()} to disallow empty strings.
+	 */
 	@Contract(pure=true) @NotNull StringEntryBuilder minLength(@Range(from=0, to=Integer.MAX_VALUE) int minLength);
 	
+	/**
+	 * Dissallow empty strings.<br>
+	 * Equivalent to {@code minLength(1)}
+	 */
 	@Contract(pure=true) @NotNull StringEntryBuilder notEmpty();
 }

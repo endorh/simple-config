@@ -5,6 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+/**
+ * Basic rectangle class.<br>
+ */
 public class Rectangle {
 	public int x;
 	public int y;
@@ -155,6 +158,9 @@ public class Rectangle {
 		return min(getMaxY(), r.getMaxY()) - max(y, r.y);
 	}
 	
+	/**
+	 * Intersection of this and the given rectangle.
+	 */
 	public @NotNull Rectangle intersection(@NotNull Rectangle r) {
 		int x = this.x;
 		int y = this.y;
@@ -173,6 +179,9 @@ public class Rectangle {
 		return new Rectangle(x, y, (int) w, (int) h);
 	}
 	
+	/**
+	 * Smallest rectangle containing this and the given rectangle.<br>
+	 */
 	public @NotNull Rectangle union(@NotNull Rectangle r) {
 		long w = width;
 		long h = height;
@@ -197,6 +206,10 @@ public class Rectangle {
 		return new Rectangle(x, y, (int) w, (int) h);
 	}
 	
+	/**
+	 * Change the bounds of this rectangle to the smallest rectangle
+	 * containing this and the point with the given coordinates.
+	 */
 	public void add(int addX, int addY) {
 		if ((width | height) < 0) {
 			x = addX;
@@ -220,6 +233,11 @@ public class Rectangle {
 	public void add(@NotNull Point pt) {
 		add(pt.x, pt.y);
 	}
+	
+	/**
+	 * Change the bounds of this rectangle to the smallest rectangle
+	 * containing this and the given rectangle.
+	 */
 	public void add(@NotNull Rectangle r) {
 		long w = width;
 		long h = height;
@@ -244,9 +262,16 @@ public class Rectangle {
 		setBounds(x, y, (int) w, (int) h);
 	}
 	
+	/**
+	 * Grow by the given amounts in each direction.
+	 */
 	public @NotNull Rectangle grow(int left, int up, int right, int down) {
 		return new Rectangle(x - left, y - up, width + left + right, height + up + down);
 	}
+	
+	/**
+	 * Grow by the given amounts in each direction.
+	 */
 	public void grow(int h, int v) {
 		long x = this.x;
 		long y = this.y;
@@ -281,6 +306,9 @@ public class Rectangle {
 		setBounds((int) x, (int) y, (int) ww, (int) hh);
 	}
 	
+	/**
+	 * Whether this rectangle has no area.
+	 */
 	public boolean isEmpty() {
 		return width <= 0 || height <= 0;
 	}

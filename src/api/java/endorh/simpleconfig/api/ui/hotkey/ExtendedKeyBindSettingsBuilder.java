@@ -29,7 +29,6 @@ public class ExtendedKeyBindSettingsBuilder {
 	public @NotNull KeyBindActivation getActivation() {
 		return activation;
 	}
-	
 	public ExtendedKeyBindSettingsBuilder withActivation(KeyBindActivation activation) {
 		this.activation = activation;
 		return this;

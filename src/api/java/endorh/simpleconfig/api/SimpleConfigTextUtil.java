@@ -31,10 +31,16 @@ import static java.lang.Math.min;
 	  "%(?:(?<index>\\d+)\\$)?(?<flags>[-#+ 0,(<]*)?(?<width>\\d+)?(?<precision>\\.\\d+)?(?<t>[tT])?(?<conversion>[a-zA-Z%])");
 	protected static final Pattern FORMATTING_CODE_PATTERN = Pattern.compile("§[\\da-fklmnor]");
 	
+	/**
+	 * Strip formatting codes (§[0-9a-fklmnor]) from a string
+	 */
 	public static @NotNull String stripFormattingCodes(@NotNull String text) {
 		return FORMATTING_CODE_PATTERN.matcher(text).replaceAll("");
 	}
 	
+	/**
+	 * Make the first letter of a string uppercase.
+	 */
 	public static @NotNull String toTitleCase(@NotNull String s) {
 		return s.substring(0, 1).toUpperCase() + s.substring(1);
 	}
