@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class TagEntry extends AbstractSerializableEntry<Tag, TagEntry> {
+public class TagEntry extends AbstractSerializableEntry<Tag> {
 	@Internal public TagEntry(ConfigEntryHolder parent, String name, Tag value) {
 		super(parent, name, value, Tag.class);
 	}

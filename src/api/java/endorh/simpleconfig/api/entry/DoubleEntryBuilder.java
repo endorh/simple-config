@@ -10,17 +10,35 @@ public interface DoubleEntryBuilder
 	/**
 	 * Set min (inclusive)
 	 */
-	@Contract(pure=true) @NotNull DoubleEntryBuilder min(double min);
+	@Contract(pure=true) @NotNull default DoubleEntryBuilder min(double min) {
+		return min((Double) min);
+	}
 	
 	/**
 	 * Set max (inclusive)
 	 */
-	@Contract(pure=true) @NotNull DoubleEntryBuilder max(double max);
+	@Contract(pure=true) @NotNull default DoubleEntryBuilder max(double max) {
+		return max((Double) max);
+	}
 	
 	/**
 	 * Set inclusive range
 	 */
-	@Contract(pure=true) @NotNull DoubleEntryBuilder range(double min, double max);
+	@Contract(pure=true) @NotNull default DoubleEntryBuilder range(double min, double max) {
+		return range((Double) min, (Double) max);
+	}
+	
+	/**
+	 * Set a different range (inclusive) for the slider.<br>
+	 * Will be constrained by the range set by {@link #range}.<br>
+	 * Useful to display a recommended/commonly useful range of values,
+	 * while allowing users to override this range by manually entering
+	 * a value beyond it (but still within the normal range).<br>
+	 * Implies {@link #slider()}.
+	 */
+	@Contract(pure=true) default @NotNull DoubleEntryBuilder sliderRange(double min, double max) {
+		return sliderRange((Double) min, (Double) max);
+	}
 	
 	/**
 	 * Scale the backing field of this entry by the given scale.<br>

@@ -9,6 +9,7 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -25,6 +26,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -161,15 +163,24 @@ public class DemoConfigCategory {
 		            // Sliders still let users introduce exact numbers by toggling a text
 		            //   input in the GUI, so don't worry about precision when a slider
 		            //   would be more intuitive for the general user
-		            .add("long_slider", number(5L, 0, 10).slider())
-		            // For obvious reasons, entries displayed as sliders must
-		            //   have finite defined bounds
-		            .add("float_slider", number(80F, 0, 100).slider())
+		            .add("long_slider", number(5L, 0, 20).slider())
+		            // It's also possible to define a different range for the slider than
+		            //   the entry itself. In this case, values outside the slider range will
+		            //   only be editable as text. This is convenient to differentiate between
+		            //   the recommended and the possible range of an entry.
+		            //   (The slider range is constrained by the entry range).
+		            // Slider entries must either declare min and max, or a slider range,
+		            //   since otherwise the slider would have no bounds.
+		            .add("float_slider", number(80F).min(0).sliderRange(0, 100))
 		            // There's also a shortcut for volume sliders, which display a different
 		            //   translation in the slider widget, and take 1F as their default
 		            // Sliders may take custom translation keys to show in the slider widget.
 		            //   The volume() builder is simply a shortcut for
 		            //   fraction(1F).slider("simpleconfig.format.slider.volume")
+		            // Sliders can have non-linear mapping over their range
+		            .add("sqrt_slider", number(50, 0, 100).sliderMap(Mth::square, Math::sqrt))
+		            .add("exp_slider", number(10F, 0, 1000).sliderMap(
+		              InvertibleDouble2DoubleFunction.expMap(10)))
 		            .add("volume_slider", volume())
 		            // String values are also common
 		            .add("string_value", string("Hello World!"))

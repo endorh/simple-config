@@ -106,8 +106,8 @@ public abstract class RangedListEntry<
 			return e;
 		}
 		
-		@Override public SelfImpl copy() {
-			final SelfImpl copy = super.copy();
+		@Override public SelfImpl copy(List<V> value) {
+			final SelfImpl copy = super.copy(value);
 			copy.min = min;
 			copy.max = max;
 			return copy;

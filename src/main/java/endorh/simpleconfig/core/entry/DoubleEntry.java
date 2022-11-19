@@ -35,18 +35,6 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 			super(value, Double.class, "%.2f");
 		}
 		
-		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder min(double min) {
-			return super.min(min);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder max(double max) {
-			return super.max(max);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder range(double min, double max) {
-			return super.range(min, max);
-		}
-		
 		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder fieldScale(double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
@@ -76,9 +64,11 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 		protected void checkBounds() {
 			min = min == null ? Double.NEGATIVE_INFINITY : min;
 			max = max == null ? Double.POSITIVE_INFINITY : max;
+			double sMin = sliderMin != null? Math.max(min, sliderMin) : min;
+			double sMax = sliderMax != null? Math.min(max, sliderMax) : max;
 			if (min.isNaN() || max.isNaN())
 				throw new IllegalArgumentException("NaN bound in double config entry");
-			if (asSlider && (min.isInfinite() || max.isInfinite()))
+			if (asSlider && (Double.isInfinite(sMin) || Double.isInfinite(sMax)))
 				throw new IllegalArgumentException("Infinite bound in double config entry");
 			super.checkBounds();
 		}
@@ -110,9 +100,11 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 		} else {
 			final DoubleSliderBuilder valBuilder =
 			  new DoubleSliderBuilder(builder, getDisplayName(), get(), min, max)
+			    .setSliderMin(sliderMin)
+			    .setSliderMax(sliderMax)
+			    .setSliderMap(sliderMap)
 				 .setTextGetter(sliderTextSupplier);
 			return Optional.of(decorate(valBuilder));
 		}
 	}
-	
 }

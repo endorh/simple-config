@@ -220,7 +220,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteConf
 		SimpleConfigImpl config = configMap.get(configType);
 		if (asExternal) {
 			config.loadGUIRemoteExternalChanges(snapshot);
-		} else config.loadSnapshot(snapshot, true, true, null);
+		} else config.loadSnapshot(snapshot, true, true);
 	}
 	
 	@Override public void saveRemoteConfig(EditType type, boolean requiresRestart) {
@@ -230,7 +230,7 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteConf
 		if (configType != SimpleConfig.Type.COMMON) throw new IllegalArgumentException(
 		  "Unsupported remote config type: " + type.getAlias());
 		SimpleConfigImpl config = configMap.get(configType);
-		CommentedConfig snapshot = config.takeSnapshot(true, true, null);
+		CommentedConfig snapshot = config.takeSnapshot(true, true);
 		SimpleConfigNetworkHandler.saveServerCommonConfig(modId, config, requiresRestart, snapshot);
 	}
 }

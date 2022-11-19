@@ -18,7 +18,7 @@ interface RegexEntryBuilder : SerializableEntryBuilder<Regex, RegexEntryBuilder>
 
 internal class RegexEntry(
   parent: ConfigEntryHolder, name: String, value: Regex
-): AbstractSerializableEntry<Regex, RegexEntry>(
+): AbstractSerializableEntry<Regex>(
     parent, name, value, Regex::class.java
 ) {
     var options: Set<RegexOption> = EnumSet.noneOf(RegexOption::class.java)

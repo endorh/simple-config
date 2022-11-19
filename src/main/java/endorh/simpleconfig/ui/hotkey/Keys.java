@@ -170,7 +170,7 @@ public class Keys {
 	}
 	
 	protected static Int2ObjectMap<Key> getInputMap(Type type) {
-		return ObfuscationReflectionHelper.getPrivateValue(Type.class, type, "map");
+		return ObfuscationReflectionHelper.getPrivateValue(Type.class, type, "f_84885_");
 	}
 	
 	static {

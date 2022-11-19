@@ -3,6 +3,7 @@ package endorh.simpleconfig.ui.impl.builders;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
+import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import endorh.simpleconfig.ui.impl.ConfigCategoryImpl;
@@ -17,6 +18,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 	protected boolean isEditable = true;
 	protected Icon icon = Icon.EMPTY;
 	protected int color = 0;
+	protected @Nullable CompletableFuture<Function<ConfigCategory, Boolean>> loadingFuture = null;
 	
 	public ConfigCategoryBuilderImpl(ConfigScreenBuilder builder, String name, EditType type) {
 		this.builder = builder;
@@ -103,6 +107,14 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 		isEditable = editable;
 	}
 	
+	@Override public @Nullable CompletableFuture<Function<ConfigCategory, Boolean>> getLoadingFuture() {
+		return loadingFuture;
+	}
+	
+	@Override public void setLoadingFuture(@Nullable CompletableFuture<Function<ConfigCategory, Boolean>> future) {
+		loadingFuture = future;
+	}
+	
 	@Override public Icon getIcon() {
 		return icon;
 	}
@@ -123,6 +135,6 @@ public class ConfigCategoryBuilderImpl implements ConfigCategoryBuilder {
 		return new ConfigCategoryImpl(
 		  name, type, builtEntries, getTitle(), getSortingOrder(),
 		  getBackground(), getDescription(), getContainingFile(), isEditable(),
-		  getIcon(), getColor());
+		  getIcon(), getColor(), getLoadingFuture());
 	}
 }

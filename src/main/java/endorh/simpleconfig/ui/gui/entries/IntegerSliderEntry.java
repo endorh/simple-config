@@ -1,9 +1,11 @@
 package endorh.simpleconfig.ui.gui.entries;
 
+import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -11,7 +13,7 @@ import java.util.stream.Stream;
 
 import static java.lang.Math.*;
 
-@OnlyIn(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class IntegerSliderEntry extends SliderListEntry<Integer> {
 	
 	public IntegerSliderEntry(
@@ -41,17 +43,41 @@ public class IntegerSliderEntry extends SliderListEntry<Integer> {
 		
 		@Override public double getStep(boolean left) {
 			setValue(getValue());
-			final double step = super.getStep(left);
-			return copySign(max(abs(step), 1.001D / (max - min)), step);
+			return super.getStep(left);
+		}
+		
+		@Override public double applyStep(double step) {
+			InvertibleDouble2DoubleFunction map = sliderMap;
+			if (map == null) return super.applyStep(copySign(
+			  max(abs(step), 1.001D / (sliderMax - sliderMin)), step));
+			double v = value + step;
+			if (v <= 0) return 0;
+			if (v >= 1) return 1;
+			int prev = toInt(getSliderValue()), vv = prev;
+			while (vv == prev) {
+				v += step;
+				if (v <= 0) return 0;
+				if (v >= 1) return 1;
+				vv = toInt(map.applyAsDouble(v));
+			}
+			double r = Mth.clamp(map.inverse(toDouble(vv)), 0, 1);
+			return toInt(map.applyAsDouble(r)) == vv? r : v;
+		}
+		
+		public int toInt(double v) {
+			return (int) round(sliderMin + (sliderMax - sliderMin) * v);
+		}
+		
+		public double toDouble(int v) {
+			return (double) (v - sliderMin) / (double) (sliderMax - sliderMin);
 		}
 		
 		@Override public Integer getValue() {
-			return (int) round(min + ((max - min) * value));
+			return toInt(getSliderValue());
 		}
 		
 		@Override public void setValue(Integer v) {
-			value = (double) (v - min) / (double) (max - min);
+			setSliderValue(toDouble(v));
 		}
 	}
 }
-

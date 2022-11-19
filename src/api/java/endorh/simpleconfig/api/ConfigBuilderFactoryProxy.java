@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public final class ConfigBuilderFactoryProxy {
@@ -187,6 +188,38 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	@NotNull public static <E extends Enum<E>> EnumEntryBuilder<E> option(E value) {
 		return getFactory().option(value);
+	}
+	
+	/**
+	 * Option entry, like an enum but for arbitrary types.<br>
+	 * Supports variable allowed options, mainly intended to support
+	 * environment dependent options (that don't change for a given
+	 * installation).<br>
+	 * The set of allowed values is only checked upon modifications,
+	 * so it's not reliable to modify it during a game session.
+	 * @see #option(Object, List)
+	 */
+	@NotNull public static <T> OptionEntryBuilder<T> option(T value, Supplier<List<T>> options) {
+		return getFactory().option(value, options);
+	}
+	
+	/**
+	 * Option entry, like an enum but for arbitrary types.<br>
+	 * Can also support variable allowed options.
+	 * @see #option(Object, Supplier)
+	 */
+	@NotNull public static <T> OptionEntryBuilder<T> option(T value, List<T> options) {
+		return getFactory().option(value, options);
+	}
+	
+	/**
+	 * Option entry, like an enum but for arbitrary types.<br>
+	 * Can also support variable allowed options.
+	 * @see #option(Object, Supplier)
+	 */
+	@SafeVarargs
+	@NotNull public static <T> OptionEntryBuilder<T> option(T value, T... options) {
+		return getFactory().option(value, options);
 	}
 	
 	/**

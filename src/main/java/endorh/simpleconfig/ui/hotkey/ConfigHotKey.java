@@ -66,10 +66,9 @@ public class ConfigHotKey implements IConfigHotKeyGroupEntry {
 					messages.addAll(context.report);
 				} else messages.add(new TranslatableComponent(
 				  "simpleconfig.hotkey.no_permission",
-				  new TextComponent(context.config.getModName())
-					 .withStyle(ChatFormatting.GRAY)));
+				  new TextComponent(context.config.getModName()).withStyle(ChatFormatting.GRAY)));
 			} else {
-				context.config.loadSnapshot(context.result, false, false, null);
+				context.config.loadSnapshot(context.result, false, false);
 				context.config.save();
 				messages.addAll(context.report);
 			}

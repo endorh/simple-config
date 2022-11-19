@@ -3,6 +3,7 @@ package endorh.simpleconfig.core.entry;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
+import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import net.minecraft.ChatFormatting;
@@ -22,6 +23,13 @@ import java.util.function.Predicate;
 public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
   extends AbstractConfigEntry<V, Config, Gui> {
 	
+	protected V min;
+	protected V max;
+	protected @Nullable V sliderMin;
+	protected @Nullable V sliderMax;
+	protected boolean asSlider;
+	protected Function<V, Component> sliderTextSupplier;
+	protected InvertibleDouble2DoubleFunction sliderMap;
 	protected double commentMin = Integer.MIN_VALUE;
 	protected double commentMax = Integer.MAX_VALUE;
 	
@@ -36,8 +44,11 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		
 		protected V min;
 		protected V max;
+		protected @Nullable V sliderMin;
+		protected @Nullable V sliderMax;
 		protected boolean asSlider;
 		protected Function<V, Component> sliderTextSupplier;
+		protected @Nullable InvertibleDouble2DoubleFunction sliderMap;
 		
 		public Builder(V value, Class<?> typeClass) {this(value, typeClass, "%d");}
 		
@@ -93,6 +104,21 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 			return copy.castSelf();
 		}
 		
+		@Override public @NotNull Self sliderRange(V min, V max) {
+			SelfImpl copy = copy();
+			copy.asSlider = true;
+			copy.sliderMin = min;
+			copy.sliderMax = max;
+			return copy.castSelf();
+		}
+		
+		@Override public @NotNull Self sliderMap(@Nullable InvertibleDouble2DoubleFunction map) {
+			SelfImpl copy = copy();
+			copy.asSlider = true;
+			copy.sliderMap = map;
+			return copy.castSelf();
+		}
+		
 		protected void checkBounds() {
 			if (value.compareTo(min) < 0 || value.compareTo(max) > 0)
 				throw new IllegalArgumentException(
@@ -105,30 +131,29 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 			final Entry e = super.build(parent, name);
 			e.min = min;
 			e.max = max;
+			e.sliderMin = sliderMin;
+			e.sliderMax = sliderMax;
 			e.asSlider = asSlider;
 			e.sliderTextSupplier = sliderTextSupplier;
+			e.sliderMap = sliderMap != null? sliderMap : InvertibleDouble2DoubleFunction.identity();
 			return e;
 		}
 		
-		@Override public SelfImpl copy() {
-			final SelfImpl copy = super.copy();
+		@Override public SelfImpl copy(V value) {
+			final SelfImpl copy = super.copy(value);
 			copy.sliderFormat = sliderFormat;
 			copy.min = min;
 			copy.max = max;
+			copy.sliderMin = sliderMin;
+			copy.sliderMax = sliderMax;
 			copy.asSlider = asSlider;
 			copy.sliderTextSupplier = sliderTextSupplier;
+			copy.sliderMap = sliderMap;
 			return copy;
 		}
 	}
 	
-	protected V min;
-	protected V max;
-	protected boolean asSlider;
-	protected Function<V, Component> sliderTextSupplier;
-	
-	public AbstractRangedEntry(
-	  ConfigEntryHolder parent, String name, V value
-	) {
+	protected AbstractRangedEntry(ConfigEntryHolder parent, String name, V value) {
 		super(parent, name, value);
 	}
 	
@@ -145,6 +170,17 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 	}
 	public V getMax() {
 		return max;
+	}
+	
+	public @Nullable V getSliderMin() {
+		return sliderMin;
+	}
+	public @Nullable V getSliderMax() {
+		return sliderMax;
+	}
+	
+	public InvertibleDouble2DoubleFunction getSliderMap() {
+		return sliderMap;
 	}
 	
 	protected @Nullable String getTypeComment() {

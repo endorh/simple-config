@@ -53,6 +53,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -177,8 +178,8 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	
 	@Override public Optional<Path> getFilePath() {
 		ModConfig modConfig = getModConfig();
-		return modConfig.getConfigData() instanceof CommentedFileConfig? Optional.of(
-		  modConfig.getFullPath()) : Optional.empty();
+		return modConfig != null && modConfig.getConfigData() instanceof CommentedFileConfig
+		       ? Optional.of(modConfig.getFullPath()) : Optional.empty();
 	}
 	
 	/**
@@ -207,7 +208,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		this.commandRoot = commandRoot;
 	}
 	
-	@Internal protected void build(ModContainer container, ModConfig modConfig) {
+	@Internal public void build(ModContainer container, ModConfig modConfig) {
 		this.modContainer = container;
 		this.modConfig = modConfig;
 	}
@@ -375,26 +376,58 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		remoteListeners.remove(listener);
 	}
 	
+	@Internal public CommentedConfig takeSnapshot(boolean fromGUI, boolean fromRemote) {
+		return takeSnapshot(fromGUI, fromRemote, (Predicate<String>) null);
+	}
+	
 	@Internal public CommentedConfig takeSnapshot(
 	  boolean fromGUI, boolean fromRemote, @Nullable Set<String> selectedPaths
 	) {
 		if (selectedPaths != null) selectedPaths = selectedPaths.stream()
 		  .map(p -> p.startsWith(".")? p.substring(1) : p)
 		  .collect(Collectors.toSet());
+		return takeSnapshot(fromGUI, fromRemote, selectedPaths != null? selectedPaths::contains : null);
+	}
+	
+	@Internal public CommentedConfig takeSnapshot(
+	  boolean fromGUI, boolean fromRemote, @Nullable Predicate<String> selectedPaths
+	) {
 		final CommentedConfig config = CommentedConfig.of(LinkedHashMap::new, SimpleConfigCommentedYamlFormat.forConfig(this));
 		saveSnapshot(config, fromGUI, fromRemote, selectedPaths);
 		return config;
 	}
 	
-	@Internal @Override public void loadSnapshot(
+	@Internal public void loadSnapshot(CommentedConfig config, boolean intoGUI, boolean forRemote) {
+		loadSnapshot(config, intoGUI, forRemote, (Predicate<String>) null);
+	}
+	
+	@Internal public void loadSnapshot(
 	  CommentedConfig config, boolean intoGUI, boolean forRemote, @Nullable Set<String> selectedPaths
+	) {
+		loadSnapshot(
+		  config, intoGUI, forRemote, selectedPaths != null? selectedPaths::contains : null);
+	}
+	
+	@Internal @Override public void loadSnapshot(
+	  CommentedConfig config, boolean intoGUI, boolean forRemote,
+	  @Nullable Predicate<String> selectedPaths
+	) {
+		loadSnapshot(config, intoGUI, forRemote, false, selectedPaths);
+	}
+	
+	@Internal public void loadSnapshot(
+	  CommentedConfig config, boolean intoGUI, boolean forRemote,
+	  boolean opaque, @Nullable Predicate<String> selectedPaths
 	) {
 		if (intoGUI) {
 			if (FMLEnvironment.dist != Dist.CLIENT) throw new IllegalStateException(
 			  "Cannot load snapshot into GUI on server");
 			AbstractConfigScreen screen = getGUI();
 			if (screen != null) {
-				screen.runAtomicTransparentAction(
+				if (opaque) {
+					screen.runUnrecordedAction(
+					  () -> super.loadSnapshot(config, true, forRemote, selectedPaths));
+				} else screen.runAtomicTransparentAction(
 				  () -> super.loadSnapshot(config, true, forRemote, selectedPaths));
 			} else throw new IllegalStateException(
 			  "Cannot load snapshot into GUI when no GUI is active");

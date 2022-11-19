@@ -165,6 +165,7 @@ println(
 
 minecraft {
     mappings(V.mappings.channel, V.mappings.version)
+    accessTransformer("src/main/resources/META-INF/accesstransformer.cfg")
     
     // Run configurations
     runs {
@@ -359,17 +360,21 @@ fun Jar.setArchive(baseName: String, classifier: String = "", version: String = 
 }
 
 fun ShadowJar.configureShadowJar() {
+    from(mainSourceSet.output)
     from(apiSourceSet.output)
     from(kotlinApiSourceSet.output)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     
+    configurations.addAll(listOf(
+        project.configurations.antlr
+    ).map { it.get() })
     dependencies {
         include(dependency("org.antlr:antlr4:$antlrVersion"))
         include(dependency("org.antlr:antlr4-runtime:$antlrVersion"))
         include(dependency("org.yaml:snakeyaml:${V.yaml}"))
     }
     
-    val shadowRoot = "$group.shadowed"
+    val shadowRoot = "${project.group}.shadowed"
     val relocatedPackages = listOf(
         "org.antlr",
         "org.yaml.snakeyaml",
