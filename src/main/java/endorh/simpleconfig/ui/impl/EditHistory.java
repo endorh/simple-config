@@ -58,12 +58,6 @@ public class EditHistory {
 		return owner;
 	}
 	
-	/**
-	 * Perform a batch of modifications that won't be recorded in the history.
-	 * <b>Only useful for loading purposes.</b> Instead, consider using
-	 * {@link #runAtomicTransparentAction(Runnable)}.
-	 * @param action Action to run.
-	 */
 	public void runUnrecordedAction(Runnable action) {
 		if (insideAtomicAction) throw new IllegalStateException(
 		  "Cannot run unrecorded action within another atomic action");

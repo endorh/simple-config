@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class ResourceLocationEntry
-  extends AbstractSerializableEntry<ResourceLocation, ResourceLocationEntry> {
+  extends AbstractSerializableEntry<ResourceLocation> {
 	
 	@Internal public ResourceLocationEntry(
 	  ConfigEntryHolder parent, String name, ResourceLocation value

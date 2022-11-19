@@ -1,8 +1,10 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
+import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
@@ -10,12 +12,16 @@ import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -36,6 +42,9 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	protected TextFieldListEntry<V> textFieldEntry = null;
 	protected V min;
 	protected V max;
+	protected V sliderMin;
+	protected V sliderMax;
+	protected @Nullable InvertibleDouble2DoubleFunction sliderMap = null;
 	
 	protected Function<V, Component> textGetter;
 	protected List<GuiEventListener> widgets;
@@ -44,12 +53,15 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	protected List<GuiEventListener> textChildWidgets;
 	
 	public SliderListEntry(
-	  Component fieldName, V min, V max, V value,
+	  Component fieldName,
+	  V min, V max, V value,
 	  Function<V, Component> textGetter
 	) {
 		super(fieldName);
 		this.min = min;
 		this.max = max;
+		sliderMin = min;
+		sliderMax = max;
 		setOriginal(value);
 		setValue(value);
 		sliderValue = value;
@@ -67,7 +79,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	  SliderWidget widget, @Nullable TextFieldListEntry<V> textFieldEntry
 	) {
 		if (sliderWidget != null)
-			throw new IllegalStateException();
+			throw new IllegalStateException("initWidgets called twice");
 		sliderWidget = widget;
 		sliderWidget.setHeight(20);
 		sliderWidget.setValue(getValue());
@@ -102,17 +114,40 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	public V getMin() {
 		return min;
 	}
-	
 	public void setMin(V min) {
 		this.min = min;
+		if (min.compareTo(sliderMin) > 0) sliderMin = min;
 	}
 	
 	public V getMax() {
 		return max;
 	}
-	
 	public void setMax(V max) {
 		this.max = max;
+		if (max.compareTo(sliderMax) < 0) sliderMax = max;
+	}
+	
+	public V getSliderMin() {
+		return sliderMin;
+	}
+	public void setSliderMin(V sliderMin) {
+		this.sliderMin = min.compareTo(sliderMin) > 0? min : sliderMin;
+	}
+	
+	public V getSliderMax() {
+		return sliderMax;
+	}
+	public void setSliderMax(V sliderMax) {
+		this.sliderMax = max.compareTo(sliderMax) < 0? max : sliderMax;
+	}
+	
+	public @Nullable InvertibleDouble2DoubleFunction getSliderMap() {
+		return sliderMap;
+	}
+	public void setSliderMap(@Nullable InvertibleDouble2DoubleFunction sliderMap) {
+		double v = sliderWidget.getSliderValue();
+		this.sliderMap = sliderMap;
+		sliderWidget.setSliderValue(v);
 	}
 	
 	public Function<V, Component> getTextGetter() {
@@ -131,9 +166,9 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override public void setDisplayedValue(V value) {
-		this.sliderValue = value;
-		this.sliderWidget.setValue(value);
-		this.sliderWidget.updateMessage();
+		sliderValue = value;
+		sliderWidget.setValue(value);
+		sliderWidget.updateMessage();
 		if (showText && !areEqual(textFieldEntry.getDisplayedValue(), value))
 			textFieldEntry.setDisplayedValue(value);
 	}
@@ -148,14 +183,14 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {
-		return isTextFieldShown()? this.isChildSubEntry() ? textChildWidgets : textWidgets
-		                         : this.isChildSubEntry() ? childWidgets : widgets;
+		return isTextFieldShown()? isChildSubEntry() ? textChildWidgets : textWidgets
+		                         : isChildSubEntry() ? childWidgets : widgets;
 	}
 	
 	@Override public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
 		switch (keyCode) {
 			case 262: // Right
-				if (!isTextFieldShown() && !this.isChildSubEntry()) {
+				if (!isTextFieldShown() && !isChildSubEntry()) {
 					setTextFieldShown(true, true);
 					return true;
 				}
@@ -302,18 +337,19 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	public abstract class SliderWidget extends AbstractSliderButton {
-		public SliderWidget(
-		  int x, int y, int width, int height
-		) {
+		boolean clamped = false;
+		
+		public SliderWidget(int x, int y, int width, int height) {
 			super(x, y, width, height, TextComponent.EMPTY, 0D);
 		}
 		
 		@Override protected void updateMessage() {
-			setMessage(textGetter.apply(SliderListEntry.this.getDisplayedValue()));
+			setMessage(textGetter.apply(getDisplayedValue()));
 		}
 		
 		@Override protected void applyValue() {
-			SliderListEntry.this.sliderValue = getValue();
+			clamped = value < 0 || value > 1;
+			sliderValue = getValue();
 		}
 		
 		public double getStep(boolean left) {
@@ -322,7 +358,11 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 				step *= 0.25D;
 			if (Screen.hasControlDown())
 				step *= 4D;
-			return step / (float) (this.width - 8);
+			return step / (float) (width - 8);
+		}
+		
+		public double applyStep(double step) {
+			return Mth.clamp(value + step, 0D, 1D);
 		}
 		
 		@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -330,9 +370,9 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 				boolean left = keyCode == GLFW.GLFW_KEY_LEFT;
 				if (left || keyCode == GLFW.GLFW_KEY_RIGHT) {
 					final double step = getStep(left);
-					final double v = Mth.clamp(value + step, 0D, 1D);
+					final double v = applyStep(step);
 					value = v;
-					SliderListEntry.this.setDisplayedValue(getValue());
+					setDisplayedValue(getValue());
 					value = v;
 					return true;
 				}
@@ -344,6 +384,57 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		  double mouseX, double mouseY, int button, double dragX, double dragY
 		) {
 			return isEditable() && super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+		}
+		
+		@Override
+		protected void renderBg(@NotNull PoseStack mStack, @NotNull Minecraft mc, int mouseX, int mouseY) {
+			RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
+			if (clamped) {
+				RenderSystem.setShaderColor(1F, 0.7F, 0.5F, 1F);
+			} else RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+			int bw = clamped? 4 : 8;
+			int vOffset = (isHoveredOrFocused()? 2 : 1) * 20;
+			blit(mStack, x + (int)(value * (double)(width - bw)), y, 0, 46 + vOffset, bw / 2, 20);
+			blit(mStack, x + (int)(value * (double)(width - bw)) + bw / 2, y, 200 - bw / 2, 46 + vOffset, bw / 2, 20);
+		}
+		
+		@Override
+		public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+			Minecraft mc = Minecraft.getInstance();
+			Font font = mc.font;
+			RenderSystem.setShader(GameRenderer::getPositionTexShader);
+			RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
+			if (clamped) {
+				RenderSystem.setShaderColor(1F, 0.7F, 0.5F, alpha);
+			} else RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
+			int level = getYImage(isHoveredOrFocused());
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+			RenderSystem.enableDepthTest();
+			blit(mStack, x, y, 0, 46 + level * 20, width / 2, height);
+			blit(mStack, x + width / 2, y, 200 - width / 2, 46 + level * 20, width / 2, height);
+			renderBg(mStack, mc, mouseX, mouseY);
+			int color = getFGColor();
+			FormattedText message = getMessage();
+			if (font.width(message) > width - 8 && !isHoveredOrFocused())
+				message = font.substrByWidth(message, width - 8);
+			FormattedCharSequence seq = font.split(message, Integer.MAX_VALUE).get(0);
+			int textWidth = font.width(seq);
+			int textX = Mth.clamp(x + (width - textWidth) / 2, 4, getScreen().width - 4 - textWidth);
+			drawString(
+			  mStack, font, seq, textX, y + (height - 8) / 2,
+			  color | Mth.ceil(alpha * 255F) << 24);;
+			if (clamped) RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+		}
+		
+		protected double getSliderValue() {
+			return sliderMap != null? sliderMap.apply(value) : value;
+		}
+		
+		protected void setSliderValue(double value) {
+			if (sliderMap != null) value = sliderMap.inverse(value);
+			clamped = value < 0 || value > 1;
+			this.value = Mth.clamp(value, 0, 1);
 		}
 		
 		public abstract V getValue();

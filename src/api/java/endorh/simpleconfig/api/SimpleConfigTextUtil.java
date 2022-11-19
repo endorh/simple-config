@@ -1,5 +1,6 @@
 package endorh.simpleconfig.api;
 
+import com.google.common.collect.Lists;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.locale.Language;
@@ -8,6 +9,7 @@ import net.minecraft.network.chat.FormattedText.StyledContentConsumer;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -238,6 +240,21 @@ import static java.lang.Math.min;
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Internal public static @NotNull List<Component> splitTtc(@NotNull String key, Object... args) {
+		List<Component> ls = optSplitTtc(key, args);
+		if (ls.isEmpty()) ls.add(new TextComponent(key));
+		return ls;
+	}
+	
+	/**
+	 * Separate a translation text component on each line break<br>
+	 * Line breaks added by format arguments aren't considered<br>
+	 * Only works on the client side<br>
+	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods
+	 */
+	@OnlyIn(Dist.CLIENT)
+	@Internal public static @NotNull List<Component> optSplitTtc(
+	  @NotNull String key, Object... args
+	) {
 		if (I18n.exists(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting
@@ -272,11 +289,7 @@ import static java.lang.Math.min;
 				components.add(built);
 			}
 			return components;
-		} else {
-			List<Component> components = new ArrayList<>();
-			components.add(new TextComponent(key));
-			return components;
-		}
+		} else return Lists.newArrayList();
 	}
 	
 	protected static final Pattern FS_INDEX_PATTERN = Pattern.compile(
@@ -305,5 +318,47 @@ import static java.lang.Math.min;
 		}
 		m.appendTail(sb);
 		return sb.toString();
+	}
+	
+	/**
+	 * Convert a {@link FormattedCharSequence} into a {@link Component}
+	 */
+	@Internal public static Component asComponent(FormattedCharSequence sequence) {
+		return new FormattedCharSequenceConverter(sequence).convert();
+	}
+	
+	private static class FormattedCharSequenceConverter {
+		private Style style = Style.EMPTY;
+		private MutableComponent component = null;
+		private StringBuilder builder = new StringBuilder();
+		private final FormattedCharSequence sequence;
+		
+		public FormattedCharSequenceConverter(FormattedCharSequence sequence) {
+			this.sequence = sequence;
+		}
+		
+		public MutableComponent convert() {
+			sequence.accept(this::append);
+			if (builder.length() > 0) flush();
+			return component != null? component : TextComponent.EMPTY.copy();
+		}
+		
+		private boolean append(int width, Style style, int ch) {
+			if (this.style != style) {
+				if (builder.length() > 0) {
+					flush();
+					builder = new StringBuilder();
+				}
+				this.style = style;
+			}
+			builder.appendCodePoint(ch);
+			return true;
+		}
+		
+		private void flush() {
+			if (component == null) {
+				component = new TextComponent(builder.toString()).setStyle(style);
+			} else component.append(new TextComponent(builder.toString()).setStyle(style));
+		}
 	}
 }

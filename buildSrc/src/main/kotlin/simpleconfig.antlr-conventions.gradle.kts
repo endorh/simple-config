@@ -68,8 +68,8 @@ afterEvaluate {
 }
 
 dependencies {
-    "antlr"("org.antlr:antlr4:$antlrVersion") // use ANTLR version 4
-    "antlr"("org.antlr:antlr4-runtime:$antlrVersion")
+    antlr("org.antlr:antlr4:$antlrVersion") // use ANTLR version 4
+    antlr("org.antlr:antlr4-runtime:$antlrVersion")
 }
 
 // Add dependency on grammar source set

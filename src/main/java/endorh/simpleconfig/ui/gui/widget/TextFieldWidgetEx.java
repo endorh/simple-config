@@ -115,7 +115,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 				this.value = value.substring(0, maxLength);
 			} else this.value = value;
 			
-			moveCaretToEnd();
+			moveCaretToStart();
 			setAnchorPos(caretPos);
 			onValueChange(value);
 		}

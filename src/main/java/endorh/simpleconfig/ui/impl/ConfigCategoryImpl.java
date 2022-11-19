@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
@@ -30,12 +32,15 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	protected boolean isEditable;
 	protected Icon icon;
 	protected int color;
+	protected final @Nullable CompletableFuture<Boolean> loadingFuture;
+	private boolean loaded;
 	
 	@Internal public ConfigCategoryImpl(
 	  String name, EditType type, List<AbstractConfigField<?>> entries,
 	  Component title, int sortingOrder, @Nullable ResourceLocation background,
 	  @Nullable Supplier<Optional<Component[]>> description, @Nullable Path containingFile,
-	  boolean isEditable, Icon icon, int color
+	  boolean isEditable, Icon icon, int color,
+	  @Nullable CompletableFuture<Function<ConfigCategory, Boolean>> loadingFuture
 	) {
 		this.entries = entries;
 		this.name = name;
@@ -48,6 +53,16 @@ public class ConfigCategoryImpl implements ConfigCategory {
 		this.isEditable = isEditable;
 		this.icon = icon;
 		this.color = color;
+		this.loadingFuture = loadingFuture != null
+		                     ? loadingFuture.thenApply(f -> loaded = f.apply(this)) : null;
+	}
+	
+	private static <T> void finishLoadingField(AbstractConfigField<T> field) {
+		field.setOriginal(field.getValue());
+	}
+	
+	@Override public void finishLoadingEntries() {
+		getAllMainEntries().forEach(ConfigCategoryImpl::finishLoadingField);
 	}
 	
 	@Override public Component getTitle() {
@@ -68,6 +83,10 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	@Override public ConfigCategory addEntry(AbstractConfigListEntry<?> entry) {
 		entries.add(entry);
 		return this;
+	}
+	
+	@Override @Internal public void removeEntry(String name) {
+		entries.removeIf(e -> e.getName().equals(name));
 	}
 	
 	@Override public Optional<Path> getContainingFile() {
@@ -91,6 +110,14 @@ public class ConfigCategoryImpl implements ConfigCategory {
 	
 	@Override public void setEditable(boolean editable) {
 		isEditable = editable;
+	}
+	
+	@Override public @Nullable CompletableFuture<Boolean> getLoadingFuture() {
+		return loadingFuture;
+	}
+	
+	@Override public boolean isLoaded() {
+		return loadingFuture == null || loaded;
 	}
 	
 	@Override public int getColor() {

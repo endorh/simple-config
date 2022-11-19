@@ -132,7 +132,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	public static class DialogScrollingContainerWidget extends ScrollingContainerWidget {
 		private static final Method Screen$renderComponentHoverEffect =
 		  ObfuscationReflectionHelper.findMethod(
-			 Screen.class, "renderComponentHoverEffect",
+			 Screen.class, "m_96570_",
 			 PoseStack.class, Style.class, int.class, int.class);
 		private static final Logger LOGGER = LogManager.getLogger();
 		private static boolean loggedReflectionError = false;

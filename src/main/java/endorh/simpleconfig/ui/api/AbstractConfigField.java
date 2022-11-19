@@ -850,8 +850,10 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	@Override public void navigate() {
-		expandParents();
-		claimFocus();
+		if (getCategory().isLoaded()) {
+			expandParents();
+			claimFocus();
+		}
 	}
 	
 	protected void acquireFocus() {
