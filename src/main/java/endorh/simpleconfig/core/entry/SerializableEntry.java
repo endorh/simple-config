@@ -18,7 +18,7 @@ import java.util.function.Function;
  * Simple serializable entry.
  * @param <V> Type of the value
  */
-public class SerializableEntry<V> extends AbstractSerializableEntry<V, SerializableEntry<V>> {
+public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 	public Function<V, String> serializer;
 	public Function<String, Optional<V>> deserializer;
 	public ITextFormatter textFormatter = ITextFormatter.DEFAULT;

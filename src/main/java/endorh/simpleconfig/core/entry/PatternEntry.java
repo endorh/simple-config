@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-public class PatternEntry extends AbstractSerializableEntry<Pattern, PatternEntry> {
+public class PatternEntry extends AbstractSerializableEntry<Pattern> {
 	protected final int flags;
 	
 	@Internal public PatternEntry(ConfigEntryHolder parent, String name, Pattern value) {

@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.Color;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -42,11 +43,11 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	) {
 		super(x, y, 20, 200, Icon.EMPTY, ButtonAction.of(() -> {
 			if (category != null) screen.setSelectedCategory(category);
-		})/*.tint(category.getColor())*/
-		  .icon(category.getIcon())
+		}).icon(category.getIcon())
 		  .title(() -> screen.isSelecting()? title.copy().append(
 		    Component.literal(" [" + category.getAllMainEntries().stream().filter(
-			   AbstractConfigField::isSelected).count() + "]").withStyle(ChatFormatting.AQUA)) : title));
+			   AbstractConfigField::isSelected).count() + "]").withStyle(ChatFormatting.AQUA)) : title)
+		  .active(category::isLoaded));
 		this.descriptionSupplier = descriptionSupplier;
 		this.category = category;
 		this.screen = screen;
@@ -63,7 +64,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	private void updateColors() {
 		int c = lastColor;
 		lastDark = c == 0? 0x64242424 :
-		           new java.awt.Color(c, true).darker().darker().getRGB() & 0xFFFFFF
+		           new Color(c, true).darker().darker().getRGB() & 0xFFFFFF
 		           | (int) ((c >> 24 & 0xFF) * 0.6F) << 24;
 		lastLight = c == 0? 0x32E0E0E0 : c;
 	}
@@ -78,7 +79,10 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		int c = category.getColor();
-		if (c != lastColor) updateColors();
+		if (c != lastColor) {
+			lastColor = c;
+			updateColors();
+		}
 		if (isSelected()) {
 			defaultTint = lastLight;
 		} else defaultTint = lastDark;

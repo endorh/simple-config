@@ -71,7 +71,7 @@ public class SimpleConfigModConfig extends ModConfig {
 	@EventBusSubscriber(value = Dist.DEDICATED_SERVER, modid = SimpleConfigMod.MOD_ID)
 	public static class ServerLanguageReloadManager {
 		/**
-		 * FMLServerStartingEvent is posted after server translations have been loaded.
+		 * ServerStartingEvent is posted after server translations have been loaded.
 		 */
 		@SubscribeEvent public static void onServerLanguageReloaded(ServerStartingEvent event) {
 			SimpleConfigImpl.updateAllFileTranslations();

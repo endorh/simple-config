@@ -66,6 +66,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -75,6 +76,7 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.min;
+import static net.minecraft.util.Mth.clamp;
 
 @OnlyIn(Dist.CLIENT) public class SimpleConfigScreen
   extends AbstractConfigScreen implements ISearchHandler {
@@ -122,12 +124,14 @@ import static java.lang.Math.min;
 	protected final List<ConfigCategoryButton> tabButtons = Lists.newArrayList();
 	protected TooltipSearchBarWidget searchBar;
 	protected StatusDisplayBar statusDisplayBar;
+	protected boolean scheduledLayout = false;
 	
 	protected final Set<AbstractConfigField<?>> selectedEntries = new HashSet<>();
 	protected boolean isSelecting = false;
 	
 	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
-	protected IConfigScreenGUIState prevState;
+	protected IConfigScreenGUIState scheduledGUIState;
+	protected IConfigScreenGUIState lastRestoredGUIState;
 	protected boolean showingHelp = false;
 	
 	// Tick caches
@@ -151,6 +155,10 @@ import static java.lang.Math.min;
 		}
 		selectedCategory = sortedCategories.stream().findFirst().orElseThrow(
 		  () -> new IllegalArgumentException("No categories for config GUI"));
+		sortedCategories.stream().filter(c -> !c.isLoaded()).forEach(c -> {
+			CompletableFuture<Boolean> future = c.getLoadingFuture();
+			if (future != null) future.thenRun(() -> finishLoadingCategory(c));
+		});
 		lastCategories.put(selectedCategory.getType(), selectedCategory);
 		statusDisplayBar = new StatusDisplayBar(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
@@ -166,8 +174,7 @@ import static java.lang.Math.min;
 		modeButtonMap = Util.make(new EnumMap<>(EditType.class), m -> {
 			m.put(SimpleConfig.EditType.CLIENT, clientButton = createModeButton(SimpleConfig.EditType.CLIENT));
 			m.put(SimpleConfig.EditType.COMMON, commonButton = createModeButton(SimpleConfig.EditType.COMMON));
-			m.put(SimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(
-			  SimpleConfig.EditType.SERVER_COMMON));
+			m.put(SimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(SimpleConfig.EditType.SERVER_COMMON));
 			m.put(SimpleConfig.EditType.SERVER, serverButton = createModeButton(SimpleConfig.EditType.SERVER));
 		});
 		
@@ -218,15 +225,7 @@ import static java.lang.Math.min;
 	}
 	
 	@NotNull private MultiFunctionIconButton createModeButton(EditType type) {
-		String alias = type.getAlias().replace('-', '.');
-		return MultiFunctionIconButton.of(Types.iconFor(type), 20, 70, ButtonAction.of(
-			 () -> showType(type)
-		  ).title(() -> Component.translatable("simpleconfig.config.category." + alias))
-		  .tooltip(
-			 () -> hasType(type) && getEditedType() != type
-			       ? Lists.newArrayList(Component.translatable("simpleconfig.ui.switch." + alias))
-			       : Collections.emptyList()
-		  ).active(() -> hasType(type)));
+		return new ConfigModeButton(this, type);
 	}
 	
 	protected static String getModNameOrId(String modId) {
@@ -302,6 +301,7 @@ import static java.lang.Math.min;
 	
 	@Override protected void init() {
 		super.init();
+		scheduledLayout = false;
 		
 		// Toolbar
 		searchBar.w = width;
@@ -354,20 +354,20 @@ import static java.lang.Math.min;
 		addWidget(selectionToolbar);
 		
 		if (isEditingConfigHotKey()) {
-			int textFieldWidth = Mth.clamp(width / 5, 100, 300);
+			int textFieldWidth = clamp(width / 5, 100, 300);
 			pos(editedHotKeyNameTextField, width / 2 - textFieldWidth / 2, 8, textFieldWidth, 12);
 			addRenderableWidget(editedHotKeyNameTextField);
 		}
 		
 		// Right toolbar
 		if (!isEditingConfigHotKey()) {
-			int presetPickerWidth = Mth.clamp(width / 3, 80, 250);
+			int presetPickerWidth = clamp(width / 3, 80, 250);
 			presetPickerWidget.setPosition(width - presetPickerWidth - 24, 2, presetPickerWidth);
 			pos(hotKeyButton, width - 22, 2);
 			addWidget(presetPickerWidget);
 			addRenderableWidget(hotKeyButton);
 		} else {
-			int hotKeyButtonWidth = Mth.clamp(width / 3, 80, 250);
+			int hotKeyButtonWidth = clamp(width / 3, 80, 250);
 			editedHotKeyButton.setPosition(width - hotKeyButtonWidth - 2, 2, hotKeyButtonWidth);
 			addWidget(editedHotKeyButton);
 		}
@@ -379,19 +379,20 @@ import static java.lang.Math.min;
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
 			pos(buttonLeftTab, 4, 27);
 			addWidget(buttonLeftTab);
+			addWidget(buttonRightTab);
 			tabButtons.clear();
 			int ww = 0;
 			for (ConfigCategory cat : getSortedTypeCategories()) {
 				final int w = font.width(cat.getTitle());
-				ww += w + 2;
-				tabButtons.add(new ConfigCategoryButton(
+				ConfigCategoryButton b = new ConfigCategoryButton(
 				  this, cat, -100, 26,
-				  cat.getTitle(), cat.getDescription()));
+				  cat.getTitle(), cat.getDescription());
+				tabButtons.add(b);
+				ww += b.getWidth() + 2;
 			}
-			tabsMaximumScrolled = ww;
+			tabsMaximumScrolled = ww + 2;
 			tabButtons.forEach(this::addWidget);
 			pos(buttonRightTab, width - 16, 27);
-			addWidget(buttonRightTab);
 		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
 		
 		// Content
@@ -444,9 +445,9 @@ import static java.lang.Math.min;
 		// Post init
 		if (afterInitConsumer != null) afterInitConsumer.accept(this);
 		
-		if (prevState != null) {
-			IConfigScreenGUIState state = prevState;
-			prevState = null;
+		if (scheduledGUIState != null) {
+			IConfigScreenGUIState state = scheduledGUIState;
+			scheduledGUIState = null;
 			loadConfigScreenGUIState(state);
 		}
 	}
@@ -454,11 +455,17 @@ import static java.lang.Math.min;
 	public ListWidget<AbstractConfigField<?>> getListWidget(ConfigCategory category) {
 		return listWidgets.computeIfAbsent(category, c -> {
 			final ListWidget<AbstractConfigField<?>> w = new ListWidget<>(
-			  this, minecraft, width, height, isShowingTabs()? 50 : 24,
+			  this, minecraft, width, height, category, isShowingTabs()? 50 : 24,
 			  height - 28, c.getBackground() != null? c.getBackground() : backgroundLocation);
-			w.getEntries().addAll(c.getHeldEntries());
+			if (category.isLoaded()) initListWidget(category, w);
 			return w;
 		});
+	}
+	
+	protected void initListWidget(
+	  ConfigCategory category, ListWidget<AbstractConfigField<?>> widget
+	) {
+		widget.getEntries().addAll(category.getHeldEntries());
 	}
 	
 	@Override public List<EntryError> getErrors() {
@@ -539,6 +546,23 @@ import static java.lang.Math.min;
 		return showingHelp;
 	}
 	
+	public void finishLoadingCategory(ConfigCategory category) {
+		if (!category.isLoaded()) {
+			sortedCategoriesMap.get(category.getType()).remove(category);
+			sortedCategories.remove(category);
+			categoryMap.get(category.getType().getAlias()).remove(category.getName());
+		} else {
+			ListWidget<AbstractConfigField<?>> w = listWidgets.get(category);
+			if (w != null) initListWidget(category, w);
+			scheduledLayout = true;
+			if (selectedCategory == category && lastRestoredGUIState != null) {
+				IConfigCategoryGUIState state = lastRestoredGUIState.getCategoryStates()
+				  .get(category.getType()).get(category.getName());
+				if (state != null) loadConfigCategoryGUIState(category, state);
+			}
+		}
+	}
+	
 	@Override public void setSelectedCategory(ConfigCategory category) {
 		if (selectedCategory != category) {
 			// Switching sides is prevented while selecting
@@ -560,7 +584,7 @@ import static java.lang.Math.min;
 					for (int i = 0; i < innerIndex; i++)
 						x += tabButtons.get(i).getWidth() + 2;
 					x += tabButtons.get(innerIndex).getWidth() / 2;
-					x -= tabsScroller.getBounds().width / 2;
+					x -= tabsScroller.getBounds().height / 2;
 					tabsScroller.scrollTo(x, true, 250L);
 				}
 				searchBar.refresh();
@@ -613,9 +637,10 @@ import static java.lang.Math.min;
 	@Override public void loadConfigScreenGUIState(@Nullable IConfigScreenGUIState state) {
 		if (state != null) {
 			if (width == 0) {
-				prevState = state;
+				scheduledGUIState = state;
 				return;
 			}
+			lastRestoredGUIState = state;
 			showType(state.getEditedType());
 			state.getSelectedCategories().forEach((t, n) -> {
 				ConfigCategory c = getTypeCategories(t).get(n);
@@ -877,6 +902,9 @@ import static java.lang.Math.min;
 	}
 	
 	@Override public void tick() {
+		if (scheduledLayout) {
+			init(Minecraft.getInstance(), width, height);
+		}
 		super.tick();
 		listWidget.tick();
 		updateErrors();
@@ -1103,6 +1131,7 @@ import static java.lang.Math.min;
 	
 	public static class ListWidget<R extends AbstractConfigField<?>> extends DynamicElementListWidget<R> {
 		private final AbstractConfigScreen screen;
+		private final ConfigCategory category;
 		private boolean hasCurrent;
 		private double currentX;
 		private double currentY;
@@ -1176,10 +1205,12 @@ import static java.lang.Math.min;
 		}
 		
 		public ListWidget(
-		  AbstractConfigScreen screen, Minecraft client, int width, int height, int top, int bottom,
+		  AbstractConfigScreen screen, Minecraft client, int width, int height,
+		  ConfigCategory category, int top, int bottom,
 		  ResourceLocation backgroundLocation
 		) {
 			super(client, width, height, top, bottom, backgroundLocation);
+			this.category = category;
 			this.screen = screen;
 		}
 		
@@ -1193,11 +1224,11 @@ import static java.lang.Math.min;
 		}
 		
 		@Override public int getFieldWidth() {
-			return (int) Mth.clamp((right - left) * 0.3F, 80, 250);
+			return (int) clamp((right - left) * 0.3F, 80, 250);
 		}
 		
 		@Override public int getKeyFieldWidth() {
-			return (int) Mth.clamp((right - left) * 0.25F, 80, 250);
+			return (int) clamp((right - left) * 0.25F, 80, 250);
 		}
 		
 		@Override protected int getScrollBarPosition() {
@@ -1270,6 +1301,12 @@ import static java.lang.Math.min;
 		}
 		
 		@Override protected MutableComponent getEmptyPlaceHolder() {
+			if (!category.isLoaded()) {
+				CompletableFuture<Boolean> future = category.getLoadingFuture();
+				return Component.translatable(
+				  future == null || future.isDone()
+				  ? "simpleconfig.ui.not_available" : "simpleconfig.ui.loading");
+			}
 			SearchBarWidget bar = screen.getSearchBar();
 			return bar.isFilter() && bar.isExpanded()
 			       ? Component.translatable("simpleconfig.ui.no_matches")

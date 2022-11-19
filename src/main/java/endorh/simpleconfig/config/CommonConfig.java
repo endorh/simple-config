@@ -40,6 +40,7 @@ public class CommonConfig {
 			   .add("wrap_top_level_groups_as_categories", yesNo(true).restart()
 			     .editable(g -> g.getGUIBoolean("wrap_configs")
 			                    || !g.<List<?>>getGUI("wrap_config_exceptions").isEmpty()))
+			   .add("prevent_external_menu_replacement", yesNo(true).restart())
 		  ).n(
 			 category("demo")
 				.withIcon(SimpleConfigIcons.Status.INFO)
@@ -64,6 +65,7 @@ public class CommonConfig {
 		@Bind public static boolean replace_config_menus;
 		@Bind public static List<String> replace_menu_exceptions;
 		@Bind public static boolean wrap_top_level_groups_as_categories;
+		@Bind public static boolean prevent_external_menu_replacement;
 		
 		public static boolean shouldWrapConfig(String modId) {
 			return wrap_configs != wrap_config_exceptions.contains(modId);

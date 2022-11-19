@@ -12,18 +12,19 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 @OnlyIn(value = Dist.CLIENT)
 public interface ConfigCategory extends IEntryHolder {
 	Component getTitle();
-	
 	void setTitle(Component name);
 	
 	@Override @Internal List<AbstractConfigField<?>> getHeldEntries();
 	
 	String getName();
-	ConfigCategory addEntry(AbstractConfigListEntry<?> var1);
+	ConfigCategory addEntry(AbstractConfigListEntry<?> entry);
+	@Internal void removeEntry(String name);
 	
 	void setBackground(@Nullable ResourceLocation background);
 	@Nullable ResourceLocation getBackground();
@@ -32,11 +33,15 @@ public interface ConfigCategory extends IEntryHolder {
 	boolean isEditable();
 	void setEditable(boolean editable);
 	
+	@Nullable CompletableFuture<Boolean> getLoadingFuture();
+	boolean isLoaded();
+	
 	int getColor();
 	Icon getIcon();
 	int getSortingOrder();
 	
 	@Nullable Supplier<Optional<Component[]>> getDescription();
 	Optional<Path> getContainingFile();
+	
+	void finishLoadingEntries();
 }
-

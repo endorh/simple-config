@@ -41,6 +41,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -287,6 +288,17 @@ public abstract class AbstractConfigScreen extends Screen
 	
 	public boolean isShowingTabs() {
 		return isAlwaysShowTabs() || getTypeCategories().size() > 1;
+	}
+	
+	/**
+	 * Perform a batch of modifications that won't be recorded in the history.
+	 * <b>Only useful for loading purposes.</b> Instead, consider using
+	 * {@link #runAtomicTransparentAction(Runnable)}.
+	 *
+	 * @param action Action to run.
+	 */
+	public void runUnrecordedAction(Runnable action) {
+		getHistory().runUnrecordedAction(action);
 	}
 	
 	/**
@@ -584,17 +596,28 @@ public abstract class AbstractConfigScreen extends Screen
 		  SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, volume));
 	}
 	
+	protected void playFeedbackClick(float volume) {
+		Minecraft.getInstance().getSoundManager().play(
+		  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, volume));
+	}
+	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
 		Key key = InputConstants.getKey(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
+			EditType prevType = getEditedType();
 			selectNextCategory(true);
 			recomputeFocus();
-			playFeedbackTap(1F);
+			if (prevType == getEditedType()) {
+				playFeedbackTap(1F);
+			} else playFeedbackClick(1F);
 			return true;
 		} else if (KeyBindings.PREV_PAGE.isActiveAndMatches(key)) {
+			EditType prevType = getEditedType();
 			selectNextCategory(false);
 			recomputeFocus();
-			playFeedbackTap(1F);
+			if (prevType == getEditedType()) {
+				playFeedbackTap(1F);
+			} else playFeedbackClick(1F);
 			return true;
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
 			if (isEditingConfigHotKey()) {

@@ -9,17 +9,35 @@ public interface FloatEntryBuilder
 	/**
 	 * Set min (inclusive)
 	 */
-	@Contract(pure=true) @NotNull FloatEntryBuilder min(float min);
+	@Contract(pure=true) @NotNull default FloatEntryBuilder min(float min) {
+		return min((Float) min);
+	}
 	
 	/**
 	 * Set max (inclusive)
 	 */
-	@Contract(pure=true) @NotNull FloatEntryBuilder max(float max);
+	@Contract(pure=true) @NotNull default FloatEntryBuilder max(float max) {
+		return max((Float) max);
+	}
 	
 	/**
 	 * Set inclusive range
 	 */
-	@Contract(pure=true) @NotNull FloatEntryBuilder range(float min, float max);
+	@Contract(pure=true) @NotNull default FloatEntryBuilder range(float min, float max) {
+		return range((Float) min, (Float) max);
+	}
+	
+	/**
+	 * Set a different range (inclusive) for the slider.<br>
+	 * Will be constrained by the range set by {@link #range}.<br>
+	 * Useful to display a recommended/commonly useful range of values,
+	 * while allowing users to override this range by manually entering
+	 * a value beyond it (but still within the normal range).<br>
+	 * Implies {@link #slider()}.
+	 */
+	@Contract(pure=true) default @NotNull FloatEntryBuilder sliderRange(float min, float max) {
+		return sliderRange((Float) min, (Float) max);
+	}
 	
 	/**
 	 * Scale the backing field of this entry by the given scale.<br>

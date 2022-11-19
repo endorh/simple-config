@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class CompoundTagEntry extends AbstractSerializableEntry<CompoundTag, CompoundTagEntry> {
+public class CompoundTagEntry extends AbstractSerializableEntry<CompoundTag> {
 	@Internal public CompoundTagEntry(ConfigEntryHolder parent, String name, CompoundTag value) {
 		super(parent, name, value, CompoundTag.class);
 	}

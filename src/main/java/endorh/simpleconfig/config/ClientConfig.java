@@ -34,6 +34,7 @@ import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.config.ClientConfig.KeyBindings.EDIT_CONFIG_HOTKEYS;
 import static endorh.simpleconfig.config.ClientConfig.KeyBindings.OPEN_MOD_LIST;
 import static endorh.simpleconfig.config.ClientConfig.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
+import static endorh.simpleconfig.config.ClientConfig.OptionsButtonBehaviour.SECONDARY_CLICK;
 import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 
 /**
@@ -53,6 +54,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				.add("add_pause_menu_button", yesNo(true))
 				.add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
 				  .editable(g -> g.getGUIBoolean("add_pause_menu_button")))
+			   .add("options_button_behaviour", option(SECONDARY_CLICK))
 		  ).n(
 			 group("hotkey_log")
 				.add("hotkey_log_location", option(RIGHT_OVERLAY))
@@ -150,9 +152,14 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
 	}
 	
+	public enum OptionsButtonBehaviour {
+		DEFAULT, SECONDARY_CLICK, MAIN_CLICK
+	}
+	
 	@Bind public static class menu {
 		@Bind public static boolean add_pause_menu_button;
 		@Bind public static MenuButtonPosition menu_button_position;
+		@Bind public static OptionsButtonBehaviour options_button_behaviour;
 	}
 	
 	@Bind public static class hotkey_log {

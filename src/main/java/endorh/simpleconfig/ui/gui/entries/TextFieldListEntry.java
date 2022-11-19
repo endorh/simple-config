@@ -75,9 +75,18 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
+		boolean prev = isFocused();
 		super.updateFocused(isFocused);
-		if (!isFocused)
-			WidgetUtils.forceUnFocus(textFieldWidget);
+		if (!isFocused && prev) {
+			textFieldWidget.setAnchorPos(textFieldWidget.getCaret());
+			textFieldWidget.setFocused(false);
+		}
+	}
+	
+	@Override protected void acquireFocus() {
+		super.acquireFocus();
+		textFieldWidget.moveCaretToEnd();
+		textFieldWidget.setAnchorPos(0);
 	}
 	
 	@Override public void tick() {

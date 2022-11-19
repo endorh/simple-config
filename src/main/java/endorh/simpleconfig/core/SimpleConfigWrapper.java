@@ -19,6 +19,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 import net.minecraftforge.common.ForgeConfigSpec.ValueSpec;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModContainer;
@@ -80,7 +81,8 @@ public class SimpleConfigWrapper {
 		}
 	}
 	
-	@SubscribeEvent public static void onLoadComplete(FMLLoadCompleteEvent event) {
+	@SubscribeEvent(priority = EventPriority.LOW)
+	public static void onLoadComplete(FMLLoadCompleteEvent event) {
 		event.enqueueWork(() -> {
 			wrapConfigs();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> ConfigHotKeyManager::initHotKeyManager);
@@ -153,7 +155,10 @@ public class SimpleConfigWrapper {
 			config.build(container, modConfig);
 		}
 		
-		@Override public void build(AbstractConfigEntry<?, ?, ?> entry) {
+		@Override public void build(
+		  AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entryBuilder,
+		  AbstractConfigEntry<?, ?, ?> entry
+		) {
 			Object o = getConfigValues().get(entry.name);
 			if (o instanceof ConfigValue) {
 				entry.setConfigValue((ConfigValue<?>) o);
@@ -394,39 +399,38 @@ public class SimpleConfigWrapper {
 		reg((Class<List<?>>) (Class<?>) List.class, Function.identity(), (s, v) -> {
 			Object defValue = s.getDefault();
 			if (!(defValue instanceof List<?> def)) return null;
-			ListEntryBuilder<?, ?, ?, ?> builder = guessListType(def, s::test);
-			if (!s.test(Lists.newArrayList()))
-				builder = builder.minSize(1);
 			//noinspection unchecked
-			return (ConfigEntryBuilder<List<?>, List<?>, ?, ?>) (ConfigEntryBuilder<?, ?, ?, ?>) builder;
+			return (ConfigEntryBuilder<List<?>, List<?>, ?, ?>) (ConfigEntryBuilder<?, ?, ?, ?>)
+			  guessListType(def, s::test);
 		});
 	}
 	
 	private static ListEntryBuilder<?, ?, ?, ?> guessListType(
 	  List<?> defValue, Predicate<Object> validator
 	) {
+		ListEntryBuilder<?, ?, ?, ?> b;
 		if (defValue.isEmpty()) {
-			return guessListTypeFromValidator(validator);
+			b = guessListTypeFromValidator(validator);
 		} else {
 			if (allInstance(defValue, Boolean.class)) {
-				return list(bool(false));
+				b = list(bool(false), castList(defValue));
 			} else if (allInstance(defValue, Integer.class)) {
-				return list(number(!validator.test(singletonList(0))? 1 : 0));
+				b = list(number(!validator.test(singletonList(0))? 1 : 0), castList(defValue));
 			} else if (allInstance(defValue, Long.class)) {
-				return list(number(!validator.test(singletonList(0L))? 1L : 0L));
+				b = list(number(!validator.test(singletonList(0L))? 1L : 0L), castList(defValue));
 			} else if (allInstance(defValue, Float.class)) {
-				return list(number(!validator.test(singletonList(0F))? 1F : 0F));
+				b = list(number(!validator.test(singletonList(0F))? 1F : 0F), castList(defValue));
 			} else if (allInstance(defValue, Double.class)) {
-				return list(number(!validator.test(singletonList(0D))? 1D : 0D));
+				b = list(number(!validator.test(singletonList(0D))? 1D : 0D), castList(defValue));
 			} else if (allInstance(defValue, Byte.class)) {
-				return list(number(!validator.test(singletonList((byte) 0))? (byte) 1 : (byte) 0));
+				b = list(number(!validator.test(singletonList((byte) 0))? (byte) 1 : (byte) 0), castList(defValue));
 			} else if (allInstance(defValue, Short.class)) {
-				return list(number(!validator.test(singletonList((short) 0))? (short) 1 : (short) 0));
+				b = list(number(!validator.test(singletonList((short) 0))? (short) 1 : (short) 0), castList(defValue));
 			} else if (allInstance(defValue, String.class)) {
-				return list(string(""));
+				b = list(string(""), castList(defValue));
 			} else if (allInstance(defValue, Enum.class)) {
 				//noinspection unchecked,rawtypes
-				return list(option((Enum) defValue.get(0)));
+				b = list(option((Enum) defValue.get(0)), castList(defValue));
 			} else if (allInstance(defValue, List.class)) {
 				Predicate<Object> subValidator = o -> validator.test(singletonList(o));
 				Optional<? extends List<?>> opt = defValue.stream()
@@ -437,9 +441,12 @@ public class SimpleConfigWrapper {
 				if (opt.isPresent()) {
 					sub = guessListType(opt.get(), subValidator);
 				} else sub = guessListTypeFromValidator(subValidator);
-				return wrapSubList(sub, defValue);
-			} else return list(entry("", new YamlConfigSerializer()));
+				b = wrapSubList(sub, defValue);
+			} else b = list(entry("", new YamlConfigSerializer()), defValue);
 		}
+		if (!validator.test(Lists.newArrayList()))
+			b = b.minSize(1);
+		return b;
 	}
 	
 	@SuppressWarnings("unchecked") private static <
@@ -454,39 +461,40 @@ public class SimpleConfigWrapper {
 		return list.stream().allMatch(clazz::isInstance);
 	}
 	
+	@SuppressWarnings("unchecked") private static <T> List<T> castList(List<?> list) {
+		return (List<T>) list;
+	}
+	
 	private static ListEntryBuilder<?, ?, ?, ?> guessListTypeFromValidator(Predicate<Object> validator) {
-		ListEntryBuilder<?, ?, ?, ?> b;
 		if (validator.test(singletonList("s"))) {
-			b = list(string(""));
+			return list(string(""));
 		} else if (validator.test(singletonList(true))) {
-			b = list(bool(false));
+			return list(bool(false));
 		} else if (validator.test(singletonList(0))) {
-			b = list(number(0));
+			return list(number(0));
 		} else if (validator.test(singletonList(1))) {
-			b = list(number(1));
+			return list(number(1));
 		} else if (validator.test(singletonList(0L))) {
-			b = list(number(0L));
+			return list(number(0L));
 		} else if (validator.test(singletonList(1L))) {
-			b = list(number(1L));
+			return list(number(1L));
 		} else if (validator.test(singletonList(0F))) {
-			b = list(number(0F));
+			return list(number(0F));
 		} else if (validator.test(singletonList(1F))) {
-			b = list(number(1F));
+			return list(number(1F));
 		} else if (validator.test(singletonList(0D))) {
-			b = list(number(0D));
+			return list(number(0D));
 		} else if (validator.test(singletonList(1D))) {
-			b = list(number(1D));
+			return list(number(1D));
 		} else if (validator.test(singletonList((byte) 0))) {
-			b = list(number((byte) 0));
+			return list(number((byte) 0));
 		} else if (validator.test(singletonList((byte) 1))) {
-			b = list(number((byte) 1));
+			return list(number((byte) 1));
 		} else if (validator.test(singletonList((short) 0))) {
-			b = list(number((short) 0));
+			return list(number((short) 0));
 		} else if (validator.test(singletonList((short) 1))) {
-			b = list(number((short) 1));
-		} else b = list(entry("", new YamlConfigSerializer()));
-		if (!validator.test(Lists.newArrayList())) b = b.minSize(1);
-		return b;
+			return list(number((short) 1));
+		} else return list(entry("", new YamlConfigSerializer()));
 	}
 	
 	public static class YamlConfigSerializer implements IConfigEntrySerializer<Object> {

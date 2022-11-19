@@ -107,8 +107,8 @@ public abstract class AbstractRangeEntry<
 			return canEditExclusiveness(canEdit, canEdit);
 		}
 		
-		@Override public SelfImpl copy() {
-			SelfImpl copy = super.copy();
+		@Override public SelfImpl copy(R value) {
+			SelfImpl copy = super.copy(value);
 			copy.min = min;
 			copy.max = max;
 			copy.canEditMinExclusiveness = canEditMinExclusiveness;
@@ -259,8 +259,8 @@ public abstract class AbstractRangeEntry<
 				return entry;
 			}
 			
-			@Override public SelfImpl copy() {
-				SelfImpl copy = super.copy();
+			@Override public SelfImpl copy(R value) {
+				SelfImpl copy = super.copy(value);
 				copy.minSize = minSize;
 				copy.maxSize = maxSize;
 				return copy;

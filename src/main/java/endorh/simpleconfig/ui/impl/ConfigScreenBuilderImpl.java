@@ -147,6 +147,10 @@ import java.util.function.Consumer;
 		return this;
 	}
 	
+	@Override public List<ConfigCategoryBuilder> getCategories(EditType type) {
+		return new ArrayList<>(categories.get(type).values());
+	}
+	
 	@Override public ConfigCategoryBuilder getOrCreateCategory(String name, EditType type) {
 		Map<String, ConfigCategoryBuilder> categories = this.categories.get(type);
 		ConfigCategoryBuilder cat = categories.computeIfAbsent(

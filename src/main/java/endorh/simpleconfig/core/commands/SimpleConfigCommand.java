@@ -32,6 +32,8 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.forgespi.language.IModInfo;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ public class SimpleConfigCommand {
 	  m -> Component.translatable("simpleconfig.command.error.unsupported_config", m));
 	private static final DynamicCommandExceptionType NO_PERMISSION = new DynamicCommandExceptionType(
 	  m -> Component.translatable("simpleconfig.command.error.no_permission", m));
+	private static final Logger LOGGER = LogManager.getLogger();
 	
 	@OnlyIn(Dist.CLIENT) private CommandClientTickExecutor clientTickExecutor;
 	
@@ -235,8 +238,10 @@ public class SimpleConfigCommand {
 			AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 			BaseCommand base = getBase(ctx, modId, 3);
 			String serialized = entry.getForCommand();
-			if (serialized == null) src.sendFailure(
-			  Component.translatable("simpleconfig.command.error.get.unexpected"));
+			if (serialized == null) {
+				src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected"));
+				LOGGER.error("Couldn't serialize entry value for command: {}", entry.getGlobalPath());
+			}
 			src.sendSuccess(Component.translatable("simpleconfig.command.msg.get",
 			                                       formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
 			return 0;
@@ -244,6 +249,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
+			LOGGER.error(e);
 		}
 		return 1;
 	}
@@ -260,8 +266,10 @@ public class SimpleConfigCommand {
 			AbstractConfigEntry<Object, Object, Object> entry = config.getEntry(key);
 			BaseCommand base = getBase(ctx, modId, 3);
 			String serialized = entry.getForCommand();
-			if (serialized == null) src.sendFailure(
-			  Component.translatable("simpleconfig.command.error.get.unexpected"));
+			if (serialized == null) {
+				src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected"));
+				LOGGER.error("Couldn't serialize entry value for command: {}", entry.getGlobalPath());
+			}
 			src.sendSuccess(Component.translatable("simpleconfig.command.msg.get",
 			                                       formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
 			return 0;
@@ -269,6 +277,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
+			LOGGER.error(e);
 		}
 		return 1;
 	}
@@ -284,8 +293,7 @@ public class SimpleConfigCommand {
 		String value = ctx.getArgument("value", String.class);
 		Player player = src.getPlayerOrException();
 		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
-			src.sendFailure(
-			  Component.translatable("simpleconfig.command.error.no_permission", config.getModName()));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
 		}
 		AbstractConfigEntry<Object, Object, Object> entry;
@@ -302,8 +310,7 @@ public class SimpleConfigCommand {
 			
 			Optional<Component> error = entry.getErrorFromCommand(value);
 			if (error.isPresent()) {
-				src.sendFailure(
-				  Component.translatable("simpleconfig.command.error.set.invalid_value", error.get()));
+				src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", error.get()));
 				return -1;
 			}
 			
@@ -330,6 +337,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
+			LOGGER.error(e);
 		}
 		return 1;
 	}
@@ -359,8 +367,7 @@ public class SimpleConfigCommand {
 			
 			Optional<Component> error = entry.getErrorFromCommand(value);
 			if (error.isPresent()) {
-				src.sendFailure(
-				  Component.translatable("simpleconfig.command.error.set.invalid_value", error.get()));
+				src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", error.get()));
 				return -1;
 			}
 			
@@ -385,6 +392,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
+			LOGGER.error(e);
 		}
 		return 1;
 	}
@@ -399,8 +407,7 @@ public class SimpleConfigCommand {
 		String key = ctx.getArgument("key", String.class);
 		Player player = src.getPlayerOrException();
 		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
-			src.sendFailure(
-			  Component.translatable("simpleconfig.command.error.no_permission", config.getModName()));
+			src.sendFailure(Component.translatable("simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
 		}
 		try {
@@ -441,6 +448,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
+			LOGGER.error(e);
 		}
 		return 1;
 	}
@@ -488,6 +496,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
+			LOGGER.error(e);
 		}
 		return 1;
 	}

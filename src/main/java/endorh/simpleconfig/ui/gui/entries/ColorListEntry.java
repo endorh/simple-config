@@ -174,6 +174,11 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 			setColorPickerVisible(false);
 	}
 	
+	@Override protected void acquireFocus() {
+		super.acquireFocus();
+		textFieldWidget.setAnchorPos(1);
+	}
+	
 	@Override public void setOriginal(@Nullable Integer original) {
 		super.setOriginal(original);
 		if (original != null && colorPicker != null)

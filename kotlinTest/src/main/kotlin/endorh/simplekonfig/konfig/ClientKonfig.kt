@@ -23,6 +23,9 @@ object ClientKonfig : SimpleKonfig(
     val list by list(
         string(""), listOf("a", "b", "c", "d")
     ).caption(color(Color.BLUE))
+    val map by map(
+        pair(string(""), int()), triple(string(""), int(), regex())
+    ).caption(pair(string(""), int()))
     val pair by pair(string(), int())
     val pairList by pairList(string(), int())
     val regex by regex("nice.*(?:regex)?").withOptions(RegexOption.IGNORE_CASE)

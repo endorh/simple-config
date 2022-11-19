@@ -54,7 +54,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	) {
 		comboBox.setEnabled(shouldRenderEditable());
 		comboBox.setRestrictedToSuggestions(!isSuggestionMode());
-		// As text fields, combo boxes render the border outside, so we inset it 1px to match
+		// Like text fields, combo boxes render the border outside, so we inset it 1px to match
 		comboBox.x = x + 1;
 		comboBox.y = y + 1;
 		comboBox.setWidth(w - 2);
@@ -64,8 +64,18 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
+		boolean prev = isFocused();
 		super.updateFocused(isFocused);
-		if (!isFocused) comboBox.setFocused(false);
+		if (!isFocused && prev) {
+			comboBox.setAnchorPos(comboBox.getCaret());
+			comboBox.setFocused(false);
+		}
+	}
+	
+	@Override protected void acquireFocus() {
+		super.acquireFocus();
+		comboBox.moveCaretToEnd();
+		comboBox.setAnchorPos(0);
 	}
 	
 	@Override public boolean onMouseClicked(double mouseX, double mouseY, int button) {

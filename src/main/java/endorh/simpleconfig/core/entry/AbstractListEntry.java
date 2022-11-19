@@ -93,8 +93,8 @@ public abstract class AbstractListEntry
 			return e;
 		}
 		
-		@Override public SelfImpl copy() {
-			final SelfImpl copy = super.copy();
+		@Override public SelfImpl copy(List<V> value) {
+			final SelfImpl copy = super.copy(value);
 			copy.elemErrorSupplier = elemErrorSupplier;
 			copy.expand = expand;
 			copy.innerType = innerType;

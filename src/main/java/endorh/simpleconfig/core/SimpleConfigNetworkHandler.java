@@ -9,6 +9,7 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.config.ServerConfig.permissions;
+import endorh.simpleconfig.core.wrap.MinecraftServerConfigWrapper;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyLogger;
@@ -28,6 +29,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.IConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
@@ -76,6 +80,8 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
  * Handle synchronization of {@link SimpleConfigImpl} data with server config
  */
 @Internal public class SimpleConfigNetworkHandler {
+	private static final String MINECRAFT_MOD_ID = "minecraft";
+	
 	public static Style ALLOWED_UPDATE_STYLE = Style.EMPTY
 	  .applyFormat(ChatFormatting.GRAY).withItalic(true);
 	public static Style DENIED_UPDATE_STYLE = Style.EMPTY
@@ -174,7 +180,10 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		ModConfig modConfig = config.getModConfig();
 		CommentedConfig sentConfig = deserializeSnapshot(config, fileData);
 		if (sentConfig == null) return;
-		try {
+		if (modConfig == null) {
+			// Minecraft Gamerules Simple Config wrapper
+			config.loadSnapshot(sentConfig, false, false);
+		} else try {
 			if (set) {
 				trySetConfigData(modConfig, sentConfig);
 			} else modConfig.getConfigData().putAll(sentConfig);
@@ -202,7 +211,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	  SimpleConfigImpl config, @Nullable CommentedConfig snapshot
 	) {
 		try {
-			if (snapshot == null) snapshot = config.takeSnapshot(false, false, null);
+			if (snapshot == null) snapshot = config.takeSnapshot(false, false);
 			if (snapshot instanceof CommentedFileConfig) {
 				return Files.readAllBytes(((CommentedFileConfig) snapshot).getNioPath());
 			} else {
@@ -226,6 +235,9 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 	  CHANNEL_PROTOCOL_VERSION::equals,
 	  CHANNEL_PROTOCOL_VERSION::equals);
 	private static int ID_COUNT = 0;
+	private static int loginID = 0;
+	private static int dedicatedServerLoginID = -1;
+	private static boolean isConnectedToDedicatedServer = false;
 	
 	public static SimpleChannel getChannel() {
 		return CHANNEL;
@@ -242,6 +254,19 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		return getChannel().isRemotePresent(connection.getConnection());
 	}
 	
+	public static boolean isConnectedToDedicatedServer() {
+		return isConnectedToDedicatedServer;
+	}
+	
+	@EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
+	@Internal public static class LoginEventSubscriber {
+		@SubscribeEvent public static void onClientLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+			// LoggingIn event occurs after SDedicatedServerLoginPacket is handled, so we need
+			//   to compare a pair of login IDs to properly check if the packet was sent for this login
+			isConnectedToDedicatedServer = dedicatedServerLoginID == loginID++;
+		}
+	}
+	
 	// Registering ----------------------------------------------------
 	
 	@Internal public static void registerPackets() {
@@ -255,6 +280,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		registerServer(SSaveRemoteHotKeyGroupPacket::new);
 		registerServer(SSimpleConfigServerCommonConfigPacket::new);
 		registerServer(SSimpleConfigPatchReportPacket::new);
+		registerServer(SSimpleConfigServerPropertiesPacket::new);
 
 		registerClient(CSimpleConfigSyncPacket::new);
 		registerClient(CSimpleConfigSavePresetPacket::new);
@@ -267,9 +293,12 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		registerClient(CSimpleConfigSaveServerCommonConfigPacket::new);
 		registerClient(CSimpleConfigReleaseServerCommonConfigPacket::new);
 		registerClient(CSimpleConfigApplyPatchPacket::new);
+		registerClient(CSimpleConfigServerPropertiesRequestPacket::new);
 		
 		registerLogin(CAcknowledgePacket::new);
 		registerLogin(SLoginConfigDataPacket::new, SimpleConfigNetworkHandler::getLoginConfigDataPackets);
+		registerLogin(SDedicatedServerLoginPacket::new, isLocal -> Lists.newArrayList(
+		  Pair.of(MINECRAFT_MOD_ID, new SDedicatedServerLoginPacket(!isLocal))));
 	}
 	
 	private static <Packet extends CAbstractPacket> void registerClient(Supplier<Packet> factory) {
@@ -533,6 +562,27 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		@Override public void read(FriendlyByteBuf buf) {
 			modId = buf.readUtf(32767);
 			fileData = buf.readByteArray();
+		}
+	}
+	
+	protected static class SDedicatedServerLoginPacket extends SAbstractLoginPacket {
+		private boolean isDedicatedServer;
+		
+		public SDedicatedServerLoginPacket() {}
+		public SDedicatedServerLoginPacket(boolean isDedicatedServer) {
+			this.isDedicatedServer = isDedicatedServer;
+		}
+		
+		@Override public void onClient(Context ctx) {
+			if (isDedicatedServer) dedicatedServerLoginID = loginID;
+		}
+		
+		@Override public void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(isDedicatedServer);
+		}
+		
+		@Override public void read(FriendlyByteBuf buf) {
+			isDedicatedServer = buf.readBoolean();
 		}
 	}
 	
@@ -1592,11 +1642,97 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		return future;
 	}
 	
+	public static class SSimpleConfigServerPropertiesPacket extends SAbstractPacket {
+		private boolean protectedProperties;
+		private byte @Nullable[] data;
+		
+		public SSimpleConfigServerPropertiesPacket() {}
+		public SSimpleConfigServerPropertiesPacket(boolean protectedProperties, byte @Nullable[] data) {
+			this.protectedProperties = protectedProperties;
+			this.data = data;
+		}
+		
+		@Override public void onClient(Context ctx) {
+			SimpleConfigImpl config = SimpleConfigImpl.getConfigOrNull(MINECRAFT_MOD_ID, Type.SERVER);
+			CompletableFuture<Pair<Boolean, CommentedConfig>> future =
+			  CSimpleConfigServerPropertiesRequestPacket.FUTURE;
+			CSimpleConfigServerPropertiesRequestPacket.FUTURE = null;
+			if (config != null && data != null) {
+				CommentedConfig snapshot = deserializeSnapshot(config, data);
+				if (snapshot != null) future.complete(Pair.of(protectedProperties, snapshot));
+			}
+			if (!future.isDone()) future.completeExceptionally(
+			  new SimpleConfigPermissionException("Cannot fetch server properties"));
+		}
+		
+		@Override public void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(protectedProperties);
+			buf.writeBoolean(data != null);
+			if (data != null) buf.writeByteArray(data);
+		}
+		@Override public void read(FriendlyByteBuf buf) {
+			protectedProperties = buf.readBoolean();
+			data = buf.readBoolean()? buf.readByteArray() : null;
+		}
+	}
+	
+	public static class CSimpleConfigServerPropertiesRequestPacket extends CAbstractPacket {
+		private static CompletableFuture<Pair<Boolean, CommentedConfig>> FUTURE;
+		
+		@Override public void onServer(Context ctx) {
+			ServerPlayer sender = ctx.getSender();
+			if (sender == null) {
+				LOGGER.warn("Received server properties request packet from null sender");
+				return;
+			}
+			boolean dedicated = ServerLifecycleHooks.getCurrentServer().isDedicatedServer();
+			if (dedicated && permissions.canAccessServerProperties(sender)) {
+				SimpleConfigImpl config = SimpleConfigImpl.getConfigOrNull(MINECRAFT_MOD_ID, Type.SERVER);
+				if (config != null) {
+					CommentedConfig snapshot = config.takeSnapshot(
+					  false, false, p -> p.startsWith("properties."));
+					if (!snapshot.isEmpty()) {
+						new SSimpleConfigServerPropertiesPacket(
+						  MinecraftServerConfigWrapper.areProtectedPropertiesEditable(),
+						  serializeSnapshot(config, snapshot)
+						).sendTo(sender);
+						return;
+					} else LOGGER.warn("No server properties to serialize");
+				} else LOGGER.warn(
+				  "Could not serialize server properties because Minecraft config wrapper is null");
+			} else if (dedicated) LOGGER.info(
+			  "Server properties not sent to player " + sender.getScoreboardName() + " as " +
+			  "they don't have permission to access them.");
+			new SSimpleConfigServerPropertiesPacket(false, null).sendTo(sender);
+		}
+		
+		@Override public void write(FriendlyByteBuf buf) {}
+		@Override public void read(FriendlyByteBuf buf) {}
+	}
+	
+	@Internal public static CompletableFuture<Pair<Boolean, CommentedConfig>> requestServerProperties() {
+		if (!isConnectedToSimpleConfigServer())
+			return failedFuture(new IllegalStateException("Not connected to SimpleConfig server"));
+		CompletableFuture<Pair<Boolean, CommentedConfig>> future = new CompletableFuture<>();
+		CSimpleConfigServerPropertiesRequestPacket.FUTURE = future;
+		new CSimpleConfigServerPropertiesRequestPacket().send();
+		return future;
+	}
+	
 	public static class SimpleConfigSyncException extends RuntimeException {
 		public SimpleConfigSyncException(String message) {
 			super(message);
 		}
 		public SimpleConfigSyncException(String message, Throwable cause) {
+			super(message, cause);
+		}
+	}
+	
+	public static class SimpleConfigPermissionException extends RuntimeException {
+		public SimpleConfigPermissionException(String message) {
+			super(message);
+		}
+		public SimpleConfigPermissionException(String message, Throwable cause) {
 			super(message, cause);
 		}
 	}

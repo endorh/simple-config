@@ -88,6 +88,35 @@ fun <E : Enum<E>> enum(value: E) = option(value)
 fun <E : Enum<E>> option(value: E) = P.option(value)
 
 /**
+ * Option entry, like an enum but for arbitrary types.
+ *
+ * Supports variable allowed options, mainly intended to support
+ * environment dependent options (that don't change for a given
+ * installation).
+ *
+ * The set of allowed values is only checked upon modifications,
+ * so it's not reliable to modify it during a game session.
+ * @see [option]
+ */
+fun <T> option(value: T, options: () -> List<T>) = P.option(value, options)
+
+/**
+ * Option entry, like an enum but for arbitrary types.
+ *
+ * Can also support variable allowed options.
+ * @see [option]
+ */
+fun <T> option(value: T, options: List<T>?) = P.option(value, options)
+
+/**
+ * Option entry, like an enum but for arbitrary types.
+ *
+ * Can also support variable allowed options.
+ * @see [option]
+ */
+fun <T> option(value: T, vararg options: T) = P.option(value, *options)
+
+/**
  * Enum entry, defaults to the first value in the enum.
  */
 inline fun <reified E: Enum<E>> enum() = option(enumValues<E>()[0])
@@ -482,7 +511,7 @@ fun color(value: Long) = color(Color(value.toInt(), true)).also {
  *
  * Will use the flags of the passed regex to compile user input
  */
-fun regex(regex: Regex) = K.regex(regex)
+fun regex(regex: Regex = Regex("")) = K.regex(regex)
 
 /**
  * Regex entry
@@ -497,7 +526,7 @@ fun regex(@Language("RegExp") regex: String, vararg options: RegexOption) = K.re
  * Will use the pattern's flags to compile user input
  */
 @Deprecated("Use regex(Regex) instead", ReplaceWith("regex(pattern)"))
-fun pattern(pattern: Pattern) = P.pattern(pattern)
+fun pattern(pattern: Pattern = Pattern.compile("")) = P.pattern(pattern)
 
 /**
  * Java Regex pattern entry
