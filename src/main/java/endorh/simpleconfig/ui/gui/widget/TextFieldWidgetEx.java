@@ -112,7 +112,7 @@ public class TextFieldWidgetEx extends Widget {
 				this.text = text.substring(0, maxLength);
 			} else this.text = text;
 			
-			moveCaretToEnd();
+			moveCaretToStart();
 			setAnchorPos(caretPos);
 			onTextChange(text);
 		}

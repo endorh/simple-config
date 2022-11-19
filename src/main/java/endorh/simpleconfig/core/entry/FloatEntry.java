@@ -35,18 +35,6 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 			super(value, Float.class, "%.2f");
 		}
 		
-		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder min(float min) {
-			return super.min(min);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder max(float max) {
-			return super.max(max);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder range(float min, float max) {
-			return super.range(min, max);
-		}
-		
 		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder fieldScale(float scale) {
 			if (scale == 0F || !Float.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
@@ -70,9 +58,11 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 		protected void checkBounds() {
 			min = min == null ? Float.NEGATIVE_INFINITY : min;
 			max = max == null ? Float.POSITIVE_INFINITY : max;
+			float sMin = sliderMin != null? Math.max(min, sliderMin) : min;
+			float sMax = sliderMax != null? Math.min(max, sliderMax) : max;
 			if (min.isNaN() || max.isNaN())
 				throw new IllegalArgumentException("NaN bound in float config entry");
-			if (asSlider && (min.isInfinite() || max.isInfinite()))
+			if (asSlider && (Float.isInfinite(sMin) || Float.isInfinite(sMax)))
 				throw new IllegalArgumentException("Infinite bound in float config entry");
 			super.checkBounds();
 		}
@@ -104,6 +94,9 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 		} else {
 			final FloatSliderBuilder valBuilder =
 			  new FloatSliderBuilder(builder, getDisplayName(), get(), min, max)
+			    .setSliderMin(sliderMin)
+			    .setSliderMax(sliderMax)
+			    .setSliderMap(sliderMap)
 				 .setTextGetter(sliderTextSupplier);
 			return Optional.of(decorate(valBuilder));
 		}

@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
+import endorh.simpleconfig.core.wrap.ConfigEntryDelegate;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -54,6 +55,7 @@ public abstract class AbstractConfigEntryBuilder<
 	protected Set<EntryTag> tags = new HashSet<>();
 	protected BackingFieldBuilder<V, ?> backingFieldBuilder;
 	protected List<BackingFieldBinding<V, ?>> backingFieldBindings = new ArrayList<>();
+	protected @Nullable ConfigEntryDelegate<V> delegate = null;
 	
 	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
 		this.value = value;
@@ -84,6 +86,10 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	@Override @Internal public V getValue() {
 		return value;
+	}
+	
+	@Internal public Class<?> getTypeClass() {
+		return typeClass;
 	}
 	
 	@Contract(pure=true)
@@ -275,7 +281,7 @@ public abstract class AbstractConfigEntryBuilder<
 	}
 	
 	@Contract(pure=true)
-	@Internal protected SelfImpl translation(@Nullable String translation) {
+	@Internal public SelfImpl translation(@Nullable String translation) {
 		SelfImpl copy = copy();
 		copy.translation = translation;
 		return copy;
@@ -291,6 +297,12 @@ public abstract class AbstractConfigEntryBuilder<
 		SelfImpl copy = copy();
 		Arrays.stream(tags).forEach(copy.tags::remove);
 		return copy.castSelf();
+	}
+	
+	@Internal @Contract(pure=true) public SelfImpl withDelegate(@Nullable ConfigEntryDelegate<V> delegate) {
+		SelfImpl copy = copy();
+		copy.delegate = delegate;
+		return copy;
 	}
 	
 	/**
@@ -320,6 +332,7 @@ public abstract class AbstractConfigEntryBuilder<
 		// if (!e.isValidValue(value))
 		// 	throw new InvalidDefaultConfigValueException(e.getGlobalPath(), value);
 		if (buildListener != null) buildListener.accept(e);
+		if (delegate != null) e.setDelegate(delegate);
 		return e;
 	}
 	
@@ -346,6 +359,7 @@ public abstract class AbstractConfigEntryBuilder<
 		final SelfImpl copy = createCopy(value);
 		copy.value = value;
 		copy.translation = translation;
+		copy.buildListener = buildListener;
 		copy.errorSupplier = errorSupplier;
 		copy.tooltipSupplier = tooltipSupplier;
 		copy.nameArgs = new ArrayList<>(nameArgs);
@@ -356,8 +370,10 @@ public abstract class AbstractConfigEntryBuilder<
 		copy.editableSupplier = editableSupplier;
 		copy.nonPersistent = nonPersistent;
 		copy.ignored = ignored;
+		copy.backingFieldBuilder = backingFieldBuilder;
 		copy.backingFieldBindings = new ArrayList<>(backingFieldBindings);
 		copy.tags = new HashSet<>(tags);
+		copy.delegate = delegate;
 		return copy;
 	}
 }

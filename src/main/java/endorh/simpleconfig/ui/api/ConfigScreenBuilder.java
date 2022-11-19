@@ -13,6 +13,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -55,6 +56,7 @@ public interface ConfigScreenBuilder {
 	boolean isEditable();
 	ConfigScreenBuilder setEditable(boolean editable);
 	
+	@Internal List<ConfigCategoryBuilder> getCategories(EditType type);
 	ConfigCategoryBuilder getOrCreateCategory(String name, EditType type);
 	ConfigScreenBuilder removeCategory(String name, EditType type);
 	ConfigScreenBuilder removeCategoryIfExists(String name, EditType type);

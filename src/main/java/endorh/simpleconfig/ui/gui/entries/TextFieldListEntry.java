@@ -2,13 +2,13 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.client.gui.chat.NarratorChatListener;
@@ -76,9 +76,18 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {
+		boolean prev = isFocused();
 		super.updateFocused(isFocused);
-		if (!isFocused)
-			WidgetUtils.forceUnFocus(textFieldWidget);
+		if (!isFocused && prev) {
+			textFieldWidget.setAnchorPos(textFieldWidget.getCaret());
+			textFieldWidget.setFocused(false);
+		}
+	}
+	
+	@Override protected void acquireFocus() {
+		super.acquireFocus();
+		textFieldWidget.moveCaretToEnd();
+		textFieldWidget.setAnchorPos(0);
 	}
 	
 	@Override public void tick() {

@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -59,6 +60,10 @@ public interface ConfigBuilderFactory {
 	
 	@NotNull @Deprecated <E extends Enum<E>> EnumEntryBuilder<E> enum_(E value);
 	@NotNull <E extends Enum<E>> EnumEntryBuilder<E> option(E value);
+	
+	@NotNull <T> OptionEntryBuilder<@NotNull T> option(T value, List<T> options);
+	@NotNull <T> OptionEntryBuilder<@NotNull T> option(T value, Supplier<List<T>> options);
+	@NotNull <T> OptionEntryBuilder<@NotNull T> option(T value, T... options);
 	
 	// Buttons
 	

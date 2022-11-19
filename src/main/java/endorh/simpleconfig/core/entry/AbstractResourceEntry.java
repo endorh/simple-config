@@ -61,8 +61,8 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 			return entry;
 		}
 		
-		@Override public SelfImpl copy() {
-			final SelfImpl copy = super.copy();
+		@Override public SelfImpl copy(ResourceLocation value) {
+			final SelfImpl copy = super.copy(value);
 			copy.suggestionSupplier = suggestionSupplier;
 			copy.suggestionMode = suggestionMode;
 			return copy;

@@ -14,6 +14,8 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -281,8 +283,9 @@ public class ConfigHotKeyManager {
 				Object enabled = value.get("enabled");
 				group.setEnabled(enabled instanceof Boolean ? (Boolean) enabled : true);
 				Object groupKey = value.get("key");
-				group.setKeyMapping(groupKey instanceof String?
-				                    KeyBindMapping.parse(((String) groupKey)) : KeyBindMapping.unset());
+				group.setKeyMapping(groupKey instanceof String
+				                    ? KeyBindMapping.parse((String) groupKey)
+				                    : KeyBindMapping.unset());
 				Object entries = value.get("entries");
 				if (entries instanceof PairList) {
 					((PairList<?, ?>) entries).forEach((k, v) -> {
@@ -323,5 +326,16 @@ public class ConfigHotKeyManager {
 	public interface IConfigHotKeyGroupEntry extends IConfigHotKey {
 		Object getSerializationKey();
 		Object serialize();
+	}
+	
+	@EventBusSubscriber(value=Dist.CLIENT, modid=SimpleConfigMod.MOD_ID)
+	public static class ServerConfigHotkeyReloader {
+		/**
+		 * Reload config hotkeys when logging into a server, in order to load
+		 * server config hotkeys.
+		 */
+		@SubscribeEvent public static void onConnectToServer(ClientPlayerNetworkEvent.LoggedInEvent event) {
+			INSTANCE.loadHotkeys();
+		}
 	}
 }

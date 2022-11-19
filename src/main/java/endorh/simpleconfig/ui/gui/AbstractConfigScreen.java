@@ -36,6 +36,7 @@ import net.minecraft.client.util.InputMappings;
 import net.minecraft.client.util.InputMappings.Input;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.ITextComponent;
@@ -273,7 +274,18 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	/**
-	 * Run an atomic action, which is committed to the history as a single step.
+	 * Perform a batch of modifications that won't be recorded in the history.<br>
+	 * <b>Only useful for loading purposes.</b> Instead, consider using
+	 * {@link #runAtomicTransparentAction(Runnable)}.
+	 *
+	 * @param action Action to run.
+	 */
+	public void runUnrecordedAction(Runnable action) {
+		getHistory().runUnrecordedAction(action);
+	}
+	
+	/**
+	 * Run an atomic action, which is committed to the history as a single step.<br>
 	 * Atomic actions triggered within the action will also be joined in the same step.
 	 *
 	 * @param action Action to run
@@ -571,17 +583,28 @@ public abstract class AbstractConfigScreen extends Screen
 		  SimpleSound.master(SimpleConfigMod.UI_TAP, volume));
 	}
 	
+	protected void playFeedbackClick(float volume) {
+		Minecraft.getInstance().getSoundHandler().play(
+		  SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, volume));
+	}
+	
 	protected boolean screenKeyPressed(int keyCode, int scanCode, int modifiers) {
 		Input key = InputMappings.getInputByCode(keyCode, scanCode);
 		if (KeyBindings.NEXT_PAGE.isActiveAndMatches(key)) {
+			EditType prevType = getEditedType();
 			selectNextCategory(true);
 			recomputeFocus();
-			playFeedbackTap(1F);
+			if (prevType == getEditedType()) {
+				playFeedbackTap(1F);
+			} else playFeedbackClick(1F);
 			return true;
 		} else if (KeyBindings.PREV_PAGE.isActiveAndMatches(key)) {
+			EditType prevType = getEditedType();
 			selectNextCategory(false);
 			recomputeFocus();
-			playFeedbackTap(1F);
+			if (prevType == getEditedType()) {
+				playFeedbackTap(1F);
+			} else playFeedbackClick(1F);
 			return true;
 		} else if (KeyBindings.SAVE.isActiveAndMatches(key)) {
 			if (isEditingConfigHotKey()) {

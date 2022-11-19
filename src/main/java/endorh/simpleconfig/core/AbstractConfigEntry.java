@@ -15,6 +15,7 @@ import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
+import endorh.simpleconfig.core.wrap.ConfigEntryDelegate;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -100,6 +101,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	protected V actualValue = null;
 	protected @Nullable ConfigValue<?> configValue = null;
 	protected boolean ignored = false;
+	protected @Nullable ConfigEntryDelegate<V> delegate = null;
 	
 	protected AbstractConfigEntry(
 	  ConfigEntryHolder parent, String name, V defValue
@@ -115,6 +117,14 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	
 	@Internal public SimpleConfig getRoot() {
 		return getParent().getRoot();
+	}
+	
+	public @Nullable ConfigEntryDelegate<V> getDelegate() {
+		return delegate;
+	}
+	
+	public void setDelegate(@Nullable ConfigEntryDelegate<V> delegate) {
+		this.delegate = delegate;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -633,27 +643,26 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 	
 	@Internal public V get() {
+		if (delegate != null) {
+			V v = delegate.getValue();
+			return v != null? v : defValue;
+		}
 		if (nonPersistent) return actualValue;
 		if (configValue == null) throw new NoSuchConfigEntryError(getGlobalPath());
 		return get(configValue);
 	}
 	
 	@Internal public void set(V value) {
-		if (!isValidValue(value))
+		if (!trySet(value))
 			throw new InvalidConfigValueException(getGlobalPath(), value);
-		if (nonPersistent) {
-			actualValue = value;
-		} else if (configValue == null) {
-			throw new NoSuchConfigEntryError(getGlobalPath());
-		} else {
-			set(configValue, value);
-		}
 		if (hasGUI()) setGUIAsExternal(forGui(value), false);
 	}
 	
 	@Internal public boolean trySet(V value) {
 		if (isValidValue(value)) {
-			if (nonPersistent) {
+			if (delegate != null) {
+				delegate.setValue(value);
+			} else if (nonPersistent) {
 				actualValue = value;
 			} else if (configValue == null) {
 				throw new NoSuchConfigEntryError(getGlobalPath());

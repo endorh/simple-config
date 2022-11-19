@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class INBTEntry extends AbstractSerializableEntry<INBT, INBTEntry> {
+public class INBTEntry extends AbstractSerializableEntry<INBT> {
 	@Internal public INBTEntry(ConfigEntryHolder parent, String name, INBT value) {
 		super(parent, name, value, INBT.class);
 	}

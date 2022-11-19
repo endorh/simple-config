@@ -39,11 +39,11 @@ public class DoubleSliderEntry extends SliderListEntry<Double> {
 		}
 		
 		@Override public Double getValue() {
-			return min + ((max - min) * sliderValue);
+			return sliderMin + (sliderMax - sliderMin) * getSliderValue();
 		}
 		
 		@Override public void setValue(final Double v) {
-			sliderValue = (v - min) / (max - min);
+			setSliderValue((v - sliderMin) / (sliderMax - sliderMin));
 		}
 	}
 }

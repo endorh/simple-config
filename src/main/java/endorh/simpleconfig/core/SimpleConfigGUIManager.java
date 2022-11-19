@@ -4,6 +4,8 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.config.ClientConfig.OptionsButtonBehaviour;
 import endorh.simpleconfig.config.ClientConfig.menu;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
@@ -14,25 +16,38 @@ import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.DialogScreen;
 import endorh.simpleconfig.ui.gui.InfoDialog;
+import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
+import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
+import net.minecraft.client.gui.screen.MainMenuScreen;
+import net.minecraft.client.gui.screen.OptionsScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.Widget;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.gui.widget.button.ImageButton;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.client.gui.screen.ModListScreen;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper.UnableToAccessFieldException;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +64,8 @@ import static java.util.Collections.synchronizedMap;
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
 public class SimpleConfigGUIManager {
+	private static final Logger LOGGER = LogManager.getLogger();
+	
 	// Mod loading is asynchronous
 	protected static final Map<String, Map<Type, SimpleConfigImpl>> modConfigs = synchronizedMap(new HashMap<>());
 	private static final Map<String, AbstractConfigScreen> activeScreens = new HashMap<>();
@@ -62,6 +79,7 @@ public class SimpleConfigGUIManager {
 	private static int guiSession;
 	private static final Map<String, Integer> guiSessions = new HashMap<>();
 	private static final Map<String, IConfigScreenGUIState> guiStates = new HashMap<>();
+	private static final String MINECRAFT_MOD_ID = "minecraft";
 	
 	@Internal public static int getGuiSession() {
 		return guiSession;
@@ -104,6 +122,27 @@ public class SimpleConfigGUIManager {
 		} else modConfigs.get(modId).put(config.getType(), config);
 	}
 	
+	private static void reRegisterMenus() {
+		ModList.get().forEachModContainer((modId, container) -> {
+			if (modConfigs.containsKey(modId)) {
+				container.getCustomExtension(ExtensionPoint.CONFIGGUIFACTORY).ifPresent(f -> {
+					if (!(f instanceof ConfigGUIFactory))
+						container.registerExtensionPoint(
+						  ExtensionPoint.CONFIGGUIFACTORY, () -> new ConfigGUIFactory(modId));
+				});
+			}
+		});
+	}
+	
+	@EventBusSubscriber(value=Dist.CLIENT, bus=Bus.MOD, modid=SimpleConfigMod.MOD_ID)
+	private static class ModEventSubscriber {
+		@SubscribeEvent(priority=EventPriority.LOWEST)
+		public static void onLoadComplete(FMLLoadCompleteEvent event) {
+			if (CommonConfig.menu.prevent_external_menu_replacement)
+				event.enqueueWork(SimpleConfigGUIManager::reRegisterMenus);
+		}
+	}
+	
 	/**
 	 * Used for marking instead of an anonymous lambda.
 	 */
@@ -124,10 +163,12 @@ public class SimpleConfigGUIManager {
 	public static Screen getNoServerDialogScreen(Screen parent) {
 		return new DialogScreen(parent, InfoDialog.create(
 		  new TranslationTextComponent("simpleconfig.error.no_server.dialog.title"),
-		  SimpleConfigTextUtil.splitTtc("simpleconfig.error.no_server.dialog.body"), d -> {
-			  d.setConfirmText(new TranslationTextComponent("gui.ok"));
-		  }
+		  SimpleConfigTextUtil.splitTtc("simpleconfig.error.no_server.dialog.body"), d -> d.setConfirmText(new TranslationTextComponent("gui.ok"))
 		));
+	}
+	
+	public static boolean hasConfigGUI(String modId) {
+		return modConfigs.containsKey(modId);
 	}
 	
 	public static Screen getConfigGUIForHotKey(
@@ -286,19 +327,30 @@ public class SimpleConfigGUIManager {
 			return;
 		final Screen gui = event.getGui();
 		if (gui instanceof IngameMenuScreen) {
+			if (hasConfigGUI(MINECRAFT_MOD_ID))
+				getOptionsButton(gui, event.getWidgetList(), false)
+				  .ifPresent(b -> lastOptionsButton = b);
 			// Coordinates taken from IngameMenuScreen#addButtons
 			int w = 20, h = 20, x, y;
 			switch (menu.menu_button_position) {
 				case TOP_LEFT_CORNER:
-					x = 8; y = 8; break;
+					x = 8;
+					y = 8;
+					break;
 				case TOP_RIGHT_CORNER:
-					x = gui.width - 28; y = 8; break;
+					x = gui.width - 28;
+					y = 8;
+					break;
 				case BOTTOM_LEFT_CORNER:
-					x = 8; y = gui.height - 28; break;
+					x = 8;
+					y = gui.height - 28;
+					break;
 				case BOTTOM_RIGHT_CORNER:
-					x = gui.width - 28; y = gui.height - 28; break;
+					x = gui.width - 28;
+					y = gui.height - 28;
+					break;
 				case SPLIT_OPTIONS_BUTTON:
-					Optional<Button> opt = getOptionsButton(gui, event.getWidgetList());
+					Optional<Button> opt = getOptionsButton(gui, event.getWidgetList(), true);
 					if (opt.isPresent()) {
 						Button options = opt.get();
 						options.setWidth(options.getWidth() - 20 - 4);
@@ -319,26 +371,66 @@ public class SimpleConfigGUIManager {
 			  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/menu.png"),
 			  32, 64, p -> showModListGUI());
 			event.addWidget(modOptions);
+		} else if (gui instanceof MainMenuScreen && hasConfigGUI(MINECRAFT_MOD_ID)) {
+			getOptionsButton(gui, event.getWidgetList(), false)
+			  .ifPresent(b -> lastOptionsButton = b);
+		} else if (gui instanceof OptionsScreen && hasConfigGUI(MINECRAFT_MOD_ID)) {
+			Screen last = getLastScreen((OptionsScreen) gui).orElse(gui);
+			MultiFunctionImageButton b = MultiFunctionImageButton.of(
+			  Buttons.GEAR, ButtonAction.of(
+				 () -> Minecraft.getInstance().displayGuiScreen(
+				   getConfigGUI(MINECRAFT_MOD_ID, last))));
+			b.setPosition(10, gui.height - 10 - b.getHeightRealms());
+			event.addWidget(b);
+		}
+	}
+	
+	private static Optional<Screen> getLastScreen(OptionsScreen gui) {
+		try {
+			return Optional.ofNullable(ObfuscationReflectionHelper.getPrivateValue(
+			  OptionsScreen.class, gui, "field_146441_g"));
+		} catch (UnableToAccessFieldException e) {
+			LOGGER.error("Couldn't access field OptionsScreen#lastScreen", e);
+			return Optional.empty();
 		}
 	}
 	
 	/**
 	 * Try to find the Options button in the game menu<br>
-	 * Checks its position and size before returning, so it returns
+	 * Can check its position and size before returning, so it returns
 	 * empty if the button does not match the expected placement<br>
 	 */
-	public static Optional<Button> getOptionsButton(Screen gui, List<Widget> widgets) {
-		final int x = gui.width / 2 - 102, y = gui.height / 4 + 96 - 16;
-		for (Widget widget : widgets) {
-			if (widget instanceof Button) {
-				Button but = (Button) widget;
-				if (but.getMessage().getString().equals(I18n.format("menu.options"))) {
-					if (but.x == x && but.y == y && but.getWidth() == 98) {
-						return Optional.of(but);
-					}
+	public static Optional<Button> getOptionsButton(
+	  Screen gui, List<Widget> widgets, boolean checkDimensions
+	) {
+		int x = gui.width / 2 - (gui instanceof MainMenuScreen? 100 : 102);
+		int y = gui instanceof MainMenuScreen? gui.height / 4 + 48 + 72 + 12 : gui.height / 4 + 96 - 16;
+		int width = 98;
+		return widgets.stream()
+		  .filter(l -> l instanceof Button).map(l -> (Button) l)
+		  .filter(b -> {
+			  ITextComponent m = b.getMessage();
+			  return m instanceof TranslationTextComponent
+			         && "menu.options".equals(((TranslationTextComponent) m).getKey());
+		  }).findFirst()
+		  .filter(b -> !checkDimensions || b.x == x && b.y == y && b.getWidth() == width);
+	}
+	
+	private static Button lastOptionsButton = null;
+	@SubscribeEvent
+	public static void onButtonClick(GuiScreenEvent.MouseClickedEvent.Pre event) {
+		if (menu.options_button_behaviour == OptionsButtonBehaviour.DEFAULT || lastOptionsButton == null) return;
+		Screen screen = Minecraft.getInstance().currentScreen;
+		if ((screen instanceof IngameMenuScreen || screen instanceof MainMenuScreen)
+		    && lastOptionsButton.isMouseOver(event.getMouseX(), event.getMouseY())) {
+			if (menu.options_button_behaviour == OptionsButtonBehaviour.MAIN_CLICK
+			    ? event.getButton() != 1 && !Screen.hasShiftDown()
+			    : event.getButton() == 1 || Screen.hasShiftDown()) {
+				if (hasConfigGUI(MINECRAFT_MOD_ID)) {
+					showConfigGUI(MINECRAFT_MOD_ID);
+					event.setCanceled(true);
 				}
 			}
 		}
-		return Optional.empty();
 	}
 }

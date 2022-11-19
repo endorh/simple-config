@@ -1,6 +1,8 @@
 package endorh.simpleconfig.api;
 
+import com.google.common.collect.Lists;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.*;
 import net.minecraft.util.text.ITextProperties.IStyledTextAcceptor;
 import net.minecraftforge.api.distmarker.Dist;
@@ -233,6 +235,21 @@ import static java.lang.Math.min;
 	 */
 	@OnlyIn(Dist.CLIENT)
 	@Internal public static @NotNull List<ITextComponent> splitTtc(@NotNull String key, Object... args) {
+		List<ITextComponent> ls = optSplitTtc(key, args);
+		if (ls.isEmpty()) ls.add(new StringTextComponent(key));
+		return ls;
+	}
+	
+	/**
+	 * Separate a translation text component on each line break<br>
+	 * Line breaks added by format arguments aren't considered<br>
+	 * Only works on the client side<br>
+	 * <b>Internal utils</b>, see the LazuLib mod for an updated version of these methods
+	 */
+	@OnlyIn(Dist.CLIENT)
+	@Internal public static @NotNull List<ITextComponent> optSplitTtc(
+	  @NotNull String key, Object... args
+	) {
 		if (I18n.hasKey(key)) {
 			// We add the explicit indexes, so relative/implicit indexes
 			//   preserve meaning after splitting
@@ -267,11 +284,7 @@ import static java.lang.Math.min;
 				components.add(built);
 			}
 			return components;
-		} else {
-			List<ITextComponent> components = new ArrayList<>();
-			components.add(new StringTextComponent(key));
-			return components;
-		}
+		} else return Lists.newArrayList();
 	}
 	
 	protected static final Pattern FS_INDEX_PATTERN = Pattern.compile(
@@ -300,5 +313,47 @@ import static java.lang.Math.min;
 		}
 		m.appendTail(sb);
 		return sb.toString();
+	}
+	
+	/**
+	 * Convert an {@link IReorderingProcessor} into a {@link ITextComponent}
+	 */
+	@Internal public static ITextComponent asComponent(IReorderingProcessor sequence) {
+		return new ReorderingProcessorConverter(sequence).convert();
+	}
+	
+	private static class ReorderingProcessorConverter {
+		private Style style = Style.EMPTY;
+		private IFormattableTextComponent component = null;
+		private StringBuilder builder = new StringBuilder();
+		private final IReorderingProcessor sequence;
+		
+		public ReorderingProcessorConverter(IReorderingProcessor sequence) {
+			this.sequence = sequence;
+		}
+		
+		public IFormattableTextComponent convert() {
+			sequence.accept(this::append);
+			if (builder.length() > 0) flush();
+			return component != null? component : StringTextComponent.EMPTY.deepCopy();
+		}
+		
+		private boolean append(int width, Style style, int ch) {
+			if (this.style != style) {
+				if (builder.length() > 0) {
+					flush();
+					builder = new StringBuilder();
+				}
+				this.style = style;
+			}
+			builder.appendCodePoint(ch);
+			return true;
+		}
+		
+		private void flush() {
+			if (component == null) {
+				component = new StringTextComponent(builder.toString()).setStyle(style);
+			} else component.append(new StringTextComponent(builder.toString()).setStyle(style));
+		}
 	}
 }

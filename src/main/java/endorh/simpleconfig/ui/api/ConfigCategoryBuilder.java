@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface ConfigCategoryBuilder {
@@ -37,6 +39,9 @@ public interface ConfigCategoryBuilder {
 	
 	boolean isEditable();
 	void setEditable(boolean editable);
+	
+	@Nullable CompletableFuture<Function<ConfigCategory, Boolean>> getLoadingFuture();
+	void setLoadingFuture(@Nullable CompletableFuture<Function<ConfigCategory, Boolean>> future);
 	
 	Icon getIcon();
 	void setIcon(Icon icon);

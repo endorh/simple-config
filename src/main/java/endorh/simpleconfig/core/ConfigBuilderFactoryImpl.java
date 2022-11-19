@@ -20,6 +20,7 @@ import net.minecraft.item.Item;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
@@ -33,7 +34,10 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
+
+import static java.lang.Math.round;
 
 @Internal public class ConfigBuilderFactoryImpl implements ConfigBuilderFactory {
 	@Internal public ConfigBuilderFactoryImpl() {}
@@ -88,6 +92,21 @@ import java.util.regex.Pattern;
 	
 	@Override public <E extends Enum<E>> EnumEntry.@NotNull Builder<E> option(E value) {
 		return new EnumEntry.Builder<>(value);
+	}
+	
+	@Override public @NotNull <T> OptionEntryBuilder<@NotNull T> option(T value, List<T> options) {
+		return new OptionEntry.Builder<>(value).withOptions(options);
+	}
+	
+	@Override
+	public @NotNull <T> OptionEntryBuilder<@NotNull T> option(T value, Supplier<List<T>> options) {
+		return new OptionEntry.Builder<>(value).withOptions(options);
+	}
+	
+	@SafeVarargs @Override public final @NotNull <T> OptionEntryBuilder<@NotNull T> option(
+	  T value, T... options
+	) {
+		return new OptionEntry.Builder<>(value).withOptions(options);
 	}
 	
 	
@@ -242,7 +261,8 @@ import java.util.regex.Pattern;
 	}
 	
 	@Override public @NotNull FloatEntryBuilder volume(float value) {
-		return fraction(value).slider("simpleconfig.format.slider.volume");
+		return fraction(value).slider(v -> new TranslationTextComponent(
+		  "simpleconfig.format.slider.volume", round(v * 100F)));
 	}
 	
 	@Override public @NotNull FloatEntryBuilder volume() {
@@ -250,7 +270,8 @@ import java.util.regex.Pattern;
 	}
 	
 	@Override public @NotNull DoubleEntryBuilder volume(double value) {
-		return fraction(value).slider("simpleconfig.format.slider.volume");
+		return fraction(value).slider(v -> new TranslationTextComponent(
+		  "simpleconfig.format.slider.volume", round(v * 100D)));
 	}
 	
 	@Override public @NotNull DoubleRangeEntry.Builder range(DoubleRange range) {

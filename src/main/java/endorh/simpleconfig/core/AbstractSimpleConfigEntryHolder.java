@@ -23,6 +23,7 @@ import org.yaml.snakeyaml.comments.CommentLine;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
@@ -99,7 +100,8 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 	}
 	
 	protected void saveSnapshot(
-	  CommentedConfig config, boolean fromGUI, boolean fromRemote, @Nullable Set<String> selectedPaths
+	  CommentedConfig config, boolean fromGUI, boolean fromRemote,
+	  @Nullable Predicate<String> selectedPaths
 	) {
 		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
 			final CommentedConfig subConfig = config.createSubConfig();
@@ -111,7 +113,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 			//noinspection unchecked
 			final AbstractConfigEntry<?, Object, ?> entry =
 			  (AbstractConfigEntry<?, Object, ?>) e.getValue();
-			if ((selectedPaths == null || selectedPaths.contains(entry.getPath())) && !entry.nonPersistent)
+			if ((selectedPaths == null || selectedPaths.test(entry.getPath())) && !entry.nonPersistent)
 				entry.put(
 				  config,
 				  fromGUI
@@ -121,7 +123,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 	}
 	
 	protected void loadSnapshot(
-	  CommentedConfig config, boolean intoGUI, boolean forRemote, @Nullable Set<String> selectedPaths
+	  CommentedConfig config, boolean intoGUI, boolean forRemote, @Nullable Predicate<String> selectedPaths
 	) {
 		for (Entry<String, ? extends AbstractSimpleConfigEntryHolder> e : children.entrySet()) {
 			if (config.contains(e.getKey())) {
@@ -133,7 +135,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 		for (Entry<String, AbstractConfigEntry<?, ?, ?>> e : entries.entrySet()) {
 			//noinspection unchecked
 			AbstractConfigEntry<?, Object, ?> entry = (AbstractConfigEntry<?, Object, ?>) e.getValue();
-			if ((selectedPaths == null || selectedPaths.contains(entry.getPath()))
+			if ((selectedPaths == null || selectedPaths.test(entry.getPath()))
 			    && config.contains(e.getKey()) && !entry.nonPersistent) {
 				try {
 					if (intoGUI) {

@@ -67,6 +67,7 @@ public class SimpleConfigBuilderImpl
 	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator = null;
 	protected @Nullable ResourceLocation background = null;
 	protected boolean transparent = true;
+	protected boolean isWrapper;
 	
 	protected SimpleConfigBuilderImpl(String modId, Type type) { this(modId, type, null); }
 	
@@ -356,7 +357,7 @@ public class SimpleConfigBuilderImpl
 					buildTranslations(entry);
 					entry.backingField = getBackingField(name);
 					entry.secondaryBackingFields = getSecondaryBackingFields(name);
-					builder.build(entry);
+					builder.build(value, entry);
 				}
 			});
 			boolean forceExpanded = this.groups.size() == 1 && entries.isEmpty();
@@ -554,7 +555,7 @@ public class SimpleConfigBuilderImpl
 				buildTranslations(heldEntry);
 				heldEntry.backingField = getBackingField(heldEntryName);
 				heldEntry.secondaryBackingFields = getSecondaryBackingFields(heldEntryName);
-				builder.build(heldEntry);
+				builder.build(heldEntryBuilder, heldEntry);
 			}
 			entries.forEach((name, b) -> {
 				if (b == heldEntryBuilder || !builder.canBuildEntry(name)) return;
@@ -563,7 +564,7 @@ public class SimpleConfigBuilderImpl
 				buildTranslations(entry);
 				entry.backingField = getBackingField(name);
 				entry.secondaryBackingFields = getSecondaryBackingFields(name);
-				builder.build(entry);
+				builder.build(b, entry);
 			});
 			boolean forceExpanded = groups.size() == 1 && entries.isEmpty();
 			for (String name : groups.keySet()) {
@@ -610,11 +611,18 @@ public class SimpleConfigBuilderImpl
 		}
 	}
 	
+	@Internal public @NotNull SimpleConfigBuilderImpl markAsWrapper() {
+		this.isWrapper = true;
+		return this;
+	}
+	
 	@Override public @NotNull SimpleConfigImpl buildAndRegister(@NotNull IEventBus modEventBus) {
 		return buildAndRegister(modEventBus, new ForgeConfigSpecConfigValueBuilder());
 	}
 	
-	@Internal protected SimpleConfigImpl buildAndRegister(IEventBus modEventBus, ConfigValueBuilder builder) {
+	@Internal public SimpleConfigImpl buildAndRegister(
+	  IEventBus modEventBus, ConfigValueBuilder builder
+	) {
 		preBuildHook();
 		if (type == SimpleConfig.Type.SERVER) {
 			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
@@ -638,7 +646,7 @@ public class SimpleConfigBuilderImpl
 				buildTranslations(entry);
 				entry.backingField = getBackingField(name);
 				entry.secondaryBackingFields = getSecondaryBackingFields(name);
-				builder.build(entry);
+				builder.build(value, entry);
 			}
 		});
 		SimpleConfigCategoryImpl defaultCategory = this.defaultCategory.build(config, builder, true);
@@ -682,7 +690,9 @@ public class SimpleConfigBuilderImpl
 		public boolean canBuildSection(String name) {
 			return true;
 		}
-		public abstract void build(AbstractConfigEntry<?, ?, ?> entry);
+		public abstract void build(
+		  AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entryBuilder,
+		  AbstractConfigEntry<?, ?, ?> entry);
 		public void enterSection(String name) {}
 		public void exitSection() {}
 		public abstract ForgeConfigSpec build();
@@ -697,7 +707,11 @@ public class SimpleConfigBuilderImpl
 			config.build(modContainer, modConfig);
 			modContainer.addConfig(modConfig);
 		}
-		@Override public void build(AbstractConfigEntry<?, ?, ?> entry) {
+		
+		@Override public void build(
+		  AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> entryBuilder,
+		  AbstractConfigEntry<?, ?, ?> entry
+		) {
 			entry.buildConfig(builder);
 		}
 		@Override public void enterSection(String name) {

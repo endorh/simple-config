@@ -43,12 +43,12 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	) {
 		super(x, y, 20, 200, Icon.EMPTY, ButtonAction.of(() -> {
 			if (category != null) screen.setSelectedCategory(category);
-		})/*.tint(category.getColor())*/
-		  .icon(category.getIcon())
+		}).icon(category.getIcon())
 		  .title(() -> screen.isSelecting() ? title.deepCopy().append(new StringTextComponent(
 		    " [" + category.getAllMainEntries().stream().filter(
 			   AbstractConfigField::isSelected).count() + "]"
-		  ).mergeStyle(TextFormatting.AQUA)) : title));
+		  ).mergeStyle(TextFormatting.AQUA)) : title)
+		  .active(category::isLoaded));
 		this.descriptionSupplier = descriptionSupplier;
 		this.category = category;
 		this.screen = screen;
@@ -80,7 +80,10 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	  @NotNull MatrixStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		int c = category.getColor();
-		if (c != lastColor) updateColors();
+		if (c != lastColor) {
+			lastColor = c;
+			updateColors();
+		}
 		if (isSelected()) {
 			defaultTint = lastLight;
 		} else defaultTint = lastDark;

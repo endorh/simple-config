@@ -5,8 +5,8 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
-import endorh.simpleconfig.demo.DemoServerCategory;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.demo.DemoServerCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -20,6 +20,7 @@ import net.minecraft.util.text.event.HoverEvent;
 import net.minecraft.util.text.event.HoverEvent.Action;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
@@ -178,6 +179,7 @@ public class ServerConfig {
 	
 	@Bind
 	public static class permissions {
+		private static final String MINECRAFT_MOD_ID = "minecraft";
 		// Each role contains a list of players
 		//   The roles "[op]" and "[all]" are reserved
 		@Bind public static Map<String, List<String>> roles;
@@ -193,8 +195,7 @@ public class ServerConfig {
 		  rules;
 		@Bind public static List<Pair<String, Boolean>> hotkey_rules;
 		
-		@OnlyIn(
-		  Dist.CLIENT)
+		@OnlyIn(Dist.CLIENT)
 		public static Pair<ConfigPermission, PresetPermission> permissionFor(String mod) {
 			ClientPlayerEntity player = Minecraft.getInstance().player;
 			return player == null? Pair.of(ConfigPermission.DENY, PresetPermission.LOAD_PRESETS)
@@ -232,6 +233,13 @@ public class ServerConfig {
 		@OnlyIn(Dist.CLIENT) public static boolean canEditServerHotKeys() {
 			ClientPlayerEntity player = Minecraft.getInstance().player;
 			return player != null && canEditServerHotKeys(player);
+		}
+		
+		public static boolean canAccessServerProperties(PlayerEntity player) {
+			return DistExecutor.unsafeRunForDist(() -> () -> false, () -> () -> {
+				MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+				return server.isDedicatedServer() && permissionFor(player, MINECRAFT_MOD_ID).getLeft().canEdit();
+			});
 		}
 		
 		public static boolean canEditServerHotKeys(PlayerEntity player) {

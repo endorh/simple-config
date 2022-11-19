@@ -59,7 +59,7 @@ public class EditHistory {
 	}
 	
 	/**
-	 * Perform a batch of modifications that won't be recorded in the history.
+	 * Perform a batch of modifications that won't be recorded in the history.<br>
 	 * <b>Only useful for loading purposes.</b> Instead, consider using
 	 * {@link #runAtomicTransparentAction(Runnable)}.
 	 * @param action Action to run.

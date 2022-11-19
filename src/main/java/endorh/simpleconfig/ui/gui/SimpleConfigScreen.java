@@ -63,6 +63,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -120,12 +121,14 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	protected final List<ConfigCategoryButton> tabButtons = Lists.newArrayList();
 	protected TooltipSearchBarWidget searchBar;
 	protected StatusDisplayBar statusDisplayBar;
+	protected boolean scheduledLayout = false;
 	
 	protected final Set<AbstractConfigField<?>> selectedEntries = new HashSet<>();
 	protected boolean isSelecting = false;
 	
 	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
-	protected IConfigScreenGUIState prevState;
+	protected IConfigScreenGUIState scheduledGUIState;
+	protected IConfigScreenGUIState lastRestoredGUIState;
 	protected boolean showingHelp = false;
 	
 	// Tick caches
@@ -149,6 +152,10 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		}
 		selectedCategory = sortedCategories.stream().findFirst().orElseThrow(
 		  () -> new IllegalArgumentException("No categories for config GUI"));
+		sortedCategories.stream().filter(c -> !c.isLoaded()).forEach(c -> {
+			CompletableFuture<Boolean> future = c.getLoadingFuture();
+			if (future != null) future.thenRun(() -> finishLoadingCategory(c));
+		});
 		lastCategories.put(selectedCategory.getType(), selectedCategory);
 		statusDisplayBar = new StatusDisplayBar(this);
 		searchBar = new TooltipSearchBarWidget(this, 0, 0, 256, this);
@@ -164,8 +171,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		modeButtonMap = Util.make(new EnumMap<>(EditType.class), m -> {
 			m.put(SimpleConfig.EditType.CLIENT, clientButton = createModeButton(SimpleConfig.EditType.CLIENT));
 			m.put(SimpleConfig.EditType.COMMON, commonButton = createModeButton(SimpleConfig.EditType.COMMON));
-			m.put(SimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(
-			  SimpleConfig.EditType.SERVER_COMMON));
+			m.put(SimpleConfig.EditType.SERVER_COMMON, remoteCommonButton = createModeButton(SimpleConfig.EditType.SERVER_COMMON));
 			m.put(SimpleConfig.EditType.SERVER, serverButton = createModeButton(SimpleConfig.EditType.SERVER));
 		});
 		
@@ -216,15 +222,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	}
 	
 	@NotNull private MultiFunctionIconButton createModeButton(EditType type) {
-		String alias = type.getAlias().replace('-', '.');
-		return MultiFunctionIconButton.of(Types.iconFor(type), 20, 70, ButtonAction.of(
-			 () -> showType(type)
-		  ).title(() -> new TranslationTextComponent("simpleconfig.config.category." + alias))
-		  .tooltip(
-			 () -> hasType(type) && getEditedType() != type
-			       ? Lists.newArrayList(new TranslationTextComponent("simpleconfig.ui.switch." + alias))
-			       : Collections.emptyList()
-		  ).active(() -> hasType(type)));
+		return new ConfigModeButton(this, type);
 	}
 	
 	protected static String getModNameOrId(String modId) {
@@ -300,6 +298,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	@Override protected void init() {
 		super.init();
+		scheduledLayout = false;
 		
 		// Toolbar
 		searchBar.w = width;
@@ -377,19 +376,20 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
 			pos(buttonLeftTab, 4, 27);
 			children.add(buttonLeftTab);
+			children.add(buttonRightTab);
 			tabButtons.clear();
 			int ww = 0;
 			for (ConfigCategory cat : getSortedTypeCategories()) {
 				final int w = font.getStringPropertyWidth(cat.getTitle());
-				ww += w + 2;
-				tabButtons.add(new ConfigCategoryButton(
+				ConfigCategoryButton b = new ConfigCategoryButton(
 				  this, cat, -100, 26,
-				  cat.getTitle(), cat.getDescription()));
+				  cat.getTitle(), cat.getDescription());
+				tabButtons.add(b);
+				ww += b.getWidth() + 2;
 			}
-			tabsMaximumScrolled = ww;
+			tabsMaximumScrolled = ww + 2;
 			children.addAll(tabButtons);
 			pos(buttonRightTab, width - 16, 27);
-			children.add(buttonRightTab);
 		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
 		
 		// Content
@@ -442,9 +442,9 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		// Post init
 		if (afterInitConsumer != null) afterInitConsumer.accept(this);
 		
-		if (prevState != null) {
-			IConfigScreenGUIState state = prevState;
-			prevState = null;
+		if (scheduledGUIState != null) {
+			IConfigScreenGUIState state = scheduledGUIState;
+			scheduledGUIState = null;
 			loadConfigScreenGUIState(state);
 		}
 	}
@@ -452,11 +452,17 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	public ListWidget<AbstractConfigField<?>> getListWidget(ConfigCategory category) {
 		return listWidgets.computeIfAbsent(category, c -> {
 			final ListWidget<AbstractConfigField<?>> w = new ListWidget<>(
-			  this, minecraft, width, height, isShowingTabs()? 50 : 24,
+			  this, minecraft, width, height, category, isShowingTabs()? 50 : 24,
 			  height - 28, c.getBackground() != null? c.getBackground() : backgroundLocation);
-			w.getEntries().addAll(c.getHeldEntries());
+			if (category.isLoaded()) initListWidget(category, w);
 			return w;
 		});
+	}
+	
+	protected void initListWidget(
+	  ConfigCategory category, ListWidget<AbstractConfigField<?>> widget
+	) {
+		widget.getEntries().addAll(category.getHeldEntries());
 	}
 	
 	@Override public List<EntryError> getErrors() {
@@ -537,6 +543,23 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		return showingHelp;
 	}
 	
+	public void finishLoadingCategory(ConfigCategory category) {
+		if (!category.isLoaded()) {
+			sortedCategoriesMap.get(category.getType()).remove(category);
+			sortedCategories.remove(category);
+			categoryMap.get(category.getType().getAlias()).remove(category.getName());
+		} else {
+			ListWidget<AbstractConfigField<?>> w = listWidgets.get(category);
+			if (w != null) initListWidget(category, w);
+			scheduledLayout = true;
+			if (selectedCategory == category && lastRestoredGUIState != null) {
+				IConfigCategoryGUIState state = lastRestoredGUIState.getCategoryStates()
+				  .get(category.getType()).get(category.getName());
+				if (state != null) loadConfigCategoryGUIState(category, state);
+			}
+		}
+	}
+	
 	@Override public void setSelectedCategory(ConfigCategory category) {
 		if (selectedCategory != category) {
 			// Switching sides is prevented while selecting
@@ -558,7 +581,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 					for (int i = 0; i < innerIndex; i++)
 						x += tabButtons.get(i).getWidth() + 2;
 					x += tabButtons.get(innerIndex).getWidth() / 2;
-					x -= tabsScroller.getBounds().width / 2;
+					x -= tabsScroller.getBounds().height / 2;
 					tabsScroller.scrollTo(x, true, 250L);
 				}
 				searchBar.refresh();
@@ -611,9 +634,10 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	@Override public void loadConfigScreenGUIState(@Nullable IConfigScreenGUIState state) {
 		if (state != null) {
 			if (width == 0) {
-				prevState = state;
+				scheduledGUIState = state;
 				return;
 			}
+			lastRestoredGUIState = state;
 			showType(state.getEditedType());
 			state.getSelectedCategories().forEach((t, n) -> {
 				ConfigCategory c = getTypeCategories(t).get(n);
@@ -875,6 +899,9 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	}
 	
 	@Override public void tick() {
+		if (scheduledLayout) {
+			init(Minecraft.getInstance(), width, height);
+		}
 		super.tick();
 		listWidget.tick();
 		updateErrors();
@@ -1107,6 +1134,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 	
 	public static class ListWidget<R extends AbstractConfigField<?>> extends DynamicElementListWidget<R> {
 		private final AbstractConfigScreen screen;
+		private final ConfigCategory category;
 		private boolean hasCurrent;
 		private double currentX;
 		private double currentY;
@@ -1183,10 +1211,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		}
 		
 		public ListWidget(
-		  AbstractConfigScreen screen, Minecraft client, int width, int height, int top, int bottom,
+		  AbstractConfigScreen screen, Minecraft client, int width, int height,
+		  ConfigCategory category, int top, int bottom,
 		  ResourceLocation backgroundLocation
 		) {
 			super(client, width, height, top, bottom, backgroundLocation);
+			this.category = category;
 			this.screen = screen;
 		}
 		
@@ -1277,6 +1307,12 @@ import static net.minecraft.util.math.MathHelper.clamp;
 		}
 		
 		@Override protected IFormattableTextComponent getEmptyPlaceHolder() {
+			if (!category.isLoaded()) {
+				CompletableFuture<Boolean> future = category.getLoadingFuture();
+				return new TranslationTextComponent(
+				  future == null || future.isDone()
+				  ? "simpleconfig.ui.not_available" : "simpleconfig.ui.loading");
+			}
 			SearchBarWidget bar = screen.getSearchBar();
 			return bar.isFilter() && bar.isExpanded()
 			       ? new TranslationTextComponent("simpleconfig.ui.no_matches")

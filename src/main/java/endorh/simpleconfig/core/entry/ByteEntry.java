@@ -10,8 +10,6 @@ import endorh.simpleconfig.ui.impl.builders.IntSliderBuilder;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -30,18 +28,6 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
 	  implements ByteEntryBuilder {
 		public Builder(Byte value) {
 			super(value, Byte.class);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull ByteEntryBuilder min(byte min) {
-			return super.min(min);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull ByteEntryBuilder max(byte max) {
-			return super.max(max);
-		}
-		
-		@Override @Contract(pure=true) public @NotNull ByteEntryBuilder range(byte min, byte max) {
-			return super.range(min, max);
 		}
 		
 		@Override
@@ -78,6 +64,9 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
 		} else {
 			final IntSliderBuilder valBuilder = builder
 			  .startIntSlider(getDisplayName(), get(), forGui(min), forGui(max))
+			  .setSliderMin(sliderMin != null? (int) sliderMin : null)
+			  .setSliderMax(sliderMax != null? (int) sliderMax : null)
+			  .setSliderMap(sliderMap)
 			  .setTextGetter(g -> sliderTextSupplier.apply(fromGui(g)));
 			return Optional.of(decorate(valBuilder));
 		}

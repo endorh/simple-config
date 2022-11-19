@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT, CompoundNBTEntry> {
+public class CompoundNBTEntry extends AbstractSerializableEntry<CompoundNBT> {
 	protected static final Pattern STYLE_COMPONENT = Pattern.compile("§[\\da-f]");
 	
 	@Internal public CompoundNBTEntry(ConfigEntryHolder parent, String name, CompoundNBT value) {
