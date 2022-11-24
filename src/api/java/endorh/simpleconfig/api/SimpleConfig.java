@@ -1,12 +1,16 @@
 package endorh.simpleconfig.api;
 
 import net.minecraft.Util;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.fml.config.ModConfig;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.*;
+
+import static endorh.simpleconfig.api.SimpleConfigGUIManagerProxy.getSimpleConfigGUIManager;
 
 public interface SimpleConfig extends ConfigEntryHolder {
 	@Internal String MOD_ID = "simpleconfig";
@@ -292,6 +296,51 @@ public interface SimpleConfig extends ConfigEntryHolder {
 		public @NotNull String getAlias() {
 			return alias;
 		}
+	}
+	
+	// SimpleConfigGUIManager methods
+	
+	/**
+	 * Check if a config GUI exists for a mod
+	 */
+	static boolean hasConfigGUI(String modId) {
+		return getSimpleConfigGUIManager().hasConfigGUI(modId);
+	}
+	
+	/**
+	 * Build a config GUI for the specified mod id
+	 * @param parent Parent screen to return to
+	 */
+	static @Nullable Screen getConfigGUI(String modId, Screen parent) {
+		return getSimpleConfigGUIManager().getConfigGUI(modId, parent);
+	}
+	
+	/**
+	 * Build a config GUI for the specified mod id, using the current screen as parent
+	 */
+	static @Nullable Screen getConfigGUI(String modId) {
+		return getSimpleConfigGUIManager().getConfigGUI(modId);
+	}
+	
+	/**
+	 * Show the config GUI for the specified mod id, using the current screen as parent
+	 */
+	static void showConfigGUI(String modId) {
+		getSimpleConfigGUIManager().showConfigGUI(modId);
+	}
+	
+	/**
+	 * Show the Forge mod list GUI
+	 */
+	static void showModListGUI() {
+		getSimpleConfigGUIManager().showModListGUI();
+	}
+	
+	/**
+	 * Show the Config Hotkey GUI
+	 */
+	static void showConfigHotkeysGUI() {
+		getSimpleConfigGUIManager().showConfigHotkeysGUI();
 	}
 	
 	class NoSuchConfigEntryError extends RuntimeException {

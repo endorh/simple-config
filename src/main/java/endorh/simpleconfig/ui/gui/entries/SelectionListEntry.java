@@ -5,12 +5,15 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
+import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
+import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.Minecraft;
@@ -26,14 +29,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
 import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static java.lang.Math.*;
 
 @OnlyIn(Dist.CLIENT)
 public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChildListEntry {
@@ -46,6 +49,8 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	protected final List<GuiEventListener> widgets;
 	protected final List<GuiEventListener> childWidgets;
 	protected SelectionButtonOverlay<T> overlay;
+	protected double accumulatedScroll;
+	protected long lastScrollTime = 0;
 	
 	@Internal public SelectionListEntry(
 	  Component fieldName, T[] valuesArray, T value, Function<T, Component> nameProvider
@@ -69,7 +74,8 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				  int step = b == 0 ^ Screen.hasShiftDown()? 1 : -1;
 				  displayedIndex = (displayedIndex + step + s) % s;
 			  }
-		}).title(() -> this.nameProvider.apply(getDisplayedValue())));
+		}).title(() -> this.nameProvider.apply(getDisplayedValue()))
+			 .active(this::shouldRenderEditable));
 		intEntry = new IntegerListEntry(TextComponent.EMPTY, 1);
 		intEntry.setSubEntry(true);
 		intEntry.setParentEntry(this);
@@ -104,7 +110,6 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				return;
 			}
 		}
-		buttonWidget.active = shouldRenderEditable();
 		buttonWidget.x = x;
 		buttonWidget.y = y;
 		buttonWidget.setExactWidth(w);
@@ -160,10 +165,37 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			  width, buttonWidget.getHeight() * (values.size() * 2 - 1));
 			if (overlay != null) overlay.cancel();
 			overlay = new SelectionButtonOverlay<>(this);
+			overlay.startAnimation();
 			getScreen().addOverlay(area, overlay);
 			return true;
 		}
 		return super.onMouseClicked(mouseX, mouseY, button);
+	}
+	
+	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (advanced.cycle_with_scroll && isEditable() && buttonWidget.isMouseOver(mouseX, mouseY)) {
+			int i = values.indexOf(getDisplayedValue());
+			delta /= Minecraft.getInstance().options.mouseWheelSensitivity;
+			delta = accumulateScroll(delta);
+			if (abs(delta) >= 1D) {
+				int step = delta > 0D? -(int) delta : (int) -delta;
+				i += step;
+				accumulatedScroll += step;
+				int ic = Mth.clamp(i, 0, values.size() - 1);
+				setDisplayedValue(values.get(ic));
+				playFeedbackTap(i != ic? 0.1F : 0.5F);
+			}
+			return true;
+		}
+		return super.mouseScrolled(mouseX, mouseY, delta);
+	}
+	
+	protected double accumulateScroll(double delta) {
+		long time = System.currentTimeMillis();
+		if (time - lastScrollTime > 250) accumulatedScroll = 0;
+		lastScrollTime = time;
+		accumulatedScroll = accumulatedScroll + delta;
+		return accumulatedScroll;
 	}
 	
 	@Override public void endDrag(double mouseX, double mouseY, int button) {
@@ -182,6 +214,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		private int startIndex;
 		private T lastSelected;
 		private boolean cancelled = false;
+		private ToggleAnimator animator = new ToggleAnimator(150L);
 		
 		public SelectionButtonOverlay(SelectionListEntry<T> entry) {
 			this.entry = entry;
@@ -190,12 +223,59 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			if (startIndex == -1) startIndex = 0;
 		}
 		
+		public void startAnimation() {
+			animator.resetTarget();
+		}
+		
 		@Override public boolean renderOverlay(
 		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 		) {
 			if (cancelled) return false;
 			if (startY == -1)
 				startY = mouseY;
+			MultiFunctionIconButton button = entry.buttonWidget;
+			ImmutableList<T> values = entry.values;
+			int bh = button.getHeight();
+			if (animator.isInProgress()) {
+				float p = animator.getEaseOut();
+				Rectangle rect = new Rectangle(
+				  button.x, button.y + mouseY - startY - round(startIndex * bh * p),
+				  area.width, round(Mth.lerp(p, bh, bh * values.size())));
+				renderOverlayShadow(mStack, area, mouseX, mouseY, delta, rect);
+				ScissorsHandler.INSTANCE.withSingleScissor(
+				  rect, () -> doRenderOverlay(mStack, area, mouseX, mouseY, delta));
+			} else {
+				renderOverlayShadow(mStack, area, mouseX, mouseY, delta, null);
+				doRenderOverlay(mStack, area, mouseX, mouseY, delta);
+			}
+			return true;
+		}
+		
+		public void renderOverlayShadow(
+		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta,
+		  @Nullable Rectangle overlayArea
+		) {
+			if (overlayArea == null) {
+				MultiFunctionIconButton button = entry.buttonWidget;
+				ImmutableList<T> values = entry.values;
+				int bh = button.getHeight();
+				int y = button.y + mouseY - startY - startIndex * bh;
+				y = Mth.clamp(y, button.y - (values.size() - 1) * bh, button.y);
+				overlayArea = new Rectangle(
+				  button.x, y,
+				  area.width, bh * values.size());
+			}
+			final Rectangle r = overlayArea;
+			ScissorsHandler.INSTANCE.withoutScissors(() -> {
+				for (int i = 4; i > 0; i--) fill(
+				  mStack, r.x - i, r.y - i, r.getMaxX() + i, r.getMaxY() + i,
+				  (int) ((4 - i + 1) / 4F * 0.8F * 255F) << 24 | 0x161616);
+			});
+		}
+		
+		public void doRenderOverlay(
+		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+		) {
 			MultiFunctionIconButton button = entry.buttonWidget;
 			ImmutableList<T> values = entry.values;
 			int bh = button.getHeight();
@@ -214,7 +294,6 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			}
 			WidgetUtils.forceSetFocus(button, prevFocused);
 			entry.setDisplayedValue(prev);
-			return true;
 		}
 		
 		public T getSelected() {

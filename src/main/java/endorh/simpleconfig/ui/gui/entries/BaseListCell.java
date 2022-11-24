@@ -79,7 +79,7 @@ public abstract class BaseListCell<T> extends AbstractContainerEventHandler
 	
 	public abstract int getCellHeight();
 	
-	@Override public void applyErrorHighlight() {
+	public void applyErrorHighlight() {
 		applyFocusHighlight(errorHighlightColor);
 	}
 	

@@ -26,10 +26,11 @@ import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
-import endorh.simpleconfig.core.SimpleConfigGUIManager;
+import endorh.simpleconfig.core.SimpleConfigGUIManagerImpl;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigScreenGUIState.IConfigCategoryGUIState;
+import endorh.simpleconfig.ui.api.INavigableTarget.HighlightColors;
 import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry;
 import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
@@ -112,6 +113,8 @@ import static net.minecraft.util.Mth.clamp;
 	protected MultiFunctionImageButton settingsButton;
 	protected MultiFunctionImageButton selectAllButton;
 	protected MultiFunctionImageButton invertSelectionButton;
+	protected MultiFunctionImageButton navigateUpButton;
+	protected MultiFunctionImageButton navigateDownButton;
 	protected MultiFunctionIconButton hotKeyButton;
 	protected KeyBindButton editedHotKeyButton;
 	protected TextFieldWidgetEx editedHotKeyNameTextField;
@@ -191,6 +194,25 @@ import static net.minecraft.util.Mth.clamp;
 			setFocused(listWidget);
 		}).active(() -> history.canRedo()));
 		
+		navigateUpButton = MultiFunctionImageButton.of(18, 18, Buttons.NAVIGATE_UP, ButtonAction.of(
+		  () -> focusNextEdited(false)
+		).active(this::isEdited)
+		  .tooltip(Lists.newArrayList(
+			 new TranslatableComponent("simpleconfig.ui.navigate.edited.prev"),
+			 new TranslatableComponent(
+				"simpleconfig.ui.shortcut",
+				KeyBindings.PREV_EDITED.getTranslatedKeyMessage()
+				  .copy().withStyle(ChatFormatting.DARK_AQUA)))));
+		navigateDownButton = MultiFunctionImageButton.of(18, 18, Buttons.NAVIGATE_DOWN, ButtonAction.of(
+		  () -> focusNextEdited(true)
+		).active(this::isEdited)
+		  .tooltip(Lists.newArrayList(
+			 new TranslatableComponent("simpleconfig.ui.navigate.edited.next"),
+			 new TranslatableComponent(
+				"simpleconfig.ui.shortcut",
+				KeyBindings.NEXT_EDITED.getTranslatedKeyMessage()
+				  .copy().withStyle(ChatFormatting.DARK_AQUA)))));
+		
 		hotKeyButton = MultiFunctionIconButton.of(
 		  Buttons.KEYBOARD, 20, 20,
 		  ButtonAction.of(() -> addDialog(HotKeyListDialog.forModId(modId)))
@@ -215,7 +237,7 @@ import static net.minecraft.util.Mth.clamp;
 		
 		settingsButton = MultiFunctionImageButton.of(
 		  18, 18, SimpleConfigIcons.Buttons.GEAR,
-		  ButtonAction.of(() -> SimpleConfigGUIManager.showConfigGUI(SimpleConfigMod.MOD_ID))
+		  ButtonAction.of(() -> SimpleConfigGUIManagerImpl.INSTANCE.showConfigGUI(SimpleConfigMod.MOD_ID))
 			 .tooltip(new TranslatableComponent("simpleconfig.ui.simple_config_settings")));
 		keyboardButton = MultiFunctionImageButton.of(
 		  18, 18, SimpleConfigIcons.Buttons.KEYBOARD,
@@ -407,22 +429,29 @@ import static net.minecraft.util.Mth.clamp;
 		addRenderableWidget(statusDisplayBar);
 		
 		// Left controls
+		int by = height - 21;
 		selectAllButton = new MultiFunctionImageButton(
-		  3, height - 21, 18, 18, SimpleConfigIcons.Buttons.SELECT_ALL,
+		  bx = 3, by, 18, 18, SimpleConfigIcons.Buttons.SELECT_ALL,
 		  ButtonAction.of(this::selectAllEntries)
 			 .tooltip(new TranslatableComponent("simpleconfig.ui.select_all")));
 		addRenderableWidget(selectAllButton);
 		invertSelectionButton = new MultiFunctionImageButton(
-		  25, height - 21, 18, 18, SimpleConfigIcons.Buttons.INVERT_SELECTION,
+		  bx += 22, by, 18, 18, SimpleConfigIcons.Buttons.INVERT_SELECTION,
 		  ButtonAction.of(this::invertEntrySelection)
 			 .tooltip(new TranslatableComponent("simpleconfig.ui.invert_selection")));
 		addRenderableWidget(invertSelectionButton);
 		selectAllButton.visible = invertSelectionButton.visible = false;
+		if (!isSelecting()) bx = 3;
+		navigateUpButton.setPosition(bx, by);
+		addRenderableWidget(navigateUpButton);
+		navigateDownButton.setPosition(bx += 22, by);
+		addRenderableWidget(navigateDownButton);
+		navigateUpButton.visible = navigateDownButton.visible = true;
 		
 		// Center controls
 		int buttonWidths = min(200, (width - 88) / 3);
 		int cX = width / 2;
-		int by = height - 24;
+		by = height - 24;
 		pos(quitButton, cX - buttonWidths - 2, by, buttonWidths);
 		addRenderableWidget(quitButton);
 		pos(saveButton, cX + 2, by, buttonWidths);
@@ -430,11 +459,12 @@ import static net.minecraft.util.Mth.clamp;
 		saveButton.active = isEdited();
 		
 		// Right buttons
+		by = height - 21;
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
-			pos(settingsButton, width - 41, height - 21);
+			pos(settingsButton, width - 41, by);
 			addRenderableWidget(settingsButton);
 		}
-		pos(keyboardButton, width - 21, height - 21);
+		pos(keyboardButton, width - 21, by);
 		addRenderableWidget(keyboardButton);
 		
 		// Update UI mode
@@ -782,6 +812,16 @@ import static net.minecraft.util.Mth.clamp;
 			else if (hasConflictingExternalChanges()) focusNextExternalConflict(false);
 			playFeedbackTap(0.4F);
 			return true;
+		} else if (KeyBindings.NEXT_EDITED.isActiveAndMatches(key)) {
+			boolean edited = isEdited();
+			if (edited) focusNextEdited(true);
+			playFeedbackTap(edited? 0.8F : 0.2F);
+			return true;
+		} else if (KeyBindings.PREV_EDITED.isActiveAndMatches(key)) {
+			boolean edited = isEdited();
+			if (edited) focusNextEdited(false);
+			playFeedbackTap(edited? 0.8F : 0.2F);
+			return true;
 		} else if (KeyBindings.SEARCH.isActiveAndMatches(key)) {
 			searchBar.open();
 			setFocused(searchBar);
@@ -878,6 +918,11 @@ import static net.minecraft.util.Mth.clamp;
 				visible.setExactWidth(20);
 				visible.x = editFileButton.x + 24;
 				selectionToolbar.visible = true;
+				int y = selectAllButton.y;
+				navigateUpButton.setPosition(3 + 44, y);
+				navigateDownButton.setPosition(3 + 66, y);
+				if (navigateDownButton.x + navigateDownButton.getWidth() > quitButton.x - 4)
+					navigateUpButton.visible = navigateDownButton.visible = false;
 			} else {
 				int bx = 48;
 				if (hasUndoButtons()) {
@@ -885,9 +930,10 @@ import static net.minecraft.util.Mth.clamp;
 					bx += 44;
 				}
 				selectAllButton.visible = invertSelectionButton.visible = false;
+				navigateUpButton.visible = navigateDownButton.visible = true;
 				modeButtons.forEach(b -> b.setWidthRange(20, 70));
 				remoteCommonButton.setExactWidth(20);
-				if (modeButtons.stream().mapToInt(AbstractWidget::getWidth).sum() > 0.35 * width)
+				if (bx + modeButtons.stream().mapToInt(AbstractWidget::getWidth).sum() > 0.35 * width)
 					modeButtons.forEach(b -> b.setExactWidth(20));
 				for (MultiFunctionIconButton b: modeButtons) {
 					b.x = bx;
@@ -895,15 +941,17 @@ import static net.minecraft.util.Mth.clamp;
 					b.visible = true;
 				}
 				selectionToolbar.visible = false;
+				int y = selectAllButton.y;
+				navigateUpButton.setPosition(3, y);
+				navigateDownButton.setPosition(3 + 22, y);
 			}
 			isSelecting = selecting;
 		}
 	}
 	
 	@Override public void tick() {
-		if (scheduledLayout) {
+		if (scheduledLayout)
 			init(Minecraft.getInstance(), width, height);
-		}
 		super.tick();
 		listWidget.tick();
 		updateErrors();
@@ -973,79 +1021,96 @@ import static net.minecraft.util.Mth.clamp;
 		return displayTitle;
 	}
 	
-	public @Nullable INavigableTarget getNext(Predicate<INavigableTarget> predicate, boolean forwards) {
+	public @Nullable INavigableTarget getNext(
+	  Predicate<INavigableTarget> predicate, boolean forwards, boolean preferSameCategory
+	) {
 		List<INavigableTarget> targets = listWidget.getNavigableTargets(false, true);
 		if (targets.isEmpty()) return null;
 		INavigableTarget target = listWidget.getSelectedTarget();
+		int i = -1, idx = target != null ? targets.indexOf(target) : -1, s = targets.size();
+		Function<Integer, Integer> step = forwards? j -> (j + 1) % s : j -> (j - 1 + s) % s;
+		Predicate<Integer> check = preferSameCategory? j -> j != idx : forwards? j -> j > idx : j -> j < idx;
 		if (target == null) {
 			final Optional<INavigableTarget> opt =
 			  forwards ? targets.stream().filter(predicate).findFirst()
 			           : Lists.reverse(targets).stream().filter(predicate).findFirst();
 			if (opt.isPresent()) return opt.get();
 		} else {
-			int idx = targets.indexOf(target), s = targets.size();
-			Function<Integer, Integer> step = forwards ? i -> (i + 1) % s : i -> (i - 1 + s) % s;
-			for (int i = step.apply(idx); i != idx; i = step.apply(i))
+			for (i = step.apply(idx); check.test(i); i = step.apply(i))
 				if (predicate.test(targets.get(i))) return targets.get(i);
-			if (predicate.test(target))
+			if (preferSameCategory && predicate.test(target))
 				return target;
 		}
-		int s = sortedCategories.size();
+		int cs = sortedCategories.size();
 		final int selectedIndex = sortedCategories.indexOf(selectedCategory);
-		Function<Integer, Integer> step = forwards ? j -> (j + 1) % s : j -> (j - 1 + s) % s;
-		for (int i = step.apply(selectedIndex); i != selectedIndex; i = step.apply(i)) {
-			ConfigCategory cat = sortedCategories.get(i);
-			Optional<INavigableTarget> opt = getListWidget(cat)
-			  .getNavigableTargets(false, true).stream()
+		Function<Integer, Integer> catStep = forwards ? j -> (j + 1) % cs : j -> (j - 1 + cs) % cs;
+		for (int j = catStep.apply(selectedIndex); j != selectedIndex; j = catStep.apply(j)) {
+			ConfigCategory cat = sortedCategories.get(j);
+			List<INavigableTarget> catTargets = getListWidget(cat)
+			  .getNavigableTargets(false, true);
+			if (!forwards) catTargets = Lists.reverse(catTargets);
+			Optional<INavigableTarget> opt = catTargets.stream()
 			  .filter(predicate).findFirst();
 			if (opt.isPresent()) return opt.get();
+		}
+		if (!preferSameCategory && i > -1) {
+			for (; i != idx; i = catStep.apply(i))
+				if (predicate.test(targets.get(i))) return targets.get(i);
+			if (predicate.test(target)) return target;
 		}
 		return null;
 	}
 	
 	public void focusNextExternalConflict(boolean forwards) {
-		Predicate<INavigableTarget> predicate = t -> {
-			if (!(t instanceof final AbstractConfigField<?> entry)) return false;
-			return !entry.isSubEntry() && entry.hasExternalDiff()
-			       && !entry.hasAcceptedExternalDiff();
-		};
-		INavigableTarget next = getNext(predicate.and(INavigableTarget::isNavigable), forwards);
-		boolean foundVisible = next != null;
-		if (next == null) next = getNext(predicate, forwards);
+		focusNextEntry(
+		  e -> e.hasExternalDiff() && !e.hasAcceptedExternalDiff(),
+		  forwards, false, HighlightColors.MERGE);
+	}
+	
+	public void focusNextTarget(
+	  Predicate<INavigableTarget> predicate, boolean forwards,
+	  boolean preferSameCategory, int tint
+	) {
+		ConfigCategory cat = getSelectedCategory();
+		INavigableTarget next = getNext(predicate, forwards, preferSameCategory);
 		if (next != null) {
-			if (!foundVisible) getSearchBar().close();
+			AbstractConfigField<?> entry = next.findParentEntry();
+			if (entry != null && entry.getCategory() != cat)
+				getSearchBar().close();
 			next.navigate();
-			next.applyMergeHighlight();
+			next.applyFocusHighlight(tint);
 		}
 	}
 	
-	public void focusNextRequiresRestart(boolean forwards) {
-		Predicate<INavigableTarget> predicate = t -> {
+	public void focusNextEntry(
+	  Predicate<AbstractConfigField<?>> predicate, boolean forwards,
+	  boolean preferSameCategory, int tint
+	) {
+		focusNextTarget(t -> {
 			if (!(t instanceof final AbstractConfigField<?> entry)) return false;
-			return !entry.isSubEntry() && entry.isRequiresRestart() && entry.isEdited();
-		};
-		INavigableTarget next = getNext(predicate.and(INavigableTarget::isNavigable), forwards);
-		boolean foundVisible = next != null;
-		if (next == null) next = getNext(predicate, forwards);
-		if (next != null) {
-			if (!foundVisible) getSearchBar().close();
-			next.navigate();
-			next.applyWarningHighlight();
-		}
+			return !entry.isSubEntry() && predicate.test(entry) && entry.isEdited();
+		}, forwards, preferSameCategory, tint);
 	}
 	
 	public void focusNextError(boolean forwards) {
+		focusNextError(forwards, true);
+	}
+	
+	public void focusNextError(boolean forwards, boolean prefersSameCategory) {
 		Map<INavigableTarget, EntryError> errorMap = sortedCategories.stream()
 		  .flatMap(c -> c.getErrors().stream())
 		  .collect(Collectors.toMap(EntryError::getSource, e -> e, (a, b) -> a));
-		INavigableTarget next = getNext(t -> errorMap.containsKey(t) && t.isNavigable(), forwards);
-		boolean foundVisible = next != null;
-		if (next == null) next = getNext(errorMap::containsKey, forwards);
-		if (next != null) {
-			if (!foundVisible) getSearchBar().close();
-			next.navigate();
-			next.applyErrorHighlight();
-		}
+		focusNextTarget(errorMap::containsKey, forwards, prefersSameCategory, HighlightColors.ERROR);
+	}
+	
+	public void focusNextEdited(boolean forwards) {
+		focusNextEntry(t -> {
+			if (!(t instanceof AbstractConfigListEntry<?> e) || !e.isEdited())
+				return false;
+			if (!(t instanceof CaptionedSubCategoryListEntry<?, ?> sc)) return true;
+			AbstractConfigField<?> ce = sc.getCaptionEntry();
+			return ce != null && ce.isEdited();
+		}, forwards, false, HighlightColors.EDITED);
 	}
 	
 	@SuppressWarnings("SameParameterValue" ) private void drawTabsShades(
@@ -1109,6 +1174,8 @@ import static net.minecraft.util.Mth.clamp;
 			 .key("page.next", KeyBindings.NEXT_PAGE)
 			 .key("error.prev", KeyBindings.PREV_ERROR)
 			 .key("error.next", KeyBindings.NEXT_ERROR)
+			 .key("edited.prev", KeyBindings.PREV_EDITED)
+			 .key("edited.next", KeyBindings.NEXT_EDITED)
 		  ).category("lists", c -> c
 			 .key("move", "left.control+left.alt+up/down")
 			 .key("move.drag", "mouse.middle/left.alt+mouse.left")

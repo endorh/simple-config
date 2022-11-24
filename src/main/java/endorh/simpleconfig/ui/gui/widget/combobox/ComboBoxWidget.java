@@ -12,11 +12,10 @@ import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.ITextFormatter;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
-import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
+import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
-import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import net.minecraft.ChatFormatting;
@@ -77,6 +76,8 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	protected long scrollAnimationDuration = 150L;
 	protected long lastSuggestionCursorNavigation = 0;
 	protected ToggleAnimator expandAnimator = new ToggleAnimator(250L);
+	protected boolean showHelpTooltips = true;
+	protected @Nullable TooltipRenderer tooltipConsumer = null;
 	protected @Nullable Component hint = null;
 	
 	protected @NotNull IComboBoxModel<T> suggestionProvider;
@@ -114,6 +115,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	/** Called to check if the text is valid */
 	protected Predicate<String> filter = Objects::nonNull;
 	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
+	protected Rectangle area = new Rectangle();
 	protected Rectangle dropDownRectangle = new Rectangle();
 	protected Rectangle reportedDropDownRectangle = new Rectangle();
 	protected long lastDropDownScroll = 0;
@@ -137,9 +139,9 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		this.typeWrapper = typeWrapper;
 		ITextFormatter formatter = typeWrapper.getTextFormatter();
 		if (formatter != null) this.formatter = formatter;
-		this.screenSupplier = screen;
+		screenSupplier = screen;
 		this.font = font;
-		this.suggestionProvider = new SimpleComboBoxModel<>(
+		suggestionProvider = new SimpleComboBoxModel<>(
 		  Lists.newArrayList());
 	}
 	
@@ -158,7 +160,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	public void setSuggestionProvider(@NotNull IComboBoxModel<T> provider) {
-		this.suggestionProvider = provider;
+		suggestionProvider = provider;
 		updateSuggestions();
 		// onTextChanged(text);
 	}
@@ -176,6 +178,25 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		return this;
 	}
 	
+	/**
+	 * Read only rectangle.
+	 */
+	public Rectangle getArea() {
+		return area;
+	}
+	
+	public boolean isShowHelpTooltips() {
+		return showHelpTooltips;
+	}
+	
+	public void setShowHelpTooltips(boolean show) {
+		showHelpTooltips = show;
+	}
+	
+	public void setTooltipRenderer(@Nullable TooltipRenderer consumer) {
+		tooltipConsumer = consumer;
+	}
+	
 	@Override public boolean renderOverlay(
 	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
 	) {
@@ -185,8 +206,8 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		mStack.pushPose();{
 			final int maxScroll = getMaxDropDownScroll();
 			final double prev = dropDownScroll;
-			this.dropDownScroll = ScrollingHandler.handleScrollingPosition(
-			  new double[]{dropDownScrollTarget}, this.dropDownScroll, Double.POSITIVE_INFINITY,
+			dropDownScroll = ScrollingHandler.handleScrollingPosition(
+			  new double[]{dropDownScrollTarget}, dropDownScroll, Double.POSITIVE_INFINITY,
 			  0, scrollAnimationStart, scrollAnimationDuration);
 			if (dropDownScroll > maxScroll && dropDownScroll > prev)
 				dropDownScroll = maxScroll;
@@ -209,11 +230,11 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			if (!lastSortedSuggestions.isEmpty()) {
 				final int suggestionHeight = getSuggestionHeight();
 				int firstIdx =
-				  (int) Mth.clamp(this.dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+				  (int) Mth.clamp(dropDownScroll / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				int lastIdx =
-				  (int) Mth.clamp((this.dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
+				  (int) Mth.clamp((dropDownScroll + dropDownHeight + suggestionHeight - 1) / suggestionHeight, 0, lastSortedSuggestions.size() - 1);
 				
-				int yy = area.y + 1 - ((int) this.dropDownScroll) % suggestionHeight;
+				int yy = area.y + 1 - ((int) dropDownScroll) % suggestionHeight;
 				for (int i = firstIdx; i <= lastIdx; i++) {
 					renderSuggestion(
 					  i, lastSortedSuggestions.get(i), mStack, area.x + 1, yy,
@@ -227,7 +248,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 					int thumbHeight =
 					  max(20, (area.height - 2) / (lastSortedSuggestions.size() * suggestionHeight));
 					int thumbY = area.y + 1 + (int) round(
-					  (area.height - 2 - thumbHeight) * (this.dropDownScroll / maxScroll));
+					  (area.height - 2 - thumbHeight) * (dropDownScroll / maxScroll));
 					int thumbColor = draggingDropDownScrollBar || (
 					  mouseX >= scrollBarX && mouseX < scrollBarX + 5
 					  && mouseY >= thumbY && mouseY < thumbY + thumbHeight
@@ -297,13 +318,13 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	@Override public boolean overlayMouseScrolled(Rectangle area, double mouseX, double mouseY, double amount) {
-		final double lastScroll = this.dropDownScroll;
-		final double lastTarget = this.dropDownScrollTarget;
+		final double lastScroll = dropDownScroll;
+		final double lastTarget = dropDownScrollTarget;
 		final long current = System.currentTimeMillis();
 		scrollBy(-amount * min(24, getSuggestionHeight()), abs(amount) >= 1.0);
 		// setDropDownScroll((int) round(lastScroll - amount * 10));
 		if (lastTarget != dropDownScrollTarget || lastScroll != dropDownScroll || current - lastDropDownScroll <= 100) {
-			this.lastDropDownScroll = current;
+			lastDropDownScroll = current;
 			return true;
 		}
 		return false;
@@ -382,7 +403,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	public void setRestrictedToSuggestions(boolean restrict) {
-		this.restrictToSuggestions = restrict;
+		restrictToSuggestions = restrict;
 	}
 	
 	public boolean isAutoDropDown() {
@@ -399,7 +420,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	
 	public void setDropDownShown(boolean expanded) {
 		if (!canShowDropDown()) expanded = false;
-		this.dropDownShown = expanded;
+		dropDownShown = expanded;
 		expandAnimator.setEaseOutTarget(expanded);
 		suggestionCursor = -1;
 		if (expanded) {
@@ -459,15 +480,15 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	public void setDropDownHeight(int height) {
-		this.dropDownHeight = height;
+		dropDownHeight = height;
 	}
 	
 	public void setTextListener(Consumer<String> listener) {
-		this.textListener = listener;
+		textListener = listener;
 	}
 	
 	public void setValueListener(Consumer<T> listener) {
-		this.valueListener = listener;
+		valueListener = listener;
 	}
 	
 	public void setTextFormatter(ITextFormatter formatter) {
@@ -569,9 +590,9 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	protected void updateValue() {
 		if (!isRestrictedToSuggestions()) {
 			final Pair<Optional<T>, Optional<Component>> parsed = typeWrapper.parseElement(text);
-			this.value = parsed.getLeft().orElse(null);
-			this.parseError = parsed.getRight().orElse(null);
-			this.onValueChanged(value);
+			value = parsed.getLeft().orElse(null);
+			parseError = parsed.getRight().orElse(null);
+			onValueChanged(value);
 		}
 		updateSuggestions();
 	}
@@ -1047,109 +1068,122 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	@Override public void renderButton(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
-		if (isVisible()) {
-			updateSuggestions();
-			if (shouldDrawBackground()) {
-				int color = isHoveredOrFocused() ? focusedBorderColor : borderColor;
-				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, color);
-				fill(mStack, x, y, x + width, y + height, backgroundColor);
-				if (!isRestrictedToSuggestions())
-					fill(mStack, x + width - arrowWidth - 1, y, x + width - arrowWidth, y + height, color);
+		area.setBounds(x, y, width, height);
+		if (!isVisible()) return;
+		updateSuggestions();
+		if (shouldDrawBackground()) {
+			int color = isHoveredOrFocused() ? focusedBorderColor : borderColor;
+			fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, color);
+			fill(mStack, x, y, x + width, y + height, backgroundColor);
+			if (!isRestrictedToSuggestions())
+				fill(mStack, x + width - arrowWidth - 1, y, x + width - arrowWidth, y + height, color);
+		}
+		
+		if (!isFocused() || !canShowDropDown())
+			setDropDownShown(false);
+		
+		updateDropDownRectangle();
+		
+		if (lastSortedSuggestions.isEmpty()) {
+			autoCompleteValue = null;
+		} else if (suggestionCursor >= 0 && suggestionCursor < lastSortedSuggestions.size()) {
+			autoCompleteValue = lastSortedSuggestions.get(suggestionCursor);
+		} else if (text.isEmpty() && !"".equals(value)) {
+			autoCompleteValue = value;
+		} else autoCompleteValue = lastSortedSuggestions.get(0);
+		
+		boolean hasIcon = hasIcon();
+		final int iconHeight = getIconHeight();
+		final int iconWidth = getIconWidth();
+		int textX = hasIcon? x + iconWidth + 1 : shouldDrawBackground ? x + 4 : x;
+		int textY = shouldDrawBackground ? y + (height - 8) / 2 : y;
+		int iconX = x;
+		int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
+		final int innerWidth = getInnerWidth();
+		final Component hint = getHint();
+		int color = isEnabled() ? enabledColor : disabledColor;
+		if (isFocused() || value == null && hint == null) {
+			int relCaret = caretPos - hScroll;
+			int relAnchor = anchorPos - hScroll;
+			
+			MutableComponent displayedText = subText(getDisplayedText(), hScroll);
+			String shown = font.substrByWidth(displayedText, innerWidth).getString();
+			int fitLength = shown.length();
+			displayedText = subText(displayedText, 0, fitLength);
+			
+			boolean fitCaret = relCaret >= 0 && relCaret <= fitLength;
+			boolean showCaret = isFocused() && fitCaret
+			                    && (System.currentTimeMillis() - lastInteraction) % 1000 < 500;
+			int caretX = fitCaret? textX + font.width(subText(displayedText, 0, relCaret)) - 1
+			                     : relCaret > 0? textX + innerWidth - 1 : textX;
+			int endTextX = textX;
+			
+			// Render text
+			if (!shown.isEmpty())
+				endTextX += font.drawShadow(mStack, displayedText, textX, textY, color);
+			
+			// Render autocompletion
+			if (isDropDownShown() && autoCompleteValue != null) {
+				String autoComplete = typeWrapper.getName(autoCompleteValue);
+				String shownAutocomplete =
+				  autoComplete.startsWith(text)
+				  ? autoComplete.substring(text.length()) : "→" + autoComplete;
+				shownAutocomplete = font.plainSubstrByWidth(shownAutocomplete, innerWidth - endTextX + textX);
+				font.drawShadow(
+				  mStack, shownAutocomplete, (float) endTextX, (float) textY, 0x96808080);
 			}
 			
-			if (!isFocused() || !canShowDropDown())
-				setDropDownShown(false);
+			// Render caret
+			if (showCaret) {
+				renderCaret(mStack, caretX, textY - 2, 1, 12);
+			}
 			
-			updateDropDownRectangle();
-			
-			if (lastSortedSuggestions.isEmpty()) {
-				autoCompleteValue = null;
-			} else if (suggestionCursor >= 0 && suggestionCursor < lastSortedSuggestions.size()) {
-				autoCompleteValue = lastSortedSuggestions.get(suggestionCursor);
-			} else if (text.isEmpty() && !"".equals(value)) {
-				autoCompleteValue = value;
-			} else autoCompleteValue = lastSortedSuggestions.get(0);
-			
-			boolean hasIcon = hasIcon();
-			final int iconHeight = getIconHeight();
-			final int iconWidth = getIconWidth();
-			int textX = hasIcon? x + iconWidth + 1 : shouldDrawBackground ? x + 4 : x;
-			int textY = shouldDrawBackground ? y + (height - 8) / 2 : y;
-			int iconX = x;
-			int iconY = shouldDrawBackground? textY + 4 - iconHeight / 2 : hasIcon? y + iconHeight / 2 - 4 : y;
-			final int innerWidth = getInnerWidth();
-			final Component hint = getHint();
-			int color = isEnabled() ? enabledColor : disabledColor;
-			if (isFocused() || value == null && hint == null) {
-				int relCaret = caretPos - hScroll;
-				int relAnchor = anchorPos - hScroll;
-				
-				MutableComponent displayedText = subText(getDisplayedText(), hScroll);
-				String shown = font.substrByWidth(displayedText, innerWidth).getString();
-				int fitLength = shown.length();
-				displayedText = subText(displayedText, 0, fitLength);
-				
-				boolean fitCaret = relCaret >= 0 && relCaret <= fitLength;
-				boolean showCaret = isFocused() && fitCaret
-				                    && (System.currentTimeMillis() - lastInteraction) % 1000 < 500;
-				int caretX = fitCaret? textX + font.width(subText(displayedText, 0, relCaret)) - 1
-				                     : relCaret > 0? textX + innerWidth - 1 : textX;
-				int endTextX = textX;
-				
-				// Render text
-				if (!shown.isEmpty())
-					endTextX += font.drawShadow(mStack, displayedText, textX, textY, color);
-				
-				// Render autocompletion
-				if (isDropDownShown() && autoCompleteValue != null) {
-					String autoComplete = typeWrapper.getName(autoCompleteValue);
-					String shownAutocomplete =
-					  autoComplete.startsWith(text)
-					  ? autoComplete.substring(text.length()) : "→" + autoComplete;
-					shownAutocomplete = font.plainSubstrByWidth(shownAutocomplete, innerWidth - endTextX + textX);
-					font.drawShadow(
-					  mStack, shownAutocomplete, (float) endTextX, (float) textY, 0x96808080);
-				}
-				
-				// Render caret
-				if (showCaret) {
-					renderCaret(mStack, caretX, textY - 2, 1, 12);
-				}
-				
-				// Render selection
-				if (relAnchor != relCaret) {
-					if (relAnchor > fitLength) relAnchor = fitLength;
-					int anchorX = textX + font.width(shown.substring(0, relAnchor));
-					renderSelection(mStack, caretX, textY - 3, anchorX - 1, textY + 2 + 9);
-				}
-			} else if (text.isEmpty() && value == null) {
-				// Render hint
-				drawTextComponent(hint.copy().withStyle(ChatFormatting.GRAY),
-				  mStack, textX, textY, innerWidth, 10, 0x96FFFFFF);
-			} else if (value != null) {
-				// Render value
-				Component display = typeWrapper.getDisplayName(value);
-				if (!isEnabled()) display = new TextComponent(
+			// Render selection
+			if (relAnchor != relCaret) {
+				if (relAnchor > fitLength) relAnchor = fitLength;
+				int anchorX = textX + font.width(shown.substring(0, relAnchor));
+				renderSelection(mStack, caretX, textY - 3, anchorX - 1, textY + 2 + 9);
+			}
+		} else if (text.isEmpty() && value == null) {
+			// Render hint
+			drawTextComponent(hint.copy().withStyle(ChatFormatting.GRAY),
+			  mStack, textX, textY, innerWidth, 10, 0x96FFFFFF);
+		} else if (value != null) {
+			// Render value
+			Component display = typeWrapper.getDisplayName(value);
+			if (!isEnabled()) display = new TextComponent(
 				  display.getContents()).withStyle(ChatFormatting.GRAY);
-				drawTextComponent(display, mStack, textX, textY, innerWidth, 10, 0xFFE0E0E0);
-			} else {
-				// Render text
-				MutableComponent displayedText = subText(getDisplayedText(), hScroll);
-				displayedText = subText(
-				  displayedText, 0, font.substrByWidth(displayedText, innerWidth).getString().length());
-				font.drawShadow(mStack, displayedText, textX, textY, color);
+			drawTextComponent(display, mStack, textX, textY, innerWidth, 10, 0xFFE0E0E0);
+		} else {
+			// Render text
+			MutableComponent displayedText = subText(getDisplayedText(), hScroll);
+			displayedText = subText(
+			  displayedText, 0, font.substrByWidth(displayedText, innerWidth).getString().length());
+			font.drawShadow(mStack, displayedText, textX, textY, color);
+		}
+		
+		if (hasIcon) {
+			RenderSystem.setShaderColor(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
+			typeWrapper.renderIcon(
+			  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
+			  iconX, iconY, iconWidth, iconHeight, 0, mouseX, mouseY, delta);
+			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+		}
+		
+		int arrowX = x + width - arrowWidth, arrowY = y;
+		renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHoveredOrFocused() ? x : arrowX);
+		
+		if (isShowHelpTooltips() && value != null
+		    && isMouseOver(mouseX, mouseY) && !isMouseOverArrow(mouseX, mouseY)) {
+			List<Component> tooltip = typeWrapper.getHelpTooltip(value);
+			if (!tooltip.isEmpty()) {
+				IOverlayCapableContainer screen = getScreen();
+				if (tooltipConsumer != null) {
+					tooltipConsumer.renderTooltip(tooltip, mouseX, mouseY);
+				} else if (screen instanceof IMultiTooltipScreen ts) {
+					ts.addTooltip(Tooltip.of(area, Point.of(mouseX, mouseY), tooltip));
+				} else ((Screen) screen).renderComponentTooltip(mStack, tooltip, mouseX, mouseY);
 			}
-			
-			if (hasIcon) {
-				RenderSystem.setShaderColor(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
-				typeWrapper.renderIcon(
-				  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
-				  iconX, iconY, iconWidth, iconHeight, 0, mouseX, mouseY, delta);
-				RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-			}
-			
-			int arrowX = x + width - arrowWidth, arrowY = y;
-			renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHoveredOrFocused() ? x : arrowX);
 		}
 	}
 	

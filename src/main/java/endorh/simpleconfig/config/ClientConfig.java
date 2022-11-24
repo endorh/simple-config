@@ -12,7 +12,6 @@ import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.VanillaKeyBindContext;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation;
-import endorh.simpleconfig.core.SimpleConfigGUIManager;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.demo.DemoConfigCategory;
 import net.minecraft.Util;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.config.ClientConfig.KeyBindings.EDIT_CONFIG_HOTKEYS;
 import static endorh.simpleconfig.config.ClientConfig.KeyBindings.OPEN_MOD_LIST;
-import static endorh.simpleconfig.config.ClientConfig.MenuButtonPosition.SPLIT_OPTIONS_BUTTON;
 import static endorh.simpleconfig.config.ClientConfig.OptionsButtonBehaviour.SECONDARY_CLICK;
 import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 
@@ -52,9 +50,12 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		  .n(
 			 group("menu", true)
 				.add("add_pause_menu_button", yesNo(true))
-				.add("menu_button_position", option(SPLIT_OPTIONS_BUTTON)
+				.add("menu_button_position", option(PauseMenuButtonPosition.SPLIT_OPTIONS_BUTTON)
 				  .editable(g -> g.getGUIBoolean("add_pause_menu_button")))
 			   .add("options_button_behaviour", option(SECONDARY_CLICK))
+			   .add("add_options_menu_button", yesNo(true))
+			   .add("options_menu_button_position", option(OptionsMenuButtonPosition.TOP_LEFT_CORNER)
+			     .editable(g -> g.getGUIBoolean("add_options_menu_button")))
 		  ).n(
 			 group("hotkey_log")
 				.add("hotkey_log_location", option(RIGHT_OVERLAY))
@@ -104,6 +105,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 			   .add("allow_over_scroll", yesNo(false))
 				.add("tooltip_max_width", percent(60F))
 				.add("prefer_combo_box", number(8))
+			   .add("cycle_with_scroll", yesNo(false))
 				.add("max_options_in_config_comment", number(16).min(5).restart())
 				.add("color_picker_saved_colors", map(
 				  number(0), color(Color.BLACK).alpha(),
@@ -146,8 +148,13 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		  .buildAndRegister();
 	}
 	
-	public enum MenuButtonPosition {
+	public enum PauseMenuButtonPosition {
 		SPLIT_OPTIONS_BUTTON, LEFT_OF_OPTIONS_BUTTON,
+		TOP_LEFT_CORNER, TOP_RIGHT_CORNER,
+		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
+	}
+	
+	public enum OptionsMenuButtonPosition {
 		TOP_LEFT_CORNER, TOP_RIGHT_CORNER,
 		BOTTOM_LEFT_CORNER, BOTTOM_RIGHT_CORNER
 	}
@@ -158,8 +165,10 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	
 	@Bind public static class menu {
 		@Bind public static boolean add_pause_menu_button;
-		@Bind public static MenuButtonPosition menu_button_position;
+		@Bind public static PauseMenuButtonPosition menu_button_position;
 		@Bind public static OptionsButtonBehaviour options_button_behaviour;
+		@Bind public static boolean add_options_menu_button;
+		@Bind public static OptionsMenuButtonPosition options_menu_button_position;
 	}
 	
 	@Bind public static class hotkey_log {
@@ -202,6 +211,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		@Bind public static boolean allow_over_scroll;
 		@Bind public static float tooltip_max_width;
 		@Bind public static int prefer_combo_box;
+		@Bind public static boolean cycle_with_scroll;
 		@Bind public static int max_options_in_config_comment = 4;
 		@Bind public static Map<Integer, Color> color_picker_saved_colors;
 		@Bind public static class search {
@@ -235,7 +245,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				  new TranslatableComponent(
 				    "simpleconfig.keybind.open_mod_config",
 				    SimpleConfigImpl.getModNameOrId(modId)),
-				  mapping, () -> SimpleConfigGUIManager.showConfigGUI(modId));
+				  mapping, () -> SimpleConfig.showConfigGUI(modId));
 			}).filter(Objects::nonNull).collect(Collectors.toList());
 		}
 	}
@@ -243,9 +253,9 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	public static class KeyBindings {
 		public static final ExtendedKeyBind
 		  OPEN_MOD_LIST = keyBind(
-		  "right.alt>\"m\"", SimpleConfigGUIManager::showModListGUI),
+		  "right.alt>\"m\"", SimpleConfig::showModListGUI),
 		  EDIT_CONFIG_HOTKEYS = keyBind(
-		    "right.alt>\"h\"", SimpleConfigGUIManager::showConfigHotkeysGUI);
+		    "right.alt>\"h\"", SimpleConfig::showConfigHotkeysGUI);
 		
 		public static class ModExtendedKeyBindProvider implements ExtendedKeyBindProvider {
 			@Override public @NotNull Iterable<ExtendedKeyBind> getActiveKeyBinds() {

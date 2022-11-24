@@ -104,6 +104,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		  PREV_PAGE, NEXT_PAGE,
 		  UNDO, REDO,
 		  PREV_ERROR, NEXT_ERROR,
+		  PREV_EDITED, NEXT_EDITED,
 		  SAVE, RESET_RESTORE, HOTKEY, HELP;
 		
 		@SubscribeEvent public static void register(FMLClientSetupEvent event) {
@@ -117,6 +118,8 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 				REDO = reg("redo", CONTROL, GLFW.GLFW_KEY_Y);
 				PREV_ERROR = reg("prev_error", SHIFT, GLFW.GLFW_KEY_F1);
 				NEXT_ERROR = reg("next_error", GLFW.GLFW_KEY_F1);
+				PREV_EDITED = reg("prev_edited", SHIFT, GLFW.GLFW_KEY_F7);
+				NEXT_EDITED = reg("next_edited", GLFW.GLFW_KEY_F7);
 				SAVE = reg("save", CONTROL, GLFW.GLFW_KEY_S);
 				RESET_RESTORE = reg("reset_restore", CONTROL, GLFW.GLFW_KEY_R);
 				HOTKEY = reg("hotkey", CONTROL, GLFW.GLFW_KEY_H);
