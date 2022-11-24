@@ -7,6 +7,7 @@ import com.electronwill.nightconfig.core.io.WritingException;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import endorh.simpleconfig.api.ConfigBuilderFactoryProxy;
 import endorh.simpleconfig.api.SimpleConfig;
+import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
@@ -94,6 +95,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	protected List<IGUIEntry> order;
 	protected ForgeConfigSpec spec;
 	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
+	protected @Nullable Predicate<SimpleConfigCategory> categoryFilter;
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
@@ -540,7 +542,8 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 				entry.buildGUI(category, entryBuilder, forRemote);
 		}
 		for (SimpleConfigCategoryImpl cat : categories.values())
-			cat.buildGUI(configBuilder, entryBuilder, forRemote);
+			if (categoryFilter == null || categoryFilter.test(cat))
+				cat.buildGUI(configBuilder, entryBuilder, forRemote);
 		if (decorator != null)
 			decorator.accept(this, configBuilder);
 	}

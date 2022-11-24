@@ -13,7 +13,7 @@ import endorh.simpleconfig.config.ServerConfig.ConfigPermission;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
-import endorh.simpleconfig.core.SimpleConfigGUIManager;
+import endorh.simpleconfig.core.SimpleConfigGUIManagerImpl;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -505,9 +505,9 @@ public class SimpleConfigCommand {
 	  CommandContext<CommandSourceStack> ctx, @Nullable String modId
 	) throws CommandSyntaxException {
 		if (modId == null) modId = getModId(ctx);
-		if (!SimpleConfigGUIManager.hasConfigGUI(modId)) throw UNSUPPORTED_CONFIG.create(modId);
+		if (!SimpleConfigGUIManagerImpl.INSTANCE.hasConfigGUI(modId)) throw UNSUPPORTED_CONFIG.create(modId);
 		String id = modId;
-		clientTickExecutor.run(() -> SimpleConfigGUIManager.showConfigGUI(id));
+		clientTickExecutor.run(() -> SimpleConfigGUIManagerImpl.INSTANCE.showConfigGUI(id));
 		return 0;
 	}
 	

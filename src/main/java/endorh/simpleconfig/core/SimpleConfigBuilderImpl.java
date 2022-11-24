@@ -6,6 +6,8 @@ import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -63,6 +66,7 @@ public class SimpleConfigBuilderImpl
 	protected @Nullable Consumer<SimpleConfig> baker = null;
 	protected @Nullable Consumer<SimpleConfigImpl> saver = null;
 	protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator = null;
+	protected @Nullable Predicate<SimpleConfigCategory> categoryFilter = null;
 	protected @Nullable ResourceLocation background = null;
 	protected boolean transparent = true;
 	protected boolean isWrapper;
@@ -121,6 +125,13 @@ public class SimpleConfigBuilderImpl
 	  BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator
 	) {
 		this.decorator = decorator;
+		return this;
+	}
+	
+	@Contract("_ -> this") @Override public @NotNull SimpleConfigBuilderImpl withDynamicGUICategoryFilter(
+	  Predicate<SimpleConfigCategory> categoryFilter
+	) {
+		this.categoryFilter = categoryFilter;
 		return this;
 	}
 	
@@ -616,63 +627,70 @@ public class SimpleConfigBuilderImpl
 	@Internal public SimpleConfigImpl buildAndRegister(
 	  IEventBus modEventBus, ConfigValueBuilder builder
 	) {
-		preBuildHook();
-		if (type == SimpleConfig.Type.SERVER) {
-			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
-			        ? SimpleConfigImpl::syncToClients
-			        : SimpleConfigImpl::syncToServer;
-		} else if (type == SimpleConfig.Type.COMMON) {
-			saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
-			        ? SimpleConfigImpl::syncToClients
-			        : SimpleConfigImpl::checkRestart;
-		} else if (FMLEnvironment.dist != Dist.DEDICATED_SERVER)
-			saver = SimpleConfigImpl::checkRestart;
-		final SimpleConfigImpl
-		  config = new SimpleConfigImpl(modId, type, title, baker, saver, configClass);
-		final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
-		final Map<String, SimpleConfigCategoryImpl> categoryMap = new LinkedHashMap<>();
-		final Map<String, SimpleConfigGroupImpl> groupMap = new LinkedHashMap<>();
-		entries.forEach((name, value) -> {
-			if (builder.canBuildEntry(name)) {
-				final AbstractConfigEntry<?, ?, ?> entry = value.build(config, name);
-				entriesByName.put(name, entry);
-				buildTranslations(entry);
-				entry.backingField = getBackingField(name);
-				entry.secondaryBackingFields = getSecondaryBackingFields(name);
-				builder.build(value, entry);
+		try {
+			preBuildHook();
+			if (type == SimpleConfig.Type.SERVER) {
+				saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
+				        ? SimpleConfigImpl::syncToClients
+				        : SimpleConfigImpl::syncToServer;
+			} else if (type == SimpleConfig.Type.COMMON) {
+				saver = FMLEnvironment.dist == Dist.DEDICATED_SERVER
+				        ? SimpleConfigImpl::syncToClients
+				        : SimpleConfigImpl::checkRestart;
+			} else if (FMLEnvironment.dist != Dist.DEDICATED_SERVER)
+				saver = SimpleConfigImpl::checkRestart;
+			final SimpleConfigImpl
+			  config = new SimpleConfigImpl(modId, type, title, baker, saver, configClass);
+			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
+			final Map<String, SimpleConfigCategoryImpl> categoryMap = new LinkedHashMap<>();
+			final Map<String, SimpleConfigGroupImpl> groupMap = new LinkedHashMap<>();
+			entries.forEach((name, value) -> {
+				if (builder.canBuildEntry(name)) {
+					final AbstractConfigEntry<?, ?, ?> entry = value.build(config, name);
+					entriesByName.put(name, entry);
+					buildTranslations(entry);
+					entry.backingField = getBackingField(name);
+					entry.secondaryBackingFields = getSecondaryBackingFields(name);
+					builder.build(value, entry);
+				}
+			});
+			SimpleConfigCategoryImpl defaultCategory =
+			  this.defaultCategory.build(config, builder, true);
+			for (GroupBuilder group: groups.values()) {
+				if (builder.canBuildSection(group.name)) {
+					final SimpleConfigGroupImpl g = group.build(defaultCategory, builder);
+					groupMap.put(group.name, g);
+				}
 			}
-		});
-		SimpleConfigCategoryImpl defaultCategory = this.defaultCategory.build(config, builder, true);
-		for (GroupBuilder group : groups.values()) {
-			if (builder.canBuildSection(group.name)) {
-				final SimpleConfigGroupImpl g = group.build(defaultCategory, builder);
-				groupMap.put(group.name, g);
-			}
+			categories.values().stream().sorted(
+			  Comparator.comparing(c -> categoryOrder.getOrDefault(c, 0))
+			).forEachOrdered(c -> {
+				if (builder.canBuildSection(c.name))
+					categoryMap.put(c.name, c.build(config, builder, false));
+			});
+			final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
+			  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
+			).map(
+			  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
+			).toList();
+			config.build(
+			  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
+			  unmodifiableMap(groupMap), order, builder.build(),
+			  defaultCategory.icon, defaultCategory.color, commandRoot);
+			builder.buildModConfig(config);
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+				config.decorator = decorator;
+				config.categoryFilter = categoryFilter;
+				config.background = background;
+				config.transparent = transparent;
+				SimpleConfigGUIManagerImpl.INSTANCE.registerConfig(config);
+			});
+			if (modEventBus != null) modEventBus.register(config);
+			return config;
+		} catch (RuntimeException e) {
+			throw new ReportedException(CrashReport.forThrowable(
+			  e, "Building config for mod " + modId));
 		}
-		categories.values().stream().sorted(
-		  Comparator.comparing(c -> categoryOrder.getOrDefault(c, 0))
-		).forEachOrdered(c -> {
-			if (builder.canBuildSection(c.name))
-				categoryMap.put(c.name, c.build(config, builder, false));
-		});
-		final List<IGUIEntry> order = guiOrder.keySet().stream().sorted(
-		  Comparator.comparing(a -> guiOrder.getOrDefault(a, 0))
-		).map(
-		  n -> groupMap.containsKey(n)? groupMap.get(n) : entriesByName.get(n)
-		).toList();
-		config.build(
-		  unmodifiableMap(entriesByName), unmodifiableMap(categoryMap),
-		  unmodifiableMap(groupMap), order, builder.build(),
-		  defaultCategory.icon, defaultCategory.color, commandRoot);
-		builder.buildModConfig(config);
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			config.decorator = decorator;
-			config.background = background;
-			config.transparent = transparent;
-			SimpleConfigGUIManager.registerConfig(config);
-		});
-		if (modEventBus != null) modEventBus.register(config);
-		return config;
 	}
 	
 	@Internal public static abstract class ConfigValueBuilder {

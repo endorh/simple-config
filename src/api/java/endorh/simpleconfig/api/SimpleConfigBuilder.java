@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConfigBuilder> {
 	/**
@@ -67,6 +68,15 @@ public interface SimpleConfigBuilder extends ConfigEntryHolderBuilder<SimpleConf
 	 * By default, config GUIs are transparent when in-game
 	 */
 	@Contract("-> this") @NotNull SimpleConfigBuilder withSolidInGameBackground();
+	
+	/**
+	 * Restrict dynamically which categories are displayed in the config GUI.<br>
+	 * Intended to hide config categories only relevant in certain environments,
+	 * or for certain players. Do not abuse it as a permission system.<br><br>
+	 * Keep in mind that this will only hide the category from the GUI, but players
+	 * will still be able to access it via commands or the config files.
+	 */
+	@Contract("_ -> this") @NotNull SimpleConfigBuilder withDynamicGUICategoryFilter(Predicate<SimpleConfigCategory> filter);
 	
 	/**
 	 * Register the config command at the given command root<br>

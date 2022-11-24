@@ -107,6 +107,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		  PREV_PAGE, NEXT_PAGE,
 		  UNDO, REDO,
 		  PREV_ERROR, NEXT_ERROR,
+		  PREV_EDITED, NEXT_EDITED,
 		  SAVE, RESET_RESTORE, HOTKEY, HELP;
 		
 		@SubscribeEvent public static void register(RegisterKeyMappingsEvent e) {
@@ -119,6 +120,8 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 			REDO = reg(e, "redo", CONTROL, GLFW.GLFW_KEY_Y);
 			PREV_ERROR = reg(e, "prev_error", SHIFT, GLFW.GLFW_KEY_F1);
 			NEXT_ERROR = reg(e, "next_error", GLFW.GLFW_KEY_F1);
+			PREV_EDITED = reg(e, "prev_edited", SHIFT, GLFW.GLFW_KEY_F7);
+			NEXT_EDITED = reg(e, "next_edited", GLFW.GLFW_KEY_F7);
 			SAVE = reg(e, "save", CONTROL, GLFW.GLFW_KEY_S);
 			RESET_RESTORE = reg(e, "reset_restore", CONTROL, GLFW.GLFW_KEY_R);
 			HOTKEY = reg(e, "hotkey", CONTROL, GLFW.GLFW_KEY_H);

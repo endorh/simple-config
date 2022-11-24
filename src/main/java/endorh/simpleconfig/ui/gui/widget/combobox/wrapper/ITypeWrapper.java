@@ -11,6 +11,8 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -87,6 +89,13 @@ public interface ITypeWrapper<T> {
 	 * otherwise the lookup will use the string name.
 	 */
 	Component getDisplayName(@NotNull T element);
+	
+	/**
+	 * Get the help tooltip for an element.
+	 */
+	default List<Component> getHelpTooltip(@NotNull T element) {
+		return Collections.emptyList();
+	}
 	
 	@Internal Pattern STYLE_ESCAPE = Pattern.compile("§[\\da-f]");
 	
