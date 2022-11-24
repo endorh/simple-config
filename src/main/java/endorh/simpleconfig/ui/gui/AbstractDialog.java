@@ -134,7 +134,7 @@ public abstract class AbstractDialog
 		int tx = x + 8;
 		if (icon != null && icon != Icon.EMPTY) {
 			tx += 18;
-			icon.renderStretch(mStack, x + 2, y + 2, 20, 20);
+			icon.renderCentered(mStack, x + 2, y + 2, 20, 20);
 		}
 		drawString(mStack, font, title, tx, y + 8, titleColor);
 		if (canCopyText())

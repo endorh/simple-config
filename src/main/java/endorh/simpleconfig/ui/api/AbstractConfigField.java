@@ -342,9 +342,9 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 			setValue((T) storedValue);
 			if (isDisplayingValue()) //noinspection unchecked
 				setDisplayedValue((T) storedValue);
-			applyHistoryHighlight();
+			applyFocusHighlight(HighlightColors.HISTORY);
 		} catch (RuntimeException e) {
-			applyErrorHighlight();
+			applyFocusHighlight(HighlightColors.ERROR);
 			LOGGER.warn("Could not revert value of config entry with path " + getPath() + ": " + e.getMessage());
 		}
 	}

@@ -5,7 +5,7 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.config.ClientConfig.confirm;
-import endorh.simpleconfig.core.SimpleConfigGUIManager;
+import endorh.simpleconfig.core.SimpleConfigGUIManagerImpl;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.gui.AbstractButtonDialog;
 import endorh.simpleconfig.ui.gui.AbstractDialog;
@@ -64,7 +64,7 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	
 	public void editHotKey(String modId, ConfigHotKey hotKey) {
 		IDialogCapableScreen screen = getScreen();
-		SimpleConfigGUIManager.showConfigGUIForHotKey(modId, screen, this, hotKey);
+		SimpleConfigGUIManagerImpl.INSTANCE.showConfigGUIForHotKey(modId, screen, this, hotKey);
 		screen.removeDialog(this);
 	}
 	

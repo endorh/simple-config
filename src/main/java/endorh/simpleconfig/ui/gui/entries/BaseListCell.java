@@ -79,7 +79,7 @@ public abstract class BaseListCell<T> extends FocusableGui
 	
 	public abstract int getCellHeight();
 	
-	@Override public void applyErrorHighlight() {
+	public void applyErrorHighlight() {
 		applyFocusHighlight(errorHighlightColor);
 	}
 	

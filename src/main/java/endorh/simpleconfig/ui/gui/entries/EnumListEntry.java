@@ -1,13 +1,18 @@
 package endorh.simpleconfig.ui.gui.entries;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.ui.api.EntryError;
+import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
+import net.minecraft.util.IReorderingProcessor;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Function;
@@ -17,13 +22,32 @@ public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
 	public static final Function<Enum<?>, ITextComponent> DEFAULT_NAME_PROVIDER =
 	  t -> new TranslationTextComponent(
 		 t instanceof SelectionListEntry.Translatable ? ((Translatable) t).getKey() : t.toString());
+	protected @Nullable Function<E, List<ITextComponent>> enumTooltipProvider;
 	
 	@Internal public EnumListEntry(
 	  ITextComponent fieldName, Class<E> clazz, E value,
-	  Function<Enum<?>, ITextComponent> enumNameProvider
+	  Function<E, ITextComponent> enumNameProvider,
+	  @Nullable Function<E, List<ITextComponent>> enumTooltipProvider
 	) {
-		super(fieldName, clazz.getEnumConstants(), value, enumNameProvider::apply);
+		super(fieldName, clazz.getEnumConstants(), value, enumNameProvider);
+		this.enumTooltipProvider = enumTooltipProvider;
 		hotKeyActionTypes.add(HotKeyActionTypes.ENUM_ADD.cast());
+	}
+	
+	@Override protected void renderField(
+	  MatrixStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+	) {
+		super.renderField(
+		  mStack, fieldX, fieldY, fieldWidth, fieldHeight, x, y,
+		  entryWidth, entryHeight, index, mouseX, mouseY, delta);
+		if (enumTooltipProvider != null && !getEntryList().isDragging()
+		    && fieldArea.contains(mouseX, mouseY)) {
+			List<ITextComponent> tooltip = enumTooltipProvider.apply(getDisplayedValue());
+			IReorderingProcessor[] tt = postProcessTooltip(tooltip.toArray(new ITextComponent[0]));
+			if (!tooltip.isEmpty()) addTooltip(Tooltip.of(
+			  fieldArea, Point.of(mouseX, mouseY), tt));
+		}
 	}
 	
 	@Override public List<EntryError> getHotKeyActionErrors(HotKeyActionType<E, ?> type) {

@@ -24,12 +24,11 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.optSplitTtc;
 
 public class EnumEntry<E extends Enum<E>>
   extends AbstractConfigEntry<E, E, E> implements AtomicEntry<E> {
@@ -86,6 +85,9 @@ public class EnumEntry<E extends Enum<E>>
 	
 	public interface ITranslatedEnum {
 		ITextComponent getDisplayName();
+		default List<ITextComponent> getHelpTooltip() {
+			return Collections.emptyList();
+		}
 	}
 	
 	public String presentName(E value) {
@@ -170,15 +172,25 @@ public class EnumEntry<E extends Enum<E>>
 		       "." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, item.name());
 	}
 	
+	protected String getEnumTooltipKey(E item) {
+		return getEnumTranslationKey(item) + ":help";
+	}
+	
 	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent enumName(E item) {
 		if (item instanceof ITranslatedEnum)
 			return ((ITranslatedEnum) item).getDisplayName();
 		final String key = getEnumTranslationKey(item);
-		// if (debugTranslations()) return new StringTextComponent(key);
 		if (I18n.hasKey(key))
 			return new TranslationTextComponent(key);
 		return new StringTextComponent(item.name());
+	}
+	
+	@OnlyIn(Dist.CLIENT)
+	protected List<ITextComponent> enumTooltip(E item) {
+		if (item instanceof ITranslatedEnum)
+			return ((ITranslatedEnum) item).getHelpTooltip();
+		return optSplitTtc(getEnumTooltipKey(item));
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -189,15 +201,16 @@ public class EnumEntry<E extends Enum<E>>
 			final List<E> choices = Lists.newArrayList(enumClass.getEnumConstants());
 			final ComboBoxFieldBuilder<E> valBuilder =
 			  builder.startComboBox(getDisplayName(), new ChoicesTypeWrapper<>(
-				   choices, e -> e.name().toLowerCase(), this::enumName), get()
+				   choices, e -> e.name().toLowerCase(),
+				   this::enumName, this::enumTooltip), get()
 				 ).setSuggestionMode(false)
 				 .setSuggestions(choices);
 			return Optional.of(decorate(valBuilder));
 		} else {
 			final EnumSelectorBuilder<E> valBuilder = builder
-			  .startEnumSelector(getDisplayName(), get());
-			//noinspection unchecked
-			valBuilder.setEnumNameProvider(e -> enumName((E) e));
+			  .startEnumSelector(getDisplayName(), get())
+			  .setEnumNameProvider(this::enumName)
+			  .setEnumTooltipProvider(this::enumTooltip);
 			return Optional.of(decorate(valBuilder));
 		}
 	}
@@ -215,14 +228,17 @@ public class EnumEntry<E extends Enum<E>>
 		protected List<V> choices;
 		protected Function<V, String> nameProvider;
 		protected Function<V, ITextComponent> formattedNameProvider;
+		protected Function<V, List<ITextComponent>> tooltipProvider;
 		
 		public ChoicesTypeWrapper(
 		  List<V> choices, Function<V, String> nameProvider,
-		  Function<V, ITextComponent> formattedNameProvider
+		  Function<V, ITextComponent> formattedNameProvider,
+		  Function<V, List<ITextComponent>> tooltipProvider
 		) {
 			this.choices = choices;
 			this.nameProvider = nameProvider;
 			this.formattedNameProvider = formattedNameProvider;
+			this.tooltipProvider = tooltipProvider;
 		}
 		
 		@Override public Pair<Optional<V>, Optional<ITextComponent>> parseElement(@NotNull String text) {
@@ -234,6 +250,10 @@ public class EnumEntry<E extends Enum<E>>
 		
 		@Override public ITextComponent getDisplayName(@NotNull V element) {
 			return formattedNameProvider.apply(element);
+		}
+		
+		@Override public List<ITextComponent> getHelpTooltip(@NotNull V element) {
+			return tooltipProvider.apply(element);
 		}
 		
 		@Override public String getName(@NotNull V element) {

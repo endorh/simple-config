@@ -80,19 +80,13 @@ public interface INavigableTarget extends INestedGuiEventHandler {
 		return false;
 	}
 	
+	/**
+	 * For common colors, see {@link HighlightColors}
+	 */
 	void applyFocusHighlight(int color, int length);
-	default void applyHistoryHighlight() {
-		applyFocusHighlight(0x804242FF);
-	}
-	default void applyMergeHighlight() {
-		applyFocusHighlight(0x80603070);
-	}
-	default void applyWarningHighlight() {
-		applyFocusHighlight(0xA0646448);
-	}
-	default void applyErrorHighlight() {
-		applyFocusHighlight(0x80FF4242);
-	}
+	/**
+	 * For common colors, see {@link HighlightColors}
+	 */
 	default void applyFocusHighlight(int color) {
 		applyFocusHighlight(color, 0);
 	}
@@ -102,5 +96,15 @@ public interface INavigableTarget extends INestedGuiEventHandler {
 		while (!(target instanceof AbstractConfigField) && target != null)
 			target = target.getNavigableParent();
 		return (AbstractConfigField<?>) target;
+	}
+	
+	final class HighlightColors {
+		private HighlightColors() {}
+		
+		public static int HISTORY = 0x804242FF;
+		public static int MERGE = 0x80603070;
+		public static int WARNING = 0xA0646448;
+		public static int ERROR = 0x80FF4242;
+		public static int EDITED = 0x80A0A0A0;
 	}
 }

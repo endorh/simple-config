@@ -9,7 +9,7 @@ import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
-import endorh.simpleconfig.core.SimpleConfigGUIManager;
+import endorh.simpleconfig.core.SimpleConfigGUIManagerImpl;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
@@ -49,7 +49,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 	//   to identify them for overlap detection.
 	private static final Int2ObjectMap<List<ExtendedKeyBind>> UNBOUND = new Int2ObjectOpenHashMap<>();
 	private static List<ExtendedKeyBind> getUnbound() {
-		int session = SimpleConfigGUIManager.getGuiSession();
+		int session = SimpleConfigGUIManagerImpl.INSTANCE.getGuiSession();
 		UNBOUND.keySet().removeIf((int i) -> i < session - 1);
 		return UNBOUND.computeIfAbsent(session, s -> new ArrayList<>());
 	}
