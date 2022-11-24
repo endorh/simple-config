@@ -2,7 +2,9 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.ui.api.IChildListEntry;
+import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
@@ -45,6 +47,9 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setMaxLength(99999);
 		comboBox.setSuggestions(this.suggestions);
 		comboBox.setValue(value);
+		comboBox.setTooltipRenderer((t, mx, my) -> getScreen().addTooltip(Tooltip.of(
+		  fieldArea, Point.of(mx, my),
+		  postProcessTooltip(t.toArray(Component[]::new)))));
 		listeners = Lists.newArrayList(comboBox, sideButtonReference);
 		childListeners = Lists.newArrayList(comboBox);
 	}

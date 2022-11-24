@@ -84,6 +84,12 @@ import org.jetbrains.annotations.NotNull;
 		public static final Icon
 		  LEFT_TAB = b.offset(220, 0).size(12, 18).level(12, 0).at(0, 18),
 		  RIGHT_TAB = b.level(-12, 0).at(24, 0);
+		/**
+		 * Size 18×18
+		 */
+		public static final Icon
+		  NAVIGATE_UP = b.offset(146, 196).size(18, 18).level(10, 0).cropArea(4, 4, 10, 10).cropFor(0, 0),
+		  NAVIGATE_DOWN = b.cropFor(0, 10);
 		static { b = null; }
 	}
 	
