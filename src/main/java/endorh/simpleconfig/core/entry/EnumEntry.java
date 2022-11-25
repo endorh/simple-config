@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EnumEntryBuilder;
+import endorh.simpleconfig.api.entry.EnumEntryBuilder.TranslatedEnum;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
@@ -24,7 +25,10 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -83,13 +87,6 @@ public class EnumEntry<E extends Enum<E>>
 		}
 	}
 	
-	public interface ITranslatedEnum {
-		ITextComponent getDisplayName();
-		default List<ITextComponent> getHelpTooltip() {
-			return Collections.emptyList();
-		}
-	}
-	
 	public String presentName(E value) {
 		String name = value.name();
 		String lowerCaseName = name.toLowerCase();
@@ -131,7 +128,7 @@ public class EnumEntry<E extends Enum<E>>
 				  ? new StringTextComponent("✔ ").mergeStyle(TextFormatting.DARK_AQUA)
 				  : new StringTextComponent("_ ").mergeStyle(TextFormatting.DARK_AQUA));
 			}
-			boolean correct = defValue instanceof ITranslatedEnum
+			boolean correct = defValue instanceof EnumEntryBuilder.TranslatedEnum
 			                  || Arrays.stream(enumClass.getEnumConstants())
 			                    .allMatch(e -> I18n.hasKey(getEnumTranslationKey(e)));
 			status = status.append(
@@ -146,7 +143,7 @@ public class EnumEntry<E extends Enum<E>>
 	@OnlyIn(Dist.CLIENT) @Override protected void addTranslationsDebugInfo(List<ITextComponent> tooltip) {
 		super.addTranslationsDebugInfo(tooltip);
 		if (parent != null) {
-			if (defValue instanceof ITranslatedEnum)
+			if (defValue instanceof EnumEntryBuilder.TranslatedEnum)
 				tooltip.add(new StringTextComponent(" + Enum provides its own translations").mergeStyle(
 				  TextFormatting.GRAY));
 			tooltip.add(
@@ -156,7 +153,7 @@ public class EnumEntry<E extends Enum<E>>
 				final IFormattableTextComponent status =
 				  I18n.hasKey(key)
 				  ? new StringTextComponent("(✔ present)").mergeStyle(TextFormatting.DARK_GREEN)
-				  : (defValue instanceof ITranslatedEnum)
+				  : (defValue instanceof EnumEntryBuilder.TranslatedEnum)
 				    ? new StringTextComponent("(not present)").mergeStyle(TextFormatting.DARK_GRAY)
 				    : new StringTextComponent("(✘ missing)").mergeStyle(TextFormatting.RED);
 				tooltip.add(new StringTextComponent("   > ").mergeStyle(TextFormatting.GRAY)
@@ -178,8 +175,8 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@OnlyIn(Dist.CLIENT)
 	protected ITextComponent enumName(E item) {
-		if (item instanceof ITranslatedEnum)
-			return ((ITranslatedEnum) item).getDisplayName();
+		if (item instanceof EnumEntryBuilder.TranslatedEnum)
+			return ((TranslatedEnum) item).getDisplayName();
 		final String key = getEnumTranslationKey(item);
 		if (I18n.hasKey(key))
 			return new TranslationTextComponent(key);
@@ -188,8 +185,8 @@ public class EnumEntry<E extends Enum<E>>
 	
 	@OnlyIn(Dist.CLIENT)
 	protected List<ITextComponent> enumTooltip(E item) {
-		if (item instanceof ITranslatedEnum)
-			return ((ITranslatedEnum) item).getHelpTooltip();
+		if (item instanceof EnumEntryBuilder.TranslatedEnum)
+			return ((TranslatedEnum) item).getHelpTooltip();
 		return optSplitTtc(getEnumTooltipKey(item));
 	}
 	

@@ -9,13 +9,13 @@ import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.SimpleConfigGroup;
 import endorh.simpleconfig.api.annotation.Bind;
+import endorh.simpleconfig.api.entry.EnumEntryBuilder.TranslatedEnum;
 import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
-import endorh.simpleconfig.core.entry.EnumEntry.ITranslatedEnum;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluids;
@@ -673,7 +673,7 @@ public class DemoConfigCategory {
 	
 	// Alternatively, enums may implement ITranslatedEnum instead,
 	//   providing their own translations
-	public enum Placement implements ITranslatedEnum {
+	public enum Placement implements TranslatedEnum {
 		UPRIGHT, UPSIDE_DOWN;
 		
 		// Although in this case it doesn't make much difference
