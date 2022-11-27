@@ -48,11 +48,11 @@ atom: characterClass | escape | anchor | flagSwitch | group | literal;
         innerPositiveCharacterClass: InnerCharacterClassStart characterClassBody CharacterClassEnd;
         innerNegativeCharacterClass: InnerNegatedCharacterClassStart characterClassBody CharacterClassEnd;
 
-characterClassBody: characterClassBody INTERSECTION innerCharacterClass
-                  | characterClassEscape
-                  | characterClassRange
-                  | innerCharacterClass
-                  | characterClassLiteral;
+characterClassBody: characterClassBody INTERSECTION innerCharacterClass characterClassBody?
+                  | characterClassEscape characterClassBody?
+                  | characterClassRange characterClassBody?
+                  | innerCharacterClass characterClassBody?
+                  | characterClassLiteral+ characterClassBody?;
     characterClassRange: characterClassLiteral RANGE characterClassLiteral;
     characterClassEscape: ClassMetaCharacter | ClassMetaEscape | ClassOctalEscape | ClassHexadecimalEscape | ClassControlCharacter | ClassShortUnicodeClass | ClassShortNegatedUnicodeClass | characterClassUnicodeClass | characterClassNegatedUnicodeClass;
     characterClassUnicodeClass: ClassUnicodeClassStart unicodeClassBody UnicodeClassEnd;

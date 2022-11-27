@@ -7,7 +7,7 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,7 +25,7 @@ import static java.lang.Math.min;
 
 @OnlyIn(Dist.CLIENT)
 public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildListEntry {
-	protected ITypeWrapper<T> typeWrapper;
+	protected TypeWrapper<T> typeWrapper;
 	protected ComboBoxWidget<T> comboBox;
 	@NotNull protected List<T> suggestions;
 	protected boolean suggestionMode = true;
@@ -35,7 +35,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	private int frame = 0;
 	
 	public ComboBoxListEntry(
-	  Component fieldName, T value, ITypeWrapper<T> typeWrapper, @Nullable Collection<T> suggestions
+	  Component fieldName, T value, TypeWrapper<T> typeWrapper, @Nullable Collection<T> suggestions
 	) {
 		super(fieldName);
 		setOriginal(value);

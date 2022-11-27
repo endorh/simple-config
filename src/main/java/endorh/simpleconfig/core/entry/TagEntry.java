@@ -5,7 +5,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.TagEntryBuilder;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
@@ -59,7 +59,7 @@ public class TagEntry extends AbstractSerializableEntry<Tag> {
 		return Optional.of(Component.translatable("simpleconfig.config.error.invalid_nbt"));
 	}
 	
-	@Override protected ITextFormatter getTextFormatter() {
-		return ITextFormatter.forLanguageOrDefault("snbt", ITextFormatter.DEFAULT);
+	@Override protected TextFormatter getTextFormatter() {
+		return TextFormatter.forLanguageOrDefault("snbt", TextFormatter.DEFAULT);
 	}
 }

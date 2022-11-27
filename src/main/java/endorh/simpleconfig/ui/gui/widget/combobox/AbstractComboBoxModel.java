@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -65,7 +65,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	}
 	
 	@Override public Pair<List<T>, List<Component>> pickAndDecorateSuggestions(
-	  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions
+	  TypeWrapper<T> typeWrapper, String query, List<T> suggestions
 	) {
 		if (query.isEmpty())
 			return Pair.of(suggestions, suggestions.stream()
@@ -143,14 +143,14 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	}
 	
 	protected Component getMatch(
-	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
+	  TypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
 	  String fragment, int matchPos, String match
 	) {
 		return Component.literal(match).setStyle(getMatchStyle());
 	}
 	
 	protected Component getNonMatch(
-	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
+	  TypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
 	) {
 		final Component title = typeWrapper.getDisplayName(item);
 		if (!title.getString().equals(name))

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.gui.entries.LongListListEntry.LongListCell;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -34,7 +34,7 @@ public class LongListListEntry extends AbstractTextFieldListListEntry<Long, Long
 	  AbstractTextFieldListListEntry.AbstractTextFieldListCell<Long, LongListCell, LongListListEntry> {
 		public LongListCell(LongListListEntry listListEntry) {
 			super(listListEntry);
-			widget.setFormatter(ITextFormatter.numeric(true));
+			widget.setFormatter(TextFormatter.numeric(true));
 		}
 		
 		@Override protected boolean isValidText(@NotNull String text) {

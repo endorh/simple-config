@@ -11,7 +11,7 @@ import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.EnumSelectorBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -225,7 +225,7 @@ public class EnumEntry<E extends Enum<E>>
 		return true;
 	}
 	
-	public static class ChoicesTypeWrapper<V> implements ITypeWrapper<V> {
+	public static class ChoicesTypeWrapper<V> implements TypeWrapper<V> {
 		protected List<V> choices;
 		protected Function<V, String> nameProvider;
 		protected Function<V, Component> formattedNameProvider;

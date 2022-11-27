@@ -546,7 +546,7 @@ fun <V: Any> entry(
 /**
  * Entry of a String serializable object
  */
-fun <V: Any> entry(value: V, serializer: IConfigEntrySerializer<V>) =
+fun <V: Any> entry(value: V, serializer: ConfigEntrySerializer<V>) =
   P.entry(value, serializer)
 
 /**

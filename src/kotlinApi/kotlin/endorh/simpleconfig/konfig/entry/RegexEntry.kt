@@ -2,7 +2,7 @@ package endorh.simpleconfig.konfig.entry
 
 import endorh.simpleconfig.api.ConfigEntryHolder
 import endorh.simpleconfig.api.entry.SerializableEntryBuilder
-import endorh.simpleconfig.api.ui.ITextFormatter
+import endorh.simpleconfig.api.ui.TextFormatter
 import endorh.simpleconfig.core.entry.AbstractSerializableEntry
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
@@ -101,6 +101,6 @@ internal class RegexEntry(
         return tooltips
     }
     
-    override fun getTextFormatter(): ITextFormatter? =
-      ITextFormatter.forLanguageOrDefault("regex", ITextFormatter.DEFAULT)
+    override fun getTextFormatter(): TextFormatter? =
+      TextFormatter.forLanguageOrDefault("regex", TextFormatter.DEFAULT)
 }

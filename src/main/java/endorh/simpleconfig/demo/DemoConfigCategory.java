@@ -8,8 +8,8 @@ import endorh.simpleconfig.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.annotation.Bind;
+import endorh.simpleconfig.api.entry.ConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.EnumEntryBuilder.TranslatedEnum;
-import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.icon.Icon;
@@ -740,7 +740,8 @@ public class DemoConfigCategory {
 		}
 	}
 	
-	public static class StringIntPairSerializer implements IConfigEntrySerializer<Pair<String, Integer>> {
+	public static class StringIntPairSerializer implements
+	                                            ConfigEntrySerializer<Pair<String, Integer>> {
 		@Override public String serializeConfigEntry(Pair<String, Integer> value) {
 			return value.getKey() + ", " + value.getValue();
 		}

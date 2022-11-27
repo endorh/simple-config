@@ -8,14 +8,20 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.intellij.lang.annotations.Language;
 
 import static java.util.Arrays.asList;
 
 public class RegexParserTest {
 	public static void main(String[] args) {
 		// Parse
-		CharStream stream = CharStreams.fromString("\\s*+(?<group>\\w+?)(?i)(?>a|b)");
-		RegexLexer lexer  = new RegexLexer(stream);
+		test("\\s*+(?<group>\\w+?)[abc](?i)(?>a|b)[abc[def]&&[e-h]]");
+	}
+	
+	private static void test(@Language("RegExp") String regex) {
+		// Parse
+		CharStream stream = CharStreams.fromString(regex);
+		RegexLexer lexer = new RegexLexer(stream);
 		TokenStream tokenStream = new CommonTokenStream(lexer);
 		RegexParser parser = new RegexParser(tokenStream);
 		ParseTree tree = parser.pattern();

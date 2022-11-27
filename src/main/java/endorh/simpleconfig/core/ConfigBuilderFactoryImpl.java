@@ -332,7 +332,7 @@ import static java.lang.Math.round;
 	}
 	
 	@Override public <V> SerializableEntry.@NotNull Builder<V> entry(
-	  V value, IConfigEntrySerializer<V> serializer
+	  V value, ConfigEntrySerializer<V> serializer
 	) {
 		return new SerializableEntry.Builder<>(value, serializer);
 	}

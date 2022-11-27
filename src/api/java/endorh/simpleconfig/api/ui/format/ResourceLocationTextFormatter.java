@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.ui.format;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * Also prevents the user from inputting invalid characters, and
  * forces inputted characters to be lowercase.
  */
-public class ResourceLocationTextFormatter implements ITextFormatter {
+public class ResourceLocationTextFormatter implements TextFormatter {
 	private Style namespaceStyle = Style.EMPTY.withColor(TextColor.fromRgb(0xA0A0A0));
 	private Style colonStyle = Style.EMPTY.withColor(TextColor.fromRgb(0x808080));
 	private Style pathStyle = Style.EMPTY.withColor(TextColor.fromRgb(0x80FFA0));
@@ -92,7 +92,7 @@ public class ResourceLocationTextFormatter implements ITextFormatter {
 	}
 	
 	@Override public @NotNull String stripInsertText(@NotNull String text) {
-		return ITextFormatter.filterCharacters(
+		return TextFormatter.filterCharacters(
 		  text.toLowerCase(),
 		  c -> c >= 'a' && c <= 'z' || c == '/' || c == '_' || c == '-' || c == ':');
 	}

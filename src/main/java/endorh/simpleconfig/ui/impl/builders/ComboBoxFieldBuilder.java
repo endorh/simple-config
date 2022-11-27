@@ -17,14 +17,14 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T>, ComboBoxFieldBuilder<T>> {
 	
-	protected final ITypeWrapper<T> typeWrapper;
+	protected final TypeWrapper<T> typeWrapper;
 	protected List<T> suggestions = null;
 	protected IComboBoxModel<T> suggestionProvider;
 	protected boolean suggestionMode = true;
 	protected int maxLength = Integer.MAX_VALUE;
 	
 	public ComboBoxFieldBuilder(
-	  ConfigFieldBuilder builder, Component name, T value, ITypeWrapper<T> typeWrapper
+	  ConfigFieldBuilder builder, Component name, T value, TypeWrapper<T> typeWrapper
 	) {
 		super(ComboBoxListEntry.class, builder, name, value);
 		this.typeWrapper = typeWrapper;
@@ -72,35 +72,35 @@ public class ComboBoxFieldBuilder<T> extends FieldBuilder<T, ComboBoxListEntry<T
 		return entry;
 	}
 	
-	public static ITypeWrapper<String> ofString() {
+	public static TypeWrapper<String> ofString() {
 		return new StringTypeWrapper();
 	}
 	
-	public static ITypeWrapper<ResourceLocation> ofResourceLocation() {
+	public static TypeWrapper<ResourceLocation> ofResourceLocation() {
 		return new ResourceLocationTypeWrapper();
 	}
 	
-	public static ITypeWrapper<Item> ofItem() {
+	public static TypeWrapper<Item> ofItem() {
 		return new ItemTypeWrapper();
 	}
 	
-	public static ITypeWrapper<ResourceLocation> ofItemName() {
+	public static TypeWrapper<ResourceLocation> ofItemName() {
 		return new ItemNameTypeWrapper();
 	}
 	
-	public static ITypeWrapper<Block> ofBlock() {
+	public static TypeWrapper<Block> ofBlock() {
 		return new BlockTypeWrapper();
 	}
 	
-	public static ITypeWrapper<ResourceLocation> ofBlockName() {
+	public static TypeWrapper<ResourceLocation> ofBlockName() {
 		return new BlockNameTypeWrapper();
 	}
 	
-	public static ITypeWrapper<Fluid> ofFluid() {
+	public static TypeWrapper<Fluid> ofFluid() {
 		return new FluidTypeWrapper();
 	}
 	
-	public static ITypeWrapper<ResourceLocation> ofFluidName() {
+	public static TypeWrapper<ResourceLocation> ofFluidName() {
 		return new FluidNameTypeWrapper();
 	}
 }

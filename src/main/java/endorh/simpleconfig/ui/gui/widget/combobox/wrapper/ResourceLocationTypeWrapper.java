@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.network.chat.Component;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class ResourceLocationTypeWrapper implements ITypeWrapper<ResourceLocation> {
+public class ResourceLocationTypeWrapper implements TypeWrapper<ResourceLocation> {
 	
 	boolean hasIcon = false;
 	int iconHeight = 20;
@@ -34,11 +34,11 @@ public class ResourceLocationTypeWrapper implements ITypeWrapper<ResourceLocatio
 	}
 	
 	@Override public int getIconHeight() {
-		return hasIcon ? iconHeight : ITypeWrapper.super.getIconHeight();
+		return hasIcon ? iconHeight : TypeWrapper.super.getIconHeight();
 	}
 	
 	@Override public int getIconWidth() {
-		return hasIcon ? iconWidth : ITypeWrapper.super.getIconWidth();
+		return hasIcon ? iconWidth : TypeWrapper.super.getIconWidth();
 	}
 	
 	@Override public Pair<Optional<ResourceLocation>, Optional<Component>> parseElement(
@@ -64,7 +64,7 @@ public class ResourceLocationTypeWrapper implements ITypeWrapper<ResourceLocatio
 		return element.getNamespace().equals("minecraft") ? element.getPath() : element.toString();
 	}
 	
-	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.forResourceLocation();
+	@Override public @Nullable TextFormatter getTextFormatter() {
+		return TextFormatter.forResourceLocation();
 	}
 }

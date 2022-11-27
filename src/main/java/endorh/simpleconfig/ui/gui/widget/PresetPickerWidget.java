@@ -17,10 +17,8 @@ import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePosit
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.Location;
-import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
@@ -115,7 +113,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 			  return getSaveTooltip(true, preset != null && preset.isRemote());
 		  }));
 		selector = new ComboBoxWidget<>(
-		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
+		  new Preset.TypeWrapper(this), () -> screen, x, y, w - 48, 24,
 		  Component.translatable("simpleconfig.preset.picker.label"));
 		selector.setHint(Component.translatable("simpleconfig.preset.picker.hint"));
 		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
@@ -580,7 +578,8 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		}
 		
 		@SuppressWarnings("ClassCanBeRecord")
-		public static class TypeWrapper implements ITypeWrapper<Preset> {
+		public static class TypeWrapper implements
+		                                endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper<Preset> {
 			public final PresetPickerWidget widget;
 			
 			public TypeWrapper(PresetPickerWidget widget) {

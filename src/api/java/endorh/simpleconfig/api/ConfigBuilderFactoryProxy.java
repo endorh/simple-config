@@ -628,7 +628,7 @@ public final class ConfigBuilderFactoryProxy {
 	/**
 	 * Entry of a String serializable object
 	 */
-	@Contract(pure=true) public static <V> @NotNull ISerializableEntryBuilder<V> entry(V value, IConfigEntrySerializer<V> serializer) {
+	@Contract(pure=true) public static <V> @NotNull ISerializableEntryBuilder<V> entry(V value, ConfigEntrySerializer<V> serializer) {
 		return getFactory().entry(value, serializer); 
 	}
 	

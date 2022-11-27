@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class StringTypeWrapper implements ITypeWrapper<String> {
+public class StringTypeWrapper implements TypeWrapper<String> {
 	@Override
 	public Pair<Optional<String>, Optional<Component>> parseElement(@NotNull String text) {
 		return Pair.of(Optional.of(text), Optional.empty());
@@ -20,7 +20,7 @@ public class StringTypeWrapper implements ITypeWrapper<String> {
 		return Component.literal(element);
 	}
 	
-	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.plain(Style.EMPTY.withColor(TextColor.fromRgb(0xE0E0E0)));
+	@Override public @Nullable TextFormatter getTextFormatter() {
+		return TextFormatter.plain(Style.EMPTY.withColor(TextColor.fromRgb(0xE0E0E0)));
 	}
 }

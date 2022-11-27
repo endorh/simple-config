@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.gui.entries.FloatListListEntry.FloatListCell;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -34,7 +34,7 @@ public class FloatListListEntry
 	  extends AbstractTextFieldListListEntry.AbstractTextFieldListCell<Float, FloatListCell, FloatListListEntry> {
 		public FloatListCell(FloatListListEntry listListEntry) {
 			super(listListEntry);
-			widget.setFormatter(ITextFormatter.numeric(false));
+			widget.setFormatter(TextFormatter.numeric(false));
 		}
 		
 		@Override protected boolean isValidText(@NotNull String text) {
