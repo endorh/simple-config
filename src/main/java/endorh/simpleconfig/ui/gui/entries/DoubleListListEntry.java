@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.gui.entries.DoubleListListEntry.DoubleListCell;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -38,7 +38,7 @@ public class DoubleListListEntry
 		
 		public DoubleListCell(DoubleListListEntry listListEntry) {
 			super(listListEntry);
-			widget.setFormatter(ITextFormatter.numeric(false));
+			widget.setFormatter(TextFormatter.numeric(false));
 		}
 		
 		@Override protected boolean isValidText(@NotNull String text) {

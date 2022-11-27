@@ -12,8 +12,8 @@ import endorh.simpleconfig.grammar.nbt.SNBTLexer;
 import endorh.simpleconfig.grammar.nbt.SNBTParser;
 import endorh.simpleconfig.grammar.regex.RegexLexer;
 import endorh.simpleconfig.grammar.regex.RegexParser;
-import endorh.simpleconfig.highlight.HighlighterManager;
-import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlighter;
+import endorh.simpleconfig.highlight.HighlighterManagerImpl;
+import endorh.simpleconfig.highlight.HighlighterManagerImpl.LanguageHighlighterImpl;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
 import endorh.simpleconfig.ui.hotkey.ResourceConfigHotKeyGroupHandler;
 import net.minecraft.client.KeyMapping;
@@ -53,7 +53,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	public static SimpleConfig COMMON_CONFIG;
 	public static SimpleConfig SERVER_CONFIG;
 	
-	public static final HighlighterManager JSON_HIGHLIGHTER_MANAGER = HighlighterManager.INSTANCE;
+	public static final HighlighterManagerImpl JSON_HIGHLIGHTER_MANAGER = HighlighterManagerImpl.INSTANCE;
 	public static final SimpleConfigResourcePresetHandler RESOURCE_PRESET_HANDLER = SimpleConfigResourcePresetHandler.INSTANCE;
 	public static final ResourceConfigHotKeyGroupHandler RESOURCE_HOT_KEY_GROUP_HANDLER = ResourceConfigHotKeyGroupHandler.INSTANCE;
 	public static final LanguageReloadManager LANGUAGE_RELOAD_MANAGER = LanguageReloadManager.INSTANCE;
@@ -74,9 +74,9 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		manager.registerReloadListener(JSON_HIGHLIGHTER_MANAGER);
 		manager.registerReloadListener(RESOURCE_PRESET_HANDLER);
 		manager.registerReloadListener(RESOURCE_HOT_KEY_GROUP_HANDLER);
-		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
+		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighterImpl<>(
 		  "regex", RegexLexer::new, RegexParser::new, RegexParser::root));
-		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighter<>(
+		JSON_HIGHLIGHTER_MANAGER.registerHighlighter(new LanguageHighlighterImpl<>(
 		  "snbt", SNBTLexer::new, SNBTParser::new, SNBTParser::root));
 		manager.registerReloadListener(LANGUAGE_RELOAD_MANAGER);
 	}

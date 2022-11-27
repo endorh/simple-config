@@ -5,7 +5,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.CompoundTagEntryBuilder;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.nbt.TagParser;
@@ -59,8 +59,8 @@ public class CompoundTagEntry extends AbstractSerializableEntry<CompoundTag> {
 		  "simpleconfig.config.error.invalid_nbt"));
 	}
 	
-	@Override protected ITextFormatter getTextFormatter() {
-		return ITextFormatter.forLanguageOrDefault("snbt", ITextFormatter.DEFAULT);
+	@Override protected TextFormatter getTextFormatter() {
+		return TextFormatter.forLanguageOrDefault("snbt", TextFormatter.DEFAULT);
 	}
 }
 

@@ -2,14 +2,14 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.SerializableEntryBuilder;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.StringTypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextFieldBuilder;
@@ -128,11 +128,11 @@ public abstract class AbstractSerializableEntry<V>
 		return typeClass.getSimpleName();
 	}
 	
-	protected ITextFormatter getTextFormatter() {
-		return ITextFormatter.DEFAULT;
+	protected TextFormatter getTextFormatter() {
+		return TextFormatter.DEFAULT;
 	}
 	
-	protected ITypeWrapper<String> getTypeWrapper() {
+	protected TypeWrapper<String> getTypeWrapper() {
 		return new SerializableTypeWrapper<>(this);
 	}
 	
@@ -163,7 +163,7 @@ public abstract class AbstractSerializableEntry<V>
 			this.entry = entry;
 		}
 		
-		@Override public @Nullable ITextFormatter getTextFormatter() {
+		@Override public @Nullable TextFormatter getTextFormatter() {
 			return entry.getTextFormatter();
 		}
 	}

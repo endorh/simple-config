@@ -8,7 +8,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.math.Matrix4f;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.client.KeyboardHandler;
@@ -65,7 +65,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	private @Nullable Function<String, Optional<Component>> hintProvider;
 	protected Consumer<String> responder;
 	protected Predicate<String> filter = Objects::nonNull;
-	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
+	protected TextFormatter formatter = TextFormatter.DEFAULT;
 	
 	public static TextFieldWidgetEx of(String text) {
 		TextFieldWidgetEx tf = new TextFieldWidgetEx(
@@ -92,7 +92,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		this.responder = responder;
 	}
 	
-	public void setFormatter(ITextFormatter formatter) {
+	public void setFormatter(TextFormatter formatter) {
 		this.formatter = formatter;
 	}
 	

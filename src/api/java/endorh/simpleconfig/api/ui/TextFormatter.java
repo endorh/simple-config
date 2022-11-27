@@ -1,8 +1,8 @@
 package endorh.simpleconfig.api.ui;
 
 import endorh.simpleconfig.api.ui.format.*;
+import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.CharacterFormatter;
 import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.CharacterMapTextFormatter;
-import endorh.simpleconfig.api.ui.format.CharacterBasedTextFormatter.ICharacterFormatter;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
@@ -15,13 +15,13 @@ import java.util.function.Predicate;
 /**
  * Text formatter, used to format user-input depending on the context.
  */
-public interface ITextFormatter {
+public interface TextFormatter {
 	/**
 	 * Cache the another formatter.<br>
 	 * Only remembers the last value.<br>
 	 * Useful for rendering loops where the same text may be formatted multiple times.
 	 */
-	static @NotNull CachedTextFormatter cached(ITextFormatter formatter) {
+	static @NotNull CachedTextFormatter cached(TextFormatter formatter) {
 		return new CachedTextFormatter(formatter);
 	}
 	
@@ -36,9 +36,9 @@ public interface ITextFormatter {
 	}
 	
 	/**
-	 * Character-based formatter using an {@link ICharacterFormatter}.
+	 * Character-based formatter using an {@link CharacterFormatter}.
 	 */
-	static @NotNull CharacterBasedTextFormatter characterBased(ICharacterFormatter formatter) {
+	static @NotNull CharacterBasedTextFormatter characterBased(CharacterFormatter formatter) {
 		return new CharacterBasedTextFormatter(formatter);
 	}
 	
@@ -46,8 +46,8 @@ public interface ITextFormatter {
 	 * Text formatter for a registered language.<br>
 	 * The only built-in languages are {@code "regex"} and {@code "snbt"}
 	 */
-	static @NotNull ILanguageHighlighter forLanguage(String language) {
-		ILanguageHighlighter highlighter = IHighlighterManager.getInstance().getHighlighter(language);
+	static @NotNull LanguageHighlighter forLanguage(String language) {
+		LanguageHighlighter highlighter = HighlighterManager.getInstance().getHighlighter(language);
 		if (highlighter == null) throw new IllegalArgumentException(
 		  "Missing highlighter for language: \"" + language + "\"");
 		return highlighter;
@@ -56,8 +56,8 @@ public interface ITextFormatter {
 	/**
 	 * Text formatter for a registered language, or a fallback text formatter.<br>
 	 */
-	static @NotNull ITextFormatter forLanguageOrDefault(String language, ITextFormatter def) {
-		ILanguageHighlighter highlighter = IHighlighterManager.getInstance().getHighlighter(language);
+	static @NotNull TextFormatter forLanguageOrDefault(String language, TextFormatter def) {
+		LanguageHighlighter highlighter = HighlighterManager.getInstance().getHighlighter(language);
 		if (highlighter == null) return def;
 		return highlighter;
 	}
@@ -65,12 +65,12 @@ public interface ITextFormatter {
 	/**
 	 * Default text formatter, which doesn't apply any style.
 	 */
-	ITextFormatter DEFAULT = plain(Style.EMPTY);
+	TextFormatter DEFAULT = plain(Style.EMPTY);
 	
 	/**
 	 * Plain text formatter, which applies the given style to the whole text.
 	 */
-	static @NotNull ITextFormatter plain(Style style) {
+	static @NotNull TextFormatter plain(Style style) {
 		return text -> new TextComponent(text).setStyle(style);
 	}
 	

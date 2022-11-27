@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.StringListEntry;
 import net.minecraft.network.chat.Component;
@@ -13,7 +13,7 @@ import java.util.Objects;
 @OnlyIn(value = Dist.CLIENT)
 public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, TextFieldBuilder> {
 	protected int maxLength = Integer.MAX_VALUE;
-	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
+	protected TextFormatter textFormatter = TextFormatter.DEFAULT;
 	
 	public TextFieldBuilder(
 	  ConfigFieldBuilder builder, Component name, String value
@@ -26,7 +26,7 @@ public class TextFieldBuilder extends FieldBuilder<String, StringListEntry, Text
 		return self();
 	}
 	
-	public TextFieldBuilder setTextFormatter(ITextFormatter textFormatter) {
+	public TextFieldBuilder setTextFormatter(TextFormatter textFormatter) {
 		this.textFormatter = textFormatter;
 		return self();
 	}

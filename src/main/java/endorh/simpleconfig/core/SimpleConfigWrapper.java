@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.Type;
-import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.entry.ConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.config.CommonConfig.menu;
@@ -499,7 +499,7 @@ public class SimpleConfigWrapper {
 		} else return list(entry("", new YamlConfigSerializer()));
 	}
 	
-	public static class YamlConfigSerializer implements IConfigEntrySerializer<Object> {
+	public static class YamlConfigSerializer implements ConfigEntrySerializer<Object> {
 		@Override public String serializeConfigEntry(Object value) {
 			Yaml yaml = SimpleConfigCommentedYamlFormat.getDefaultYaml();
 			try {

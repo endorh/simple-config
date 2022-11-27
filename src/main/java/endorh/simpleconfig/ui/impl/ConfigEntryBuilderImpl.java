@@ -9,7 +9,7 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -188,7 +188,7 @@ public class ConfigEntryBuilderImpl implements ConfigFieldBuilder {
 	}
 	
 	@Override public <T> ComboBoxFieldBuilder<T> startComboBox(
-	  Component name, ITypeWrapper<T> typeWrapper, T value
+	  Component name, TypeWrapper<T> typeWrapper, T value
 	) {
 		return new ComboBoxFieldBuilder<>(this, name, value, typeWrapper);
 	}

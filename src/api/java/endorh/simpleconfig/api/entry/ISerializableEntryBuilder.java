@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,5 +16,6 @@ public interface ISerializableEntryBuilder<V>
 	 * Set the text formatter used by this entry.<br>
 	 * It will provide syntax highlighting and editing features in the GUI.
 	 */
-	@Contract(pure=true) @NotNull ISerializableEntryBuilder<V> setTextFormatter(ITextFormatter formatter);
+	@Contract(pure=true) @NotNull ISerializableEntryBuilder<V> setTextFormatter(
+	  TextFormatter formatter);
 }
