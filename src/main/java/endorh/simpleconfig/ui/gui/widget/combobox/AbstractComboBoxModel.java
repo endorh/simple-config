@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
 import com.google.common.collect.Lists;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
