@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -21,7 +21,7 @@ public class FloatListEntry extends TextFieldListEntry<Float> implements IRanged
 	  Component fieldName, Float value
 	) {
 		super(fieldName, value, false);
-		setTextFormatter(ITextFormatter.numeric(false));
+		setTextFormatter(TextFormatter.numeric(false));
 		Stream.of(
 		  HotKeyActionTypes.FLOAT_ADD, HotKeyActionTypes.FLOAT_ADD_CYCLE,
 		  HotKeyActionTypes.FLOAT_MULTIPLY, HotKeyActionTypes.FLOAT_DIVIDE

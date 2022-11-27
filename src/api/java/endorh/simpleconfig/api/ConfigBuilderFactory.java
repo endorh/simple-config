@@ -157,7 +157,7 @@ public interface ConfigBuilderFactory {
 	<V> @NotNull SerializableEntryBuilder<V, ?> entry(
 	  V value, Function<V, String> serializer, Function<String, Optional<V>> deserializer);
 	<V> @NotNull ISerializableEntryBuilder<V> entry(
-	  V value, IConfigEntrySerializer<V> serializer);
+	  V value, ConfigEntrySerializer<V> serializer);
 	<V extends ISerializableConfigEntry<V>> @NotNull ISerializableEntryBuilder<V> entry(V value);
 	
 	<B> @NotNull BeanEntryBuilder<B> bean(B value);

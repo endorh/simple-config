@@ -5,15 +5,15 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 
 class HighlighterManagerProxy {
-	private static IHighlighterManager manager;
+	private static HighlighterManager manager;
 	
-	static @NotNull IHighlighterManager getHighlighterManager() {
+	static @NotNull HighlighterManager getHighlighterManager() {
 		if (manager != null) return manager;
 		try {
 			Class<?> cls = Class.forName("endorh.simpleconfig.highlight.HighlighterManager");
 			Field inst = cls.getDeclaredField("INSTANCE");
 			inst.setAccessible(true);
-			return manager = (IHighlighterManager) inst.get(null);
+			return manager = (HighlighterManager) inst.get(null);
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(
 			  "Missing SimpleConfig runtime. One of your mods depends on " +

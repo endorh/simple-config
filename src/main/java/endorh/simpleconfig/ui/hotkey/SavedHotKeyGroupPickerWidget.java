@@ -24,7 +24,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
@@ -581,7 +581,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		}
 	}
 	
-	public static class SavedHotKeyGroupWrapper implements ITypeWrapper<SavedHotKeyGroup> {
+	public static class SavedHotKeyGroupWrapper implements TypeWrapper<SavedHotKeyGroup> {
 		private final SavedHotKeyGroupPickerWidget widget;
 		public SavedHotKeyGroupWrapper(SavedHotKeyGroupPickerWidget widget) {
 			this.widget = widget;

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.gui.entries.IntegerListListEntry.IntegerListCell;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -35,7 +35,7 @@ public class IntegerListListEntry
 	  extends AbstractTextFieldListListEntry.AbstractTextFieldListCell<Integer, IntegerListCell, IntegerListListEntry> {
 		public IntegerListCell(IntegerListListEntry listListEntry) {
 			super(listListEntry);
-			widget.setFormatter(ITextFormatter.numeric(true));
+			widget.setFormatter(TextFormatter.numeric(true));
 		}
 		
 		@Override protected boolean isValidText(@NotNull String text) {

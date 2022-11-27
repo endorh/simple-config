@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.ui.format;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,12 +10,12 @@ import java.util.Objects;
 /**
  * Wrapper for a text formatter that caches the last formatted result.
  */
-public class CachedTextFormatter implements ITextFormatter {
-	private final ITextFormatter delegate;
+public class CachedTextFormatter implements TextFormatter {
+	private final TextFormatter delegate;
 	private String lastText;
 	private MutableComponent lastFormattedText;
 	
-	public CachedTextFormatter(ITextFormatter delegate) {
+	public CachedTextFormatter(TextFormatter delegate) {
 		this.delegate = delegate;
 	}
 	
@@ -38,7 +38,7 @@ public class CachedTextFormatter implements ITextFormatter {
 		return delegate.shouldSkipClosingPair(typedChar, context, caretPos);
 	}
 	
-	public ITextFormatter getDelegate() {
+	public TextFormatter getDelegate() {
 		return delegate;
 	}
 }

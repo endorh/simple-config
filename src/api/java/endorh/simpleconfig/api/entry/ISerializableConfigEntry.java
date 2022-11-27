@@ -2,9 +2,9 @@ package endorh.simpleconfig.api.entry;
 
 public interface ISerializableConfigEntry<T extends ISerializableConfigEntry<T>> {
 	/**
-	 * An {@link IConfigEntrySerializer} for this entry type
+	 * An {@link ConfigEntrySerializer} for this entry type
 	 */
-	IConfigEntrySerializer<T> getConfigSerializer();
+	ConfigEntrySerializer<T> getConfigSerializer();
 	
 	/**
 	 * The required type for backing fields of this entry type
