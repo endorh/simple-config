@@ -24,7 +24,7 @@ val modGroup = "endorh.simpleconfig"
 
 object V {
     val api = "1.0.0"
-    val mod = "1.0.3"
+    val mod = "1.0.0"
     val minecraft = "1.19.2"
     val forge = "43.1.1"
     val minecraftForge = "$minecraft-$forge"

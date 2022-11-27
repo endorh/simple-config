@@ -29,7 +29,7 @@ val antlrVersion: String by extra
 object V {
     val api = "1.0.0"
     val kotlinApi = api
-    val mod = "1.0.4"
+    val mod = "1.0.0"
     val minecraft = "1.19.2"
     val forge = "43.1.1"
     val minecraftForge = "$minecraft-$forge"
