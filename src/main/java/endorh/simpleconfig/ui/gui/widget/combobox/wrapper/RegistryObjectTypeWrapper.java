@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.text.ITextComponent;
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
+public abstract class RegistryObjectTypeWrapper<T> implements TypeWrapper<T> {
 	protected boolean hasIcon = false;
 	protected int iconSize = 20;
 	
@@ -66,7 +66,7 @@ public abstract class RegistryObjectTypeWrapper<T> implements ITypeWrapper<T> {
 		  .append(new StringTextComponent(name.getPath()).mergeStyle(TextFormatting.WHITE));
 	}
 	
-	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.forResourceLocation();
+	@Override public @Nullable TextFormatter getTextFormatter() {
+		return TextFormatter.forResourceLocation();
 	}
 }

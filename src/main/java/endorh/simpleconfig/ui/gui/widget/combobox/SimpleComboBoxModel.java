@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +30,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 	}
 	
 	@Override public Optional<List<T>> updateSuggestions(
-	  ITypeWrapper<T> typeWrapper, String query
+	  TypeWrapper<T> typeWrapper, String query
 	) {
 		final long time = System.currentTimeMillis();
 		if (time - lastUpdate < updateCooldown)
@@ -40,7 +40,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 	}
 	
 	@Override public Optional<ITextComponent> getPlaceHolder(
-	  ITypeWrapper<T> typeWrapper, String query
+	  TypeWrapper<T> typeWrapper, String query
 	) {
 		return placeholder != null ? Optional.of(placeholder.apply(query))
 		                           : super.getPlaceHolder(typeWrapper, query);

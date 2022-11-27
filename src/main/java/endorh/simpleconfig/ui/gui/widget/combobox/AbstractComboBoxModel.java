@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.util.text.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -115,7 +115,7 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	}
 	
 	@Override public Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
-	  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions
+	  TypeWrapper<T> typeWrapper, String query, List<T> suggestions
 	) {
 		if (query.isEmpty())
 			return Pair.of(suggestions, suggestions.stream()
@@ -193,14 +193,14 @@ public abstract class AbstractComboBoxModel<T> implements IComboBoxModel<T> {
 	}
 	
 	protected ITextComponent getMatch(
-	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
+	  TypeWrapper<T> typeWrapper, T item, String name, int fragmentPos,
 	  String fragment, int matchPos, String match
 	) {
 		return new StringTextComponent(match).setStyle(getMatchStyle());
 	}
 	
 	protected ITextComponent getNonMatch(
-	  ITypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
+	  TypeWrapper<T> typeWrapper, T item, String name, int fragmentPos, String fragment
 	) {
 		final ITextComponent title = typeWrapper.getDisplayName(item);
 		if (!title.getString().equals(name))

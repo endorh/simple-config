@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.text.Color;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class StringTypeWrapper implements ITypeWrapper<String> {
+public class StringTypeWrapper implements TypeWrapper<String> {
 	@Override
 	public Pair<Optional<String>, Optional<ITextComponent>> parseElement(@NotNull String text) {
 		return Pair.of(Optional.of(text), Optional.empty());
@@ -21,7 +21,7 @@ public class StringTypeWrapper implements ITypeWrapper<String> {
 		return new StringTextComponent(element);
 	}
 	
-	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.plain(Style.EMPTY.setColor(Color.fromInt(0xE0E0E0)));
+	@Override public @Nullable TextFormatter getTextFormatter() {
+		return TextFormatter.plain(Style.EMPTY.setColor(Color.fromInt(0xE0E0E0)));
 	}
 }

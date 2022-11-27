@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.ui.format;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.text.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * It also prevents the user from inputting any non-numeric characters,
  * or decimal points if the number should be an integer.
  */
-public class NumberTextFormatter implements ITextFormatter {
+public class NumberTextFormatter implements TextFormatter {
 	private Style numberStyle = Style.EMPTY.setColor(Color.fromInt(0xA0BDFF));
 	private Style punctuationStyle = Style.EMPTY.setColor(Color.fromInt(0xBDA0FF));
 	private Style errorStyle = Style.EMPTY.setColor(Color.fromInt(0xFF8080));
@@ -95,7 +95,7 @@ public class NumberTextFormatter implements ITextFormatter {
 	}
 	
 	@Override public @NotNull String stripInsertText(@NotNull String text) {
-		return ITextFormatter.filterCharacters(
+		return TextFormatter.filterCharacters(
 		  text, c -> Character.isDigit(c) || c == '-' || c == '+' || c == '_'
 		             || !integer && (c == '.' || c == 'e' || c == 'E'));
 	}

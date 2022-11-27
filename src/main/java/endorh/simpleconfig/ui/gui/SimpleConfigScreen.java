@@ -1052,7 +1052,7 @@ import static net.minecraft.util.math.MathHelper.clamp;
 			if (opt.isPresent()) return opt.get();
 		}
 		if (!preferSameCategory && i > -1) {
-			for (; i != idx; i = catStep.apply(i))
+			for (; i != idx; i = step.apply(i))
 				if (predicate.test(targets.get(i))) return targets.get(i);
 			if (predicate.test(target)) return target;
 		}

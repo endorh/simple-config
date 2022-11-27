@@ -1,11 +1,11 @@
 package endorh.simpleconfig.highlight;
 
 import com.google.gson.*;
-import endorh.simpleconfig.api.ui.IHighlighterManager;
-import endorh.simpleconfig.api.ui.ILanguageHighlighter;
-import endorh.simpleconfig.highlight.HighlighterManager.HighlightRule.RuleDeserializer;
-import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.HighlighterDeserializer;
-import endorh.simpleconfig.highlight.HighlighterManager.LanguageHighlightingRules.StyleDeserializer;
+import endorh.simpleconfig.api.ui.HighlighterManager;
+import endorh.simpleconfig.api.ui.LanguageHighlighter;
+import endorh.simpleconfig.highlight.HighlighterManagerImpl.HighlightRule.RuleDeserializer;
+import endorh.simpleconfig.highlight.HighlighterManagerImpl.LanguageHighlightingRules.HighlighterDeserializer;
+import endorh.simpleconfig.highlight.HighlighterManagerImpl.LanguageHighlightingRules.StyleDeserializer;
 import net.minecraft.client.resources.JsonReloadListener;
 import net.minecraft.loot.LootSerializers;
 import net.minecraft.profiler.IProfiler;
@@ -29,19 +29,20 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HighlighterManager extends JsonReloadListener implements IHighlighterManager {
+public class HighlighterManagerImpl extends JsonReloadListener implements
+                                                                             HighlighterManager {
 	private static final Gson GSON = LootSerializers.func_237386_a_()
 	  .registerTypeAdapter(HighlightRule.class, new RuleDeserializer())
 	  .registerTypeAdapter(LanguageHighlightingRules.class, new HighlighterDeserializer())
 	  .registerTypeAdapter(Style.class, new StyleDeserializer())
 	  .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
 	  .create();
-	public static final HighlighterManager INSTANCE = new HighlighterManager();
+	public static final HighlighterManagerImpl INSTANCE = new HighlighterManagerImpl();
 	
-	private final Map<String, LanguageHighlighter<?>> highlighters = new HashMap<>();
+	private final Map<String, LanguageHighlighterImpl<?>> highlighters = new HashMap<>();
 	private final Map<String, LanguageHighlightingRules> rules = new HashMap<>();
 	
-	public HighlighterManager() {
+	public HighlighterManagerImpl() {
 		super(GSON, "simpleconfig-highlight");
 	}
 	
@@ -59,25 +60,25 @@ public class HighlighterManager extends JsonReloadListener implements IHighlight
 		  });
 	}
 	
-	public void registerHighlighter(LanguageHighlighter<?> parser) {
+	public void registerHighlighter(LanguageHighlighterImpl<?> parser) {
 		highlighters.put(parser.getLanguage(), parser);
 	}
 	
-	@Override public @Nullable ILanguageHighlighter getHighlighter(String language) {
-		LanguageHighlighter<?> parser = highlighters.get(language);
+	@Override public @Nullable LanguageHighlighter getHighlighter(String language) {
+		LanguageHighlighterImpl<?> parser = highlighters.get(language);
 		if (parser != null) parser.setRules(
 		  rules.getOrDefault(language, LanguageHighlightingRules.EMPTY));
 		return parser;
 	}
 	
-	public static class LanguageHighlighter<P extends Parser> implements ILanguageHighlighter {
+	public static class LanguageHighlighterImpl<P extends Parser> implements LanguageHighlighter {
 		private final String language;
 		private final Function<CharStream, Lexer> lexerFactory;
 		private final Function<CommonTokenStream, P> parserFactory;
 		private final Function<P, ParserRuleContext> rootParser;
 		private LanguageHighlightingRules highlighter = LanguageHighlightingRules.EMPTY;
 		
-		public LanguageHighlighter(
+		public LanguageHighlighterImpl(
 		  String language, Function<CharStream, Lexer> lexerFactory,
 		  Function<CommonTokenStream, P> parserFactory,
 		  Function<P, ParserRuleContext> rootParser

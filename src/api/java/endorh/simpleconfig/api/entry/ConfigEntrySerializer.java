@@ -1,11 +1,11 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-public interface IConfigEntrySerializer<T> {
+public interface ConfigEntrySerializer<T> {
 	/**
 	 * Serialize the value to a string.
 	 */
@@ -26,11 +26,11 @@ public interface IConfigEntrySerializer<T> {
 	}
 	
 	/**
-	 * Get the {@link ITextFormatter} for this entry.<br>
+	 * Get the {@link TextFormatter} for this entry.<br>
 	 * It will be used to provide syntax highlighting and editing
 	 * features in the GUI.
 	 */
-	default @NotNull ITextFormatter getConfigTextFormatter() {
-		return ITextFormatter.DEFAULT;
+	default @NotNull TextFormatter getConfigTextFormatter() {
+		return TextFormatter.DEFAULT;
 	}
 }

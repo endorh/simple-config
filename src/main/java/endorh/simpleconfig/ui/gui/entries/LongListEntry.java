@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -20,7 +20,7 @@ public class LongListEntry
 	
 	@Internal public LongListEntry(ITextComponent fieldName, Long value) {
 		super(fieldName, value, false);
-		setTextFormatter(ITextFormatter.numeric(true));
+		setTextFormatter(TextFormatter.numeric(true));
 		Stream.of(HotKeyActionTypes.LONG_ADD, HotKeyActionTypes.LONG_ADD_CYCLE)
 		  .forEach(hotKeyActionTypes::add);
 	}

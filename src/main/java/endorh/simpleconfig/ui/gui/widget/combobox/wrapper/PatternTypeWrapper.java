@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.text.Color;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-public class PatternTypeWrapper implements ITypeWrapper<Pattern> {
+public class PatternTypeWrapper implements TypeWrapper<Pattern> {
 	
 	protected int flags;
 	
@@ -40,8 +40,8 @@ public class PatternTypeWrapper implements ITypeWrapper<Pattern> {
 		return new StringTextComponent(element.pattern());
 	}
 	
-	@Override public @Nullable ITextFormatter getTextFormatter() {
-		return ITextFormatter.forLanguageOrDefault("regex", ITextFormatter.plain(
+	@Override public @Nullable TextFormatter getTextFormatter() {
+		return TextFormatter.forLanguageOrDefault("regex", TextFormatter.plain(
 		  Style.EMPTY.setColor(Color.fromInt(0xFFA080))));
 	}
 }

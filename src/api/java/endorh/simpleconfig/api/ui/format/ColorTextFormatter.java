@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.ui.format;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.text.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * Color text formatter in {@code #AARRGGBB} or {@code #RRGGBB} format.
  */
-public class ColorTextFormatter implements ITextFormatter {
+public class ColorTextFormatter implements TextFormatter {
 	private static final Pattern COLOR_PATTERN = Pattern.compile(
 	  "^#(?<a>[\\da-fA-F]{2})?(?<r>[\\da-fA-F]{2})(?<g>[\\da-fA-F]{2})(?<b>[\\da-fA-F]{2})$");
 	
@@ -34,7 +34,7 @@ public class ColorTextFormatter implements ITextFormatter {
 	}
 	
 	@Override public @NotNull String stripInsertText(@NotNull String text) {
-		return ITextFormatter.filterCharacters(
+		return TextFormatter.filterCharacters(
 		  text.toUpperCase(), c -> c == '#' || Character.isDigit(c)
 		                           || c >= 'A' && c <= 'F');
 	}

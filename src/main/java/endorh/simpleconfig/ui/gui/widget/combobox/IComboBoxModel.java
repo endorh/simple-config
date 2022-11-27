@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.combobox;
 
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -11,11 +11,11 @@ import java.util.Optional;
 
 public interface IComboBoxModel<T> {
 	Pair<List<T>, List<ITextComponent>> pickAndDecorateSuggestions(
-	  ITypeWrapper<T> typeWrapper, String query, List<T> suggestions);
+	  TypeWrapper<T> typeWrapper, String query, List<T> suggestions);
 	
-	Optional<List<T>> updateSuggestions(ITypeWrapper<T> typeWrapper, String query);
+	Optional<List<T>> updateSuggestions(TypeWrapper<T> typeWrapper, String query);
 	
-	default Optional<ITextComponent> getPlaceHolder(ITypeWrapper<T> typeWrapper, String query) {
+	default Optional<ITextComponent> getPlaceHolder(TypeWrapper<T> typeWrapper, String query) {
 		return Optional.of(new TranslationTextComponent(
 		  "simpleconfig.ui.no_suggestions").mergeStyle(TextFormatting.GRAY));
 	}

@@ -6,6 +6,10 @@ import com.google.common.collect.Maps;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Presets;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.*;
@@ -13,14 +17,8 @@ import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePosit
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.Location;
-import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset.TypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Presets;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.gui.FocusableGui;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.Util;
@@ -109,7 +107,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 			  return getSaveTooltip(true, preset != null && preset.isRemote());
 		  }));
 		selector = new ComboBoxWidget<>(
-		  new TypeWrapper(this), () -> screen, x, y, w - 48, 24,
+		  new Preset.TypeWrapper(this), () -> screen, x, y, w - 48, 24,
 		  new TranslationTextComponent("simpleconfig.preset.picker.label"));
 		selector.setHint(new TranslationTextComponent("simpleconfig.preset.picker.hint"));
 		final SimpleComboBoxModel<Preset> provider = new SimpleComboBoxModel<>(
@@ -566,7 +564,8 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 			}
 		}
 		
-		public static class TypeWrapper implements ITypeWrapper<Preset> {
+		public static class TypeWrapper implements
+		                                endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper<Preset> {
 			public final PresetPickerWidget widget;
 			
 			public TypeWrapper(PresetPickerWidget widget) {

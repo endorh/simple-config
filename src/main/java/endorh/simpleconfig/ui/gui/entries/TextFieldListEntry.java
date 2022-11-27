@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -38,7 +38,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	protected int maxLength;
 	protected int minLength;
 	private int frame = 0;
-	protected ITextFormatter textFormatter = ITextFormatter.DEFAULT;
+	protected TextFormatter textFormatter = TextFormatter.DEFAULT;
 	
 	@Internal protected TextFieldListEntry(
 	  ITextComponent fieldName, V original, boolean canExpand
@@ -48,7 +48,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		textFieldWidget = new TextFieldWidgetEx(
 		  Minecraft.getInstance().fontRenderer, 0, 0, 150, 18, NarratorChatListener.EMPTY);
 		textFieldWidget.setMaxLength(999999);
-		textFieldWidget.setFormatter(ITextFormatter.cached(textFormatter));
+		textFieldWidget.setFormatter(TextFormatter.cached(textFormatter));
 		setOriginal(original);
 		setValue(original);
 		setDisplayedValue(original);
@@ -213,12 +213,12 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		this.minLength = minLength;
 	}
 	
-	public void setTextFormatter(ITextFormatter textFormatter) {
+	public void setTextFormatter(TextFormatter textFormatter) {
 		this.textFormatter = textFormatter;
-		textFieldWidget.setFormatter(ITextFormatter.cached(textFormatter));
+		textFieldWidget.setFormatter(TextFormatter.cached(textFormatter));
 	}
 	
-	public ITextFormatter getTextFormatter() {
+	public TextFormatter getTextFormatter() {
 		return textFormatter;
 	}
 	

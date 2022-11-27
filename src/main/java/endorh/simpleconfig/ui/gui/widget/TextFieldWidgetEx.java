@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.client.KeyboardListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -62,7 +62,7 @@ public class TextFieldWidgetEx extends Widget {
 	private @Nullable Function<String, Optional<ITextComponent>> hintProvider;
 	protected Consumer<String> responder;
 	protected Predicate<String> filter = Objects::nonNull;
-	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
+	protected TextFormatter formatter = TextFormatter.DEFAULT;
 	
 	public static TextFieldWidgetEx of(String text) {
 		TextFieldWidgetEx tf = new TextFieldWidgetEx(
@@ -89,7 +89,7 @@ public class TextFieldWidgetEx extends Widget {
 		this.responder = responder;
 	}
 	
-	public void setFormatter(ITextFormatter formatter) {
+	public void setFormatter(TextFormatter formatter) {
 		this.formatter = formatter;
 	}
 	

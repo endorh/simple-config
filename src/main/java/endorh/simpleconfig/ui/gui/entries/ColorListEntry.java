@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
@@ -58,7 +58,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		widgetsWithColorPicker.add(colorPicker);
 		childWidgetsWithColorPicker = new LinkedList<>(childWidgets);
 		childWidgetsWithColorPicker.add(colorPicker);
-		setTextFormatter(ITextFormatter.forColor());
+		setTextFormatter(TextFormatter.forColor());
 		last = value;
 	}
 	

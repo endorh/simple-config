@@ -2,6 +2,10 @@ package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Hotkeys;
+import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ServerConfig;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
@@ -20,14 +24,10 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Hotkeys;
-import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.FocusableGui;
@@ -583,7 +583,7 @@ public class SavedHotKeyGroupPickerWidget extends FocusableGui implements IRecta
 		}
 	}
 	
-	public static class SavedHotKeyGroupWrapper implements ITypeWrapper<SavedHotKeyGroup> {
+	public static class SavedHotKeyGroupWrapper implements TypeWrapper<SavedHotKeyGroup> {
 		private final SavedHotKeyGroupPickerWidget widget;
 		public SavedHotKeyGroupWrapper(SavedHotKeyGroupPickerWidget widget) {
 			this.widget = widget;

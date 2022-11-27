@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
@@ -16,20 +16,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-public interface ITypeWrapper<T> {
+public interface TypeWrapper<T> {
 	Icon ICON_ERROR = SimpleConfigIcons.ComboBox.ERROR;
 	Icon ICON_UNKNOWN = SimpleConfigIcons.ComboBox.UNKNOWN;
 	
 	/**
 	 * Whether this type has an icon to display in combo boxes<br>
-	 * Subclasses that return yes should also override {@link ITypeWrapper#renderIcon}
+	 * Subclasses that return yes should also override {@link TypeWrapper#renderIcon}
 	 */
 	default boolean hasIcon() {
 		return false;
 	}
 	
 	/**
-	 * Only queried if {@link ITypeWrapper#hasIcon} returns true
+	 * Only queried if {@link TypeWrapper#hasIcon} returns true
 	 *
 	 * @return The height reserved for the icon of this type
 	 */
@@ -38,17 +38,17 @@ public interface ITypeWrapper<T> {
 	}
 	
 	/**
-	 * Only queried if {@link ITypeWrapper#hasIcon()} returns true.
+	 * Only queried if {@link TypeWrapper#hasIcon()} returns true.
 	 *
 	 * @return The width reserved for the icons of this type.
-	 * Defaults to {@link ITypeWrapper#getIconHeight()}.
+	 * Defaults to {@link TypeWrapper#getIconHeight()}.
 	 */
 	default int getIconWidth() {
 		return getIconHeight();
 	}
 	
 	/**
-	 * Render the icon for an element, by default calls {@link ITypeWrapper#getIcon}
+	 * Render the icon for an element, by default calls {@link TypeWrapper#getIcon}
 	 * and renders it if present.
 	 */
 	default void renderIcon(
@@ -65,7 +65,7 @@ public interface ITypeWrapper<T> {
 	/**
 	 * Get the icon of an element.<br>
 	 * Implementations may alternatively override
-	 * {@link ITypeWrapper#renderIcon} directly.
+	 * {@link TypeWrapper#renderIcon} directly.
 	 *
 	 * @param element The element being rendered, possibly null.
 	 * @param text    The text written by the user, possibly not matching
@@ -102,7 +102,7 @@ public interface ITypeWrapper<T> {
 	/**
 	 * Get a string name of the element to be used
 	 * for query lookup by the {@link IComboBoxModel}<br>
-	 * Should have the same text as the namme returned by {@link ITypeWrapper#getDisplayName}
+	 * Should have the same text as the namme returned by {@link TypeWrapper#getDisplayName}
 	 */
 	default String getName(@NotNull T element) {
 		return STYLE_ESCAPE.matcher(getDisplayName(element).getString()).replaceAll("");
@@ -115,7 +115,7 @@ public interface ITypeWrapper<T> {
 	 *
 	 * @return A text formatter for this type or {@code null}.
 	 */
-	default @Nullable ITextFormatter getTextFormatter() {
+	default @Nullable TextFormatter getTextFormatter() {
 		return null;
 	}
 }

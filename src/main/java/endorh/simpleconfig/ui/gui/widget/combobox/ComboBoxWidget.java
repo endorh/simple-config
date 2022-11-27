@@ -5,14 +5,14 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
-import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.ITypeWrapper;
+import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import net.minecraft.client.KeyboardListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
@@ -52,7 +52,7 @@ import static java.lang.Math.*;
 public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	@Internal protected IOverlayCapableContainer screen = null;
 	protected Supplier<IOverlayCapableContainer> screenSupplier;
-	protected final @NotNull ITypeWrapper<T> typeWrapper;
+	protected final @NotNull TypeWrapper<T> typeWrapper;
 	protected int focusedBorderColor = 0xFFFFFFFF;
 	protected int borderColor = 0xFFA0A0A0;
 	protected int backgroundColor = 0xFF000000;
@@ -107,7 +107,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected List<ITextComponent> decoratedSuggestions = Lists.newArrayList();
 	/** Called to check if the text is valid */
 	protected Predicate<String> filter = Objects::nonNull;
-	protected ITextFormatter formatter = ITextFormatter.DEFAULT;
+	protected TextFormatter formatter = TextFormatter.DEFAULT;
 	protected Rectangle area = new Rectangle();
 	protected Rectangle dropDownRectangle = new Rectangle();
 	protected Rectangle reportedDropDownRectangle = new Rectangle();
@@ -115,22 +115,22 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 	protected int suggestionCursor = -1;
 	
 	public ComboBoxWidget(
-	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
+	  @NotNull TypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  int x, int y, int width, int height
 	) { this(typeWrapper, screen, x, y, width, height, NarratorChatListener.EMPTY); }
 	
 	public ComboBoxWidget(
-	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
+	  @NotNull TypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  int x, int y, int width, int height, @NotNull ITextComponent title
 	) { this(typeWrapper, screen, Minecraft.getInstance().fontRenderer, x, y, width, height, title); }
 	
 	public ComboBoxWidget(
-	  @NotNull ITypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
+	  @NotNull TypeWrapper<T> typeWrapper, @NotNull Supplier<IOverlayCapableContainer> screen,
 	  @NotNull FontRenderer font, int x, int y, int width, int height, @NotNull ITextComponent title
 	) {
 		super(x, y, width, height, title);
 		this.typeWrapper = typeWrapper;
-		ITextFormatter formatter = typeWrapper.getTextFormatter();
+		TextFormatter formatter = typeWrapper.getTextFormatter();
 		if (formatter != null) this.formatter = formatter;
 		screenSupplier = screen;
 		this.font = font;
@@ -484,7 +484,7 @@ public class ComboBoxWidget<T> extends Widget implements IOverlayRenderer {
 		valueListener = listener;
 	}
 	
-	public void setTextFormatter(ITextFormatter formatter) {
+	public void setTextFormatter(TextFormatter formatter) {
 		this.formatter = formatter;
 	}
 	

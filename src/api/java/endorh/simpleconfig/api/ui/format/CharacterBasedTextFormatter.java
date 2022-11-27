@@ -1,16 +1,16 @@
 package endorh.simpleconfig.api.ui.format;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
 
 import java.util.Map;
 
-public class CharacterBasedTextFormatter implements ITextFormatter {
-	private final ICharacterFormatter characterFormatter;
+public class CharacterBasedTextFormatter implements TextFormatter {
+	private final CharacterFormatter characterFormatter;
 	
-	public CharacterBasedTextFormatter(ICharacterFormatter formatter) {
+	public CharacterBasedTextFormatter(CharacterFormatter formatter) {
 		this.characterFormatter = formatter;
 	}
 	
@@ -53,13 +53,13 @@ public class CharacterBasedTextFormatter implements ITextFormatter {
 	 * Character-based formatter.<br>
 	 * For each character computes a style.
 	 */
-	@FunctionalInterface public interface ICharacterFormatter {
-		ICharacterFormatter DEFAULT = plain(Style.EMPTY);
+	@FunctionalInterface public interface CharacterFormatter {
+		CharacterFormatter DEFAULT = plain(Style.EMPTY);
 		
 		/**
 		 * Create a character-based format that assigns the same style to all characters.
 		 */
-		static ICharacterFormatter plain(Style style) {
+		static CharacterFormatter plain(Style style) {
 			return (text, pos, chr, last) -> style;
 		}
 		Style getCharacterStyle(String text, int pos, char chr, Style last);

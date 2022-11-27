@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ResourceLocationEntryBuilder;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.ResourceLocationException;
 import net.minecraft.util.text.ITextComponent;
@@ -68,7 +68,7 @@ public class ResourceLocationEntry
 		return "namespace:path";
 	}
 	
-	@Override protected ITextFormatter getTextFormatter() {
-		return ITextFormatter.forResourceLocation();
+	@Override protected TextFormatter getTextFormatter() {
+		return TextFormatter.forResourceLocation();
 	}
 }

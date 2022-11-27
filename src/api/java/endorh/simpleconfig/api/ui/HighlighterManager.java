@@ -3,8 +3,8 @@ package endorh.simpleconfig.api.ui;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IHighlighterManager {
-	@NotNull static IHighlighterManager getInstance() {
+public interface HighlighterManager {
+	@NotNull static HighlighterManager getInstance() {
 		return HighlighterManagerProxy.getHighlighterManager();
 	}
 	
@@ -12,5 +12,5 @@ public interface IHighlighterManager {
 	 * Get the highlighter for a language.<br>
 	 * The only built-in languages are {@code "regex"} and {@code "snbt"}.
 	 */
-	@Nullable ILanguageHighlighter getHighlighter(String language);
+	@Nullable LanguageHighlighter getHighlighter(String language);
 }

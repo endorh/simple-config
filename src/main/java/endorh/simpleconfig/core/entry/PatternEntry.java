@@ -2,7 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.PatternEntryBuilder;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -129,7 +129,7 @@ public class PatternEntry extends AbstractSerializableEntry<Pattern> {
 		return tooltips;
 	}
 	
-	@Override protected ITextFormatter getTextFormatter() {
-		return ITextFormatter.forLanguageOrDefault("regex", ITextFormatter.DEFAULT);
+	@Override protected TextFormatter getTextFormatter() {
+		return TextFormatter.forLanguageOrDefault("regex", TextFormatter.DEFAULT);
 	}
 }

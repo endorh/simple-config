@@ -1,10 +1,10 @@
 package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
-import endorh.simpleconfig.api.entry.IConfigEntrySerializer;
+import endorh.simpleconfig.api.entry.ConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.ISerializableConfigEntry;
 import endorh.simpleconfig.api.entry.ISerializableEntryBuilder;
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.core.BackingField;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
@@ -21,7 +21,7 @@ import java.util.function.Function;
 public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 	public Function<V, String> serializer;
 	public Function<String, Optional<V>> deserializer;
-	public ITextFormatter textFormatter = ITextFormatter.DEFAULT;
+	public TextFormatter textFormatter = TextFormatter.DEFAULT;
 	
 	@Internal public SerializableEntry(
 	  ConfigEntryHolder parent, String name, V value,
@@ -39,7 +39,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 	> implements ISerializableEntryBuilder<V> {
 		protected Function<V, String> serializer;
 		protected Function<String, Optional<V>> deserializer;
-		protected ITextFormatter formatter = ITextFormatter.DEFAULT;
+		protected TextFormatter formatter = TextFormatter.DEFAULT;
 		
 		public Builder(V value, Function<V, String> serializer, Function<String, Optional<V>> deserializer) {
 			super(value);
@@ -47,7 +47,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 			this.deserializer = deserializer;
 		}
 		
-		public Builder(V value, IConfigEntrySerializer<V> serializer) {
+		public Builder(V value, ConfigEntrySerializer<V> serializer) {
 			this(value, serializer::serializeConfigEntry, serializer::deserializeConfigEntry);
 			this.typeClass = serializer.getClass(value);
 			//noinspection unchecked
@@ -64,7 +64,8 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 			return copy;
 		}
 		
-		@Override @Contract(pure=true) public @NotNull Builder<V> setTextFormatter(ITextFormatter formatter) {
+		@Override @Contract(pure=true) public @NotNull Builder<V> setTextFormatter(
+		  TextFormatter formatter) {
 			Builder<V> copy = copy();
 			copy.formatter = formatter;
 			return copy;
@@ -86,7 +87,7 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 		}
 	}
 	
-	@Override protected ITextFormatter getTextFormatter() {
+	@Override protected TextFormatter getTextFormatter() {
 		return textFormatter;
 	}
 	

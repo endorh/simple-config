@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import endorh.simpleconfig.api.ui.ITextFormatter;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -19,7 +19,7 @@ public class IntegerListEntry extends TextFieldListEntry<Integer> implements IRa
 	
 	@Internal public IntegerListEntry(ITextComponent fieldName, Integer value) {
 		super(fieldName, value, false);
-		setTextFormatter(ITextFormatter.numeric(true));
+		setTextFormatter(TextFormatter.numeric(true));
 		Stream.of(HotKeyActionTypes.INT_ADD, HotKeyActionTypes.INT_ADD_CYCLE)
 		  .forEach(hotKeyActionTypes::add);
 	}

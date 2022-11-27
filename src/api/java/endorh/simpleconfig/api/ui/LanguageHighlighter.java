@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Text formatter for a language.<br>
  */
-public interface ILanguageHighlighter extends ITextFormatter {
+public interface LanguageHighlighter extends TextFormatter {
 	@NotNull IFormattableTextComponent highlight(@NotNull String text);
 	
 	@Override @Nullable String closingPair(char typedChar, String context, int caretPos);
