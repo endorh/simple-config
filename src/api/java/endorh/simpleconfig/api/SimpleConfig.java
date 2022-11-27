@@ -2,6 +2,8 @@ package endorh.simpleconfig.api;
 
 import net.minecraft.Util;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -303,6 +305,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	/**
 	 * Check if a config GUI exists for a mod
 	 */
+	@OnlyIn(Dist.CLIENT)
 	static boolean hasConfigGUI(String modId) {
 		return getSimpleConfigGUIManager().hasConfigGUI(modId);
 	}
@@ -311,6 +314,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	 * Build a config GUI for the specified mod id
 	 * @param parent Parent screen to return to
 	 */
+	@OnlyIn(Dist.CLIENT)
 	static @Nullable Screen getConfigGUI(String modId, Screen parent) {
 		return getSimpleConfigGUIManager().getConfigGUI(modId, parent);
 	}
@@ -318,6 +322,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	/**
 	 * Build a config GUI for the specified mod id, using the current screen as parent
 	 */
+	@OnlyIn(Dist.CLIENT)
 	static @Nullable Screen getConfigGUI(String modId) {
 		return getSimpleConfigGUIManager().getConfigGUI(modId);
 	}
@@ -325,6 +330,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	/**
 	 * Show the config GUI for the specified mod id, using the current screen as parent
 	 */
+	@OnlyIn(Dist.CLIENT)
 	static void showConfigGUI(String modId) {
 		getSimpleConfigGUIManager().showConfigGUI(modId);
 	}
@@ -332,6 +338,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	/**
 	 * Show the Forge mod list GUI
 	 */
+	@OnlyIn(Dist.CLIENT)
 	static void showModListGUI() {
 		getSimpleConfigGUIManager().showModListGUI();
 	}
@@ -339,6 +346,7 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	/**
 	 * Show the Config Hotkey GUI
 	 */
+	@OnlyIn(Dist.CLIENT)
 	static void showConfigHotkeysGUI() {
 		getSimpleConfigGUIManager().showConfigHotkeysGUI();
 	}

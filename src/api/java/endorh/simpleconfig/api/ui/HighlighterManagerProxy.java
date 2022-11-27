@@ -10,7 +10,7 @@ class HighlighterManagerProxy {
 	static @NotNull HighlighterManager getHighlighterManager() {
 		if (manager != null) return manager;
 		try {
-			Class<?> cls = Class.forName("endorh.simpleconfig.highlight.HighlighterManager");
+			Class<?> cls = Class.forName("endorh.simpleconfig.highlight.HighlighterManagerImpl");
 			Field inst = cls.getDeclaredField("INSTANCE");
 			inst.setAccessible(true);
 			return manager = (HighlighterManager) inst.get(null);
