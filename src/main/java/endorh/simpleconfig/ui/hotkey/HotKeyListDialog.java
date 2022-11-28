@@ -21,6 +21,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static java.lang.Math.max;
@@ -174,6 +175,12 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 			cancel(true);
 			return true;
 		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
+		boolean r = super.keyPressed(keyCode, scanCode, modifiers);
+		if (!r && (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN)) {
+			ConfigHotKeyTreeView treeView = getTreeView();
+			setFocused(treeView);
+			return treeView.keyPressed(keyCode, scanCode, modifiers);
+		}
+		return r;
 	}
 }

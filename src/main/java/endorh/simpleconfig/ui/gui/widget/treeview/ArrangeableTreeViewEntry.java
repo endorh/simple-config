@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
+import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Point;
@@ -185,6 +186,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		E p = getParent();
 		if (p == null) return 0;
 		int y = p.getRelY();
+		if (p != tree.getRoot()) y += p.getOwnHeight();
 		for (E e: p.getSubEntries()) {
 			if (e == this) break;
 			y += e.getTotalHeight(false, false);
@@ -224,16 +226,18 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	public boolean handleNavigationKey(int keyCode, int scanCode, int modifiers) {
-		E focused = this.focusedSubEntry;
+		E focused = focusedSubEntry;
 		if (focused != null) return focused.handleNavigationKey(keyCode, scanCode, modifiers);
-		boolean clear = !Screen.hasShiftDown() && !Screen.hasControlDown();
-		boolean select = !Screen.hasControlDown() || Screen.hasShiftDown();
+		boolean shift = Screen.hasShiftDown();
+		boolean ctrl = Screen.hasControlDown();
+		boolean clear = !shift && !ctrl;
+		boolean select = shift || !ctrl;
 		if (keyCode == GLFW.GLFW_KEY_LEFT) {
 			if (isExpanded()) {
 				setExpanded(false);
 			} else {
 				E p = getParent();
-				if (p != null) p.focusAndSelect(clear, select, null);
+				if (p != null) p.focusAndSelect(clear, select, shift, null);
 			}
 			return true;
 		} else if (keyCode == GLFW.GLFW_KEY_RIGHT) {
@@ -242,13 +246,13 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			} else {
 				Optional<E> first = getSubEntries().stream().findFirst();
 				if (first.isPresent()) {
-					first.get().focusAndSelect(clear, select, null);
+					first.get().focusAndSelect(clear, select, shift, null);
 				} else handleNavigationKey(GLFW.GLFW_KEY_DOWN, scanCode, modifiers);
 			}
 			return true;
 		} else if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN) {
 			return handleArrowKeys(keyCode == GLFW.GLFW_KEY_DOWN, null);
-		} else if (keyCode == GLFW.GLFW_KEY_SPACE && Screen.hasControlDown()) {
+		} else if (keyCode == GLFW.GLFW_KEY_SPACE && ctrl) {
 			ArrangeableTreeView<E> tree = getTree();
 			tree.setSelected(this, !tree.isSelected(this));
 			return true;
@@ -264,8 +268,9 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	
 	protected boolean handleArrowKeys(boolean forwards, ArrangeableTreeViewEntry<E> redirect) {
 		boolean shift = Screen.hasShiftDown();
-		boolean clear = !shift && !Screen.hasControlDown();
-		boolean select = shift || !Screen.hasControlDown();
+		boolean ctrl = Screen.hasControlDown();
+		boolean clear = !shift && !ctrl;
+		boolean select = shift || !ctrl;
 		List<E> subEntries = getSubEntries();
 		boolean hasChildren = isExpanded() && !subEntries.isEmpty();
 		E p = getParent();
@@ -273,11 +278,11 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			if (redirect != null && !forwards) {
 				if (hasChildren) {
 					subEntries.get(subEntries.size() - 1).handleArrowKeys(false, redirect);
-				} else focusAndSelect(clear, select, redirect);
+				} else focusAndSelect(clear, select, shift, redirect);
 				return true;
 			}
 			if (hasChildren && forwards && redirect == null) {
-				subEntries.get(0).focusAndSelect(clear, select, this);
+				subEntries.get(0).focusAndSelect(clear, select, shift, this);
 				return true;
 			}
 			List<E> siblings = p.getSubEntries();
@@ -288,25 +293,29 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			index += step;
 			if (index < 0) {
 				if (p.getParent() == null) return p.handleArrowKeys(false, this);
-				p.focusAndSelect(clear, select, this);
+				p.focusAndSelect(clear, select, shift, this);
 			} else if (index >= siblings.size()) {
 				p.setFocused(null);
 				p.handleArrowKeys(true, this);
 			} else {
 				E entry = siblings.get(index);
 				if (forwards) {
-					entry.focusAndSelect(clear, select, redirect != null? redirect : this);
+					entry.focusAndSelect(clear, select, shift, redirect != null? redirect : this);
 				} else entry.handleArrowKeys(false, this);
 			}
 		} else {
 			if (forwards) {
-				subEntries.get(0).focusAndSelect(clear, select, redirect);
+				subEntries.get(0).focusAndSelect(clear, select, shift, redirect);
 			} else subEntries.get(subEntries.size() - 1).handleArrowKeys(false, redirect);
 		}
 		return true;
 	}
 	
 	@Override public void setFocused(@Nullable GuiEventListener listener) {
+		setFocused(listener, true);
+	}
+	
+	public void setFocused(@Nullable GuiEventListener listener, boolean scroll) {
 		super.setFocused(listener);
 		if (focusedSubEntry != null && focusedSubEntry != listener)
 			focusedSubEntry.unFocus();
@@ -315,7 +324,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			// noinspection unchecked
 			E entry = (E) listener;
 			focusedSubEntry = entry;
-			if (entry != null && entry.getFocusedSubEntry() == null) entry.ensureVisible();
+			if (scroll && entry != null && entry.getFocusedSubEntry() == null) entry.ensureVisible();
 		} else focusedSubEntry = null;
 	}
 	
@@ -331,7 +340,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	protected void focusAndSelect(
-	  boolean clearSelection, boolean select, @Nullable ArrangeableTreeViewEntry<E> remove
+	  boolean clearSelection, boolean select, boolean retract, @Nullable ArrangeableTreeViewEntry<E> remove
 	) {
 		focus();
 		ArrangeableTreeView<E> tree = getTree();
@@ -341,7 +350,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		E self = (E) this;
 		if (clearSelection) {
 			tree.clearSelection();
-		} else if (remove != null && tree.getSelection().contains(self))
+		} else if (retract && remove != null && tree.getSelection().contains(self))
 			tree.setSelected(remove, false);
 		if (select) tree.setSelected(isSelectable()? this : parent, true);
 	}
@@ -354,7 +363,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		E parent = getParent();
 		if (parent != null) {
 			parent.focus(false);
-			parent.setFocused(this);
+			parent.setFocused(this, false);
 		}
 		List<GuiEventListener> listeners = children();
 		GuiEventListener first = listeners.stream()
@@ -597,6 +606,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	@Override public @NotNull List<GuiEventListener> children() {
+		if (this == tree.getRoot()) return Lists.newArrayList(subEntries);
 		return isExpanded()? Stream.concat(
 		  listeners.stream(), subEntries.stream()
 		).collect(Collectors.toList()) : listeners;

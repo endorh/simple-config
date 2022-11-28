@@ -10,6 +10,8 @@ import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -17,10 +19,12 @@ import net.minecraft.util.Mth;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 
 import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
+import static java.lang.Math.max;
 
 /**
  * Arrangeable Tree View widget.<br>
@@ -118,13 +122,27 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		return area;
 	}
 	
+	public int getPlaceHolderHeight() {
+		Component placeHolder = getPlaceHolder();
+		if (placeHolder != null) {
+			Font font = Minecraft.getInstance().font;
+			return font.split(placeHolder, getWidth() - 8).size() * font.lineHeight;
+		}
+		return 0;
+	}
 	public int getInnerHeight() {
 		E root = getRoot();
-		return root.getTotalHeight(false, true) - root.getOwnHeight();
+		int placeHolderHeight = 0;
+		if (root.getSubEntries().isEmpty())
+			placeHolderHeight = getPlaceHolderHeight();
+		return max(placeHolderHeight, root.getTotalHeight(false, true) - root.getOwnHeight());
 	}
 	public int getTotalInnerHeight() {
 		E root = getRoot();
-		return root.getTotalHeight(true, true) - root.getOwnHeight();
+		int placeHolderHeight = 0;
+		if (root.getSubEntries().isEmpty())
+			placeHolderHeight = getPlaceHolderHeight();
+		return max(placeHolderHeight, root.getTotalHeight(true, true) - root.getOwnHeight());
 	}
 	public int getPreferredHeight() {
 		ArrangeableTreeViewCaption<E> caption = getCaption();
@@ -211,7 +229,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		}
 		if (focused != null) {
 			focused.addSubEntry(index, entry);
-			entry.focusAndSelect(true, true, null);
+			entry.focusAndSelect(true, true, true, null);
 		}
 		return focused != null;
 	}
@@ -236,7 +254,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 				parent.removeSubEntry(entry);
 			}
 		}
-		if (last != null) last.focusAndSelect(true, true, null);
+		if (last != null) last.focusAndSelect(true, true, true, null);
 	}
 	
 	public @Nullable E getEntryAtPos(double mouseX, double mouseY) {
@@ -266,7 +284,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 			boolean state = getExpandDragState();
 			if (entry != null && entry.isExpanded() != state && !entry.getSubEntries().isEmpty()) {
 				entry.setExpanded(state);
-				if (!state) entry.focusAndSelect(true, true, null);
+				if (!state) entry.focusAndSelect(true, true, true, null);
 			}
 			return true;
 		}
@@ -395,7 +413,12 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (isDraggingEntries()) return true;
-		return super.keyPressed(keyCode, scanCode, modifiers);
+		boolean r = super.keyPressed(keyCode, scanCode, modifiers);
+		if (!r && (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN)) {
+			setFocused(root);
+			return root.handleNavigationKey(keyCode, scanCode, modifiers);
+		}
+		return r;
 	}
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {
