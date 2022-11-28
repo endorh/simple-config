@@ -20,6 +20,7 @@ import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static java.lang.Math.max;
@@ -179,6 +180,12 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 			cancel(true);
 			return true;
 		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
+		boolean r = super.keyPressed(keyCode, scanCode, modifiers);
+		if (!r && (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN)) {
+			ConfigHotKeyTreeView treeView = getTreeView();
+			setListener(treeView);
+			return treeView.keyPressed(keyCode, scanCode, modifiers);
+		}
+		return r;
 	}
 }

@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
+import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
@@ -63,7 +64,12 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 		containerSupplier = () -> overlayContainer;
 		this.hotKeyEditor = hotKeyEditor;
 		setCaption(new ConfigHotKeyTreeViewCaption(screenSupplier, overlayContainer, this));
-		setPlaceHolder(new TranslationTextComponent("simpleconfig.ui.no_hotkeys"));
+		Throwable lastError = ConfigHotKeyManager.INSTANCE.getLastLoadingError();
+		setPlaceHolder(
+		  lastError == null
+		  ? new TranslationTextComponent("simpleconfig.ui.no_hotkeys")
+		  : new TranslationTextComponent("simpleconfig.ui.error_loading_hotkeys", lastError.getLocalizedMessage())
+		    .mergeStyle(TextFormatting.RED));
 		ExtendedKeyBindDispatcher.registerProvider(provider);
 	}
 	
@@ -120,19 +126,25 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_ADD, 20, 20, ButtonAction.of(
 					tree::addHotKey
-				 ).tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.hotkey"))
+				 ).tooltip(ImmutableList.of(
+					new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.hotkey"),
+					new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.hotkey:key")))
 				 .tint(0x6480FF80)
 			));
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_ADD_GROUP, 20, 20, ButtonAction.of(
 				  tree::addGroup
-				 ).tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.group"))
+				 ).tooltip(ImmutableList.of(
+					new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.group"),
+					new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.add.group:key")))
 				 .tint(0x6480FF80)
 			));
 			addControl(MultiFunctionIconButton.of(
 			  SimpleConfigIcons.Widgets.TREE_REMOVE, 20, 20, ButtonAction.of(
 					tree::removeSelection
-				 ).tooltip(new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.remove"))
+				 ).tooltip(ImmutableList.of(
+					new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.remove"),
+					new TranslationTextComponent("simpleconfig.ui.hotkey.dialog.remove:key")))
 				 .tint(0x64FF8080)
 				 .active(() -> !tree.getSelection().isEmpty())
 			));

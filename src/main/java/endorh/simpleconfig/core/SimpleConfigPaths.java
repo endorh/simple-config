@@ -13,9 +13,9 @@ import java.nio.file.Path;
 @Internal public class SimpleConfigPaths {
 	public static final Path CLIENT_CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 	public static final Path LOCAL_PRESETS_DIR = CLIENT_CONFIG_DIR.resolve("presets");
-	public static final Path DEFAULT_SERVER_CONFIG_DIR = FMLPaths.GAMEDIR.get()
-	  .resolve(FMLConfig.defaultConfigPath());
+	public static final Path DEFAULT_SERVER_CONFIG_DIR = FMLPaths.GAMEDIR.get().resolve(FMLConfig.defaultConfigPath());
 	public static final Path LOCAL_HOTKEYS_DIR = CLIENT_CONFIG_DIR.resolve("saved-hotkeys");
+	public static final Path CONFIG_HOTKEYS_FILE = CLIENT_CONFIG_DIR.resolve("simpleconfig-hotkeys.yaml");
 	
 	public static final FolderName SERVERCONFIG = new FolderName("serverconfig");
 	

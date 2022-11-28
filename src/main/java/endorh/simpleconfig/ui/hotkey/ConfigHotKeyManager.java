@@ -17,6 +17,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,22 +28,28 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(value=Dist.CLIENT, modid=SimpleConfigMod.MOD_ID, bus=EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value=Dist.CLIENT, modid=SimpleConfigMod.MOD_ID, bus=Bus.MOD)
 public class ConfigHotKeyManager {
 	private static final Logger LOGGER = LogManager.getLogger();
 	public static final ConfigHotKeyManager INSTANCE = new ConfigHotKeyManager();
+	private static final int MAX_BACKUPS = 5;
+	private static final String FORMAT_VERSION = "1";
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("(yyyy-MM-dd HH:mm)");
 	
-	private final File configHotKeysFile = SimpleConfigPaths.CLIENT_CONFIG_DIR
-	  .resolve("simpleconfig-hotkeys.yaml").toFile();
+	private final File configHotKeysFile = SimpleConfigPaths.CONFIG_HOTKEYS_FILE.toFile();
 	
 	private List<IConfigHotKey> hotKeys = Lists.newArrayList();
 	private ConfigHotKeyGroup group = new ConfigHotKeyGroup();
 	private List<ConfigHotKeyGroup> defaultGroupQueue = new ArrayList<>();
 	private final Set<String> addedDefaultGroups = new HashSet<>();
+	private @Nullable Throwable lastLoadingError = null;
 	
 	private ConfigHotKeyManager() {}
 	
@@ -87,8 +95,11 @@ public class ConfigHotKeyManager {
 		try (FileOutputStream os = new FileOutputStream(file)) {
 			OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8);
 			Map<String, Object> serialized = new LinkedHashMap<>();
+			serialized.put("version", FORMAT_VERSION);
 			serialized.put("entries", group.serialize().get("entries"));
 			serialized.put("added_default_groups", addedDefaultGroups);
+			writer.append("## Simple Config Hotkeys ").append(DATE_FORMAT.format(new Date())).append("\n");
+			writer.append("##   It's not recommended to edit this file manually\n");
 			yaml.dump(serialized, writer);
 		} catch (IOException e) {
 			LOGGER.error("I/O Error saving hotkeys to file \"" + file.getName() + "\"", e);
@@ -121,11 +132,15 @@ public class ConfigHotKeyManager {
 			}
 		} catch (IOException e) {
 			LOGGER.error("I/O Error loading hotkeys from file \"" + file.getName() + "\"", e);
+			lastLoadingError = e;
+			backUpHotkeys();
 		} catch (RuntimeException e) {
 			LOGGER.error(
 			  "Unexpected error loading hotkeys from file \"" + file.getName() + "\"\n" +
 			  "Ensure the file contains valid YAML.\n" +
 			  "Otherwise, you may report this to the Simple Config mod issue tracker", e);
+			lastLoadingError = e;
+			backUpHotkeys();
 		}
 	}
 	
@@ -135,7 +150,14 @@ public class ConfigHotKeyManager {
 		  ByteArrayOutputStream os = new ByteArrayOutputStream();
 		  OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)
 		) {
-			yaml.dump(group.serialize(), writer);
+			Map<String, Object> serialized = new LinkedHashMap<>();
+			Map<String, Object> sg = group.serialize();
+			serialized.put("version", FORMAT_VERSION);
+			serialized.putAll(sg);
+			writer.append("## Simple Config Hotkey Group: \"").append(group.getName()).append("\" ")
+			  .append(DATE_FORMAT.format(new Date())).append("\n");
+			writer.append("##   It's not recommended to edit this file manually\n");
+			yaml.dump(serialized, writer);
 			return os.toByteArray();
 		} catch (IOException e) {
 			LOGGER.error("I/O Error saving hotkeys to memory", e);
@@ -168,12 +190,38 @@ public class ConfigHotKeyManager {
 		}
 	}
 	
+	protected void backUpHotkeys() {
+		String originalName = configHotKeysFile.getName();
+		String name = FilenameUtils.removeExtension(originalName);
+		String ext = FilenameUtils.getExtension(originalName) + ".bak";
+		Path dir = configHotKeysFile.toPath().getParent();
+		Path bakFile = dir.resolve(name + "-1" + "." + ext);
+		try {
+			for (int i = MAX_BACKUPS; i > 0; i--) {
+				Path oldBak = dir.resolve(name + "-" + i + "." + ext);
+				if (Files.exists(oldBak)) {
+					if (i >= MAX_BACKUPS) {
+						Files.delete(oldBak);
+					} else Files.move(
+					  oldBak, dir.resolve(name + "-" + (i + 1) + "." + ext));
+				}
+			}
+			Files.copy(configHotKeysFile.toPath(), bakFile);
+		} catch (IOException e) {
+			LOGGER.error("Failed to back up Hotkeys: " + configHotKeysFile.toPath(), e);
+		}
+	}
+	
 	public List<IConfigHotKey> getSortedHotKeys() {
 		return hotKeys;
 	}
 	
 	public ConfigHotKeyGroup getHotKeys() {
 		return group;
+	}
+	
+	public @Nullable Throwable getLastLoadingError() {
+		return lastLoadingError;
 	}
 	
 	public void updateHotKeys(ConfigHotKeyGroup hotKeys) {
