@@ -225,7 +225,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		return Stream.of(
 		  knownLocalPresets.get(type),
 		  knownRemotePresets.get(type),
-		  knownRemotePresets.get(type)
+		  knownResourcePresets.get(type)
 		).flatMap(m -> m.values().stream()).collect(Collectors.toList());
 	}
 	
