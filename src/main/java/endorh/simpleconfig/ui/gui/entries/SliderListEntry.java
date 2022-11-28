@@ -132,14 +132,18 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		return sliderMin;
 	}
 	public void setSliderMin(V sliderMin) {
+		V v = getDisplayedValue();
 		this.sliderMin = min.compareTo(sliderMin) > 0? min : sliderMin;
+		setDisplayedValue(v);
 	}
 	
 	public V getSliderMax() {
 		return sliderMax;
 	}
 	public void setSliderMax(V sliderMax) {
+		V v = getDisplayedValue();
 		this.sliderMax = max.compareTo(sliderMax) < 0? max : sliderMax;
+		setDisplayedValue(v);
 	}
 	
 	public @Nullable InvertibleDouble2DoubleFunction getSliderMap() {
