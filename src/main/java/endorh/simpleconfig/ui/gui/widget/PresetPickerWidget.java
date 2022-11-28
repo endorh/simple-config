@@ -213,7 +213,7 @@ public class PresetPickerWidget extends FocusableGui implements IRectanglePositi
 		return Stream.of(
 		  knownLocalPresets.get(type),
 		  knownRemotePresets.get(type),
-		  knownRemotePresets.get(type)
+		  knownResourcePresets.get(type)
 		).flatMap(m -> m.values().stream()).collect(Collectors.toList());
 	}
 	
