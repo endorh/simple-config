@@ -12,12 +12,22 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Built-in icons used by the Simple Config mod in its GUIs.
  */
-@SuppressWarnings("UnusedAssignment") public class SimpleConfigIcons {
-	public static final ResourceLocation TEXTURE = new ResourceLocation(
-	  SimpleConfig.MOD_ID, "textures/gui/simpleconfig/config_menu.png");
+@SuppressWarnings({"UnusedAssignment", "WeakerAccess", "unused"})
+public class SimpleConfigIcons {
+	public static class Textures {
+		public static final ResourceLocation
+		  CONFIG_MENU = texture("config_menu"),
+		  MINECRAFT_OPTIONS = texture("minecraft_options"),
+		  SPINNING_CUBE = texture("cube"),
+		  HOTKEY_RECORDING = texture("hotkey_recording");
+		
+		private static ResourceLocation texture(String name) {
+			return new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/" + name + ".png");
+		}
+	}
 	
 	public static class Types {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256)
 		  .reverseOffset(true, false).offset(256, 198);
 		/** Size 16×16 */
 		public static final Icon
@@ -46,7 +56,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Buttons {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 136);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(0, 136);
 		/** Size 20×20 */
 		public static final Icon
 		  RESET = b.size(20, 20).at(0, 0),
@@ -94,7 +104,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Actions {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256)
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256)
 		  .offset(256, 104).reverseOffset(true, false);
 		/** Size 16×16 */
 		public static final Icon
@@ -112,7 +122,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class SearchBar {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(112, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(112, 0);
 		/** Size 18×18 */
 		public static final Icon
 		  SEARCH_TOOLTIPS = b.size(18, 18).at(0, 0),
@@ -123,7 +133,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Status {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(66, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(66, 0);
 		/** Size 15×15 */
 		public static final Icon
 		  ERROR = b.level(0, 0).size(15, 15).at(0, 0),
@@ -136,7 +146,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Widgets {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(184, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(184, 0);
 		/** Size 18×18 */
 		public static final Icon
 		  CHECKBOX_FLAT = b.size(18, 18).at(0, 0),
@@ -156,7 +166,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Presets {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(200, 214);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(200, 214);
 		/** Size 14×14 */
 		public static final Icon
 		  CLIENT_LOCAL = b.size(14, 14).at(0, 0),
@@ -175,7 +185,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Hotkeys {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(158, 76);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(158, 76);
 		/** Size 14×14 */
 		public static final Icon
 		  LOCAL_HOTKEY = b.size(14, 14).at(0, 0),
@@ -220,7 +230,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Lists {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(0, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(0, 0);
 		/** Size 9×9 */
 		public static final Icon
 		  ADD = b.size(9, 9).at(0, 0),
@@ -238,7 +248,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class Entries {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(39, 0);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(39, 0);
 		/** Size 9×9 */
 		public static final Icon
 		  EXPAND = b.size(9, 9).at(0, 0),
@@ -278,7 +288,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class ComboBox {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(132, 36);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(132, 36);
 		/** Size 20×20 */
 		public static final Icon
 		  UNKNOWN = b.size(20, 20).at(0, 0),
@@ -290,7 +300,7 @@ import org.jetbrains.annotations.NotNull;
 	}
 	
 	public static class ColorPicker {
-		private static IconBuilder b = IconBuilder.ofTexture(TEXTURE, 256, 256).offset(40, 36);
+		private static IconBuilder b = IconBuilder.ofTexture(Textures.CONFIG_MENU, 256, 256).offset(40, 36);
 		/** Size 40×40 */
 		public static final Icon
 		  CHESS_BOARD = b.size(40, 40).at(0, 0),
@@ -314,10 +324,33 @@ import org.jetbrains.annotations.NotNull;
 		static { b = null; }
 	}
 	
+	public static class MinecraftOptions {
+		private static final IconBuilder b = IconBuilder.ofTexture(Textures.MINECRAFT_OPTIONS, 64, 64);
+		
+		/**
+		 * 16×16
+		 */
+		public static Icon
+		  CONTROLS = b.size(16, 16).at(0, 0),
+		  GRAPHICS = b.at(16, 0),
+		  SOUND = b.at(32, 0),
+		  CHAT = b.at(48, 0),
+		  SKIN = b.at(0, 16),
+		  LANGUAGE = b.at(16, 16),
+		  ONLINE = b.at(32, 16),
+		  ACCESSIBILITY = b.at(48, 16),
+		  ADVANCED = b.at(0, 32);
+		
+		/**
+		 * 16×16
+		 */
+		public static Icon
+		  GAMERULES = b.at(16, 32),
+		  PROPERTIES = b.at(32, 32);
+	}
+	
 	public static final AnimatedIcon SPINNING_CUBE = AnimatedIcon.ofStripe(
-	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/cube.png"),
-	  20, 20, 8, 40);
+	  Textures.SPINNING_CUBE, 20, 20, 8, 40);
 	public static final AnimatedIcon HOTKEY_RECORDING = AnimatedIcon.ofStripe(
-	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/hotkey_recording.png"),
-	  18, 18, 16, 50);
+	  Textures.HOTKEY_RECORDING, 18, 18, 16, 50);
 }

@@ -141,28 +141,6 @@ repositories {
         includeOnly("thedarkcolour")
     }
     
-    // Local repository for faster multi-mod development
-    maven(rootProject.projectDir.parentFile.resolve("maven")) {
-        name = "LocalMods"
-        includeOnly("endorh")
-    }
-    
-    // GitHub Packages
-    val gitHubRepos = mapOf(
-        "endorh/simple-config" to "endorh.simpleconfig",
-    )
-    for (repo in gitHubRepos.entries) maven("https://maven.pkg.github.com/${repo.key}") {
-        name = "GitHub/${repo.key}"
-        includeOnly(repo.value)
-        credentials {
-            // read:packages only GitHub token published by Endor H
-            // You may as well use your own GitHub PAT with read:packages scope, until GitHub
-            //   supports unauthenticated read access to public packages, see:
-            //   https://github.com/orgs/community/discussions/26634#discussioncomment-3252637
-            password = "\u0067hp_SjEzHOWgAWIKVczipKZzLPPJcCMHHd1LILfK"
-        }
-    }
-    
     mavenCentral {
         excludeExplicit()
     }
