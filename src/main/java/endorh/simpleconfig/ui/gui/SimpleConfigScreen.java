@@ -855,21 +855,15 @@ import static net.minecraft.util.Mth.clamp;
 					return true;
 				}
 			} else {
-				AbstractConfigField<?> entry = listWidget.getSelectedEntry();
+				AbstractConfigField<?> entry = getFocusedEntry();
 				while (entry != null && entry.isSubEntry()) entry = entry.getParentEntry();
 				if (entry != null) {
-					ResetButton resetButton = entry.getResetButton();
-					if (resetButton != null && resetButton.active) {
-						GuiEventListener focused = entry.getFocused();
-						if (focused != resetButton) {
-							if (focused instanceof AbstractWidget && ((AbstractWidget) focused).isFocused())
-								WidgetUtils.forceUnFocus(focused);
-							if (entry.children().contains(resetButton))
-								entry.setFocused(resetButton);
-							WidgetUtils.forceFocus(resetButton);
-						}
-						if (resetButton.activate()) return true;
-					}
+					if (Screen.hasAltDown()) {
+						entry.restoreValue();
+					} else entry.resetValue();
+					entry.navigate();
+					playFeedbackTap(1F);
+					return true;
 				}
 			}
 			playFeedbackTap(0.4F);

@@ -9,6 +9,7 @@ import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
@@ -283,6 +284,10 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	
 	@Override public boolean modalMouseClicked(double mouseX, double mouseY, int button) {
 		if (cancelButton.isMouseOver(mouseX, mouseY)) return false;
+		if (advanced.commit_keybind_on_click_outside && !isMouseOver(mouseX, mouseY)) {
+			commitInput();
+			return false;
+		}
 		int k = Keys.getKeyFromMouseInput(button);
 		if (!startedKeys.contains(k)) startedKeys.add(k);
 		return true;
@@ -299,7 +304,7 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	}
 	
 	@Override public boolean shouldConsumeModalClicks(double mouseX, double mouseY, int button) {
-		return isMouseOver(mouseX, mouseY);
+		return advanced.commit_keybind_on_click_outside || isMouseOver(mouseX, mouseY);
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
