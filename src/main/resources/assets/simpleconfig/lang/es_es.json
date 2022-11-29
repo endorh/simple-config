@@ -138,6 +138,7 @@
   "simpleconfig.config.client.advanced.prefer_combo_box:help": "Máximo número de opciones permitidas en botones\nLos botones con demasiadas opciones se transforman en desplegables",
   "simpleconfig.config.client.advanced.cycle_with_scroll": "Seleccionar con Rueda",
   "simpleconfig.config.client.advanced.cycle_with_scroll:help": "Permite seleccionar opciones con la rueda del ratón sobre algunos botones",
+  "simpleconfig.config.client.advanced.commit_keybind_on_click_outside": "Guardar Atajos al Hacer Click Fuera",
   "simpleconfig.config.client.advanced.max_options_in_config_comment": "Máx. opciones en comentarios",
   "simpleconfig.config.client.advanced.max_options_in_config_comment:help": "Configura el máximo número de opciones/sugerencias que aparecerán en el archivo de configuración para una entrada\n§7Sin un límite, las entradas con cientos de valores posibles crearían comentarios muy largos",
   "simpleconfig.config.client.advanced.color_picker_saved_colors": "Paleta de Colores Guardados",

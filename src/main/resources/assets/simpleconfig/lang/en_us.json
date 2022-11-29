@@ -151,6 +151,7 @@
   "simpleconfig.config.client.advanced.prefer_combo_box:help": "Maximum number of options allowed in cycling buttons before being transformed into combo boxes",
   "simpleconfig.config.client.advanced.cycle_with_scroll": "Cycle with Scroll",
   "simpleconfig.config.client.advanced.cycle_with_scroll:help": "Allow cycling options in selection entries by scrolling over the button",
+  "simpleconfig.config.client.advanced.commit_keybind_on_click_outside": "Commit Keybind When Clicked Outside",
   "simpleconfig.config.client.advanced.max_options_in_config_comment": "Max Options in Config Comments",
   "simpleconfig.config.client.advanced.max_options_in_config_comment:help": "Configure the maximum number of options/suggestions that will be displayed in the config file's comments\n§7Entries with many possible options, such as item entries may create very long comments otherwise",
   "simpleconfig.config.client.advanced.color_picker_saved_colors": "Color Picker Saved Colors",

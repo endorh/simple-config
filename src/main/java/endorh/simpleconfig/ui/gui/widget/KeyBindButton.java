@@ -4,6 +4,12 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import endorh.simpleconfig.api.ui.icon.AnimatedIcon;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
+import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.api.IModalInputCapableScreen;
 import endorh.simpleconfig.ui.api.IModalInputProcessor;
@@ -12,12 +18,10 @@ import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.KeyBindSettingsButton.KeyBindSettingsOverlay;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
-import endorh.simpleconfig.ui.hotkey.*;
-import endorh.simpleconfig.api.ui.icon.AnimatedIcon;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
-import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
+import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
+import endorh.simpleconfig.ui.hotkey.KeyBindMappingImpl;
+import endorh.simpleconfig.ui.hotkey.Keys;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -271,6 +275,10 @@ public class KeyBindButton extends FocusableGui
 	
 	@Override public boolean modalMouseClicked(double mouseX, double mouseY, int button) {
 		if (cancelButton.isMouseOver(mouseX, mouseY)) return false;
+		if (advanced.commit_keybind_on_click_outside && !isMouseOver(mouseX, mouseY)) {
+			commitInput();
+			return false;
+		}
 		int k = Keys.getKeyFromMouseInput(button);
 		if (!startedKeys.contains(k)) startedKeys.add(k);
 		return true;
@@ -287,7 +295,7 @@ public class KeyBindButton extends FocusableGui
 	}
 	
 	@Override public boolean shouldConsumeModalClicks(double mouseX, double mouseY, int button) {
-		return isMouseOver(mouseX, mouseY);
+		return advanced.commit_keybind_on_click_outside || isMouseOver(mouseX, mouseY);
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
