@@ -8,8 +8,7 @@ import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.DoubleEntryBuilder;
 import endorh.simpleconfig.api.entry.IntegerEntryBuilder;
 import endorh.simpleconfig.api.entry.OptionEntryBuilder;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.Icon.IconBuilder;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.MinecraftOptions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl;
@@ -32,7 +31,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraftforge.api.distmarker.Dist;
@@ -116,7 +114,7 @@ public class MinecraftClientConfigWrapper {
 		private final MinecraftConfigValueBuilder vb = new MinecraftConfigValueBuilder();
 		
 		private void addEntries() {
-			with(category("controls").withIcon(Icons.CONTROLS).withColor(0x808080F0), () -> {
+			with(category("controls").withIcon(MinecraftOptions.CONTROLS).withColor(0x808080F0), () -> {
 				with(group("mouse", true), () -> {
 					wrapDouble(options.sensitivity());
 					wrapBool(options.invertYMouse());
@@ -133,7 +131,7 @@ public class MinecraftClientConfigWrapper {
 					mc.setScreen(new KeyBindsScreen(mc.screen, mc.options));
 				}).label("simpleconfig.ui.open"));
 			});
-			with(category("graphics").withIcon(Icons.GRAPHICS).withColor(0x8080F0A0), () -> {
+			with(category("graphics").withIcon(MinecraftOptions.GRAPHICS).withColor(0x8080F0A0), () -> {
 				wrapInt(options.fov());
 				wrapInt(options.guiScale());
 				
@@ -165,11 +163,11 @@ public class MinecraftClientConfigWrapper {
 				wrapInt("overrideWidth", 0);
 				wrapInt("overrideHeight", 0);
 			});
-			with(category("sound").withIcon(Icons.SOUND).withColor(0x80F04280), () -> {
+			with(category("sound").withIcon(MinecraftOptions.SOUND).withColor(0x80F04280), () -> {
 				with(group("volume", true), true, () -> {
 					Object2FloatMap<SoundSource> sourceVolumes =
 					  ObfuscationReflectionHelper.getPrivateValue(
-						 Options.class, options, SRG_NAMES.get("sourceVolumes"));
+					    Options.class, options, SRG_NAMES.get("sourceVolumes"));
 					for (SoundSource source: SoundSource.values())
 						wrapMapValue(
 						  source.getName(), "soundCategory." + source.getName(),
@@ -179,7 +177,7 @@ public class MinecraftClientConfigWrapper {
 				wrapBool(options.showSubtitles());
 				wrapBool(options.directionalAudio());
 			});
-			with(category("chat").withIcon(Icons.CHAT).withColor(0x8090F080), () -> {
+			with(category("chat").withIcon(MinecraftOptions.CHAT).withColor(0x8090F080), () -> {
 				wrapOption(options.chatVisibility());
 				wrapDouble(options.chatOpacity());
 				wrapDouble(options.textBackgroundOpacity());
@@ -200,7 +198,7 @@ public class MinecraftClientConfigWrapper {
 				wrapBool(options.onlyShowSecureChat());
 				wrapBool(options.hideMatchedNames());
 			});
-			with(category("skin").withIcon(Icons.SKIN).withColor(0x80E0E080), () -> {
+			with(category("skin").withIcon(MinecraftOptions.SKIN).withColor(0x80E0E080), () -> {
 				wrapOption(options.mainHand());
 				with(group("modelPart", true), () -> {
 					Set<PlayerModelPart> modelParts = ObfuscationReflectionHelper.getPrivateValue(
@@ -210,22 +208,23 @@ public class MinecraftClientConfigWrapper {
 					  modelParts, part, true);
 				});
 			});
-			with(category("language").withIcon(Icons.LANGUAGE).withColor(0x80E042E0), () -> {
+			with(category("language").withIcon(MinecraftOptions.LANGUAGE).withColor(0x80E042E0), () -> {
 				wrapString("lang", "en_us", () -> Minecraft.getInstance()
 				  .getLanguageManager().getLanguages().stream()
 				  .map(LanguageInfo::getCode).collect(Collectors.toList()));
 				wrapBool(options.forceUnicodeFont());
 			});
-			with(category("online").withIcon(Icons.ONLINE).withColor(0x80F0A080), () -> {
+			with(category("online").withIcon(MinecraftOptions.ONLINE).withColor(0x80F0A080), () -> {
 				wrapBool(options.allowServerListing());
 				wrapBool(options.realmsNotifications());
 			});
-			with(category("accessibility").withIcon(Icons.ACCESSIBILITY).withColor(0x80E0E0FF), () -> {
+			with(category("accessibility").withIcon(
+			  MinecraftOptions.ACCESSIBILITY).withColor(0x80E0E0FF), () -> {
 				wrapOption(options.narrator());
 				wrapBool(options.hideLightningFlash());
 				wrapBool(options.darkMojangStudiosBackground());
 			});
-			with(category("advanced").withIcon(Icons.ADVANCED), () -> {
+			with(category("advanced").withIcon(MinecraftOptions.ADVANCED), () -> {
 				wrapBool(options.reducedDebugInfo());
 				wrapBool("pauseOnLostFocus", true);
 				wrapBool("advancedItemTooltips", false);
@@ -630,24 +629,5 @@ public class MinecraftClientConfigWrapper {
 			map.put(key, value);
 			Minecraft.getInstance().options.save();
 		}
-	}
-	
-	public static class Icons {
-		private static final IconBuilder b =
-		  IconBuilder.ofTexture(new ResourceLocation(
-			 SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/minecraft_options.png"), 64, 64);
-		/**
-		 * 16×16
-		 */
-		public static Icon
-		  CONTROLS = b.size(16, 16).at(0, 0),
-		  GRAPHICS = b.at(16, 0),
-		  SOUND = b.at(32, 0),
-		  CHAT = b.at(48, 0),
-		  SKIN = b.at(0, 16),
-		  LANGUAGE = b.at(16, 16),
-		  ONLINE = b.at(32, 16),
-		  ACCESSIBILITY = b.at(48, 16),
-		  ADVANCED = b.at(0, 32);
 	}
 }

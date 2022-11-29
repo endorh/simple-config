@@ -8,8 +8,7 @@ import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.BooleanEntryBuilder;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.Icon.IconBuilder;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.MinecraftOptions;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.ConfigValueBuilder;
 import endorh.simpleconfig.core.wrap.MinecraftServerConfigWrapper.MinecraftGameRulesWrapperBuilder.MinecraftServerPropertyEntryDelegate;
@@ -17,7 +16,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.dedicated.DedicatedServerProperties;
@@ -126,10 +124,11 @@ public class MinecraftServerConfigWrapper {
 		public SimpleConfigImpl build() {
 			try {
 				with(
-				  category("gamerule").withIcon(Icons.GAMERULES).withColor(0x804242FF),
+				  category("gamerule").withIcon(MinecraftOptions.GAMERULES).withColor(0x804242FF),
 				  this::addGameRuleEntries);
 				with(
-				  category("properties").withIcon(Icons.PROPERTIES).withColor(0x8042FF42),
+				  category("properties").withIcon(
+				    MinecraftOptions.PROPERTIES).withColor(0x8042FF42),
 				  this::addServerPropertiesEntries);
 				DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> builder.withGUIDecorator((s, b) -> {
 					if (!SimpleConfigNetworkHandler.isConnectedToDedicatedServer()) {
@@ -581,17 +580,5 @@ public class MinecraftServerConfigWrapper {
 				return null;
 			}
 		}
-	}
-	
-	public static class Icons {
-		private static final IconBuilder b =
-		  IconBuilder.ofTexture(new ResourceLocation(
-			 SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/minecraft_options.png"), 64, 64);
-		/**
-		 * 16×16
-		 */
-		public static Icon
-		  GAMERULES = b.size(16, 16).at(16, 32),
-		  PROPERTIES = b.at(32, 32);
 	}
 }
