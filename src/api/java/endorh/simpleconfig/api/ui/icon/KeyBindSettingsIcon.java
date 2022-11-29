@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindContext;
 import endorh.simpleconfig.api.ui.icon.LayeredIcon.SimpleIconLayer;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Textures;
 import net.minecraft.Util;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +19,7 @@ import java.util.stream.Stream;
  */
 public class KeyBindSettingsIcon extends LayeredIcon<SimpleIconLayer> {
 	@SuppressWarnings("UnusedAssignment") private static IconBuilder b = IconBuilder
-	  .ofTexture(SimpleConfigIcons.TEXTURE, 256, 256)
+	  .ofTexture(Textures.CONFIG_MENU, 256, 256)
 	  .offset(140, 216);
 	
 	/** Size 20×20 */
