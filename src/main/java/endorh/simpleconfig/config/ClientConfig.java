@@ -106,6 +106,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 				.add("tooltip_max_width", percent(60F))
 				.add("prefer_combo_box", number(8))
 			   .add("cycle_with_scroll", yesNo(false))
+			   .add("commit_keybind_on_click_outside", yesNo(true))
 				.add("max_options_in_config_comment", number(16).min(5).restart())
 				.add("color_picker_saved_colors", map(
 				  number(0), color(Color.BLACK).alpha(),
@@ -212,6 +213,7 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		@Bind public static float tooltip_max_width;
 		@Bind public static int prefer_combo_box;
 		@Bind public static boolean cycle_with_scroll;
+		@Bind public static boolean commit_keybind_on_click_outside;
 		@Bind public static int max_options_in_config_comment = 4;
 		@Bind public static Map<Integer, Color> color_picker_saved_colors;
 		@Bind public static class search {
