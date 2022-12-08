@@ -7,6 +7,7 @@ import endorh.simpleconfig.api.entry.BlockEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -57,7 +58,7 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 		protected boolean requireGroup = true;
 		
 		public Builder(Block value) {
-			super(value, Block.class);
+			super(value, EntryType.of(Block.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {

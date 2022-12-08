@@ -165,6 +165,14 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	@Contract(pure=true) @NotNull Self withTags(EntryTag... tags);
 	
 	/**
+	 * Add or remove {@link EntryTag}s to this entry.<br>
+	 * @param add Whether to add or remove the tags
+	 */
+	@Contract(pure=true) @NotNull default Self withTags(boolean add, EntryTag... tags) {
+		return add? withTags(tags) : withoutTags(tags);
+	}
+	
+	/**
 	 * Remove {@link EntryTag}s from this entry.
 	 */
 	@Contract(pure=true) @NotNull Self withoutTags(EntryTag... tags);

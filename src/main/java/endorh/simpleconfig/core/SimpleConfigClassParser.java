@@ -1,267 +1,169 @@
 package endorh.simpleconfig.core;
 
-import endorh.simpleconfig.api.ConfigEntryBuilder;
-import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
+import com.google.common.collect.Sets;
+import endorh.simpleconfig.api.*;
+import endorh.simpleconfig.api.annotation.Error;
 import endorh.simpleconfig.api.annotation.*;
-import endorh.simpleconfig.api.entry.ListEntryBuilder;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
-import endorh.simpleconfig.core.entry.AbstractListEntry;
 import endorh.simpleconfig.core.entry.TextEntry;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import endorh.simpleconfig.core.reflection.FieldParser;
+import endorh.simpleconfig.core.reflection.MethodBindingContext;
+import endorh.simpleconfig.core.reflection.MethodBindingContext.MethodWrapper;
+import endorh.simpleconfig.core.reflection.MethodBindingContext.MethodWrapper.AdapterMethodWrapper;
+import endorh.simpleconfig.core.reflection.MethodBindingContext.ParametersAdapter;
+import endorh.simpleconfig.core.reflection.MethodBindingContext.ReturnTypeAdapter;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Fluid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
-import static endorh.simpleconfig.core.ReflectionUtil.*;
-import static java.util.Collections.synchronizedMap;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.category;
+import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.group;
+import static endorh.simpleconfig.core.ReflectionUtil.getFieldName;
+import static endorh.simpleconfig.core.ReflectionUtil.getMethodName;
+import static endorh.simpleconfig.core.reflection.MethodBindingContext.ParametersAdapter.emptySignature;
+import static endorh.simpleconfig.core.reflection.MethodBindingContext.oneOptionalAdapter;
 
 public class SimpleConfigClassParser {
-	
 	private static final Logger LOGGER = LogManager.getLogger();
-	protected static final Map<Class<? extends Annotation>, Map<Class<?>, List<FieldEntryParser<?, ?>>>>
-	  PARSERS = synchronizedMap(new HashMap<>());
+	@SuppressWarnings("unchecked")
+	public static final Set<Class<? extends Annotation>> CONFIG_ENTRY_ANNOTATIONS = Sets.newHashSet(
+	  Advanced.class, Default.class, Error.class, Experimental.class, HasAlpha.class,
+	  Length.class, Linked.class, Max.class, Min.class, NonPersistent.class, Operator.class,
+	  RequireRestart.class, Size.class, Slider.class, Suggest.class
+	);
 	
 	// Used to construct exception messages
 	protected static final Map<Class<?>, AbstractSimpleConfigEntryHolderBuilder<?>> builders = new ConcurrentHashMap<>();
-	
-	static {
-		registerFieldParsers();
-	}
-	
-	protected static void registerFieldParsers() {
-		registerFieldParser(Entry.class, Boolean.class, (a, field, value) ->
-		  bool(value != null ? value : false));
-		registerFieldParser(Entry.class, String.class, (a, field, value) ->
-		  string(value != null ? value : ""));
-		registerFieldParser(Entry.class, Enum.class, (a, field, value) -> {
-			if (value == null)
-				//noinspection rawtypes
-				value = (Enum) field.getType().getEnumConstants()[0];
-			return option(value);
-		});
-		registerFieldParser(Entry.class, Byte.class, (a, field, value) ->
-		  number(value, getMin(field).byteValue(), getMax(field).byteValue())
-		    .slider(field.isAnnotationPresent(Slider.class)));
-		registerFieldParser(Entry.class, Short.class, (a, field, value) ->
-		  number(value, getMin(field).shortValue(), getMax(field).shortValue())
-		    .slider(field.isAnnotationPresent(Slider.class)));
-		registerFieldParser(Entry.class, Integer.class, (a, field, value) ->
-		  number(value, getMin(field).intValue(), getMax(field).intValue())
-		    .slider(field.isAnnotationPresent(Slider.class)));
-		registerFieldParser(Entry.class, Long.class, (a, field, value) ->
-		  number(value, getMin(field).longValue(), getMax(field).longValue())
-		    .slider(field.isAnnotationPresent(Slider.class)));
-		registerFieldParser(Entry.class, Float.class, (a, field, value) ->
-		  number(value, getMin(field).floatValue(), getMax(field).floatValue())
-		    .slider(field.isAnnotationPresent(Slider.class)));
-		registerFieldParser(Entry.class, Double.class, (a, field, value) ->
-		  number(value, getMin(field).doubleValue(), getMax(field).doubleValue())
-		    .slider(field.isAnnotationPresent(Slider.class)));
-		registerFieldParser(Entry.class, Color.class, (a, field, value) ->
-		  color(value).alpha(field.isAnnotationPresent(HasAlpha.class)));
-		
-		// Lists
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, String.class) ? null :
-		  decorateListEntry(stringList((List<String>) value), field));
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, Integer.class) ? null :
-		  decorateListEntry(
-		    intList((List<Integer>) value)
-		      .min(getMin(field).intValue()).max(getMax(field).intValue()), field));
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, Long.class) ? null :
-		  decorateListEntry(
-		    longList((List<Long>) value)
-		      .min(getMin(field).longValue()).max(getMax(field).longValue()), field));
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, Float.class) ? null :
-		  decorateListEntry(
-		    floatList((List<Float>) value)
-		      .min(getMin(field).floatValue()).max(getMax(field).floatValue()), field));
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, Double.class) ? null :
-		  decorateListEntry(
-		    doubleList((List<Double>) value)
-		      .min(getMin(field).doubleValue()).max(getMax(field).doubleValue()), field));
-		
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, Short.class) ? null :
-		  decorateListEntry(
-		    shortList((List<Short>) value)
-		      .min(getMin(field).shortValue()).max(getMax(field).shortValue()), field));
-		//noinspection unchecked
-		registerFieldParser(Entry.class, List.class, (a, field, value) ->
-		  !checkType(field, List.class, Byte.class) ? null :
-		  decorateListEntry(
-		    byteList((List<Byte>) value)
-		      .min(getMin(field).byteValue()).max(getMax(field).byteValue()), field));
-		
-		// Minecraft entry types
-		registerFieldParser(Entry.class, Item.class, (a, field, value) -> item(value));
-		registerFieldParser(Entry.class, Block.class, (a, field, value) -> block(value));
-		registerFieldParser(Entry.class, Fluid.class, (a, field, value) -> fluid(value));
-		registerFieldParser(Entry.class, CompoundTag.class, (a, field, value) -> compoundTag(value));
-		registerFieldParser(Entry.class, Tag.class, (a, field, value) -> tag(value));
-		registerFieldParser(Entry.class, ResourceLocation.class, (a, field, value) -> resource(value));
-	}
-	
-	@FunctionalInterface
-	public interface FieldEntryParser<T extends Annotation, V> {
-		@Nullable ConfigEntryBuilder<?, ?, ?, ?> tryParse(T annotation, Field field, V value);
-	}
-	
-	/**
-	 * Technically, you may register new field parsers before you mod's config
-	 * is registered, but this is discouraged. Using the builder will probably be easier.
-	 */
-	@Internal public static <T extends Annotation, V> void registerFieldParser(
-	  Class<T> annotationClass, Class<V> fieldClass, FieldEntryParser<T, V> parser
-	) {
-		PARSERS.computeIfAbsent(annotationClass, a -> synchronizedMap(new HashMap<>()))
-		  .computeIfAbsent(fieldClass, c -> new ArrayList<>()).add(parser);
-	}
-	
-	
-	/**
-	 * Adds a validator from a sibling method to a {@link AbstractListEntry}
-	 */
-	@Internal public static @Nullable <V, B extends ListEntryBuilder<V, ?, ?, B>> B decorateListEntry(
-	  B builder, Field field
-	) {
-		final Class<?> cl = field.getDeclaringClass();
-		final Method validate = tryGetMethod(cl, field.getName(), "elemError", getTypeParameter(field, 0));
-		if (validate != null) {
-			final String errorMsg = "Unexpected reflection error invoking config list element validator method %s";
-			if (checkType(validate, Optional.class, Component.class)) {
-				builder = builder.elemError(e -> invoke(
-				  validate, null, errorMsg, Optional.class, e));
-			} else throw new SimpleConfigClassParseException(cl,
-			  "Unsupported return type in config list element validator method " + getMethodName(validate) +
-			  "\n  Return type must be either \"boolean\" or \"Optional<Component>\"");
-		}
-		return builder;
-	}
-	
-	protected static <V> ConfigEntryBuilder<V, ?, ?, ?> decorateEntry(
-	  ConfigEntryBuilder<V, ?, ?, ?> builder, Class<?> cl, Field field
-	) {
-		final Method m = tryGetMethod(cl, field.getName(), "error", field.getType());
-		if (m != null) {
-			if (!checkType(m, Optional.class, Component.class))
-				throw new SimpleConfigClassParseException(cl,
-				  "Invalid return type in config field error supplier method " + getMethodName(m)
-				  + ": " + getMethodTypeName(m) + "\n  Error suppliers must return Optional<Component>");
-			final String errorMsg = "Reflection error invoking config element error supplier method %s";
-			builder = builder.error(v -> invoke(m, null, errorMsg, Optional.class, v));
-		}
-		builder = addTooltip(builder, cl, field);
-		if (field.isAnnotationPresent(RequireRestart.class))
-			builder = builder.restart(true);
-		if (field.isAnnotationPresent(NonPersistent.class))
-			builder = builder.temp();
-		return builder;
-	}
-	
-	protected static <V> ConfigEntryBuilder<V, ?, ?, ?> addTooltip(
-	  ConfigEntryBuilder<V, ?, ?, ?> builder, Class<?> cl, Field field
-	) {
-		boolean a = true;
-		Method m = tryGetMethod(cl, field.getName(), "tooltip", field.getType());
-		if (m == null) {
-			m = tryGetMethod(cl, field.getName(), "tooltip");
-			a = false;
-		}
-		if (m != null) {
-			if (!checkType(m, List.class, Component.class))
-				throw new SimpleConfigClassParseException(cl,
-				  "Invalid return type in config field error supplier method " + getMethodName(m)
-				  + ": " + getMethodTypeName(m) + "\n  Tooltip suppliers must return List<Component>");
-			final String errorMsg = "Reflection error invoking config element tooltip supplier method %s";
-			final Method mm = m;
-			builder = builder.tooltip(
-			  a ? v -> invoke(mm, null, errorMsg, List.class, v)
-			    : v -> invoke(mm, null, errorMsg, List.class));
-		}
-		return builder;
-	}
-	
-	/**
-	 * Get the minimum annotated value in this field
-	 */
-	public static Number getMin(Field field) {
-		return field.isAnnotationPresent(Min.class)
-		       ? field.getAnnotation(Min.class).value()
-		       : Double.NEGATIVE_INFINITY;
-	}
-	
-	/**
-	 * Get the maximum annotated value in this field
-	 */
-	public static Number getMax(Field field) {
-		return field.isAnnotationPresent(Max.class)
-		       ? field.getAnnotation(Max.class).value()
-		       : Double.POSITIVE_INFINITY;
-	}
-	
-	/**
-	 * Try to invoke method<br>
-	 * Convenient for lambdas
-	 *
-	 * @param errorMsg Error message added to the exception on error<br>
-	 *   Will be formatted with the method name
-	 * @throws SimpleConfigClassParseException on error
-	 */
-	public static <T> T invoke(
-	  Method method, Object self, String errorMsg, Class<?> clazz, Object... args
-	) {
-		try {
-			//noinspection unchecked
-			return (T) clazz.cast(method.invoke(self, args));
-		} catch (InvocationTargetException | IllegalAccessException | ClassCastException e) {
-			throw new ConfigReflectiveOperationException(
-			  String.format(errorMsg, getMethodName(method)) +
-			  "\n  Details: " + e.getMessage(), e);
-		}
-	}
+	protected static final Map<SimpleConfigBuilderImpl, Map<Class<?>, Set<Method>>> seenMethods = new ConcurrentHashMap<>();
 	
 	protected static void decorateBuilder(SimpleConfigBuilderImpl root) {
-		if (root.configClass != null)
-			decorateAbstractBuilder(root, root.configClass, root);
-		for (CategoryBuilder catBuilder : root.categories.values())
-			if (catBuilder.configClass != null)
-				decorateAbstractBuilder(root, catBuilder.configClass, catBuilder);
+		MethodBindingContext ctx = null;
+		if (root.configClass != null) {
+			ctx = methodBindingContext(root, root.configClass, null);
+			decorateAbstractBuilder(root, ctx, root.configClass, root);
+		}
+		for (CategoryBuilder catBuilder : root.categories.values()) if (catBuilder.configClass != null) {
+			decorateAbstractBuilder(
+			  root, methodBindingContext(root, catBuilder.configClass, ctx),
+			  catBuilder.configClass, catBuilder);
+		}
+		checkBoundMethods(root);
+		seenMethods.remove(root);
+	}
+	
+	private static MethodBindingContext methodBindingContext(
+	  SimpleConfigBuilderImpl root, Class<?> cls, @Nullable MethodBindingContext parent
+	) {
+		Set<Method> set = new HashSet<>();
+		seenMethods.computeIfAbsent(root, c -> new HashMap<>()).put(cls, set);
+		return MethodBindingContext.forConfigClass(cls, parent, set);
 	}
 	
 	protected static void decorateAbstractBuilder(
-	  SimpleConfigBuilderImpl root, Class<?> configClass,
-	  AbstractSimpleConfigEntryHolderBuilder<?> builder
+	  SimpleConfigBuilderImpl root, MethodBindingContext ctx,
+	  Class<?> configClass, AbstractSimpleConfigEntryHolderBuilder<?> builder
 	) {
 		builders.put(configClass, builder);
+		Class<?> builderTypeClass = match(builder, r -> SimpleConfigBuilder.class, c -> ConfigCategoryBuilder.class, g -> ConfigGroupBuilder.class);
+		EntryType<?> builderType = EntryType.unchecked(builderTypeClass);
+		MethodWrapper<?> buildMethod = ctx.findOwnMethod("build", ParametersAdapter.singleSignature(builderType), ReturnTypeAdapter.identity(builderType));
+		if (buildMethod != null)
+			builder = (AbstractSimpleConfigEntryHolderBuilder<?>) buildMethod.invoke(builder);
+		AdapterMethodWrapper<Icon> iconGetter = ctx.findCompatibleMethod(
+		  "getIcon", false, emptySignature(),
+		  ReturnTypeAdapter.identity(EntryType.unchecked(Icon.class)));
+		if (iconGetter != null) {
+			if (builder != root && !(builder instanceof CategoryBuilder)) {
+				LOGGER.warn(
+				  "Config class " + configClass.getName() + " has an icon getter, but it's not a config " +
+				  "filo nor a category! Only categories and the file itself can have an icon getter, " +
+				  "so this method will be ignored.");
+			} else try {
+				Icon icon = iconGetter.invoke();
+				if (icon != null) {
+					if (builder == root) {
+						if (root.defaultCategory.icon != null) LOGGER.warn(
+						  "Config class " + configClass.getName() + " has an icon getter, but it " +
+						  "already has a default category icon! Only the first icon set will be used!" +
+						  "\n  Remove the `getIcon` method, or the call to `withIcon` to suppress this warning!"
+						);
+						else root.withIcon(icon);
+					} else {
+						CategoryBuilder cb = (CategoryBuilder) builder;
+						if (cb.icon != null) LOGGER.warn(
+						  "Config category class " + configClass.getName() + " has an icon getter, " +
+						  "but it already has an icon! Only the first icon set will be used!" +
+						  "\n  Remove the `getIcon` method, or the call to `withIcon` to suppress this warning!"
+						);
+						else cb.withIcon(icon);
+					}
+				} else LOGGER.warn(
+				  "Icon getter for method " + iconGetter.getMethodName() + " returned a null icon!");
+			} catch (RuntimeException e) {
+				throw new SimpleConfigClassParseException(
+				  builder, "Error creating icon for config category from method " +
+				           iconGetter.getMethodName());
+			}
+		}
+		if (configClass.isAnnotationPresent(Category.class)) {
+			if (!(builder instanceof CategoryBuilder cb)) throw new SimpleConfigClassParseException(
+			  builder, "Config class " + configClass.getName() + " is annotated with @Category, " +
+			           "but is not associated with a category builder!!");
+			Category cat = configClass.getAnnotation(Category.class);
+			if (!cat.background().isEmpty()) {
+				if (cb.background != null) LOGGER.warn(
+				  "Config class " + configClass.getName() + " specifies a background texture in its " +
+				  "@Category annotation, but already has a background!" +
+				  "\n  Only the first background set will be used. Remove the background from the " +
+				  "annotation to suppress this warning."
+				); else cb.withBackground(cat.background());
+			}
+			if (cat.color() != 0) {
+				if (cb.tint != 0) LOGGER.warn(
+				  "Config class " + configClass.getName() + " specifies a tint color in its " +
+				  "@Category annotation, but already has a tint color!" +
+				  "\n  Only the first tint set will be used. Remove the color from the " +
+				  "annotation to suppress this warning."
+				); else cb.withColor(cat.color());
+			}
+		}
+		if (configClass.isAnnotationPresent(ConfigClass.class)) {
+			if (builder != root) throw new SimpleConfigClassParseException(
+			  builder, "Config class " + configClass.getName() + " is annotated with @ConfigClass, " +
+			           "but is not the root config class!!");
+			ConfigClass config = configClass.getAnnotation(ConfigClass.class);
+			if (!config.background().isEmpty()) {
+				if (root.background != null) LOGGER.warn(
+				  "Config class " + configClass.getName() + " specifies a background texture in its " +
+				  "@ConfigClass annotation, but already has a background!" +
+				  "\n  Only the first background set will be used. Remove the background from the " +
+				  "annotation to suppress this warning."
+				); else root.withBackground(config.background());
+			}
+			if (config.color() != 0) {
+				if (root.defaultCategory.tint != 0) LOGGER.warn(
+				  "Config class " + configClass.getName() + " specifies a default tint color in its " +
+				  "@ConfigClass annotation, but already has a default tint color!" +
+				  "\n  Only the first tint set will be used. Remove the color from the " +
+				  "annotation to suppress this warning."
+				); else root.withColor(config.color());
+			}
+		}
 		Set<Field> secondaryBackingFields = new HashSet<>();
 		for (String name : builder.entries.keySet()) {
 			List<? extends BackingFieldBinding<?, ?>> bindings = builder.getSecondaryBackingFieldBindings(name);
@@ -290,37 +192,73 @@ public class SimpleConfigClassParser {
 			builder.setSecondaryBackingFields(name, backingFields);
 		}
 		final String className = configClass.getName();
-		parseFields:for (Field field : configClass.getDeclaredFields()) {
+		for (Field field: configClass.getDeclaredFields()) {
 			final String name = field.getName();
 			if (secondaryBackingFields.contains(field)) continue;
 			final String fieldTypeName = field.getGenericType().getTypeName();
 			if (!Modifier.isStatic(field.getModifiers()))
-				throw new SimpleConfigClassParseException(builder,
+				throw new SimpleConfigClassParseException(
+				  builder,
 				  "Config class members must be static. Found non-static field " + getFieldName(field));
+			if (field.isAnnotationPresent(Group.class) || field.isAnnotationPresent(Category.class)) {
+				Group group = field.getAnnotation(Group.class);
+				if (field.getType() != Void.class) throw new SimpleConfigClassParseException(
+				  builder, "Found " + (group != null? "group" : "category") + " marker field with non-void type: " + getFieldName(field));
+				String holderName = name.endsWith("$marker")? name.substring(0, name.length() - 7) : name;
+				if (group != null) {
+					if (builder.groups.containsKey(holderName)) throw new SimpleConfigClassParseException(
+					  builder, "Found group marker field for already registered group: " + getFieldName(field));
+					boolean expand = group.expand();
+					Class<?> cl = Arrays.stream(configClass.getDeclaredClasses())
+					  .filter(c -> c.getSimpleName().equals(holderName))
+					  .findFirst().orElseThrow(() -> new SimpleConfigClassParseException(
+						  configClass, "Found group marker field without matching group class: " + getFieldName(field)));
+					Group gr = cl.getAnnotation(Group.class);
+					expand |= gr != null && gr.expand();
+					builder.n(group(holderName, expand));
+				} else {
+					if (root != builder) throw new SimpleConfigClassParseException(
+					  builder, "Found category marker field in non-root builder: " + getFieldName(field));
+					if (root.categories.containsKey(holderName)) throw new SimpleConfigClassParseException(
+					  builder, "Found category marker field for already registered category: " + getFieldName(field));
+					Class<?> cl = Arrays.stream(configClass.getDeclaredClasses())
+					  .filter(c -> c.getSimpleName().equals(holderName))
+					  .findFirst().orElseThrow(() -> new SimpleConfigClassParseException(
+						  configClass, "Found category marker field without matching category class: " + getFieldName(field)));
+					root.n(category(holderName, cl));
+				}
+				if (hasAnyConfigAnnotation(field)) LOGGER.warn(
+				  "Group/category marker field " + getFieldName(field) + " has config annotations " +
+				  "that have no effect\n  Remove them to suppress this warning.");
+				continue;
+			}
 			Object value;
 			try {
 				field.setAccessible(true);
 				value = field.get(null);
 			} catch (IllegalAccessException e) {
-				throw new SimpleConfigClassParseException(builder,
-				  "Couldn't access config class field " + getFieldName(field) + "\n  Details: " + e.getMessage(), e);
+				throw new SimpleConfigClassParseException(
+				  builder, "Couldn't access config class field " +
+				           getFieldName(field) + "\n  Details: " +
+				           e.getMessage(), e);
 			}
 			if (field.isAnnotationPresent(Text.class)) {
 				TextEntry.Builder textBuilder;
-				if (field.getType() == String.class) {
+				if (field.getType() == Void.class) {
 					textBuilder = new TextEntry.Builder();
 				} else if (value instanceof final Component tc) {
 					textBuilder = new TextEntry.Builder(() -> tc);
-				} else if (value instanceof Supplier && Component.class.isAssignableFrom(
-				  (Class<?>) ((ParameterizedType) field.getGenericType())
-				    .getActualTypeArguments()[0])) {
-					//noinspection unchecked
+				} else if (value instanceof Supplier && EntryType.from(
+				  Supplier.class, Component.class
+				).equals(EntryType.fromField(field))) {
+					// noinspection unchecked
 					final Supplier<Component> supplier = (Supplier<Component>) value;
 					textBuilder = new TextEntry.Builder(supplier);
-				} else throw new SimpleConfigClassParseException(builder,
-				  "Unsupported text supplier in config field " + getFieldName(field) + " of type " + fieldTypeName
-				  + "\n  Should be either String (contents ignored), Component or Supplier<Component>");
-				builder.add(getOrder(field), field.getName(), addTooltip(textBuilder, configClass, field));
+				} else throw new SimpleConfigClassParseException(
+				  builder, "Unsupported text supplier in config field " + getFieldName(field) + " of type " +
+				  fieldTypeName + "\n  Should be either String (contents ignored), Component or Supplier<Component>");
+				ctx.setContextName(field);
+				builder.add(getOrder(field), field.getName(), FieldParser.addTooltip(ctx, textBuilder));
 				continue;
 			}
 			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
@@ -345,64 +283,40 @@ public class SimpleConfigClassParser {
 				continue;
 			}
 			if (field.isAnnotationPresent(Bind.class))
-				throw new SimpleConfigClassParseException(builder,
+				throw new SimpleConfigClassParseException(
+				  builder,
 				  "Config field " + getFieldName(field) + " was annotated with @Bind but no " +
 				  "matching config entry was found defined");
-			synchronized (PARSERS) {
-				for (Class<? extends Annotation> annotationClass : PARSERS.keySet()) {
-					if (field.isAnnotationPresent(annotationClass)) {
-						final Map<Class<?>, List<FieldEntryParser<?, ?>>> parsers = PARSERS.get(annotationClass);
-						final Class<?> fieldClass = field.getType();
-						boolean match = false;
-						for (Class<?> clazz : parsers.keySet()) {
-							if (clazz.isInstance(value) || clazz.isAssignableFrom(fieldClass)) {
-								Annotation annotation = field.getAnnotation(annotationClass);
-								for (FieldEntryParser<?, ?> parser : parsers.get(clazz)) {
-									//noinspection unchecked
-									ConfigEntryBuilder<?, ?, ?, ?> entryBuilder =
-									  ((FieldEntryParser<Annotation, Object>) parser).tryParse(annotation, field, value);
-									if (entryBuilder != null) {
-										if (builder.hasEntry(name) || builder.groups.containsKey(name))
-											throw new SimpleConfigClassParseException(
-											  builder, "Cannot create entry with name " + name + ". The name is already used.");
-										entryBuilder = decorateEntry(entryBuilder, configClass, field);
-										if (!(entryBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalStateException(
-										  "Entry builder " + entryBuilder.getClass().getCanonicalName() + " is not an AbstractConfigEntryBuilder");
-										BackingFieldBuilder<?, ?> fieldBuilder = ((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entryBuilder).backingFieldBuilder;
-										if (fieldBuilder == null) throw new SimpleConfigClassParseException(builder,
-										  "Config entry generated from field does not support backing fields");
-										if (!fieldBuilder.matchesType(field)) {
-											match = true;
-											continue;
-										}
-										BackingField<?, ?> backingField = fieldBuilder.build(field);
-										builder.add(getOrder(field), name, entryBuilder);
-										builder.setBackingField(name, backingField);
-										continue parseFields;
-									}
-								}
-							}
-						}
-						if (match) {
-							throw new SimpleConfigClassParseException(builder,
-							  "Backing field for config entry generated from field \"" +
-							  getFieldName(field) + "\" doesn't match its expected type.");
-						} else throw new SimpleConfigClassParseException(builder,
-						  "Unsupported type for Config field " + getFieldName(field) + " with " +
-						  "annotation " + annotationClass.getName() + ": " + fieldTypeName);
-					}
-				}
+			if (field.isAnnotationPresent(Entry.class) || field.isAnnotationPresent(Caption.class)) {
+				ConfigEntryBuilder<?, ?, ?, ?> entryBuilder = FieldParser.parseField(ctx, field);
+				if (!(entryBuilder instanceof AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> b))
+					throw new IllegalStateException(
+					  "Entry builder " + entryBuilder.getClass().getCanonicalName() +
+					  " is not an AbstractConfigEntryBuilder");
+				BackingFieldBuilder<?, ?> fieldBuilder = b.backingFieldBuilder;
+				if (fieldBuilder == null) throw new SimpleConfigClassParseException(
+				  builder, "Config entry generated from field does not support backing fields");
+				BackingField<?, ?> backingField = fieldBuilder.build(field);
+				if (field.isAnnotationPresent(Caption.class)) {
+					if (builder instanceof GroupBuilder gBuilder) {
+						if (gBuilder.captionBuilder != null) throw new SimpleConfigClassParseException(
+						  builder, "Field " + getFieldName(field) + " is annotated with @Caption, but " +
+						           "this group already has a caption entry: " + gBuilder.captionName);
+						addCaption(gBuilder, name, entryBuilder, field);
+					} else throw new SimpleConfigClassParseException(
+					  builder, "Found @Caption annotation on field " + getFieldName(field) +
+					  " in non-group builder: " + className);
+				} else builder.add(getOrder(field), name, entryBuilder);
+				builder.setBackingField(name, backingField);
+				continue;
 			}
-			if (hasAnyConfigAnnotation(field))
-				throw new SimpleConfigClassParseException(builder,
-				  "Unsupported config annotation/field type combination in field " + getFieldName(field) +
-				  " of type " + fieldTypeName);
+			if (hasAnyConfigAnnotation(field)) throw new SimpleConfigClassParseException(
+			  builder, "Unsupported config annotation/field type combination in field " +
+			           getFieldName(field) + " of type " + fieldTypeName);
 		}
 		for (Class<?> clazz : configClass.getDeclaredClasses()) {
 			final String name = clazz.getSimpleName();
-			if (clazz.isAnnotationPresent(Category.class)
-			    || root.categories.containsKey(name)
-			) {
+			if (clazz.isAnnotationPresent(Category.class) || root.categories.containsKey(name)) {
 				if (builder != root)
 					throw new SimpleConfigClassParseException(builder,
 					  "Config category " + className + "." + name + " found outside of upper config level");
@@ -420,9 +334,8 @@ public class SimpleConfigClassParser {
 						catBuilder.restart();
 					root.n(catBuilder, a.value());
 				}
-				decorateAbstractBuilder(root, clazz, catBuilder);
-			} else if (clazz.isAnnotationPresent(Group.class)
-			           || builder.groups.containsKey(name)) {
+				decorateAbstractBuilder(root, methodBindingContext(root, clazz, ctx), clazz, catBuilder);
+			} else if (clazz.isAnnotationPresent(Group.class) || builder.groups.containsKey(name)) {
 				GroupBuilder gBuilder;
 				if (builder.groups.containsKey(name)) {
 					gBuilder = builder.groups.get(name);
@@ -434,118 +347,87 @@ public class SimpleConfigClassParser {
 						gBuilder.restart();
 					builder.n(gBuilder, a.value());
 				}
-				decorateAbstractBuilder(root, clazz, gBuilder);
+				decorateAbstractBuilder(root, methodBindingContext(root, clazz, ctx), clazz, gBuilder);
 			} else if (clazz.isAnnotationPresent(Bind.class))
 				throw new SimpleConfigClassParseException(builder,
 				  "Config inner class " + clazz.getName() + " was annotated with @Bind " +
 				  "but no matching config category/group was found defined");
 		}
-		if (builder instanceof final SimpleConfigBuilderImpl b) {
-			final Method baker = tryGetMethod(configClass, "bake", SimpleConfigImpl.class);
-			if (baker != null) {
-				final String errorMsg = "Reflective error invoking config baker method %s";
-				if (b.baker == null) {
-					if (!Modifier.isStatic(baker.getModifiers()))
-						throw new SimpleConfigClassParseException(
-						  builder, "Found non-static bake method in config class " + className);
-					b.withBaker(c -> invoke(baker, null, errorMsg, Object.class, c));
-				} else {
-					LOGGER.warn(
-					  "Found bake method in config class " + className + ", but the config " +
-					  "already has a configured baker\nOnly the configured baker will " +
-					  "be used\nIf the configured baker is precisely this method, rename it " +
-					  "or let the reflection find it to suppress this warning.");
-				}
-			}
-		} else if (builder instanceof final CategoryBuilder b) {
-			boolean useArg = true;
-			Method m = tryGetMethod(configClass, "bake", SimpleConfigCategoryImpl.class);
-			if (m == null) {
-				useArg = false;
-				m = tryGetMethod(configClass, "bake");
-			}
-			final Method baker = m;
-			if (baker != null) {
-				if (!Modifier.isStatic(baker.getModifiers()))
-					throw new SimpleConfigClassParseException(builder,
-					  "Found non-static bake method in config category class " + className);
-				final String errorMsg = "Reflective error invoking config category baker method %s";
-				if (b.baker == null) {
-					b.withBaker(
-					  useArg? c -> invoke(baker, null, errorMsg, Object.class, c)
-					        : c -> invoke(baker, null, errorMsg, Object.class));
-				} else {
-					LOGGER.warn(
-					  "Found bake method in config category class " + className + ", but the category " +
-					  "already has a configured baker.\nOnly the configured baker will " +
-					  "be used.\nIf the configured baker is precisely this method, rename it " +
-					  "to suppress this warning.");
-				}
-			} else if (
-			  Arrays.stream(configClass.getDeclaredMethods()).anyMatch(mm -> mm.getName().equals("bake"))
-			) {
-				LOGGER.warn(
-				  "Found method named \"bake\" in config category class " + className + " with an " +
-				  "unsupported signature.\nRename the method to suppress this warning, or fix the bug");
-			}
-		} else if (builder instanceof final GroupBuilder b) {
-			boolean useArg = true;
-			Method m = tryGetMethod(configClass, "bake", SimpleConfigGroupImpl.class);
-			if (m == null) {
-				useArg = false;
-				m = tryGetMethod(configClass, "bake");
-			}
-			final Method baker = m;
-			if (baker != null) {
-				if (!Modifier.isStatic(baker.getModifiers()))
-					throw new SimpleConfigClassParseException(builder,
-					  "Found non-static bake method in config group class " + className);
-				final String errorMsg = "Reflective error invoking config category baker method %s";
-				if (b.baker == null) {
-					b.withBaker(
-					  useArg? c -> invoke(baker, null, errorMsg, Object.class, c)
-					        : c -> invoke(baker, null, errorMsg, Object.class));
-				} else {
-					LOGGER.warn(
-					  "Found bake method in config group class " + className + ", but the group " +
-					  "already has a configured baker.\nOnly the configured baker will " +
-					  "be used.\nIf the configured builder is precisely this method, rename it " +
-					  "to suppress this warning.");
-				}
-			} else if (
-			  Arrays.stream(configClass.getDeclaredMethods()).anyMatch(mm -> mm.getName().equals("bake"))
-			) {
-				LOGGER.warn(
-				  "Found method named \"bake\" in config group class " + className + " with an " +
-				  "unsupported signature.\nRename the method to suppress this warning, or fix the bug");
-			}
+		Class<?> bakeArgClass = match(builder, c -> SimpleConfig.class, c -> SimpleConfigCategory.class, c -> SimpleConfigGroup.class);
+		Consumer<? extends ConfigEntryHolder> prevBaker = match(builder, c -> c.baker, c -> c.baker, c -> c.baker);
+		MethodWrapper<Void> baker = ctx.findOwnMethod(
+		  "bake", oneOptionalAdapter(EntryType.unchecked(bakeArgClass)),
+		  ReturnTypeAdapter.ofVoid());
+		if (baker != null) {
+			if (prevBaker == null) {
+				match(builder, c -> c.withBaker(baker::invoke), c -> c.withBaker(baker::invoke), c -> c.withBaker(baker::invoke));
+			} else LOGGER.warn(
+			  "Found bake method in config class " + className + ", but this config " +
+			  "file/category/group already has a configured baker\nOnly the already " +
+			  "configured baker will be used\nIf the configured baker is precisely this " +
+			  "method, rename it or let the reflection find it to suppress this warning.");
 		}
 		builders.remove(configClass);
 	}
 	
-	protected static boolean hasAnyConfigAnnotation(Field field) {
-		synchronized (PARSERS) {
-			for (Class<? extends Annotation> clazz : PARSERS.keySet())
-				if (field.isAnnotationPresent(clazz))
-					return false;
-		}
-		return hasAnyAnnotation(
-		  field, Text.class, RequireRestart.class, Min.class, Max.class,
-		  HasAlpha.class, Slider.class, NonPersistent.class);
+	@SuppressWarnings("unchecked") private static <V, C, G, B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder> void addCaption(
+	  GroupBuilder builder, String name, ConfigEntryBuilder<V, C, G, ?> entryBuilder, Field field
+	) {
+		if (!(entryBuilder instanceof AtomicEntryBuilder)) throw new SimpleConfigClassParseException(
+		  builder, "Field " + getFieldName(field) + " is annotated with @Caption, but " +
+		           "its entry type builder doesn't implement AtomicEntryBuilder" +
+		           "\nThis type of config entry cannot be used as caption: " +
+		           EntryType.fromField(field));
+		builder.caption(name, (B) entryBuilder);
 	}
 	
-	@SafeVarargs protected static boolean hasAnyAnnotation(Field field, Class<? extends Annotation>... annotations) {
-		for (Class<? extends Annotation> annotation : annotations)
-			if (field.isAnnotationPresent(annotation)) return true;
+	protected static void checkBoundMethods(SimpleConfigBuilderImpl root) {
+		Map<Class<?>, Set<Method>> methodSets = seenMethods.remove(root);
+		if (methodSets == null) return;
+		for (Map.Entry<Class<?>, Set<Method>> e: methodSets.entrySet()) {
+			Class<?> cls = e.getKey();
+			Set<Method> methods = e.getValue();
+			Optional<Method> opt = Arrays.stream(cls.getDeclaredMethods())
+			  .filter(m -> m.isAnnotationPresent(Bind.class) && !methods.contains(m))
+			  .findFirst();
+			if (opt.isPresent()) throw new SimpleConfigClassParseException(
+			  cls, "Found unbound method in config class annotated with @Bind: " +
+			       getMethodName(opt.get()) +
+			       "\nMake sure the references to this method from config annotations are correct " +
+			       "or remove the @Bind annotation");
+		}
+	}
+	
+	protected static <R> R match(
+	  AbstractSimpleConfigEntryHolderBuilder<?> builder,
+	  Function<SimpleConfigBuilderImpl, R> rootGetter,
+	  Function<CategoryBuilder, R> categoryGetter,
+	  Function<GroupBuilder, R> groupGetter
+	) {
+		if (builder instanceof SimpleConfigBuilderImpl root)
+			return rootGetter.apply(root);
+		else if (builder instanceof CategoryBuilder category)
+			return categoryGetter.apply(category);
+		else if (builder instanceof GroupBuilder group)
+			return groupGetter.apply(group);
+		else throw new IllegalArgumentException(
+			  "Unknown builder type: " + builder.getClass().getCanonicalName());
+	}
+	
+	protected static boolean hasAnyConfigAnnotation(Field field) {
+		for (Class<? extends Annotation> cls: CONFIG_ENTRY_ANNOTATIONS)
+			if (field.isAnnotationPresent(cls)) return true;
 		return false;
 	}
 	
 	protected static int getOrder(Field field) {
-		if (field.isAnnotationPresent(Entry.class))
+		if (field.isAnnotationPresent(Entry.class)) {
 			return field.getAnnotation(Entry.class).value();
-		else if (field.isAnnotationPresent(Text.class))
+		} else if (field.isAnnotationPresent(Text.class)) {
 			return field.getAnnotation(Text.class).value();
-		else return 0;
+		} else if (field.isAnnotationPresent(Caption.class)) {
+			return -1;
+		} else return 0;
 	}
 	
 	public static AbstractSimpleConfigEntryHolderBuilder<?> getBuilderForClass(Class<?> clazz) {
@@ -571,9 +453,13 @@ public class SimpleConfigClassParser {
 			super(message + getExtraMessage(builder), cause);
 		}
 		
-		protected static String getExtraMessage(AbstractSimpleConfigEntryHolderBuilder<?> builder) {
+		public static String getExtraMessage(Class<?> parsedClass) {
+			return getExtraMessage(getBuilderForClass(parsedClass));
+		}
+		
+		public static String getExtraMessage(AbstractSimpleConfigEntryHolderBuilder<?> builder) {
 			if (builder == null)
-				return "\n  Could not get parsing context information";
+				return "\n  Could not get config building context information";
 			StringBuilder r = new StringBuilder("\n");
 			r.append("  Parsing config ").append(builder).append("\n");
 			r.append("    Defined entries:\n");
@@ -581,12 +467,22 @@ public class SimpleConfigClassParser {
 			  builder.entries.entrySet()) {
 				final AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> e = entry.getValue();
 				r.append("      ").append(entry.getKey()).append(": ")
-				  .append(e.getClass().getSimpleName());
-				if (e.typeClass != null)
-					r.append(" (").append(e.typeClass.getName()).append(")");
+				  .append(Arrays.stream(e.getClass().getInterfaces())
+				            .filter(ConfigEntryBuilder.class::isAssignableFrom).findFirst()
+				            .map(Class::getSimpleName).orElse(e.getClass().getSimpleName() +
+				                                              " [unknown builder interface!]"));
+				if (e.type != null)
+					r.append(" (").append(e.type).append(")");
 				r.append("\n");
 			}
 			return r.toString();
+		}
+		
+		public static String getEntryBuilderName(ConfigEntryBuilder<?, ?, ?, ?> builder) {
+			return Arrays.stream(builder.getClass().getInterfaces())
+			  .filter(ConfigEntryBuilder.class::isAssignableFrom).findFirst()
+			  .map(Class::getSimpleName)
+			  .orElse(builder.getClass().getSimpleName());
 		}
 	}
 }

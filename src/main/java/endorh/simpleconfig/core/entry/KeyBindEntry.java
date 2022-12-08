@@ -6,10 +6,7 @@ import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.AtomicEntry;
-import endorh.simpleconfig.core.SimpleConfigGUIManagerImpl;
+import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindDispatcher;
@@ -92,7 +89,7 @@ public class KeyBindEntry extends AbstractConfigEntry<
 		}
 		
 		public Builder(KeyBindMapping value) {
-			super(value, KeyBindMapping.class);
+			super(value, EntryType.of(KeyBindMapping.class));
 		}
 		
 		@Override public @NotNull Builder withDefaultSettings(ExtendedKeyBindSettings settings) {

@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.impl.builders.ListFieldBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -50,9 +51,9 @@ public abstract class AbstractListEntry
 		protected int minSize = 0;
 		protected int maxSize = Integer.MAX_VALUE;
 		
-		public Builder(List<V> value, Class<?> innerType) {
-			super(value, List.class);
-			this.innerType = innerType;
+		public Builder(List<V> value, EntryType<?> innerType) {
+			super(value, EntryType.of(List.class, innerType));
+			this.innerType = innerType.type();
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Self expand() {

@@ -5,6 +5,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.config.ModConfig;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,9 +14,54 @@ import java.nio.file.Path;
 import java.util.*;
 
 import static endorh.simpleconfig.api.SimpleConfigGUIManagerProxy.getSimpleConfigGUIManager;
+import static endorh.simpleconfig.api.SimpleConfigProxy.getModNameOrId;
 
 public interface SimpleConfig extends ConfigEntryHolder {
 	@Internal String MOD_ID = "simpleconfig";
+	
+	/**
+    * Builds and registers a config file declared using the
+    * declarative Java API<br><br>
+    *
+	 * The mod ID is inferred from the mod thread.<br><br>
+	 *
+    * If the Simple Config mod is not present, this method will log
+    * a warning stating that Simple Config needs to be installed to
+    * edit the configuration for your mod.
+	 *
+	 * @param type The {@link Type} of the config file, usually either {@code CLIENT} or {@code SERVER}
+	 * @param configClass The config class that defines config entries for your file using the
+	 *                    declarative Java API
+    */
+	static boolean registerConfig(Type type, @NotNull Class<?> configClass) {
+		return registerConfig(null, type, configClass);
+	}
+	
+	/**
+	 * Builds and registers a config file declared using the
+	 * declarative Java API<br><br>
+	 *
+	 * If the Simple Config mod is not present, this method will log
+	 * a warning stating that Simple Config needs to be installed to
+	 * edit the configuration for your mod.
+	 *
+	 * @param modId Your mod ID, it will be inferred from your mod thread if omitted
+	 * @param type The {@link Type} of the config file, usually either {@code CLIENT} or {@code SERVER}
+	 * @param configClass The config class that defines config entries for your file using the
+	 *                    declarative Java API
+	 */
+	static boolean registerConfig(@Nullable String modId, Type type, @NotNull Class<?> configClass) {
+		if (!SimpleConfigProxy.isRuntimePresent()) {
+			LogManager.getLogger().warn(
+			  "Config file for mod " + getModNameOrId(modId) + "(" + modId + ")" +
+			  " cannot be created because the Simple Config mod is not present." +
+			  "\n  Install Simple Config to modify the configuration of this mod:" +
+			  "\n    https://www.curseforge.com/minecraft/mc-mods/simple-config");
+			return false;
+		}
+		ConfigBuilderFactoryProxy.config(modId, type, configClass).buildAndRegister();
+		return true;
+	}
 	
 	/**
 	 * Whether this config is a wrapper for a mod that

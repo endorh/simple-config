@@ -8,6 +8,7 @@ import endorh.simpleconfig.api.entry.BooleanEntryBuilder.BooleanDisplayer;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.BooleanToggleBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -37,7 +38,7 @@ public class BooleanEntry
 		protected BooleanDisplayer yesNoSupplier = BooleanDisplayer.TRUE_FALSE;
 		
 		public Builder(Boolean value) {
-			super(value, Boolean.class);
+			super(value, EntryType.of(Boolean.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder text(BooleanDisplayer displayAdapter) {

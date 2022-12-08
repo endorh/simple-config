@@ -3,6 +3,7 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ByteEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
@@ -27,7 +28,7 @@ public class ByteEntry extends AbstractRangedEntry<Byte, Number, Integer>
 	  extends AbstractRangedEntry.Builder<Byte, Number, Integer, ByteEntry, ByteEntryBuilder, Builder>
 	  implements ByteEntryBuilder {
 		public Builder(Byte value) {
-			super(value, Byte.class);
+			super(value, EntryType.of(Byte.class));
 		}
 		
 		@Override

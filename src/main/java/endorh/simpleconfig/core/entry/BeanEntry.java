@@ -10,11 +10,9 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.entry.BeanEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.AtomicEntry;
-import endorh.simpleconfig.core.DummyEntryHolder;
+import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.entry.BeanProxy.IBeanGuiAdapter;
+import endorh.simpleconfig.core.reflection.BeanClassParser;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -62,16 +60,20 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 	public static class Builder<B> extends AbstractConfigEntryBuilder<
 	  B, Map<String, Object>, B, BeanEntry<B>, BeanEntryBuilder<B>, Builder<B>
 	> implements BeanEntryBuilder<B> {
-		private final Class<B> type;
+		private final Class<B> beanType;
 		private final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
 		private String caption;
 		private @Nullable Function<B, Icon> iconProvider = null;
 		private boolean allowUneditableProperties = false;
 		
+		public static <B> BeanEntryBuilder<B> create(B value) {
+			return BeanClassParser.create(value);
+		}
+		
 		public Builder(B value) {
-			super(value, value.getClass());
+			super(value, EntryType.unchecked(value.getClass()));
 			//noinspection unchecked
-			type = (Class<B>) value.getClass();
+			beanType = (Class<B>) value.getClass();
 		}
 		
 		@Override public @NotNull BeanEntryBuilder<B> allowUneditableProperties(boolean allowUneditable) {
@@ -83,7 +85,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		@Override protected BeanEntry<B> buildEntry(ConfigEntryHolder parent, String name) {
 			Map<String, AbstractConfigEntry<?, ?, ?>> entries = new LinkedHashMap<>();
 			this.entries.forEach((n, e) -> entries.put(n, DummyEntryHolder.build(parent, e)));
-			BeanProxyImpl<B> proxy = new BeanProxyImpl<>(type, Util.make(
+			BeanProxyImpl<B> proxy = new BeanProxyImpl<>(beanType, Util.make(
 			  new HashMap<>(), m -> entries.forEach((n, e) -> m.put(n, createAdapter(e)))));
 			String prefix = entries.values().stream().map(e -> e.getRoot().getModId()).findFirst().orElse("")
 			                + ".config.bean." + proxy.getTypeTranslation() + ".";

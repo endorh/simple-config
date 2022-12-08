@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ShortListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
@@ -31,7 +32,7 @@ public class ShortListEntry extends RangedListEntry<Short, Number, Integer, Shor
 	  implements ShortListEntryBuilder {
 		
 		public Builder(List<Short> value) {
-			super(value, Short.class);
+			super(value, EntryType.of(Short.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull ShortListEntryBuilder min(short min) {

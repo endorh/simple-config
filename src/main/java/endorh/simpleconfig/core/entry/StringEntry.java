@@ -8,6 +8,7 @@ import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -56,7 +57,7 @@ public class StringEntry
 		protected int maxLength = Integer.MAX_VALUE;
 		protected int minLength = 0;
 		public Builder(String value) {
-			super(value, String.class);
+			super(value, EntryType.of(String.class));
 		}
 		
 		@Override public @NotNull StringEntryBuilder withValue(String value) {
@@ -70,6 +71,12 @@ public class StringEntry
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder suggest(String... suggestions) {
+			if (suggestions.length == 0) {
+				Builder copy = copy();
+				copy.choiceSupplier = null;
+				copy.restrict = false;
+				return copy;
+			}
 			return suggest(Arrays.stream(suggestions).collect(Collectors.toList()));
 		}
 		

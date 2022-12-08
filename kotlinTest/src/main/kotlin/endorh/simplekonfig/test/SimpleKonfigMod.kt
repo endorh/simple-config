@@ -1,4 +1,4 @@
-package endorh.simplekonfig.konfig
+package endorh.simplekonfig.test
 
 import endorh.simpleconfig.konfig.SimpleKonfig
 import net.minecraftforge.fml.common.Mod
@@ -8,6 +8,6 @@ object SimpleKonfigMod {
     const val MOD_ID = "simplekonfig"
     
     init {
-        SimpleKonfig.buildAndRegister(ClientKonfig)
+        SimpleKonfig.registerConfig(ClientKonfig)
     }
 }

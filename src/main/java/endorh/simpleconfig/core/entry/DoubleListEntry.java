@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleListBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -27,7 +28,7 @@ public class DoubleListEntry extends RangedListEntry<Double, Number, Double, Dou
 	  DoubleListEntry, DoubleListEntryBuilder, Builder>
 	  implements DoubleListEntryBuilder {
 		public Builder(List<Double> value) {
-			super(value, Double.class);
+			super(value, EntryType.of(Double.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull DoubleListEntryBuilder min(double min) {
