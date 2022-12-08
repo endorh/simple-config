@@ -16,7 +16,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -416,8 +416,8 @@ public class SimpleConfigBuilderImpl
 		protected @Nullable Consumer<SimpleConfigGroup> baker = null;
 		
 		protected String path;
-		protected String heldEntryName;
-		protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> heldEntryBuilder = null;
+		protected String captionName;
+		protected AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> captionBuilder = null;
 		
 		protected GroupBuilder(String name, boolean expanded) {
 			this.name = name;
@@ -474,13 +474,13 @@ public class SimpleConfigBuilderImpl
 		  V, C, G,
 		  B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder
 		> @NotNull GroupBuilder caption(String name, B entry) {
-			if (heldEntryBuilder != null)
+			if (captionBuilder != null)
 				throw new IllegalArgumentException("Attempt to declare two caption entries for the same config group: " + path);
 			if (!(entry instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
 			  "ConfigEntryBuilder not instance of AbstractConfigEntryBuilder");
-			heldEntryBuilder = (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry;
-			heldEntryName = name;
-			addEntry(0, name, heldEntryBuilder);
+			captionBuilder = (AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) entry;
+			captionName = name;
+			addEntry(0, name, captionBuilder);
 			guiOrder.remove(name);
 			return this;
 		}
@@ -554,16 +554,16 @@ public class SimpleConfigBuilderImpl
 			final Map<String, SimpleConfigGroupImpl> groupMap = new LinkedHashMap<>();
 			final Map<String, AbstractConfigEntry<?, ?, ?>> entriesByName = new LinkedHashMap<>();
 			final AbstractConfigEntry<?, ?, ?> heldEntry =
-			  heldEntryBuilder != null ? heldEntryBuilder.build(group, heldEntryName) : null;
-			if (heldEntry != null && builder.canBuildEntry(heldEntryName)) {
-				entriesByName.put(heldEntryName, heldEntry);
+			  captionBuilder != null? captionBuilder.build(group, captionName) : null;
+			if (heldEntry != null && builder.canBuildEntry(captionName)) {
+				entriesByName.put(captionName, heldEntry);
 				buildTranslations(heldEntry);
-				heldEntry.backingField = getBackingField(heldEntryName);
-				heldEntry.secondaryBackingFields = getSecondaryBackingFields(heldEntryName);
-				builder.build(heldEntryBuilder, heldEntry);
+				heldEntry.backingField = getBackingField(captionName);
+				heldEntry.secondaryBackingFields = getSecondaryBackingFields(captionName);
+				builder.build(captionBuilder, heldEntry);
 			}
 			entries.forEach((name, b) -> {
-				if (b == heldEntryBuilder || !builder.canBuildEntry(name)) return;
+				if (b == captionBuilder || !builder.canBuildEntry(name)) return;
 				final AbstractConfigEntry<?, ?, ?> entry = b.build(group, name);
 				entriesByName.put(name, entry);
 				buildTranslations(entry);
@@ -714,7 +714,9 @@ public class SimpleConfigBuilderImpl
 		private final ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 		
 		@Override public void buildModConfig(SimpleConfigImpl config) {
-			ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
+			ModContainer modContainer =
+			  ModList.get().getModContainerById(config.getModId()).orElseThrow(
+				 () -> new IllegalStateException("Missing mod ID for config: " + config.getModId()));
 			SimpleConfigModConfig modConfig = new SimpleConfigModConfig(config, modContainer);
 			config.build(modContainer, modConfig);
 			modContainer.addConfig(modConfig);

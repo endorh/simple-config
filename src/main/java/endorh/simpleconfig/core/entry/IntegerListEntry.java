@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IntegerListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
@@ -29,7 +30,7 @@ public class IntegerListEntry extends RangedListEntry<Integer, Number, Integer, 
 	  implements IntegerListEntryBuilder {
 		
 		public Builder(List<Integer> value) {
-			super(value, Integer.class);
+			super(value, EntryType.of(Integer.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull IntegerListEntryBuilder min(int min) {

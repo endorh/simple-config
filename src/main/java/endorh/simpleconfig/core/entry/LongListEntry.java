@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.LongListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongListBuilder;
@@ -28,7 +29,7 @@ public class LongListEntry extends RangedListEntry<Long, Number, Long, LongListE
 	  LongListEntryBuilder, Builder>
 	  implements LongListEntryBuilder {
 		public Builder(List<Long> value) {
-			super(value, Long.class);
+			super(value, EntryType.of(Long.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull LongListEntryBuilder min(long min) {

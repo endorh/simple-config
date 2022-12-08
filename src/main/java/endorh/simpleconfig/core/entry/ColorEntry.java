@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.entry.ColorEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ColorFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -36,7 +37,7 @@ public class ColorEntry extends AbstractConfigEntry<Color, String, Integer>
 		protected boolean alpha;
 		
 		public Builder(Color value) {
-			super(value, Color.class);
+			super(value, EntryType.of(Color.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder alpha() {

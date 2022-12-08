@@ -14,6 +14,7 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.demo.DemoConfigCategory;
+import endorh.simpleconfig.demo.DemoDeclarativeConfigCategory;
 import net.minecraft.Util;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -145,7 +146,8 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 							  m.getSettings().context().serialize())) : Optional.empty()),
 				  string("").suggest(modNameSupplier)).expand())
 			 // Hook here the demo category
-		  ).n(DemoConfigCategory.getDemoCategory())
+		  ).n(DemoConfigCategory.build())
+		  .n(DemoDeclarativeConfigCategory.build())
 		  .buildAndRegister();
 	}
 	

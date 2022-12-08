@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.StringEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
-import endorh.simpleconfig.demo.DemoServerCategory;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -112,8 +111,6 @@ public class ServerConfig {
 			    .add("hotkey_rules", pairList(
 				   roleName, yesNo(true), Lists.newArrayList(Pair.of("[op]", true))))
 		  ).text("end")
-		  // Register the demo server config category as well
-		  .n(DemoServerCategory.getDemoServerCategory())
 		  .buildAndRegister();
 	}
 	

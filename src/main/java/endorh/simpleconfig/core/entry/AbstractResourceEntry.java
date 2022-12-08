@@ -6,6 +6,7 @@ import endorh.simpleconfig.api.entry.ResourceEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import net.minecraft.ResourceLocationException;
@@ -37,8 +38,8 @@ public abstract class AbstractResourceEntry<Self extends AbstractResourceEntry<S
 		protected Supplier<List<ResourceLocation>> suggestionSupplier = Lists::newArrayList;
 		protected boolean suggestionMode = true;
 		
-		public Builder(ResourceLocation value, Class<?> typeClass) {
-			super(value, typeClass);
+		public Builder(ResourceLocation value, EntryType<?> type) {
+			super(value, type);
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Self suggest(

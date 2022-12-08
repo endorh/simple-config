@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangedListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.impl.builders.RangedListFieldBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -45,8 +46,8 @@ public abstract class RangedListEntry<
 		protected V min = null;
 		protected V max = null;
 		
-		public Builder(List<V> value, Class<?> innerType) {
-			super(value, innerType);
+		public Builder(List<V> value, EntryType<?> type) {
+			super(value, type);
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Self min(@NotNull V min) {

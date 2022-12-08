@@ -36,8 +36,10 @@ public interface ConfigBuilderFactory {
 	
 	// Configs, groups and categories
 	
-	@NotNull SimpleConfigBuilder builder(String modId, Type type);
-	@NotNull SimpleConfigBuilder builder(String modId, Type type, Class<?> configClass);
+	@NotNull SimpleConfigBuilder config(Type type);
+	@NotNull SimpleConfigBuilder config(Type type, Class<?> configClass);
+	@NotNull SimpleConfigBuilder config(String modId, Type type);
+	@NotNull SimpleConfigBuilder config(String modId, Type type, Class<?> configClass);
 	
 	@NotNull ConfigGroupBuilder group(String name);
 	@NotNull ConfigGroupBuilder group(String name, boolean expand);

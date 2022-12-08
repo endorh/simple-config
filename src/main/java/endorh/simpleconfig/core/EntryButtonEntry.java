@@ -68,7 +68,7 @@ public class EntryButtonEntry<V, Gui>
 		public Builder(
 		  B inner, BiConsumer<V, ConfigEntryHolder> action
 		) {
-			super(inner.value, inner.typeClass);
+			super(inner.value, inner.type);
 			this.inner = inner;
 			this.action = action;
 		}

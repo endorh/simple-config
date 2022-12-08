@@ -14,6 +14,11 @@ import java.lang.annotation.Target;
  *
  * @see Entry
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NonPersistent {}
+public @interface NonPersistent {
+	/**
+	 * Whether the annotated entry is non-persistent or not
+	 */
+	boolean value() default true;
+}

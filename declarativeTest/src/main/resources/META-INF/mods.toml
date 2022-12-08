@@ -1,0 +1,26 @@
+modLoader = "javafml"
+loaderVersion = "[41,)"
+license='LGPL'
+
+[[mods]]
+modId="simpleconfigtest"
+version="${file.jarVersion}"
+displayName="Simple Config Test"
+credits=""
+authors=""
+description='''
+Example mod that uses the Simple Config Declarative Java API.
+'''
+[[dependencies.simpleconfigtest]]
+    modId="forge"
+    mandatory=true
+    versionRange="[41,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.simpleconfigtest]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.19,1.20)"
+    ordering="NONE"
+    side="BOTH"
+# Does not depend on Simple Config

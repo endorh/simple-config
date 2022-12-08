@@ -1,7 +1,6 @@
 package endorh.simpleconfig.api.annotation;
 
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
-import endorh.simpleconfig.api.entry.RangedListEntryBuilder;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,13 +8,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * If this field generates a {@link RangedEntryBuilder}
- * or {@link RangedListEntryBuilder}, this annotation
- * sets its minimum value (inclusive)<br>
+ * Configure the minimum value of this entry.<br>
+ * Only applicable to numeric entries (subclasses of {@link RangedEntryBuilder}).<br><br>
  * The value is converted from double to the correspondent type
  * @see Entry
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE_USE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Min {
 	double value() default Double.NEGATIVE_INFINITY;
