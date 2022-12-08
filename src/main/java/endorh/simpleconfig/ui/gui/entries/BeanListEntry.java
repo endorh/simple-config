@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,7 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	protected final Rectangle captionEntryArea = new Rectangle();
 	protected @Nullable Function<B, Icon> iconProvider;
 	protected @Nullable Icon icon;
+	protected boolean isOverrideEquals;
 	
 	protected ToggleAnimator expandAnimator = new ToggleAnimator();
 	private boolean expanded;
@@ -85,6 +87,10 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 		this.iconProvider = iconProvider;
 		setValue(value);
 		setDisplayedValue(value);
+		
+		// It's an easy mistake to not override .equals() for a
+		//   config bean object, so we make up for it
+		isOverrideEquals = !proxy.createFrom(value).equals(value);
 	}
 	
 	@Override public B getDisplayedValue() {
@@ -117,6 +123,19 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 				  "Invalid Bean property type: " + proxy.getPropertyName(name), e);
 			}
 		});
+	}
+	
+	@Override public boolean areEqual(B value, B other) {
+		if (isOverrideEquals) {
+			for (Entry<String, AbstractConfigListEntry<?>> e: entries.entrySet()) {
+				//noinspection unchecked
+				AbstractConfigListEntry<Object> entry = (AbstractConfigListEntry<Object>) e.getValue();
+				if (!entry.areEqual(proxy.getGUI(value, e.getKey()), proxy.getGUI(other, e.getKey())))
+					return false;
+			}
+			return true;
+		}
+		return super.areEqual(value, other);
 	}
 	
 	@Override public void renderEntry(

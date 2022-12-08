@@ -49,6 +49,7 @@ public abstract class AbstractConfigEntryBuilder<
 	protected boolean requireRestart = false;
 	protected boolean experimental = false;
 	protected Class<?> typeClass;
+	protected EntryType<?> type;
 	protected boolean nonPersistent = false;
 	protected boolean ignored = false;
 	protected Set<EntryTag> tags = new HashSet<>();
@@ -56,12 +57,17 @@ public abstract class AbstractConfigEntryBuilder<
 	protected List<BackingFieldBinding<V, ?>> backingFieldBindings = new ArrayList<>();
 	protected @Nullable ConfigEntryDelegate<V> delegate = null;
 	
-	public AbstractConfigEntryBuilder(V value, Class<?> typeClass) {
+	public AbstractConfigEntryBuilder(V value, EntryType<?> type) {
 		this.value = value;
-		this.typeClass = typeClass;
-		backingFieldBuilder = typeClass != null? BackingFieldBuilder.<V, V>of(
-		  Function.identity(), typeClass
+		this.typeClass = type != null? type.type() : null;
+		this.type = type;
+		backingFieldBuilder = type != null? BackingFieldBuilder.<V, V>of(
+		  Function.identity(), type
 		).withCommitter(Function.identity()) : null;
+	}
+	
+	@Internal public static EntryType<?> getEntryType(ConfigEntryBuilder<?, ?, ?, ?> builder) {
+		return ((AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>) builder).type;
 	}
 	
 	@Contract(pure=true) @Internal public SelfImpl withBuildListener(
@@ -89,6 +95,10 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	@Internal public Class<?> getTypeClass() {
 		return typeClass;
+	}
+	
+	@Internal public EntryType<?> getEntryType() {
+		return type;
 	}
 	
 	@Contract(pure=true)
@@ -189,7 +199,7 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	@Override @Contract(pure=true)
 	public <F> @NotNull Self addField(String suffix, Function<V, F> mapper, Class<?> type) {
-		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, type)));
+		return addField(BackingFieldBinding.withSuffix(suffix, BackingFieldBuilder.of(mapper, EntryType.unchecked(type))));
 	}
 	
 	@Override @Contract(pure=true)
@@ -200,18 +210,18 @@ public abstract class AbstractConfigEntryBuilder<
 	@Override @Contract(pure=true)
 	public <F> @NotNull Self field(Function<V, F> mapper, Function<F, V> reader, Class<?> type) {
 		SelfImpl copy = copy();
-		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type).withCommitter(reader);
+		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, EntryType.unchecked(type)).withCommitter(reader);
 		return copy.castSelf();
 	}
 	
 	@Override public <F> @NotNull Self field(String name, Function<V, F> mapper, Class<?> type) {
-		return addField(BackingFieldBinding.withName(name, BackingFieldBuilder.of(mapper, type)));
+		return addField(BackingFieldBinding.withName(name, BackingFieldBuilder.of(mapper, EntryType.unchecked(type))));
 	}
 	
 	@Override @Contract(pure=true)
 	public <F> @NotNull Self field(Function<V, F> mapper, Class<?> type) {
 		SelfImpl copy = copy();
-		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, type);
+		copy.backingFieldBuilder = BackingFieldBuilder.of(mapper, EntryType.unchecked(type));
 		return copy.castSelf();
 	}
 	
@@ -364,6 +374,7 @@ public abstract class AbstractConfigEntryBuilder<
 		copy.requireRestart = requireRestart;
 		copy.experimental = experimental;
 		copy.typeClass = typeClass;
+		copy.type = type;
 		copy.editableSupplier = editableSupplier;
 		copy.nonPersistent = nonPersistent;
 		copy.ignored = ignored;

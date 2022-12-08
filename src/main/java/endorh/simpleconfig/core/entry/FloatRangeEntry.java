@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.FloatRangeEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -51,7 +52,7 @@ public class FloatRangeEntry
 		
 		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder fieldScale(String name, float scale) {
 			return addField(BackingFieldBinding.withName(
-			  name, BackingFieldBuilder.of(scale(scale), FloatRange.class)));
+			  name, BackingFieldBuilder.of(scale(scale), EntryType.of(FloatRange.class))));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull FloatRangeEntryBuilder addFieldScale(String suffix, float scale) {

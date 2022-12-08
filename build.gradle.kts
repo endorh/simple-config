@@ -15,6 +15,7 @@ plugins {
     id("net.minecraftforge.gradle")
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("simpleconfig.antlr-conventions")
+    id("simpleconfig.minecraft-conventions")
     `maven-publish`
 }
 
@@ -272,6 +273,8 @@ val copiedForRuntime by configurations.creating {
 val apiImplementation = configurations.getByName(apiSourceSet.implementationConfigurationName).apply {
     extendsFrom(configurations.minecraft.get())
 }
+val apiApi = configurations.getByName(apiSourceSet.apiConfigurationName)
+val apiAnnotationProcessor = configurations.getByName(apiSourceSet.annotationProcessorConfigurationName)
 val kotlinApiImplementation = configurations.getByName(kotlinApiSourceSet.implementationConfigurationName).apply {
     extendsFrom(configurations.minecraft.get())
     extendsFrom(apiImplementation)
@@ -280,6 +283,9 @@ configurations {
     implementation.get().apply {
         extendsFrom(apiImplementation)
         extendsFrom(copiedForRuntime)
+    }
+    annotationProcessor.get().apply {
+        extendsFrom(apiAnnotationProcessor)
     }
 }
 
@@ -329,6 +335,10 @@ val deobfShadowJar by configurations.creating {
     isCanBeConsumed = true
     isCanBeResolved = false
 }
+val apiJar by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+}
 
 // Workaround issue of `snakeyaml` classes not being added to run configurations
 //   We copy its classes files into our classpath
@@ -374,12 +384,14 @@ fun ShadowJar.configureShadowJar() {
         include(dependency("org.antlr:antlr4:$antlrVersion"))
         include(dependency("org.antlr:antlr4-runtime:$antlrVersion"))
         include(dependency("org.yaml:snakeyaml:${V.yaml}"))
+        include(dependency("org.atteo.classindex:classindex:3.13"))
     }
     
     val shadowRoot = "${project.group}.shadowed"
     val relocatedPackages = listOf(
         "org.antlr",
         "org.yaml.snakeyaml",
+        "com.impetus",
     )
     relocatedPackages.forEach { relocate(it, "$shadowRoot.$it") }
 }
@@ -472,6 +484,7 @@ artifacts {
     ) = add(name, artifact, action)
     
     deobfShadowJar(tasks.shadowJar.get())
+    apiJar(apiJarTask.get())
     archives(reobfShadowJarTask.get())
     archives(apiJarTask.get())
     archives(kotlinApiJarTask.get())

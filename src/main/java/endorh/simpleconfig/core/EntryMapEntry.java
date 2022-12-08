@@ -117,7 +117,7 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		}
 		
 		public Builder(Map<K, V> value, KB keyEntryBuilder, B entryBuilder) {
-			super(new LinkedHashMap<>(value), Map.class);
+			super(new LinkedHashMap<>(value), EntryType.of(Map.class, keyEntryBuilder.type, entryBuilder.type));
 			this.entryBuilder = entryBuilder.copy();
 			this.keyEntryBuilder = keyEntryBuilder.copy();
 		}

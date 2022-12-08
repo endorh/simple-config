@@ -4,6 +4,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.ItemNameEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -47,7 +48,7 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		protected TagKey<Item> tag = null;
 		
 		public Builder(ResourceLocation value) {
-			super(value, ResourceLocation.class);
+			super(value, EntryType.of(ResourceLocation.class));
 			suggestionSupplier = () -> ForgeRegistries.ITEMS.getValues().stream()
 			  .filter(i -> i.getItemCategory() != null).map(ForgeRegistries.ITEMS::getKey)
 			  .filter(Objects::nonNull)

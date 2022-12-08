@@ -14,6 +14,12 @@ import java.lang.annotation.Target;
  *
  * @see Entry
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequireRestart {}
+public @interface RequireRestart {
+	/**
+	 * Whether the annotated entry requires a restart to be effective
+	 * or not
+	 */
+	boolean value() default true;
+}

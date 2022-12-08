@@ -67,7 +67,7 @@ public class EntrySetEntry<
 	> implements EntrySetEntryBuilder<V, C, G, S> {
 		protected B builder;
 		protected Class<?> innerType;
-		protected Function<V, Optional<Component>> elemErrorSupplier;
+		protected Function<V, Optional<Component>> elemErrorSupplier = v -> Optional.empty();
 		protected boolean expand;
 		protected int minSize = 0;
 		protected int maxSize = Integer.MAX_VALUE;
@@ -78,7 +78,7 @@ public class EntrySetEntry<
 		}
 		
 		public Builder(Set<V> value, B builder) {
-			super(new HashSet<>(value), Set.class);
+			super(new HashSet<>(value), EntryType.of(Set.class, builder.type));
 			innerType = builder.typeClass;
 			this.builder = builder.copy();
 		}

@@ -12,6 +12,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.OptionEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.SelectorBuilder;
@@ -51,7 +52,11 @@ public class OptionEntry<T> extends AbstractConfigEntry<T, String, T> {
 		}
 		
 		public Builder(T value, Class<?> typeClass) {
-			super(value, typeClass);
+			super(value, EntryType.unchecked(typeClass));
+		}
+		
+		public Builder(T value, EntryType<?> type) {
+			super(value, type);
 		}
 		
 		@Override public @NotNull OptionEntryBuilder<T> withOptions(Supplier<List<T>> options) {

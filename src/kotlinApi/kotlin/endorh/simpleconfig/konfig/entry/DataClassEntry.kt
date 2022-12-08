@@ -8,10 +8,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder
 import endorh.simpleconfig.api.ConfigEntryHolder
 import endorh.simpleconfig.api.EntryTag
 import endorh.simpleconfig.api.ui.icon.Icon
-import endorh.simpleconfig.core.AbstractConfigEntry
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder
-import endorh.simpleconfig.core.AtomicEntry
-import endorh.simpleconfig.core.DummyEntryHolder
+import endorh.simpleconfig.core.*
 import endorh.simpleconfig.core.entry.BeanProxy
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder
@@ -61,7 +58,7 @@ internal class DataClassEntry<D : Any>(
     
     internal class Builder<B : Any>(value: B) : AbstractConfigEntryBuilder<
       B, Map<String, Any>, B, DataClassEntry<B>, DataClassEntryBuilder<B>, Builder<B>
-    >(value, value::class.java), DataClassEntryBuilder<B> {
+    >(value, EntryType.unchecked(value::class.java)), DataClassEntryBuilder<B> {
         private val entries = mutableMapOf<String, AbstractConfigEntryBuilder<*, *, *, *, *, *>>()
         private val bakedEntries = mutableMapOf<String, BakedDataClassBinding<B, *>>()
         private var caption: String? = null

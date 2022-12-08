@@ -62,17 +62,33 @@ public final class ConfigBuilderFactoryProxy {
 	}
 	
 	/**
-	 * Create a {@link SimpleConfig} builder<br>
-	 * Add entries with {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
-	 * Add categories and groups with {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)}
-	 * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
-	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+    * Create a {@link SimpleConfig} builder.<br>
+	 * The mod ID is inferred from your mod thread.<br><br>
 	 *
-	 * @param modId Your mod id
-	 * @param type A {@link Type}, usually either CLIENT or SERVER
-	 */
-	@Contract(pure=true) public static @NotNull SimpleConfigBuilder config(String modId, Type type) {
-		return getFactory().builder(modId, type);
+    * Add entries with {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
+    * Add categories and groups with {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)}
+    * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
+    * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+    *
+    * @param type A {@link Type}, usually either {@code CLIENT} or {@code SERVER}
+    */
+	@Contract(pure=true) public static @NotNull SimpleConfigBuilder config(Type type) {
+		return getFactory().config(type);
+	}
+	
+	/**
+    * Create a {@link SimpleConfig} builder<br>
+    * Add entries with {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
+    * Add categories and groups with {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)}
+    * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
+    * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+    *
+    * @param type A {@link Type}, usually either {@code CLIENT} or {@code SERVER}
+    * @param configClass Backing class for the config. It will be parsed
+    *   for static backing fields and config annotations
+    */
+	@Contract(pure=true) public static @NotNull SimpleConfigBuilder config(Type type, Class<?> configClass) {
+		return getFactory().config(type, configClass);
 	}
 	
 	/**
@@ -82,13 +98,27 @@ public final class ConfigBuilderFactoryProxy {
 	 * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
 	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
 	 *
-	 * @param modId Your mod id
-	 * @param type A {@link Type}, usually either CLIENT or SERVER
+	 * @param modId Your mod id, will be inferred from your mod thread if omitted
+	 * @param type A {@link Type}, usually either {@code CLIENT} or {@code SERVER}
+	 */
+	@Contract(pure=true) public static @NotNull SimpleConfigBuilder config(String modId, Type type) {
+		return getFactory().config(modId, type);
+	}
+	
+	/**
+	 * Create a {@link SimpleConfig} builder<br>
+	 * Add entries with {@link SimpleConfigBuilder#add(String, ConfigEntryBuilder)}<br>
+	 * Add categories and groups with {@link SimpleConfigBuilder#n(ConfigCategoryBuilder)}
+	 * and {@link SimpleConfigBuilder#n(ConfigGroupBuilder)}<br>
+	 * Complete the config by calling {@link SimpleConfigBuilder#buildAndRegister()}<br>
+	 *
+	 * @param modId Your mod id, will be inferred from your mod thread if omitted
+	 * @param type A {@link Type}, usually either {@code CLIENT} or {@code SERVER}
 	 * @param configClass Backing class for the config. It will be parsed
 	 *   for static backing fields and config annotations
 	 */
 	@Contract(pure=true) public static @NotNull SimpleConfigBuilder config(String modId, Type type, Class<?> configClass) {
-		return getFactory().builder(modId, type, configClass);
+		return getFactory().config(modId, type, configClass);
 	}
 	
 	/**

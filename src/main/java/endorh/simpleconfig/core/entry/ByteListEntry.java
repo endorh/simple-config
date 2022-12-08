@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ByteListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntListBuilder;
@@ -28,7 +29,7 @@ public class ByteListEntry extends RangedListEntry<Byte, Number, Integer, ByteLi
 	public static class Builder extends RangedListEntry.Builder<Byte, Number, Integer, ByteListEntry, ByteListEntryBuilder, Builder>
 	  implements ByteListEntryBuilder {
 		public Builder(List<Byte> value) {
-			super(value, Byte.class);
+			super(value, EntryType.of(Byte.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull ByteListEntryBuilder min(byte min) {

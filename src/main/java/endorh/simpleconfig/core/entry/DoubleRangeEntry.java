@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleRangeEntryBuilder;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -51,7 +52,7 @@ public class DoubleRangeEntry
 		
 		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder fieldScale(String name, double scale) {
 			return addField(BackingFieldBinding.withName(
-			  name, BackingFieldBuilder.of(scale(scale), DoubleRange.class)));
+			  name, BackingFieldBuilder.of(scale(scale), EntryType.of(DoubleRange.class))));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull DoubleRangeEntryBuilder addFieldScale(String suffix, double scale) {

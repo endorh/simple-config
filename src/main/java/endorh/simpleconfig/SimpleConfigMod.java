@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.CommonConfig;
 import endorh.simpleconfig.config.ServerConfig;
+import endorh.simpleconfig.core.SimpleConfigDiscoverer;
 import endorh.simpleconfig.core.SimpleConfigModConfig.LanguageReloadManager;
 import endorh.simpleconfig.core.SimpleConfigNetworkHandler;
 import endorh.simpleconfig.core.SimpleConfigResourcePresetHandler;
@@ -67,6 +68,9 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		});
 		COMMON_CONFIG = CommonConfig.build();
 		SERVER_CONFIG = ServerConfig.build();
+		
+		SimpleConfigDiscoverer.discoverConfigs();
+		
 		SimpleConfigArgumentTypes.registerArgumentTypes();
 		SimpleConfigNetworkHandler.registerPackets();
 	}

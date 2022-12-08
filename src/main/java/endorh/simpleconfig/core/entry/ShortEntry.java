@@ -3,6 +3,7 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ShortEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.IntFieldBuilder;
@@ -27,7 +28,7 @@ public class ShortEntry extends AbstractRangedEntry<Short, Number, Integer>
 	  extends AbstractRangedEntry.Builder<Short, Number, Integer, ShortEntry, ShortEntryBuilder, Builder>
 	  implements ShortEntryBuilder {
 		public Builder(Short value) {
-			super(value, Short.class);
+			super(value, EntryType.of(Short.class));
 		}
 		
 		@Override

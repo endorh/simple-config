@@ -7,6 +7,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.TextEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.TextDescriptionBuilder;
@@ -46,7 +47,7 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		protected Supplier<Component> translationSupplier = null;
 		
 		public Builder() {
-			super(null, null);
+			super(null, EntryType.of(Void.class));
 		}
 		
 		public Builder(@Nullable Supplier<Component> supplier) {

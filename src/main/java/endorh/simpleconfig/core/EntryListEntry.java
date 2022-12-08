@@ -71,7 +71,7 @@ public class EntryListEntry
 		}
 		
 		public Builder(List<V> value, B builder) {
-			super(new ArrayList<>(value), builder.typeClass);
+			super(new ArrayList<>(value), getEntryType(builder));
 			this.builder = builder.copy();
 		}
 		

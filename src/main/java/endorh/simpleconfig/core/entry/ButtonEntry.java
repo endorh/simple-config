@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.ButtonEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ButtonFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -33,7 +34,7 @@ public class ButtonEntry extends GUIOnlyEntry<
 		  () -> Component.translatable("simpleconfig.label.run");
 		
 		public Builder(Consumer<ConfigEntryHolder> value) {
-			super(value, Void.class);
+			super(value, EntryType.of(Void.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder label(String translation) {

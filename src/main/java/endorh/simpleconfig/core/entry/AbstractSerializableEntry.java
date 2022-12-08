@@ -6,6 +6,7 @@ import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.StringTypeWrapper;
@@ -47,11 +48,15 @@ public abstract class AbstractSerializableEntry<V>
 		protected @Nullable Supplier<List<V>> suggestionSupplier = null;
 		
 		protected Builder(V value) {
-			super(value, value.getClass());
+			this(value, value.getClass());
 		}
 		
 		protected Builder(V value, Class<?> typeClass) {
-			super(value, typeClass);
+			this(value, EntryType.unchecked(typeClass));
+		}
+		
+		protected Builder(V value, EntryType<?> type) {
+			super(value, type);
 		}
 		
 		@SafeVarargs @Override public final @NotNull Self suggest(V... suggestions) {

@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -43,10 +44,26 @@ import static java.lang.Math.round;
 @Internal public class ConfigBuilderFactoryImpl implements ConfigBuilderFactory {
 	@Internal public ConfigBuilderFactoryImpl() {}
 	
-	@Override public @NotNull SimpleConfigBuilder builder(String modId, Type type) {
+	private static String getThreadModID() {
+		String modId = ModLoadingContext.get().getActiveContainer().getModId();
+		if ("minecraft".equals(modId)) throw new IllegalStateException(
+		  "Cannot get mod ID from thread at this point. " +
+		  "Register your config earlier, or specify your mod ID explicitly");
+		return modId;
+	}
+	
+	@Override public @NotNull SimpleConfigBuilder config(Type type) {
+		return config(getThreadModID(), type);
+	}
+	@Override public @NotNull SimpleConfigBuilder config(Type type, Class<?> configClass) {
+		return config(getThreadModID(), type, configClass);
+	}
+	@Override public @NotNull SimpleConfigBuilder config(String modId, Type type) {
+		if (modId == null) modId = getThreadModID();
 		return new SimpleConfigBuilderImpl(modId, type);
 	}
-	@Override public @NotNull SimpleConfigBuilder builder(String modId, Type type, Class<?> configClass) {
+	@Override public @NotNull SimpleConfigBuilder config(String modId, Type type, Class<?> configClass) {
+		if (modId == null) modId = getThreadModID();
 		return new SimpleConfigBuilderImpl(modId, type, configClass);
 	}
 	
@@ -346,7 +363,7 @@ import static java.lang.Math.round;
 	// Java Beans
 	
 	@Override public <B> @NotNull BeanEntryBuilder<B> bean(B value) {
-		return new BeanEntry.Builder<>(value);
+		return BeanEntry.Builder.create(value);
 	}
 	
 	// Convenience Minecraft entries
