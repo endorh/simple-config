@@ -8,6 +8,7 @@ import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -52,7 +53,7 @@ public class StringEntry
 		protected int maxLength = Integer.MAX_VALUE;
 		protected int minLength = 0;
 		public Builder(String value) {
-			super(value, String.class);
+			super(value, EntryType.of(String.class));
 		}
 		
 		@Override public @NotNull StringEntryBuilder withValue(String value) {
@@ -66,6 +67,12 @@ public class StringEntry
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder suggest(String... suggestions) {
+			if (suggestions.length == 0) {
+				Builder copy = copy();
+				copy.choiceSupplier = null;
+				copy.restrict = false;
+				return copy;
+			}
 			return suggest(Arrays.stream(suggestions).collect(Collectors.toList()));
 		}
 		
@@ -128,9 +135,8 @@ public class StringEntry
 		
 		@Override protected StringEntry buildEntry(ConfigEntryHolder parent, String name) {
 			final StringEntry entry = new StringEntry(parent, name, value);
-			if (value.length() > maxLength)
-				throw new IllegalArgumentException(
-				  "Config entry's default value is longer than its max length: " + entry.getGlobalPath());
+			if (value.length() > maxLength && !name.isEmpty()) throw new IllegalArgumentException(
+			  "Config entry's default value is longer than its max length: " + entry.getGlobalPath());
 			// if (value.length() < minLength)
 			// 	throw new IllegalArgumentException(
 			// 	  "Config entry's default value is shorter than its min length: " + entry.getPath());

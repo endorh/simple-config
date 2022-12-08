@@ -11,31 +11,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public interface ListEntryBuilder<V, Config, Gui, Self extends ListEntryBuilder<V, Config, Gui, Self>>
-  extends ConfigEntryBuilder<@NotNull List<@NotNull V>, List<Config>, List<Gui>, Self> {
-	/**
-	 * Expand this entry by default in the config menu.
-	 */
-	@Contract(pure=true) @NotNull Self expand();
-	
-	/**
-	 * Configure whether this entry should appear expanded by default in the config menu.
-	 */
-	@Contract(pure=true) @NotNull Self expand(boolean expand);
-	
-	/**
-	 * Set the minimum (inclusive) allowed list size.
-	 *
-	 * @param minSize Inclusive minimum size
-	 */
-	@Contract(pure=true) @NotNull Self minSize(int minSize);
-	
-	/**
-	 * Set the maximum (inclusive) allowed list size.
-	 *
-	 * @param maxSize Inclusive maximum size
-	 */
-	@Contract(pure=true) @NotNull Self maxSize(int maxSize);
-	
+  extends ConfigEntryBuilder<@NotNull List<@NotNull V>, List<Config>, List<Gui>, Self>,
+          CollectionEntryBuilder<@NotNull List<@NotNull V>, List<Config>, List<Gui>, Self> {
 	/**
 	 * Set an error message supplier for the elements of this list entry<br>
 	 * You may also use {@link ErrorEntryBuilder#error(Function)} to check

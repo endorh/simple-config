@@ -29,7 +29,7 @@ public class BeanProxyImpl<B> implements BeanProxy<B> {
 			for (Property prop: set) properties.put(prop.getName(), prop);
 		} catch (YAMLException e) {
 			throw new ConfigBeanIntrospectionException(
-			  "Invalid Java Bean for config entry: " + type.getCanonicalName(), e.getCause());
+			  "Invalid Java Bean for config entry: " + type.getCanonicalName(), e);
 		}
 	}
 	

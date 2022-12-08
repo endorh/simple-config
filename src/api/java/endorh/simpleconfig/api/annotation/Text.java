@@ -10,25 +10,17 @@ import java.lang.annotation.Target;
  * within the config class<br>
  * The type of this field must be either:
  * <ul>
- *    <li>A {@code String}, which value is ignored<br>
- *    It is mapped to a translation according to its name and
+ *    <li>{@code Void}, mapped to a translation according to its name and
  *    path within the config</li>
- *    <li>An {@code ITextComponent}, which is served right-away
+ *    <li>{@code ITextComponent}, which is displayed as is.
  *    It may be a {@code TranslationTextComponent}, or even have
- *    click/hover events through {@code .modifyStyle}</li>
- *    <li>A {@code Supplier<ITextComponent>} which will be invoked
+ *    click/hover events through {@code withStyle}</li>
+ *    <li>{@code Supplier<ITextComponent>} which will be invoked
  *    every time the GUI is built and thus may be able to provide
  *    dynamic information</li>
  * </ul>
  * Making fields used for text entries non-public helps keep a cleaner
  * config API for your project<br><br>
- *
- * However, <b>you're encouraged</b> to generate your entries with
- * the {@link ISimpleConfigBuilder} methods
- * instead, because it provides more options and is less prone
- * to errors<br>
- * Declaring text entries in the backing class forces you to define
- * dummy fields
  *
  * @see Entry
  */
@@ -37,8 +29,7 @@ import java.lang.annotation.Target;
 public @interface Text {
 	/**
 	 * Preferred order to be inserted in the config (relative to its siblings)<br>
-	 * Should only be necessary when dealing with nested groups in between entries,
-	 * but the Java reflection specification won't let me guarantee that
+	 * You shouldn't need to use this.
 	 */
 	int value() default 0;
 }

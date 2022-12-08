@@ -9,6 +9,7 @@ import endorh.simpleconfig.api.entry.SizedRangeEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -56,8 +57,8 @@ public abstract class AbstractRangeEntry<
 		protected boolean canEditMinExclusiveness = false;
 		protected boolean canEditMaxExclusiveness = false;
 		
-		public Builder(R value, Class<R> typeClass) {
-			super(value, typeClass);
+		public Builder(R value, EntryType<?> type) {
+			super(value, type);
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Self min(V min) {
@@ -234,7 +235,7 @@ public abstract class AbstractRangeEntry<
 			protected double maxSize = Double.POSITIVE_INFINITY;
 			
 			public Builder(R value, Class<R> typeClass) {
-				super(value, typeClass);
+				super(value, EntryType.unchecked(typeClass));
 			}
 			
 			@Override @Contract(pure=true) public @NotNull Self allowEmpty(boolean empty) {

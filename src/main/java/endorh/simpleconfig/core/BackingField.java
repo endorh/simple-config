@@ -1,6 +1,5 @@
 package endorh.simpleconfig.core;
 
-import com.google.gson.internal.Primitives;
 import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
 import endorh.simpleconfig.core.SimpleConfigClassParser.SimpleConfigClassParseException;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -16,7 +15,7 @@ public class BackingField<V, F> {
 	private final Function<F, V> committer;
 	
 	public static <V, F> BackingFieldBuilder<V, F> field(Function<V, F> mapper, Class<F> type) {
-		return of(mapper, type);
+		return of(mapper, EntryType.unchecked(type));
 	}
 	
 	private BackingField(Field field, Function<V, F> fieldMapper, Function<F, V> committer) {
@@ -90,25 +89,25 @@ public class BackingField<V, F> {
 	public static class BackingFieldBuilder<V, F> {
 		private final Function<V, F> fieldMapper;
 		private final Function<F, V> committer;
-		private final Class<?> fieldType;
+		private final EntryType<?> type;
 		
 		@Internal public static <V, F> BackingFieldBuilder<V, F> of(
-		  Function<V, F> mapper, Class<?> type
+		  Function<V, F> mapper, EntryType<?> type
 		) {
 			return new BackingFieldBuilder<>(mapper, null, type);
 		}
 		
 		private BackingFieldBuilder(
 		  Function<V, F> fieldMapper, Function<F, V> committer,
-		  Class<?> fieldType
+		  EntryType<?> type
 		) {
 			this.fieldMapper = fieldMapper;
 			this.committer = committer;
-			this.fieldType = fieldType;
+			this.type = type;
 		}
 		
 		public BackingFieldBuilder<V, F> withCommitter(Function<F, V> committer) {
-			return new BackingFieldBuilder<>(fieldMapper, committer, fieldType);
+			return new BackingFieldBuilder<>(fieldMapper, committer, type);
 		}
 		
 		@Internal protected BackingField<V, F> build(Field field) {
@@ -116,7 +115,7 @@ public class BackingField<V, F> {
 				throw new SimpleConfigClassParseException(
 				  field.getDeclaringClass(),
 				  "Backing field " + field.getDeclaringClass().getCanonicalName() + "." +
-				  field.getName() + " doesn't match its expected type: " + fieldType.getSimpleName() +
+				  field.getName() + " doesn't match its expected type: " + type.type().getSimpleName() +
 				  "\nIf this is the default field for this entry, you may annotate it with @NotEntry " +
 				  "to suppress this error");
 			}
@@ -124,7 +123,7 @@ public class BackingField<V, F> {
 		}
 		
 		@Internal protected boolean matchesType(Field field) {
-			return fieldType == null || Primitives.unwrap(field.getType()) == Primitives.unwrap(fieldType);
+			return type == null || type.equals(EntryType.fromField(field));
 		}
 	}
 }

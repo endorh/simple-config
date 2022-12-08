@@ -6,9 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Mark this field to throw a fatal error at load time if it belongs
- * to the backing class of a Simple Config, but wasn't bound to a
- * config entry.
+ * Mark this field/method as expected to be bound by Simple Config to
+ * some config entry. Failure to do so will result in a load-time error.<br>
+ * Can help prevent common binding mistakes, such as misspelled names.
  */
 @Target({ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

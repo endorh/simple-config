@@ -6,6 +6,7 @@ import endorh.simpleconfig.api.entry.RangedEntryBuilder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import net.minecraft.util.text.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -46,10 +47,10 @@ public abstract class AbstractRangedEntry<V extends Comparable<V>, Config, Gui>
 		protected Function<V, ITextComponent> sliderTextSupplier;
 		protected @Nullable InvertibleDouble2DoubleFunction sliderMap;
 		
-		public Builder(V value, Class<?> typeClass) {this(value, typeClass, "%d");}
+		public Builder(V value, EntryType<?> type) {this(value, type, "%d");}
 		
-		public Builder(V value, Class<?> typeClass, String sliderFormat) {
-			super(value, typeClass);
+		public Builder(V value, EntryType<?> type, String sliderFormat) {
+			super(value, type);
 			this.sliderFormat = sliderFormat;
 		}
 		

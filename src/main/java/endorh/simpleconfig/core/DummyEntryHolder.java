@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,9 +14,17 @@ import org.jetbrains.annotations.Nullable;
  */
 public class DummyEntryHolder<V> implements ConfigEntryHolder {
 	protected SimpleConfig root;
+	private static final SimpleConfig DUMMY = new SimpleConfigImpl(
+	  "", Type.SERVER, "dummy", null, null, null);
 	
 	public DummyEntryHolder(SimpleConfig root) {
 		this.root = root;
+	}
+	
+	public static <V, E extends AbstractConfigEntry<V, ?, ?>> E build(
+	  ConfigEntryBuilder<V, ?, ?, ?> builder
+	) {
+		return build(DUMMY, builder);
 	}
 	
 	public static <V, E extends AbstractConfigEntry<V, ?, ?>> E build(

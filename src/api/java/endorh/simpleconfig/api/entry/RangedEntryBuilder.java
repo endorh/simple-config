@@ -27,7 +27,7 @@ public interface RangedEntryBuilder<
 	/**
 	 * Set range (inclusive)
 	 */
-	@Contract(pure=true) @NotNull Self range(V min, V max);
+	@Contract(pure=true) @NotNull Self range(@Nullable V min, @Nullable V max);
 	
 	/**
 	 * Display as slider

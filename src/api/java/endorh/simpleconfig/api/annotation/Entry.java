@@ -1,9 +1,28 @@
 package endorh.simpleconfig.api.annotation;
 
+import endorh.simpleconfig.api.AbstractRange.DoubleRange;
+import endorh.simpleconfig.api.AbstractRange.FloatRange;
+import endorh.simpleconfig.api.AbstractRange.IntRange;
+import endorh.simpleconfig.api.AbstractRange.LongRange;
+import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
+import net.minecraft.block.Block;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.util.ResourceLocation;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+
+import java.awt.Color;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Mark a <b>static</b> field as a config entry<br>
@@ -12,66 +31,103 @@ import java.lang.annotation.Target;
  *    <li>{@code boolean} (or {@code Boolean})</li>
  *    <li>{@code String}</li>
  *    <li>{@code Enum} (any {@code enum} type)</li>
+ *    <li>{@code byte} (or {@code Byte}</li>
+ *    <li>{@code short} (or {@code Short})</li>
  *    <li>{@code int} (or {@code Integer})</li>
  *    <li>{@code long} (or {@code Long})</li>
  *    <li>{@code float} (or {@code Float})</li>
  *    <li>{@code double} (or {@code Double})</li>
- *    <li>{@link java.awt.Color}</li>
+ *    <li>{@link IntRange}</li>
+ *    <li>{@link LongRange}</li>
+ *    <li>{@link FloatRange}</li>
+ *    <li>{@link DoubleRange}</li>
+ *    <li>{@link Color}</li>
+ *    <li>{@link Pattern}</li>
+ *    <li>{@link INBT}</li>
+ *    <li>{@link CompoundNBT}</li>
+ *    <li>{@link ResourceLocation}</li>
+ *    <li>{@link KeyBindMapping}</li>
+ *    <li>{@link Item}</li>
+ *    <li>{@link Block}</li>
+ *    <li>{@link Fluid}</li>
  * </ul>
- * Additionally, a few list types are also supported
+ * Additionally, the following generic types are also supported,
+ * given that their type arguments are also supported:
  * <ul>
- *    <li>{@code List<String>}</li>
- *    <li>{@code List<Integer>}</li>
- *    <li>{@code List<Long>}</li>
- *    <li>{@code List<Float>}</li>
- *    <li>{@code List<Double>}</li>
+ *    <li>{@link List}</li>
+ *    <li>{@link Set}</li>
+ *    <li>{@link Map} (keys must be atomic)</li>
+ *    <li>{@link Pair} (values must be atomic)</li>
+ *    <li>{@link Triple} (values must be atomic)</li>
  * </ul>
- * To define more complex lists, such as lists of other entry types
- * (including lists of lists), use the builder<br>
- * Also, the {@code Byte} and {@code Short} types are supported,
- * but deprecated<br>
- * A config entry with the name and type of this field will
- * be created on this context.<br><br>
+ * Furthermore, any class annotated as {@link Bean} is also supported.
+ * Such classes should contain their own {@link Entry} annotated field
+ * bean properties.<br><br>
  *
- * Some annotations, like {@link Min}, {@link Max}, {@link Slider},
- * {@link HasAlpha}, {@link RequireRestart} or {@link NonPersistent}
- * allow to configure some of the settings of the generated entries
- * for the types that support them<br>
+ * Other annotations in this package (such as {@link Min}, {@link Max} or
+ * {@link Slider}) can be used to configure generated entries.<br>
+ * In particular, the {@link Configure} annotation can be used to
+ * achieve full parity with the builder API, by defining decorator
+ * methods that get applied to entries annotated with your own
+ * custom annotations.<br><br>
  *
- * A sibling method with the same name followed by '{@code $error}'
- * may be defined, accepting the type of this field and
- * returning an {@code Optional<ITextComponent>} with an
- * optional error message<br>
- * Likewise, a sibling method with the suffix '{@code $tooltip}'
- * returning instead an {@code Optional<ITextComponent[]>} with
- * an optional tooltip may be defined as well<br>
- * <b>Remember that entries get automatically mapped tooltip
+ * Simple Config can also recognize what will be referred to as
+ * 'sibling methods'. These are methods defined besides their entries,
+ * sharing their name with a suffix (separated by '{@code $}').
+ * The following sibling methods are supported:
+ * <ul><li>
+ *    {@code $error}, receiving a value of the same type as the entry,
+ *    and returning either of the following types:
+ *    <ul><li>
+ *       {@code Optional<Component>}, an optional error message
+ *    </li><li>
+ *       {@code Component}, an error message or null
+ *    </li><li>
+ *       {@code String}, an error message translation key or null
+ *    </li><li>
+ *       {@code boolean}, {@code true} if an error is present (a generic error message will be used)
+ *    </li></ul>
+ * </li><li>
+ *    {@code $tooltip}, receiving a value of the same type as the entry,
+ *    and returning either of the following types:
+ *    <ul><li>
+ *       {@code List<Component>}, a tooltip for the value
+ *    </li><li>
+ *       {@code Component}, a single line tooltip for the value
+ *    </li><li>
+ *       {@code String}, a translation key for the tooltip for the value,
+ *       which may contain new lines
+ *    </li></ul>
+ * </li></ul>
+ *
+ * <b>Keep in mind that entries get automatically mapped tooltip
  * translation keys</b>. Use dynamic tooltips only when
- * necessary<br>
- * For list entry types it's also possible to have a sibling method with
- * the same name, followed by '{@code $validate}' which accepts list
- * elements and may return either a boolean (true for valid) or an
- * {@code Optional<ITextComponent>} with an optional error message,
- * instead of using the '{@code $error}' method, which takes the whole list<br><br>
+ * necessary<br><br>
  *
- * <b>You're encouraged</b> to generate your entries with
- * the {@link ISimpleConfigBuilder} methods
- * instead, because it provides more options and is less prone
- * to errors<br>
- * However, for simpler configs, you might want to check out other
- * annotations for different entry types<br>
- * @see Text
+ * For generic entry types, sibling methods can be defined for the inner entries,
+ * by appending the following suffixes after the entry name:
+ * <ul>
+ *    <li>{@code $v} for {@code List}s, {@code Set}s and {@code Map} values</li>
+ *    <li>{@code $k} for {@code Map} keys</li>
+ *    <li>{@code $l}, {@code $m} and {@code $r} for {@code Pair} and {@code Triple} values</li>
+ *    <li>
+ *       {@code $caption} and {@code $list}/{@code $set}/{@code $map} for captioned collections
+ *    </li>
+ * </ul>
+ * @see Category
  * @see Group
+ * @see Configure
+ * @see Bind
+ * @see Text
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Entry {
 	/**
 	 * The preferred index where to add this entry, relative to its siblings,
-	 * including config groups on the same level<br>
+	 * including config groups on the same level<br><br>
 	 * Should only be necessary when dealing with nested groups in between
 	 * entries, but the Java language specification won't let me guarantee that
 	 */
 	int value() default 0;
-	
 }

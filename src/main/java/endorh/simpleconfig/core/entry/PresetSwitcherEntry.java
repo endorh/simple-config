@@ -4,6 +4,7 @@ import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.PresetSwitcherEntryBuilder;
 import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.DummyEntryHolder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -56,7 +57,7 @@ public class PresetSwitcherEntry extends GUIOnlyEntry<String, String, PresetSwit
 		protected boolean global;
 		
 		public Builder(Map<String, Map<String, Object>> presets, String path, boolean global) {
-			super(firstKey(presets), String.class);
+			super(firstKey(presets), EntryType.of(String.class));
 			this.presets = presets;
 			this.path = path;
 			this.global = global;

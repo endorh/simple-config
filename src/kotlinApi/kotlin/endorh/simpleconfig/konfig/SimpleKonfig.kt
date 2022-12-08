@@ -308,7 +308,7 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
  *
  * Should only be subclassed by `object`s, one per Konfig [Type] per mod.
  *
- * Register a [SimpleKonfig] object by passing it to [SimpleKonfig.buildAndRegister]
+ * Register a [SimpleKonfig] object by passing it to [SimpleKonfig.registerConfig]
  * from your mod's constructor. (see the sample below)
  *
  * Define subcategories by declaring nested objects that extend [category], or
@@ -406,7 +406,7 @@ open class SimpleKonfig protected constructor(
          * [SimpleKonfig] objects, and all their nested categories and groups are
          * loaded and registered to the Simple Config API.
          */
-        fun buildAndRegister(
+        fun registerConfig(
           client: SimpleKonfig? = null, server: SimpleKonfig? = null, common: SimpleKonfig? = null
         ) = listOfNotNull(client, server, common).forEach { build(it) }
     

@@ -87,7 +87,7 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		}
 		
 		public Builder(List<Pair<K, V>> value, KB keyEntryBuilder, B entryBuilder) {
-			super(value, Map.class);
+			super(value, EntryType.of(Pair.class, getEntryType(keyEntryBuilder), getEntryType(entryBuilder)));
 			this.entryBuilder = entryBuilder;
 			this.keyEntryBuilder = keyEntryBuilder;
 		}

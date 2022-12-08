@@ -10,6 +10,7 @@ import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -57,12 +58,12 @@ public class EnumEntry<E extends Enum<E>>
 		protected @Nullable Boolean useComboBox = null;
 		
 		public Builder(E value) {
-			super(value, value.getDeclaringClass());
+			super(value, EntryType.of(value.getDeclaringClass()));
 			enumClass = value.getDeclaringClass();
 		}
 		
 		public Builder(Class<E> enumClass) {
-			super(enumClass.getEnumConstants()[0], enumClass);
+			super(enumClass.getEnumConstants()[0], EntryType.of(enumClass));
 			this.enumClass = enumClass;
 		}
 		

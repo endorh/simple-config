@@ -12,6 +12,7 @@ buildscript {
 plugins {
     kotlin("jvm") version "1.5.21"
     id("net.minecraftforge.gradle")
+    id("simpleconfig.minecraft-conventions")
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 

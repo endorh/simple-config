@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.StringListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.StringListBuilder;
@@ -27,7 +28,7 @@ public class StringListEntry extends AbstractListEntry<String, String, String, S
 	  String, String, String, StringListEntry, StringListEntryBuilder, Builder
 	> implements StringListEntryBuilder {
 		public Builder(List<String> value) {
-			super(value, String.class);
+			super(value, EntryType.of(String.class));
 		}
 		
 		@Override

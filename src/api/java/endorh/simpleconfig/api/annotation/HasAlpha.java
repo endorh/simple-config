@@ -12,6 +12,11 @@ import java.lang.annotation.Target;
  * it will be configured to accept alpha component values
  * @see Entry
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE_USE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface HasAlpha {}
+public @interface HasAlpha {
+	/**
+	 * Whether the annotated entry accepts alpha components.
+	 */
+	boolean value() default true;
+}

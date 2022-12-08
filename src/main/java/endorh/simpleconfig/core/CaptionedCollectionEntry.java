@@ -64,7 +64,7 @@ public class CaptionedCollectionEntry<
 		protected AbstractConfigEntryBuilder<CV, CC, CG, ?, CS, ?> captionBuilder;
 		
 		public Builder(Pair<CV, V> value, S collectionBuilder, CS captionBuilder) {
-			super(value, Pair.class);
+			super(value, EntryType.of(Pair.class, getEntryType(captionBuilder), getEntryType(collectionBuilder)));
 			if (!(collectionBuilder instanceof AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>))
 				throw new IllegalArgumentException("`collectionBuilder` is not an `AbstractConfigEntryBuilder`!");
 			if (!(captionBuilder instanceof AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>))
@@ -88,7 +88,7 @@ public class CaptionedCollectionEntry<
 		@Override @Contract(pure=true)
 		public @NotNull CaptionedCollectionEntryBuilder<V, C, G, S, CV, CC, CG, CS> collectionField() {
 			return addField(BackingFieldBinding.sameName(BackingFieldBuilder.of(
-			  Pair::getValue, collectionBuilder.typeClass)));
+			  Pair::getValue, collectionBuilder.type)));
 		}
 		
 		@Override @Contract(pure=true)

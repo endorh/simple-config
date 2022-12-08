@@ -8,7 +8,7 @@ license='LGPL'
 [[mods]]
 modId="simplekonfig"
 version="${file.jarVersion}"
-displayName="simplekonfig"
+displayName="Simple Konfig Test"
 credits=""
 authors=""
 description='''

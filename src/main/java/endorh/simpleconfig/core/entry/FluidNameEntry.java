@@ -4,6 +4,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.entry.FluidNameEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
@@ -49,7 +50,7 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		protected ITag<Fluid> tag = null;
 		
 		public Builder(ResourceLocation value) {
-			super(value, ResourceLocation.class);
+			super(value, EntryType.of(ResourceLocation.class));
 			suggestionSupplier = () -> Registry.FLUID.getEntries().stream().map(Entry::getValue)
 			  .filter(f -> f.getFilledBucket().getGroup() != null)
 			  .filter(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getStillFluid() == f)

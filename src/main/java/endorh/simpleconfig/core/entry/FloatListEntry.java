@@ -2,6 +2,7 @@ package endorh.simpleconfig.core.entry;
 
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.FloatListEntryBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FloatListBuilder;
@@ -27,7 +28,7 @@ public class FloatListEntry extends RangedListEntry<Float, Number, Float, FloatL
 	  FloatListEntry, FloatListEntryBuilder, Builder>
 	  implements FloatListEntryBuilder {
 		public Builder(List<Float> value) {
-			super(value, Float.class);
+			super(value, EntryType.of(Float.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull FloatListEntryBuilder min(float min) {

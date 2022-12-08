@@ -3,6 +3,7 @@ package endorh.simpleconfig.core.entry;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.LongEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.LongFieldBuilder;
@@ -29,7 +30,7 @@ public class LongEntry extends AbstractRangedEntry<Long, Number, Long>
 	  implements LongEntryBuilder {
 		
 		public Builder(Long value) {
-			super(value, Long.class);
+			super(value, EntryType.of(Long.class));
 		}
 		
 		@Override

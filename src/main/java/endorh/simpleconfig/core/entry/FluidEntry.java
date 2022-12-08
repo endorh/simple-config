@@ -7,6 +7,7 @@ import endorh.simpleconfig.api.entry.FluidEntryBuilder;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
@@ -58,7 +59,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 		protected boolean excludeFlowing = true;
 		
 		public Builder(Fluid value) {
-			super(value, Fluid.class);
+			super(value, EntryType.of(Fluid.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {

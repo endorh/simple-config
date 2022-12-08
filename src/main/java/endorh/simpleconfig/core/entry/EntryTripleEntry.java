@@ -5,10 +5,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EntryTripleEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.AtomicEntry;
-import endorh.simpleconfig.core.DummyEntryHolder;
+import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -93,7 +90,7 @@ public class EntryTripleEntry<
 		@SuppressWarnings("unchecked") public Builder(
 		  Triple<L, M, R> value, LS leftBuilder, MS middleBuilder, RS rightBuilder
 		) {
-			super(value, Triple.class);
+			super(value, EntryType.of(Triple.class, getEntryType(leftBuilder), getEntryType(middleBuilder), getEntryType(rightBuilder)));
 			if (!(leftBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
 			  "Mixed API use: builder not subclass of AbstractConfigEntryBuilder");
 			if (!(middleBuilder instanceof AbstractConfigEntryBuilder)) throw new IllegalArgumentException(
@@ -108,7 +105,7 @@ public class EntryTripleEntry<
 		public Builder(
 		  Triple<L, M, R> value, LB leftBuilder, MB middleBuilder, RB rightBuilder
 		) {
-			super(value, Triple.class);
+			super(value, EntryType.of(Triple.class, getEntryType(leftBuilder), getEntryType(middleBuilder), getEntryType(rightBuilder)));
 			this.leftBuilder = leftBuilder;
 			this.middleBuilder = middleBuilder;
 			this.rightBuilder = rightBuilder;

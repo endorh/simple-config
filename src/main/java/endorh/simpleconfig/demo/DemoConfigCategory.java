@@ -35,6 +35,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
@@ -74,7 +75,7 @@ public class DemoConfigCategory {
 	//   default category for its config (Client / Server)
 	// Only server operators can access categories registered
 	//   in the server config
-	public static ConfigCategoryBuilder getDemoCategory() {
+	@Internal public static ConfigCategoryBuilder build() {
 		// This value will be used below
 		CompoundNBT nbt = new CompoundNBT();
 		nbt.putString("name", "Steve");
@@ -858,7 +859,7 @@ public class DemoConfigCategory {
 		@Bind public static class maps {
 			// As with the lists, the generics of the field types must match
 			@Bind public static Map<String, String> map;
-			@Bind public static Map<String, List<String>> list_map;
+			@Bind public static Map<ResourceLocation, List<String>> list_map;
 			@Bind public static Pair<Integer, Map<String, Map<String, Integer>>> divisible_int_map_map;
 			@Bind public static Map<Integer, Integer> int_to_int_map;
 			@Bind public static Map<KeyBindMapping, String> key_map;

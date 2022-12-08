@@ -1,4 +1,4 @@
-package endorh.simplekonfig.konfig
+package endorh.simplekonfig.test
 
 import endorh.simpleconfig.api.SimpleConfig.Type
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons

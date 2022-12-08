@@ -15,31 +15,7 @@ public interface EntrySetEntryBuilder<
   V, C, G, B extends ConfigEntryBuilder<V, C, G, B>
 > extends ConfigEntryBuilder<
   @NotNull Set<@NotNull V>, Set<C>, List<G>, EntrySetEntryBuilder<V, C, G, B>
-> {
-	/**
-	 * Expand this entry by default in the config menu.
-	 */
-	@Contract(pure=true) @NotNull EntrySetEntryBuilder<V, C, G, B> expand();
-	
-	/**
-	 * Configure whether this entry should appear expanded by default in the config menu.
-	 */
-	@Contract(pure=true) @NotNull EntrySetEntryBuilder<V, C, G, B> expand(boolean expand);
-	
-	/**
-	 * Set the minimum (inclusive) allowed set size.
-	 *
-	 * @param minSize Inclusive minimum size
-	 */
-	@Contract(pure=true) @NotNull EntrySetEntryBuilder<V, C, G, B> minSize(int minSize);
-	
-	/**
-	 * Set the maximum (inclusive) allowed set size.
-	 *
-	 * @param maxSize Inclusive maximum size
-	 */
-	@Contract(pure=true) @NotNull EntrySetEntryBuilder<V, C, G, B> maxSize(int maxSize);
-	
+>, CollectionEntryBuilder<Set<V>, Set<C>, List<G>, EntrySetEntryBuilder<V, C, G, B>> {
 	/**
 	 * Set an error message supplier for the elements of this set entry<br>
 	 * You may also use {@link ErrorEntryBuilder#error(Function)} to check

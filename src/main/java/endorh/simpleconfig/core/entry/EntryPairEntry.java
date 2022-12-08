@@ -5,10 +5,7 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EntryPairEntryBuilder;
 import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
-import endorh.simpleconfig.core.AtomicEntry;
-import endorh.simpleconfig.core.DummyEntryHolder;
+import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
@@ -82,7 +79,7 @@ public class EntryPairEntry<
 		}
 		
 		public Builder(Pair<L, R> value, LB leftBuilder, RB rightBuilder) {
-			super(value, Pair.class);
+			super(value, EntryType.of(Pair.class, getEntryType(leftBuilder), getEntryType(rightBuilder)));
 			this.leftBuilder = leftBuilder;
 			this.rightBuilder = rightBuilder;
 		}

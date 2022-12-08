@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.entry.DoubleEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
+import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.DoubleSliderBuilder;
@@ -32,7 +33,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 	  extends AbstractRangedEntry.Builder<Double, Number, Double, DoubleEntry, DoubleEntryBuilder, Builder>
 	  implements DoubleEntryBuilder {
 		public Builder(Double value) {
-			super(value, Double.class, "%.2f");
+			super(value, EntryType.of(Double.class), "%.2f");
 		}
 		
 		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder fieldScale(double scale) {
@@ -45,7 +46,7 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");
 			return addField(BackingFieldBinding.withName(
-			  name, BackingFieldBuilder.of(f -> f * scale, Double.class)));
+			  name, BackingFieldBuilder.of(f -> f * scale, EntryType.of(Double.class))));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder addFieldScale(String suffix, double scale) {

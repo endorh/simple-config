@@ -54,6 +54,7 @@ public class Icon {
 	) { // @formatter:off
 		@Override public void renderCentered(@NotNull MatrixStack m, int x, int y, int w, int h, int level) {}
 		@Override public void renderStretch(@NotNull MatrixStack m, int x, int y, int w, int h, int level) {}
+		@Override public void renderFill(@NotNull MatrixStack mStack, int x, int y, int w, int h, int level) {}
 		@Override public void bindTexture() {}
 	}; // @formatter:on
 	
