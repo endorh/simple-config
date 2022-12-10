@@ -55,6 +55,7 @@ internal class DataClassEntry<D : Any>(
     
     private var caption: String? = null
     private var iconProvider: ((D) -> Icon)? = null
+    private val hasSubPresentation = entries.values.any { it.hasPresentation() }
     
     internal class Builder<B : Any>(value: B) : AbstractConfigEntryBuilder<
       B, Map<String, Any>, B, DataClassEntry<B>, DataClassEntryBuilder<B>, Builder<B>
@@ -162,6 +163,28 @@ internal class DataClassEntry<D : Any>(
         if (value == null) return null
         return proxy.createFrom(defValue, Maps.transformEntries(entries) { name, v ->
             (v as AbstractConfigEntry<*, Any, *>).fromConfigOrDefault(value[name]!!)
+        })
+    }
+    
+    override fun hasPresentation() = super.hasPresentation() || hasSubPresentation
+    
+    @Suppress("UNCHECKED_CAST")
+    override fun doForPresentation(value: D): D {
+        if (!hasSubPresentation) return super.doForPresentation(value)
+        return super.doForPresentation(proxy.createFrom(value, Maps.transformEntries(
+            Maps.filterValues(entries, AbstractConfigEntry<*, *, *>::hasPresentation)
+        ) { name, v ->
+            (v as AbstractConfigEntry<Any, *, *>).forPresentation(proxy.get(value, name)!!)
+        }))
+    }
+    @Suppress("UNCHECKED_CAST")
+    override fun doFromPresentation(value: D): D {
+        val vv = super.doFromPresentation(value)
+        if (!hasSubPresentation) return vv
+        return proxy.createFrom(value, Maps.transformEntries(
+            Maps.filterValues(entries, AbstractConfigEntry<*, *, *>::hasPresentation)
+        ) { name, v ->
+            (v as AbstractConfigEntry<Any, *, *>).fromPresentation(proxy.get(vv, name)!!)
         })
     }
     

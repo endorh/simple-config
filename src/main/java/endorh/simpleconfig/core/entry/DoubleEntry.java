@@ -36,6 +36,10 @@ public class DoubleEntry extends AbstractRangedEntry<Double, Number, Double>
 			super(value, EntryType.of(Double.class), "%.2f");
 		}
 		
+		@Override public @NotNull DoubleEntryBuilder bakeScale(double scale) {
+			return baked(d -> d * scale, d -> d / scale);
+		}
+		
 		@Override @Contract(pure=true) public @NotNull DoubleEntryBuilder fieldScale(double scale) {
 			if (scale == 0D || !Double.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");

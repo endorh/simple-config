@@ -40,7 +40,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 	/**
 	 * Get the root config of this entry holder
 	 */
-	@Override public SimpleConfigImpl getRoot() {
+	@Override public @NotNull SimpleConfigImpl getRoot() {
 		return root;
 	}
 	
@@ -343,46 +343,63 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 		getChild(path).commitFields();
 	}
 	
-	/**
-	 * Get a config value<br>
-	 * To retrieve a numeric primitive value use instead the variant methods,
-	 * or pass {@link Number} as the type parameter to prevent illegal casts.
-	 * @param path Name or dot-separated path to the value
-	 * @param <T> Expected type of the value
-	 * @throws NoSuchConfigEntryError if the value is not found
-	 * @throws InvalidConfigValueTypeException if the value type does not match the expected
-	 * @see #getBoolean(String)
-	 * @see #getChar(String)
-	 * @see #getByte(String)
-	 * @see #getShort(String)
-	 * @see #getInt(String)
-	 * @see #getLong(String)
-	 * @see #getFloat(String)
-	 * @see #getDouble(String)
-	 */
 	@Override public <T> T get(String path) {
-		try {
-			return this.<T, Object, Object>getEntry(path).get();
-		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
-		}
+		return this.<T, Object, Object>getEntry(path).get();
 	}
 	
-	/**
-	 * Set a config value<br>
-	 * Use {@link AbstractSimpleConfigEntryHolder#set(String, Object)} instead
-	 * to benefit from an extra layer of primitive generics type safety
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @param <V> Type of the value
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 * @deprecated Use {@link AbstractSimpleConfigEntryHolder#set(String, Object)} instead
-	 * to benefit from an extra layer of primitive generics type safety
-	 */
-	@Internal @Deprecated @Override public <V> void doSet(String path, V value) {
+	@Override public <T> T getBaked(String path) {
+		return this.<T, Object, Object>getEntry(path).getPresented();
+	}
+	
+	@Override public <V> void set(String path, V value) {
+		if (value instanceof Number) {
+			try {
+				set(path, (Number) value);
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSet(path, value);
+	}
+	
+	public void set(String path, Number number) {
+		boolean pre;
+		//noinspection AssignmentUsedAsCondition
+		if (pre = number instanceof Byte) {
+			try {
+				doSet(path, number.byteValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Short) {
+			try {
+				doSet(path, number.shortValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Integer) {
+			try {
+				doSet(path, number.intValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre || number instanceof Long) {
+			try {
+				doSet(path, number.longValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (number instanceof Float) {
+			try {
+				doSet(path, number.floatValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSet(path, number.doubleValue());
+	}
+	
+	@Internal public <V> void doSet(String path, V value) {
 		try {
-			AbstractConfigEntry<V, ?, Object> entry = this.getEntry(path);
+			AbstractConfigEntry<V, ?, Object> entry = getEntry(path);
 			if (!entry.typeClass.isInstance(value))
 				throw new InvalidConfigValueTypeException(getPath() + "." + path);
 			entry.set(value);
@@ -391,19 +408,110 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 		}
 	}
 	
-	/**
-	 * Set a config value in the GUI<br>
-	 * Use {@link AbstractSimpleConfigEntryHolder#setGUI(String, Object)} instead
-	 * to benefit from an extra layer of primitive generics type safety
-	 * @param path Name or dot-separated path to the value
-	 * @param value Value to be set
-	 * @param <G> Type of the value
-	 * @throws NoSuchConfigEntryError if the entry is not found
-	 * @throws InvalidConfigValueTypeException if the entry's type does not match the expected
-	 * @deprecated Use {@link AbstractSimpleConfigEntryHolder#setGUI(String, Object)} instead
-	 * to benefit from an extra layer of primitive generics type safety
-	 */
-	@Internal @Deprecated @Override public <G> void doSetGUI(String path, G value) {
+	@Override public <V> void setBaked(String path, V value) {
+		if (value instanceof Number) {
+			try {
+				setBaked(path, (Number) value);
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetBaked(path, value);
+	}
+	
+	public void setBaked(String path, Number number) {
+		boolean pre;
+		//noinspection AssignmentUsedAsCondition
+		if (pre = number instanceof Byte) {
+			try {
+				doSetBaked(path, number.byteValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Short) {
+			try {
+				doSetBaked(path, number.shortValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Integer) {
+			try {
+				doSetBaked(path, number.intValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre || number instanceof Long) {
+			try {
+				doSetBaked(path, number.longValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (number instanceof Float) {
+			try {
+				doSetBaked(path, number.floatValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetBaked(path, number.doubleValue());
+	}
+	
+	@Internal public <V> void doSetBaked(String path, V value) {
+		try {
+			AbstractConfigEntry<V, ?, Object> entry = this.getEntry(path);
+			if (!entry.typeClass.isInstance(value))
+				throw new InvalidConfigValueTypeException(getPath() + "." + path);
+			entry.setPresented(value);
+		} catch (ClassCastException e) {
+			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
+		}
+	}
+	
+	@Override public <G> void setGUI(String path, G value) {
+		if (value instanceof Number) {
+			try {
+				setGUI(path, (Number) value);
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetGUI(path, value);
+	}
+	
+	public void setGUI(String path, Number number) {
+		boolean pre;
+		//noinspection AssignmentUsedAsCondition
+		if (pre = number instanceof Byte) {
+			try {
+				doSetGUI(path, number.byteValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Short) {
+			try {
+				doSetGUI(path, number.shortValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre |= number instanceof Integer) {
+			try {
+				doSetGUI(path, number.intValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (pre || number instanceof Long) {
+			try {
+				doSetGUI(path, number.longValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		if (number instanceof Float) {
+			try {
+				doSetGUI(path, number.floatValue());
+				return;
+			} catch (InvalidConfigValueTypeException ignored) {}
+		}
+		doSetGUI(path, number.doubleValue());
+	}
+	
+	@Internal public <G> void doSetGUI(String path, G value) {
 		try {
 			this.<Object, Object, G>getEntry(path).setGUI(value);
 		} catch (ClassCastException e) {
@@ -478,11 +586,7 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 	}
 	
 	@Override public <V> V getFromGUI(String path) {
-		try {
-			return this.<V, Object, Object>getEntry(path).apply(e -> e.fromGui(e.getGUI()));
-		} catch (ClassCastException e) {
-			throw new InvalidConfigValueTypeException(getPath() + "." + path, e);
-		}
+		return this.<V, Object, Object>getEntry(path).apply(e -> e.fromGui(e.getGUI()));
 	}
 	
 	@Override public void reset() {

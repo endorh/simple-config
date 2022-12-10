@@ -36,6 +36,10 @@ public class FloatEntry extends AbstractRangedEntry<Float, Number, Float>
 			super(value, EntryType.of(Float.class), "%.2f");
 		}
 		
+		@Override public @NotNull FloatEntryBuilder bakeScale(float scale) {
+			return baked(f -> f * scale, f -> f / scale);
+		}
+		
 		@Override @Contract(pure=true) public @NotNull FloatEntryBuilder fieldScale(float scale) {
 			if (scale == 0F || !Float.isFinite(scale))
 				throw new IllegalArgumentException("Scale must be a non-zero finite number");

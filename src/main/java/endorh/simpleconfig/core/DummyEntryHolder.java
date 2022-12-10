@@ -41,11 +41,23 @@ public class DummyEntryHolder<V> implements ConfigEntryHolder {
 		return e;
 	}
 	
-	@Override public SimpleConfig getRoot() {
+	@Override public @NotNull SimpleConfig getRoot() {
 		return root;
 	}
 	
 	@Override public <T> T get(String path) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <V> void set(String path, V value) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <T> T getBaked(String path) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <T> void setBaked(String path, T value) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -58,6 +70,10 @@ public class DummyEntryHolder<V> implements ConfigEntryHolder {
 	}
 	
 	@Override public @Nullable AbstractConfigScreen getGUI() {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <G> void setGUI(String path, G value) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -74,16 +90,9 @@ public class DummyEntryHolder<V> implements ConfigEntryHolder {
 	@Override public <T> T getFromGUI(String path) {
 		throw new UnsupportedOperationException();
 	}
-	@Override public <T> void doSet(String path, T value) {
-		throw new UnsupportedOperationException();
-	}
 	
 	@Override public void markDirty(boolean dirty) {}
 	@Override public boolean isDirty() {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override public <G> void doSetGUI(String path, G value) {
 		throw new UnsupportedOperationException();
 	}
 	

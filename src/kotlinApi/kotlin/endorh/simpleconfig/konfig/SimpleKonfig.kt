@@ -63,7 +63,7 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
      * has been baked.
      *
      * You may override this method to post-process some configuration values, or to compute
-     * dependent values, if [baked] properties aren't enough for your case.
+     * dependent values, if [transform] properties aren't enough for your case.
      *
      * You shouldn't need to call this method yourself.
      */
@@ -78,18 +78,18 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
     /**
      * Adapt this entry to use Kotlin [Pair]s rather than Apache Commons [CPair]s
      */
-    protected fun <L, R, LC, RC, LG, RG> EntryPairEntryBuilder<L, R, LC, RC, LG, RG>.toKotlin() =
-      baked { it.toPair() } writer { it.toCommonsPair() }
+    protected fun <L: Any, R: Any, LC, RC, LG, RG> EntryPairEntryBuilder<L, R, LC, RC, LG, RG>.toKotlin() =
+      transform { it.toPair() } writer { it.toCommonsPair() }
     /**
      * Adapt this entry to use Kotlin [Triple]s rather than Apache Commons [CTriple]s
      */
-    protected fun <L, M, R, LC, MC, RC, LG, MG, RG> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>.toKotlin() =
-      baked { it.toTriple() } writer { it.toCommonsTriple() }
+    protected fun <L: Any, M: Any, R: Any, LC, MC, RC, LG, MG, RG> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>.toKotlin() =
+      transform { it.toTriple() } writer { it.toCommonsTriple() }
     /**
      * Adapt this entry to use Kotlin [Pair]s rather than Apache Commons [CPair]s
      */
-    protected fun <K, V, KC, C, KG, G> EntryPairListEntryBuilder<K, V, KC, C, KG, G, *, *>.toKotlin() =
-      baked { l -> l.map { it.toPair() } } writer { l -> l.map { it.toCommonsPair() } }
+    protected fun <K: Any, V: Any, KC, C, KG, G> EntryPairListEntryBuilder<K, V, KC, C, KG, G, *, *>.toKotlin() =
+      transform { l -> l.map { it.toPair() } } writer { l -> l.map { it.toCommonsPair() } }
     
     // Make entry builders delegate providers
     protected operator fun <V, C, G, B: Builder<V, C, G, B>> B.provideDelegate(
@@ -108,17 +108,17 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
     // Specific delegate providers for collection types to prevent delegate type inference
     //   from depending on a platform call, which would produce a warning in the config
     //   declaration, suggesting to specify the type explicitly
-    protected operator fun <V, C, G> EntryListEntryBuilder<V, C, G, *>.provideDelegate(
+    protected operator fun <V: Any, C, G> EntryListEntryBuilder<V, C, G, *>.provideDelegate(
       thisRef: Any, property: KProperty<*>
     ): EntryDelegate<List<V>, List<C>, List<G>, *> = createEntryDelegate(property)
-    protected operator fun <V, C, G> EntrySetEntryBuilder<V, C, G, *>.provideDelegate(
+    protected operator fun <V: Any, C, G> EntrySetEntryBuilder<V, C, G, *>.provideDelegate(
       thisRef: Any, property: KProperty<*>
     ): EntryDelegate<Set<V>, Set<C>, List<G>, *> = createEntryDelegate(property)
-    protected operator fun <K, V, KC, C, KG, G> EntryMapEntryBuilder<K, V, KC, C, KG, G, *, *>.provideDelegate(
+    protected operator fun <K: Any, V: Any, KC, C, KG, G> EntryMapEntryBuilder<K, V, KC, C, KG, G, *, *>.provideDelegate(
       thisRef: Any, property: KProperty<*>
     ): EntryDelegate<Map<K, V>, Map<KC, C>, List<CPair<KG, G>>, *> = createEntryDelegate(property)
     // Pair lists are automatically transformed to Kotlin pairs
-    protected operator fun <K, V, KC, C, KG, G> EntryPairListEntryBuilder<K, V, KC, C, KG, G, *, *>.provideDelegate(
+    protected operator fun <K: Any, V: Any, KC, C, KG, G> EntryPairListEntryBuilder<K, V, KC, C, KG, G, *, *>.provideDelegate(
       thisRef: Any, property: KProperty<*>
     ): WritableTransformingEntryDelegate<
       List<Pair<K, V>>, List<CPair<K, V>>, List<CPair<KC, C>>, List<CPair<KG, G>>, *
@@ -140,11 +140,11 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
       EntryDelegate<List<String>, List<String>, List<String>, *> = createEntryDelegate(property)
     
     // Automatic transformation to Kotlin types
-    protected operator fun <L, R, LC, RC, LG, RG> EntryPairEntryBuilder<L, R, LC, RC, LG, RG>.provideDelegate(
+    protected operator fun <L: Any, R: Any, LC, RC, LG, RG> EntryPairEntryBuilder<L, R, LC, RC, LG, RG>.provideDelegate(
       thisRef: Any, property: KProperty<*>
     ): WritableTransformingEntryDelegate<Pair<L, R>, CPair<L, R>, CPair<LC, RC>, CPair<LG, RG>, *> =
       toKotlin().provideDelegate(thisRef, property)
-    protected operator fun <L, M, R, LC, MC, RC, LG, MG, RG> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>.provideDelegate(
+    protected operator fun <L: Any, M: Any, R: Any, LC, MC, RC, LG, MG, RG> EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>.provideDelegate(
       thisRef: Any, property: KProperty<*>
     ): WritableTransformingEntryDelegate<Triple<L, M, R>, CTriple<L, M, R>, CTriple<LC, MC, RC>, CTriple<LG, MG, RG>, *> =
       toKotlin().provideDelegate(thisRef, property)
@@ -166,7 +166,7 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
      * to apply unit conversion to numeric values, so the mod code has access to
      * a more convenient unit than the one exposed to users.
      */
-    protected infix fun <T, V, C, G, B: Builder<V, C, G, B>> B.baked(transform: (V) -> T) =
+    protected infix fun <T, V, C, G, B: Builder<V, C, G, B>> B.transform(transform: (V) -> T) =
       TransformingEntryDelegate.Provider(builder, this, transform)
     
     /**
@@ -202,12 +202,12 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
         
         override fun getValue(thisRef: Any, property: KProperty<*>): V & Any = cachedValue!!
         override fun setValue(thisRef: Any, property: KProperty<*>, value: V & Any) {
-            entry.set(value)
+            entry.presented = value
             bake()
         }
         
         override fun bake() {
-            cachedValue = entry.get()
+            cachedValue = entry.presented
         }
     }
     
@@ -229,7 +229,7 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
         
         override fun getValue(thisRef: Any, property: KProperty<*>): T = cachedValue
         override fun bake() {
-            cachedValue = transform(entry.get())
+            cachedValue = transform(entry.presented)
         }
         
         class Provider<T, V, C, G, B: Builder<V, C, G, B>>(
@@ -267,12 +267,12 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
     
         override fun getValue(thisRef: Any, property: KProperty<*>) = cachedValue
         override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
-            entry.set(inverse(value))
+            entry.presented = inverse(value)
             bake()
         }
     
         override fun bake() {
-            cachedValue = transform(entry.get())
+            cachedValue = transform(entry.presented)
         }
         
         class Provider<T, V, C, G, B: Builder<V, C, G, B>>(
@@ -317,10 +317,10 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
  * [delegated properties](https://kotlinlang.org/docs/delegated-properties.html)
  * and the entry builders from [endorh.simpleconfig.konfig.builders].
  *
- * You may also use [baked] to define baked properties, computed from others (and
+ * You may also use [transform] to define baked properties, computed from others (and
  * updated on any config changes).
  *
- * You may also call [baked] on an entry to adapt its value
+ * You may also call [transform] on an entry to adapt its value
  * (for example, converting units, or wrapping it with a different type).
  * The user will be able to edit the original entry, but your code will access
  * the adapted value, which is updated after any config changes.
@@ -354,7 +354,7 @@ abstract class AbstractKonfig<B: ConfigEntryHolderBuilder<*>> internal construct
  *         // Computed entry (updated on any config change)
  *         val timeInTicks by baked { (time * 20).toInt() }
  *         // Transformed entry (stored/displayed as seconds, directly available as ticks)
- *         val timeInTicks2 by double(1.0) baked { (it * 20).toInt() }
+ *         val timeInTicks2 by double(1.0) transform { (it * 20).toInt() }
  *     }
  *
  *     // Subcategory, displayed as a tab in the menu (must be top level)
@@ -641,7 +641,7 @@ open class KonfigGroup protected constructor(
      * Only one entry within a group may be marked as a caption entry.
      * Only entry builders marked as [AtomicEntryBuilder] can be used.
      */
-    protected fun <L, R, LC, RC, LG, RG> caption(
+    protected fun <L: Any, R: Any, LC, RC, LG, RG> caption(
       entryBuilder: EntryPairEntryBuilder<L, R, LC, RC, LG, RG>
     ) = caption(entryBuilder.toKotlin())
     
@@ -654,7 +654,7 @@ open class KonfigGroup protected constructor(
      * Only one entry within a group may be marked as a caption entry.
      * Only entry builders marked as [AtomicEntryBuilder] can be used.
      */
-    protected fun <L, M, R, LC, MC, RC, LG, MG, RG> caption(
+    protected fun <L: Any, M: Any, R: Any, LC, MC, RC, LG, MG, RG> caption(
       entryBuilder: EntryTripleEntryBuilder<L, M, R, LC, MC, RC, LG, MG, RG>
     ) = caption(entryBuilder.toKotlin())
     

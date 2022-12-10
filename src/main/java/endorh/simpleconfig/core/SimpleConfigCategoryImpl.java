@@ -18,6 +18,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.text.WordUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -87,7 +88,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		return isRoot? "" : name + ".";
 	}
 	
-	@Override public @Nullable AbstractSimpleConfigEntryHolder getParent() {
+	@Override public @NotNull AbstractSimpleConfigEntryHolder getParent() {
 		return root;
 	}
 	

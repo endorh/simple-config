@@ -1,6 +1,8 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
+import endorh.simpleconfig.api.ui.TextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -28,9 +30,53 @@ public class IntegerSliderEntry extends SliderListEntry<Integer> {
 		textEntry.setMaximum(max);
 		textEntry.setChildSubEntry(true);
 		textFieldEntry = textEntry;
-		Stream.of(HotKeyActionTypes.INT_ADD, HotKeyActionTypes.INT_ADD_CYCLE)
-		  .forEach(hotKeyActionTypes::add);
+		Stream.of(
+		  HotKeyActionTypes.INT_ADD, HotKeyActionTypes.INT_ADD_CYCLE,
+		  HotKeyActionTypes.INT_MUL, HotKeyActionTypes.INT_DIV
+		).forEach(hotKeyActionTypes::add);
 		initWidgets(new IntegerSliderEntry.SliderWidget(0, 0, 100, 24), textEntry);
+	}
+	
+	private static boolean isFloating(HotKeyActionType<Integer, ?> type) {
+		return type == HotKeyActionTypes.INT_MUL || type == HotKeyActionTypes.INT_DIV;
+	}
+	
+	@Override public void setHotKeyActionType(HotKeyActionType<Integer, ?> type) {
+		boolean prevFloating = isFloating(getHotKeyActionType());
+		Float prev = prevFloating? getDisplayedFloat() : (Float) (float) getDisplayedValue();
+		super.setHotKeyActionType(type);
+		boolean floating = isFloating(type);
+		if (floating) setDisplayedFloat(prev);
+		if (floating != prevFloating) {
+			textFieldEntry.setTextFormatter(TextFormatter.numeric(!floating));
+			if (!floating) {
+				Float f = getDisplayedFloat();
+				setDisplayedValue((int) (f != null? f : getValue()));
+			}
+		}
+	}
+	
+	@Override public void setHotKeyActionValue(Object value) {
+		HotKeyActionType<Integer, ?> type = getHotKeyActionType();
+		if (isFloating(type)) {
+			setDisplayedFloat(value);
+		} else super.setHotKeyActionValue(value);
+	}
+	
+	@Override public Object getHotKeyActionValue() {
+		return isFloating(getHotKeyActionType())? getDisplayedFloat() : super.getHotKeyActionValue();
+	}
+	
+	private Float getDisplayedFloat() {
+		try {
+			return Float.parseFloat(textFieldEntry.textFieldWidget.getValue());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
+	private void setDisplayedFloat(Object d) {
+		textFieldEntry.textFieldWidget.setValue(d != null? String.valueOf(d) : "");
 	}
 	
 	public class SliderWidget extends SliderListEntry<Integer>.SliderWidget {

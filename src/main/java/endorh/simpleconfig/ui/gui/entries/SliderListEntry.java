@@ -104,6 +104,12 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			setTextFieldShown(true, true);
 	}
 	
+	@Override public Object getHotKeyActionValue() {
+		if (isTextFieldEnforced())
+			return textFieldEntry.getDisplayedValue();
+		return super.getHotKeyActionValue();
+	}
+	
 	protected boolean isTextFieldEnforced() {
 		if (!isEditingHotKeyAction()) return false;
 		HotKeyActionType<?, ?> type = getHotKeyActionType();
@@ -213,9 +219,6 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	  int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		if (showText && (!canUseTextField() || getFocused() != textFieldEntry)) {
-			setTextFieldShown(false, false);
-		}
 		
 		if (canUseTextField() && !isTextFieldEnforced()) {
 			SimpleConfigIcons.Entries.SLIDER_EDIT.renderCentered(
@@ -235,6 +238,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	@Override public void renderChildEntry(
 	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
+		if (showText && !isTextFieldEnforced() && (!canUseTextField() || getFocused() != textFieldEntry))
+			setTextFieldShown(false, false);
 		if (isTextFieldShown()) {
 			textFieldEntry.updateFocused(isFocused() && getFocused() == textFieldEntry);
 			textFieldEntry.setEditable(shouldRenderEditable());

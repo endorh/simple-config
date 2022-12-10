@@ -427,6 +427,12 @@ public interface SimpleConfig extends ConfigEntryHolder {
 		}
 	}
 	
+	class UnInvertibleBakingTransformationException extends RuntimeException {
+		public UnInvertibleBakingTransformationException(String path) {
+			super("Baking transformation of config entry \"" + path + "\" does not support write access");
+		}
+	}
+	
 	class InvalidConfigValueTypeException extends RuntimeException {
 		public InvalidConfigValueTypeException(String path) {
 			super("Invalid type requested for config value \"" + path + "\"");

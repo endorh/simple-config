@@ -107,6 +107,23 @@ public class EntryPairListEntry<K, V, KC, C, KG, G,
 		}
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || keyEntry.hasPresentation() || entry.hasPresentation();
+	}
+	
+	@Override protected List<Pair<K, V>> doForPresentation(List<Pair<K, V>> value) {
+		return super.doForPresentation(value.stream().map(p -> Pair.of(
+		  keyEntry.forPresentation(p.getLeft()),
+		  entry.forPresentation(p.getRight())
+		)).collect(Collectors.toList()));
+	}
+	@Override protected List<Pair<K, V>> doFromPresentation(List<Pair<K, V>> value) {
+		return super.doFromPresentation(value).stream().map(p -> Pair.of(
+		  keyEntry.fromPresentation(p.getLeft()),
+		  entry.fromPresentation(p.getRight())
+		)).collect(Collectors.toList());
+	}
+	
 	@Override public List<Map<Object, Object>> forActualConfig(@Nullable List<Pair<KC, C>> value) {
 		if (value == null) return null;
 		return value.stream()

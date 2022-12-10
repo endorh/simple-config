@@ -40,14 +40,38 @@ public interface FloatEntryBuilder
 	}
 	
 	/**
-	 * Scale the backing field of this entry by the given scale.<br>
+	 * Scale baked values of this entry by the given scale.<br>
+	 * Equivalent to {@code baked(f -> f * scale, f -> f / scale)}.<br><br>
+	 *
 	 * The scale is applied in both directions, when committing the field's value,
-	 * the inverse of the scale is applied before saving the changes to the config.
+	 * the inverse of the scale is applied before saving the changes to the config.<br><br>
+	 *
+	 * This will affect all backing fields, as well as Kotlin delegated properties.<br>
+	 * To instead scale only the main backing field, use {@link #fieldScale(float)}<br>
+	 * To instead add a scaled secondary backing field, use {@link #fieldScale(String, float)},
+	 * {@link #addFieldScale(String, float)} or {@link #add_field_scale(String, float)}.
+	 *
+	 * @param scale The scale by which the config value is <em>multiplied</em> when being baked.
+	 * @see #fieldScale(float)
+	 * @see #fieldScale(String, float)
+	 * @see #addFieldScale(String, float)
+	 * @see #add_field_scale(String, float)
+	 */
+	@Contract(pure=true) @NotNull FloatEntryBuilder bakeScale(float scale);
+	
+	/**
+	 * Scale the backing field of this entry by the given scale.<br>
+	 * Prefer using {@link #bakeScale(float)} if you don't need the unscaled value.<br><br>
+	 *
+	 * The scale is applied in both directions, when committing the field's value,
+	 * the inverse of the scale is applied before saving the changes to the config.<br><br>
+	 *
 	 * To instead add a secondary backing field, use {@link #fieldScale(String, float)},
 	 * {@link #addFieldScale(String, float)} or {@link #add_field_scale(String, float)}.
 	 *
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(String, float)
 	 * @see #addFieldScale(String, float)
 	 * @see #add_field_scale(String, float)
@@ -61,6 +85,7 @@ public interface FloatEntryBuilder
 	 * @param name The name of the secondary backing field
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(float)
 	 * @see #addFieldScale(String, float)
 	 * @see #add_field_scale(String, float)
@@ -74,6 +99,7 @@ public interface FloatEntryBuilder
 	 * @param suffix The camelCase suffix used to generate the backing field's name
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(float)
 	 * @see #fieldScale(String, float)
 	 * @see #add_field_scale(String, float)
@@ -87,6 +113,7 @@ public interface FloatEntryBuilder
 	 * @param suffix The snake_case suffix used to generate the backing field's name
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(float)
 	 * @see #fieldScale(String, float)
 	 * @see #addFieldScale(String, float)
