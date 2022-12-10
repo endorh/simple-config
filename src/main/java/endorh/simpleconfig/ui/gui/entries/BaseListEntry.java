@@ -116,10 +116,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		return expanded;
 	}
 	
-	@Override public void setExpanded(boolean expanded, boolean recursive) {
+	@Override public void setExpanded(boolean expanded, boolean recursive, boolean animate) {
 		if (this.expanded != expanded) {
-			expandAnimator.setLength(min(250L, cells.size() * 25L));
-			expandAnimator.setEaseOutTarget(expanded);
+			if (animate) {
+				expandAnimator.setLength(min(250L, cells.size() * 25L));
+				expandAnimator.setEaseOutTarget(expanded);
+			} else expandAnimator.stopAndSet(expanded);
 			cells.forEach(expanded? BaseListCell::onShown : BaseListCell::onHidden);
 		}
 		this.expanded = expanded;

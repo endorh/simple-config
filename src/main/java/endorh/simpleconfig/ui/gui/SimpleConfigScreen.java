@@ -98,6 +98,8 @@ import static net.minecraft.util.Mth.clamp;
 	protected TintedButton quitButton;
 	protected SaveButton saveButton;
 	protected List<MultiFunctionIconButton> modeButtons = Lists.newArrayList();
+	protected int titleStartX = -1;
+	protected int titleEndX = -1;
 	protected EnumMap<EditType, MultiFunctionIconButton> modeButtonMap;
 	protected MultiFunctionIconButton clientButton;
 	protected MultiFunctionIconButton commonButton;
@@ -132,8 +134,10 @@ import static net.minecraft.util.Mth.clamp;
 	protected boolean isSelecting = false;
 	
 	protected EnumMap<EditType, ConfigCategory> lastCategories = new EnumMap<>(EditType.class);
-	protected IConfigScreenGUIState scheduledGUIState;
-	protected IConfigScreenGUIState lastRestoredGUIState;
+	protected @Nullable IConfigScreenGUIState scheduledGUIState;
+	protected @Nullable IConfigScreenGUIState lastRestoredGUIState;
+	protected @Nullable INavigableTarget scheduledTarget;
+	protected int scheduledTargetDelay = 0;
 	protected boolean showingHelp = false;
 	
 	// Tick caches
@@ -370,6 +374,8 @@ import static net.minecraft.util.Mth.clamp;
 			addRenderableWidget(b);
 		}
 		
+		titleStartX = bx + 4;
+		
 		selectionToolbar = new SelectionToolbar(this, 76, 2);
 		selectionToolbar.visible = false;
 		addWidget(selectionToolbar);
@@ -387,10 +393,12 @@ import static net.minecraft.util.Mth.clamp;
 			pos(hotKeyButton, width - 22, 2);
 			addWidget(presetPickerWidget);
 			addRenderableWidget(hotKeyButton);
+			titleEndX = presetPickerWidget.getX() - 4;
 		} else {
 			int hotKeyButtonWidth = clamp(width / 3, 80, 250);
 			editedHotKeyButton.setPosition(width - hotKeyButtonWidth - 2, 2, hotKeyButtonWidth);
 			addWidget(editedHotKeyButton);
+			titleEndX = editedHotKeyButton.getX() - 4;
 		}
 		
 		// Tab bar
@@ -691,7 +699,7 @@ import static net.minecraft.util.Mth.clamp;
 	protected void loadConfigCategoryGUIState(ConfigCategory category, IConfigCategoryGUIState state) {
 		state.getExpandStates().forEach((p, e) -> {
 			AbstractConfigField<?> entry = category.getEntry(p);
-			if (entry instanceof IExpandable) ((IExpandable) entry).setExpanded(e);
+			if (entry instanceof IExpandable) ((IExpandable) entry).setExpanded(e, false, false);
 		});
 		ListWidget<AbstractConfigField<?>> widget = getListWidget(category);
 		widget.setScroll(state.getScrollOffset());
@@ -701,6 +709,10 @@ import static net.minecraft.util.Mth.clamp;
 			if (entry != null) {
 				widget.setSelectedTarget(entry);
 				if (getSelectedCategory() == category) entry.navigate();
+				if (getSelectedCategory() == category) {
+					scheduledTarget = entry;
+					scheduledTargetDelay = 2;
+				}
 			}
 		}
 	}
@@ -944,6 +956,10 @@ import static net.minecraft.util.Mth.clamp;
 	}
 	
 	@Override public void tick() {
+		if (scheduledTarget != null && scheduledTargetDelay-- <= 0) {
+			scheduledTarget.navigate();
+			scheduledTarget = null;
+		}
 		if (scheduledLayout)
 			init(Minecraft.getInstance(), width, height);
 		super.tick();
@@ -985,8 +1001,8 @@ import static net.minecraft.util.Mth.clamp;
 				  mStack, font, new TranslatableComponent(
 					 "simpleconfig.ui.n_selected", new TextComponent(
 					 String.valueOf(selectedEntries.size())).withStyle(ChatFormatting.AQUA)),
-				  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xffffffff);
-			} else drawCenteredString(mStack, font, title, width / 2, 8, 0xffffffff);
+				  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xFFFFFFFF);
+			} else drawCenteredString(mStack, font, title, (titleStartX + titleEndX) / 2, 8, 0xFFFFFFFF);
 		}
 		if (isShowingTabs()) {
 			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);

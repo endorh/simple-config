@@ -57,6 +57,11 @@ import java.lang.annotation.Target;
  * no applicable decorator for a certain type of entry (which will produce
  * an error, as if you used a built-in annotation for a type it doesn't support).<br><br>
  *
+ * Unlike any other annotations, the {@link Configure} annotation can be applied
+ * many times to the same entry. If multiple annotations applied to an entry
+ * are annotated with {@link Configure}, their configuring methods are applied in order,
+ * ending with the ones closer to the entry.
+ *
  * <h2>Samples</h2>
  * <h3>Custom annotation with arguments</h3>
  * <pre>{@code

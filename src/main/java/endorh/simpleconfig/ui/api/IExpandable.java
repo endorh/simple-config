@@ -5,7 +5,10 @@ public interface IExpandable {
 	default void setExpanded(boolean expanded) {
 		setExpanded(expanded, false);
 	}
-	void setExpanded(boolean expanded, boolean recurse);
+	default void setExpanded(boolean expanded, boolean recurse) {
+		setExpanded(expanded, recurse, true);
+	}
+	void setExpanded(boolean expanded, boolean recurse, boolean animate);
 	
 	/**
 	 * Compute the relative y position of the top of the

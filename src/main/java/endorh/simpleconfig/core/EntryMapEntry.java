@@ -278,6 +278,24 @@ public class EntryMapEntry<K, V, KC, C, KG, G,
 		return m;
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || keyEntry.hasPresentation() || entry.hasPresentation();
+	}
+	
+	@Override protected Map<K, V> doForPresentation(Map<K, V> value) {
+		Map<K, V> mapped = value.entrySet().stream().collect(Collectors.toMap(
+		  e -> keyEntry.forPresentation(e.getKey()), e -> entry.forPresentation(e.getValue()),
+		  (a, b) -> b, LinkedHashMap::new));
+		return super.doForPresentation(mapped);
+	}
+	
+	@Override protected Map<K, V> doFromPresentation(Map<K, V> value) {
+		value = super.doFromPresentation(value);
+		return value.entrySet().stream().collect(Collectors.toMap(
+		  e -> keyEntry.fromPresentation(e.getKey()), e -> entry.fromPresentation(e.getValue()),
+		  (a, b) -> b, LinkedHashMap::new));
+	}
+	
 	@Override
 	public List<Pair<KG, G>> forGui(Map<K, V> value) {
 		return value.entrySet().stream().map(

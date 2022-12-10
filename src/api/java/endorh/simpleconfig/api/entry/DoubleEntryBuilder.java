@@ -41,14 +41,40 @@ public interface DoubleEntryBuilder
 	}
 	
 	/**
-	 * Scale the backing field of this entry by the given scale.<br>
+	 * Scale baked values of this entry by the given scale.<br>
+	 * Equivalent to {@code baked(d -> d * scale, d -> d / scale)}.<br><br>
+	 *
 	 * The scale is applied in both directions, when committing the field's value,
-	 * the inverse of the scale is applied before saving the changes to the config.<br>
+	 * the inverse of the scale is applied before saving the changes to the config.<br><br>
+	 *
+	 * This will affect all backing fields, as well as Kotlin delegated properties.<br>
+	 * To instead scale only the main backing field, use {@link #fieldScale(double)}<br>
+	 * To instead add a scaled secondary backing field, use {@link #fieldScale(String, double)},
+	 * {@link #addFieldScale(String, double)} or {@link #add_field_scale(String, double)}.
+	 *
+	 * @param scale The scale by which the config value is <em>multiplied</em> when being baked.
+	 * @see #fieldScale(double)
+	 * @see #fieldScale(String, double)
+	 * @see #addFieldScale(String, double)
+	 * @see #add_field_scale(String, double)
+	 */
+	@Contract(pure=true) @NotNull DoubleEntryBuilder bakeScale(double scale);
+	
+	/**
+	 * Scale the backing field of this entry by the given scale.<br>
+	 * Prefer using {@link #bakeScale(double)} if you don't need the unscaled value.<br><br>
+	 *
+	 * The scale is applied in both directions, when committing the field's value,
+	 * the inverse of the scale is applied before saving the changes to the config.<br><br>
+	 *
+	 * The scale is applied in both directions, when committing the field's value,
+	 * the inverse of the scale is applied before saving the changes to the config.<br><br>
 	 * To instead add a secondary backing field, use {@link #fieldScale(String, double)},
 	 * {@link #addFieldScale(String, double)} or {@link #add_field_scale(String, double)}.
 	 *
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale 
 	 * @see #fieldScale(String, double)
 	 * @see #addFieldScale(String, double)
 	 * @see #add_field_scale(String, double)
@@ -62,6 +88,7 @@ public interface DoubleEntryBuilder
 	 * @param name The name of the secondary backing field
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(double)
 	 * @see #addFieldScale(String, double)
 	 * @see #add_field_scale(String, double)
@@ -75,6 +102,7 @@ public interface DoubleEntryBuilder
 	 * @param suffix The camelCase suffix used to generate the backing field's name
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(double)
 	 * @see #fieldScale(String, double)
 	 * @see #add_field_scale(String, double)
@@ -88,6 +116,7 @@ public interface DoubleEntryBuilder
 	 * @param suffix The snake_case suffix used to generate the backing field's name
 	 * @param scale The scale by which the config value is <em>multiplied</em>
 	 *   before being stored in the backing field
+	 * @see #bakeScale
 	 * @see #fieldScale(double)
 	 * @see #fieldScale(String, double)
 	 * @see #addFieldScale(String, double)

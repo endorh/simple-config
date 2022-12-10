@@ -39,6 +39,8 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 	private final Map<String, AbstractConfigEntry<?, ?, ?>> entries;
 	private @Nullable String caption;
 	private @Nullable Function<B, Icon> iconProvider;
+	private final boolean hasSubPresentation;
+	private boolean overrideEquals;
 	
 	public BeanEntry(
 	  ConfigEntryHolder parent, String name, B defValue, BeanProxyImpl<B> proxy,
@@ -47,6 +49,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		super(parent, name, defValue);
 		this.proxy = proxy;
 		this.entries = entries;
+		hasSubPresentation = entries.values().stream().anyMatch(AbstractConfigEntry::hasPresentation);
 	}
 	
 	public BeanProxy<B> getProxy() {
@@ -60,6 +63,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 	public static class Builder<B> extends AbstractConfigEntryBuilder<
 	  B, Map<String, Object>, B, BeanEntry<B>, BeanEntryBuilder<B>, Builder<B>
 	> implements BeanEntryBuilder<B> {
+		private static final Map<Class<?>, Boolean> NON_REFLEXIVE_TYPES = new HashMap<>();
 		private final Class<B> beanType;
 		private final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
 		private String caption;
@@ -109,6 +113,13 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			entries.keySet().forEach(n -> {
 				if (proxy.get(value, n) == null)
 					throw new ConfigBeanNullPropertyException(proxy.getPropertyName(n));
+			});
+			entry.overrideEquals = NON_REFLEXIVE_TYPES.computeIfAbsent(beanType, t -> {
+				boolean nonReflexive = !value.equals(proxy.createFrom(value));
+				if (nonReflexive) LOGGER.info(
+				  "Bean type " + proxy.getTypeName() + " has a non-reflexive equals method. " +
+				  "It'll be compared based on its defined property entries instead.");
+				return nonReflexive;
 			});
 			entry.caption = caption;
 			entry.iconProvider = iconProvider;
@@ -192,6 +203,30 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		));
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || hasSubPresentation;
+	}
+	
+	@Override protected B doForPresentation(B value) {
+		if (!hasSubPresentation) return super.doForPresentation(value);
+		//noinspection unchecked
+		return super.doForPresentation(proxy.createFrom(value, Maps.transformEntries(
+		  Maps.filterEntries(entries, e -> proxy.getPropertyNames().contains(e.getKey()) && e.getValue().hasPresentation()),
+		  (n, v) -> ((AbstractConfigEntry<Object, ?, ?>) v).forPresentation(proxy.get(value, n))
+		)));
+	}
+	
+	@Override protected B doFromPresentation(B value) {
+		value = super.doFromPresentation(value);
+		if (!hasSubPresentation) return value;
+		final B vv = value;
+		//noinspection unchecked
+		return proxy.createFrom(value, Maps.transformEntries(
+		  Maps.filterEntries(entries, e -> proxy.getPropertyNames().contains(e.getKey()) && e.getValue().hasPresentation()),
+		  (n, v) -> ((AbstractConfigEntry<Object, ?, ?>) v).fromPresentation(proxy.get(vv, n))
+		));
+	}
+	
 	@Override public Object forActualConfig(@Nullable Map<String, Object> value) {
 		if (value == null) return null;
 		Map<String, Object> map = new LinkedHashMap<>(value.size());
@@ -261,6 +296,20 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 			return map;
 		}
 		return null;
+	}
+	
+	@Override public boolean areEqual(B current, B candidate) {
+		if (overrideEquals) {
+			for (Entry<String, AbstractConfigEntry<?, ?, ?>> e: entries.entrySet()) {
+				String name = e.getKey();
+				//noinspection unchecked
+				AbstractConfigEntry<Object, ?, ?> entry = (AbstractConfigEntry<Object, ?, ?>) e.getValue();
+				if (!entry.areEqual(proxy.get(current, name), proxy.get(candidate, name)))
+					return false;
+			}
+			return true;
+		}
+		return super.areEqual(current, candidate);
 	}
 	
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");

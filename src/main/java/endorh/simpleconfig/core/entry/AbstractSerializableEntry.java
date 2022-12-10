@@ -18,11 +18,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -30,8 +31,11 @@ import static java.util.Arrays.asList;
 
 public abstract class AbstractSerializableEntry<V>
   extends AbstractConfigEntry<V, String, String> implements AtomicEntry<String> {
+	private static final Map<Class<?>, Boolean> NON_REFLEXIVE_TYPES = new HashMap<>();
+	private static final Logger LOGGER = LogManager.getLogger();
 	
 	protected @Nullable Supplier<List<V>> suggestionSupplier;
+	protected boolean overrideEquals;
 	
 	protected AbstractSerializableEntry(
 	  ConfigEntryHolder parent, String name, V value, Class<?> typeClass
@@ -83,6 +87,14 @@ public abstract class AbstractSerializableEntry<V>
 		@Override protected Entry build(@NotNull ConfigEntryHolder parent, String name) {
 			Entry entry = super.build(parent, name);
 			entry.suggestionSupplier = suggestionSupplier;
+			entry.overrideEquals = NON_REFLEXIVE_TYPES.computeIfAbsent(
+			  typeClass, t -> {
+				  boolean nonReflexive = !value.equals(entry.deserialize(entry.serialize(value)));
+				  if (nonReflexive) LOGGER.info(
+					 "Serializable type " + t.getName() + " does not have a reflexive equals method. " +
+					 "Their config entries will be compared by their serialization instead.");
+				  return nonReflexive;
+			  });
 			return entry;
 		}
 	}
@@ -107,6 +119,12 @@ public abstract class AbstractSerializableEntry<V>
 	@Nullable
 	@Override public V fromConfig(@Nullable String value) {
 		return value != null? deserialize(value) : null;
+	}
+	
+	@Override public boolean areEqual(V current, V candidate) {
+		return overrideEquals
+		       ? Objects.equals(serialize(current), serialize(candidate))
+		       : super.areEqual(current, candidate);
 	}
 	
 	protected Optional<Component> getErrorMessage(String value) {

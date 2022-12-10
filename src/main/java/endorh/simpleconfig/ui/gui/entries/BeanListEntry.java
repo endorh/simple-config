@@ -209,10 +209,12 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 		return expanded;
 	}
 	
-	@Override public void setExpanded(boolean expanded, boolean recurse) {
+	@Override public void setExpanded(boolean expanded, boolean recurse, boolean animate) {
 		if (this.expanded != expanded) {
-			expandAnimator.setLength(min(250L, entries.size() * 25L));
-			expandAnimator.setEaseOutTarget(expanded);
+			if (animate) {
+				expandAnimator.setLength(min(250L, entries.size() * 25L));
+				expandAnimator.setEaseOutTarget(expanded);
+			} else expandAnimator.stopAndSet(expanded);
 		}
 		this.expanded = expanded;
 		if (recurse) heldEntries.stream().filter(e -> e instanceof IExpandable)

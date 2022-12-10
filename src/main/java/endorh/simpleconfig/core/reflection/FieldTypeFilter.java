@@ -37,11 +37,11 @@ public interface FieldTypeFilter {
 		}
 		
 		@Override public boolean isApplicable(Field field) {
-			return type.equals(EntryType.fromField(field));
+			return type.matches(EntryType.fromField(field));
 		}
 		
 		@Override public boolean isApplicable(Type type) {
-			return this.type.equals(EntryType.fromType(type));
+			return this.type.matches(EntryType.fromType(type));
 		}
 	}
 	

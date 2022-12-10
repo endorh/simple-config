@@ -4,7 +4,7 @@ import com.google.gson.internal.Primitives;
 import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.core.ReflectionUtil;
 import endorh.simpleconfig.core.SimpleConfigClassParser.SimpleConfigClassParseException;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.MethodWrapper.AdapterMethodWrapper;
+import endorh.simpleconfig.core.reflection.BindingContext.MethodWrapper.AdapterMethodWrapper;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,42 +28,26 @@ import static endorh.simpleconfig.core.ReflectionUtil.getMethodName;
 import static endorh.simpleconfig.core.reflection.FieldParser.invoke;
 import static java.lang.Math.min;
 
-public class MethodBindingContext {
+public class BindingContext {
 	private static final Logger LOGGER = LogManager.getLogger();
 	public final Class<?> cls;
-	public final @Nullable MethodBindingContext parent;
+	public final @Nullable BindingContext parent;
 	private @Nullable String contextName = null;
 	private @Nullable Set<Method> methodSet;
 	
-	public static MethodBindingContext forConfigClass(
-	  Class<?> cls, @Nullable MethodBindingContext parent, Set<Method> methodSet
+	public static BindingContext forConfigClass(
+	  Class<?> cls, @Nullable BindingContext parent, Set<Method> methodSet
 	) {
-		MethodBindingContext ctx = new MethodBindingContext(cls, parent);
+		BindingContext ctx = new BindingContext(cls, parent);
 		ctx.methodSet = methodSet;
 		return ctx;
 	}
 	
-	public MethodBindingContext(
-	  Class<?> cls, @Nullable MethodBindingContext parent
+	public BindingContext(
+	  Class<?> cls, @Nullable BindingContext parent
 	) {
 		this.cls = cls;
 		this.parent = parent;
-	}
-	
-	public static ParametersAdapter[] oneOptionalAdapter(EntryType<?> type) {
-		return new ParametersAdapter[]{
-		  ParametersAdapter.of(p -> p, type),
-		  ParametersAdapter.of(p -> new Object[]{})
-		};
-	}
-	
-	public static ParametersAdapter[] lastOptionalAdapter(
-	  EntryType<?> type, EntryType<?>... fixed
-	) {
-		return new ParametersAdapter[]{
-		  ParametersAdapter.of(p -> p, ArrayUtils.add(fixed, type)),
-		  ParametersAdapter.of(p -> ArrayUtils.subarray(p, 0, p.length - 1), fixed)
-		};
 	}
 	
 	private void warnMissTypedMethod(String name) {
@@ -131,15 +115,17 @@ public class MethodBindingContext {
 	}
 	
 	@SafeVarargs
-	public final @Nullable <R> AdapterMethodWrapper<R> findCompatibleMethod(
-	  String name, boolean widen, ParametersAdapter[] parameters, ReturnTypeAdapter<?, R>... adapters
+	public final <R> Pair<@Nullable AdapterMethodWrapper<R>, Boolean> doFindCompatibleOwnMethod(
+	  String name, boolean warn, boolean widen, ParametersAdapter[] parameters,
+	  ReturnTypeAdapter<?, R>... adapters
 	) {
 		MemberName nm = normalizeName(name);
 		AdapterMethodWrapper<R> method = null;
 		boolean found = false;
 		for (ParametersAdapter p: parameters) {
 			Class<?>[] paramTypes = p.getParameterTypes();
-			findMethod:for (Method m: nm.cls().getDeclaredMethods()) {
+			findMethod:
+			for (Method m: nm.cls().getDeclaredMethods()) {
 				if (!m.getName().equals(nm.name())) continue;
 				Class<?>[] types = m.getParameterTypes();
 				if (types.length != paramTypes.length) continue;
@@ -161,10 +147,29 @@ public class MethodBindingContext {
 		}
 		if (method != null) {
 			add(method.method);
-			return method;
+			return Pair.of(method, true);
 		}
+		if (found && warn) warnMissTypedMethod(name);
+		return Pair.of(null, found);
+	}
+	
+	@SafeVarargs
+	public final @Nullable <R> AdapterMethodWrapper<R> findCompatibleOwnMethod(
+	  String name, boolean widen, ParametersAdapter[] parameters,
+	  ReturnTypeAdapter<?, R>... adapters
+	) {
+		return doFindCompatibleOwnMethod(name, true, widen, parameters, adapters).getLeft();
+	}
+	
+	@SafeVarargs
+	public final @Nullable <R> AdapterMethodWrapper<R> findCompatibleMethod(
+	  String name, boolean widen, ParametersAdapter[] parameters, ReturnTypeAdapter<?, R>... adapters
+	) {
+		Pair<@Nullable AdapterMethodWrapper<R>, Boolean> p = doFindCompatibleOwnMethod(name, false, widen, parameters, adapters);
+		if (p.getLeft() != null) return p.getLeft();
+		AdapterMethodWrapper<R> method = null;
 		if (parent != null) method = parent.findCompatibleMethod(name, widen, parameters, adapters);
-		if (method == null && found) warnMissTypedMethod(name);
+		if (method == null && p.getRight()) warnMissTypedMethod(name);
 		return method;
 	}
 	
@@ -186,7 +191,7 @@ public class MethodBindingContext {
 			Method m = p.getRight();
 			ParametersAdapter arg = p.getLeft();
 			for (ReturnTypeAdapter<?, R> r : adapters) {
-				if (r.getReturnType().equals(EntryType.fromType(m.getGenericReturnType()))) {
+				if (r.getReturnType().matches(EntryType.fromType(m.getGenericReturnType()))) {
 					add(m);
 					Class<?> cls = r.getReturnType().type();
 					return args -> r.castAdapt(invoke(m, null, cls, arg.adapt(args)));
@@ -368,6 +373,22 @@ public class MethodBindingContext {
 			return new ParametersAdapter[] { of(args -> args, type) };
 		}
 		
+		static ParametersAdapter[] oneOptionalAdapter(EntryType<?> type) {
+			return new ParametersAdapter[]{
+			  of(p -> p, type),
+			  of(p -> new Object[]{})
+			};
+		}
+		
+		static ParametersAdapter[] lastOptionalAdapter(
+		  EntryType<?> type, EntryType<?>... fixed
+		) {
+			return new ParametersAdapter[]{
+			  of(p -> p, ArrayUtils.add(fixed, type)),
+			  of(p -> ArrayUtils.subarray(p, 0, p.length - 1), fixed)
+			};
+		}
+		
 		EntryType<?>[] getGenericParameterTypes();
 		Class<?>[] getParameterTypes();
 		Object[] adapt(Object[] args);
@@ -454,13 +475,13 @@ public class MethodBindingContext {
 		}
 		
 		public boolean matches(Method method) {
-			if (!returnType.equals(EntryType.fromType(method.getGenericReturnType())))
+			if (!returnType.matches(EntryType.fromType(method.getGenericReturnType())))
 				return false;
 			if (args.length != method.getParameterCount())
 				return false;
 			Type[] a = method.getGenericParameterTypes();
 			for (int i = 0; i < args.length; i++)
-				if (!args[i].equals(EntryType.fromType(a[i])))
+				if (!args[i].matches(EntryType.fromType(a[i])))
 					return false;
 			return true;
 		}
