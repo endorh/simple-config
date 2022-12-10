@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.impl;
 
-import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.range.Range;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.entry.BeanProxy;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -227,7 +227,7 @@ public class ConfigEntryBuilderImpl implements ConfigFieldBuilder {
 	}
 	
 	@Override public <
-	  V extends Comparable<V>, R extends AbstractRange<V, R>,
+	  V extends Comparable<V>, R extends Range<V, R>,
 	  E extends AbstractConfigListEntry<V> & IChildListEntry
 	> RangeListEntryBuilder<V, R, E> startRange(
 	  Component name, R value, FieldBuilder<V, E, ?> entryBuilder
@@ -236,7 +236,7 @@ public class ConfigEntryBuilderImpl implements ConfigFieldBuilder {
 	}
 	
 	@Override public <
-	  V extends Comparable<V>, R extends AbstractRange<V, R>,
+	  V extends Comparable<V>, R extends Range<V, R>,
 	  E extends AbstractConfigListEntry<V> & IChildListEntry
 	> RangeListEntryBuilder<V, R, E> startRange(
 	  Component name, R value, E minEntry, E maxEntry

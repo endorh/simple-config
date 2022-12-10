@@ -1,11 +1,11 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.AbstractRange.AbstractSizedRange;
+import endorh.simpleconfig.api.range.SizedRange;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public interface SizedRangeEntryBuilder<
-  V extends Comparable<V>, R extends AbstractSizedRange<V, R>,
+  V extends Comparable<V>, R extends SizedRange<V, R>,
   Self extends SizedRangeEntryBuilder<V, R, Self>
 > extends RangeEntryBuilder<@NotNull V, R, Self> {
 	/**

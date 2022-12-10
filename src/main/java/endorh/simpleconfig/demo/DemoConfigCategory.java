@@ -2,8 +2,6 @@ package endorh.simpleconfig.demo;
 
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
-import endorh.simpleconfig.api.AbstractRange.DoubleRange;
-import endorh.simpleconfig.api.AbstractRange.FloatRange;
 import endorh.simpleconfig.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigCategory;
@@ -11,6 +9,8 @@ import endorh.simpleconfig.api.annotation.Bind;
 import endorh.simpleconfig.api.entry.ConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.EnumEntryBuilder.TranslatedEnum;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
+import endorh.simpleconfig.api.range.DoubleRange;
+import endorh.simpleconfig.api.range.FloatRange;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -497,7 +497,7 @@ public class DemoConfigCategory {
 		          //   specific builder exists as shown below
 		          .add("button_entry", button(
 		            number(2F).error(
-		              n -> abs(n) > 10 ? Optional.of(new TextComponent("> 10")) :
+		              n -> abs(n) > 10? Optional.of(new TextComponent("> 10")) :
 		                   Optional.empty()
 		            ), s -> {
 		            	final String path = "demo.entries.special.button_test";
