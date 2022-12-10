@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.AbstractRange.IntRange;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.IntegerRangeEntryBuilder;
+import endorh.simpleconfig.api.range.IntRange;
 import endorh.simpleconfig.core.entry.AbstractRangeEntry.AbstractSizedRangeEntry;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;

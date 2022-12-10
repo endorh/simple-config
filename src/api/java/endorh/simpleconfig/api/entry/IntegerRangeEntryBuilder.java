@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.entry;
 
-import endorh.simpleconfig.api.AbstractRange.IntRange;
 import endorh.simpleconfig.api.AtomicEntryBuilder;
+import endorh.simpleconfig.api.range.IntRange;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
