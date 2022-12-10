@@ -2,13 +2,13 @@ package endorh.simpleconfig.core;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import endorh.simpleconfig.api.AbstractRange.DoubleRange;
-import endorh.simpleconfig.api.AbstractRange.FloatRange;
-import endorh.simpleconfig.api.AbstractRange.IntRange;
-import endorh.simpleconfig.api.AbstractRange.LongRange;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.*;
+import endorh.simpleconfig.api.range.DoubleRange;
+import endorh.simpleconfig.api.range.FloatRange;
+import endorh.simpleconfig.api.range.IntRange;
+import endorh.simpleconfig.api.range.LongRange;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;

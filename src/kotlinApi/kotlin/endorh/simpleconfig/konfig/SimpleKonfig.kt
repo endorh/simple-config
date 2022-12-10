@@ -2,9 +2,9 @@ package endorh.simpleconfig.konfig
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import endorh.simpleconfig.api.*
-import endorh.simpleconfig.api.AbstractRange.*
 import endorh.simpleconfig.api.SimpleConfig.Type
 import endorh.simpleconfig.api.entry.*
+import endorh.simpleconfig.api.range.AbstractRange.*
 import endorh.simpleconfig.api.ui.icon.Icon
 import endorh.simpleconfig.core.AbstractConfigEntry
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder

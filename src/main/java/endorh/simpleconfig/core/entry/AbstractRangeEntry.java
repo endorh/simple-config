@@ -1,11 +1,11 @@
 package endorh.simpleconfig.core.entry;
 
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import endorh.simpleconfig.api.AbstractRange;
-import endorh.simpleconfig.api.AbstractRange.AbstractSizedRange;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.RangeEntryBuilder;
 import endorh.simpleconfig.api.entry.SizedRangeEntryBuilder;
+import endorh.simpleconfig.api.range.Range;
+import endorh.simpleconfig.api.range.SizedRange;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.AtomicEntry;
@@ -29,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class AbstractRangeEntry<
-  V extends Comparable<V>, R extends AbstractRange<V, R>
+  V extends Comparable<V>, R extends Range<V, R>
 > extends AbstractConfigEntry<R, String, R> implements AtomicEntry<R> {
 	protected @Nullable V min = null;
 	protected @Nullable V max = null;
@@ -45,7 +45,7 @@ public abstract class AbstractRangeEntry<
 	}
 	
 	public static abstract class Builder<
-	  V extends Comparable<V>, R extends AbstractRange<V, R>,
+	  V extends Comparable<V>, R extends Range<V, R>,
 	  E extends AbstractRangeEntry<V, R>,
 	  Self extends RangeEntryBuilder<V, R, Self>,
 	  SelfImpl extends Builder<V, R, E, Self, SelfImpl>
@@ -214,7 +214,7 @@ public abstract class AbstractRangeEntry<
 	EE buildLimitGUIEntry(ConfigFieldBuilder builder, String name, V value);
 	
 	public static abstract class AbstractSizedRangeEntry<
-	  V extends Comparable<V>, R extends AbstractSizedRange<V, R>,
+	  V extends Comparable<V>, R extends SizedRange<V, R>,
 	  E extends AbstractSizedRangeEntry<V, R, E>
 	> extends AbstractRangeEntry<V, R> {
 		protected double minSize = 0D;
@@ -225,7 +225,7 @@ public abstract class AbstractRangeEntry<
 		}
 		
 		public static abstract class Builder<
-		  V extends Comparable<V>, R extends AbstractSizedRange<V, R>,
+		  V extends Comparable<V>, R extends SizedRange<V, R>,
 		  E extends AbstractSizedRangeEntry<V, R, E>,
 		  Self extends SizedRangeEntryBuilder<V, R, Self>,
 		  SelfImpl extends Builder<V, R, E, Self, SelfImpl>

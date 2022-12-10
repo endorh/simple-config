@@ -347,7 +347,6 @@ fun ShadowJar.configureShadowJar() {
         include(dependency("org.antlr:antlr4:$antlrVersion"))
         include(dependency("org.antlr:antlr4-runtime:$antlrVersion"))
         include(dependency("org.yaml:snakeyaml:${V.yaml}"))
-        include(dependency("org.atteo.classindex:classindex:3.13"))
     }
     
     val shadowRoot = "${project.group}.shadowed"

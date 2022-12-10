@@ -2,12 +2,12 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.range.Range;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.ToggleImageButton;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.gui.IGuiEventListener;
 import net.minecraft.util.text.ITextComponent;
@@ -20,7 +20,7 @@ import java.util.List;
 import static java.lang.Math.max;
 
 public class RangeListEntry<
-  V extends Comparable<V>, R extends AbstractRange<V, R>,
+  V extends Comparable<V>, R extends Range<V, R>,
   E extends AbstractConfigField<V> & IChildListEntry
 > extends TooltipListEntry<R> implements IChildListEntry, IEntryHolder {
 	private final E minEntry;

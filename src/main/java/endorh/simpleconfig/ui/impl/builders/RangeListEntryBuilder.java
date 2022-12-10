@@ -1,18 +1,18 @@
 package endorh.simpleconfig.ui.impl.builders;
 
-import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.range.Range;
+import endorh.simpleconfig.api.ui.icon.Icon;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.entries.RangeListEntry;
-import endorh.simpleconfig.api.ui.icon.Icon;
-import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.util.text.ITextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RangeListEntryBuilder<
-  V extends Comparable<V>, R extends AbstractRange<V, R>,
+  V extends Comparable<V>, R extends Range<V, R>,
   E extends AbstractConfigListEntry<V> & IChildListEntry
 > extends FieldBuilder<R, RangeListEntry<V, R, E>, RangeListEntryBuilder<V, R, E>> {
 	protected final E minEntry;

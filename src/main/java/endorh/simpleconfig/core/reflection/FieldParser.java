@@ -1,10 +1,6 @@
 package endorh.simpleconfig.core.reflection;
 
 import com.google.common.collect.Lists;
-import endorh.simpleconfig.api.AbstractRange.DoubleRange;
-import endorh.simpleconfig.api.AbstractRange.FloatRange;
-import endorh.simpleconfig.api.AbstractRange.IntRange;
-import endorh.simpleconfig.api.AbstractRange.LongRange;
 import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.EntryTag;
@@ -15,6 +11,10 @@ import endorh.simpleconfig.api.annotation.*;
 import endorh.simpleconfig.api.annotation.Slider.SliderType;
 import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
+import endorh.simpleconfig.api.range.DoubleRange;
+import endorh.simpleconfig.api.range.FloatRange;
+import endorh.simpleconfig.api.range.IntRange;
+import endorh.simpleconfig.api.range.LongRange;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder;

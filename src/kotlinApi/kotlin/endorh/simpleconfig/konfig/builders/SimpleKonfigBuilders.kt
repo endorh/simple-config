@@ -1,11 +1,13 @@
 package endorh.simpleconfig.konfig.builders
 
 import endorh.simpleconfig.api.*
-import endorh.simpleconfig.api.AbstractRange.*
-import endorh.simpleconfig.api.AbstractRange.IntRange
-import endorh.simpleconfig.api.AbstractRange.LongRange
 import endorh.simpleconfig.api.ConfigBuilderFactory.PresetBuilder
 import endorh.simpleconfig.api.entry.*
+import endorh.simpleconfig.api.range.AbstractRange.*
+import endorh.simpleconfig.api.range.DoubleRange
+import endorh.simpleconfig.api.range.FloatRange
+import endorh.simpleconfig.api.range.IntRange
+import endorh.simpleconfig.api.range.LongRange
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindProvider
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping
@@ -389,7 +391,8 @@ fun volume(value: Double = 1.0) = P.volume(value)
  * You may allow users to change the exclusiveness of the bounds.
  * @see DoubleRange
  */
-fun range(range: KDoubleRange) = P.range(DoubleRange.inclusive(range.start, range.endInclusive))
+fun range(range: KDoubleRange) = P.range(
+    DoubleRange.inclusive(range.start, range.endInclusive))
 
 /**
  * Double range entry, which defines a min and max values, optionally exclusive.
@@ -415,7 +418,8 @@ fun range(min: Double, max: Double) = P.range(min, max)
  * You may allow users to change the exclusiveness of the bounds.
  * @see FloatRange
  */
-fun range(range: KFloatRange) = P.range(FloatRange.inclusive(range.start, range.endInclusive))
+fun range(range: KFloatRange) = P.range(
+    FloatRange.inclusive(range.start, range.endInclusive))
 
 /**
  * Float range entry, which defines a min and max values, optionally exclusive.
@@ -441,7 +445,8 @@ fun range(min: Float, max: Float) = P.range(min, max)
  * You may allow users to change the exclusiveness of the bounds.
  * @see LongRange
  */
-fun range(range: KLongRange) = P.range(LongRange.inclusive(range.first, range.last))
+fun range(range: KLongRange) = P.range(
+    LongRange.inclusive(range.first, range.last))
 
 /**
  * Long range entry, which defines a min and max values, optionally exclusive.
@@ -467,7 +472,8 @@ fun range(min: Long, max: Long) = P.range(min, max)
  * You may allow users to change the exclusiveness of the bounds.
  * @see IntRange
  */
-fun range(range: KIntRange) = P.range(IntRange.inclusive(range.first, range.last))
+fun range(range: KIntRange) = P.range(
+    IntRange.inclusive(range.first, range.last))
 
 /**
  * Integer range entry, which defines a min and max values, optionally exclusive.

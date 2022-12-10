@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
-import endorh.simpleconfig.api.AbstractRange;
+import endorh.simpleconfig.api.range.Range;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.core.entry.BeanProxy;
@@ -119,13 +119,13 @@ public interface ConfigFieldBuilder {
 	> TripleListEntryBuilder<L, M, R, LE, ME, RE, LEB, MEB, REB> startTriple(
 	  ITextComponent name, LEB leftEntry, MEB middleEntry, REB rightEntry, Triple<L, M, R> value);
 	
-	<V extends Comparable<V>, R extends AbstractRange<V, R>,
+	<V extends Comparable<V>, R extends Range<V, R>,
 	  E extends AbstractConfigListEntry<V> & IChildListEntry
 	> RangeListEntryBuilder<V, R, E> startRange(
 	  ITextComponent name, R value, FieldBuilder<V, E, ?> entryBuilder
 	);
 	
-	<V extends Comparable<V>, R extends AbstractRange<V, R>,
+	<V extends Comparable<V>, R extends Range<V, R>,
 	  E extends AbstractConfigListEntry<V> & IChildListEntry
 	> RangeListEntryBuilder<V, R, E> startRange(
 		 ITextComponent name, R value, E minEntry, E maxEntry
