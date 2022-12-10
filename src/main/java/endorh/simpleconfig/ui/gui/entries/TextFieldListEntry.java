@@ -92,7 +92,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	
 	@Override public void tick() {
 		super.tick();
-		if ((frame++) % 10 == 0) textFieldWidget.tick();
+		if (frame++ % 10 == 0) textFieldWidget.tick();
 		textFieldWidget.setBorderColor(hasError()? 0xFF8080 : 0xFFFFFF);
 	}
 	

@@ -4,19 +4,21 @@ import com.google.common.collect.Sets;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.annotation.Error;
 import endorh.simpleconfig.api.annotation.*;
+import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.CategoryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.GroupBuilder;
 import endorh.simpleconfig.core.entry.TextEntry;
+import endorh.simpleconfig.core.reflection.BindingContext;
+import endorh.simpleconfig.core.reflection.BindingContext.MethodWrapper;
+import endorh.simpleconfig.core.reflection.BindingContext.MethodWrapper.AdapterMethodWrapper;
+import endorh.simpleconfig.core.reflection.BindingContext.ParametersAdapter;
+import endorh.simpleconfig.core.reflection.BindingContext.ReturnTypeAdapter;
 import endorh.simpleconfig.core.reflection.FieldParser;
-import endorh.simpleconfig.core.reflection.MethodBindingContext;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.MethodWrapper;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.MethodWrapper.AdapterMethodWrapper;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.ParametersAdapter;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.ReturnTypeAdapter;
 import net.minecraft.network.chat.Component;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -30,21 +32,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.category;
 import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.group;
 import static endorh.simpleconfig.core.ReflectionUtil.getFieldName;
 import static endorh.simpleconfig.core.ReflectionUtil.getMethodName;
-import static endorh.simpleconfig.core.reflection.MethodBindingContext.ParametersAdapter.emptySignature;
-import static endorh.simpleconfig.core.reflection.MethodBindingContext.oneOptionalAdapter;
+import static endorh.simpleconfig.core.reflection.BindingContext.ParametersAdapter.emptySignature;
+import static endorh.simpleconfig.core.reflection.BindingContext.ParametersAdapter.oneOptionalAdapter;
+import static endorh.simpleconfig.core.reflection.FieldParser.*;
 
 public class SimpleConfigClassParser {
 	private static final Logger LOGGER = LogManager.getLogger();
 	@SuppressWarnings("unchecked")
 	public static final Set<Class<? extends Annotation>> CONFIG_ENTRY_ANNOTATIONS = Sets.newHashSet(
-	  Advanced.class, Default.class, Error.class, Experimental.class, HasAlpha.class,
-	  Length.class, Linked.class, Max.class, Min.class, NonPersistent.class, Operator.class,
-	  RequireRestart.class, Size.class, Slider.class, Suggest.class
+	  Advanced.class, Bake.class, Bake.Scale.class, Default.class, Error.class, Experimental.class,
+	  HasAlpha.class, Length.class, Linked.class, Max.class, Min.class, NonPersistent.class,
+	  Operator.class, RequireRestart.class, Size.class, Slider.class, Suggest.class
 	);
 	
 	// Used to construct exception messages
@@ -52,7 +56,7 @@ public class SimpleConfigClassParser {
 	protected static final Map<SimpleConfigBuilderImpl, Map<Class<?>, Set<Method>>> seenMethods = new ConcurrentHashMap<>();
 	
 	protected static void decorateBuilder(SimpleConfigBuilderImpl root) {
-		MethodBindingContext ctx = null;
+		BindingContext ctx = null;
 		if (root.configClass != null) {
 			ctx = methodBindingContext(root, root.configClass, null);
 			decorateAbstractBuilder(root, ctx, root.configClass, root);
@@ -66,16 +70,16 @@ public class SimpleConfigClassParser {
 		seenMethods.remove(root);
 	}
 	
-	private static MethodBindingContext methodBindingContext(
-	  SimpleConfigBuilderImpl root, Class<?> cls, @Nullable MethodBindingContext parent
+	private static BindingContext methodBindingContext(
+	  SimpleConfigBuilderImpl root, Class<?> cls, @Nullable BindingContext parent
 	) {
 		Set<Method> set = new HashSet<>();
 		seenMethods.computeIfAbsent(root, c -> new HashMap<>()).put(cls, set);
-		return MethodBindingContext.forConfigClass(cls, parent, set);
+		return BindingContext.forConfigClass(cls, parent, set);
 	}
 	
 	protected static void decorateAbstractBuilder(
-	  SimpleConfigBuilderImpl root, MethodBindingContext ctx,
+	  SimpleConfigBuilderImpl root, BindingContext ctx,
 	  Class<?> configClass, AbstractSimpleConfigEntryHolderBuilder<?> builder
 	) {
 		builders.put(configClass, builder);
@@ -84,20 +88,20 @@ public class SimpleConfigClassParser {
 		MethodWrapper<?> buildMethod = ctx.findOwnMethod("build", ParametersAdapter.singleSignature(builderType), ReturnTypeAdapter.identity(builderType));
 		if (buildMethod != null)
 			builder = (AbstractSimpleConfigEntryHolderBuilder<?>) buildMethod.invoke(builder);
-		AdapterMethodWrapper<Icon> iconGetter = ctx.findCompatibleMethod(
+		AdapterMethodWrapper<Icon> iconGetter = ctx.findCompatibleOwnMethod(
 		  "getIcon", false, emptySignature(),
 		  ReturnTypeAdapter.identity(EntryType.unchecked(Icon.class)));
 		if (iconGetter != null) {
 			if (builder != root && !(builder instanceof CategoryBuilder)) {
 				LOGGER.warn(
 				  "Config class " + configClass.getName() + " has an icon getter, but it's not a config " +
-				  "filo nor a category! Only categories and the file itself can have an icon getter, " +
+				  "file nor a category! Only categories and the file itself can have an icon getter, " +
 				  "so this method will be ignored.");
 			} else try {
 				Icon icon = iconGetter.invoke();
 				if (icon != null) {
 					if (builder == root) {
-						if (root.defaultCategory.icon != null) LOGGER.warn(
+						if (root.defaultCategory.icon != Icon.EMPTY) LOGGER.warn(
 						  "Config class " + configClass.getName() + " has an icon getter, but it " +
 						  "already has a default category icon! Only the first icon set will be used!" +
 						  "\n  Remove the `getIcon` method, or the call to `withIcon` to suppress this warning!"
@@ -105,7 +109,7 @@ public class SimpleConfigClassParser {
 						else root.withIcon(icon);
 					} else {
 						CategoryBuilder cb = (CategoryBuilder) builder;
-						if (cb.icon != null) LOGGER.warn(
+						if (cb.icon != Icon.EMPTY) LOGGER.warn(
 						  "Config category class " + configClass.getName() + " has an icon getter, " +
 						  "but it already has an icon! Only the first icon set will be used!" +
 						  "\n  Remove the `getIcon` method, or the call to `withIcon` to suppress this warning!"
@@ -164,11 +168,11 @@ public class SimpleConfigClassParser {
 				); else root.withColor(config.color());
 			}
 		}
-		Set<Field> secondaryBackingFields = new HashSet<>();
+		Map<Field, Pair<String, BackingFieldBinding<?, ?>>> secondaryBackingFieldBindings = new HashMap<>();
+		Set<Field> seenFields = new HashSet<>();
 		for (String name : builder.entries.keySet()) {
 			List<? extends BackingFieldBinding<?, ?>> bindings = builder.getSecondaryBackingFieldBindings(name);
 			if (bindings.isEmpty()) continue;
-			List<BackingField<?, ?>> backingFields = new ArrayList<>();
 			for (BackingFieldBinding<?, ?> f : bindings) {
 				String fieldName = f.buildName(name);
 				try {
@@ -177,30 +181,28 @@ public class SimpleConfigClassParser {
 					if (!Modifier.isStatic(field.getModifiers()))
 						throw new SimpleConfigClassParseException(builder,
 						  "Config class members must be static. Found non-static field " + getFieldName(field));
-					BackingField<?, ?> backingField = f.build(field);
-					backingFields.add(backingField);
-					secondaryBackingFields.add(field);
-					if (hasAnyConfigAnnotation(field)) LOGGER.warn(
-					  "Config field " + getFieldName(field) + " has config annotations but is already " +
-					  "defined by the builder. Its annotations will be ignored.");
+					secondaryBackingFieldBindings.put(field, Pair.of(name, f));
+					seenFields.add(field);
 				} catch (NoSuchFieldException e) {
 					throw new SimpleConfigClassParseException(builder,
 					  "Missing backing field \"" + configClass.getSimpleName() + "#" + fieldName +
 					  "\" for entry \"" + name + "\"");
 				}
 			}
-			builder.setSecondaryBackingFields(name, backingFields);
 		}
 		final String className = configClass.getName();
+		Field captionField = null;
+		ConfigEntryBuilder<?, ?, ?, ?> captionBuilder = null;
 		for (Field field: configClass.getDeclaredFields()) {
 			final String name = field.getName();
-			if (secondaryBackingFields.contains(field)) continue;
+			if (seenFields.contains(field)) continue;
 			final String fieldTypeName = field.getGenericType().getTypeName();
 			if (!Modifier.isStatic(field.getModifiers()))
 				throw new SimpleConfigClassParseException(
 				  builder,
 				  "Config class members must be static. Found non-static field " + getFieldName(field));
 			if (field.isAnnotationPresent(Group.class) || field.isAnnotationPresent(Category.class)) {
+				if (captionField != null) throw captionTarget(builder, captionField);
 				Group group = field.getAnnotation(Group.class);
 				if (field.getType() != Void.class) throw new SimpleConfigClassParseException(
 				  builder, "Found " + (group != null? "group" : "category") + " marker field with non-void type: " + getFieldName(field));
@@ -230,6 +232,7 @@ public class SimpleConfigClassParser {
 				if (hasAnyConfigAnnotation(field)) LOGGER.warn(
 				  "Group/category marker field " + getFieldName(field) + " has config annotations " +
 				  "that have no effect\n  Remove them to suppress this warning.");
+				seenFields.add(field);
 				continue;
 			}
 			Object value;
@@ -243,6 +246,7 @@ public class SimpleConfigClassParser {
 				           e.getMessage(), e);
 			}
 			if (field.isAnnotationPresent(Text.class)) {
+				if (captionField != null) throw captionTarget(builder, captionField);
 				TextEntry.Builder textBuilder;
 				if (field.getType() == Void.class) {
 					textBuilder = new TextEntry.Builder();
@@ -250,7 +254,7 @@ public class SimpleConfigClassParser {
 					textBuilder = new TextEntry.Builder(() -> tc);
 				} else if (value instanceof Supplier && EntryType.from(
 				  Supplier.class, Component.class
-				).equals(EntryType.fromField(field))) {
+				).matches(EntryType.fromField(field))) {
 					// noinspection unchecked
 					final Supplier<Component> supplier = (Supplier<Component>) value;
 					textBuilder = new TextEntry.Builder(supplier);
@@ -259,9 +263,11 @@ public class SimpleConfigClassParser {
 				  fieldTypeName + "\n  Should be either String (contents ignored), Component or Supplier<Component>");
 				ctx.setContextName(field);
 				builder.add(getOrder(field), field.getName(), FieldParser.addTooltip(ctx, textBuilder));
+				seenFields.add(field);
 				continue;
 			}
 			if (builder.hasEntry(name) && !field.isAnnotationPresent(NotEntry.class)) {
+				if (captionField != null) throw captionTarget(builder, captionField);
 				BackingFieldBuilder<?, ?> fieldBuilder = builder.getEntry(name).backingFieldBuilder;
 				if (fieldBuilder == null) {
 					LOGGER.warn(
@@ -280,15 +286,24 @@ public class SimpleConfigClassParser {
 					LOGGER.warn(
 					  "Config field " + getFieldName(field) + " has config annotations but is already " +
 					  "defined by the builder. Its annotations will be ignored.");
+				seenFields.add(field);
 				continue;
 			}
-			if (field.isAnnotationPresent(Bind.class))
-				throw new SimpleConfigClassParseException(
-				  builder,
-				  "Config field " + getFieldName(field) + " was annotated with @Bind but no " +
-				  "matching config entry was found defined");
-			if (field.isAnnotationPresent(Entry.class) || field.isAnnotationPresent(Caption.class)) {
+			if (field.isAnnotationPresent(Entry.Caption.class)) {
+				if (captionField != null) throw captionTarget(builder, captionField);
+				captionField = field;
+				captionBuilder = FieldParser.parseField(ctx, field);
+				continue;
+			}
+			if (field.isAnnotationPresent(Entry.class) || field.isAnnotationPresent(Group.Caption.class)) {
+				if (field.isAnnotationPresent(Group.Caption.class) && captionField != null)
+					throw captionTarget(builder, captionField);
 				ConfigEntryBuilder<?, ?, ?, ?> entryBuilder = FieldParser.parseField(ctx, field);
+				if (captionField != null) {
+					entryBuilder = makeCaption(captionBuilder, captionField, entryBuilder, field);
+					captionField = null;
+					captionBuilder = null;
+				}
 				if (!(entryBuilder instanceof AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> b))
 					throw new IllegalStateException(
 					  "Entry builder " + entryBuilder.getClass().getCanonicalName() +
@@ -297,7 +312,20 @@ public class SimpleConfigClassParser {
 				if (fieldBuilder == null) throw new SimpleConfigClassParseException(
 				  builder, "Config entry generated from field does not support backing fields");
 				BackingField<?, ?> backingField = fieldBuilder.build(field);
-				if (field.isAnnotationPresent(Caption.class)) {
+				for (BackingFieldBinding<?, ?> f: b.backingFieldBindings) {
+					String fieldName = f.buildName(name);
+					try {
+						Field secondaryField = configClass.getDeclaredField(fieldName);
+						secondaryBackingFieldBindings.put(secondaryField, Pair.of(name, f));
+						seenFields.add(secondaryField);
+					} catch (NoSuchFieldException e) {
+						throw new SimpleConfigClassParseException(
+						  builder,
+						  "Missing backing field \"" + configClass.getSimpleName() + "#" + fieldName +
+						  "\" for entry \"" + name + "\"");
+					}
+				}
+				if (field.isAnnotationPresent(Group.Caption.class)) {
 					if (builder instanceof GroupBuilder gBuilder) {
 						if (gBuilder.captionBuilder != null) throw new SimpleConfigClassParseException(
 						  builder, "Field " + getFieldName(field) + " is annotated with @Caption, but " +
@@ -308,11 +336,36 @@ public class SimpleConfigClassParser {
 					  " in non-group builder: " + className);
 				} else builder.add(getOrder(field), name, entryBuilder);
 				builder.setBackingField(name, backingField);
+				seenFields.add(field);
 				continue;
 			}
 			if (hasAnyConfigAnnotation(field)) throw new SimpleConfigClassParseException(
 			  builder, "Unsupported config annotation/field type combination in field " +
 			           getFieldName(field) + " of type " + fieldTypeName);
+		}
+		Optional<Field> unbound = Arrays.stream(configClass.getDeclaredFields())
+		  .filter(f -> f.isAnnotationPresent(Bind.class) && !seenFields.contains(f))
+		  .findFirst();
+		if (unbound.isPresent()) throw new SimpleConfigClassParseException(
+		  builder,
+		  "Config field " + getFieldName(unbound.get()) + " was annotated with @Bind but no " +
+		  "matching config entry was found defined");
+		if (captionField != null) throw captionTarget(builder, captionField);
+		Map<String, List<Map.Entry<Field, Pair<String, BackingFieldBinding<?, ?>>>>> groupedBindings =
+		  secondaryBackingFieldBindings.entrySet().stream().collect(Collectors.groupingBy(
+			 e -> e.getValue().getKey(), Collectors.toList()));
+		for (String name: groupedBindings.keySet()) {
+			List<BackingField<?, ?>> backingFields = new ArrayList<>();
+			for (Map.Entry<Field, Pair<String, BackingFieldBinding<?, ?>>> e: groupedBindings.get(name)) {
+				Field field = e.getKey();
+				BackingFieldBinding<?, ?> f = e.getValue().getValue();
+				BackingField<?, ?> backingField = f.build(field);
+				backingFields.add(backingField);
+				if (hasAnyConfigAnnotation(field)) LOGGER.warn(
+				  "Config field " + getFieldName(field) + " has config annotations but is already " +
+				  "defined by the builder. Its annotations will be ignored.");
+			}
+			builder.setSecondaryBackingFields(name, backingFields);
 		}
 		for (Class<?> clazz : configClass.getDeclaredClasses()) {
 			final String name = clazz.getSimpleName();
@@ -370,6 +423,67 @@ public class SimpleConfigClassParser {
 		builders.remove(configClass);
 	}
 	
+	private static ConfigEntryBuilder<?, ?, ?, ?> makeCaption(
+	  ConfigEntryBuilder<?, ?, ?, ?> caption, Field captionField,
+	  ConfigEntryBuilder<?, ?, ?, ?> builder, Field field
+	) {
+		Class<?> configClass = field.getDeclaringClass();
+		try {
+			ConfigEntryBuilder<?, ?, ?, ?> cb;
+			if (builder instanceof EntryPairListEntryBuilder<?, ?, ?, ?, ?, ?, ?, ?> plb) {
+				cb = makeCaptionedPairList(caption, plb, null);
+			} else if (builder instanceof ListEntryBuilder<?, ?, ?, ?> lb) {
+				cb = makeCaptionedList(caption, lb, null);
+			} else if (builder instanceof EntrySetEntryBuilder<?, ?, ?, ?> sb) {
+				cb = makeCaptionedSet(caption, sb, null);
+			} else if (builder instanceof EntryMapEntryBuilder<?, ?, ?, ?, ?, ?, ?, ?> mb) {
+				cb = makeCaptionedMap(caption, mb, null);
+			} else throw captionTarget(getBuilderForClass(configClass), captionField);
+			if (cb instanceof CaptionedCollectionEntryBuilder<?, ?, ?, ?, ?, ?, ?, ?> cceb) {
+				cb = cceb
+				  .captionField(captionField.getName())
+				  .collectionField();
+			} else throw new SimpleConfigClassParseException(
+			  configClass, "Unexpected type for captioned collection entry: " + cb.getClass().getName());
+			return cb;
+		} catch (IllegalArgumentException e) {
+			throw new SimpleConfigClassParseException(
+			  configClass,
+			  "Unexpected error creating captioned entry." +
+			  "\n  Possible cause: Expected type of field " + getFieldName(captionField) +
+			  " to be atomic. Actual type is: " + EntryType.fromField(captionField),
+			  e);
+		} catch (SimpleConfigClassParseException e) {
+			throw e;
+		} catch (RuntimeException e) {
+			throw new SimpleConfigClassParseException(
+			  configClass, "Unexpected error creating captioned entry for fields: " +
+			               getFieldName(captionField) + " and " + getFieldName(field), e);
+		}
+	}
+	
+	
+	
+	@SuppressWarnings("unchecked")
+	private static <V, C, G, B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder>
+	B atomic(ConfigEntryBuilder<?, ?, ?, ?> builder, Field field) {
+		if (!(builder instanceof AtomicEntryBuilder)) throw new SimpleConfigClassParseException(
+		  field.getDeclaringClass(),
+		  "Expected field " + getFieldName(field) + " to have an atomic entry type, but found: " +
+		  EntryType.fromField(field));
+		return (B) builder;
+	}
+	
+	private static SimpleConfigClassParseException captionTarget(
+	  AbstractSimpleConfigEntryHolderBuilder<?> builder, Field field
+	) {
+		return new SimpleConfigClassParseException(
+		  builder, "@Entry.Caption annotated field \"" + getFieldName(field) +
+		           "\" is not followed by a valid composite entry" +
+		           "\n  The only entry types that support a caption are List, Set and Map" +
+		           "\n  To set the caption of a config group or bean entry, use @Group.Caption");
+	}
+	
 	@SuppressWarnings("unchecked") private static <V, C, G, B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder> void addCaption(
 	  GroupBuilder builder, String name, ConfigEntryBuilder<V, C, G, ?> entryBuilder, Field field
 	) {
@@ -425,7 +539,7 @@ public class SimpleConfigClassParser {
 			return field.getAnnotation(Entry.class).value();
 		} else if (field.isAnnotationPresent(Text.class)) {
 			return field.getAnnotation(Text.class).value();
-		} else if (field.isAnnotationPresent(Caption.class)) {
+		} else if (field.isAnnotationPresent(Group.Caption.class)) {
 			return -1;
 		} else return 0;
 	}

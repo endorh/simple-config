@@ -31,7 +31,7 @@ public interface FieldTypeParser<V> {
 		@Override public ConfigEntryBuilder<?, ?, ?, ?> create(
 		  EntryTypeData data, AnnotatedType aType, Type type, Class<V> c, @Nullable V value
 		) {
-			return builder.build(data.getMethodBindingContext(), data, aType, type, c, Optional.ofNullable(value));
+			return builder.build(data.getBindingContext(), data, aType, type, c, Optional.ofNullable(value));
 		}
 	}
 }

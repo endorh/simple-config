@@ -7,7 +7,6 @@ import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.entry.CaptionedCollectionEntryBuilder;
-import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -87,8 +86,9 @@ public class CaptionedCollectionEntry<
 		
 		@Override @Contract(pure=true)
 		public @NotNull CaptionedCollectionEntryBuilder<V, C, G, S, CV, CC, CG, CS> collectionField() {
-			return addField(BackingFieldBinding.sameName(BackingFieldBuilder.of(
-			  Pair::getValue, collectionBuilder.type)));
+			Builder<V, C, G, S, CV, CC, CG, CS> copy = copy();
+			copy.backingFieldBuilder = BackingFieldBuilder.of(Pair::getValue, collectionBuilder.type);
+			return copy;
 		}
 		
 		@Override @Contract(pure=true)
@@ -172,6 +172,23 @@ public class CaptionedCollectionEntry<
 		CV caption = captionEntry.fromConfig(value.getKey());
 		V col = listEntry.fromConfig(value.getValue());
 		return caption != null && col != null? Pair.of(caption, col) : null;
+	}
+	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || captionEntry.hasPresentation() || listEntry.hasPresentation();
+	}
+	
+	@Override protected Pair<CV, V> doForPresentation(Pair<CV, V> value) {
+		return super.doForPresentation(Pair.of(
+		  captionEntry.forPresentation(value.getKey()),
+		  listEntry.forPresentation(value.getValue())));
+	}
+	
+	@Override protected Pair<CV, V> doFromPresentation(Pair<CV, V> value) {
+		value = super.doFromPresentation(value);
+		return Pair.of(
+		  captionEntry.fromPresentation(value.getKey()),
+		  listEntry.fromPresentation(value.getValue()));
 	}
 	
 	@Override public Pair<CG, List<G>> forGui(Pair<CV, V> value) {

@@ -11,10 +11,10 @@ import java.util.Optional;
 @FunctionalInterface
 public interface FieldEntryBuilder<V> {
 	ConfigEntryBuilder<?, ?, ?, ?> build(
-	  MethodBindingContext ctx, EntryTypeData data, AnnotatedType aType, Type type, Class<?> c, Optional<V> v);
+	  BindingContext ctx, EntryTypeData data, AnnotatedType aType, Type type, Class<?> c, Optional<V> v);
 	
 	default ConfigEntryBuilder<?, ?, ?, ?> build(
-	  MethodBindingContext ctx, EntryTypeData data, AnnotatedType aType, Type type, Optional<V> v
+	  BindingContext ctx, EntryTypeData data, AnnotatedType aType, Type type, Optional<V> v
 	) {
 		if (type instanceof Class<?> c) return build(ctx, data, aType, type, c, v);
 		if (type instanceof ParameterizedType t) return build(ctx, data, aType, type, (Class<?>) t.getRawType(), v);
@@ -26,7 +26,7 @@ public interface FieldEntryBuilder<V> {
 		ConfigEntryBuilder<?, ?, ?, ?> build(EntryTypeData data, Class<?> t, Optional<V> v);
 		
 		@Override default ConfigEntryBuilder<?, ?, ?, ?> build(
-		  MethodBindingContext ctx, EntryTypeData data, AnnotatedType aType, Type type, Class<?> c, Optional<V> v
+		  BindingContext ctx, EntryTypeData data, AnnotatedType aType, Type type, Class<?> c, Optional<V> v
 		) {
 			return build(data, c, v);
 		}
@@ -37,7 +37,7 @@ public interface FieldEntryBuilder<V> {
 		ConfigEntryBuilder<?, ?, ?, ?> build(EntryTypeData data, Optional<V> v);
 		
 		@Override default ConfigEntryBuilder<?, ?, ?, ?> build(
-		  MethodBindingContext ctx, EntryTypeData data, AnnotatedType aType, Type t, Class<?> c, Optional<V> v
+		  BindingContext ctx, EntryTypeData data, AnnotatedType aType, Type t, Class<?> c, Optional<V> v
 		) {
 			return build(data, v);
 		}

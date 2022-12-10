@@ -166,6 +166,22 @@ public class EntryPairEntry<
 		return left != null && right != null? Pair.of(left, right) : null;
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || leftEntry.hasPresentation() || rightEntry.hasPresentation();
+	}
+	
+	@Override protected Pair<L, R> doForPresentation(Pair<L, R> value) {
+		return super.doForPresentation(Pair.of(
+		  leftEntry.forPresentation(value.getLeft()),
+		  rightEntry.forPresentation(value.getRight())));
+	}
+	
+	@Override protected Pair<L, R> doFromPresentation(Pair<L, R> value) {
+		return super.doFromPresentation(Pair.of(
+		  leftEntry.fromPresentation(value.getLeft()),
+		  rightEntry.fromPresentation(value.getRight())));
+	}
+	
 	@Override public Pair<LG, RG> forGui(Pair<L, R> value) {
 		return Pair.of(leftEntry.forGui(value.getLeft()),
 		               rightEntry.forGui(value.getRight()));

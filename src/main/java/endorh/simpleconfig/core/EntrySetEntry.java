@@ -201,17 +201,25 @@ public class EntrySetEntry<
 	protected C elemForConfig(V value) {
 		return entry.forConfig(value);
 	}
-	
 	protected @Nullable V elemFromConfig(C value) {
 		return entry.fromConfig(value);
 	}
-	
 	protected G elemForGui(V value) {
 		return entry.forGui(value);
 	}
-	
 	protected @Nullable V elemFromGui(G value) {
 		return entry.fromGui(value);
+	}
+	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || entry.hasPresentation();
+	}
+	
+	@Override protected Set<V> doForPresentation(Set<V> value) {
+		return super.doForPresentation(value.stream().map(entry::forPresentation).collect(Collectors.toSet()));
+	}
+	@Override protected Set<V> doFromPresentation(Set<V> value) {
+		return super.doFromPresentation(value).stream().map(entry::fromPresentation).collect(Collectors.toSet());
 	}
 	
 	protected static Component addIndex(Component message, int index) {

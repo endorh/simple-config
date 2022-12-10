@@ -1,6 +1,8 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
+import endorh.simpleconfig.api.ui.TextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -30,9 +32,53 @@ public class LongSliderEntry extends SliderListEntry<Long> {
 		textEntry.setMinimum(min);
 		textEntry.setMaximum(max);
 		textEntry.setChildSubEntry(true);
-		Stream.of(HotKeyActionTypes.LONG_ADD, HotKeyActionTypes.LONG_ADD_CYCLE)
-			 .forEach(hotKeyActionTypes::add);
+		Stream.of(
+		  HotKeyActionTypes.LONG_ADD, HotKeyActionTypes.LONG_ADD_CYCLE,
+		  HotKeyActionTypes.LONG_MUL, HotKeyActionTypes.LONG_DIV
+		).forEach(hotKeyActionTypes::add);
 		initWidgets(new SliderWidget(0, 0, 100, 24), textEntry);
+	}
+	
+	private static boolean isFloating(HotKeyActionType<Long, ?> type) {
+		return type == HotKeyActionTypes.LONG_MUL || type == HotKeyActionTypes.LONG_DIV;
+	}
+	
+	@Override public void setHotKeyActionType(HotKeyActionType<Long, ?> type) {
+		boolean prevFloating = isFloating(getHotKeyActionType());
+		Double prev = prevFloating? getDisplayedDouble() : (Double) (double) getDisplayedValue();
+		super.setHotKeyActionType(type);
+		boolean floating = isFloating(type);
+		if (floating) setDisplayedDouble(prev);
+		if (floating != prevFloating) {
+			textFieldEntry.setTextFormatter(TextFormatter.numeric(!floating));
+			if (!floating) {
+				Double d = getDisplayedDouble();
+				setDisplayedValue((long) (d != null? d : getValue()));
+			}
+		}
+	}
+	
+	@Override public void setHotKeyActionValue(Object value) {
+		HotKeyActionType<Long, ?> type = getHotKeyActionType();
+		if (isFloating(type)) {
+			setDisplayedDouble(value);
+		} else super.setHotKeyActionValue(value);
+	}
+	
+	@Override public Object getHotKeyActionValue() {
+		return isFloating(getHotKeyActionType())? getDisplayedDouble() : super.getHotKeyActionValue();
+	}
+	
+	private Double getDisplayedDouble() {
+		try {
+			return Double.parseDouble(textFieldEntry.textFieldWidget.getValue());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
+	private void setDisplayedDouble(Object d) {
+		textFieldEntry.textFieldWidget.setValue(d != null? String.valueOf(d) : "");
 	}
 	
 	public class SliderWidget extends SliderListEntry<Long>.SliderWidget {

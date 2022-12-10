@@ -11,8 +11,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
-public record EntryType<T>(@NotNull Class<T> type, @Nullable EntryType<?>[] args) {
+public record EntryType<T>(
+  @NotNull Class<T> type, EntryType<?> @Nullable[] args, boolean subClasses
+) {
 	public EntryType {
 		type = Primitives.wrap(type);
 		if (args != null) {
@@ -22,11 +25,19 @@ public record EntryType<T>(@NotNull Class<T> type, @Nullable EntryType<?>[] args
 	}
 	
 	public static <T> EntryType<T> of(Class<T> type, EntryType<?>... args) {
-		return new EntryType<>(type, args);
+		return new EntryType<>(type, args, false);
 	}
 	
 	public static <T> EntryType<T> unchecked(Class<T> type) {
-		return new EntryType<>(type, null);
+		return new EntryType<>(type, null, false);
+	}
+	
+	public static <T> EntryType<T> uncheckedSubClasses(Class<T> type) {
+		return new EntryType<>(type, null, true);
+	}
+	
+	public static EntryType<Object> wildcard() {
+		return uncheckedSubClasses(Object.class);
 	}
 	
 	public static <T> EntryType<T> from(Class<T> type, Class<?>... args) {
@@ -67,6 +78,14 @@ public record EntryType<T>(@NotNull Class<T> type, @Nullable EntryType<?>[] args
 		return args != null? args.length : 0;
 	}
 	
+	public boolean matches(EntryType<?> other) {
+		return (subClasses? type.isAssignableFrom(other.type) : type.equals(other.type))
+		       && (args == null || other.args == null
+		           || args.length == other.args.length
+		              && IntStream.range(0, args.length)
+		                .allMatch(i -> args[i].matches(other.args[i])));
+	}
+	
 	@Override public String toString() {
 		if (args == null || args.length == 0) return type.getSimpleName();
 		return type.getSimpleName() + "<" + String.join(
@@ -86,8 +105,7 @@ public record EntryType<T>(@NotNull Class<T> type, @Nullable EntryType<?>[] args
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		EntryType<?> entryType = (EntryType<?>) o;
-		return type.equals(entryType.type) && (
-		  args == null || entryType.args == null || Arrays.equals(args, entryType.args));
+		return type.equals(entryType.type) && Arrays.equals(args, entryType.args);
 	}
 	
 	@Override public int hashCode() {

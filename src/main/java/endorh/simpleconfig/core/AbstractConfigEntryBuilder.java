@@ -44,6 +44,7 @@ public abstract class AbstractConfigEntryBuilder<
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> errorSupplier = null;
 	protected @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, List<Component>> tooltipSupplier = null;
 	protected @Nullable Function<ConfigEntryHolder, Boolean> editableSupplier = null;
+	protected @Nullable ValuePresentation<V, V> presentation = null;
 	protected @Nullable String translation = null;
 	protected List<Object> nameArgs = new ArrayList<>();
 	protected List<Object> tooltipArgs = new ArrayList<>();
@@ -58,10 +59,10 @@ public abstract class AbstractConfigEntryBuilder<
 	protected List<BackingFieldBinding<V, ?>> backingFieldBindings = new ArrayList<>();
 	protected @Nullable ConfigEntryDelegate<V> delegate = null;
 	
-	public AbstractConfigEntryBuilder(V value, EntryType<?> type) {
+	protected AbstractConfigEntryBuilder(V value, EntryType<?> type) {
 		this.value = value;
-		this.typeClass = type != null? type.type() : null;
 		this.type = type;
+		typeClass = type != null? type.type() : null;
 		backingFieldBuilder = type != null? BackingFieldBuilder.<V, V>of(
 		  Function.identity(), type
 		).withCommitter(Function.identity()) : null;
@@ -100,6 +101,14 @@ public abstract class AbstractConfigEntryBuilder<
 	
 	@Internal public EntryType<?> getEntryType() {
 		return type;
+	}
+	
+	@Internal public @Nullable ValuePresentation<V, V> getPresentation() {
+		return presentation;
+	}
+	
+	@Internal public @Nullable BiFunction<AbstractConfigEntry<V, Config, Gui>, Gui, Optional<Component>> getErrorSupplier() {
+		return errorSupplier;
 	}
 	
 	@Contract(pure=true)
@@ -197,6 +206,18 @@ public abstract class AbstractConfigEntryBuilder<
 		SelfImpl copy = copy();
 		copy.nameArgs.clear();
 		copy.nameArgs.addAll(Arrays.asList(args));
+		return copy.castSelf();
+	}
+	
+	@Override public @NotNull Self baked(Function<V, V> presentation) {
+		SelfImpl copy = copy();
+		copy.presentation = ValuePresentation.of(presentation);
+		return copy.castSelf();
+	}
+	
+	@Override public @NotNull Self baked(Function<V, V> presentation, Function<V, V> inverse) {
+		SelfImpl copy = copy();
+		copy.presentation = ValuePresentation.of(presentation, inverse);
 		return copy.castSelf();
 	}
 	
@@ -339,6 +360,7 @@ public abstract class AbstractConfigEntryBuilder<
 		e.ignored = ignored;
 		e.tags.clear();
 		e.tags.addAll(tags);
+		e.setPresentation(presentation);
 		// if (!e.isValidValue(value))
 		// 	throw new InvalidDefaultConfigValueException(e.getGlobalPath(), value);
 		if (buildListener != null) buildListener.accept(e);
@@ -381,6 +403,7 @@ public abstract class AbstractConfigEntryBuilder<
 		copy.editableSupplier = editableSupplier;
 		copy.nonPersistent = nonPersistent;
 		copy.ignored = ignored;
+		copy.presentation = presentation;
 		copy.backingFieldBuilder = backingFieldBuilder;
 		copy.backingFieldBindings = new ArrayList<>(backingFieldBindings);
 		copy.tags = new HashSet<>(tags);

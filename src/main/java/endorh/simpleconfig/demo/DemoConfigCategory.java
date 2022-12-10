@@ -103,7 +103,13 @@ public class DemoConfigCategory {
 		  // It will always display when opened from the main menu however.
 		  .withBackground("textures/block/warped_planks.png")
 		  // You may add text to the config GUI in using .text()
-		  .text(ttc(prefix("text.greeting_text")))
+		  .text(ttc(
+			 prefix("text.greeting_builder"),
+			 ttc(prefix("text.github")).withStyle(s -> s
+			   .withColor(ChatFormatting.AQUA)
+			   .withClickEvent(new ClickEvent(
+				  ClickEvent.Action.OPEN_URL,
+				  "https://github.com/endorh/simple-config/blob/1.18/src/main/java/endorh/simpleconfig/demo/DemoConfigCategory.java")))))
 		  // Adding entries is done with .add() and the various entry
 		  //   builders available
 		  // Entry names must not contain spaces, and they should
@@ -819,7 +825,7 @@ public class DemoConfigCategory {
 				// It's sometimes useful to precompute certain values
 				//   in baker methods, if they're going to be accessed
 				//   often and only rely on config values
-				not_an_entry = (int_value * 2) - 1;
+				not_an_entry = int_value * 2 - 1;
 				// The received group can also be used to access
 				//   config values, or to modify them, triggering however
 				//   another bake (take care for infinite recursion)
