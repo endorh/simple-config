@@ -2,9 +2,9 @@ package endorh.simpleconfig.konfig
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import endorh.simpleconfig.api.*
-import endorh.simpleconfig.api.AbstractRange.*
 import endorh.simpleconfig.api.SimpleConfig.Type
 import endorh.simpleconfig.api.entry.*
+import endorh.simpleconfig.api.range.AbstractRange.*
 import endorh.simpleconfig.api.ui.icon.Icon
 import endorh.simpleconfig.core.AbstractConfigEntry
 import endorh.simpleconfig.core.AbstractConfigEntryBuilder
@@ -17,6 +17,25 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.resources.ResourceLocation
 import net.minecraftforge.fml.ModLoadingContext
 import thedarkcolour.kotlinforforge.forge.MOD_BUS
+import kotlin.Any
+import kotlin.Boolean
+import kotlin.Byte
+import kotlin.Double
+import kotlin.Float
+import kotlin.IllegalArgumentException
+import kotlin.IllegalStateException
+import kotlin.Int
+import kotlin.Long
+import kotlin.Number
+import kotlin.Pair
+import kotlin.Short
+import kotlin.String
+import kotlin.Suppress
+import kotlin.Triple
+import kotlin.Unit
+import kotlin.also
+import kotlin.apply
+import kotlin.let
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
@@ -24,6 +43,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
+import kotlin.takeIf
 import endorh.simpleconfig.api.ConfigBuilderFactoryProxy as F
 import endorh.simpleconfig.api.ConfigEntryBuilder as Builder
 import org.apache.commons.lang3.tuple.Pair as CPair

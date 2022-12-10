@@ -1,9 +1,9 @@
 package endorh.simpleconfig.api.annotation;
 
-import endorh.simpleconfig.api.AbstractRange.DoubleRange;
-import endorh.simpleconfig.api.AbstractRange.FloatRange;
-import endorh.simpleconfig.api.AbstractRange.IntRange;
-import endorh.simpleconfig.api.AbstractRange.LongRange;
+import endorh.simpleconfig.api.range.DoubleRange;
+import endorh.simpleconfig.api.range.FloatRange;
+import endorh.simpleconfig.api.range.IntRange;
+import endorh.simpleconfig.api.range.LongRange;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;

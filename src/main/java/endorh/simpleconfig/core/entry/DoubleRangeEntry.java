@@ -1,8 +1,8 @@
 package endorh.simpleconfig.core.entry;
 
-import endorh.simpleconfig.api.AbstractRange.DoubleRange;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.DoubleRangeEntryBuilder;
+import endorh.simpleconfig.api.range.DoubleRange;
 import endorh.simpleconfig.core.BackingField.BackingFieldBinding;
 import endorh.simpleconfig.core.BackingField.BackingFieldBuilder;
 import endorh.simpleconfig.core.EntryType;
