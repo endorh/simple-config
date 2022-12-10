@@ -37,15 +37,15 @@ public interface FieldBuilderDecorator<B extends ConfigEntryBuilder<?, ?, ?, ? e
 		
 		@Override public <BB extends B> BB decorate(EntryTypeData data, BB builder) {
 			// noinspection unchecked
-			return (BB) decorator.decorate(data.getMethodBindingContext(), data, builder);
+			return (BB) decorator.decorate(data.getBindingContext(), data, builder);
 		}
 	}
 	
 	interface FieldDecorator<B extends ConfigEntryBuilder> {
-		B decorate(MethodBindingContext ctx, EntryTypeData data, B builder);
+		B decorate(BindingContext ctx, EntryTypeData data, B builder);
 	}
 	
 	interface AnnotationFieldDecorator<A extends Annotation, B extends ConfigEntryBuilder> {
-		B decorate(MethodBindingContext ctx, EntryTypeData data, A a, B builder);
+		B decorate(BindingContext ctx, EntryTypeData data, A a, B builder);
 	}
 }

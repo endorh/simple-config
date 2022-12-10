@@ -123,7 +123,7 @@ public class BackingField<V, F> {
 		}
 		
 		@Internal protected boolean matchesType(Field field) {
-			return type == null || type.equals(EntryType.fromField(field));
+			return type == null || type.matches(EntryType.fromField(field));
 		}
 	}
 }

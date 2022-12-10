@@ -131,6 +131,17 @@ public class EntryListEntry
 		return entry.fromGui(value);
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || entry.hasPresentation();
+	}
+	
+	@Override protected List<V> doForPresentation(List<V> value) {
+		return super.doForPresentation(value.stream().map(entry::forPresentation).collect(Collectors.toList()));
+	}
+	@Override protected List<V> doFromPresentation(List<V> value) {
+		return super.doFromPresentation(value).stream().map(entry::fromPresentation).collect(Collectors.toList());
+	}
+	
 	@Override public List<ITextComponent> getElementErrors(int index, G value) {
 		List<ITextComponent> errors = super.getElementErrors(index, value);
 		entry.getErrorsFromGUI(value).stream()

@@ -127,6 +127,18 @@ public class EntryButtonEntry<V, Gui>
 		return inner.fromGui(value);
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || inner.hasPresentation();
+	}
+	
+	@Override protected V doForPresentation(V value) {
+		return super.doForPresentation(inner.forPresentation(value));
+	}
+	
+	@Override protected V doFromPresentation(V value) {
+		return inner.fromPresentation(super.doFromPresentation(value));
+	}
+	
 	@SuppressWarnings("unchecked")
 	public <
 	  E extends AbstractConfigListEntry<Gui> & IChildListEntry,

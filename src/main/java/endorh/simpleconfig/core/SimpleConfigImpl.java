@@ -43,6 +43,7 @@ import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.comments.CommentLine;
 
@@ -634,7 +635,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		return commandRoot;
 	}
 	
-	@Override public AbstractSimpleConfigEntryHolder getParent() {
+	@Override public @NotNull AbstractSimpleConfigEntryHolder getParent() {
 		throw new NoSuchConfigGroupError(getGlobalPath());
 	}
 	

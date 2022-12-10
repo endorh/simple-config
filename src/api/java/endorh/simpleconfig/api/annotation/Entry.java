@@ -120,7 +120,7 @@ import java.util.regex.Pattern;
  * @see Bind
  * @see Text
  */
-@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Entry {
 	/**
@@ -130,4 +130,13 @@ public @interface Entry {
 	 * entries, but the Java language specification won't let me guarantee that
 	 */
 	int value() default 0;
+	
+	/**
+	 * Marks this entry as the caption of the following entry in the same class.<br><br>
+	 *
+	 * Only non-atomic entries can have a caption, and the caption must always be atomic.
+	 */
+	@Target(ElementType.FIELD)
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface Caption {}
 }

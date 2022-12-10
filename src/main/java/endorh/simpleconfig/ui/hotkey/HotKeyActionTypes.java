@@ -77,6 +77,7 @@ public class HotKeyActionTypes {
 		}
 	}
 	
+	// Int
 	public static final SimpleHotKeyActionType<Integer, Number> INT_ADD = type(
 	  "int:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
 		 a + b.intValue(), min.intValue(), max.intValue())), notNull());
@@ -87,6 +88,13 @@ public class HotKeyActionTypes {
 		  int r = mx - mn;
 		  return mn + (a + b.intValue() - mn + r) % r;
 	  }), notNull());
+	public static final SimpleHotKeyActionType<Integer, Number> INT_MUL = type(
+	  "int:mul", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
+		 (int) (a * b.floatValue()), min.intValue(), max.intValue())), notNull());
+	public static final SimpleHotKeyActionType<Integer, Number> INT_DIV = type(
+	  "int:div", Actions.DIVIDE, ranged((entry, a, b, min, max) -> clamp(
+		 (int) (a / b.floatValue()), min.intValue(), max.intValue())), notNull());
+	// Long
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD = type(
 	  "long:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
 		 a + b.longValue(), min.longValue(), max.longValue())), notNull());
@@ -97,6 +105,13 @@ public class HotKeyActionTypes {
 		  long r = mx - mn;
 		  return mn + (a + b.longValue() - mn + r) % r;
 	  }), notNull());
+	public static final SimpleHotKeyActionType<Long, Number> LONG_MUL = type(
+	  "long:mul", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
+		 (long) (a * b.doubleValue()), min.longValue(), max.longValue())), notNull());
+	public static final SimpleHotKeyActionType<Long, Number> LONG_DIV = type(
+	  "long:div", Actions.DIVIDE, ranged((entry, a, b, min, max) -> clamp(
+		 (long) (a / b.doubleValue()), min.longValue(), max.longValue())), notNull());
+	// Float
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_ADD = type(
 	  "float:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
 		 a + b.floatValue(), min.floatValue(), max.floatValue())), notNull());
@@ -108,12 +123,13 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.floatValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_MULTIPLY = type(
-	  "float:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
+	  "float:mul", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
 		 a * b.floatValue(), min.floatValue(), max.floatValue())), notNull());
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_DIVIDE = type(
 	  "float:div", Actions.DIVIDE, ranged(
 		 (entry, a, b, min, max) -> b.floatValue() == 0F? null : clamp(
 			a / b.floatValue(), min.floatValue(), max.floatValue())), divError());
+	// Double
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_ADD = type(
 	  "double:add", Actions.ADD, ranged((entry, a, b, min, max) -> clamp(
 		 a + b.doubleValue(), min.doubleValue(), max.doubleValue())), notNull());
@@ -125,12 +141,13 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.doubleValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_MULTIPLY = type(
-	  "double:mult", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
+	  "double:mul", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> clamp(
 		 a * b.doubleValue(), min.doubleValue(), max.doubleValue())), notNull());
 	public static final SimpleHotKeyActionType<Double, Number> DOUBLE_DIVIDE = type(
 	  "double:div", Actions.DIVIDE, ranged(
 		 (entry, a, b, min, max) -> b.doubleValue() == 0D? null : clamp(
 			a / b.doubleValue(), min.doubleValue(), max.doubleValue())), divError());
+	// Enum
 	public static final EnumAddSimpleHotKeyActionType<Enum<?>> ENUM_ADD = reg(new EnumAddSimpleHotKeyActionType<>());
 	public static class EnumAddSimpleHotKeyActionType<E extends Enum<?>> extends SimpleHotKeyActionType<E, Integer> {
 		public EnumAddSimpleHotKeyActionType() {
@@ -155,10 +172,14 @@ public class HotKeyActionTypes {
 		}
 	}
 	
+	// Boolean
 	public static final StorageLessHotKeyActionType<Boolean> BOOLEAN_TOGGLE = type(
 	  "bool:toggle", Actions.CYCLE, (entry, b) -> !b);
+	
+	// List
 	// public static final NestedHotKeyActionType<List<?>, Map<Integer, SimpleHotKeyAction<?, ?>>> LIST_NEST;
 	
+	// Bean
 	// public static final BeanHotKeyActionType<Object> BEAN = type(new BeanHotKeyActionType<>());
 	public static class BeanHotKeyActionType<B> extends NestedHotKeyActionType<B> {
 		public BeanHotKeyActionType() {
@@ -194,6 +215,7 @@ public class HotKeyActionTypes {
 		}
 	}
 	
+	// Pair
 	// public static final PairNestedHotKeyActionType<Object, Object> PAIR = type(new PairNestedHotKeyActionType<>());
 	public static class PairNestedHotKeyActionType<L, R> extends NestedHotKeyActionType<Pair<L, R>> {
 		public PairNestedHotKeyActionType() {
@@ -257,8 +279,7 @@ public class HotKeyActionTypes {
 	}
 	
 	@FunctionalInterface public interface IRangedSimpleHotKeyAction<V, S> {
-		V applyValue(
-		  AbstractConfigEntry<?, ?, V> entry, V value, S storage, Number min, Number max);
+		V applyValue(AbstractConfigEntry<?, ?, V> entry, V value, S storage, Number min, Number max);
 	}
 	
 	public static <V, S> ISimpleHotKeyAction<V, S> ranged(

@@ -75,10 +75,12 @@ public class CaptionedSubCategoryListEntry<
 		return expanded;
 	}
 	
-	@Override public void setExpanded(boolean expanded, boolean recursive) {
+	@Override public void setExpanded(boolean expanded, boolean recursive, boolean animate) {
 		if (this.expanded != expanded) {
-			expandAnimator.setLength(min(250L, entries.size() * 25L));
-			expandAnimator.setEaseOutTarget(expanded);
+			if (animate) {
+				expandAnimator.setLength(min(250L, entries.size() * 25L));
+				expandAnimator.setEaseOutTarget(expanded);
+			} else expandAnimator.stopAndSet(expanded);
 		}
 		this.expanded = expanded;
 		if (recursive) entries.stream().filter(e -> e instanceof IExpandable)
@@ -262,11 +264,11 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public boolean canResetGroup() {
-		return entries.stream().anyMatch(AbstractConfigField::isResettable);
+		return entries.stream().anyMatch(e -> e.isResettable() || e.canResetGroup());
 	}
 	
 	@Override public boolean canRestoreGroup() {
-		return entries.stream().anyMatch(AbstractConfigField::isRestorable);
+		return entries.stream().anyMatch(e -> e.isRestorable() || e.canRestoreGroup());
 	}
 	
 	@Override public int getExtraScrollHeight() {

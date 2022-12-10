@@ -179,6 +179,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			delta /= Minecraft.getInstance().gameSettings.mouseWheelSensitivity;
 			delta = accumulateScroll(delta);
 			if (abs(delta) >= 1D) {
+				preserveState();
 				int step = delta > 0D? -(int) delta : (int) -delta;
 				i += step;
 				accumulatedScroll += step;

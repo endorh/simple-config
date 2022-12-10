@@ -42,6 +42,40 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	@Contract(pure=true) @NotNull Self nameArgs(Object... args);
 	
 	/**
+	 * Specify a function that will be used to bake the value of this entry.<br><br>
+	 *
+	 * This function will be applied to the values stored in config fields,
+	 * as well as to the values available through Kotlin delegated properties.<br><br>
+	 *
+	 * This baking function is always applied before any backing field transformations,
+	 * and affects all backing fields.<br><br>
+	 *
+	 * <b>This entry won't be committable</b> from baked values unless you also specify
+	 * an inverse function.
+	 *
+	 * @param presentation The function that will be used to bake the value of this entry
+	 * @see #field(Function, Class)
+	 */
+	@Contract(pure=true) @NotNull Self baked(Function<V, V> presentation);
+	
+	/**
+	 * Specify a function that will be used to bake the value of this entry.<br>
+	 * You don't need to pass an {@code inverse} function, unless you want to
+	 * be able to modify the value from your code and have the inverse applied.<br><br>
+	 * <p>
+	 * This function will be applied to the values stored in config fields,
+	 * as well as to the values available through Kotlin delegated properties.<br><br>
+	 * <p>
+	 * This baking function is always applied before any backing field transformations,
+	 * and affects all backing fields.<br>
+	 *
+	 * @param presentation The function that will be used to bake the value of this entry.
+	 * @param inverse The function that will be used to commit changes from modified baked values
+	 * @see #field(Function, Class)
+	 */
+	@Contract(pure=true) @NotNull Self baked(Function<V, V> presentation, Function<V, V> inverse);
+	
+	/**
 	 * Add a secondary field with the given suffix to the entry<br>
 	 * To instead use a snake_case suffix, use {@link #add_field(String, Function, Class)}<br>
 	 * To instead specify the full field name, use {@link #field(String, Function, Class)}
@@ -69,6 +103,8 @@ public interface ConfigEntryBuilder<V, Config, Gui, Self extends ConfigEntryBuil
 	 * @param mapper The transformation to apply to the main backing field
 	 * @param reader Optional reading function to use when committing this field.
 	 * @param type The type of the field, used for checking
+	 * @see #field(String, Function, Class)
+	 * @see #baked
 	 */
 	@Contract(pure=true) <F> @NotNull Self field(Function<V, F> mapper, Function<F, V> reader, Class<?> type);
 	

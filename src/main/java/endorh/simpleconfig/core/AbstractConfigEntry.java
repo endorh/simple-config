@@ -8,10 +8,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfig;
-import endorh.simpleconfig.api.SimpleConfig.ConfigReflectiveOperationException;
-import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
-import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueTypeException;
-import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigEntryError;
+import endorh.simpleconfig.api.SimpleConfig.*;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
@@ -73,6 +70,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	private static final ITextComponent[] EMPTY_TEXT_ARRAY = new ITextComponent[0];
 	
 	public final V defValue;
+	private @Nullable ValuePresentation<V, V> presentation;
 	protected final ConfigEntryHolder parent;
 	protected String name;
 	protected Class<?> typeClass;
@@ -166,6 +164,20 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 	@Internal public void setName(String name) {
 		this.name = name;
+	}
+	
+	@Internal public @Nullable ValuePresentation<V, V> getPresentation() {
+		return presentation;
+	}
+	@Internal public void setPresentation(@Nullable ValuePresentation<V, V> presentation) {
+		if (this.presentation != null) throw new IllegalStateException("Cannot set presentation twice");
+		this.presentation = presentation;
+	}
+	/**
+	 * Whether this entry (or any of its subentries) has a presentation
+	 */
+	@Internal public boolean hasPresentation() {
+		return presentation != null;
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -301,6 +313,24 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		}
 	}
 	
+	public final V forPresentation(V value) {
+		return hasPresentation()? doForPresentation(value) : value;
+	}
+	
+	protected V doForPresentation(V value) {
+		return presentation != null? presentation.apply(value) : value;
+	}
+	
+	public final V fromPresentation(V value) {
+		return hasPresentation()? doFromPresentation(value) : value;
+	}
+	
+	protected V doFromPresentation(V value) {
+		if (presentation == null) return value;
+		if (!presentation.isInvertible()) throw new UnInvertibleBakingTransformationException(getGlobalPath());
+		return presentation.recover(value);
+	}
+	
 	protected void put(CommentedConfig config, Config value) {
 		config.set(name, forActualConfig(value));
 	}
@@ -350,12 +380,16 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		if (ignored) return g -> {};
 		return g -> {
 			final V v = fromGuiOrDefault(g);
-			if (!Objects.equals(get(), v)) {
+			if (!areEqual(get(), v)) {
 				if (trySet(v)) dirty();
 				else LOGGER.error("Unexpected error saving config entry \"" + getGlobalPath() + "\"");
 			}
 			// setGuiEntry(null); // Discard the entry
 		};
+	}
+	
+	@Internal public boolean areEqual(V current, V candidate) {
+		return Objects.equals(current, candidate);
 	}
 	
 	@OnlyIn(Dist.CLIENT)
@@ -671,6 +705,19 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		} else return false;
 	}
 	
+	@Internal public V getPresented() {
+		return forPresentation(get());
+	}
+	
+	@Internal public void setPresented(V value) {
+		set(fromPresentation(value));
+	}
+	
+	@Internal public void trySetPresentation(V value) {
+		if (presentation == null || presentation.isInvertible())
+			trySet(fromPresentation(value));
+	}
+	
 	/**
 	 * Get the value held by this entry
 	 *
@@ -790,14 +837,14 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 	}
 	
 	protected void commitField() throws IllegalAccessException {
-		if (backingField != null && backingField.canBeRead())
-			set(getFromBackingField());
+		if (backingField != null && backingField.canBeRead() && (presentation == null || presentation.isInvertible()))
+			setPresented(getFromBackingField());
 	}
 	
 	protected void bakeField() {
 		if (backingField != null || secondaryBackingFields != null && !secondaryBackingFields.isEmpty()) {
 			try {
-				setBackingField(get());
+				setBackingField(getPresented());
 			} catch (IllegalAccessException e) {
 				throw new ConfigReflectiveOperationException(
 				  "Could not access mod config field during config bake\n  Details: " + e.getMessage(), e);

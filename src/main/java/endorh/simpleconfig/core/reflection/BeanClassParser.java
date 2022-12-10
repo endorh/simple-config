@@ -3,8 +3,8 @@ package endorh.simpleconfig.core.reflection;
 import endorh.simpleconfig.api.AtomicEntryBuilder;
 import endorh.simpleconfig.api.ConfigEntryBuilder;
 import endorh.simpleconfig.api.annotation.Bean;
-import endorh.simpleconfig.api.annotation.Caption;
 import endorh.simpleconfig.api.annotation.Entry;
+import endorh.simpleconfig.api.annotation.Group.Caption;
 import endorh.simpleconfig.api.entry.BeanEntryBuilder;
 import endorh.simpleconfig.core.entry.BeanEntry.Builder;
 
@@ -49,7 +49,7 @@ public class BeanClassParser {
 		  "Recursion detected in config bean class: " + rootClass.getCanonicalName()
 		  + ", bean " + beanClass.getCanonicalName() + " contains a transitive reference to itself.");
 		foundBeans.push(beanClass);
-		MethodBindingContext ctx = new MethodBindingContext(beanClass, null);
+		BindingContext ctx = new BindingContext(beanClass, null);
 		Field[] fields = beanClass.getFields();
 		boolean captionFound = false;
 		for (Field field: fields) {

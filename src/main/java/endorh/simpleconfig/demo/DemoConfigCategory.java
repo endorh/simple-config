@@ -106,7 +106,13 @@ public class DemoConfigCategory {
 		  // It will always display when opened from the main menu however.
 		  .withBackground("textures/block/warped_planks.png")
 		  // You may add text to the config GUI in using .text()
-		  .text(ttc(prefix("text.greeting_text")))
+		  .text(ttc(
+			 prefix("text.greeting_builder"),
+			 ttc(prefix("text.github")).modifyStyle(s -> s
+			   .applyFormatting(TextFormatting.AQUA)
+			   .setClickEvent(new ClickEvent(
+				  ClickEvent.Action.OPEN_URL,
+				  "https://github.com/endorh/simple-config/blob/1.16/src/main/java/endorh/simpleconfig/demo/DemoConfigCategory.java")))))
 		  // Adding entries is done with .add() and the various entry
 		  //   builders available
 		  // Entry names must not contain spaces, and they should

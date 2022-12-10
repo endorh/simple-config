@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 	}
 	
 	@Override
-	public SimpleConfig getRoot() {
+	public @NotNull SimpleConfig getRoot() {
 		return root;
 	}
 	
@@ -36,15 +36,27 @@ import org.jetbrains.annotations.Nullable;
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override public <T> T getBaked(String path) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <V> void set(String path, V value) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <V> void setBaked(String path, V value) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override public <G> void setGUI(String path, G value) {
+		throw new UnsupportedOperationException();
+	}
+	
 	@Override public <V> void setForGUI(String path, V value) {
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override public void setForGUI(String path, Number number) {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Override public <T> void doSet(String path, T value) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -69,9 +81,6 @@ import org.jetbrains.annotations.Nullable;
 		throw new UnsupportedOperationException();
 	}
 	@Override public <V> V getFromGUI(String path) {
-		throw new UnsupportedOperationException();
-	}
-	@Override public <G> void doSetGUI(String path, G value) {
 		throw new UnsupportedOperationException();
 	}
 	

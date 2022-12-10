@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import endorh.simpleconfig.api.ui.TextFormatter;
+import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-@OnlyIn(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class LongListEntry
   extends TextFieldListEntry<Long> implements IRangedEntry<Long> {
 	private long minimum = Long.MIN_VALUE;
@@ -21,8 +22,10 @@ public class LongListEntry
 	@Internal public LongListEntry(ITextComponent fieldName, Long value) {
 		super(fieldName, value, false);
 		setTextFormatter(TextFormatter.numeric(true));
-		Stream.of(HotKeyActionTypes.LONG_ADD, HotKeyActionTypes.LONG_ADD_CYCLE)
-		  .forEach(hotKeyActionTypes::add);
+		Stream.of(
+		  HotKeyActionTypes.LONG_ADD, HotKeyActionTypes.LONG_ADD_CYCLE,
+		  HotKeyActionTypes.LONG_MUL, HotKeyActionTypes.LONG_DIV
+		).forEach(hotKeyActionTypes::add);
 	}
 	
 	@Override public void setMinimum(Long minimum) {
@@ -41,13 +44,49 @@ public class LongListEntry
 		}
 	}
 	
+	private static boolean isFloating(HotKeyActionType<Long, ?> type) {
+		return type == HotKeyActionTypes.LONG_MUL || type == HotKeyActionTypes.LONG_DIV;
+	}
+	
+	@Override public void setHotKeyActionType(HotKeyActionType<Long, ?> type) {
+		boolean prevFloating = isFloating(getHotKeyActionType());
+		super.setHotKeyActionType(type);
+		boolean floating = isFloating(type);
+		if (floating != prevFloating) {
+			setTextFormatter(TextFormatter.numeric(!floating));
+			if (!floating) {
+				Double d = getDisplayedDouble();
+				setDisplayedValue((long) (d != null? d : getValue()));
+			}
+		}
+	}
+	
+	@Override public void setHotKeyActionValue(Object value) {
+		HotKeyActionType<Long, ?> type = getHotKeyActionType();
+		if (isFloating(type)) {
+			textFieldWidget.setText(String.valueOf(value));
+		} else super.setHotKeyActionValue(value);
+	}
+	
+	@Override public Object getHotKeyActionValue() {
+		return isFloating(getHotKeyActionType())? getDisplayedDouble() : super.getHotKeyActionValue();
+	}
+	
+	private Double getDisplayedDouble() {
+		try {
+			return Double.parseDouble(textFieldWidget.getText());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
 	@Internal @Override public Optional<ITextComponent> getErrorMessage() {
 		try {
 			long i = Long.parseLong(getText());
-			if (i > this.maximum)
-				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_large", this.maximum));
-			if (i < this.minimum)
-				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_small", this.minimum));
+			if (i > maximum)
+				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_large", maximum));
+			if (i < minimum)
+				return Optional.of(new TranslationTextComponent("simpleconfig.config.error.too_small", minimum));
 		} catch (NumberFormatException ex) {
 			return Optional.of(
 			  new TranslationTextComponent("simpleconfig.config.error.invalid_integer", getText()));

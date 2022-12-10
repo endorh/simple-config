@@ -242,6 +242,25 @@ public class EntryTripleEntry<
 		return left != null && middle != null && right != null? Triple.of(left, middle, right) : null;
 	}
 	
+	@Override public boolean hasPresentation() {
+		return super.hasPresentation() || leftEntry.hasPresentation()
+		       || middleEntry.hasPresentation() || rightEntry.hasPresentation();
+	}
+	
+	@Override protected Triple<L, M, R> doForPresentation(Triple<L, M, R> value) {
+		return super.doForPresentation(Triple.of(
+		  leftEntry.forPresentation(value.getLeft()),
+		  middleEntry.forPresentation(value.getMiddle()),
+		  rightEntry.forPresentation(value.getRight())));
+	}
+	@Override protected Triple<L, M, R> doFromPresentation(Triple<L, M, R> value) {
+		value = super.doFromPresentation(value);
+		return Triple.of(
+		  leftEntry.fromPresentation(value.getLeft()),
+		  middleEntry.fromPresentation(value.getMiddle()),
+		  rightEntry.fromPresentation(value.getRight()));
+	}
+	
 	@Override public Triple<LG, MG, RG> forGui(Triple<L, M, R> value) {
 		return Triple.of(leftEntry.forGui(value.getLeft()),
 							middleEntry.forGui(value.getMiddle()),

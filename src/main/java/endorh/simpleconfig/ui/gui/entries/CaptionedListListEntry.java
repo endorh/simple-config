@@ -183,8 +183,8 @@ public class CaptionedListListEntry<
 		return listEntry.isExpanded();
 	}
 	
-	@Override public void setExpanded(boolean expanded, boolean recurse) {
-		listEntry.setExpanded(expanded, recurse);
+	@Override public void setExpanded(boolean expanded, boolean recurse, boolean animate) {
+		listEntry.setExpanded(expanded, recurse, animate);
 	}
 	
 	@Override public int getFocusedScroll() {

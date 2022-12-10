@@ -21,12 +21,13 @@ import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.DummyEntryHolder;
 import endorh.simpleconfig.core.EntryType;
 import endorh.simpleconfig.core.SimpleConfigClassParser.SimpleConfigClassParseException;
+import endorh.simpleconfig.core.reflection.BindingContext.MethodWrapper;
+import endorh.simpleconfig.core.reflection.BindingContext.ParametersAdapter;
+import endorh.simpleconfig.core.reflection.BindingContext.ReturnTypeAdapter;
 import endorh.simpleconfig.core.reflection.FieldBuilderDecorator.AnnotationFieldDecorator;
 import endorh.simpleconfig.core.reflection.FieldBuilderDecorator.FieldDecorator;
 import endorh.simpleconfig.core.reflection.FieldEntryBuilder.ClassFieldEntryBuilder;
 import endorh.simpleconfig.core.reflection.FieldEntryBuilder.SimpleFieldEntryBuilder;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.MethodWrapper;
-import endorh.simpleconfig.core.reflection.MethodBindingContext.ReturnTypeAdapter;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.Fluid;
@@ -41,6 +42,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;
@@ -56,8 +59,8 @@ import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.core.ReflectionUtil.getMethodName;
 import static endorh.simpleconfig.core.SimpleConfigClassParser.CONFIG_ENTRY_ANNOTATIONS;
 import static endorh.simpleconfig.core.SimpleConfigClassParser.SimpleConfigClassParseException.getEntryBuilderName;
-import static endorh.simpleconfig.core.reflection.MethodBindingContext.lastOptionalAdapter;
-import static endorh.simpleconfig.core.reflection.MethodBindingContext.oneOptionalAdapter;
+import static endorh.simpleconfig.core.reflection.BindingContext.ParametersAdapter.lastOptionalAdapter;
+import static endorh.simpleconfig.core.reflection.BindingContext.ParametersAdapter.oneOptionalAdapter;
 import static java.util.Collections.*;
 
 public class FieldParser {
@@ -96,21 +99,25 @@ public class FieldParser {
 		reg(t(Fluid.class), (d, o) -> fluid(o.orElse(Fluids.EMPTY)));
 		
 		reg(EntryType.of(List.class, EntryType.unchecked(Pair.class)), (ctx, d, at, t, c, o) -> {
-			if (!(at instanceof AnnotatedParameterizedType))
-				throw new UnexpectedFieldParsingException(
-				  d, "Unexpected type found introspecting config field type: " +
-				     at.getClass().getCanonicalName());
-			AnnotatedType tt = ((AnnotatedParameterizedType) at).getAnnotatedActualTypeArguments()[0];
-			if (!(tt instanceof AnnotatedParameterizedType))
-				throw new UnexpectedFieldParsingException(
-				  d, "Unexpected type found introspecting config field type: " +
-				     tt.getClass().getCanonicalName());
-			ConfigEntryBuilder<?, ?, ?, ?>[] args = parseSubTypes(ctx, d, ((AnnotatedParameterizedType) tt), "k", "v");
+			AnnotatedParameterizedType apt = requireParameterized(d, at);
+			AnnotatedType tt = apt.getAnnotatedActualTypeArguments()[0];
+			AnnotatedParameterizedType pt = requireParameterized(d, tt);
+			ConfigEntryBuilder<?, ?, ?, ?>[] args = parseSubTypes(ctx, d, pt, "k", "v");
 			return makePairList(args[0], args[1], o.orElse(emptyList()));
 		});
 		rec(t(List.class), (ctx, d, sub, t, c, o) -> makeList(sub[0], o.orElse(emptyList())), "v");
 		rec(t(Set.class), (ctx, d, sub, t, c, o) -> makeSet(sub[0], o.orElse(emptySet())), "v");
 		rec(t(Map.class), (ctx, d, sub, t, c, o) -> makeMap(sub[0], sub[1], o.orElse(emptyMap())), "k", "v");
+		
+		// Captioned lists
+		rec(EntryType.of(Pair.class, EntryType.wildcard(), EntryType.unchecked(List.class)),
+		    (ctx, d, sub, t, c, o) -> makeCaptionedList(sub[0], sub[1], o.orElse(null)), "caption", "list");
+		rec(EntryType.of(Pair.class, EntryType.wildcard(), EntryType.unchecked(Set.class)),
+		    (ctx, d, sub, t, c, o) -> makeCaptionedSet(sub[0], sub[1], o.orElse(null)), "caption", "set");
+		rec(EntryType.of(Pair.class, EntryType.wildcard(), EntryType.unchecked(Map.class)),
+		    (ctx, d, sub, t, c, o) -> makeCaptionedMap(sub[0], sub[1], o.orElse(null)), "caption", "map");
+		rec(EntryType.of(Pair.class, EntryType.wildcard(), EntryType.of(List.class, EntryType.unchecked(Pair.class))),
+		    (ctx, d, sub, t, c, o) -> makeCaptionedPairList(sub[0], sub[1], o.orElse(null)), "caption", "list");
 		rec(t(Pair.class), (ctx, d, sub, t, c, o) -> makePair(
 		  sub[0], sub[1], o.orElse(Pair.of(sub[0].getValue(), sub[1].getValue()))), "l", "r");
 		rec(t(Triple.class), (ctx, d, sub, t, c, o) -> makeTriple(
@@ -164,6 +171,10 @@ public class FieldParser {
 			return bb;
 		}).orElse(b));
 		
+		// @Bake.Scale
+		dec(FloatEntryBuilder.class, Bake.Scale.class, (a, b) -> b.bakeScale((float) a.value()));
+		dec(DoubleEntryBuilder.class, Bake.Scale.class, (a, b) -> b.bakeScale(a.value()));
+		
 		// @HasAlpha
 		dec(ColorEntryBuilder.class, HasAlpha.class, (a, b) -> b.alpha(a.value()));
 		dec(ConfigEntryBuilder.class, Default.class, (c, d, a, b) -> {
@@ -206,6 +217,13 @@ public class FieldParser {
 			return b;
 		});
 		dec(ConfigEntryBuilder.class, (c, d, b) -> addTooltip(c, b));
+		dec(ConfigEntryBuilder.class, (c, d, b) -> {
+			EntryType<?> type = getType(b);
+			MethodWrapper<?> m = c.findOwnMethod(
+			  "$bake", oneOptionalAdapter(type), ReturnTypeAdapter.identity(type));
+			if (m != null) return ((ConfigEntryBuilder<Object, ?, ?, ?>) b).baked(m::invoke);
+			return b;
+		});
 		dec(StringEntryBuilder.class, (c, d, b) -> d.get(Suggest.class).map(s -> {
 			if (s.value().length > 0) {
 				return b.suggest(s.value());
@@ -217,10 +235,37 @@ public class FieldParser {
 		dec(ConfigEntryBuilder.class, (c, d, b) -> d.get(Error.class).map(s -> {
 			if (s.method().isEmpty()) throw new InvalidConfigEntryFieldAnnotationException(
 			  d, "@Error annotation must specify a non empty method name");
+			if (cast(b).getErrorSupplier() != null) throw new InvalidConfigEntryFieldAnnotationException(
+			  d, "@Error annotation used for field of entry which already has an error supplier");
 			MethodWrapper<Optional<ITextComponent>> m = c.requireMethod(
 			  s.method(), oneOptionalAdapter(getType(b)), ERROR_TYPE_ADAPTERS);
 			ConfigEntryBuilder<?, ?, ?, ?> bb = b;
 			return bb = bb.error(m::invoke);
+		}).orElse(b));
+		dec(ConfigEntryBuilder.class, (c, d, b) -> d.get(Bake.class).map(s -> {
+			if (s.method().isEmpty()) throw new InvalidConfigEntryFieldAnnotationException(
+			  d, "@Bake annotation must specify a non empty method name");
+			if (cast(b).getPresentation() != null) throw new InvalidConfigEntryFieldAnnotationException(
+			  d, "@Bake annotation used for field of entry which already has a baking method");
+			EntryType<?> type = getType(b);
+			Optional<Annotation> pOpt = d.getParent(s);
+			ParametersAdapter[] pars = pOpt.map(
+			  pa -> lastOptionalAdapter(EntryType.unchecked(pa.annotationType()), type)
+			).orElse(ParametersAdapter.singleSignature(type));
+			BindingContext ctx = c;
+			if (pOpt.isPresent()) {
+				Class<?> declaringClass = pOpt.get().annotationType().getDeclaringClass();
+				if (declaringClass != null)
+					ctx = new BindingContext(declaringClass, ctx);
+			}
+			MethodWrapper<?> m = ctx.requireMethod(
+			  s.method(), pars, ReturnTypeAdapter.identity(type));
+			ConfigEntryBuilder<Object, ?, ?, ?> bb = b;
+			if (pOpt.isPresent()) {
+				Annotation a = pOpt.get();
+				return bb = bb.baked(v -> m.invoke(v, a));
+			}
+			return bb = bb.baked(m::invoke);
 		}).orElse(b));
 	}
 	
@@ -238,7 +283,7 @@ public class FieldParser {
 	};
 	
 	public static ConfigEntryBuilder<?, ?, ?, ?> addTooltip(
-	  MethodBindingContext c, ConfigEntryBuilder<?, ?, ?, ?> b
+	  BindingContext c, ConfigEntryBuilder<?, ?, ?, ?> b
 	) {
 		MethodWrapper<List<ITextComponent>> m = c.findOwnMethod(
 		  "$tooltip", oneOptionalAdapter(getType(b)), TOOLTIP_TYPE_ADAPTERS);
@@ -246,18 +291,8 @@ public class FieldParser {
 		return b;
 	}
 	
-	@SuppressWarnings("unchecked")
-	private static <T> AbstractConfigEntryBuilder<T, ?, ?, ?, ?, ?> cast(ConfigEntryBuilder<T, ?, ?, ?> b) {
-		return (AbstractConfigEntryBuilder<T, ?, ?, ?, ?, ?>) b;
-	}
-	
-	static EntryType<?> getType(ConfigEntryBuilder<?, ?, ?, ?> b) {
-		AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> bb = cast(b);
-		return bb.getEntryType();
-	}
-	
 	public static ConfigEntryBuilder<?, ?, ?, ?> parseInstanceField(
-	  MethodBindingContext ctx, Field field, Object instance
+	  BindingContext ctx, Field field, Object instance
 	) {
 		try {
 			ctx.setContextName(field);
@@ -269,7 +304,7 @@ public class FieldParser {
 		}
 	}
 	
-	public static ConfigEntryBuilder<?, ?, ?, ?> parseField(MethodBindingContext ctx, Field field) {
+	public static ConfigEntryBuilder<?, ?, ?, ?> parseField(BindingContext ctx, Field field) {
 		try {
 			ctx.setContextName(field);
 			Object o = field.get(null);
@@ -281,7 +316,7 @@ public class FieldParser {
 	}
 	
 	public static ConfigEntryBuilder<?, ?, ?, ?> parseSubType(
-	  EntryTypeData parentData, MethodBindingContext ctx, AnnotatedType type, String name
+	  EntryTypeData parentData, BindingContext ctx, AnnotatedType type, String name
 	) {
 		String prevCtx = ctx.getContextName();
 		ctx.setContextName(prevCtx + "$" + name);
@@ -291,7 +326,7 @@ public class FieldParser {
 	}
 	
 	public static ConfigEntryBuilder<?, ?, ?, ?> parseType(
-	  MethodBindingContext ctx, AnnotatedType aType,
+	  BindingContext ctx, AnnotatedType aType,
 	  @Nullable EntryTypeData data, @Nullable EntryTypeData parentData, @Nullable Object value
 	) {
 		Class<?> cls;
@@ -322,7 +357,7 @@ public class FieldParser {
 	}
 	
 	public static ConfigEntryBuilder<?, ?, ?, ?> decorateType(
-	  MethodBindingContext ctx, EntryTypeData data, ConfigEntryBuilder<?, ?, ?, ?> builder
+	  BindingContext ctx, EntryTypeData data, ConfigEntryBuilder<?, ?, ?, ?> builder
 	) {
 		Class<?> cls = builder.getClass();
 		Map<Configure, Class<? extends Annotation>> entries = data.getConfigureAnnotations();
@@ -331,14 +366,14 @@ public class FieldParser {
 			Class<? extends Annotation> cl = entries.get(e);
 			String methodName = e.value();
 			if (!methodName.isEmpty()) {
-				MethodBindingContext c = ctx;
+				BindingContext c = ctx;
 				EntryType<?> t = EntryType.unchecked(cls);
 				Object obj;
 				if (cl != null) {
 					// We look within the declaring class, since annotation
 					//   classes cannot have static methods
 					if (cl.getDeclaringClass() != null)
-						c = new MethodBindingContext(cl.getDeclaringClass(), ctx);
+						c = new BindingContext(cl.getDeclaringClass(), ctx);
 					MethodWrapper<?> m = c.requireCompatibleMethod(methodName, true, lastOptionalAdapter(
 					  EntryType.unchecked(cl), t
 					), ReturnTypeAdapter.identity(t));
@@ -386,8 +421,30 @@ public class FieldParser {
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 	@FunctionalInterface public interface RecursiveFieldTypeBuilder<T> {
 		ConfigEntryBuilder<?, ?, ?, ?> build(
-		  MethodBindingContext ctx, EntryTypeData a, ConfigEntryBuilder<?, ?, ?, ?>[] args,
+		  BindingContext ctx, EntryTypeData a, ConfigEntryBuilder<?, ?, ?, ?>[] args,
 		  AnnotatedParameterizedType type, Class<?> cls, Optional<T> o);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static <T> AbstractConfigEntryBuilder<T, ?, ?, ?, ?, ?> cast(
+	  ConfigEntryBuilder<T, ?, ?, ?> b
+	) {
+		return (AbstractConfigEntryBuilder<T, ?, ?, ?, ?, ?>) b;
+	}
+	
+	private static @NotNull AnnotatedParameterizedType requireParameterized(
+	  EntryTypeData d, AnnotatedType at
+	) {
+		if (!(at instanceof AnnotatedParameterizedType))
+			throw new UnexpectedFieldParsingException(
+			  d, "Unexpected type found introspecting config field type: " +
+			     at.getClass().getCanonicalName());
+		return (AnnotatedParameterizedType) at;
+	}
+	
+	static EntryType<?> getType(ConfigEntryBuilder<?, ?, ?, ?> b) {
+		AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?> bb = cast(b);
+		return bb.getEntryType();
 	}
 	
 	private static <T> EntryType<T> t(Class<T> cls) {
@@ -409,7 +466,7 @@ public class FieldParser {
 	}
 	
 	private static ConfigEntryBuilder<?, ?, ?, ?>[] parseSubTypes(
-	  MethodBindingContext ctx, EntryTypeData d, AnnotatedParameterizedType type, String... names
+	  BindingContext ctx, EntryTypeData d, AnnotatedParameterizedType type, String... names
 	) {
 		AnnotatedType[] subTypes = type.getAnnotatedActualTypeArguments();
 		if (subTypes.length != names.length) throw new UnexpectedFieldParsingException(
@@ -457,17 +514,66 @@ public class FieldParser {
 		return pairList((KB) kb, (VB) b, (List<Pair<K, V>>) l);
 	}
 	
+	@SuppressWarnings("unchecked") @Internal public static <
+	  C, CC, CG, CB extends ConfigEntryBuilder<C, CC, CG, CB> & AtomicEntryBuilder,
+	  L, LC, LG, LB extends ListEntryBuilder<L, LC, LG, LB>
+	> ConfigEntryBuilder<?, ?, ?, ?> makeCaptionedList(
+	  ConfigEntryBuilder<C, ?, ?, ?> cb, ConfigEntryBuilder<?, ?, ?, ?> b, @Nullable Pair<?, ?> v
+	) {
+		CaptionedCollectionEntryBuilder<@NotNull List<@NotNull L>, List<LC>, LG, LB, C, CC, CG, CB>
+		  e = caption((CB) atomic(cb), (LB) b);
+		if (v != null) e = e.withValue((Pair<C, List<L>>) v);
+		return e;
+	}
+	
+	@SuppressWarnings("unchecked") @Internal public static <
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder,
+	  V, C, G, B extends ConfigEntryBuilder<V, C, G, B>,
+	  SB extends EntrySetEntryBuilder<V, C, G, B>
+	> ConfigEntryBuilder<?, ?, ?, ?> makeCaptionedSet(
+	  ConfigEntryBuilder<CV, ?, ?, ?> cb, ConfigEntryBuilder<V, ?, ?, ?> b, @Nullable Pair<?, ?> v
+	) {
+		CaptionedCollectionEntryBuilder<@NotNull Set<@NotNull V>, Set<C>, G, EntrySetEntryBuilder<V, C, G, B>, CV, CC, CG, CB>
+		  e = caption((CB) atomic(cb), (SB) b);
+		if (v != null) e = e.withValue((Pair<CV, Set<V>>) v);
+		return e;
+	}
+	
+	@SuppressWarnings("unchecked") @Internal public static <
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder,
+	  K, KC, KG, KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
+	  V, C, G, B extends ConfigEntryBuilder<V, C, G, B>,
+	  MB extends EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>
+	> ConfigEntryBuilder<?, ?, ?, ?> makeCaptionedMap(
+	  ConfigEntryBuilder<CV, ?, ?, ?> cb, ConfigEntryBuilder<?, ?, ?, ?> mb, @Nullable Pair<?, ?> v
+	) {
+		CaptionedCollectionEntryBuilder<@NotNull Map<@NotNull K, @NotNull V>, Map<KC, C>, Pair<KG, G>, EntryMapEntryBuilder<K, V, KC, C, KG, G, B, KB>, CV, CC, CG, CB>
+		  e = caption((CB) atomic(cb), (MB) mb);
+		if (v != null) e = e.withValue((Pair<CV, Map<K, V>>) v);
+		return e;
+	}
+	
+	@SuppressWarnings("unchecked") @Internal public static <
+	  CV, CC, CG, CB extends ConfigEntryBuilder<CV, CC, CG, CB> & AtomicEntryBuilder,
+	  K, KC, KG, KB extends ConfigEntryBuilder<K, KC, KG, KB> & AtomicEntryBuilder,
+	  V, C, G, B extends ConfigEntryBuilder<V, C, G, B>,
+	  PLB extends EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>
+	> ConfigEntryBuilder<?, ?, ?, ?> makeCaptionedPairList(
+	  ConfigEntryBuilder<CV, ?, ?, ?> cb, ConfigEntryBuilder<?, ?, ?, ?> b, @Nullable Pair<?, ?> v
+	) {
+		CaptionedCollectionEntryBuilder<@NotNull List<@NotNull Pair<@NotNull K, @NotNull V>>, List<Pair<KC, C>>, Pair<KG, G>, EntryPairListEntryBuilder<K, V, KC, C, KG, G, B, KB>, CV, CC, CG, CB>
+		  e = caption((CB) atomic(cb), (PLB) b);
+		if (v != null) e = e.withValue((Pair<CV, List<Pair<K, V>>>) v);
+		return e;
+	}
+	
 	@SuppressWarnings("unchecked") private static <
 	  L, LC, LG, LB extends ConfigEntryBuilder<L, LC, LG, LB> & AtomicEntryBuilder,
 	  R, RC, RG, RB extends ConfigEntryBuilder<R, RC, RG, RB> & AtomicEntryBuilder
 	> ConfigEntryBuilder<?, ?, ?, ?> makePair(
 	  ConfigEntryBuilder<L, ?, ?, ?> lb, ConfigEntryBuilder<R, ?, ?, ?> rb, Pair<?, ?> p
 	) {
-		if (!(lb instanceof AtomicEntryBuilder)) throw new IllegalArgumentException(
-		  "Inner pair type is not atomic: " + lb.getClass().getName());
-		if (!(rb instanceof AtomicEntryBuilder)) throw new IllegalArgumentException(
-		  "Inner pair type is not atomic: " + rb.getClass().getName());
-		return pair((LB) lb, (RB) rb, (Pair<L, R>) p);
+		return pair((LB) atomic(lb), (RB) atomic(rb), (Pair<L, R>) p);
 	}
 	
 	@SuppressWarnings("unchecked") private static <
@@ -478,13 +584,15 @@ public class FieldParser {
 	  ConfigEntryBuilder<L, ?, ?, ?> lb, ConfigEntryBuilder<M, ?, ?, ?> mb,
 	  ConfigEntryBuilder<R, ?, ?, ?> rb, Triple<?, ?, ?> p
 	) {
-		if (!(lb instanceof AtomicEntryBuilder)) throw new IllegalArgumentException(
-		  "Inner pair type is not atomic: " + lb.getClass().getName());
-		if (!(mb instanceof AtomicEntryBuilder)) throw new IllegalArgumentException(
-		  "Inner pair type is not atomic: " + mb.getClass().getName());
-		if (!(rb instanceof AtomicEntryBuilder)) throw new IllegalArgumentException(
-		  "Inner pair type is not atomic: " + rb.getClass().getName());
-		return triple((LB) lb, (MB) mb, (RB) rb, (Triple<L, M, R>) p);
+		return triple((LB) atomic(lb), (MB) atomic(mb), (RB) atomic(rb), (Triple<L, M, R>) p);
+	}
+	
+	@SuppressWarnings("unchecked") private static <
+	  V, C, G, B extends ConfigEntryBuilder<V, C, G, B> & AtomicEntryBuilder
+	> B atomic(ConfigEntryBuilder<?, ?, ?, ?> b) {
+		if (!(b instanceof AtomicEntryBuilder)) throw new IllegalArgumentException(
+		  "Type is not atomic: " + b.getClass().getName());
+		return (B) b;
 	}
 	
 	@SuppressWarnings("unchecked") private static <T, B extends ConfigEntryBuilder<T, ?, ?, ?>> T adapt(

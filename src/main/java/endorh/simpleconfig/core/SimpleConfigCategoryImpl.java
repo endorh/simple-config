@@ -5,12 +5,12 @@ import endorh.simpleconfig.api.SimpleConfig.InvalidConfigValueException;
 import endorh.simpleconfig.api.SimpleConfig.NoSuchConfigGroupError;
 import endorh.simpleconfig.api.SimpleConfigCategory;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
+import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.config.ClientConfig;
 import endorh.simpleconfig.core.SimpleConfigImpl.IGUIEntry;
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
-import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -20,6 +20,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.text.WordUtils;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -89,7 +90,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		return isRoot? "" : name + ".";
 	}
 	
-	@Override public @Nullable AbstractSimpleConfigEntryHolder getParent() {
+	@Override public @NotNull AbstractSimpleConfigEntryHolder getParent() {
 		return root;
 	}
 	
