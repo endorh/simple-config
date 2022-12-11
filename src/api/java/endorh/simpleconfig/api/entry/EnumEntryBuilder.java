@@ -32,13 +32,13 @@ public interface EnumEntryBuilder<E extends Enum<E>>
 	 * Keep in mind that you probably don't need to do this.
 	 * Enum values get automatically mapped translation keys:
 	 * <ul>
-	 *    <li>{@code <modid>.config.enum.<enum_class_name>.<enum_value_name>}</li>
-	 *    <li>{@code <modid>.config.enum.<enum_class_name>.<enum_value_name>:help} (for the
+	 *    <li>{@code <modid>.config.enum.<EnumClassName>.<ENUM_VALUE_NAME>}</li>
+	 *    <li>{@code <modid>.config.enum.<EnumClassName>.<ENUM_VALUE_NAME>:help} (for the
 	 *    tooltip (optional))</li>
 	 * </ul>
-	 * where {@code <modid>} is your mod ID, {@code <enum_class_name>} is the name of the enum
-	 * class in snake_case and {@code <enum_value_name>} is the name of the enum value in
-	 * snake_case.
+	 * where {@code <modid>} is your mod ID, {@code <EnumClassName>} is the name of the enum
+	 * class and {@code <ENUM_VALUE_NAME>} is the name of the enum value, all in their
+	 * original capitalization.
 	 */
 	interface TranslatedEnum {
 		Component getDisplayName();
