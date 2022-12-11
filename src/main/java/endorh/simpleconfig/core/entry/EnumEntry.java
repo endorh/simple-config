@@ -1,6 +1,5 @@
 package endorh.simpleconfig.core.entry;
 
-import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
@@ -165,9 +164,7 @@ public class EnumEntry<E extends Enum<E>>
 	}
 	
 	protected String getEnumTranslationKey(E item) {
-		return parent.getRoot().getModId() + ".config.enum." +
-		       CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, enumClass.getSimpleName()) +
-		       "." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, item.name());
+		return parent.getRoot().getModId() + ".config.enum." + enumClass.getSimpleName() + "." + item.name();
 	}
 	
 	protected String getEnumTooltipKey(E item) {
