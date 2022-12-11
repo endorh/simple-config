@@ -1,7 +1,6 @@
 package endorh.simpleconfig.konfig.entry
 
 import com.electronwill.nightconfig.core.Config
-import com.google.common.base.CaseFormat
 import com.google.common.collect.Maps
 import endorh.simpleconfig.api.AtomicEntryBuilder
 import endorh.simpleconfig.api.ConfigEntryBuilder
@@ -103,7 +102,7 @@ internal class DataClassEntry<D : Any>(
             val proxy = DataClassProxy(value, entries.mapValues { createAdapter(it.value) }, bakedEntries.mapValues {
                 it.value.run {{ bake() }}
             })
-            val prefix = "${entries.values.map { it.root.modId }.firstOrNull() ?: ""}.config.bean.${proxy.typeTranslation}."
+            val prefix = "${entries.values.map { it.root.modId }.firstOrNull() ?: ""}.config.data.${proxy.typeTranslation}."
             entries.entries.forEach { (n, e) ->
                 val key = prefix + proxy.getTranslation(n)
                 e.translation = key
@@ -355,6 +354,6 @@ class DataClassProxy<B: Any>(
     
     override fun getTypeName() = klass.simpleName!!
     override fun getPropertyName(name: String) = "$typeName$$name"
-    override fun getTypeTranslation(): String = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, typeName)
-    override fun getTranslation(property: String): String = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, property)
+    override fun getTypeTranslation() = typeName
+    override fun getTranslation(property: String) = property
 }

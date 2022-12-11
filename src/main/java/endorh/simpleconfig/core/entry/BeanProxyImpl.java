@@ -1,6 +1,5 @@
 package endorh.simpleconfig.core.entry;
 
-import com.google.common.base.CaseFormat;
 import endorh.simpleconfig.core.entry.BeanEntry.ConfigBeanAccessException;
 import endorh.simpleconfig.core.entry.BeanEntry.ConfigBeanIntrospectionException;
 import org.jetbrains.annotations.Nullable;
@@ -116,10 +115,10 @@ public class BeanProxyImpl<B> implements BeanProxy<B> {
 	}
 	
 	@Override public String getTypeTranslation() {
-		return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, getType().getSimpleName());
+		return getType().getSimpleName();
 	}
 	@Override public String getTranslation(String property) {
-		return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, property);
+		return property;
 	}
 	
 	public Class<B> getType() {
