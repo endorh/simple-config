@@ -208,9 +208,9 @@ public class DemoConfigCategory {
 		            //   may clash
 		            // For instance, the enum RockPaperScissors would be
 		            //   mapped to the translation keys
-		            //     {mod-id}.config.enum.rock_paper_scissors.rock
-		            //     {mod-id}.config.enum.rock_paper_scissors.paper
-		            //     {mod-id}.config.enum.rock_paper_scissors.scissors
+		            //     {mod-id}.config.enum.RockPaperScissors.ROCK
+		            //     {mod-id}.config.enum.RockPaperScissors.PAPER
+		            //     {mod-id}.config.enum.RockPaperScissors.SCISSORS
 		            .add("enum_value", option(RockPaperScissors.SCISSORS))
 		            // Enums may define their own translations implementing
 		            //   ITranslatedEnum (see the Placement enum)
@@ -672,7 +672,7 @@ public class DemoConfigCategory {
 	
 	// A common pattern is creating enums for certain config settings
 	// This enum's entries are automatically mapped to translation
-	//    keys under the key '{mod-id}.config.enum.rock_paper_scissors.*'
+	//    keys under the key '{mod-id}.config.enum.RockPaperScissors.*'
 	public enum RockPaperScissors {
 		ROCK, PAPER, SCISSORS
 	}
@@ -685,7 +685,7 @@ public class DemoConfigCategory {
 		
 		// Although in this case it doesn't make much difference
 		@Override public Component getDisplayName() {
-			return ttc(prefix("enum.placement." + name().toLowerCase()));
+			return ttc(prefix("enum.Placement." + name()));
 		}
 	}
 	
