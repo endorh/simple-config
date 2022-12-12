@@ -1,5 +1,6 @@
 package endorh.simpleconfig.demo;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ConfigCategoryBuilder;
@@ -12,6 +13,7 @@ import endorh.simpleconfig.api.entry.EnumEntryBuilder.TranslatedEnum;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.range.DoubleRange;
 import endorh.simpleconfig.api.range.FloatRange;
+import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -28,10 +30,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.Direction.Axis;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
 import org.apache.commons.lang3.tuple.Pair;
@@ -747,19 +746,20 @@ public class DemoConfigCategory {
 		}
 	}
 	
-	public static class StringIntPairSerializer implements
-	                                            ConfigEntrySerializer<Pair<String, Integer>> {
+	public static class StringIntPairSerializer implements ConfigEntrySerializer<Pair<String, Integer>> {
+		private static final Splitter COMMA_SPLITTER = Splitter.on(',');
+		
 		@Override public String serializeConfigEntry(Pair<String, Integer> value) {
 			return value.getKey() + ", " + value.getValue();
 		}
 		@Override public Optional<Pair<String, Integer>> deserializeConfigEntry(String value) {
 			if (value == null || value.isEmpty() || value.matches("(?s).*?,.*?,.*+"))
 				return Optional.empty();
-			final String[] split = value.split(",");
-			if (split.length != 2)
+			List<String> split = COMMA_SPLITTER.splitToList(value);
+			if (split.size() != 2)
 				return Optional.empty();
 			try {
-				return Optional.of(Pair.of(split[0].trim(), Integer.parseInt(split[1].trim())));
+				return Optional.of(Pair.of(split.get(0).trim(), Integer.parseInt(split.get(1).trim())));
 			} catch (NumberFormatException ignored) {
 				return Optional.empty();
 			}
@@ -768,6 +768,30 @@ public class DemoConfigCategory {
 		//   API will match fields with type ImmutablePair instead
 		@Override public @NotNull Class<?> getClass(Pair<String, Integer> value) {
 			return Pair.class;
+		}
+		
+		@Override public @NotNull TextFormatter getConfigTextFormatter() {
+			return text -> {
+				List<String> split = COMMA_SPLITTER.splitToList(text);
+				IFormattableTextComponent c = StringTextComponent.EMPTY.deepCopy();
+				if (!split.isEmpty()) c = c
+				  .append(new StringTextComponent(split.get(0)).mergeStyle(TextFormatting.DARK_GREEN));
+				if (split.size() > 1) {
+					Style numberStyle = Style.EMPTY.applyFormatting(TextFormatting.AQUA);
+					try {
+						Integer.parseInt(split.get(1).trim());
+					} catch (NumberFormatException ignored) {
+						numberStyle = numberStyle
+						  .applyFormatting(TextFormatting.RED).applyFormatting(TextFormatting.UNDERLINE);
+					}
+					c = c.append(new StringTextComponent(",").mergeStyle(TextFormatting.GOLD))
+					  .append(new StringTextComponent(split.get(1)).mergeStyle(numberStyle));
+				}
+				for (int i = 2; i < split.size(); i++) c = c
+				  .append(new StringTextComponent("," + split.get(i))
+				            .mergeStyle(TextFormatting.RED).mergeStyle(TextFormatting.UNDERLINE));
+				return c;
+			};
 		}
 	}
 	

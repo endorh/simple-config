@@ -52,9 +52,8 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 			this.typeClass = serializer.getClass(value);
 			//noinspection unchecked
 			this.backingFieldBuilder =
-			  typeClass != null
-			  ? BackingField.<V, V>field(Function.identity(), (Class<V>) typeClass)
-			    .withCommitter(Function.identity()) : null;
+			  BackingField.<V, V>field(Function.identity(), (Class<V>) typeClass)
+			    .withCommitter(Function.identity());
 			this.formatter = serializer.getConfigTextFormatter();
 		}
 		
@@ -73,7 +72,9 @@ public class SerializableEntry<V> extends AbstractSerializableEntry<V> {
 		
 		@Override
 		protected SerializableEntry<V> buildEntry(ConfigEntryHolder parent, String name) {
-			return new SerializableEntry<>(parent, name, value, serializer, deserializer, typeClass);
+			SerializableEntry<V> entry = new SerializableEntry<>(parent, name, value, serializer, deserializer, typeClass);
+			entry.textFormatter = formatter;
+			return entry;
 		}
 		
 		@Override protected Builder<V> createCopy(V value) {
