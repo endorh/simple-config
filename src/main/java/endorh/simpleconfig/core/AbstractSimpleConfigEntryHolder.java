@@ -252,6 +252,24 @@ public abstract class AbstractSimpleConfigEntryHolder implements ConfigEntryHold
 		return child;
 	}
 	
+	@Internal public void removeEntry(String name) {
+		String[] split = DOT.split(name, 2);
+		if (split.length == 1) {
+			entries.remove(name);
+		} else if (children.containsKey(split[0])) {
+			children.get(split[0]).removeEntry(split[1]);
+		} else throw new NoSuchConfigGroupError(getPath() + "." + split[0]);
+	}
+	
+	@Internal public void removeChild(String name) {
+		String[] split = DOT.split(name, 2);
+		if (split.length == 1) {
+			children.remove(name);
+		} else if (children.containsKey(split[0])) {
+			children.get(split[0]).removeChild(split[1]);
+		} else throw new NoSuchConfigGroupError(getPath() + "." + split[0]);
+	}
+	
 	/**
 	 * Get a config entry by name or dot-separated path<br>
 	 * Doesn't check for the types to be correct<br>

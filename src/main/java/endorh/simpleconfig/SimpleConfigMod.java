@@ -30,12 +30,16 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ExtensionPoint;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.network.FMLNetworkConstants;
 import net.minecraftforge.registries.IForgeRegistry;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.lwjgl.glfw.GLFW;
 
@@ -70,6 +74,10 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 		SimpleConfigDiscoverer.discoverConfigs();
 		
 		SimpleConfigNetworkHandler.registerPackets();
+		
+		ModLoadingContext.get().registerExtensionPoint(
+		  ExtensionPoint.DISPLAYTEST, () -> Pair.of(
+			 () -> FMLNetworkConstants.IGNORESERVERONLY, (s, b) -> true));
 	}
 	
 	@SubscribeEvent
