@@ -41,6 +41,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +53,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,12 +66,16 @@ import static endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2
 public class MinecraftServerConfigWrapper {
 	private static final Logger LOGGER = LogManager.getLogger();
 	public static final String MINECRAFT_MOD_ID = "minecraft";
+	public static final String EDIT_PROTECTED_PROPERTIES = "edit-protected-properties";
 	private static SimpleConfigImpl config;
+	private static @Nullable Consumer<MinecraftServer> binder = null;
 	
 	private static void wrapMinecraftGameRules() {
 		try {
 			MinecraftGameRulesWrapperBuilder builder = new MinecraftGameRulesWrapperBuilder();
-			config = builder.build();
+			Pair<SimpleConfigImpl, Consumer<MinecraftServer>> pair = builder.build();
+			config = pair.getLeft();
+			binder = pair.getRight();
 		} catch (RuntimeException e) {
 			LOGGER.error("Error wrapping Minecraft server config", e);
 		}
@@ -77,19 +83,21 @@ public class MinecraftServerConfigWrapper {
 	
 	@SubscribeEvent
 	public static void onLoadComplete(FMLLoadCompleteEvent event) {
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> MinecraftServerConfigWrapper::wrapMinecraftGameRules);
+		wrapMinecraftGameRules();
 	}
 	
 	@EventBusSubscriber(value=Dist.DEDICATED_SERVER, modid=SimpleConfigMod.MOD_ID)
 	public static class ServerEventSubscriber {
 		@SubscribeEvent public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-			wrapMinecraftGameRules();
 			DedicatedServer server = (DedicatedServer) event.getServer();
+			if (binder != null) binder.accept(server);
 			// Add default value to file
 			MinecraftServerPropertyEntryDelegate<Boolean> delegate = new MinecraftServerPropertyEntryDelegate<>(
-			  "edit-protected-properties", boolean.class, false, null);
+			  EDIT_PROTECTED_PROPERTIES, boolean.class, false, null);
 			delegate.bind(server);
 			delegate.setValue(delegate.getValue());
+			if (!delegate.getValue())
+				removeProtectedProperties();
 		}
 	}
 	
@@ -103,10 +111,15 @@ public class MinecraftServerConfigWrapper {
 		Settings$get.setAccessible(true);
 		try {
 			return (boolean) Settings$get.invoke(
-			  properties, "edit-protected-properties", false);
+			  properties, EDIT_PROTECTED_PROPERTIES, false);
 		} catch (IllegalAccessException | InvocationTargetException ignored) {
 			return false;
 		}
+	}
+	
+	@OnlyIn(Dist.DEDICATED_SERVER)
+	private static void removeProtectedProperties() {
+		config.removeChild("properties.protected");
 	}
 	
 	public static class MinecraftGameRulesWrapperBuilder {
@@ -118,7 +131,7 @@ public class MinecraftServerConfigWrapper {
 		  vb = new MinecraftGameRuleConfigValueBuilder();
 		private final List<MinecraftServerPropertyEntryDelegate<?>> delegates = Lists.newArrayList();
 		
-		public SimpleConfigImpl build() {
+		public Pair<SimpleConfigImpl, @Nullable Consumer<MinecraftServer>> build() {
 			try {
 				with(
 				  category("gamerule").withIcon(MinecraftOptions.GAMERULES).withColor(0x804242FF),
@@ -154,11 +167,10 @@ public class MinecraftServerConfigWrapper {
 					}
 				}));
 				SimpleConfigImpl config = builder.buildAndRegister(null, vb);
-				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> () -> {
-					DedicatedServer server = (DedicatedServer) ServerLifecycleHooks.getCurrentServer();
-					delegates.forEach(d -> d.bind(server));
-				});
-				return config;
+				return Pair.of(
+				  config, FMLEnvironment.dist == Dist.DEDICATED_SERVER
+				          ? s -> delegates.forEach(d -> d.bind((DedicatedServer) s))
+				          : null);
 			} catch (RuntimeException e) {
 				e.printStackTrace();
 				throw e;
@@ -250,28 +262,27 @@ public class MinecraftServerConfigWrapper {
 				addFlag("resource-pack-prompt", string(""));
 			});
 			
-			if (FMLEnvironment.dist == Dist.CLIENT || areProtectedPropertiesEditable())
-				with(group("protected"), () -> {
-					addProtected("edit-protected-properties", enable(false));
-					addProtected("online-mode", yesNo(true));
-					addProtected("prevent-proxy-connections", yesNo(false));
-					
-					addProtected("server-ip", string(""));
-					addProtected("server-port", number(25565));
-					
-					addProtected("enable-query", yesNo(false));
-					addProtected("query.port", number(25565));
-					addProtected("enable-rcon", yesNo(false));
-					addProtected("rcon.port", number(25575));
-					addProtected("rcon.password", string(""));
-					
-					addProtected("broadcast-rcon-to-ops", yesNo(true));
-					addProtected("broadcast-console-to-ops", yesNo(true));
-					
-					addProtected("enable-jmx-monitoring", yesNo(false));
-					
-					addProtected("text-filtering-config", string(""));
-				});
+			with(group("protected"), () -> {
+				addProtected(EDIT_PROTECTED_PROPERTIES, enable(false));
+				addProtected("online-mode", yesNo(true));
+				addProtected("prevent-proxy-connections", yesNo(false));
+				
+				addProtected("server-ip", string(""));
+				addProtected("server-port", number(25565));
+				
+				addProtected("enable-query", yesNo(false));
+				addProtected("query.port", number(25565));
+				addProtected("enable-rcon", yesNo(false));
+				addProtected("rcon.port", number(25575));
+				addProtected("rcon.password", string(""));
+				
+				addProtected("broadcast-rcon-to-ops", yesNo(true));
+				addProtected("broadcast-console-to-ops", yesNo(true));
+				
+				addProtected("enable-jmx-monitoring", yesNo(false));
+				
+				addProtected("text-filtering-config", string(""));
+			});
 			target.text("protected-disclaimer");
 		}
 		

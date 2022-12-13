@@ -378,7 +378,7 @@ public class SimpleConfigBuilderImpl
 			  n -> groups.containsKey(n)? groups.get(n) : entriesByName.get(n)
 			).toList();
 			cat.build(
-			  unmodifiableMap(entriesByName), unmodifiableMap(groups),
+			  entriesByName, groups,
 			  order, icon, tint);
 			if (!isRoot) builder.exitSection();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
