@@ -675,7 +675,7 @@ open class KonfigGroup protected constructor(
           CaptionWrapperDelegateProvider(builder, entryBuilder.configure())
         operator fun invoke(configure: B.() -> B) = configure(configure)
         
-        infix fun <T> baked(transform: (V) -> T) =
+        infix fun <T> transform(transform: (V) -> T) =
           TransformingCaptionWrapperDelegateProvider(builder, entryBuilder, transform)
     }
     
