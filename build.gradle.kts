@@ -30,7 +30,7 @@ val antlrVersion: String by extra
 object V {
     val api = "1.0.0"
     val kotlinApi = api
-    val mod = "1.0.0"
+    val mod = api
     val minecraft = "1.17.1"
     val forge = "37.1.1"
     val minecraftForge = "$minecraft-$forge"
@@ -363,8 +363,8 @@ tasks.withType<Jar>().all {
     manifest { attributes(jarAttributes) }
 }
 
-fun Jar.setArchive(baseName: String, classifier: String = "", version: String = V.mod) {
-    archiveBaseName.set(baseName)
+fun Jar.setArchive(classifier: String = "", version: String = V.mod) {
+    archiveBaseName.set(baseArchiveName)
     archiveClassifier.set(classifier)
     archiveVersion.set(version)
 }
@@ -394,19 +394,19 @@ fun ShadowJar.configureShadowJar() {
 }
 
 tasks.shadowJar {
-    setArchive(baseArchiveName, "deobf")
+    setArchive("deobf")
     
     configureShadowJar()
 }
 
 val reobfShadowJarTask = tasks.register<ShadowJar>("reobfShadowJar") {
-    setArchive(baseArchiveName, "") // Replace default jar
+    setArchive("") // Replace default jar
     
     configureShadowJar()
 }
 
 val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
-    setArchive(baseArchiveName, "sources")
+    setArchive("sources")
     
     from(mainSourceSet.allSource)
     from(apiSourceSet.allSource)
@@ -415,35 +415,21 @@ val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
 }
 
 val apiJarTask = tasks.register<Jar>("apiJar") {
-    setArchive("$baseArchiveName-api", "", V.api)
+    setArchive("api", V.api)
     
     from(apiSourceSet.output)
 }
 
-val apiSourcesJarTask = tasks.register<Jar>("apiSourcesJar") {
-    setArchive("$baseArchiveName-api", "sources", V.api)
-    
-    from(apiSourceSet.allJava)
-}
-
 val kotlinApiJarTask = tasks.register<Jar>("kotlinApiJar") {
-    setArchive("$simpleKonfig-${V.minecraft}-api", "", V.kotlinApi)
+    setArchive("kotlin-api", V.kotlinApi)
     
     // Includes the Java API as part of the Kotlin API
     from(kotlinApiSourceSet.output)
     from(apiSourceSet.output)
 }
 
-val kotlinApiSourcesJarTask = tasks.register<Jar>("kotlinApiSourcesJar") {
-    setArchive("$simpleKonfig-${V.minecraft}-api", "sources", V.kotlinApi)
-    
-    // Includes the Java API as part of the Kotlin API
-    from(kotlinApiSourceSet.allSource)
-    from(apiSourceSet.allJava)
-}
-
 tasks.jar {
-    setArchive(baseArchiveName, "flat")
+    setArchive("flat")
 }
 
 // Process resources
@@ -486,8 +472,6 @@ artifacts {
     archives(apiJarTask.get())
     archives(kotlinApiJarTask.get())
     archives(sourcesJarTask.get())
-    archives(apiSourcesJarTask.get())
-    archives(kotlinApiSourcesJarTask.get())
 }
 
 publishing {
@@ -511,42 +495,14 @@ publishing {
             version = V.mod
     
             artifact(reobfShadowJarTask.get())
+            artifact(apiJarTask.get())
+            artifact(kotlinApiJarTask.get())
             artifact(sourcesJarTask.get())
     
             pom {
                 name.set(displayName)
                 url.set(page)
                 description.set(modDescription)
-            }
-        }
-        
-        register<MavenPublication>("api") {
-            artifactId = "$modId-${V.minecraft}-api"
-            version = V.api
-    
-            artifact(apiJarTask.get())
-            artifact(apiSourcesJarTask.get())
-    
-            pom {
-                name.set(apiDisplayName)
-                url.set(page)
-                description.set(modDescription)
-            }
-        }
-    
-        publications {
-            register<MavenPublication>("kotlinApi") {
-                artifactId = "$simpleKonfig-${V.minecraft}-api"
-                version = V.kotlinApi
-    
-                artifact(kotlinApiJarTask.get())
-                artifact(kotlinApiSourcesJarTask.get())
-    
-                pom {
-                    name.set(kotlinApiDisplayName)
-                    url.set(page)
-                    description.set(modDescription)
-                }
             }
         }
     }
