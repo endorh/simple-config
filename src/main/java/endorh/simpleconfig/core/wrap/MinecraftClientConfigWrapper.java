@@ -368,8 +368,10 @@ public class MinecraftClientConfigWrapper {
 				BiConsumer<GameSettings, Integer> setFromIdx = opt::setValueIndex;
 				setter = (gs, e) -> {
 					int i = values.indexOf(e);
+					setFromIdx.accept(gs, i);
+					if (getter.apply(gs).equals(e)) return;
 					for (int j = 0; j < values.size(); j++) {
-						setFromIdx.accept(gs, i);
+						setFromIdx.accept(gs, 1);
 						if (getter.apply(gs).equals(e)) return;
 					}
 					LOGGER.error("Failed to set option " + getName(opt) + " to " + e);
