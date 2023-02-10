@@ -72,6 +72,12 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements SimpleConfig {
 	private static final Map<Pair<String, Type>, SimpleConfigImpl> INSTANCES = new ConcurrentHashMap<>();
+	@Internal public static final SimpleConfigImpl DUMMY = new SimpleConfigImpl(
+	  "", Type.SERVER, "dummy", null, null, null);
+	static {
+		INSTANCES.remove(Pair.of("", Type.SERVER));
+	}
+	
 	private static final Pattern LINE_BREAK = Pattern.compile("\\R");
 
 	protected final String defaultTitle;
