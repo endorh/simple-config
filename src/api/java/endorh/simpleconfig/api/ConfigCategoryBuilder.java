@@ -1,11 +1,15 @@
 package endorh.simpleconfig.api;
 
 import endorh.simpleconfig.api.ui.icon.Icon;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCategoryBuilder> {
 	/**
@@ -66,4 +70,12 @@ public interface ConfigCategoryBuilder extends ConfigEntryHolderBuilder<ConfigCa
 	 * @see ConfigEntryHolderBuilder#n(ConfigGroupBuilder)
 	 */
 	@Contract("_, _ -> this") @NotNull ConfigCategoryBuilder n(ConfigGroupBuilder group, int index);
+	
+	/**
+	 * Set the description for this config category.<br>
+	 * <br>
+	 * Category descriptions are mapped automatically from translation keys.
+	 * This method exists only for wrapped categories.
+	 */
+	@Internal @Contract("_ -> this") @NotNull ConfigCategoryBuilder withDescription(Supplier<List<Component>> description);
 }

@@ -12,7 +12,6 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.MinecraftOptions;
 import endorh.simpleconfig.core.*;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.ConfigValueBuilder;
 import endorh.simpleconfig.core.wrap.MinecraftServerConfigWrapper.MinecraftGameRulesWrapperBuilder.MinecraftServerPropertyEntryDelegate;
-import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
@@ -44,6 +43,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -76,8 +76,8 @@ public class MinecraftServerConfigWrapper {
 		try {
 			MinecraftGameRulesWrapperBuilder builder = new MinecraftGameRulesWrapperBuilder();
 			Pair<SimpleConfigImpl, Consumer<MinecraftServer>> pair = builder.build();
-			config = pair.left();
-			binder = pair.right();
+			config = pair.getLeft();
+			binder = pair.getRight();
 		} catch (RuntimeException e) {
 			LOGGER.error("Error wrapping Minecraft Server config", e);
 			throw e;
@@ -587,7 +587,7 @@ public class MinecraftServerConfigWrapper {
 			  AbstractConfigEntry<?, ?, ?> entry
 			) {}
 			
-			@Override public ForgeConfigSpec build() {
+			@Override public Pair<ForgeConfigSpec, List<ForgeConfigSpec>> build() {
 				return null;
 			}
 		}

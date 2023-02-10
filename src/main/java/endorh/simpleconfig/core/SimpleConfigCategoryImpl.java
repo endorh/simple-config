@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.stripFormattingCodes;
 
@@ -43,6 +44,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 	public final String name;
 	protected final String title;
 	protected final String tooltip;
+	protected @Nullable Supplier<List<Component>> description;
 	protected final @Nullable Consumer<SimpleConfigCategory> baker;
 	protected Map<String, SimpleConfigGroupImpl> groups;
 	protected List<IGUIEntry> order;
@@ -68,7 +70,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 	@Internal protected void build(
 	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
 	  Map<String, SimpleConfigGroupImpl> groups, List<IGUIEntry> order,
-	  Icon icon, int color
+	  @Nullable Supplier<List<Component>> description, Icon icon, int color
 	) {
 		if (this.entries != null)
 			throw new IllegalStateException("Called buildEntry() twice");
@@ -76,6 +78,7 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		this.groups = groups;
 		children = groups;
 		this.order = order;
+		this.description = description;
 		this.icon = icon;
 		this.color = color;
 	}
@@ -136,10 +139,12 @@ public class SimpleConfigCategoryImpl extends AbstractSimpleConfigEntryHolder
 		category.setEditable(getRoot().canEdit());
 		category.setTitle(getTitle());
 		category.setDescription(
-		  () -> I18n.exists(tooltip)
-		        ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new Component[0]))
-		        : Optional.empty());
-		root.getFilePath().ifPresent(category::setContainingFile);
+		  () -> description != null
+		        ? Optional.of(description.get().toArray(Component[]::new))
+		        : I18n.exists(tooltip)
+		          ? Optional.of(SimpleConfigTextUtil.splitTtc(tooltip).toArray(new Component[0]))
+		          : Optional.empty());
+		root.getFilePath(name).ifPresent(category::setContainingFile);
 		if (background != null) {
 			category.setBackground(background);
 		} else if (parent.background != null) {

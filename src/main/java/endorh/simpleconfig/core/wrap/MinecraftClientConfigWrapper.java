@@ -43,6 +43,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -536,7 +537,7 @@ public class MinecraftClientConfigWrapper {
 			  AbstractConfigEntry<?, ?, ?> entry
 			) {}
 			
-			@Override public ForgeConfigSpec build() {
+			@Override public Pair<ForgeConfigSpec, List<ForgeConfigSpec>> build() {
 				return null;
 			}
 		}

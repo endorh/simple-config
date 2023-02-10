@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
 import net.minecraft.CrashReport;
 import net.minecraft.ReportedException;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -19,6 +20,7 @@ import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +30,9 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -233,6 +237,7 @@ public class SimpleConfigBuilderImpl
 		protected SimpleConfigBuilderImpl parent;
 		protected final String name;
 		protected String title;
+		protected @Nullable Supplier<List<Component>> description = null;
 		protected Icon icon = Icon.EMPTY;
 		protected int tint = 0;
 		protected Class<?> configClass;
@@ -261,6 +266,13 @@ public class SimpleConfigBuilderImpl
 			
 			for (GroupBuilder group : groups.values())
 				group.setParent(this);
+		}
+		
+		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withDescription(
+		  Supplier<List<Component>> description
+		) {
+			this.description = description;
+			return this;
 		}
 		
 		@Override @Contract("_ -> this") public @NotNull CategoryBuilder withBaker(
@@ -379,7 +391,7 @@ public class SimpleConfigBuilderImpl
 			).toList();
 			cat.build(
 			  entriesByName, groups,
-			  order, icon, tint);
+			  order, description, icon, tint);
 			if (!isRoot) builder.exitSection();
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 				cat.decorator = decorator;
@@ -706,7 +718,7 @@ public class SimpleConfigBuilderImpl
 		  AbstractConfigEntry<?, ?, ?> entry);
 		public void enterSection(String name) {}
 		public void exitSection() {}
-		public abstract ForgeConfigSpec build();
+		public abstract Pair<ForgeConfigSpec, List<ForgeConfigSpec>> build();
 	}
 	
 	protected static class ForgeConfigSpecConfigValueBuilder extends ConfigValueBuilder {
@@ -733,8 +745,8 @@ public class SimpleConfigBuilderImpl
 		@Override public void exitSection() {
 			builder.pop();
 		}
-		@Override public ForgeConfigSpec build() {
-			return builder.build();
+		@Override public Pair<ForgeConfigSpec, List<ForgeConfigSpec>> build() {
+			return Pair.of(builder.build(), emptyList());
 		}
 	}
 	

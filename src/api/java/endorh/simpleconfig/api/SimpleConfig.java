@@ -74,6 +74,13 @@ public interface SimpleConfig extends ConfigEntryHolder {
 	 */
 	Optional<Path> getFilePath();
 	
+	/**
+	 * Return the actual path of the file for this category or the whole config, if found
+	 */
+	default Optional<Path> getFilePath(String category) {
+		return getFilePath();
+	}
+	
 	@Internal String getFileName();
 	
 	/**
