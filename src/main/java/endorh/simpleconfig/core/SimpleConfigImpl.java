@@ -63,6 +63,7 @@ import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_PRESETS_DIR;
 import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 import static endorh.simpleconfig.yaml.SimpleConfigCommentedYamlWriter.commentLine;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -102,7 +103,8 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	 * Order used in the config screen
 	 */
 	protected List<IGUIEntry> order;
-	protected ForgeConfigSpec spec;
+	@Nullable protected ForgeConfigSpec spec;
+	@Nullable protected List<ForgeConfigSpec> extraSpecs;
 	@OnlyIn(Dist.CLIENT) protected @Nullable BiConsumer<SimpleConfig, ConfigScreenBuilder> decorator;
 	protected @Nullable Predicate<SimpleConfigCategory> categoryFilter;
 	protected @Nullable ResourceLocation background;
@@ -111,6 +113,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
 	protected Set<Player> remoteListeners = new HashSet<>();
 	private ModConfig modConfig;
+	private Map<String, ModConfig> extraModConfigs;
 	private ModContainer modContainer;
 	private @Nullable LiteralArgumentBuilder<CommandSourceStack> commandRoot;
 	private Map<String, NodeComments> comments = new HashMap<>();
@@ -182,13 +185,20 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	}
 	
 	@Override public boolean isWrapper() {
-		return !(modConfig instanceof SimpleConfigModConfig);
+		return !(modConfig instanceof SimpleConfigModConfig) || !extraModConfigs.isEmpty();
 	}
 	
 	@Override public Optional<Path> getFilePath() {
 		ModConfig modConfig = getModConfig();
 		return modConfig != null && modConfig.getConfigData() instanceof CommentedFileConfig
 		       ? Optional.of(modConfig.getFullPath()) : Optional.empty();
+	}
+	
+	@Override public Optional<Path> getFilePath(String category) {
+		ModConfig config = extraModConfigs.get(category);
+		if (config == null) return getFilePath();
+		return config.getConfigData() instanceof CommentedFileConfig
+		       ? Optional.of(config.getFullPath()) : Optional.empty();
 	}
 	
 	/**
@@ -198,7 +208,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	  Map<String, AbstractConfigEntry<?, ?, ?>> entries,
 	  Map<String, SimpleConfigCategoryImpl> categories,
 	  Map<String, SimpleConfigGroupImpl> groups,
-	  List<IGUIEntry> order, ForgeConfigSpec spec,
+	  List<IGUIEntry> order, @Nullable Pair<ForgeConfigSpec, List<ForgeConfigSpec>> spec,
 	  Icon icon, int color, @Nullable LiteralArgumentBuilder<CommandSourceStack> commandRoot
 	) {
 		if (this.entries != null)
@@ -207,7 +217,8 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 		this.categories = categories;
 		this.groups = groups;
 		this.order = order;
-		this.spec = spec;
+		this.spec = spec != null? spec.getLeft() : null;
+		extraSpecs = spec != null? spec.getRight() : null;
 		final Map<String, AbstractSimpleConfigEntryHolder> children = new HashMap<>();
 		children.putAll(this.categories);
 		children.putAll(this.groups);
@@ -218,8 +229,13 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	}
 	
 	@Internal public void build(ModContainer container, ModConfig modConfig) {
-		this.modContainer = container;
+		build(container, modConfig, emptyMap());
+	}
+	
+	@Internal public void build(ModContainer container, ModConfig modConfig, Map<String, ModConfig> extraConfigs) {
+		modContainer = container;
 		this.modConfig = modConfig;
+		this.extraModConfigs = extraConfigs;
 	}
 	
 	/**
@@ -449,7 +465,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	@SubscribeEvent
 	protected void onModConfigEvent(final ModConfigEvent event) {
 		final ModConfig c = event.getConfig();
-		if (c == getModConfig()) {
+		if (c == getModConfig() || getExtraModConfigs().containsValue(c)) {
 			bake();
 			if (type == Type.SERVER || type == Type.COMMON)
 				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> this::syncToClients);
@@ -632,6 +648,10 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	
 	@Internal public ModConfig getModConfig() {
 		return modConfig;
+	}
+	
+	@Internal public Map<String, ModConfig> getExtraModConfigs() {
+		return extraModConfigs;
 	}
 	
 	@Internal public ModContainer getModContainer() {

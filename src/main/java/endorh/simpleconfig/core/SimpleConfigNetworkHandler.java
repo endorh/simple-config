@@ -182,19 +182,35 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		ModConfig modConfig = config.getModConfig();
 		CommentedConfig sentConfig = deserializeSnapshot(config, fileData);
 		if (sentConfig == null) return;
+		try {
+			Map<String, ModConfig> extraConfigs = config.getExtraModConfigs();
+			extraConfigs.forEach((id, extra) -> {
+				Object sub = sentConfig.remove(id);
+				if (sub instanceof CommentedConfig subConfig)
+					putOrSet(set, extra, subConfig);
+				extra.getSpec().afterReload();
+				
+				tryFireEvent(extra, newReloading(extra));
+			});
+		} catch (IllegalStateException | ParsingException e) {
+			LOGGER.error("Failed to parse synced server config for mod " + config.getModId(), e);
+		}
 		if (modConfig == null) {
 			// Minecraft Gamerules Simple Config wrapper
 			config.loadSnapshot(sentConfig, false, false);
 		} else try {
-			if (set) {
-				trySetConfigData(modConfig, sentConfig);
-			} else modConfig.getConfigData().putAll(sentConfig);
+			putOrSet(set, modConfig, sentConfig);
 			modConfig.getSpec().afterReload();
 			
 			tryFireEvent(modConfig, newReloading(modConfig));
 		} catch (IllegalStateException | ParsingException e) {
 			LOGGER.error("Failed to parse synced server config for mod " + config.getModId(), e);
 		}
+	}
+	private static void putOrSet(boolean set, ModConfig config, CommentedConfig data) {
+		if (set) {
+			trySetConfigData(config, data);
+		} else config.getConfigData().putAll(data);
 	}
 	
 	protected static CommentedConfig deserializeSnapshot(
