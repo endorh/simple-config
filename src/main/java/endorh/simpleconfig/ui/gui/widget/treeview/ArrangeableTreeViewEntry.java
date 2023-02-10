@@ -195,7 +195,9 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	protected Point interpolatePosition(int x, int y) {
-		int treeX = getTree().getX(), treeY = getTree().getY();
+		ArrangeableTreeView<E> tree = getTree();
+		ArrangeableTreeViewScroller scroller = tree.scroller;
+		int treeX = tree.getX(), treeY = (int) (scroller.getY() - scroller.scrollAmount);
 		int relX = x - treeX, relY = y - treeY;
 		if (relY != (int) yAnimator.getRangeMax()) {
 			yAnimator.setOutputRange(
