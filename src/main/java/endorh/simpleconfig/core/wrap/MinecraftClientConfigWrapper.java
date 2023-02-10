@@ -604,7 +604,7 @@ public class MinecraftClientConfigWrapper {
 			  AbstractConfigEntry<?, ?, ?> entry
 			) {}
 			
-			@Override public ForgeConfigSpec build() {
+			@Override public Pair<ForgeConfigSpec, List<ForgeConfigSpec>> build() {
 				return null;
 			}
 		}

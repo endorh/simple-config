@@ -1,5 +1,6 @@
 package endorh.simpleconfig.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.google.common.collect.Lists;
 import endorh.simpleconfig.SimpleConfigMod;
@@ -8,6 +9,7 @@ import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.entry.ConfigEntrySerializer;
 import endorh.simpleconfig.api.entry.ListEntryBuilder;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.MinecraftOptions;
 import endorh.simpleconfig.config.CommonConfig.menu;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.ConfigValueBuilder;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager;
@@ -28,6 +30,7 @@ import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
+import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.fml.config.IConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
@@ -45,13 +48,17 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.api.ConfigBuilderFactoryProxy.*;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.applyStyle;
+import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 @EventBusSubscriber(modid=SimpleConfigMod.MOD_ID, bus = Bus.MOD)
@@ -93,6 +100,7 @@ public class SimpleConfigWrapper {
 	
 	public static void wrapConfigs() {
 		ModList.get().forEachModContainer((modId, container) -> {
+			if (!menu.shouldWrapConfig(modId)) return;
 			EnumMap<ModConfig.Type, ModConfig> configs = getConfigs(container);
 			if (!configs.isEmpty()) {
 				String displayName = container.getModInfo().getDisplayName();
@@ -103,17 +111,30 @@ public class SimpleConfigWrapper {
 					try {
 						if (configs.containsKey(configType)) {
 							ModConfig config = configs.get(configType);
-							if (!(config instanceof SimpleConfigModConfig) && menu.shouldWrapConfig(modId)) {
+							List<ModConfig> extraConfigs = collectExtraConfigFiles(container, config, type);
+							if (!(config instanceof SimpleConfigModConfig)) {
 								LOGGER.info("Wrapping " + tt + " config for mod {}", modId);
 								IConfigSpec<?> s = config.getSpec();
 								if (!(s instanceof ForgeConfigSpec spec)) throw new IllegalArgumentException(
 								  "Config spec for mod " + container.getModInfo().getDisplayName() + " (" +
 								  container.getModId() + ") is not a ForgeConfigSpec");
-								SimpleConfigBuilderImpl builder = (SimpleConfigBuilderImpl) wrap(container, config, spec);
-								if (builder == null || builder.entries.isEmpty() && builder.categories.isEmpty() && builder.groups.isEmpty()) {
-									LOGGER.warn("Unable to wrap " + tt + " config for mod {}: Wrapped config is empty", modId);
+								if (extraConfigs.size() == 1) {
+									extraConfigs = emptyList();
+								} else if (!extraConfigs.isEmpty()) {
+									spec = null;
+								}
+								Pair<SimpleConfigBuilder, Map<String, ForgeConfigSpec>> pair = wrap(
+								  container, config, spec, extraConfigs);
+								SimpleConfigBuilderImpl builder =
+								  pair != null? (SimpleConfigBuilderImpl) pair.getLeft() : null;
+								if (builder == null
+								    || builder.entries.isEmpty()
+								       && builder.categories.isEmpty() && builder.groups.isEmpty()) {
+									LOGGER.warn("Unable to wrap " + tt + " config for mod {}: " +
+									            "Wrapped config is empty", modId);
 								} else builder.buildAndRegister(
-								  null, new WrappingConfigValueBuilder(container, config, spec));
+								  null, new WrappingConfigValueBuilder(
+									 container, config, extraConfigs, spec, pair.getRight()));
 							}
 						}
 						LOGGER.info("Wrapped " + tt + " config for mod " + logName);
@@ -127,34 +148,90 @@ public class SimpleConfigWrapper {
 		});
 	}
 	
-	private static SimpleConfigBuilder wrap(
-	  ModContainer container, ModConfig config, ForgeConfigSpec spec
+	private static List<ModConfig> collectExtraConfigFiles(ModContainer container, ModConfig config, Type type) {
+		Set<ModConfig> configs = ConfigTracker.INSTANCE.configSets().get(type.asConfigType());
+		return configs.stream()
+		  .filter(c -> c.getModId().equals(container.getModId()))
+		  .filter(c -> !(c instanceof SimpleConfigModConfig))
+		  .collect(Collectors.toList());
+	}
+	
+	private static Pair<SimpleConfigBuilder, Map<String, ForgeConfigSpec>> wrap(
+	  ModContainer container, ModConfig config, @Nullable ForgeConfigSpec spec, List<ModConfig> extraFiles
 	) {
 		if (config instanceof SimpleConfigModConfig) return null;
 		Type type = SimpleConfig.Type.fromConfigType(config.getType());
-		SimpleConfigBuilder builder = config(config.getModId(), type);
+		SimpleConfigBuilderImpl builder = (SimpleConfigBuilderImpl) config(config.getModId(), type);
 		
-		wrapConfig(builder, spec.getValues(), spec.getSpec(), "");
-		return builder;
+		if (spec != null) wrapConfig(builder, spec.getValues(), spec.getSpec(), "");
+		Map<String, ForgeConfigSpec> extraSpecs = new HashMap<>();
+		for (ModConfig extra: extraFiles) {
+			if (!(extra.getSpec() instanceof ForgeConfigSpec extraSpec)) throw new IllegalArgumentException(
+			  "Config spec for mod " + container.getModInfo().getDisplayName() + " (" +
+			  container.getModId() + ") is not a ForgeConfigSpec");
+			String key = extractExtraFileName(extra);
+			if (builder.categories.containsKey(key)) {
+				LOGGER.warn("Extra config file {} for mod {} has the same name as an existing config category",
+				            extra.getFileName(), container.getModId());
+				key = "file/" + key;
+				if (builder.categories.containsKey(key)) {
+					LOGGER.warn(
+					  "Extra config file {} for mod {} could not be wrapped, because it's fallback " +
+					  "category name: {} is already in use",
+					  extra.getFileName(), container.getModId(), key);
+					continue;
+				}
+			}
+			extraSpecs.put(key, extraSpec);
+			
+			ConfigCategoryBuilder categoryBuilder = category(key)
+			  .withIcon(MinecraftOptions.FILE)
+			  .withColor(0x80424242)
+			  .withDescription(() -> splitTtc(
+				 "simpleconfig.ui.config.file",
+				 new TextComponent(extra.getFileName()).withStyle(ChatFormatting.DARK_AQUA)));
+			wrapConfig(categoryBuilder, extraSpec.getValues(), extraSpec.getSpec(), key);
+			builder.n(categoryBuilder);
+		}
+		return Pair.of(builder, extraSpecs);
+	}
+	
+	private static final Pattern EXTRA_FILE_NAME = Pattern.compile(
+	  "(?:.*?[/\\\\])?(?!.*[/\\\\])(?<name>[^.]*+)\\.\\w+$");
+	private static String extractExtraFileName(ModConfig config) {
+		Matcher matcher = EXTRA_FILE_NAME.matcher(config.getFileName());
+		if (matcher.matches()) return matcher.group("name").replace('.', ' ');
+		return config.getFileName();
 	}
 	
 	protected static class WrappingConfigValueBuilder extends ConfigValueBuilder {
 		private final ModContainer container;
 		private final ModConfig modConfig;
+		private final Map<String, ModConfig> extraConfigs;
 		private final ForgeConfigSpec spec;
+		private final Map<String, ForgeConfigSpec> extraSpecs;
 		private final Stack<UnmodifiableConfig> stack = new Stack<>();
 		private final Stack<String> path = new Stack<>();
+		
 		protected WrappingConfigValueBuilder(
-		  ModContainer container, ModConfig modConfig, ForgeConfigSpec spec
+		  ModContainer container, ModConfig modConfig, List<ModConfig> extraConfigs,
+		  ForgeConfigSpec spec, Map<String, ForgeConfigSpec> extraSpecs
 		) {
 			this.container = container;
 			this.modConfig = modConfig;
+			this.extraConfigs = extraConfigs.stream().collect(Collectors.toMap(c -> {
+				IConfigSpec<?> s = c.getSpec();
+				return extraSpecs.entrySet().stream()
+				  .filter(ss -> ss.getValue() == s).findFirst()
+				  .map(Entry::getKey).orElseThrow();
+			}, Function.identity()));
 			this.spec = spec;
-			stack.push(this.spec.getValues());
+			this.extraSpecs = extraSpecs;
+			stack.push(spec != null? this.spec.getValues() : CommentedConfig.inMemory());
 		}
 		
 		@Override public void buildModConfig(SimpleConfigImpl config) {
-			config.build(container, modConfig);
+			config.build(container, modConfig, extraConfigs);
 		}
 		
 		@Override public void build(
@@ -187,7 +264,8 @@ public class SimpleConfigWrapper {
 		}
 		
 		@Override public boolean canBuildSection(String name) {
-			boolean r = getConfigValues().get(name) instanceof UnmodifiableConfig;
+			boolean r = getConfigValues().get(name) instanceof UnmodifiableConfig
+			            || extraSpecs.containsKey(name);
 			if (!r) LOGGER.warn("Unexpected section in wrapped config: " + getPath(name));
 			return r;
 		}
@@ -196,6 +274,8 @@ public class SimpleConfigWrapper {
 			Object o = getConfigValues().get(name);
 			if (o instanceof UnmodifiableConfig) {
 				stack.push((UnmodifiableConfig) o);
+			} else if (extraSpecs.containsKey(name)) {
+				stack.push(extraSpecs.get(name).getValues());
 			} else throw new IllegalStateException("Cannot wrap config section: " + name);
 		}
 		
@@ -203,8 +283,8 @@ public class SimpleConfigWrapper {
 			stack.pop();
 		}
 		
-		@Override public ForgeConfigSpec build() {
-			return spec;
+		@Override public Pair<ForgeConfigSpec, List<ForgeConfigSpec>> build() {
+			return Pair.of(spec, new ArrayList<>(extraSpecs.values()));
 		}
 	}
 	
@@ -374,7 +454,15 @@ public class SimpleConfigWrapper {
 		reg(clazz, transform, (ValueSpec s, V v) -> {
 			RangedEntryBuilder<V, CC, ?, ?> builder = adapter.createBuilder(s, v);
 			Pair<? extends C, ? extends C> p = tryGetRange(s, clazz);
-			if (p != null) builder = builder.range(transform.apply(p.getLeft()), transform.apply(p.getRight()));
+			if (p != null) {
+				V min = transform.apply(p.getLeft());
+				V max = transform.apply(p.getRight());
+				// Apparently, using Double.MIN_VALUE instead of Double.NEGATIVE_INFINITY or
+				//   -Double.MAX_VALUE is a frequent enough mistake, so we just ignore invalid bounds
+				if (min.compareTo(v) <= 0 && max.compareTo(v) >= 0) builder = builder.range(
+				  min, transform.apply(p.getRight()));
+			}
+			
 			return builder;
 		});
 	}
