@@ -349,6 +349,12 @@ public class SimpleConfigIcons {
 		public static Icon
 		  GAMERULES = b.at(16, 32),
 		  PROPERTIES = b.at(32, 32);
+		
+		/**
+		 * 16×16
+		 */
+		public static Icon
+		  FILE = b.at(48, 32);
 	}
 	
 	public static final AnimatedIcon SPINNING_CUBE = AnimatedIcon.ofStripe(

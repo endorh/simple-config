@@ -289,6 +289,7 @@
   "simpleconfig.ui.navigate.edited.next": "Ir a la siguiente entrada editada",
   "simpleconfig.ui.navigate.edited.prev": "Ir a la anterior entrada editada",
   "simpleconfig.ui.shortcut": "§7Atajo: %s",
+  "simpleconfig.ui.config.file": "Archivo: §7\"%s§7\"",
 
   "simpleconfig.ui.controls": "Controles",
   "simpleconfig.ui.controls.category.general": "General",

@@ -298,6 +298,10 @@ dependencies {
     // Configured
     runtimeOnly(fg.deobf("curse.maven:configured-457570:3780620"))
     
+    // Zombie Awareness (multi-file support)
+    runtimeOnly(fg.deobf("curse.maven:coroutil-237749:3586476"))
+    // runtimeOnly(fg.deobf("curse.maven:zombie-awareness-237754:3586479"))
+    
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-${V.minecraft}:${V.jei}"))
 }
