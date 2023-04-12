@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 @OnlyIn(Dist.CLIENT)
@@ -17,6 +18,7 @@ public class EnumSelectorBuilder<V extends Enum<?>> extends FieldBuilder<V, Enum
 	protected final Class<V> clazz;
 	protected Function<V, ITextComponent> enumNameProvider = EnumListEntry.DEFAULT_NAME_PROVIDER::apply;
 	protected @Nullable Function<V, List<ITextComponent>> enumTooltipProvider = null;
+	protected @Nullable Set<V> allowedValues = null;
 	
 	public EnumSelectorBuilder(
 	  ConfigFieldBuilder builder, ITextComponent name, V value
@@ -44,8 +46,15 @@ public class EnumSelectorBuilder<V extends Enum<?>> extends FieldBuilder<V, Enum
 		return this;
 	}
 	
+	public EnumSelectorBuilder<V> setAllowedValues(@Nullable Set<V> allowedValues) {
+		this.allowedValues = allowedValues;
+		return this;
+	}
+	
 	@Override @NotNull public EnumListEntry<V> buildEntry() {
-		return new EnumListEntry<>(fieldNameKey, clazz, value, enumNameProvider, enumTooltipProvider);
+		return new EnumListEntry<>(
+		  fieldNameKey, clazz, value, enumNameProvider,
+		  enumTooltipProvider, allowedValues);
 	}
 }
 

@@ -18,6 +18,8 @@ import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.SelectorBuilder;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -153,6 +155,7 @@ public class OptionEntry<T> extends AbstractConfigEntry<T, String, T> {
 		return tooltips;
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<T, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		//noinspection unchecked
 		SelectorBuilder<T> entryBuilder =

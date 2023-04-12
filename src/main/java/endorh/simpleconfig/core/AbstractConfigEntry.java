@@ -583,6 +583,7 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		return Optional.empty();
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	public void decorateGUIBuilder(FieldBuilder<Gui, ?, ?> builder, boolean forRemote) {
 		if (forRemote) builder.withSaveConsumer(g -> {});
 		builder.withBuildListener(forRemote? this::setRemoteGuiEntry : this::setGuiEntry);

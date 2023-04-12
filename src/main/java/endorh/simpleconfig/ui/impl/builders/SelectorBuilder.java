@@ -1,5 +1,6 @@
 package endorh.simpleconfig.ui.impl.builders;
 
+import com.google.common.collect.ImmutableList;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.gui.entries.SelectionListEntry;
 import net.minecraft.util.text.ITextComponent;
@@ -29,7 +30,7 @@ public class SelectorBuilder<V>
 	public SelectorBuilder<V> setNameProvider(
 	  Function<V, ITextComponent> enumNameProvider
 	) {
-		this.nameProvider = enumNameProvider;
+		nameProvider = enumNameProvider;
 		return this;
 	}
 	
@@ -37,8 +38,9 @@ public class SelectorBuilder<V>
 	@NotNull
 	public SelectionListEntry<V> buildEntry() {
 		return new SelectionListEntry<>(
-		  this.fieldNameKey, this.valuesArray, this.value,
-		  this.nameProvider);
+		  fieldNameKey,
+		  valuesArray != null? ImmutableList.copyOf(valuesArray) : ImmutableList.of(value),
+		  value, nameProvider);
 	}
 }
 

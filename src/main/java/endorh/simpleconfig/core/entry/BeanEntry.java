@@ -19,6 +19,8 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.impl.builders.BeanFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.util.Util;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -330,6 +332,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		return type.isInstance(value)? type.cast(value) : null;
 	}
 	
+	@OnlyIn(Dist.CLIENT)
 	@Override public Optional<FieldBuilder<B, ?, ?>> buildGUIEntry(ConfigFieldBuilder builder) {
 		BeanFieldBuilder<B> fieldBuilder = builder
 		  .startBeanField(getDisplayName(), forGui(get()), proxy)

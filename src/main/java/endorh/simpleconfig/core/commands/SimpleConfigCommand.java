@@ -17,6 +17,7 @@ import endorh.simpleconfig.core.AbstractSimpleConfigEntryHolder;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.core.SimpleConfigModConfig;
 import net.minecraft.command.CommandSource;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Util;
 import net.minecraft.util.text.*;
@@ -145,14 +146,26 @@ public class SimpleConfigCommand {
 	private SimpleConfigImpl requireConfig(
 	  CommandContext<CommandSource> ctx, String modId, Type type, boolean forWrite
 	) throws CommandSyntaxException {
-		PlayerEntity player = ctx.getSource().asPlayer();
+		CommandSource src = ctx.getSource();
 		if (!SimpleConfigImpl.hasConfig(modId, type)) {
 			throw UNSUPPORTED_CONFIG.create(modId);
 		} else if (
-		  forWrite? !permissions.permissionFor(player, modId).getLeft().canEdit()
-		          : !permissions.permissionFor(player, modId).getLeft().canView()
+		  forWrite? !getConfigPermission(src, modId).canEdit()
+		          : !getConfigPermission(src, modId).canView()
 		) throw NO_PERMISSION.create(modId);
 		return SimpleConfigImpl.getConfig(modId, type);
+	}
+	
+	private static @Nullable PlayerEntity getPlayer(CommandSource src) {
+		Entity entity = src.getEntity();
+		return entity instanceof PlayerEntity? (PlayerEntity) entity : null;
+	}
+	
+	private static ConfigPermission getConfigPermission(CommandSource src, String modId) {
+		PlayerEntity player = getPlayer(src);
+		return player != null
+		       ? permissions.permissionFor(player, modId).getLeft()
+		       : permissions.datapack_permission;
 	}
 	
 	// Commands -------------------------------------------------------
@@ -202,8 +215,8 @@ public class SimpleConfigCommand {
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
 		String value = ctx.getArgument("value", String.class);
-		PlayerEntity player = src.asPlayer();
-		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
+		PlayerEntity player = getPlayer(src);
+		if (!getConfigPermission(src, config.getModId()).canEdit()) {
 			src.sendErrorMessage(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
@@ -267,8 +280,8 @@ public class SimpleConfigCommand {
 		SimpleConfigImpl config = requireConfig(ctx, modId, type, true);
 		CommandSource src = ctx.getSource();
 		String key = ctx.getArgument("key", String.class);
-		PlayerEntity player = src.asPlayer();
-		if (!permissions.permissionFor(player, config.getModId()).getLeft().canEdit()) {
+		PlayerEntity player = getPlayer(src);
+		if (!getConfigPermission(src, modId).canEdit()) {
 			src.sendErrorMessage(new TranslationTextComponent(
 			  "simpleconfig.command.error.no_permission", config.getModName()));
 			return 1;
@@ -325,13 +338,15 @@ public class SimpleConfigCommand {
 	
 	// Feedback -------------------------------------------------------
 	
-	public static void broadcastToOtherOperators(PlayerEntity player, ITextComponent message) {
+	public static void broadcastToOtherOperators(@Nullable PlayerEntity player, ITextComponent message) {
+		if (player == null && !permissions.broadcast_datapack_config_changes) return;
 		ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().stream()
 		  .filter(p -> p.hasPermissionLevel(2) && p != player)
 		  .forEach(p -> p.sendMessage(message, Util.DUMMY_UUID));
 	}
 	
-	public static IFormattableTextComponent playerName(PlayerEntity player) {
+	public static IFormattableTextComponent playerName(@Nullable PlayerEntity player) {
+		if (player == null) return new StringTextComponent("<datapack>");
 		return new StringTextComponent(player.getName().getString())
 		  .mergeStyle(TextFormatting.DARK_GREEN).modifyStyle(style -> style
 			 .setClickEvent(new ClickEvent(
@@ -461,14 +476,8 @@ public class SimpleConfigCommand {
 	}
 	
 	private Predicate<CommandSource> permission(String modId, boolean forWrite) {
-		return s -> {
-			try {
-				ConfigPermission p = permissions.permissionFor(s.asPlayer(), modId).getLeft();
-				return forWrite? p.canEdit() : p.canView();
-			} catch (CommandSyntaxException e) {
-				return false;
-			}
-		};
+		return forWrite? s -> getConfigPermission(s, modId).canEdit()
+		               : s -> getConfigPermission(s, modId).canView();
 	}
 	
 	protected static class BaseCommand {

@@ -26,7 +26,7 @@ val githubRepo = "endorh/simple-config"
 
 val antlrVersion: String by extra
 object V {
-    val api = "1.0.1"
+    val api = "1.0.2"
     val kotlinApi = api
     val mod = api
     val minecraft = "1.16.5"
@@ -39,7 +39,7 @@ object V {
     }
     
     // Dependencies
-    val yaml = "1.31"
+    val yaml = "1.33"
     val jei = "7.6.1.75"
     val kotlin = "1.5.21"
     val kotlinForForge = "1.14.0"
@@ -292,6 +292,9 @@ dependencies {
     implementation("org.yaml:snakeyaml:${V.yaml}")
     
     // Testing dependencies
+    // Smart Completion
+    // runtimeOnly(fg.deobf("curse.maven:smart-completion-782653:4284511"))
+    
     // Catalogue
     runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3529457"))
     
