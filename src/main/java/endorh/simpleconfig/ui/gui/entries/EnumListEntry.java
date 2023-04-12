@@ -14,8 +14,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
 public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
@@ -23,14 +26,19 @@ public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
 	  t -> new TranslatableComponent(
 		 t instanceof SelectionListEntry.Translatable ? ((Translatable) t).getKey() : t.toString());
 	protected @Nullable Function<E, List<Component>> enumTooltipProvider;
+	protected @Nullable Set<E> allowedValues;
 	
 	@Internal public EnumListEntry(
 	  Component fieldName, Class<E> clazz, E value,
 	  Function<E, Component> enumNameProvider,
-	  @Nullable Function<E, List<Component>> enumTooltipProvider
+	  @Nullable Function<E, List<Component>> enumTooltipProvider,
+	  @Nullable Set<E> allowedValues
 	) {
-		super(fieldName, clazz.getEnumConstants(), value, enumNameProvider);
+		super(fieldName, Arrays.stream(clazz.getEnumConstants())
+		        .filter(e -> allowedValues == null || allowedValues.contains(e))
+		        .collect(Collectors.toList()), value, enumNameProvider);
 		this.enumTooltipProvider = enumTooltipProvider;
+		this.allowedValues = allowedValues;
 		hotKeyActionTypes.add(HotKeyActionTypes.ENUM_ADD.cast());
 	}
 	
