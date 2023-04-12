@@ -4,11 +4,8 @@ import com.electronwill.nightconfig.core.CommentedConfig.Entry;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Actions;
 import endorh.simpleconfig.core.AbstractConfigEntry;
-import endorh.simpleconfig.core.entry.AbstractRangedEntry;
-import endorh.simpleconfig.core.entry.BeanEntry;
+import endorh.simpleconfig.core.entry.*;
 import endorh.simpleconfig.core.entry.BeanEntry.ConfigBeanAccessException;
-import endorh.simpleconfig.core.entry.BeanProxy;
-import endorh.simpleconfig.core.entry.EntryPairEntry;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyAction;
 import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.ISimpleHotKeyError;
 import endorh.simpleconfig.ui.hotkey.StorageLessHotKeyActionType.IStorageLessHotKeyAction;
@@ -19,9 +16,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class HotKeyActionTypes {
 	public static final AssignHotKeyActionType ASSIGN = reg(new AssignHotKeyActionType());
@@ -147,9 +142,13 @@ public class HotKeyActionTypes {
 	public static class EnumAddSimpleHotKeyActionType<E extends Enum<?>> extends SimpleHotKeyActionType<E, Integer> {
 		public EnumAddSimpleHotKeyActionType() {
 			super("enum.cycle", Actions.ADD_CYCLE, (entry, value, storage) -> {
+				EnumEntry<?> e = (EnumEntry<?>) entry;
+				Set<?> values = e.getAllowedValues();
+				// noinspection unchecked
+				Object[] enums = Arrays.stream(((Class<E>) value.getClass()).getEnumConstants())
+				  .filter(values::contains).toArray();
 				//noinspection unchecked
-				E[] enums = ((Class<E>) value.getClass()).getEnumConstants();
-				return enums[(enums.length + storage + value.ordinal()) % enums.length];
+				return (E) enums[(enums.length + storage + value.ordinal()) % enums.length];
 			});
 		}
 		

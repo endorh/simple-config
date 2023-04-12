@@ -28,7 +28,7 @@ val githubRepo = "endorh/simple-config"
 
 val antlrVersion: String by extra
 object V {
-    val api = "1.0.1"
+    val api = "1.0.2"
     val kotlinApi = api
     val mod = api
     val minecraft = "1.19.2"
@@ -41,7 +41,7 @@ object V {
     }
     
     // Dependencies
-    val yaml = "1.31"
+    val yaml = "1.33"
     val jei = "11.2.0.256"
     val kotlin = "1.7.10"
     val kotlinForForge = "3.7.1"
@@ -311,6 +311,9 @@ dependencies {
     copiedForRuntime("org.yaml:snakeyaml:${V.yaml}")
     
     // Testing dependencies
+    // Smart Completion
+    runtimeOnly(fg.deobf("curse.maven:smart-completion-782653:4284525"))
+    
     // Catalogue
     runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3873264"))
     
@@ -346,20 +349,25 @@ val apiJar by configurations.creating {
 
 // Workaround issue of `snakeyaml` classes not being added to run configurations
 //   We copy its classes files into our classpath
-val extractMissingRuntimeClassesTask = tasks.register<Copy>("extractMissingRuntimeClasses") {
-    group = "build"
-    copiedForRuntime.asFileTree.forEach {
-        from(zipTree(it).matching {
-            include("**/*.class")
-        })
+// Needs to be configured in afterEvaluate, because otherwise ForgeGradle
+//   attempts to mutate some derived repository after it's been resolved :)
+afterEvaluate {
+    val extractMissingRuntimeClassesTask = tasks.register<Copy>("extractMissingRuntimeClasses") {
+        group = "build"
+        
+        copiedForRuntime.asFileTree.forEach {
+            from(zipTree(it).matching {
+                include("**/*.class")
+            })
+        }
+        
+        includeEmptyDirs = false
+        into("$buildDir/classes/java/main")
     }
     
-    includeEmptyDirs = false
-    into("$buildDir/classes/java/main")
-}
-
-tasks.classes {
-    dependsOn(extractMissingRuntimeClassesTask)
+    tasks.classes {
+        dependsOn(extractMissingRuntimeClassesTask)
+    }
 }
 
 // Jars ------------------------------------------------------------------------

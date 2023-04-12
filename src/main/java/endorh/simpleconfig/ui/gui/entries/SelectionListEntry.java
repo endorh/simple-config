@@ -51,10 +51,10 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	protected long lastScrollTime = 0;
 	
 	@Internal public SelectionListEntry(
-	  Component fieldName, T[] valuesArray, T value, Function<T, Component> nameProvider
+	  Component fieldName, List<T> valuesList, T value, Function<T, Component> nameProvider
 	) {
 		super(fieldName);
-		values = valuesArray != null ? ImmutableList.copyOf(valuesArray) : ImmutableList.of(value);
+		values = valuesList != null ? ImmutableList.copyOf(valuesList) : ImmutableList.of(value);
 		displayedIndex = values.indexOf(value);
 		if (displayedIndex == -1) displayedIndex = 0;
 		setOriginal(value);
