@@ -14,6 +14,8 @@ import endorh.simpleconfig.ui.api.ConfigFieldBuilder
 import endorh.simpleconfig.ui.api.IChildListEntry
 import endorh.simpleconfig.ui.impl.builders.BeanFieldBuilder
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.annotations.Contract
 import java.util.*
@@ -262,6 +264,7 @@ internal class DataClassEntry<D : Any>(
         })
     }
     
+    @OnlyIn(Dist.CLIENT)
     override fun buildGUIEntry(builder: ConfigFieldBuilder): Optional<FieldBuilder<D, *, *>> {
         val fieldBuilder = builder
           .startBeanField(getDisplayName(), forGui(get()), proxy)

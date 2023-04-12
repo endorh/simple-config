@@ -110,6 +110,9 @@ public class ServerConfig {
 					    PresetPermission.SAVE_PRESETS), Lists.newArrayList("[all]"))))))
 			    .add("hotkey_rules", pairList(
 				   roleName, yesNo(true), Lists.newArrayList(Pair.of("[op]", true))))
+		       .add("datapack_permission", option(ConfigPermission.EDIT_SERVER_CONFIG)
+		         .restrict(ConfigPermission.VIEW_SERVER_CONFIG))
+		       .add("broadcast_datapack_config_changes", yesNo(false))
 		  ).text("end")
 		  .buildAndRegister();
 	}
@@ -188,9 +191,12 @@ public class ServerConfig {
 		// The permissions are applied in order. Each player is ruled
 		//   by the last rule that affects them for each mod.
 		// By default, op players have ALLOW permission for the [all] mod group
-		@Bind public static List<Pair<String, Pair<Pair<ConfigPermission, PresetPermission>, List<String>>>>
-		  rules;
+		@Bind public static List<Pair<String, Pair<Pair<ConfigPermission, PresetPermission>, List<String>>>> rules;
 		@Bind public static List<Pair<String, Boolean>> hotkey_rules;
+		
+		// Permission for datapacks
+		@Bind public static ConfigPermission datapack_permission;
+		@Bind public static boolean broadcast_datapack_config_changes;
 		
 		@OnlyIn(Dist.CLIENT)
 		public static Pair<ConfigPermission, PresetPermission> permissionFor(String mod) {

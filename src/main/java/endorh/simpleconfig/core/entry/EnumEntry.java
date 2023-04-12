@@ -1,6 +1,5 @@
 package endorh.simpleconfig.core.entry;
 
-import com.google.common.collect.Lists;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.entry.EnumEntryBuilder;
@@ -29,10 +28,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,13 +37,18 @@ import static endorh.simpleconfig.api.SimpleConfigTextUtil.optSplitTtc;
 public class EnumEntry<E extends Enum<E>>
   extends AbstractConfigEntry<E, E, E> implements AtomicEntry<E> {
 	protected final Class<E> enumClass;
+	protected final @Nullable Set<E> allowedValues;
 	protected final Map<String, E> nameMap;
 	protected final Map<String, E> lowerCaseNameMap;
 	protected @Nullable Boolean useComboBox;
 	
-	@Internal public EnumEntry(ConfigEntryHolder parent, String name, E value) {
+	@Internal public EnumEntry(
+	  ConfigEntryHolder parent, String name, E value, @Nullable Set<E> allowedValueSet
+	) {
 		super(parent, name, value);
 		enumClass = value.getDeclaringClass();
+		allowedValues = allowedValueSet != null? EnumSet.copyOf(allowedValueSet) : null;
+		if (allowedValues != null) allowedValues.add(value);
 		nameMap = Arrays.stream(enumClass.getEnumConstants())
 		  .collect(Collectors.toMap(Enum::name, Function.identity()));
 		lowerCaseNameMap = Arrays.stream(enumClass.getEnumConstants())
@@ -58,6 +59,7 @@ public class EnumEntry<E extends Enum<E>>
 	  E, E, E, EnumEntry<E>, EnumEntryBuilder<E>, Builder<E>>
 	  implements EnumEntryBuilder<E> {
 		protected final Class<E> enumClass;
+		protected @Nullable Set<E> allowedValues = null;
 		protected @Nullable Boolean useComboBox = null;
 		
 		public Builder(E value) {
@@ -72,14 +74,30 @@ public class EnumEntry<E extends Enum<E>>
 		
 		@Override @Contract(pure=true) public @NotNull Builder<E> useComboBox() { return useComboBox(true); }
 		
-		@Override @Contract(pure=true) public @NotNull Builder<E> useComboBox(Boolean useComboBox) {
+		@Override @Contract(pure=true) public @NotNull Builder<E> useComboBox(@Nullable Boolean useComboBox) {
 			Builder<E> copy = copy();
 			copy.useComboBox = useComboBox;
 			return copy;
 		}
 		
+		@SafeVarargs @Override @Contract(pure=true) public final @NotNull Builder<E> restrict(
+		  E... values
+		) {
+			return restrict(Arrays.asList(values));
+		}
+		
+		@Override @Contract(pure=true) public @NotNull Builder<E> restrict(@Nullable Collection<E> values) {
+			Builder<E> copy = copy();
+			copy.allowedValues = values != null? EnumSet.copyOf(values) : null;
+			return copy;
+		}
+		
+		@Override @Contract(pure=true) public @NotNull Builder<E> clearRestrictions() {
+			return restrict((Collection<E>) null);
+		}
+		
 		@Override protected EnumEntry<E> buildEntry(ConfigEntryHolder parent, String name) {
-			final EnumEntry<E> entry = new EnumEntry<>(parent, name, value);
+			final EnumEntry<E> entry = new EnumEntry<>(parent, name, value, allowedValues);
 			entry.useComboBox = useComboBox;
 			return entry;
 		}
@@ -87,6 +105,7 @@ public class EnumEntry<E extends Enum<E>>
 		@Contract(value="_ -> new", pure=true) @Override protected Builder<E> createCopy(E value) {
 			final Builder<E> copy = new Builder<>(value);
 			copy.useComboBox = useComboBox;
+			copy.allowedValues = allowedValues != null? EnumSet.copyOf(allowedValues) : null;
 			return copy;
 		}
 	}
@@ -114,12 +133,20 @@ public class EnumEntry<E extends Enum<E>>
 		return parseName((String) value);
 	}
 	
+	@Override public boolean isValidValue(E value) {
+		return super.isValidValue(value) && (allowedValues == null || allowedValues.contains(value));
+	}
+	
 	@Override public List<String> getConfigCommentTooltips() {
 		List<String> tooltips = super.getConfigCommentTooltips();
-		E[] choices = enumClass.getEnumConstants();
-		tooltips.add("Options: " + Arrays.stream(choices)
+		tooltips.add("Options: " + Arrays.stream(enumClass.getEnumConstants())
+		  .filter(e -> allowedValues == null || allowedValues.contains(e))
 		  .map(c -> "'" + presentName(c) + "'").collect(Collectors.joining(", ")));
 		return tooltips;
+	}
+	
+	@Internal public Set<E> getAllowedValues() {
+		return Collections.unmodifiableSet(allowedValues != null? allowedValues : EnumSet.allOf(enumClass));
 	}
 	
 	@Override protected Component getDebugDisplayName() {
@@ -157,7 +184,7 @@ public class EnumEntry<E extends Enum<E>>
 				final MutableComponent status =
 				  I18n.exists(key)
 				  ? new TextComponent("(✔ present)").withStyle(ChatFormatting.DARK_GREEN)
-				  : (defValue instanceof EnumEntryBuilder.TranslatedEnum)
+				  : defValue instanceof EnumEntryBuilder.TranslatedEnum
 				    ? new TextComponent("(not present)").withStyle(ChatFormatting.DARK_GRAY)
 				    : new TextComponent("(✘ missing)").withStyle(ChatFormatting.RED);
 				tooltip.add(new TextComponent("   > ").withStyle(ChatFormatting.GRAY)
@@ -197,7 +224,9 @@ public class EnumEntry<E extends Enum<E>>
 	  ConfigFieldBuilder builder
 	) {
 		if (useComboBox != null? useComboBox : advanced.prefer_combo_box < enumClass.getEnumConstants().length) {
-			final List<E> choices = Lists.newArrayList(enumClass.getEnumConstants());
+			final List<E> choices = Arrays.stream(enumClass.getEnumConstants())
+			  .filter(e -> allowedValues == null || allowedValues.contains(e))
+			  .collect(Collectors.toList());
 			final ComboBoxFieldBuilder<E> valBuilder =
 			  builder.startComboBox(getDisplayName(), new ChoicesTypeWrapper<>(
 				   choices, e -> e.name().toLowerCase(),
@@ -209,7 +238,8 @@ public class EnumEntry<E extends Enum<E>>
 			final EnumSelectorBuilder<E> valBuilder = builder
 			  .startEnumSelector(getDisplayName(), get())
 			  .setEnumNameProvider(this::enumName)
-			  .setEnumTooltipProvider(this::enumTooltip);
+			  .setEnumTooltipProvider(this::enumTooltip)
+			  .setAllowedValues(allowedValues);
 			return Optional.of(decorate(valBuilder));
 		}
 	}
@@ -218,8 +248,11 @@ public class EnumEntry<E extends Enum<E>>
 		super.addCommandSuggestions(builder);
 		E current = get();
 		E[] values = enumClass.getEnumConstants();
-		for (E value: values) if (value != current && value != defValue && isValidValue(value))
-			builder.suggest(forCommand(value));
+		for (E value: values) {
+			if (value != current && value != defValue && isValidValue(value)
+			    && (allowedValues == null || allowedValues.contains(value))
+			) builder.suggest(forCommand(value));
+		}
 		return true;
 	}
 	
