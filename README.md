@@ -14,28 +14,79 @@ Helps other mods provide powerful config menus.
 
 Initially developed as an alternative to Forge's config API,
 now it can also provide menus (and commands) for other mods
-(and Minecraft itself) which use Forge's config API, pretty
-much like how [Configured](https://github.com/MrCrayfish/Configured) does.
+which use Forge's config API, without any effort from their
+part, pretty much like how
+[Configured](https://github.com/MrCrayfish/Configured) does.
+
+In multiplayer servers, it can allow certain players
+(by default, all operators) to remotely edit the server
+configuration for all mods, as well as share config presets
+for all players to use.
+
+As a bonus, it also wraps Minecraft's options, gamerules
+and server properties as if Minecraft was just another mod,
+which allows Minecraft options to benefit from the config
+hotkey, preset and command features.
+
+- [**Features for Players**](#features-for-players)
+  - [**Menu Features**](#menu-features)
+  - [**Example Use-cases**](#example-use-cases)
+- [**Features for Mod Developers**](#features-for-mod-developers)
+- [**Help and Documentation**](#help-and-documentation)
+  - [**Examples**](#examples-for-mod-developers)
+  - [**Usage**](#usage-for-mod-developers)
+  - [**Usage as Soft Dependency**](#usage-as-soft-dependency-for-mod-developers)
 
 ## Features for players
-- Powerful config menus for every mod
-- Edit Minecraft Options as if it was just another mod
-- Edit server config remotely (if authorized)
-- Create config presets or patches (partial presets)
-- Create hotkeys to modify any config entry in-game
-- Full config access through commands
-- Share presets/hotkeys within servers
+- **Powerful** config menus for **every** mod
+- Edit server configuration **remotely** *(if authorized)*
+- Create and easily apply config **presets** or **patches** (partial presets)
+- Create **hotkeys** to *modify* multiple config entries with a single key press
+- **Share** presets/hotkeys within servers
+- Benefit from all these features while you edit the usual **Minecraft options**
 
-## Features for developers
-- Simple Java API to define config files
-- Declarative and extensible Java API based in annotations
-- Dependency injection for use as soft dependency
-- Declarative Kotlin API based on property delegates
-- Automatically generated menus and commands
-- Automatic baking into fields (with custom transformations)
-- Automatically mapped translation keys for entries
-- Create composite entry types with generic types (lists/maps/beans/...) or custom serializable types
-- Provide multiple default presets/hotkeys for players to easily set up their config
+### Menu features
+- All options for a mod are organized in a single tabbed screen, for easier spatial orientation
+- **Search**/**Filter** by text in entries' *names*, *descriptions* or *values* (supports Regex)
+- **Reset** entries or groups of entries to their default or **restore** them to their last saved value
+- **Undo**/**Redo** changes before you save
+- **Select** multiple entries/groups of entries to reset/restore/save them as a preset with a single click
+- Create **hotkeys** which can **modify** a config entry, without leaving the menu
+- **Organize** your config hotkeys in arbitrarily deep groups, which can be enabled/disabled with their own hotkey
+- Detect **conflicts** in case you modify a menu at the same time as you edit its config file, or if you modify
+  a server config at the same time as another player
+- Easily **navigate** to config errors, warnings or conflicts to address them
+- **Drag and drop** elements in lists/dictionaries to arrange them
+- Use a middle click drag to easily **glance** at all options in multioption buttons
+- **Switch** between sliders or keyboard input for numeric entries, in case you need a precise value, which in
+  some cases can allow you to specify values **outside** the recommended range suggested by the slider
+- **Color picker** with an user-customizable **palette**
+- **Syntax highlighting** for some types of entries (NBT and Regex for now)
+- **Smart autocompletion** in multioption entries
+- Full **keyboard accesibility**, no need to swap your hand between your mouse and your keyboard all the time
+
+### Example use-cases
+- Create a hotkey to increase/decrease your FOV/mouse sensitivity by a certain amount
+- Test config changes in your server knowing you can easily rollback to your last saved preset at any moment
+- Create a datapack which changes server options in response to any game event
+- Provide presets so new players of your server can easily setup their local configuration in few steps
+
+## Features for mod developers
+- Simple yet powerful Java API built around **reusable builders** to define config files
+- Even simpler **declarative Java API** based in annotations, which can be extended with your own **custom annotations**
+- **Dependency injection** for use as soft dependency (with natural [*limitations*](#usage-as-soft-dependency-for-mod-developers) if users don't have Simple Config installed)
+- Simpler and safer **declarative Kotlin API** based on **property delegates**, if you have the luck of using Kotlin
+- Organize entries in **groups** of arbitrary depth
+- Automatically generated **menus** and **commands**, you only need to define the file
+- Automatic **baking** into fields (easily pluggable with custom transformations/checks), for **faster** and **convenient** config **access** from your mod's logic
+- Automatically mapped **translation keys** for entry **names** and **tooltips/comments**, no need to write entry descriptions in two separate locations
+- Create **composite entry types** with **generic collections** (lists, sets or maps) (arbitrarily nested), custom **Java beans/Kotlin data classes**, or **arbitrary serializable types**
+- Provide multiple **default presets/hotkeys** for players to easily set up their config when they setup your mod for the first time, choosing between different provided config suggestions (e.g., you could provide broken/easy/hard/hardcore presets to easily setup all options according to a certain difficulty level)
+- Provide **insightful error messages** for invalid config values, which may depend on multiple entries
+- **Disable** some entries **conditionally** (such as depending on the value of a feature toggle) to convey contextual irrelevance
+- Group related entries in **pairs/triples** to reduce error predicates that depend on more than one *entry*
+- Use entries as the **caption** of a group/collection of entries (where it makes sense, e.g., a feature toggle, master volume slider, ...)
+- Apply multiple **tags** to config entries, to **organize** them better, or warn players about **experimental/advanced** options
 
 ***
 
@@ -43,11 +94,12 @@ much like how [Configured](https://github.com/MrCrayfish/Configured) does.
 This mod has a [wiki](https://github.com/endorh/simple-config/wiki) which contains:
 - A [Guide for Players](https://github.com/endorh/simple-config/wiki/Guide-for-Players)
 - A [Guide for Mod Developers](https://github.com/endorh/simple-config/wiki/Guide-for-Mod-Developers)
+- A [Guide to Translate Config Menus/Files](https://github.com/endorh/simple-config/wiki/Translating-Config-Menus), which can be done with a simple resource pack
 
 You may also drop by our [Discord Server](https://discord.gg/gqYVjBq65U) if you have
 any issues, questions or feedback of any kind, or if you just want to say hi.
 
-## Examples
+### Examples (for mod developers)
 This mod includes a few demo configs:
 - [`DemoConfigCategory`](https://github.com/endorh/simple-config/blob/1.19/src/main/java/endorh/simpleconfig/demo/DemoConfigCategory.java#L55)
   which showcases the Java API
@@ -55,21 +107,20 @@ This mod includes a few demo configs:
   which showcases the Kotlin API
 - [`DemoDeclarativeConfigCategory`](https://github.com/endorh/simple-config/blob/1.19/src/main/java/endorh/simpleconfig/demo/DemoDeclarativeConfigCategory.java#L43)
   which showcases the declarative Java API
+- [`DeclarativeJavaConfig`](https://github.com/endorh/simple-config/blob/1.19/declarativeTest/src/main/java/endorh/simpleconfig/test/DeclarativeJavaConfig.java)  which showcases the declarative Java API using dependency injection in a minimal test mod
 
 You may also check the [Aerobatic Elytra](https://github.com/endorh/aerobatic-elytra) and
 [Aerobatic Elytra Jetpack](https://github.com/endorh/aerobatic-elytra-jetpack) mods,
 which use this library.
 
-## Usage
+### Usage (for mod developers)
 See the wiki on [how to add Simple Config as a dependency](https://github.com/endorh/simple-config/wiki/Adding-as-a-Dependency).
 
-***
-
-## Soft dependency
+### Usage as soft dependency (for mod developers)
 It's possible to use Simple Config as a soft dependency through [dependency injection](https://github.com/endorh/simple-config/wiki/Using-as-a-Soft-Dependency).
 
-This way, players will be able to use your mod without needing to install Simple Config.
-However, the price that they'll pay is not being able to edit your mod's configuration,
-neither through menus nor config files. They'll be forced to use your default values.
+This way, players will be able to use your mod *without needing to install Simple Config*.
+However, the price that they'll pay is **not being able to edit** your mod's configuration,
+neither through **menus** nor config **files**. They'll be forced to use your **default values**.
 
-At the moment, dependency injection is not supported for the Kotlin API.
+At the moment, dependency injection is **not supported** for the **Kotlin API**.
