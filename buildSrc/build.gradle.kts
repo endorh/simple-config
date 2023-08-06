@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation("net.minecraftforge.gradle:ForgeGradle:5.1.+") {
+    implementation("net.minecraftforge.gradle:ForgeGradle:6.0.+") {
         isChanging = true
     }
 }

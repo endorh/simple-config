@@ -31,8 +31,8 @@ object V {
     val api = "1.0.2"
     val kotlinApi = api
     val mod = api
-    val minecraft = "1.19.2"
-    val forge = "43.1.1"
+    val minecraft = "1.19.3"
+    val forge = "44.1.0"
     val minecraftForge = "$minecraft-$forge"
     val minecraftMod = "$minecraft-$mod"
     object mappings {
@@ -42,9 +42,9 @@ object V {
     
     // Dependencies
     val yaml = "1.33"
-    val jei = "11.2.0.256"
+    val jei = "12.4.0.22"
     val kotlin = "1.7.10"
-    val kotlinForForge = "3.7.1"
+    val kotlinForForge = "4.4.0"
 }
 
 val vendor = "Endor H"
@@ -312,17 +312,17 @@ dependencies {
     
     // Testing dependencies
     // Smart Completion
-    runtimeOnly(fg.deobf("curse.maven:smart-completion-782653:4284525"))
+    // runtimeOnly(fg.deobf("curse.maven:smart-completion-782653:4284525"))
     
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3873264"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4171025"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:3947885"))
+    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462839"))
     
     // Zombie Awareness (multi-file support)
-    runtimeOnly(fg.deobf("curse.maven:coroutil-237749:3928997"))
-    runtimeOnly(fg.deobf("curse.maven:zombie-awareness-237754:3928998"))
+    // runtimeOnly(fg.deobf("curse.maven:coroutil-237749:3928997"))
+    // runtimeOnly(fg.deobf("curse.maven:zombie-awareness-237754:3928998"))
     
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-${V.minecraft}-forge:${V.jei}"))
