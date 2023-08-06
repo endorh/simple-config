@@ -13,7 +13,6 @@ import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.ResourceLocationException;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
@@ -55,16 +54,13 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Block> filter = null;
 		protected @Nullable TagKey<Block> tag = null;
-		protected boolean requireGroup = true;
 		
 		public Builder(Block value) {
 			super(value, EntryType.of(Block.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {
-			Builder copy = copy();
-			copy.requireGroup = requireGroup;
-			return copy;
+			return copy();
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder from(Predicate<Block> filter) {
@@ -101,7 +97,6 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Block entry's default value doesn't match its filter");
 			Predicate<Block> filter = this.filter != null ? this.filter : b -> true;
-			if (requireGroup) filter = filter.and(b -> b.asItem().getItemCategory() != null);
 			return new BlockEntry(parent, name, value, filter);
 		}
 		
@@ -109,7 +104,6 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 			final Builder copy = new Builder(value);
 			copy.filter = filter;
 			copy.tag = tag;
-			copy.requireGroup = requireGroup;
 			return copy;
 		}
 	}
@@ -123,9 +117,8 @@ public class BlockEntry extends AbstractConfigEntry<Block, String, Block>
 		if (value == null) return null;
 		try {
 			final ResourceLocation registryName = new ResourceLocation(value);
-			//noinspection deprecation
-			final Block item = Registry.BLOCK.keySet().contains(registryName) ?
-			                   Registry.BLOCK.get(registryName) : null;
+			final Block item = ForgeRegistries.BLOCKS.containsKey(registryName) ?
+			                   ForgeRegistries.BLOCKS.getValue(registryName) : null;
 			// Prevent unnecessary config resets adding an exception for the default value
 			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {

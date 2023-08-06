@@ -49,7 +49,6 @@ public class FluidNameEntry extends AbstractResourceEntry<FluidNameEntry> {
 		public Builder(ResourceLocation value) {
 			super(value, EntryType.of(ResourceLocation.class));
 			suggestionSupplier = () -> ForgeRegistries.FLUIDS.getValues().stream()
-			  .filter(f -> f.getBucket().getItemCategory() != null)
 			  .filter(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getSource() == f)
 			  .map(ForgeRegistries.FLUIDS::getKey).collect(Collectors.toList());
 		}

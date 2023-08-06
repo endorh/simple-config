@@ -92,6 +92,8 @@ public class ToggleImageButton extends ImageButton {
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		Icon icon = tintedIcon == null? this.icon : tintedIcon;
+		int x = getX();
+		int y = getY();
 		icon.renderStretch(mStack, x, y, width, height, isToggle() ? 1 : 0);
 		if (isMouseOver(mouseX, mouseY))
 			fill(mStack, x, y, x + width, y + height, hoverOverlayColor);

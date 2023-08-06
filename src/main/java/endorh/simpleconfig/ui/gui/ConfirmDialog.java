@@ -138,8 +138,8 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		}
 		
 		for (CheckboxButton checkBox : checkBoxes) {
-			checkBox.x = x + 8;
-			checkBox.y = ty + 2;
+			checkBox.setX(x + 8);
+			checkBox.setY(ty + 2);
 			checkBox.setWidth(w - 16);
 			checkBox.render(mStack, mouseX, mouseY, delta);
 			ty += 22;

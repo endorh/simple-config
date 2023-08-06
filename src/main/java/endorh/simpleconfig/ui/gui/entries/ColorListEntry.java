@@ -98,7 +98,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		final Minecraft mc = Minecraft.getInstance();
 		final Window window = mc.getWindow();
 		final Font font = mc.font;
-		colorDisplayWidget.y = y;
+		colorDisplayWidget.setY(y);
 		ColorValue value = getColorValue(getText());
 		if (!value.hasError()) {
 			colorDisplayWidget.setColor(
@@ -107,18 +107,18 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		// An offset of 3 matches the visual offset with the reset button (2 + 1 (border))
 		final int offset = colorDisplayWidget.getWidth() + 3;
 		super.renderChildEntry(mStack, font.isBidirectional()? x : x + offset, y, w - offset, h, mouseX, mouseY, delta);
-		colorDisplayWidget.x = x;
+		colorDisplayWidget.setX(x);
 		colorDisplayWidget.render(mStack, mouseX, mouseY, delta);
 		if (isColorPickerVisible()) {
 			final int cpw = colorPicker.getWidth(), cph = colorPicker.getHeight();
 			final int ww = window.getGuiScaledWidth();
-			colorPicker.y = y;
-			colorPicker.x = x + w / 2 < ww / 2? x + w + 3 : x - cpw - 3;
-			if (colorPicker.x < 4 || colorPicker.x + cpw > ww - 4) { // Wrap
-				colorPicker.y = y + h + 3;
-				colorPicker.x = x + w / 2 < ww / 2? x : x + w - cpw;
+			colorPicker.setY(y);
+			colorPicker.setX(x + w / 2 < ww / 2 ? x + w + 3 : x - cpw - 3);
+			if (colorPicker.getX() < 4 || colorPicker.getX() + cpw > ww - 4) { // Wrap
+				colorPicker.setY(y + h + 3);
+				colorPicker.setX(x + w / 2 < ww / 2 ? x : x + w - cpw);
 			}
-			colorPickerRectangle.setBounds(colorPicker.x, colorPicker.y, cpw, cph);
+			colorPickerRectangle.setBounds(colorPicker.getX(), colorPicker.getY(), cpw, cph);
 			reportedColorPickerRectangle.setBounds(
 			  ScissorsHandler.INSTANCE.getScissorsAreas().stream()
 			    .reduce(colorPickerRectangle, Rectangle::intersection));

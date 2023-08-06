@@ -109,8 +109,8 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				return;
 			}
 		}
-		buttonWidget.x = x;
-		buttonWidget.y = y;
+		buttonWidget.setX(x);
+		buttonWidget.setY(y);
 		buttonWidget.setExactWidth(w);
 		buttonWidget.setHeight(h);
 		buttonWidget.render(mStack, mouseX, mouseY, delta);
@@ -158,9 +158,9 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			  .mapToInt(v -> font.width(nameProvider.apply(v)) + 8)
 			  .max().orElse(60);
 			width = max(buttonWidget.getWidth(), min(width, 300));
-			int x = buttonWidget.x + width > screen.width? screen.width - width : buttonWidget.x;
+			int x = buttonWidget.getX() + width > screen.width? screen.width - width : buttonWidget.getX();
 			Rectangle area = new Rectangle(
-			  x, buttonWidget.y - buttonWidget.getHeight() * (values.size() - 1),
+			  x, buttonWidget.getY() - buttonWidget.getHeight() * (values.size() - 1),
 			  width, buttonWidget.getHeight() * (values.size() * 2 - 1));
 			if (overlay != null) overlay.cancel();
 			overlay = new SelectionButtonOverlay<>(this);
@@ -239,7 +239,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			if (animator.isInProgress()) {
 				float p = animator.getEaseOut();
 				Rectangle rect = new Rectangle(
-				  button.x, button.y + mouseY - startY - round(startIndex * bh * p),
+						button.getX(), button.getY() + mouseY - startY - round(startIndex * bh * p),
 				  area.width, round(Mth.lerp(p, bh, bh * values.size())));
 				renderOverlayShadow(mStack, area, mouseX, mouseY, delta, rect);
 				ScissorsHandler.INSTANCE.withSingleScissor(
@@ -259,10 +259,10 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				MultiFunctionIconButton button = entry.buttonWidget;
 				ImmutableList<T> values = entry.values;
 				int bh = button.getHeight();
-				int y = button.y + mouseY - startY - startIndex * bh;
-				y = Mth.clamp(y, button.y - (values.size() - 1) * bh, button.y);
+				int y = button.getY() + mouseY - startY - startIndex * bh;
+				y = Mth.clamp(y, button.getY() - (values.size() - 1) * bh, button.getY());
 				overlayArea = new Rectangle(
-				  button.x, y,
+						button.getX(), y,
 				  area.width, bh * values.size());
 			}
 			final Rectangle r = overlayArea;
@@ -279,9 +279,9 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			MultiFunctionIconButton button = entry.buttonWidget;
 			ImmutableList<T> values = entry.values;
 			int bh = button.getHeight();
-			int y = button.y + mouseY - startY - startIndex * bh;
-			y = Mth.clamp(y, button.y - (values.size() - 1) * bh, button.y);
-			int index = Mth.clamp((button.y - y + bh / 2) / bh, 0, values.size());
+			int y = button.getY() + mouseY - startY - startIndex * bh;
+			y = Mth.clamp(y, button.getY() - (values.size() - 1) * bh, button.getY());
+			int index = Mth.clamp((button.getY() - y + bh / 2) / bh, 0, values.size());
 			T prev = entry.getDisplayedValue();
 			lastSelected = values.get(index);
 			boolean prevFocused = button.isFocused();

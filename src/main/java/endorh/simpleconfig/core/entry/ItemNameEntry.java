@@ -50,9 +50,9 @@ public class ItemNameEntry extends AbstractResourceEntry<ItemNameEntry> {
 		public Builder(ResourceLocation value) {
 			super(value, EntryType.of(ResourceLocation.class));
 			suggestionSupplier = () -> ForgeRegistries.ITEMS.getValues().stream()
-			  .filter(i -> i.getItemCategory() != null).map(ForgeRegistries.ITEMS::getKey)
+			  .map(ForgeRegistries.ITEMS::getKey)
 			  .filter(Objects::nonNull)
-			  .collect(Collectors.toList());;
+			  .collect(Collectors.toList());
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder suggest(Ingredient ingredient) {

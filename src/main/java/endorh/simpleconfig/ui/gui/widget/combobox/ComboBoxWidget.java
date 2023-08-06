@@ -8,7 +8,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -39,6 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Collections;
@@ -963,7 +963,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			// Click text
 			if (isFocused() && hovered && button == 0) {
 				draggingText = true;
-				double relX = mouseX - x;
+				double relX = mouseX - getX();
 				if (hasIcon()) {
 					relX -= getIconWidth() + 1;
 				} else if (shouldDrawBackground()) relX -= 4;
@@ -1002,7 +1002,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	) {
 		if (isVisible() && isFocused() && button == 0 && draggingText) {
 			lastInteraction = System.currentTimeMillis();
-			double relX = mouseX - x;
+			double relX = mouseX - getX();
 			if (hasIcon()) {
 				relX -= getIconWidth() + 1;
 			} else if (shouldDrawBackground()) relX -= 4;
@@ -1047,8 +1047,8 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	protected void updateDropDownRectangle() {
-		dropDownRectangle.x = x - 1;
-		dropDownRectangle.y = y + height;
+		dropDownRectangle.x = getX() - 1;
+		dropDownRectangle.y = getY() + height;
 		dropDownRectangle.width = width + 2;
 		dropDownRectangle.height = getDropDownHeight();
 		
@@ -1066,6 +1066,8 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	@Override public void renderButton(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
+		int x = getX();
+		int y = getY();
 		area.setBounds(x, y, width, height);
 		if (!isVisible()) return;
 		updateSuggestions();
@@ -1203,14 +1205,14 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	public boolean isMouseOverArrow(int mouseX, int mouseY) {
-		int arrowX = x + width - arrowWidth, arrowY = y;
+		int arrowX = getX() + width - arrowWidth, arrowY = getY();
 		return mouseX >= arrowX && mouseX < arrowX + arrowWidth && mouseY >= arrowY && mouseY < arrowY + height;
 	}
 	
 	public boolean isMouseOverIcon(int mouseX, int mouseY) {
 		final int iconHeight = getIconHeight();
-		int iconY = shouldDrawBackground? y + height / 2 - iconHeight / 2 : y;
-		return hasIcon() && mouseX >= x && mouseX < x + getIconWidth()
+		int iconY = shouldDrawBackground? getY() + height / 2 - iconHeight / 2 : getY();
+		return hasIcon() && mouseX >= getX() && mouseX < getX() + getIconWidth()
 		       && mouseY >= iconY && mouseY < iconY + iconHeight;
 	}
 	
@@ -1239,7 +1241,8 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			sY = eY;
 			eY = swap;
 		}
-		
+
+		int x = getX();
 		if (eX > x + width) eX = x + width;
 		if (sX > x + width) sX = x + width;
 		
@@ -1322,7 +1325,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
-		return visible && mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+		return visible && mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height;
 	}
 	
 	@Override protected void onFocusedChanged(boolean focused) {
@@ -1436,7 +1439,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	 * since it doesn't account for the line scroll
 	 */
 	@Deprecated public int getTextXFor(int pos) {
-		return pos > text.length() ? x : x + font.width(text.substring(0, pos));
+		return pos > text.length() ? getX() : getX() + font.width(text.substring(0, pos));
 	}
 	
 	public @Nullable T getValue() {
@@ -1446,9 +1449,10 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	public Optional<Component> getError() {
 		return Optional.ofNullable(parseError);
 	}
-	
-	@Override public void updateNarration(NarrationElementOutput out) {
-		// TODO: Narrate suggestions?
+
+	@Override
+	protected void updateWidgetNarration(NarrationElementOutput out) {
 		out.add(NarratedElementType.TITLE, Component.translatable("narration.edit_box", getValue()));
+		// TODO: Narrate suggestions?
 	}
 }

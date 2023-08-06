@@ -13,7 +13,6 @@ import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.ResourceLocationException;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -55,16 +54,13 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Item> filter = null;
 		protected @Nullable TagKey<Item> tag = null;
-		protected boolean requireGroup = true;
 		
 		public Builder(Item value) {
 			super(value, EntryType.of(Item.class));
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {
-			Builder copy = copy();
-			copy.requireGroup = requireGroup;
-			return copy;
+			return copy();
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder from(Ingredient filter) {
@@ -104,7 +100,6 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Item entry's default value doesn't match its filter");
 			Predicate<Item> filter = this.filter != null ? this.filter : i -> true;
-			if (requireGroup) filter = filter.and(i -> i.getItemCategory() != null);
 			return new ItemEntry(parent, name, value, filter);
 		}
 		
@@ -112,7 +107,6 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 			final Builder copy = new Builder(value);
 			copy.filter = filter;
 			copy.tag = tag;
-			copy.requireGroup = requireGroup;
 			return copy;
 		}
 	}
@@ -130,9 +124,8 @@ public class ItemEntry extends AbstractConfigEntry<Item, String, Item>
 		if (value == null) return null;
 		try {
 			final ResourceLocation name = new ResourceLocation(value);
-			//noinspection deprecation
-			final Item item = Registry.ITEM.keySet().contains(name) ?
-			                  Registry.ITEM.get(name) : null;
+			final Item item = ForgeRegistries.ITEMS.containsKey(name) ?
+			                  ForgeRegistries.ITEMS.getValue(name) : null;
 			// Prevent unnecessary config resets adding the default value as exception
 			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {

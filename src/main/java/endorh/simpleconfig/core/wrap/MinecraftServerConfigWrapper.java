@@ -233,7 +233,6 @@ public class MinecraftServerConfigWrapper {
 			addFlag("spawn-protection", number(16).slider("options.chunks").sliderRange(0, 64).sliderMap(expMap(2)));
 			addFlag("op-permission-level", number(4).sliderRange(1, 4));
 			add("function-permission-level", number(2).sliderRange(1, 4));
-			add("previews-chat", yesNo(false), (s, p) -> s.getStatus().setPreviewsChat(s.previewsChat()));
 			wrap("white-list", yesNo(false), (d, b) -> d.getPlayerList().setUsingWhiteList(b));
 			add("enforce-whitelist", yesNo(false));
 			add("enforce-secure-profile", yesNo(true));
@@ -257,6 +256,9 @@ public class MinecraftServerConfigWrapper {
 				  WorldPresets.LARGE_BIOMES, WorldPresets.AMPLIFIED,
 				  WorldPresets.SINGLE_BIOME_SURFACE, WorldPresets.DEBUG
 				).map(ResourceKey::location).map(Object::toString).collect(Collectors.toList())));
+				// TODO: Support list properties better
+				add("initial-enabled-packs", string(""));
+				add("initial-disabled-packs", string(""));
 				add("generator-settings", string("{}"));
 			});
 			

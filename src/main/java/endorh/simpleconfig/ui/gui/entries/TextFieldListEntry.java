@@ -133,8 +133,8 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	) {
 		textFieldWidget.setEditable(shouldRenderEditable());
 		// Text fields render the border outside, so we inset it 1px to match other controls
-		textFieldWidget.x = x + 1;
-		textFieldWidget.y = y + 1;
+		textFieldWidget.setX(x + 1);
+		textFieldWidget.setY(y + 1);
 		textFieldWidget.setWidth(w - 2);
 		textFieldWidget.setHeight(h - 2);
 		textFieldWidget.render(mStack, mouseX, mouseY, delta);

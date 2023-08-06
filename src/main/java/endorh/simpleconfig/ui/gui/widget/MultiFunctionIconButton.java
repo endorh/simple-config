@@ -64,11 +64,11 @@ public class MultiFunctionIconButton extends TintedButton {
 	  int x, int y, int minWidth, int maxWidth, @NotNull Icon icon,
 	  ButtonActionBuilder action
 	) {
-		super(x, y, minWidth, 20, Component.empty(), b -> {}, NO_TOOLTIP);
+		super(x, y, minWidth, 20, Component.empty(), b -> {});
 		final ButtonAction defaultAction = action.build();
 		defaultIcon = icon;
 		defaultActivePredicate = defaultAction.activePredicate != null? defaultAction.activePredicate : () -> true;
-		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : () -> Component.empty();
+		defaultTitle = defaultAction.titleSupplier != null? defaultAction.titleSupplier : Component::empty;
 		defaultTooltip = defaultAction.tooltipSupplier != null? defaultAction.tooltipSupplier : Collections::emptyList;
 		defaultSound = defaultAction.sound != null? defaultAction.sound : () -> Optional.of(
 		  SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
@@ -162,7 +162,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		
 		RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
 		int level = getYImage(isHoveredOrFocused());
-		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, x, y, width, height, level);
+		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, getX(), getY(), width, height, level);
 		renderBg(mStack, mc, mouseX, mouseY);
 		int color = getFGColor();
 		contentArea.setBounds(area.x + 2, area.y + 2, area.width - 4, area.height - 4);
@@ -170,17 +170,17 @@ public class MultiFunctionIconButton extends TintedButton {
 			if (contentWidth < width) mStack.translate((width - contentWidth) / 2.0, 0.0, 0.0);
 			if (icon != Icon.EMPTY) {
 				RenderSystem.setShaderColor(0.1F, 0.1F, 0.1F, 0.8F);
-				icon.renderCentered(mStack, x + 1, y + 1, 20, 20);
+				icon.renderCentered(mStack, getX() + 1, getY() + 1, 20, 20);
 				float intensity = active ? 1F : 0.3F;
 				RenderSystem.setShaderColor(intensity, intensity, intensity, 1F);
-				icon.renderCentered(mStack, x, y, 20, 20);
+				icon.renderCentered(mStack, getX(), getY(), 20, 20);
 			}
 			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			if (width > iconWidth) {
 				if (contentWidth > width && !suppressHoverPeek) {
 					ScissorsHandler.INSTANCE.withScissor(
 					  contentArea, () -> drawString(
-						 mStack, font, title, x + iconWidth, y + (height - 8) / 2,
+						 mStack, font, title, getX() + iconWidth, getY() + (height - 8) / 2,
 						 color | Mth.ceil(alpha * 255.0F) << 24));
 					if (isMouseOver(mouseX, mouseY) && !overlay.isRendering()) {
 						Screen screen = mc.screen;
@@ -188,14 +188,14 @@ public class MultiFunctionIconButton extends TintedButton {
 							overlayArea = new Rectangle();
 							OverlayInjector.injectVisualOverlay(overlayArea, overlay, 10);
 						}
-						overlayArea.setBounds(x, y, contentWidth + 4, height + 1);
+						overlayArea.setBounds(getX(), getY(), contentWidth + 4, height + 1);
 						if (screen != null && overlayArea.getMaxX() > screen.width)
 							overlayArea.x = max(4, screen.width - 4 - overlayArea.getWidth());
 					}
 				} else {
-					if (overlayArea != null) overlayArea.setBounds(x, y, width, height + 1);
+					if (overlayArea != null) overlayArea.setBounds(getX(), getY(), width, height + 1);
 					drawString(
-					  mStack, font, title, x + iconWidth, y + (height - 8) / 2,
+					  mStack, font, title, getX() + iconWidth, getY() + (height - 8) / 2,
 					  color | Mth.ceil(alpha * 255.0F) << 24);
 				}
 			}
@@ -218,8 +218,8 @@ public class MultiFunctionIconButton extends TintedButton {
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
-			int tooltipX = hovered? mouseX : x + width / 2;
-			int tooltipY = hovered? mouseY : y < 64? y + height : y;
+			int tooltipX = hovered? mouseX : getX() + width / 2;
+			int tooltipY = hovered? mouseY : getY() < 64? getY() + height : getY();
 			if (screen instanceof IMultiTooltipScreen ts) {
 				ts.addTooltip(Tooltip.of(
 				  area, Point.of(tooltipX, tooltipY), ls
@@ -228,6 +228,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		}
 	}
 	
+	@Override
 	public List<Component> getTooltip() {
 		ButtonAction action = activeAction;
 		return (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
@@ -349,8 +350,8 @@ public class MultiFunctionIconButton extends TintedButton {
 				lastWidth = area.width;
 			}
 			rendering = true;
-			int x = button.x;
-			int y = button.y;
+			int x = button.getX();
+			int y = button.getY();
 			int minW = button.minWidth;
 			int maxW = button.maxWidth;
 			int h = button.height;
@@ -360,8 +361,8 @@ public class MultiFunctionIconButton extends TintedButton {
 			this.area.setBounds(area.x, area.y, w, area.height);
 			ScissorsHandler.INSTANCE.withSingleScissor(
 			  this.area, () -> button.render(mStack, mouseX, mouseY, delta));
-			button.x = x;
-			button.y = y;
+			button.setX(x);
+			button.setY(y);
 			button.minWidth = minW;
 			button.maxWidth = maxW;
 			button.height = h;

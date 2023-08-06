@@ -14,7 +14,6 @@ import endorh.simpleconfig.core.AbstractConfigEntryBuilder;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl;
 import endorh.simpleconfig.core.SimpleConfigBuilderImpl.ConfigValueBuilder;
 import endorh.simpleconfig.core.SimpleConfigImpl;
-import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.Util.OS;
@@ -166,13 +165,8 @@ public class MinecraftClientConfigWrapper {
 			});
 			with(category("sound").withIcon(MinecraftOptions.SOUND).withColor(0x80F04280), () -> {
 				with(group("volume", true), true, () -> {
-					Object2FloatMap<SoundSource> sourceVolumes =
-					  ObfuscationReflectionHelper.getPrivateValue(
-					    Options.class, options, SRG_NAMES.get("sourceVolumes"));
 					for (SoundSource source: SoundSource.values())
-						wrapMapValue(
-						  source.getName(), "soundCategory." + source.getName(),
-						  sourceVolumes, source, volume(1F));
+						wrapVolume(options.getSoundSourceOptionInstance(source));
 				});
 				wrapOption(options.soundDevice());
 				wrapBool(options.showSubtitles());
@@ -195,7 +189,7 @@ public class MinecraftClientConfigWrapper {
 				
 				wrapBool(options.chatLinks());
 				wrapBool(options.chatLinksPrompt());
-				wrapOption(options.chatPreview());
+				// wrapOption(options.chatPreview()); // Removed?
 				wrapBool(options.onlyShowSecureChat());
 				wrapBool(options.hideMatchedNames());
 			});
@@ -303,9 +297,13 @@ public class MinecraftClientConfigWrapper {
 				add(opt, b);
 			}
 		}
-		
+
 		private void wrapDouble(OptionInstance<Double> opt) {
-			DoubleEntryBuilder b = number(getInitialValue(opt));
+			wrapDouble(opt, null);
+		}
+
+		private void wrapDouble(OptionInstance<Double> opt, DoubleEntryBuilder builder) {
+			DoubleEntryBuilder b = builder != null? builder.withValue(getInitialValue(opt)) : number(getInitialValue(opt));
 			Object values = opt.values();
 			if (values instanceof OptionInstance.UnitDouble unit) {
 				b = b.range(0, 1).slider(getSliderLabelProvider(opt));
@@ -316,6 +314,10 @@ public class MinecraftClientConfigWrapper {
 				  .slider(getSliderLabelProvider(opt));
 			}
 			add(opt, b);
+		}
+
+		private void wrapVolume(OptionInstance<Double> opt) {
+			wrapDouble(opt, volume(1D));
 		}
 		
 		@SuppressWarnings("unchecked") private <T> void wrapOption(OptionInstance<T> opt) {
@@ -437,10 +439,10 @@ public class MinecraftClientConfigWrapper {
 		private <V> void add(
 		  OptionInstance<V> opt, ConfigEntryBuilder<V, ?, ?, ?> entryBuilder
 		) {
-			OptionInstance.TooltipSupplierFactory<V> tooltip = getTooltip(opt);
-			TooltipSupplier<V> tooltipSupplier = tooltip.apply(Minecraft.getInstance());
-			entryBuilder = entryBuilder.tooltip(v -> tooltipSupplier.apply(v).stream()
-			  .map(SimpleConfigTextUtil::asComponent).collect(Collectors.toList()));
+			TooltipSupplier<V> tooltipSupplier = getTooltip(opt);
+			entryBuilder = entryBuilder.tooltip(v -> Optional.ofNullable(tooltipSupplier.apply(v))
+					.map(t -> t.toCharSequence(Minecraft.getInstance())).orElseGet(Collections::emptyList).stream()
+					.map(SimpleConfigTextUtil::asComponent).collect(Collectors.toList()));
 			AbstractConfigEntryBuilder<V, ?, ?, ?, ?, ?> b = cast(entryBuilder);
 			b = b.translation(getName(opt)).withDelegate(new MinecraftOptionEntryDelegate<>(opt));
 			addEntry(getID(opt), b);
@@ -474,7 +476,7 @@ public class MinecraftClientConfigWrapper {
 			return ObfuscationReflectionHelper.getPrivateValue(OptionInstance.class, opt, "f_231480_");
 		}
 		
-		private <V> OptionInstance.TooltipSupplierFactory<V> getTooltip(OptionInstance<V> opt) {
+		private <V> OptionInstance.TooltipSupplier<V> getTooltip(OptionInstance<V> opt) {
 			return ObfuscationReflectionHelper.getPrivateValue(OptionInstance.class, opt, "f_231474_");
 		}
 		

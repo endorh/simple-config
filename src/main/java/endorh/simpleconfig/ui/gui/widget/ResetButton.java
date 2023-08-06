@@ -70,6 +70,8 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+		int x = getX();
+		int y = getY();
 		if (dragging) {
 			if (Minecraft.getInstance().font.isBidirectional())
 				overlay.setBounds(x - 4, y - 4, 2 * width + 48, height + 8);
@@ -215,7 +217,7 @@ public class ResetButton extends MultiFunctionImageButton
 				dragging = true;
 				confirming = false;
 				dragOffset = 0;
-				dragAnchor = mouseX - x;
+				dragAnchor = mouseX - getX();
 				getScreen().addOverlay(overlay, this, 20);
 			}
 			return true;
@@ -237,7 +239,7 @@ public class ResetButton extends MultiFunctionImageButton
 	  double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
 		if (!dragging) return false;
-		dragOffset = (int) round(mouseX - x - dragAnchor);
+		dragOffset = (int) round(mouseX - getX() - dragAnchor);
 		if (Minecraft.getInstance().font.isBidirectional())
 			dragOffset = Mth.clamp(dragOffset, 0, 40 + width);
 		else dragOffset = Mth.clamp(dragOffset, -40 - width, 0);
@@ -260,6 +262,8 @@ public class ResetButton extends MultiFunctionImageButton
 		RenderSystem.enableBlend();
 		fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), 0x80FF4242);
 		fill(mStack, area.x + 2, area.y + 2, area.getMaxX() - 2, area.getMaxY() - 2, 0xFFFF6464);
+		int x = getX();
+		int y = getY();
 		if (dragging) {
 			defaultIcon.renderStretch(mStack, x, y, width, height, 0);
 			if (Minecraft.getInstance().font.isBidirectional()) {

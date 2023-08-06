@@ -88,8 +88,8 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			int fieldWidth = listEntry.getFieldWidth();
 			int fieldX = font.isBidirectional() ? x : x + cellWidth - fieldWidth;
 			widget.setWidth(fieldWidth);
-			widget.x = fieldX;
-			widget.y = y + 1;
+			widget.setX(fieldX);
+			widget.setY(y + 1);
 			widget.setEditable(editable);
 			
 			widget.render(mStack, mouseX, mouseY, delta);

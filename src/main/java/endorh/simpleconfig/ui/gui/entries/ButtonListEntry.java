@@ -30,8 +30,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 		this.buttonLabelSupplier = buttonLabelSupplier;
 		setOriginal(value);
 		setValue(value);
-		button = new Button(
-		  0, 0, 150, 20, buttonLabelSupplier.get(), p -> getValue().run());
+		button = new Button.Builder(buttonLabelSupplier.get(), p -> getValue().run()).bounds(0, 0, 150, 20).build();
 		listeners = Lists.newArrayList(button);
 		childListeners = Lists.newArrayList(button);
 	}
@@ -43,8 +42,8 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 	) {
 		button.setMessage(buttonLabelSupplier.get());
 		button.active = shouldRenderEditable();
-		button.x = x;
-		button.y = y;
+		button.setX(x);
+		button.setY(y);
 		button.setWidth(w);
 		button.setHeight(h);
 		button.render(mStack, mouseX, mouseY, delta);

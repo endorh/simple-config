@@ -49,11 +49,7 @@
  * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#linkedMap
  * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#pairList
  * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#caption
- * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#toCommonsPair
- * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#toPair
  * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#pair
- * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#toCommonsTriple
- * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#toTriple
  * @see endorh.simpleconfig.konfig.builders.SimpleKonfigBuildersKt#triple
  */
 package endorh.simpleconfig.konfig.builders;
