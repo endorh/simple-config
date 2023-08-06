@@ -101,10 +101,10 @@ public class RangeListEntry<
 		int centerWidth = buttonWidth * 2 + 2 * 2 + iconWidth;
 		int leftWidth = (int) ((w - centerWidth) * 0.5D);
 		int rightWidth = w - centerWidth - leftWidth;
-		minExclusivenessButton.x = x + leftWidth + 2;
-		minExclusivenessButton.y = y + 1;
-		maxExclusivenessButton.x = x + leftWidth + buttonWidth + 2 + iconWidth;
-		maxExclusivenessButton.y = y + 1;
+		minExclusivenessButton.setX(x + leftWidth + 2);
+		minExclusivenessButton.setY(y + 1);
+		maxExclusivenessButton.setX(x + leftWidth + buttonWidth + 2 + iconWidth);
+		maxExclusivenessButton.setY(y + 1);
 		if (middleIcon != null)
 			middleIcon.renderCentered(mStack, x + leftWidth, y, middleIcon.w, h);
 		minEntry.renderChild(

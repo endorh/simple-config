@@ -16,7 +16,10 @@ public interface BlockEntryBuilder
 	/**
 	 * When true (the default), requires the block item to have a group.<br>
 	 * This excludes the AIR and BARRIER blocks, as well as other special blocks.
+	 *
+	 * @deprecated Ineffective in 1.19.3+
 	 */
+	@Deprecated
 	@Contract(pure=true) @NotNull BlockEntryBuilder setRequireGroup(boolean requireGroup);
 	
 	/**

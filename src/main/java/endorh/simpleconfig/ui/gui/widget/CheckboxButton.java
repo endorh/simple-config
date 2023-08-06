@@ -55,12 +55,12 @@ public class CheckboxButton extends ToggleImageButton {
 			final List<FormattedCharSequence> lines =
 			  font.split(label, width - 24);
 			if (!lines.isEmpty())
-				font.drawShadow(mStack, lines.get(0), x + 22, y + 6, textColor);
+				font.drawShadow(mStack, lines.get(0), getX() + 22, getY() + 6, textColor);
 		}
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
-		return mouseX >= x && mouseX < x + realWidth && mouseY >= y && mouseY < y + height;
+		return mouseX >= getX() && mouseX < getX() + realWidth && mouseY >= getY() && mouseY < getY() + height;
 	}
 	
 	@Override public void setWidth(int width) {

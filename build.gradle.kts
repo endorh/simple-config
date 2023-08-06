@@ -11,7 +11,7 @@ import java.util.*
 // Plugins
 plugins {
     `java-library`
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.8.0"
     id("net.minecraftforge.gradle")
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("simpleconfig.antlr-conventions")
@@ -43,8 +43,8 @@ object V {
     // Dependencies
     val yaml = "1.33"
     val jei = "12.4.0.22"
-    val kotlin = "1.7.10"
-    val kotlinForForge = "4.4.0"
+    val kotlin = "1.8.0"
+    val kotlinForForge = "4.1.0"
 }
 
 val vendor = "Endor H"
@@ -426,6 +426,9 @@ val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
     from(apiSourceSet.allSource)
     from(kotlinApiSourceSet.allSource)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // TODO: This shouldn't be necessary
+    dependsOn("generateApiGrammarSource")
 }
 
 val apiJarTask = tasks.register<Jar>("apiJar") {

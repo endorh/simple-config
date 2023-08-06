@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Color;
@@ -120,8 +120,8 @@ public class ColorPickerWidget extends AbstractWidget {
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.enableDepthTest();
 		
-		palette.x = x + width - 2 * (unit + margin) - margin - 1;
-		palette.y = y + margin;
+		palette.x = getX() + width - 2 * (unit + margin) - margin - 1;
+		palette.y = getY() + margin;
 		palette.w = 2 * (unit + margin);
 		palette.h = height - 2 * margin;
 		
@@ -142,17 +142,17 @@ public class ColorPickerWidget extends AbstractWidget {
 			hueBar.h = palette.h - unit - margin;
 		}
 		
-		brightnessSaturation.x = x + margin;
+		brightnessSaturation.x = getX() + margin;
 		brightnessSaturation.y = palette.y;
 		brightnessSaturation.w = hueBar.x - margin - brightnessSaturation.x;
 		brightnessSaturation.h = hueBar.h;
 		
-		historyBar.x = x + margin;
-		historyBar.y = y + height - unit - margin;
+		historyBar.x = getX() + margin;
+		historyBar.y = getY() + height - unit - margin;
 		historyBar.w = palette.x - margin - historyBar.x;
 		historyBar.h = unit;
 		
-		drawBox(mStack, x, y, width, height);
+		drawBox(mStack, getX(), getY(), width, height);
 		for (SubWidget subWidget : subWidgets)
 			subWidget.render(mStack, mouseX, mouseY);
 	}
@@ -226,7 +226,7 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (mouseX < x || mouseX >= x + width || mouseY < y || mouseY >= y + height)
+		if (mouseX < getX() || mouseX >= getX() + width || mouseY < getY() || mouseY >= getY() + height)
 			return false;
 		
 		for (SubWidget subWidget : subWidgets) {
@@ -248,9 +248,10 @@ public class ColorPickerWidget extends AbstractWidget {
 	@Override public boolean changeFocus(boolean focus) {
 		return false;
 	}
-	
-	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
-	
+
+
+	@Override protected void updateWidgetNarration(NarrationElementOutput out) {}
+
 	public abstract static class SubWidget {
 		public int x = 0;
 		public int y = 0;
@@ -274,7 +275,7 @@ public class ColorPickerWidget extends AbstractWidget {
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				mStack.pushPose(); {
-					mStack.mulPose(Vector3f.ZP.rotationDegrees(- 90F));
+					mStack.mulPose(Axis.ZP.rotationDegrees(-90F));
 					fillGradient(mStack, -h, 0, 0, w, 0xFFFFFFFF,
 					             Color.ofHSB(lastHue, 1F, 1F).getOpaque());
 				} mStack.popPose();
@@ -312,7 +313,7 @@ public class ColorPickerWidget extends AbstractWidget {
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w > h) {
-					mStack.mulPose(Vector3f.ZP.rotationDegrees(-90F));
+					mStack.mulPose(Axis.ZP.rotationDegrees(-90F));
 					mStack.translate(-h, 0, 0D);
 					w = w + h;
 					h = w - h;
@@ -358,7 +359,7 @@ public class ColorPickerWidget extends AbstractWidget {
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w > h) {
-					mStack.mulPose(Vector3f.ZP.rotationDegrees(90F));
+					mStack.mulPose(Axis.ZP.rotationDegrees(90F));
 					mStack.translate(0, -w, 0D);
 					w = w + h;
 					h = w - h;
@@ -399,7 +400,7 @@ public class ColorPickerWidget extends AbstractWidget {
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w < h) {
-					mStack.mulPose(Vector3f.ZP.rotationDegrees(90F));
+					mStack.mulPose(Axis.ZP.rotationDegrees(90F));
 					mStack.translate(0, w, 0D);
 				}
 				shownHistorySize = min(historySize, max(0, (w / h) - 2));

@@ -72,8 +72,8 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			final int by = y + h - 24;
 			int bx = max(x + 4, x + w / 2 - ((bw + 4) * count - 4) / 2);
 			for (AbstractWidget button: buttons) {
-				button.x = bx;
-				button.y = by;
+				button.setX(bx);
+				button.setY(by);
 				button.setWidth(bw);
 				bx += bw + 4;
 			}

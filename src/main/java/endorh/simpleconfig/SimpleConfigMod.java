@@ -104,7 +104,7 @@ import static net.minecraftforge.client.settings.KeyModifier.*;
 	}
 	
 	protected static SoundEvent regSound(RegisterHelper<SoundEvent> registry, ResourceLocation name) {
-		SoundEvent event = new SoundEvent(name);
+		SoundEvent event = SoundEvent.createVariableRangeEvent(name);
 		registry.register(name, event);
 		return event;
 	}

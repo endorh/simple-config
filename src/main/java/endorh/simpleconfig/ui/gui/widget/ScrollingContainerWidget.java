@@ -132,7 +132,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 			final GuiEventListener listener = getFocused();
 			if (listener != null) {
 				if (listener instanceof final AbstractWidget widget) {
-					int target = widget.y + widget.getHeight() / 2 - area.y;
+					int target = widget.getY() + widget.getHeight() / 2 - area.y;
 					scrollTo(target, true);
 				}
 			}

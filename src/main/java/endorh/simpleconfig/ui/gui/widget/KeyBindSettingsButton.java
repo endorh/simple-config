@@ -137,7 +137,7 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		IOverlayCapableContainer container = getContainer();
 		Rectangle area = overlay.getArea();
 		Rectangle parent = parentRectangle.isEmpty()
-		                   ? new Rectangle(x, y, getWidth(), getHeight())
+		                   ? new Rectangle(getX(), getY(), getWidth(), getHeight())
 		                   : parentRectangle;
 		int w = container.getScreenWidth();
 		int h = container.getScreenHeight();

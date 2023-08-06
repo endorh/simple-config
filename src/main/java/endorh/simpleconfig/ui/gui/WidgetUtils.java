@@ -3,7 +3,7 @@ package endorh.simpleconfig.ui.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 
 import java.util.Collection;
@@ -41,19 +41,19 @@ public class WidgetUtils {
 	}
 	
 	public static void pos(AbstractWidget widget, int x, int y) {
-		widget.x = x;
-		widget.y = y;
+		widget.setX(x);
+		widget.setY(y);
 	}
 	
 	public static void pos(AbstractWidget widget, int x, int y, int w) {
-		widget.x = x;
-		widget.y = y;
+		widget.setX(x);
+		widget.setY(y);
 		widget.setWidth(w);
 	}
 	
 	public static void pos(AbstractWidget widget, int x, int y, int w, int h) {
-		widget.x = x;
-		widget.y = y;
+		widget.setX(x);
+		widget.setY(y);
 		widget.setWidth(w);
 		widget.setHeight(h);
 	}
@@ -71,8 +71,8 @@ public class WidgetUtils {
 	
 	public static void renderAll(
 	  PoseStack mStack, int mouseX, int mouseY, float partialTicks,
-	  Widget... widgets
+	  Renderable... widgets
 	) {
-		for (Widget widget : widgets) widget.render(mStack, mouseX, mouseY, partialTicks);
+		for (Renderable widget : widgets) widget.render(mStack, mouseX, mouseY, partialTicks);
 	}
 }

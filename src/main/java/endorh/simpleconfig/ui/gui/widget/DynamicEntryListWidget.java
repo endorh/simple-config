@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IExpandable;
@@ -21,7 +20,7 @@ import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -39,6 +38,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.AbstractList;
@@ -56,7 +56,7 @@ import static java.lang.Math.min;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicEntryListWidget<E extends ListEntry>
   extends AbstractContainerEventHandler
-  implements Widget, IExtendedDragAwareNestedGuiEventHandler, NarratableEntry {
+  implements Renderable, IExtendedDragAwareNestedGuiEventHandler, NarratableEntry {
 	
 	protected static final int DRAG_OUTSIDE = -2;
 	protected final Minecraft client;

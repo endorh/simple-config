@@ -48,7 +48,7 @@ public class BlockNameEntry extends AbstractResourceEntry<BlockNameEntry> {
 		public Builder(ResourceLocation value) {
 			super(value, EntryType.of(ResourceLocation.class));
 			suggestionSupplier = () -> ForgeRegistries.BLOCKS.getValues().stream()
-			  .filter(b -> b.asItem().getItemCategory() != null).map(ForgeRegistries.BLOCKS::getKey)
+			  .map(ForgeRegistries.BLOCKS::getKey)
 			  .collect(Collectors.toList());
 		}
 		

@@ -104,8 +104,8 @@ public abstract class AbstractDialog
 		setY(screenHeight / 2 - h / 2);
 		if (canCopyText()) {
 			copyTextReference.setTarget(copyTextButton);
-			copyTextButton.x = getX() + getWidth() - 21;
-			copyTextButton.y = getY() + 3;
+			copyTextButton.setX(getX() + getWidth() - 21);
+			copyTextButton.setY(getY() + 3);
 		} else copyTextReference.setTarget(null);
 	}
 	

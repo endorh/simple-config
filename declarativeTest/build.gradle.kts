@@ -15,8 +15,8 @@ val modGroup = "endorh.simpleconfig"
 object V {
     val api = "1.0.0"
     val mod = "1.0.0"
-    val minecraft = "1.19.2"
-    val forge = "43.1.1"
+    val minecraft = "1.19.3"
+    val forge = "44.1.0"
     val minecraftForge = "$minecraft-$forge"
     val minecraftMod = "$minecraft-$mod"
     object mappings {
@@ -28,7 +28,7 @@ object V {
     val simpleConfig = "1.0.+"
     
     // Integration
-    val jei = "11.2.0.256"
+    val jei = "12.4.0.22"
 }
 
 // License
@@ -147,10 +147,10 @@ dependencies {
     
     // Testing dependencies
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3873264"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4171025"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:3947885"))
+    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462839"))
     
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-${V.minecraft}-forge:${V.jei}"))

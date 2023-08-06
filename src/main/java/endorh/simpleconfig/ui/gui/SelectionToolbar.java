@@ -64,8 +64,8 @@ public class SelectionToolbar extends AbstractContainerEventHandler implements N
 		if (visible) {
 			int xx = x;
 			for (AbstractWidget button : buttons) {
-				button.x = xx;
-				button.y = y;
+				button.setX(xx);
+				button.setY(y);
 				xx += button.getWidth();
 				button.render(mStack, mouseX, mouseY, delta);
 			}

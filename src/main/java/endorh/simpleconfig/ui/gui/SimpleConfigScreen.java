@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.ConfigEntryHolder;
@@ -63,6 +62,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.nio.file.Path;
@@ -923,12 +923,12 @@ import static net.minecraft.util.Mth.clamp;
 				MultiFunctionIconButton visible = modeButtonMap.get(getEditedType());
 				modeButtons.stream().filter(b -> b != visible).forEach(b -> b.visible = false);
 				visible.setExactWidth(20);
-				visible.x = editFileButton.x + 24;
+				visible.setX(editFileButton.getX() + 24);
 				selectionToolbar.visible = true;
-				int y = selectAllButton.y;
+				int y = selectAllButton.getY();
 				navigateUpButton.setPosition(3 + 44, y);
 				navigateDownButton.setPosition(3 + 66, y);
-				if (navigateDownButton.x + navigateDownButton.getWidth() > quitButton.x - 4)
+				if (navigateDownButton.getX() + navigateDownButton.getWidth() > quitButton.getX() - 4)
 					navigateUpButton.visible = navigateDownButton.visible = false;
 			} else {
 				int bx = 48;
@@ -943,12 +943,12 @@ import static net.minecraft.util.Mth.clamp;
 				if (bx + modeButtons.stream().mapToInt(AbstractWidget::getWidth).sum() > 0.35 * width)
 					modeButtons.forEach(b -> b.setExactWidth(20));
 				for (MultiFunctionIconButton b: modeButtons) {
-					b.x = bx;
+					b.setX(bx);
 					bx += b.getWidth();
 					b.visible = true;
 				}
 				selectionToolbar.visible = false;
-				int y = selectAllButton.y;
+				int y = selectAllButton.getY();
 				navigateUpButton.setPosition(3, y);
 				navigateDownButton.setPosition(3 + 22, y);
 			}
@@ -985,7 +985,7 @@ import static net.minecraft.util.Mth.clamp;
 			tabsScroller.updatePosition(delta * 3.0f);
 			int xx = 24 - (int) tabsScroller.scrollAmount;
 			for (ConfigCategoryButton tabButton : tabButtons) {
-				tabButton.x = xx;
+				tabButton.setX(xx);
 				xx += tabButton.getWidth() + 2;
 			}
 		}
