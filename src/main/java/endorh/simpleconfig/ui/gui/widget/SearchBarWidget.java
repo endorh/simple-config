@@ -343,32 +343,32 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 		  String.format("%s / %s", totalMatches > 0 ? currentMatch + 1 : 0, totalMatches);
 		final int textW = font.width(text);
 		int textX = x + w - 42 - textW;
-		up.x = x + w - 38;
-		up.y = y + 3;
-		down.x = x + w - 20;
-		down.y = y + 3;
-		close.x = x + 2;
-		close.y = y + 2;
+		up.setX(x + w - 38);
+		up.setY(y + 3);
+		down.setX(x + w - 20);
+		down.setY(y + 3);
+		close.setX(x + 2);
+		close.setY(y + 2);
 		int bx = x + 24;
 		for (ToggleImageButton b : optionButtons) {
-			b.x = bx;
+			b.setX(bx);
 			bx += b.getWidth() + 2;
-			b.y = y + 12 - b.getHeight() / 2;
+			b.setY(y + 12 - b.getHeight() / 2);
 		}
 		int comboWidth = w - bx - 42 - (filter? 0 : max(42, textW));
 		comboBox.setWidth(comboWidth);
 		regexComboBox.setWidth(comboWidth);
-		comboBox.x = bx + 2;
-		comboBox.y = y + 3;
-		regexComboBox.x = bx + 2;
-		regexComboBox.y = y + 3;
+		comboBox.setX(bx + 2);
+		comboBox.setY(y + 3);
+		regexComboBox.setX(bx + 2);
+		regexComboBox.setY(y + 3);
 		if (!filter)font.drawShadow(
 		  mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
 	}
 	
 	protected void positionNotExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
-		open.x = x + 2;
-		open.y = y + 2;
+		open.setX(x + 2);
+		open.setY(y + 2);
 	}
 	
 	protected void renderExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {

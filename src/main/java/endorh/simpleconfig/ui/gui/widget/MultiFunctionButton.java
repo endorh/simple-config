@@ -21,9 +21,9 @@ public class MultiFunctionButton extends TintedButton {
 	
 	public MultiFunctionButton(
 	  int x, int y, int width, int height, Component title,
-	  BiPredicate<Button, Integer> pressAction, OnTooltip onTooltip
+	  BiPredicate<Button, Integer> pressAction, CreateNarration createNarration
 	) {
-		super(x, y, width, height, title, b -> {}, onTooltip);
+		super(x, y, width, height, title, b -> {}, createNarration);
 		this.pressAction = pressAction;
 	}
 	

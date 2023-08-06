@@ -6,7 +6,7 @@ package endorh.simpleconfig.grammar.regex;
 
 root: pattern EOF;
 
-pattern: expr* (PIPE expr*)?;
+pattern: expr* (PIPE expr*)*;
 
 expr: atom quantifier?;
 

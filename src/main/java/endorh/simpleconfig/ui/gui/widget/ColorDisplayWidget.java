@@ -23,11 +23,13 @@ public class ColorDisplayWidget extends AbstractWidget {
 	}
 	
 	@Override public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-		this.fillGradient(
-		  mStack, this.x, this.y, this.x + this.size, this.y + this.size,
-		  this.textFieldWidget.isFocused() ? -1 : -6250336,
-		  this.textFieldWidget.isFocused() ? -1 : -6250336);
-		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
+		int x = getX();
+		int y = getY();
+		fillGradient(
+		  mStack, x, y, x + size, y + size,
+		  textFieldWidget.isFocused() ? -1 : 0XFFA0A0A0,
+		  textFieldWidget.isFocused() ? -1 : 0XFFA0A0A0);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.enableDepthTest();
@@ -47,7 +49,7 @@ public class ColorDisplayWidget extends AbstractWidget {
 	public void setColor(int color) {
 		this.color = color;
 	}
-	
-	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
+
+	@Override protected void updateWidgetNarration(@NotNull NarrationElementOutput out) {}
 }
 

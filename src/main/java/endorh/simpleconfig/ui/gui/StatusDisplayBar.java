@@ -79,9 +79,9 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 	) {
 		width = screen.width;
 		height = 19;
-		x = 0;
-		y = screen.listWidget.bottom - height;
-		rect.setBounds(x, y, width, height);
+		setX(0);
+		setY(screen.listWidget.bottom - height);
+		rect.setBounds(getX(), getY(), width, height);
 		if (!activeStates.isEmpty() && !claimed) {
 			screen.addOverlay(rect, this);
 			claimed = true;
@@ -112,7 +112,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		if (!isMouseOver(mouseX, mouseY)) return false;
 		if (hasDialog() && dialogButton.mouseClicked(mouseX, mouseY, button)) return true;
 		if (activeStates.size() > 1) {
-			int i = ((int) mouseX - x) / height;
+			int i = ((int) mouseX - getX()) / height;
 			if (i < activeStates.size() - 1) {
 				StatusState state = activeStates.get(activeStates.size() - 1 - i);
 				if (button == 2 && state.hasDialog(screen)) {
@@ -139,6 +139,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		StatusStyle style = state.getStyle(screen);
 		Icon icon = style.icon();
 		if (icon == null) icon = Icon.EMPTY;
+		int y = getY();
 		fill(mStack, boxX, y, boxX + height, y + height, style.backgroundColor());
 		fill(mStack, boxX, y, boxX + height, y + 1, style.borderColor());
 		fill(mStack, boxX, y + height - 1, boxX + height, y + height, style.borderColor());
@@ -169,6 +170,8 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		Font font = mc.font;
 		
 		StatusStyle style = activeState.getStyle(screen);
+		int x = getX();
+		int y = getY();
 		fillGradient(mStack, x, y - 4, x + width, y, 0x00000000, shadowColor);
 		
 		int l = x;
@@ -186,8 +189,8 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		Component title = activeState.getTitle(screen);
 		drawString(mStack, font, title, l + 19, y + 6, 0xFFE0E0E0);
 		if (hasDialog()) {
-			dialogButton.x = x + width - 17;
-			dialogButton.y = y + 2;
+			dialogButton.setX(x + width - 17);
+			dialogButton.setY(y + 2);
 			dialogButton.visible = true;
 		} else dialogButton.visible = false;
 		dialogButton.render(mStack, mouseX, mouseY, delta);
@@ -199,9 +202,9 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		}
 		return true;
 	}
-	
-	@Override public void updateNarration(@NotNull NarrationElementOutput out) {}
-	
+
+	@Override protected void updateWidgetNarration(@NotNull NarrationElementOutput out) {}
+
 	public static final StatusState READ_ONLY = new StatusState(30) {
 		@Override public boolean isActive(SimpleConfigScreen screen) {
 			return !screen.isEditable();

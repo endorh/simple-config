@@ -164,16 +164,16 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 	protected void position() {
 		if (screen.getFocused() != this) forceUnFocus(listeners);
 		
-		selector.x = area.x + 1;
-		selector.y = area.y + 2;
+		selector.setX(area.x + 1);
+		selector.setY(area.y + 2);
 		selector.setHeight(area.height - 2);
 		selector.setWidth(area.width - 42);
 		
-		loadButton.x = area.getMaxX() - 40;
-		loadButton.y = area.y;
+		loadButton.setX(area.getMaxX() - 40);
+		loadButton.setY(area.y);
 		
-		saveButton.x = area.getMaxX() - 20;
-		saveButton.y = area.y;
+		saveButton.setX(area.getMaxX() - 20);
+		saveButton.setY(area.y);
 	}
 	
 	protected IConfigSnapshotHandler getHandler() {

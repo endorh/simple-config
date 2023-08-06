@@ -17,6 +17,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -73,8 +74,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			 Component.translatable("simpleconfig.ui.view_" + (getScreen().isEditingServer()? "remote" : "external") + "_changes")
 			   .withStyle(ChatFormatting.GOLD)))
 		) {
-			@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
-				if (advanced.show_ui_tips) super.renderToolTip(mStack, mouseX, mouseY - 16);
+			@Override public void setTooltip(@Nullable Tooltip tooltip) {
+				if (advanced.show_ui_tips) super.setTooltip(tooltip);
 			}
 		}.on(MultiFunctionImageButton.Modifier.NONE, ButtonAction.of(() -> {})
 		  .active(() -> !isPreviewingExternal() && hasAcceptedExternalDiff())
@@ -190,12 +191,12 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		entryArea.setBounds(x, y, entryWidth, entryHeight);
 		final DynamicEntryListWidget<?> parent = getEntryList();
 		rowArea.setBounds(parent.left, entryArea.y, parent.right - parent.left, getFieldHeight());
-		selectionCheckbox.x = parent.left + 2;
-		selectionCheckbox.y = y + 12 - 10;
+		selectionCheckbox.setX(parent.left + 2);
+		selectionCheckbox.setY(y + 12 - 10);
 		selectionCheckbox.setToggle(isSelected());
 		if (isSelectable() && (
 		  getScreen().isSelecting()
-		  || selectionCheckbox.isMouseOver(mouseX, selectionCheckbox.y + 1)
+		  || selectionCheckbox.isMouseOver(mouseX, selectionCheckbox.getY() + 1)
 		     && getEntryList().getArea().contains(mouseX, mouseY))) {
 			selectionCheckbox.render(mStack, mouseX, mouseY, delta);
 		}
@@ -218,24 +219,24 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			sideButtonReference.setTarget(hotKeyActionButton);
 			resetButtonOffset = hotKeyActionButton.getWidth() + 2;
 			fieldWidth -= resetButtonOffset;
-			hotKeyActionButton.y = y;
-			hotKeyActionButton.x = font.isBidirectional()? x : x + entryWidth - hotKeyActionButton.getWidth();
+			hotKeyActionButton.setY(y);
+			hotKeyActionButton.setX(font.isBidirectional() ? x : x + entryWidth - hotKeyActionButton.getWidth());
 			fieldX += font.isBidirectional()? hotKeyActionButton.getWidth() : 0;
 			hotKeyActionButton.render(mStack, mouseX, mouseY, delta);
 		} else if (resetButton != null && !ctrlDown) {
 			sideButtonReference.setTarget(this.resetButton);
 			resetButtonOffset = resetButton.getWidth() + 2;
 			fieldWidth -= resetButtonOffset;
-			resetButton.y = y;
-			resetButton.x = font.isBidirectional()? x : x + entryWidth - resetButton.getWidth();
+			resetButton.setY(y);
+			resetButton.setX(font.isBidirectional() ? x : x + entryWidth - resetButton.getWidth());
 			fieldX += font.isBidirectional()? resetButton.getWidth() : 0;
 			if (isDisplayingValue())
 				resetButton.render(mStack, mouseX, mouseY, delta);
 		}
 		Optional<ImageButton> opt = getMarginButton();
 		ImageButton marginButton = isPreviewingExternal()? mergeButton : opt.orElse(mergeButton);
-		marginButton.x = x + entryWidth + 8;
-		marginButton.y = y;
+		marginButton.setX(x + entryWidth + 8);
+		marginButton.setY(y);
 		if (opt.isPresent())
 			marginButton.render(mStack, mouseX, mouseY, delta);
 		if (hasExternalDiff()) {
@@ -354,8 +355,8 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 				  externalPreviewTextColor);
 				
 				// Controls
-				acceptButton.x = resetButton.x;
-				acceptButton.y = resetButton.y;
+				acceptButton.setX(resetButton.getX());
+				acceptButton.setY(resetButton.getY());
 				acceptButton.render(mStack, mouseX, mouseY, delta);
 				mergeButton.render(mStack, mouseX, mouseY, delta);
 			} ScissorsHandler.INSTANCE.popScissor();

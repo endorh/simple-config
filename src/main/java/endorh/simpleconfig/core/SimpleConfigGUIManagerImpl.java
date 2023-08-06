@@ -22,6 +22,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.hotkey.HotKeyListDialog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.GridWidget;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.OptionsScreen;
@@ -315,13 +316,14 @@ public final class SimpleConfigGUIManagerImpl implements SimpleConfigGUIManager 
 		int y = gui instanceof TitleScreen? gui.height / 4 + 48 + 72 + 12 : gui.height / 4 + 96 - 16;
 		int width = 98;
 		return widgets.stream()
+		  .filter(w -> w instanceof GridWidget).flatMap(w -> ((GridWidget) w).children().stream())
 		  .filter(l -> l instanceof Button).map(l -> (Button) l)
 		  .filter(b -> {
 			  ComponentContents contents = b.getMessage().getContents();
 			  return contents instanceof TranslatableContents tc
 			         && "menu.options".equals(tc.getKey());
 		  }).findFirst()
-		  .filter(b -> !checkDimensions || b.x == x && b.y == y && b.getWidth() == width);
+		  .filter(b -> !checkDimensions || b.getX() == x && b.getY() == y && b.getWidth() == width);
 	}
 	
 	private Button lastOptionsButton = null;

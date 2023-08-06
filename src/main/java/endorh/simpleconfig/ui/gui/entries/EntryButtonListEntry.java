@@ -126,8 +126,8 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		entry.renderChild(mStack, x, y, w - 22, h, mouseX, mouseY, delta);
-		button.x = x + w - 20;
-		button.y = y;
+		button.setX(x + w - 20);
+		button.setY(y);
 		button.render(mStack, mouseX, mouseY, delta);
 	}
 	

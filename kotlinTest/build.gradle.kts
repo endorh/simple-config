@@ -4,19 +4,17 @@ buildscript {
     // ForgeGradle is declared in buildSrc, only Kotlin needs to be declared here
     dependencies {
         // Kotlin For Forge Gradle plugin dependencies
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10") // Must match KFF version
-        classpath("org.jetbrains.kotlin:kotlin-serialization:1.7.10") // Optional
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0") // Must match KFF version
+        classpath("org.jetbrains.kotlin:kotlin-serialization:1.8.0") // Optional
     }
 }
 
 plugins {
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.8.0"
     id("net.minecraftforge.gradle")
     id("simpleconfig.minecraft-conventions")
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
-
-apply(from = "https://raw.githubusercontent.com/thedarkcolour/KotlinForForge/site/thedarkcolour/kotlinforforge/gradle/kff-3.7.1.gradle")
 
 // Mod info --------------------------------------------------------------------
 
@@ -26,8 +24,8 @@ val modGroup = "endorh.simpleconfig"
 object V {
     val api = "1.0.0"
     val mod = "1.0.0"
-    val minecraft = "1.19.2"
-    val forge = "43.1.1"
+    val minecraft = "1.19.3"
+    val forge = "44.1.0"
     val minecraftForge = "$minecraft-$forge"
     val minecraftMod = "$minecraft-$mod"
     object mappings {
@@ -36,11 +34,11 @@ object V {
     }
     
     // Dependencies
-    val simpleKonfigApi = "1.0.0"
+    val simpleKonfigApi = "1.0.+"
     val simpleConfig = "1.0.+"
     
     // Integration
-    val jei = "11.2.0.256"
+    val jei = "12.4.0.22"
 }
 
 // License
@@ -138,7 +136,11 @@ repositories {
         name = "ModMaven" // JEI fallback
         includeOnly("mezz.jei")
     }
-    
+    maven("https://thedarkcolour.github.io/KotlinForForge/") {
+        name = "Kotlin for Forge"
+        includeOnly("thedarkcolour")
+    }
+
     mavenCentral {
         excludeExplicit()
     }
@@ -156,13 +158,16 @@ dependencies {
     compileOnly(rootProject.sourceSets["api"].output)
     compileOnly(rootProject.sourceSets["kotlinApi"].output)
     runtimeOnly(project(rootProject.path, configuration = "deobfShadowJar"))
-    
+
+    // Kotlin For Forge
+    implementation("thedarkcolour:kotlinforforge:4.1.0")
+
     // Testing dependencies
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:3873264"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4171025"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:3947885"))
+    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462839"))
     
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-${V.minecraft}-forge:${V.jei}"))

@@ -15,7 +15,10 @@ public interface FluidEntryBuilder
 	/**
 	 * When true (the default), requires the filled bucket item to have an item group.<br>
 	 * This excludes the empty fluid.
+	 *
+	 * @deprecated Ineffective in 1.19.3+
 	 */
+	@Deprecated
 	@Contract(pure=true) @NotNull FluidEntryBuilder setRequireGroup(boolean requireGroup);
 	
 	/**

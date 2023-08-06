@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.api;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * Redirects all {@link GuiEventListener} related events to a given target.<br>
  * Convenient to replace event listeners in multiple queues.
  */
-public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListener, Widget {
+public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListener, Renderable {
 	private @Nullable GuiEventListener target;
 	public RedirectGuiEventListener(@Nullable GuiEventListener target) {
 		this.target = target;
@@ -89,8 +89,8 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 	// IRenderable methods
 	
 	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-		if (target instanceof Widget)
-			((Widget) target).render(mStack, mouseX, mouseY, delta);
+		if (target instanceof Renderable)
+			((Renderable) target).render(mStack, mouseX, mouseY, delta);
 	}
 	
 	// Widget methods

@@ -60,8 +60,8 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setEnabled(shouldRenderEditable());
 		comboBox.setRestrictedToSuggestions(!isSuggestionMode());
 		// Like text fields, combo boxes render the border outside, so we inset it 1px to match
-		comboBox.x = x + 1;
-		comboBox.y = y + 1;
+		comboBox.setX(x + 1);
+		comboBox.setY(y + 1);
 		comboBox.setWidth(w - 2);
 		comboBox.setHeight(h - 2);
 		comboBox.setDropDownHeight(min(120, getEntryList().bottom - getEntryList().top - 32));

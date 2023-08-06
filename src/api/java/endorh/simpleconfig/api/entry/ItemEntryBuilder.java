@@ -16,7 +16,10 @@ public interface ItemEntryBuilder
 	/**
 	 * When true (the default), items without an item group are not accepted.<br>
 	 * This excludes the AIR and BARRIER item blocks, as well as other special blocks.
+	 *
+	 * @deprecated Ineffective in 1.19.3+
 	 */
+	@Deprecated
 	@Contract(pure=true) @NotNull ItemEntryBuilder setRequireGroup(boolean requireGroup);
 	
 	/**

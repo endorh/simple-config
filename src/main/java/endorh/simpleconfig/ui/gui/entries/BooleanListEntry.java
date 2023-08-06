@@ -36,14 +36,13 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		setValue(value);
 		setOriginal(value);
 		displayedValue = value;
-		buttonWidget = new Button(
-		  0, 0, 150, 20, GameNarrator.NO_TITLE, widget -> {
-			  if (!isFocused()) {
-				  preserveState();
-				  setFocused(true);
-			  }
-			  displayedValue = !displayedValue;
-		  });
+		buttonWidget = new Button.Builder(GameNarrator.NO_TITLE, widget -> {
+			if (!isFocused()) {
+				preserveState();
+				setFocused(true);
+			}
+			displayedValue = !displayedValue;
+		}).bounds(0, 0, 150, 20).build();
 		widgets = Lists.newArrayList(buttonWidget, sideButtonReference);
 		childWidgets = Lists.newArrayList(buttonWidget);
 		hotKeyActionTypes.add(HotKeyActionTypes.BOOLEAN_TOGGLE);
@@ -80,8 +79,8 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		buttonWidget.active = shouldRenderEditable();
-		buttonWidget.x = x;
-		buttonWidget.y = y;
+		buttonWidget.setX(x);
+		buttonWidget.setY(y);
 		buttonWidget.setWidth(w);
 		buttonWidget.setHeight(h);
 		buttonWidget.setMessage(getYesNoText(displayedValue));

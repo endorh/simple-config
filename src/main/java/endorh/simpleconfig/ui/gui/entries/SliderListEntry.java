@@ -250,8 +250,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			}
 		} else {
 			sliderWidget.active = shouldRenderEditable();
-			sliderWidget.x = x;
-			sliderWidget.y = y;
+			sliderWidget.setX(x);
+			sliderWidget.setY(y);
 			sliderWidget.setWidth(w);
 			sliderWidget.setHeight(h);
 			sliderWidget.render(mStack, mouseX, mouseY, delta);
@@ -402,8 +402,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			} else RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			int bw = clamped? 4 : 8;
 			int vOffset = (isHoveredOrFocused()? 2 : 1) * 20;
-			blit(mStack, x + (int)(value * (double)(width - bw)), y, 0, 46 + vOffset, bw / 2, 20);
-			blit(mStack, x + (int)(value * (double)(width - bw)) + bw / 2, y, 200 - bw / 2, 46 + vOffset, bw / 2, 20);
+			blit(mStack, getX() + (int)(value * (double)(width - bw)), getY(), 0, 46 + vOffset, bw / 2, 20);
+			blit(mStack, getX() + (int)(value * (double)(width - bw)) + bw / 2, getY(), 200 - bw / 2, 46 + vOffset, bw / 2, 20);
 		}
 		
 		@Override
@@ -419,8 +419,8 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 			RenderSystem.enableDepthTest();
-			blit(mStack, x, y, 0, 46 + level * 20, width / 2, height);
-			blit(mStack, x + width / 2, y, 200 - width / 2, 46 + level * 20, width / 2, height);
+			blit(mStack, getX(), getY(), 0, 46 + level * 20, width / 2, height);
+			blit(mStack, getX() + width / 2, getY(), 200 - width / 2, 46 + level * 20, width / 2, height);
 			renderBg(mStack, mc, mouseX, mouseY);
 			int color = getFGColor();
 			FormattedText message = getMessage();
@@ -428,9 +428,9 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 				message = font.substrByWidth(message, width - 8);
 			FormattedCharSequence seq = font.split(message, Integer.MAX_VALUE).get(0);
 			int textWidth = font.width(seq);
-			int textX = Mth.clamp(x + (width - textWidth) / 2, 4, getScreen().width - 4 - textWidth);
+			int textX = Mth.clamp(getX() + (width - textWidth) / 2, 4, getScreen().width - 4 - textWidth);
 			drawString(
-			  mStack, font, seq, textX, y + (height - 8) / 2,
+			  mStack, font, seq, textX, getY() + (height - 8) / 2,
 			  color | Mth.ceil(alpha * 255F) << 24);;
 			if (clamped) RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		}

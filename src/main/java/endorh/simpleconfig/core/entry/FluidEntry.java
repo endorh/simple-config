@@ -13,7 +13,6 @@ import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import endorh.simpleconfig.ui.impl.builders.ComboBoxFieldBuilder;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
 import net.minecraft.ResourceLocationException;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.FlowingFluid;
@@ -55,7 +54,6 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 		private static final Logger LOGGER = LogManager.getLogger();
 		protected @Nullable Predicate<Fluid> filter = null;
 		protected @Nullable TagKey<Fluid> tag = null;
-		protected boolean requireGroup = true;
 		protected boolean excludeFlowing = true;
 		
 		public Builder(Fluid value) {
@@ -63,9 +61,7 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder setRequireGroup(boolean requireGroup) {
-			Builder copy = copy();
-			copy.requireGroup = requireGroup;
-			return copy;
+			return copy();
 		}
 		
 		@Override @Contract(pure=true) public @NotNull Builder setExcludeFlowing(boolean excludeFlowing) {
@@ -108,7 +104,6 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 			if (filter != null && !filter.test(value))
 				LOGGER.warn("Fluid entry's default value doesn't match its filter");
 			Predicate<Fluid> filter = this.filter != null ? this.filter : f -> true;
-			if (requireGroup) filter = filter.and(f -> f.getBucket().getItemCategory() != null);
 			if (excludeFlowing) filter = filter.and(f -> !(f instanceof FlowingFluid) || ((FlowingFluid) f).getSource() == f);
 			return new FluidEntry(parent, name, value, filter);
 		}
@@ -130,9 +125,8 @@ public class FluidEntry extends AbstractConfigEntry<Fluid, String, Fluid>
 		if (value == null) return null;
 		try {
 			final ResourceLocation registryName = new ResourceLocation(value);
-			//noinspection deprecation
-			final Fluid item = Registry.FLUID.keySet().contains(registryName) ?
-			                   Registry.FLUID.get(registryName) : null;
+			final Fluid item = ForgeRegistries.FLUIDS.containsKey(registryName) ?
+			                   ForgeRegistries.FLUIDS.getValue(registryName) : null;
 			// Prevent unnecessary config resets adding an exception for the default value
 			return filter.test(item) || item == this.defValue? item : null;
 		} catch (ResourceLocationException e) {

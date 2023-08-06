@@ -4,18 +4,18 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.gui.WidgetUtils;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Generic interface useful for layout controllers.<br>
- * Use {@link #wrap(AbstractWidget)} to wrap a {@link Widget} in this interface.<br>
+ * Use {@link #wrap(AbstractWidget)} to wrap a {@link Renderable} in this interface.<br>
  *
  * Subclasses should consider implementing the optional methods
  * {@link #isFocused()}, {@link #isActive()} and their setters.
  */
-public interface IPositionableRenderable extends GuiEventListener, Widget {
+public interface IPositionableRenderable extends Renderable, GuiEventListener {
 	static <W extends AbstractWidget> WidgetPositionableWrapper<W> wrap(W widget) {
 		return new WidgetPositionableWrapper<>(widget);
 	}
@@ -109,17 +109,17 @@ public interface IPositionableRenderable extends GuiEventListener, Widget {
 		}
 		
 		@Override public int getX() {
-			return widget.x;
+			return widget.getX();
 		}
 		@Override public void setX(int x) {
-			widget.x = x;
+			widget.setX(x);
 		}
 		
 		@Override public int getY() {
-			return widget.y;
+			return widget.getY();
 		}
 		@Override public void setY(int y) {
-			widget.y = y;
+			widget.setY(y);
 		}
 		
 		@Override public int getWidth() {

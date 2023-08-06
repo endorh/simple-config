@@ -7,7 +7,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.Matrix4f;
 import endorh.simpleconfig.api.ui.TextFormatter;
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
@@ -25,6 +24,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Objects;
@@ -406,7 +406,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 			if (isFocused() && hovered && button == 0) {
 				lastClickWordPos = -1;
 				draggingText = true;
-				double relX = mouseX - x;
+				double relX = mouseX - getX();
 				if (isBordered()) relX -= 4;
 				int clickedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
 				lastInteraction = System.currentTimeMillis();
@@ -438,7 +438,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	) {
 		if (isVisible() && isFocused() && button == 0 && draggingText) {
 			lastInteraction = System.currentTimeMillis();
-			double relX = mouseX - x;
+			double relX = mouseX - getX();
 			if (isBordered()) relX -= 4;
 			int prevAnchor = anchorPos;
 			int draggedPos = getClickedCaretPos(subText(getDisplayedText(), hScroll), relX) + hScroll;
@@ -481,8 +481,8 @@ public class TextFieldWidgetEx extends AbstractWidget {
 				int borderColor = isHoveredOrFocused()
 				                  ? 0xFF000000 | this.borderColor & 0xFFFFFF
 				                  : 0xA0000000 | this.borderColor & 0xFFFFFF;
-				fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, borderColor);
-				fill(mStack, x, y, x + width, y + height, 0xFF000000);
+				fill(mStack, getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, borderColor);
+				fill(mStack, getX(), getY(), getX() + width, getY() + height, 0xFF000000);
 			}
 			
 			int color = isEditable() ? textColor : textColorUneditable;
@@ -498,8 +498,8 @@ public class TextFieldWidgetEx extends AbstractWidget {
 			boolean fitCaret = relCaret >= 0 && relCaret <= fitLength;
 			boolean showCaret = isFocused() && fitCaret
 			                    && (System.currentTimeMillis() - lastInteraction) % 1000 < 500;
-			int textX = bordered ? x + 4 : x;
-			int textY = bordered ? y + (height - 8) / 2 : y;
+			int textX = bordered ? getX() + 4 : getX();
+			int textY = bordered ? getY() + (height - 8) / 2 : getY();
 			int caretX = fitCaret? textX + font.width(subText(displayedText, 0, relCaret)) - 1
 			             : relCaret > 0? textX + innerWidth - 1 : textX;
 			
@@ -557,8 +557,8 @@ public class TextFieldWidgetEx extends AbstractWidget {
 			eY = swap;
 		}
 		
-		if (eX > x + width) eX = x + width;
-		if (sX > x + width) sX = x + width;
+		if (eX > getX() + width) eX = getX() + width;
+		if (sX > getX() + width) sX = getX() + width;
 		
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
@@ -621,7 +621,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
-		return visible && mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+		return visible && mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height;
 	}
 	
 	@Override protected void onFocusedChanged(boolean focused) {
@@ -715,18 +715,11 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	public int getScreenX(int pos) {
-		return pos > value.length()? x : x + font.width(value.substring(0, pos));
+		return pos > value.length()? getX() : getX() + font.width(value.substring(0, pos));
 	}
-	
-	public void setX(int x) {
-		this.x = x;
-	}
-	
-	public void setY(int y) {
-		this.y = y;
-	}
-	
-	@Override public void updateNarration(@NotNull NarrationElementOutput out) {
+
+	@Override
+	protected void updateWidgetNarration(NarrationElementOutput out) {
 		out.add(NarratedElementType.TITLE, Component.translatable("narration.edit_box", getValue()));
 	}
 }
