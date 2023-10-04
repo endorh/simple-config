@@ -143,8 +143,8 @@ public class MultiFunctionImageButton extends ImageButton {
 		final ButtonAction action = activeAction;
 		active = activeOverride != null? activeOverride : (action.activePredicate != null? action.activePredicate : defaultActivePredicate).get();
 	}
-	
-	@Override public void renderButton(
+
+	@Override public void renderWidget(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		updateState();
@@ -231,12 +231,12 @@ public class MultiFunctionImageButton extends ImageButton {
 			return press(modifiers);
 		return false;
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
+
+	@Override public void setFocused(boolean focused) {
 		updateState();
-		return super.changeFocus(focus);
+		super.setFocused(focused);
 	}
-	
+
 	public Boolean getActiveOverride() {
 		return activeOverride;
 	}

@@ -395,7 +395,17 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	}
 	
 	@Override public void setFocused(boolean focused) {
-		super.setFocused(focused);
+		if (canLoseFocus || focused) {
+			super.setFocused(focused);
+			if (focused) {
+				// frame = 0;
+				lastInteraction = System.currentTimeMillis();
+			}
+		}
+	}
+
+	@Override public boolean isFocused() {
+		return super.isFocused();
 	}
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -474,7 +484,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		return relX < (left + right) * 0.5? floor: floor + 1;
 	}
 	
-	@Override public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		if (isVisible()) {
 			boolean bordered = isBordered();
 			if (bordered) {
@@ -531,7 +541,6 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(LogicOp.OR_REVERSE);
 		Matrix4f m = mStack.last().pose();
@@ -542,7 +551,6 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		bb.vertex(m,     x,     y, 0F).endVertex();
 		tessellator.end();
 		RenderSystem.disableColorLogicOp();
-		RenderSystem.enableTexture();
 	}
 	
 	protected void renderSelection(PoseStack mStack, int sX, int sY, int eX, int eY) {
@@ -559,24 +567,11 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		
 		if (eX > getX() + width) eX = getX() + width;
 		if (sX > getX() + width) sX = getX() + width;
-		
-		Tesselator tessellator = Tesselator.getInstance();
-		BufferBuilder bb = tessellator.getBuilder();
-		Matrix4f m = mStack.last().pose();
-		RenderSystem.setShaderColor(0F, 0F, 1F, 1F);
-		RenderSystem.disableTexture();
+
 		RenderSystem.enableColorLogicOp();
-		RenderSystem.logicOp(LogicOp.OR_REVERSE);
-		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
-		bb.vertex(m, sX, eY, 0F).endVertex();
-		bb.vertex(m, eX, eY, 0F).endVertex();
-		bb.vertex(m, eX, sY, 0F).endVertex();
-		bb.vertex(m, sX, sY, 0F).endVertex();
-		tessellator.end();
+		RenderSystem.logicOp(LogicOp.XOR);
+		fill(mStack, sX, sY, eX, eY, 0xFF000080);
 		RenderSystem.disableColorLogicOp();
-		RenderSystem.enableTexture();
-		// Do not leak the blue filter
-		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 	}
 	
 	public void setMaxLength(int length) {
@@ -614,18 +609,9 @@ public class TextFieldWidgetEx extends AbstractWidget {
 	public void setBorderColor(int borderColor) {
 		this.borderColor = borderColor;
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		lastInteraction = System.currentTimeMillis();
-		return visible && isEditable() && super.changeFocus(focus);
-	}
-	
+
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		return visible && mouseX >= getX() && mouseX < getX() + width && mouseY >= getY() && mouseY < getY() + height;
-	}
-	
-	@Override protected void onFocusedChanged(boolean focused) {
-	
 	}
 	
 	public boolean isEditable() {

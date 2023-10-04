@@ -11,8 +11,8 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.IExpandable;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget.ListEntry;
@@ -56,7 +56,7 @@ import static java.lang.Math.min;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicEntryListWidget<E extends ListEntry>
   extends AbstractContainerEventHandler
-  implements Renderable, IExtendedDragAwareNestedGuiEventHandler, NarratableEntry {
+  implements Renderable, ContainerEventHandlerEx, NarratableEntry {
 	
 	protected static final int DRAG_OUTSIDE = -2;
 	protected final Minecraft client;
@@ -271,8 +271,10 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	protected void renderBackBackground(
 	  PoseStack mStack, BufferBuilder buffer, Tesselator tessellator
 	) {
+		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 		RenderSystem.setShaderTexture(0, backgroundLocation);
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+		// RenderSystem.setShaderColor(32F/255F, 32F/255F, 32F/255F, 1F);
 		Matrix4f matrix = mStack.last().pose();
 		int scroll = (int) getScroll();
 		float div = 32F;
@@ -322,7 +324,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		RenderSystem.enableBlend();
 		RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
-		RenderSystem.disableTexture();
+		RenderSystem.setShaderTexture(0, 0);
 		Matrix4f m = mStack.last().pose();
 		// @formatter:off
 		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
@@ -341,8 +343,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		
 		// Render decorations
 		renderDecorations(mStack, mouseX, mouseY);
-		
-		RenderSystem.enableTexture();
+
 		RenderSystem.disableBlend();
 	}
 	
@@ -487,7 +488,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	@Override public boolean mouseDragged(
 	  double mouseX, double mouseY, int button, double deltaX, double deltaY
 	) {
-		if (IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
+		if (ContainerEventHandlerEx.super.mouseDragged(
 		  mouseX, mouseY, button, deltaX, deltaY))
 			return true;
 		if (button == 0 && scrolling) {
@@ -662,11 +663,9 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 			return focused.getItemHeight();
 		return 24;
 	}
-	
-	protected boolean isFocused() {
+	@Override public boolean isFocused() {
 		return false;
 	}
-	
 	protected void renderBarBackground(
 	  PoseStack matrices, int y1, int y2, int alpha1, int alpha2
 	) {
@@ -697,13 +696,19 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	protected boolean removeEntry(E entry) {
 		return entries.remove(entry);
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		boolean change = super.changeFocus(focus);
-		if (change)
+
+	@Override public void setFocused(boolean focused) {
+		if (focused)
 			updateSelectedTarget();
-		return change;
+		super.setFocused(focused);
 	}
+
+	// @Override public boolean changeFocus(boolean focus) {
+	// 	boolean change = super.changeFocus(focus);
+	// 	if (change)
+	// 		updateSelectedTarget();
+	// 	return change;
+	// }
 	
 	public void setSelectedTarget(@Nullable INavigableTarget target) {
 		if (smallestLastTarget == null) {

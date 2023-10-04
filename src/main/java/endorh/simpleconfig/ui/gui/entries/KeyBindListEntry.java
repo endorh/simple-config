@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -96,7 +95,7 @@ public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implement
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (!isFocused)
-			WidgetUtils.forceUnFocus(hotKeyButton);
+         ((GuiEventListener) hotKeyButton).setFocused(false);
 	}
 	
 	@Override protected @NotNull List<? extends GuiEventListener> getEntryListeners() {

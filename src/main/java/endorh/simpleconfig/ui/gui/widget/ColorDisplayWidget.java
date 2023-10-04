@@ -22,7 +22,7 @@ public class ColorDisplayWidget extends AbstractWidget {
 		this.size = size;
 	}
 	
-	@Override public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		int x = getX();
 		int y = getY();
 		fillGradient(
@@ -41,9 +41,12 @@ public class ColorDisplayWidget extends AbstractWidget {
 		if (onClick != null)
 			onClick.run();
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
+
+	@Override public boolean isFocused() {
 		return false;
+	}
+
+	@Override public void setFocused(boolean pFocused) {
 	}
 	
 	public void setColor(int color) {

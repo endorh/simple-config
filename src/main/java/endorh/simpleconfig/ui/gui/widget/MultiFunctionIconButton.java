@@ -15,6 +15,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.B
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -28,7 +29,6 @@ import org.lwjgl.glfw.GLFW;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -130,7 +130,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		return action.titleSupplier != null? action.titleSupplier.get() : defaultTitle.get();
 	}
 	
-	@Override public void renderButton(
+	@Override public void renderWidget(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		activeAction = actions.stream().filter(
@@ -161,9 +161,9 @@ public class MultiFunctionIconButton extends TintedButton {
 		RenderSystem.defaultBlendFunc();
 		
 		RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
-		int level = getYImage(isHoveredOrFocused());
+		int level = getTextureLevel();
 		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, getX(), getY(), width, height, level);
-		renderBg(mStack, mc, mouseX, mouseY);
+		renderTint(mStack, getX(), getY(), getX() + width, getY() + height);
 		int color = getFGColor();
 		contentArea.setBounds(area.x + 2, area.y + 2, area.width - 4, area.height - 4);
 		mStack.pushPose(); {
@@ -356,7 +356,9 @@ public class MultiFunctionIconButton extends TintedButton {
 			int maxW = button.maxWidth;
 			int h = button.height;
 			int w = (int) animator.getEaseOut();
-			pos(button, area.x, area.y, w, area.height);
+			button.setPosition(area.x, area.y);
+			((AbstractWidget) button).setWidth(w);
+			button.setHeight(area.height);
 			button.setExactWidth(w);
 			this.area.setBounds(area.x, area.y, w, area.height);
 			ScissorsHandler.INSTANCE.withSingleScissor(

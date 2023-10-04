@@ -7,8 +7,8 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.confirm;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
+import endorh.simpleconfig.ui.api.GuiEventListenerEx;
 import endorh.simpleconfig.ui.api.IEntryHolder;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareGuiEventListener;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -31,7 +31,7 @@ import static java.lang.Math.round;
 import static java.util.Arrays.asList;
 
 public class ResetButton extends MultiFunctionImageButton
-  implements IExtendedDragAwareGuiEventListener, IOverlayRenderer {
+  implements GuiEventListenerEx, IOverlayRenderer {
 	protected static List<Component> resetTooltip = asList(
 	  Component.translatable("simpleconfig.ui.reset"),
 	  Component.translatable("simpleconfig.ui.restore.alt"),
@@ -84,7 +84,7 @@ public class ResetButton extends MultiFunctionImageButton
 			overlay.setBounds(0, 0, 0, 0);
 		super.render(mStack, mouseX, mouseY, delta);
 		if (isFocused() && !active && entry != null) {
-			entry.changeFocus(false);
+			entry.setFocused(false);
 			setFocused(false);
 		}
 	}
@@ -291,13 +291,9 @@ public class ResetButton extends MultiFunctionImageButton
 		}
 		return IOverlayRenderer.super.overlayEscape();
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		confirming = false;
-		return super.changeFocus(focus);
-	}
-	
+
 	@Override public void setFocused(boolean focused) {
+		confirming = false;
 		super.setFocused(focused);
 	}
 	

@@ -114,7 +114,7 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	@Override
-	public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
+	public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
@@ -244,11 +244,12 @@ public class ColorPickerWidget extends AbstractWidget {
 		if (lastClicked != null)
 			lastClicked.onDrag(mouseX, mouseY, dragX, dragY);
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
+
+	@Override public boolean isFocused() {
 		return false;
 	}
 
+	@Override public void setFocused(boolean pFocused) {}
 
 	@Override protected void updateWidgetNarration(NarrationElementOutput out) {}
 

@@ -7,7 +7,6 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
@@ -267,21 +266,21 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		if (isTextFieldEnforced()) show = true;
 		showText = show;
 		if (focus)
-			WidgetUtils.forceUnFocus(sideButtonReference);
+         sideButtonReference.setFocused(false);
 		if (show) {
 			textFieldEntry.setDisplayedValue(getDisplayedValue());
 			if (focus) {
 				setFocused(textFieldEntry);
-				WidgetUtils.forceUnFocus(sliderWidget);
-				final TextFieldWidgetEx textFieldWidget = textFieldEntry.textFieldWidget;
+            ((GuiEventListener) sliderWidget).setFocused(false);
+            final TextFieldWidgetEx textFieldWidget = textFieldEntry.textFieldWidget;
 				textFieldEntry.setFocused(textFieldWidget);
-				WidgetUtils.forceFocus(textFieldWidget);
+				((GuiEventListener) textFieldWidget).setFocused(true);
 				textFieldWidget.moveCaretToEnd();
 				textFieldWidget.setAnchorPos(0);
 			}
 		} else if (focus) {
 			setFocused(sliderWidget);
-			WidgetUtils.forceFocus(sliderWidget);
+			((GuiEventListener) sliderWidget).setFocused(true);
 		}
 	}
 	
@@ -341,13 +340,13 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
-		if (!isFocused) WidgetUtils.forceUnFocus(sliderWidget);
+		if (!isFocused) ((GuiEventListener) sliderWidget).setFocused(false);
 	}
 	
 	public abstract class SliderWidget extends AbstractSliderButton {
 		boolean clamped = false;
 		
-		public SliderWidget(int x, int y, int width, int height) {
+		protected SliderWidget(int x, int y, int width, int height) {
 			super(x, y, width, height, Component.empty(), 0D);
 		}
 		
@@ -363,9 +362,9 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 		public double getStep(boolean left) {
 			float step = left ? -2.0F : 2.0F;
 			if (Screen.hasShiftDown())
-				step *= 0.25D;
+				step *= 0.25F;
 			if (Screen.hasControlDown())
-				step *= 4D;
+				step *= 4F;
 			return step / (float) (width - 8);
 		}
 		
@@ -394,33 +393,30 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			return isEditable() && super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 		}
 		
-		@Override
 		protected void renderBg(@NotNull PoseStack mStack, @NotNull Minecraft mc, int mouseX, int mouseY) {
-			RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
+			RenderSystem.setShaderTexture(0, SLIDER_LOCATION);
 			if (clamped) {
 				RenderSystem.setShaderColor(1F, 0.7F, 0.5F, 1F);
 			} else RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			int bw = clamped? 4 : 8;
-			int vOffset = (isHoveredOrFocused()? 2 : 1) * 20;
-			blit(mStack, getX() + (int)(value * (double)(width - bw)), getY(), 0, 46 + vOffset, bw / 2, 20);
-			blit(mStack, getX() + (int)(value * (double)(width - bw)) + bw / 2, getY(), 200 - bw / 2, 46 + vOffset, bw / 2, 20);
+			int vOffset = (isHoveredOrFocused()? 3 : 2) * 20;
+			blitNineSliced(mStack, getX() + (int) (value * (double) (width - bw)), getY(), bw, 20, 20, 4, 200, 20, 0, vOffset);
 		}
 		
 		@Override
-		public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+		public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 			Minecraft mc = Minecraft.getInstance();
 			Font font = mc.font;
 			RenderSystem.setShader(GameRenderer::getPositionTexShader);
-			RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
+			RenderSystem.setShaderTexture(0, SLIDER_LOCATION);
 			if (clamped) {
 				RenderSystem.setShaderColor(1F, 0.7F, 0.5F, alpha);
 			} else RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
-			int level = getYImage(isHoveredOrFocused());
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 			RenderSystem.enableDepthTest();
-			blit(mStack, getX(), getY(), 0, 46 + level * 20, width / 2, height);
-			blit(mStack, getX() + width / 2, getY(), 200 - width / 2, 46 + level * 20, width / 2, height);
+			blit(mStack, getX(), getY(), 0, 0, width / 2, height);
+			blit(mStack, getX() + width / 2, getY(), 200 - width / 2, 0, width / 2, height);
 			renderBg(mStack, mc, mouseX, mouseY);
 			int color = getFGColor();
 			FormattedText message = getMessage();

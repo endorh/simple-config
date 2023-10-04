@@ -16,12 +16,17 @@ import endorh.simpleconfig.ui.impl.EasingMethod;
 import endorh.simpleconfig.ui.impl.EasingMethod.EasingMethodImpl;
 import endorh.simpleconfig.ui.math.impl.PointHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import static java.lang.Math.*;
@@ -39,10 +44,10 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	protected long followEntryStart = 0L;
 	protected int userOverScroll;
 	
-	public DynamicNewSmoothScrollingEntryListWidget(
-	  Minecraft client, int width, int height, int top, int bottom,
-	  ResourceLocation backgroundLocation
-	) {
+	protected DynamicNewSmoothScrollingEntryListWidget(
+      Minecraft client, int width, int height, int top, int bottom,
+      ResourceLocation backgroundLocation
+   ) {
 		super(client, width, height, top, bottom, backgroundLocation);
 	}
 	
@@ -170,7 +175,49 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 		final long t = System.currentTimeMillis();
 		return t < start + duration || t < last + 200L / 2;
 	}
-	
+
+	@Override public @Nullable ComponentPath getCurrentFocusPath() {
+		return super.getCurrentFocusPath();
+		// ComponentPath path = super.getCurrentFocusPath();
+		// if (path instanceof ComponentPath.Path p)
+		// 	return ListPath.pathAsListPath(p);
+		// return path;
+	}
+
+	@Override public @Nullable ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+		return super.nextFocusPath(e);
+		// ComponentPath path = super.nextFocusPath(e);
+		// if (path instanceof ComponentPath.Path p)
+		// 	return ListPath.pathAsListPath(p);
+		// return path;
+	}
+
+	public record ListPath(
+		@NotNull DynamicElementListWidget<?> list,
+		@NotNull ComponentPath child
+	) implements ComponentPath {
+		public static ComponentPath listPath(@NotNull DynamicElementListWidget<?> list, @NotNull ComponentPath child) {
+			return new ListPath(list, child);
+		}
+
+		public static ComponentPath pathAsListPath(ComponentPath.Path path) {
+			ContainerEventHandler component = path.component();
+			if (!(component instanceof DynamicElementListWidget<?>))
+				throw new IllegalArgumentException("Path component is not a DynamicElementListWidget");
+			return listPath((DynamicElementListWidget<?>) component, path.childPath());
+		}
+
+		@Override public @NotNull GuiEventListener component() {
+			return list;
+		}
+
+		@Override public void applyFocus(boolean focused) {
+			list.setFocused(focused);
+			child.applyFocus(focused);
+			if (focused) list.ensureFocusedVisible();
+		}
+	}
+
 	protected double entryScroll(ListEntry e) {
 		return scrollFor(e.getScrollY(), e.getCaptionHeight());
 	}
@@ -214,7 +261,6 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 			  matrices, tessellator, buffer, maxScroll, sbMinX, sbMaxX);
 		} else if (maxScroll > 0) {
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
-			RenderSystem.disableTexture();
 			RenderSystem.disableDepthTest();
 			RenderSystem.enableBlend();
 			RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ZERO, DestFactor.ONE);

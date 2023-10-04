@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
@@ -20,7 +20,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.round;
 
 public abstract class ScrollingContainerWidget extends ScrollingHandler
-  implements IExtendedDragAwareNestedGuiEventHandler, IRectanglePositionableRenderable {
+  implements ContainerEventHandlerEx, IRectanglePositionableRenderable {
 	public final Rectangle area;
 	
 	protected final List<GuiEventListener> listeners = new ArrayList<>();
@@ -87,11 +87,11 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	
 	@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (updateDraggingState(mouseX, mouseY, button)) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
+		return ContainerEventHandlerEx.super.mouseClicked(mouseX, mouseY, button);
 	}
 	
 	@Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		if (IExtendedDragAwareNestedGuiEventHandler.super.mouseScrolled(mouseX, mouseY, delta))
+		if (ContainerEventHandlerEx.super.mouseScrolled(mouseX, mouseY, delta))
 			return true;
 		scrollBy(delta * -24, abs(delta) >= 1.0);
 		return true;
@@ -99,7 +99,7 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	
 	@Override public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
 		if (super.mouseDragged(mouseX, mouseY, button, dx, dy)) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
+		return ContainerEventHandlerEx.super.mouseDragged(
 		  mouseX, mouseY, button, dx, dy
 		);
 	}
@@ -125,20 +125,32 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	@Override public void setFocused(@Nullable GuiEventListener listener) {
 		this.listener = listener;
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		final boolean change = IExtendedDragAwareNestedGuiEventHandler.super.changeFocus(focus);
-		if (change) {
-			final GuiEventListener listener = getFocused();
-			if (listener != null) {
-				if (listener instanceof final AbstractWidget widget) {
-					int target = widget.getY() + widget.getHeight() / 2 - area.y;
-					scrollTo(target, true);
-				}
+
+	@Override public void setFocused(boolean focused) {
+		ContainerEventHandlerEx.super.setFocused(focused);
+		if (focused) {
+			GuiEventListener listener = getFocused();
+			if (listener instanceof final AbstractWidget widget) {
+				int target = widget.getY() + widget.getHeight() / 2 - area.y;
+				scrollTo(target, true);
 			}
 		}
-		return change;
 	}
+
+	// TODO: Test/clean
+	// @Override public boolean changeFocus(boolean focus) {
+	// 	final boolean change = IExtendedDragAwareNestedGuiEventHandler.super.changeFocus(focus);
+	// 	if (change) {
+	// 		final GuiEventListener listener = getFocused();
+	// 		if (listener != null) {
+	// 			if (listener instanceof final AbstractWidget widget) {
+	// 				int target = widget.getY() + widget.getHeight() / 2 - area.y;
+	// 				scrollTo(target, true);
+	// 			}
+	// 		}
+	// 	}
+	// 	return change;
+	// }
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		return area.contains(mouseX, mouseY);

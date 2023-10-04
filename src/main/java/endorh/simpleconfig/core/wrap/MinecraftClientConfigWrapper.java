@@ -92,7 +92,7 @@ public class MinecraftClientConfigWrapper {
 			m.put("pauseOnLostFocus", "f_92126_");
 			m.put("overrideWidth", "f_92128_");
 			m.put("overrideHeight", "f_92129_");
-			m.put("heldItemTooltips", "f_92130_");
+			// m.put("heldItemTooltips", "f_92130_");
 			m.put("useNativeTransport", "f_92028_");
 			m.put("tutorialStep", "f_92030_");
 			m.put("glDebugVerbosity", "f_92035_");
@@ -205,8 +205,8 @@ public class MinecraftClientConfigWrapper {
 			});
 			with(category("language").withIcon(MinecraftOptions.LANGUAGE).withColor(0x80E042E0), () -> {
 				wrapString("lang", "en_us", () -> Minecraft.getInstance()
-				  .getLanguageManager().getLanguages().stream()
-				  .map(LanguageInfo::getCode).collect(Collectors.toList()));
+				  .getLanguageManager().getLanguages().values().stream()
+				  .map(LanguageInfo::toComponent).map(Component::getString).collect(Collectors.toList()));
 				wrapBool(options.forceUnicodeFont());
 			});
 			with(category("online").withIcon(MinecraftOptions.ONLINE).withColor(0x80F0A080), () -> {
@@ -223,7 +223,7 @@ public class MinecraftClientConfigWrapper {
 				wrapBool(options.reducedDebugInfo());
 				wrapBool("pauseOnLostFocus", true);
 				wrapBool("advancedItemTooltips", false);
-				wrapBool("heldItemTooltips", true);
+				// wrapBool("heldItemTooltips", true);
 				wrapBool("hideServerAddress", false);
 				wrapBool("syncChunkWrites", Util.getPlatform() == OS.WINDOWS);
 				wrapBool("useNativeTransport", true);

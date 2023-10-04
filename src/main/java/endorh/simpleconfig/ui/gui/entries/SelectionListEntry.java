@@ -10,7 +10,6 @@ import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
@@ -18,6 +17,7 @@ import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.*;
 
 @OnlyIn(Dist.CLIENT)
@@ -125,7 +124,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (!isFocused)
-			WidgetUtils.forceUnFocus(buttonWidget);
+         ((GuiEventListener) buttonWidget).setFocused(false);
 		intEntry.updateFocused(isFocused && isEditingHotKeyAction() && getHotKeyActionType() == HotKeyActionTypes.ENUM_ADD);
 	}
 	
@@ -286,13 +285,14 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			lastSelected = values.get(index);
 			boolean prevFocused = button.isFocused();
 			for (T value: values) {
-				WidgetUtils.forceSetFocus(button, value == lastSelected);
-				pos(button, area.x, y, area.width);
+				((GuiEventListener) button).setFocused(value == lastSelected);
+				button.setPosition(area.x, y);
+				((AbstractWidget) button).setWidth(area.width);
 				entry.setDisplayedValue(value);
 				button.render(mStack, -1, -1, delta);
 				y += bh;
 			}
-			WidgetUtils.forceSetFocus(button, prevFocused);
+			((GuiEventListener) button).setFocused(prevFocused);
 			entry.setDisplayedValue(prev);
 		}
 		

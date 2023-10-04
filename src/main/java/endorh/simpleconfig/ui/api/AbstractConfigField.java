@@ -9,7 +9,6 @@ import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.AbstractConfigEntry;
 import endorh.simpleconfig.core.SimpleConfigImpl;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry;
 import endorh.simpleconfig.ui.gui.widget.DynamicElementListWidget;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
@@ -542,7 +541,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		if (!isFocused) {
 			final GuiEventListener listener = getFocused();
 			if (listener instanceof AbstractWidget && ((AbstractWidget) listener).isFocused())
-				WidgetUtils.forceUnFocus(listener);
+            listener.setFocused(false);
 			setFocused(null);
 		}
 	}
@@ -860,7 +859,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		if (!listeners.isEmpty()) {
 			final GuiEventListener listener = listeners.get(0);
 			setFocused(listener);
-			WidgetUtils.forceFocus(listener);
+			listener.setFocused(true);
 		}
 	}
 	

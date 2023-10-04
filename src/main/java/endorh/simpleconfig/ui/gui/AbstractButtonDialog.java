@@ -46,7 +46,7 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			addButton(button);
 		} else {
 			if (!buttons.isEmpty()) {
-				listeners.add(listeners.indexOf(buttons.get(i)) + 1, button);
+				listeners.add(listeners.indexOf(buttons.get(i)), button);
 			} else listeners.add(button);
 			buttons.add(i, button);
 		}

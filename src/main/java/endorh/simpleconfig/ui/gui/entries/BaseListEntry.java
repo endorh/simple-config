@@ -758,7 +758,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		}
 		return super.handleNavigationKey(keyCode, scanCode, modifiers);
 	}
-	
+
 	@Override public void navigate() {
 		if (isHeadless()) {
 			INavigableTarget parent = getNavigableParent();
@@ -862,7 +862,15 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		public boolean isMouseInside(double mouseX, double mouseY) {
 			return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
 		}
-		
+
+		@Override public void setFocused(boolean focus) {
+			focused = focus;
+		}
+
+		@Override public boolean isFocused() {
+			return focused;
+		}
+
 		protected BaseListEntry<?, ?, ?> getListEntry() {
 			return listEntry;
 		}
@@ -889,10 +897,6 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 				return true;
 			}
 			return GuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
-		}
-		
-		@Override public boolean changeFocus(boolean forward) {
-			return focused = !focused;
 		}
 	}
 	

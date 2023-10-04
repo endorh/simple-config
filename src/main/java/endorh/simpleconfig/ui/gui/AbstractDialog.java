@@ -6,8 +6,8 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.RedirectGuiEventListener;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
@@ -28,7 +28,7 @@ import java.util.List;
 
 public abstract class AbstractDialog
   extends AbstractContainerEventHandler
-  implements IExtendedDragAwareNestedGuiEventHandler, IOverlayCapableContainer {
+  implements ContainerEventHandlerEx, IOverlayCapableContainer {
 	protected Component title;
 	protected MultiFunctionImageButton copyTextButton;
 	protected RedirectGuiEventListener copyTextReference;
@@ -166,19 +166,19 @@ public abstract class AbstractDialog
 			  .play(SimpleSoundInstance.forUI(SimpleConfigMod.UI_TAP, 0.8F));
 			return true;
 		}
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
+		return ContainerEventHandlerEx.super.mouseClicked(mouseX, mouseY, button);
 	}
 	
 	@Override public boolean mouseReleased(double mouseX, double mouseY, int button) {
 		if (handleOverlaysMouseReleased(mouseX, mouseY, button)) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
+		return ContainerEventHandlerEx.super.mouseReleased(mouseX, mouseY, button);
 	}
 	
 	@Override public boolean mouseDragged(
 	  double mouseX, double mouseY, int button, double dragX, double dragY
 	) {
 		if (handleOverlaysMouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
+		return ContainerEventHandlerEx.super.mouseDragged(
 		  mouseX, mouseY, button, dragX, dragY);
 	}
 	
@@ -189,7 +189,7 @@ public abstract class AbstractDialog
 	
 	@Override public void endDrag(double mouseX, double mouseY, int button) {
 		if (handleOverlaysDragEnd(mouseX, mouseY, button)) return;
-		IExtendedDragAwareNestedGuiEventHandler.super.endDrag(mouseX, mouseY, button);
+		ContainerEventHandlerEx.super.endDrag(mouseX, mouseY, button);
 	}
 	
 	public boolean escapeKeyPressed() {
@@ -251,9 +251,6 @@ public abstract class AbstractDialog
 	}
 	public void setIcon(Icon icon) {
 		this.icon = icon;
-	}
-	protected void setCenterPos(int x, int y) {
-	
 	}
 	
 	public Rectangle getArea() {

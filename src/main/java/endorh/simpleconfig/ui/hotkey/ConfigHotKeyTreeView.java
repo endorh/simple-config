@@ -25,7 +25,10 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEn
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewHotKeyEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -44,7 +47,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static endorh.simpleconfig.ui.gui.WidgetUtils.renderAll;
 import static java.lang.Math.min;
 
@@ -266,7 +268,12 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				  e -> e instanceof ConfigHotKeyTreeViewGroupEntry
 				       || e instanceof ConfigHotKeyTreeViewHotKeyEntry);
 			}
-			
+
+			@Override
+			public @Nullable ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+				return super.nextFocusPath(e);
+			}
+
 			@Override protected void tick() {
 				List<ConfigHotKeyTreeViewEntry> subEntries = getSubEntries();
 				subEntries.clear();
@@ -289,7 +296,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			) {
 				int hotKeyButtonWidth = min(150, (w - 46) / 2);
 				hotKeyButton.setPosition(x, y, hotKeyButtonWidth);
-				pos(textField, x + hotKeyButtonWidth + 4, y + 6, w - 48 - hotKeyButtonWidth, h - 10);
+				textField.setPosition(x + hotKeyButtonWidth + 4, y + 6);
+				((AbstractWidget) textField).setWidth(w - 48 - hotKeyButtonWidth);
+				textField.setHeight(h - 10);
 				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
 				renderAll(mStack, mouseX, mouseY, delta,
@@ -330,7 +339,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			@Override public void renderContent(
 			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
-				pos(editButton, x + 2, y + 1, 18, 18);
+				editButton.setPosition(x + 2, y + 1);
+				editButton.setWidth(18);
+				editButton.setHeight(18);
 				editButton.render(mStack, mouseX, mouseY, delta);
 				
 				int count = getCount();
@@ -482,7 +493,9 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				int hotKeyButtonWidth = min(140, (int) (w * 0.4));
-				pos(textField, x + 4, y + 6, w - 30 - hotKeyButtonWidth, h - 10);
+				textField.setPosition(x + 4, y + 6);
+				((AbstractWidget) textField).setWidth(w - 30 - hotKeyButtonWidth);
+				textField.setHeight(h - 10);
 				hotKeyButton.setPosition(x + w - 24 - hotKeyButtonWidth, y, hotKeyButtonWidth);
 				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				

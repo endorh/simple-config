@@ -34,10 +34,10 @@ public class ItemTypeWrapper extends RegistryObjectTypeWrapper<Item> {
 	) {
 		if (element != null) {
 			ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-			float prevBlitOffset = itemRenderer.blitOffset;
-			itemRenderer.blitOffset = blitOffset;
-			itemRenderer.renderGuiItem(new ItemStack(element), x + 2, y + 2);
-			itemRenderer.blitOffset = prevBlitOffset;
+			// float prevBlitOffset = itemRenderer.blitOffset;
+			// itemRenderer.blitOffset = blitOffset;
+			itemRenderer.renderGuiItem(mStack, new ItemStack(element), x + 2, y + 2);
+			// itemRenderer.blitOffset = prevBlitOffset;
 		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 	}
 }

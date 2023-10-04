@@ -13,6 +13,8 @@ issueTrackerURL="${issue_tracker}"
     credits="${credits}"
     authors="${authors}"
     description='''${description}'''
+[modproperties.simpleconfig]
+    catalogueImageIcon="${logo_file}"
 [[dependencies.simpleconfig]]
     modId="forge"
     mandatory=true
@@ -22,6 +24,6 @@ issueTrackerURL="${issue_tracker}"
 [[dependencies.simpleconfig]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19,1.20)"
+    versionRange="[1.19.3,1.20)"
     ordering="NONE"
     side="BOTH"

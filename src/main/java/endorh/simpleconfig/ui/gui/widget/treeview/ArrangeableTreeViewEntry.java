@@ -5,15 +5,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.AbstractContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction.WidgetDragBroadcastableAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableWidget;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +28,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntry<E>>
-  extends AbstractContainerEventHandler {
+  extends AbstractContainerEventHandlerEx {
 	private static final boolean DEBUG_DRAG = false;
 	private ArrangeableTreeView<E> tree;
 	private E parent;
@@ -329,18 +328,17 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			if (scroll && entry != null && entry.getFocusedSubEntry() == null) entry.ensureVisible();
 		} else focusedSubEntry = null;
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		boolean res = super.changeFocus(focus);
+
+	@Override
+	public void setFocused(boolean focus) {
 		ArrangeableTreeView<E> tree = getTree();
 		E focused = getFocusedSubEntry();
-		if (res && focused != null && focused.getFocusedSubEntry() == null) {
+		if (focus && focused != null && focused.getFocusedSubEntry() == null) {
 			tree.clearSelection();
 			tree.setSelected(focused, true);
 		}
-		return res;
 	}
-	
+
 	protected void focusAndSelect(
 	  boolean clearSelection, boolean select, boolean retract, @Nullable ArrangeableTreeViewEntry<E> remove
 	) {
@@ -384,7 +382,7 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		setFocused(null);
 		if (listener instanceof ArrangeableTreeViewEntry) {
 			((ArrangeableTreeViewEntry<?>) listener).unFocus();
-		} else if (listener != null) WidgetUtils.forceUnFocus(listener);
+		} else if (listener != null) listener.setFocused(false);
 	}
 	
 	public void updateDraggingPos(

@@ -17,6 +17,7 @@ import endorh.simpleconfig.ui.gui.widget.SelectorButton.BooleanButton;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -32,7 +33,6 @@ import java.util.stream.Stream;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.ui.gui.AbstractConfigScreen.drawBorderRect;
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 
 public class KeyBindSettingsButton extends MultiFunctionImageButton {
 	public static @Nullable ExtendedKeyBindSettings CLIPBOARD = null;
@@ -290,32 +290,39 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			boolean tooltipInXRange = mouseX >= xx + 2 && mouseX < bx - 2;
 			drawString(mStack, font, getLabel("activation"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("activation");
-			pos(activationButton, bx, yy, bw);
+			activationButton.setPosition(bx, yy);
+			((AbstractWidget) activationButton).setWidth(bw);
 			yy += 22;
 			drawString(mStack, font, getLabel("context"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("context");
-			pos(contextButton, bx, yy, bw);
+			contextButton.setPosition(bx, yy);
+			((AbstractWidget) contextButton).setWidth(bw);
 			yy += 22;
 			drawString(mStack, font, getLabel("allow_extra_keys"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("allow_extra_keys");
-			pos(allowExtraKeysCheckBox, bx, yy, bw);
+			allowExtraKeysCheckBox.setPosition(bx, yy);
+			((AbstractWidget) allowExtraKeysCheckBox).setWidth(bw);
 			yy += 22;
 			drawString(mStack, font, getLabel("order_sensitive"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("order_sensitive");
-			pos(orderSensitiveCheckBox, bx, yy, bw);
+			orderSensitiveCheckBox.setPosition(bx, yy);
+			((AbstractWidget) orderSensitiveCheckBox).setWidth(bw);
 			yy += 22;
 			drawString(mStack, font, getLabel("exclusive"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("exclusive");
-			pos(exclusiveCheckBox, bx, yy, bw);
+			exclusiveCheckBox.setPosition(bx, yy);
+			((AbstractWidget) exclusiveCheckBox).setWidth(bw);
 			yy += 22;
 			drawString(mStack, font, getLabel("match_by_char"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("match_by_char");
-			pos(matchByCharCheckBox, bx, yy, bw);
+			matchByCharCheckBox.setPosition(bx, yy);
+			((AbstractWidget) matchByCharCheckBox).setWidth(bw);
 			yy += 22;
 			drawString(mStack, font, getLabel("prevent_further"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("prevent_further");
-			pos(preventFurtherCheckBox, bx, yy, bw);
-			
+			preventFurtherCheckBox.setPosition(bx, yy);
+			((AbstractWidget) preventFurtherCheckBox).setWidth(bw);
+
 			ExtendedKeyBindSettings def = button.defaultSettings;
 			int editedColor = getEditedTint(), defaultColor = getDefaultTint();
 			activationButton.setTintColor(def.activation() != activationButton.getValue()? editedColor : defaultColor);

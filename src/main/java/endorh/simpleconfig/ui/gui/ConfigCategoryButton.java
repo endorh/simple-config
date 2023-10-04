@@ -15,7 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +75,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		return title;
 	}
 	
-	@Override public void renderButton(
+	@Override public void renderWidget(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		int c = category.getColor();
@@ -86,7 +86,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		if (isSelected()) {
 			defaultTint = lastLight;
 		} else defaultTint = lastDark;
-		super.renderButton(mStack, mouseX, mouseY, partialTicks);
+		super.renderWidget(mStack, mouseX, mouseY, partialTicks);
 	}
 	
 	public boolean isSelected() {

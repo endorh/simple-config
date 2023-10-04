@@ -86,8 +86,8 @@ public class HotKeyActionTypes {
 		 (int) (a / b.floatValue()), min.intValue(), max.intValue())), notNull());
 	// Long
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD = type(
-	  "long:add", Actions.ADD, ranged((entry, a, b, min, max) -> Mth.clamp(
-		 a + b.longValue(), min.longValue(), max.longValue())), notNull());
+		"long:add", Actions.ADD, ranged( (IRangedSimpleHotKeyAction<Long, Number>) (entry, a, b, min, max) -> ((long) (Mth.clamp(
+			a + b.doubleValue(), min.doubleValue(), max.doubleValue())))), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_ADD_CYCLE = type(
 	  "long:cycle", Actions.ADD_CYCLE, ranged((entry, a, b, min, max) -> {
 		  long mn = min.longValue();
@@ -96,11 +96,11 @@ public class HotKeyActionTypes {
 		  return mn + (a + b.longValue() - mn + r) % r;
 	  }), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_MUL = type(
-	  "long:mul", Actions.MULTIPLY, ranged((entry, a, b, min, max) -> Mth.clamp(
+	  "long:mul", Actions.MULTIPLY, ranged((IRangedSimpleHotKeyAction<Long, Number>) (entry, a, b, min, max) -> (Long) (long) Mth.clamp(
 		 (long) (a * b.doubleValue()), min.longValue(), max.longValue())), notNull());
 	public static final SimpleHotKeyActionType<Long, Number> LONG_DIV = type(
-	  "long:div", Actions.DIVIDE, ranged((entry, a, b, min, max) -> Mth.clamp(
-		 (long) (a / b.doubleValue()), min.longValue(), max.longValue())), notNull());
+	  "long:div", Actions.DIVIDE, ranged((entry, a, b, min, max) -> (Long) (long) Mth.clamp(
+         a / b.doubleValue(), min.doubleValue(), max.doubleValue())));
 	// Float
 	public static final SimpleHotKeyActionType<Float, Number> FLOAT_ADD = type(
 	  "float:add", Actions.ADD, ranged((entry, a, b, min, max) -> Mth.clamp(

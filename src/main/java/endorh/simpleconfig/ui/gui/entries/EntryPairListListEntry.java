@@ -4,12 +4,13 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry.EntryPairCell;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -19,9 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -287,70 +286,18 @@ public class EntryPairListListEntry<
 			).collect(Collectors.toList());
 			return valueEntry.getNavigableChildren(true);
 		}
-		
-		// Modified tab order
-		@Override public boolean changeFocus(boolean forward) {
-			GuiEventListener listener = getFocused();
-			boolean hasListener = listener != null;
-			BaseListEntry<?, ?, ?> subList = isExpandable? (BaseListEntry<?, ?, ?>) valueEntry : null;
-			if (forward && isExpandable && listener == valueEntry && subList.getFocused() == subList.labelReference) {
-				subList.changeFocus(false);
-				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
-				setFocused(keyEntry);
-				return true;
-			} else if (
-			  !forward && isExpandable && listener == valueEntry && subList.children().indexOf(subList.getFocused()) == 1
-			) {
-				subList.changeFocus(false);
-				subList.changeFocus(false);
-				if (!keyEntry.changeFocus(true)) keyEntry.changeFocus(true);
-				setFocused(keyEntry);
-				return true;
-			}
-			if (hasListener && listener.changeFocus(forward)) return true;
-			
-			if (isExpandable) {
-				if (listener == keyEntry) {
-					final List<? extends GuiEventListener> subListeners = subList.children();
-					final GuiEventListener l = forward ? subListeners.get(1) : subListeners.get(0);
-					WidgetUtils.forceUnFocus(l);
-					setFocused(valueEntry);
-					valueEntry.setFocused(l);
-					if (valueEntry.changeFocus(forward))
-						return true;
-				}
-				
-				if (!hasListener && forward) {
-					setFocused(valueEntry);
-					valueEntry.setFocused(subList.labelReference);
-					return true;
-				}
-				
-				if (listener == valueEntry && valueEntry.getFocused() == subList.labelReference && !forward) {
-					valueEntry.changeFocus(false);
-					setFocused(null);
-					return false;
-				}
-			}
-			
-			List<? extends GuiEventListener> list = children();
-			int index = list.indexOf(listener);
-			int target = hasListener && index >= 0 ? index + (forward ? 1 : 0)
-			                                       : forward ? 0 : list.size();
-			ListIterator<? extends GuiEventListener> l = list.listIterator(target);
-			BooleanSupplier hasNext = forward ? l::hasNext : l::hasPrevious;
-			Supplier<? extends GuiEventListener> supplier = forward ? l::next : l::previous;
-			
-			while (hasNext.getAsBoolean()) {
-				GuiEventListener next = supplier.get();
-				if (next.changeFocus(forward)) {
-					setFocused(next);
-					return true;
-				}
-			}
-			
-			setFocused(null);
-			return false;
+
+		@Nullable @Override
+		public ComponentPath handleTabNavigation(FocusNavigationEvent.TabNavigation e) {
+			return super.handleTabNavigation(e);
+		}
+
+		@Override public void setFocused(boolean pFocused) {
+			super.setFocused(pFocused);
+		}
+
+		@Override public boolean isFocused() {
+			return super.isFocused();
 		}
 	}
 	

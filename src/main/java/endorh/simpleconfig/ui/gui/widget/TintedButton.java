@@ -2,6 +2,7 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Backgrounds;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IMultiTooltipScreen;
@@ -22,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.max;
 
 public class TintedButton extends Button {
@@ -76,19 +76,19 @@ public class TintedButton extends Button {
 		super.render(mStack, mouseX, mouseY, delta);
 	}
 	
-	@Override public void renderButton(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
 		Minecraft mc = Minecraft.getInstance();
 		Font font = mc.font;
+		int level = getTextureLevel();
+		// TODO: Simplify rendering logic
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
 		RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
-		int level = getYImage(isHoveredOrFocused());
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.enableDepthTest();
-		blit(mStack, getX(), getY(), 0, 46 + level * 20, width / 2, height);
-		blit(mStack, getX() + width / 2, getY(), 200 - width / 2, 46 + level * 20, width / 2, height);
-		renderBg(mStack, mc, mouseX, mouseY);
+		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, getX(), getY(), width, height, level);
+		renderTint(mStack, getX(), getY(), getX() + width / 2 * 2, getY() + height);
 		int fgColor = getFGColor();
 		Component message = getMessage();
 		int contentWidth = font.width(message);
@@ -120,6 +120,22 @@ public class TintedButton extends Button {
 		if (isHoveredOrFocused()) renderToolTip(mStack, mouseX, mouseY);
 	}
 
+	protected int getTextureLevel() {
+		return !active? 0 : isHoveredOrFocused()? 2 : 1;
+	}
+
+	protected void renderTint(@NotNull PoseStack mStack, int x, int y, int xm, int ym) {
+		// The 2-patch button texture blit implementation floors width to even numbers
+		if (tintColor != 0) {
+			fill(mStack, x, y, xm, ym,
+				getEffectiveTintColor());
+		}
+	}
+
+	protected int getEffectiveTintColor() {
+		return active ? tintColor : tintColor & 0xFFFFFF | (tintColor >> 24 & 0xFF) / 4 << 24;
+	}
+
 	public List<Component> getTooltip() {
 		return Collections.emptyList();
 	}
@@ -134,21 +150,10 @@ public class TintedButton extends Button {
 			int tooltipY = hovered ? mouseY : getY() < 64 ? getY() + height : getY();
 			if (screen instanceof IMultiTooltipScreen ts) {
 				ts.addTooltip(Tooltip.of(
-						Rectangle.of(getX(), getY(), width, height),
-						Point.of(tooltipX, tooltipY), ls
+					Rectangle.of(getX(), getY(), width, height),
+					Point.of(tooltipX, tooltipY), ls
 				).asKeyboardTooltip(!hovered));
 			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
-		}
-	}
-	
-	@Override protected void renderBg(
-	  @NotNull PoseStack mStack, @NotNull Minecraft minecraft, int mouseX, int mouseY
-	) {
-		super.renderBg(mStack, minecraft, mouseX, mouseY);
-		// The 2-patch button texture blit implementation floors width to even numbers
-		if (tintColor != 0) {
-			fill(mStack, getX(), getY(), getX() + width / 2 * 2, getY() + height,
-			     active ? tintColor : tintColor & 0xFFFFFF | (tintColor >> 24 & 0xFF) / 4 << 24);
 		}
 	}
 	
@@ -194,12 +199,16 @@ public class TintedButton extends Button {
 			int w = button.width;
 			int h = button.height;
 			int ww = (int) animator.getEaseOut();
-			pos(button, area.x, area.y, ww, area.height);
+			button.setPosition(area.x, area.y);
+			button.setWidth(ww);
+			button.setHeight(area.height);
 			this.area.setBounds(area.x, area.y, ww, area.height);
 			ScissorsHandler.INSTANCE.withSingleScissor(
 			  this.area, () -> button.render(mStack, mouseX, mouseY, delta));
 			button.render(mStack, mouseX, mouseY, delta);
-			pos(button, x, y, w, h);
+			button.setPosition(x, y);
+			button.setWidth(w);
+			button.setHeight(h);
 			rendering = false;
 			return true;
 		}

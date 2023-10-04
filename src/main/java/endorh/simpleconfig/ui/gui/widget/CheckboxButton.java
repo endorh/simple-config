@@ -39,16 +39,16 @@ public class CheckboxButton extends ToggleImageButton {
 		this.realWidth = width;
 	}
 	
-	@Override protected int getYImage(boolean isHovered) {
+	protected int getTextureY() {
 		return isToggle()? 1 : 0;
 	}
 	
-	@Override public void renderButton(
+	@Override public void renderWidget(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
 		final int w = width;
 		width = 18;
-		super.renderButton(mStack, mouseX, mouseY, delta);
+		super.renderWidget(mStack, mouseX, mouseY, delta);
 		width = w;
 		if (label != null) {
 			final Font font = Minecraft.getInstance().font;

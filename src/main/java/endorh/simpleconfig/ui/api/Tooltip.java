@@ -131,8 +131,9 @@ public interface Tooltip {
 		int bdSt = 0x505000FF;
 		int bdEd = 0x5028007F;
 		int bo = 400;
-		float prevIRBlitOffset = itemRenderer.blitOffset;
-		itemRenderer.blitOffset = 400F;
+		// TODO_; Fix
+		// float prevIRBlitOffset = itemRenderer.blitOffset;
+		// itemRenderer.blitOffset = 400F;
 		Tesselator tesselator = Tesselator.getInstance();
 		BufferBuilder bb = tesselator.getBuilder();
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -152,12 +153,12 @@ public interface Tooltip {
 		fillGradient(m, bb, x - 3,     y + h + 2, x + w + 3, y + h + 3,     bo, bdEd, bdEd);
 		// @formatter:on
 		RenderSystem.enableDepthTest();
-		RenderSystem.disableTexture();
+		// RenderSystem.disableTexture(); //  FIXME: Fix
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		BufferUploader.drawWithShader(bb.end());
 		RenderSystem.disableBlend();
-		RenderSystem.enableTexture();
+		// RenderSystem.enableTexture(); // FIXME
 		BufferSource bSrc = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
 		
 		mStack.translate(0D, 0D, bo);
@@ -173,10 +174,10 @@ public interface Tooltip {
 		lineY = y;
 		for (int l = 0; l < text.size(); ++l) {
 			ClientTooltipComponent line = text.get(l);
-			line.renderImage(font, x, lineY, mStack, itemRenderer, 400);
+			line.renderImage(font, x, lineY, mStack, itemRenderer); // FIXME: Removed parameter
 			lineY += line.getHeight() + (l == 0? 2 : 0);
 		}
-		itemRenderer.blitOffset = prevIRBlitOffset;
+		// itemRenderer.blitOffset = prevIRBlitOffset; // FIXME
 	}
 }
 

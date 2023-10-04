@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 
 public interface IDragBroadcastableControlContainer
-  extends IExtendedDragAwareNestedGuiEventHandler {
+  extends ContainerEventHandlerEx {
 	default <W extends IPositionableRenderable> void startDragBroadcastableAction(
 	  DragBroadcastableAction<W> action, DragBroadcastableControl<W> source
 	) {
@@ -44,14 +44,14 @@ public interface IDragBroadcastableControlContainer
 				applyDragBroadcastAction(((DragBroadcastableControl<?>) listener));
 			return true;
 		}
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
+		return ContainerEventHandlerEx.super.mouseDragged(
 		  mouseX, mouseY, button, dragX, dragY);
 	}
 	
 	@Override default void endDrag(double mouseX, double mouseY, int button) {
 		DragBroadcastableControl<?> source = getDragBroadcastableSource();
 		if (source != null) endDragBroadcastableAction(source);
-		IExtendedDragAwareNestedGuiEventHandler.super.endDrag(mouseX, mouseY, button);
+		ContainerEventHandlerEx.super.endDrag(mouseX, mouseY, button);
 	}
 	
 	default <W extends IPositionableRenderable> void endDragBroadcastableAction(

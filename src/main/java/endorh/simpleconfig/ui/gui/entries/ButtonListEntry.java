@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -52,7 +51,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (!isFocused)
-			WidgetUtils.forceUnFocus(button);
+         ((GuiEventListener) button).setFocused(false);
 	}
 	
 	@Override public boolean isSelectable() {

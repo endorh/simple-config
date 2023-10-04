@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
-import static endorh.simpleconfig.ui.gui.WidgetUtils.forceUnFocus;
 
 public class PresetPickerWidget extends AbstractContainerEventHandler implements IRectanglePositionableRenderable, NarratableEntry {
 	protected List<GuiEventListener> listeners;
@@ -162,7 +161,8 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 	}
 	
 	protected void position() {
-		if (screen.getFocused() != this) forceUnFocus(listeners);
+		if (screen.getFocused() != this)
+			listeners.forEach(l -> l.setFocused(false));
 		
 		selector.setX(area.x + 1);
 		selector.setY(area.y + 2);
