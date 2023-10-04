@@ -22,10 +22,11 @@ public class BlockNameTypeWrapper extends ResourceLocationTypeWrapper {
 		final Block block = ForgeRegistries.BLOCKS.getValue(element);
 		if (block != null) {
 			ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-			float prevBlitOffset = itemRenderer.blitOffset;
-			itemRenderer.blitOffset = blitOffset;
-			itemRenderer.renderGuiItem(new ItemStack(block), x + 2, y + 2);
-			itemRenderer.blitOffset = prevBlitOffset;
+			// FIXME
+			// float prevBlitOffset = itemRenderer.blitOffset;
+			// itemRenderer.blitOffset = blitOffset;
+			itemRenderer.renderGuiItem(mStack, new ItemStack(block), x + 2, y + 2);
+			// itemRenderer.blitOffset = prevBlitOffset;
 		} else {
 			mStack.pushPose(); {
 				mStack.translate(0D, 0D, blitOffset);

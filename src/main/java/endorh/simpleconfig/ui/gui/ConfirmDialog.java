@@ -69,7 +69,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 		addButton(cancelButton);
 		addButton(confirmButton);
 		setFocused(cancelButton);
-		cancelButton.changeFocus(true);
+		cancelButton.setFocused(true);
 	}
 	
 	public void withAction(DialogAction handler) {

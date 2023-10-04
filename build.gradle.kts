@@ -16,6 +16,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("simpleconfig.antlr-conventions")
     id("simpleconfig.minecraft-conventions")
+    id("org.parchmentmc.librarian.forgegradle") version "1.+"
     `maven-publish`
 }
 
@@ -31,20 +32,21 @@ object V {
     val api = "1.0.2"
     val kotlinApi = api
     val mod = api
-    val minecraft = "1.19.3"
-    val forge = "44.1.0"
+    val minecraft = "1.19.4"
+    val parchment = "2023.06.26"
+    val forge = "45.1.19"
     val minecraftForge = "$minecraft-$forge"
     val minecraftMod = "$minecraft-$mod"
     object mappings {
-        val channel = "official"
-        val version = minecraft
+        val channel = "parchment"
+        val version = "${parchment}-${minecraft}"
     }
     
     // Dependencies
     val yaml = "1.33"
-    val jei = "12.4.0.22"
+    val jei = "13.1.0.16"
     val kotlin = "1.8.0"
-    val kotlinForForge = "4.1.0"
+    val kotlinForForge = "4.2.0"
 }
 
 val vendor = "Endor H"
@@ -315,10 +317,10 @@ dependencies {
     // runtimeOnly(fg.deobf("curse.maven:smart-completion-782653:4284525"))
     
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4171025"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4496718"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462839"))
+    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462894"))
     
     // Zombie Awareness (multi-file support)
     // runtimeOnly(fg.deobf("curse.maven:coroutil-237749:3928997"))
@@ -428,7 +430,9 @@ val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     // TODO: This shouldn't be necessary
+    dependsOn("prepareGenerateGrammarSource")
     dependsOn("generateApiGrammarSource")
+    dependsOn("generateKotlinApiGrammarSource")
 }
 
 val apiJarTask = tasks.register<Jar>("apiJar") {

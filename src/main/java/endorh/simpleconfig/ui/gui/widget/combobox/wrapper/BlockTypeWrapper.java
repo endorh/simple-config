@@ -5,7 +5,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
@@ -34,10 +33,11 @@ public class BlockTypeWrapper extends RegistryObjectTypeWrapper<Block> {
 	) {
 		if (element != null) {
 			ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-			float prevBlitOffset = itemRenderer.blitOffset;
-			itemRenderer.blitOffset = blitOffset;
-			itemRenderer.renderGuiItem(new ItemStack(element), x + 2, y + 2);
-			itemRenderer.blitOffset = prevBlitOffset;
+			// float prevBlitOffset = itemRenderer.blitOffset;
+			// itemRenderer.blitOffset = blitOffset;
+			// itemRenderer.renderGuiItem(new ItemStack(element), x + 2, y + 2);
+			// itemRenderer.blitOffset = prevBlitOffset;
+			// FIXEEd
 		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 	}
 }

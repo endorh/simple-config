@@ -74,7 +74,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		activeState = activeStates.stream().findFirst().orElse(null);
 	}
 	
-	@Override public void renderButton(
+	@Override public void renderWidget(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
 	) {
 		width = screen.width;

@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.range.Range;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.*;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.ToggleImageButton;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -79,9 +78,11 @@ public class RangeListEntry<
 		super.updateFocused(isFocused);
 		minEntry.updateFocused(isFocused && getFocused() == minEntry);
 		maxEntry.updateFocused(isFocused && getFocused() == maxEntry);
-		WidgetUtils.forceSetFocus(minExclusivenessButton, isFocused && getFocused() == minExclusivenessButton);
-		WidgetUtils.forceSetFocus(maxExclusivenessButton, isFocused && getFocused() == maxExclusivenessButton);
-	}
+      boolean focus1 = isFocused && getFocused() == minExclusivenessButton;
+      ((GuiEventListener) minExclusivenessButton).setFocused(focus1);
+      boolean focus = isFocused && getFocused() == maxExclusivenessButton;
+      ((GuiEventListener) maxExclusivenessButton).setFocused(focus);
+   }
 	
 	@Override public boolean isGroup() {
 		return false;

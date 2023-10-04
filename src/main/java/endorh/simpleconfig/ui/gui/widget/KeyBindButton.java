@@ -27,10 +27,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -45,13 +47,13 @@ import java.util.ListIterator;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.max;
 
 public class KeyBindButton extends AbstractContainerEventHandler
   implements IRectanglePositionableRenderable, IModalInputProcessor, NarratableEntry {
-	private static int ID;
-	private final int id = ID++;
+	private static int ID_GEN;
+	private final int id = ID_GEN++;
+
 	private final Supplier<IModalInputCapableScreen> screenSupplier;
 	private final Supplier<IOverlayCapableContainer> container;
 	private final Rectangle area = new Rectangle(0, 0, 80, 20);
@@ -177,12 +179,18 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	}
 	
 	@Override public boolean isFocused() {
-		return getFocused() != null;
+		return super.isFocused();
+		// return getFocused() != null;
 	}
 	@Override public void setFocused(boolean focused) {
+		// super.setFocused(focused);
 		setFocused(focused && !listeners.isEmpty()? listeners.get(0) : null);
 	}
-	
+
+	@Nullable @Override public ComponentPath nextFocusPath(FocusNavigationEvent e) {
+			return super.nextFocusPath(e);
+	}
+
 	public KeyBindMapping getMapping() {
 		ExtendedKeyBindSettings settings = getSettings();
 		return new KeyBindMappingImpl(keys, settings.matchByChar()? chars : null, settings);
@@ -190,7 +198,7 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	public void setMapping(KeyBindMapping mapping) {
 		keys.clear();
 		IntList keys = mapping.getRequiredKeys();
-		if (keys != null) this.keys.addAll(keys);
+      this.keys.addAll(keys);
 		chars.clear();
 		Int2ObjectMap<String> chars = mapping.getCharMap();
 		if (chars != null) this.chars.putAll(chars);
@@ -373,10 +381,11 @@ public class KeyBindButton extends AbstractContainerEventHandler
 	}
 	
 	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-		pos(button, area.x, area.y);
+		button.setPosition(area.x, area.y);
 		button.setExactWidth(area.width - 22);
-		pos(settingsButton, area.getMaxX() - 20, area.y);
-		pos(cancelButton, area.getMaxX() - 20, area.y);
+		int x = area.getMaxX() - 20;
+		settingsButton.setPosition(x, area.y);
+		cancelButton.setPosition(x, area.y);
 		settingsButton.setWarning(!overlaps.isEmpty());
 		
 		button.render(mStack, mouseX, mouseY, delta);

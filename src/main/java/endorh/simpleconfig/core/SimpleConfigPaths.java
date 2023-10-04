@@ -4,10 +4,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.fml.loading.FileUtils;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Internal public class SimpleConfigPaths {
@@ -22,7 +23,12 @@ import java.nio.file.Path;
 	public static Path getServerConfigPath() {
 		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
 		Path serverConfig = server.getWorldPath(SERVERCONFIG);
-		return FileUtils.getOrCreateDirectory(serverConfig, SERVERCONFIG.getId());
+		if (!Files.isDirectory(serverConfig)) try {
+         Files.createDirectories(serverConfig);
+      } catch (IOException e) {
+         throw new RuntimeException("Problem creating directory", e);
+      }
+		return serverConfig;
 	}
 	
 	public static Path getRemotePresetsDir() {

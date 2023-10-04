@@ -2,8 +2,8 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.EntryError;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
@@ -24,7 +24,7 @@ import static java.lang.Math.min;
 
 @OnlyIn(value = Dist.CLIENT)
 public abstract class BaseListCell<T> extends AbstractContainerEventHandler
-  implements IExtendedDragAwareNestedGuiEventHandler, ISeekableComponent, INavigableTarget {
+  implements ContainerEventHandlerEx, ISeekableComponent, INavigableTarget {
 	protected Supplier<Optional<Component>> errorSupplier;
 	protected Pair<Integer, GuiEventListener> dragged = null;
 	protected final Rectangle cellArea = new Rectangle();

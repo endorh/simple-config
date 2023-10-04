@@ -34,10 +34,10 @@ public class FluidTypeWrapper extends RegistryObjectTypeWrapper<Fluid> {
 	) {
 		if (element != null) {
 			ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-			float prevBlitOffset = itemRenderer.blitOffset;
-			itemRenderer.blitOffset = blitOffset;
-			itemRenderer.renderGuiItem(new ItemStack(element.getBucket()), x + 2, y + 2);
-			itemRenderer.blitOffset = prevBlitOffset;
+			// float prevBlitOffset = itemRenderer.blitOffset; // TODO: FIXME
+			// itemRenderer.blitOffset = blitOffset;
+			itemRenderer.renderGuiItem(mStack, new ItemStack(element.getBucket()), x + 2, y + 2);
+			// itemRenderer.blitOffset = prevBlitOffset;
 		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
 	}
 }

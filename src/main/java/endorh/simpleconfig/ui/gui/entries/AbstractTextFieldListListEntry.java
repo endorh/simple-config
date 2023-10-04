@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
@@ -59,8 +58,8 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		
 		@Override public void updateSelected(boolean isSelected) {
 			super.updateSelected(isSelected);
-			WidgetUtils.forceSetFocus(widget, isSelected);
-		}
+         ((GuiEventListener) widget).setFocused(isSelected);
+      }
 		
 		protected abstract boolean isValidText(@NotNull String var1);
 		

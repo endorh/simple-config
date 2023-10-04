@@ -2,14 +2,17 @@ package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
+import endorh.simpleconfig.ui.api.AbstractContainerEventHandlerEx;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +20,7 @@ import java.util.List;
 import static java.lang.Math.max;
 
 public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEntry<E>>
-  extends AbstractContainerEventHandler {
+  extends AbstractContainerEventHandlerEx {
 	private final ArrangeableTreeView<E> tree;
 	protected List<GuiEventListener> listeners = new ArrayList<>();
 	protected List<IPositionableRenderable> controls = new ArrayList<>();
@@ -82,7 +85,11 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 	public void setTitleColor(int titleColor) {
 		this.titleColor = titleColor;
 	}
-	
+
+	@Nullable @Override public ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+		return super.nextFocusPath(e);
+	}
+
 	protected int getHeight() {
 		return 24;
 	}
@@ -118,8 +125,8 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		int maxX = x;
 		if (maxX - minX > 16) {
 			font.drawWordWrap(
-			  getTitle(), minX + 4, y + (height - font.lineHeight) / 2,
-			  maxX - minX - 8, getTitleColor());
+				mStack, getTitle(), minX + 4, y + (height - font.lineHeight) / 2,
+				maxX - minX - 8, getTitleColor());
 		}
 	}
 	

@@ -33,17 +33,17 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	protected Function<List<T>, @Nullable List<Optional<Component>>> multiCellErrorSupplier = l -> null;
 	protected @Nullable List<Optional<Component>> multiCellErrors = null;
 	
-	@Internal public AbstractListListEntry(
-	  Component fieldName, List<T> value, Function<SELF, C> createNewCell
-	) {
+	@Internal protected AbstractListListEntry(
+      Component fieldName, List<T> value, Function<SELF, C> createNewCell
+   ) {
 		super(fieldName, createNewCell);
 		setOriginal(value);
 		setValue(value);
 		setDisplayedValue(value);
 	}
-	
+
 	public BiFunction<Integer, T, Optional<Component>> getCellErrorSupplier() {
-		return this.cellErrorSupplier;
+		return cellErrorSupplier;
 	}
 	
 	public void setCellErrorSupplier(BiFunction<Integer, T, Optional<Component>> cellErrorSupplier) {
@@ -78,7 +78,7 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 	}
 	
 	@Internal
-	public static abstract class AbstractListCell<V, Self extends AbstractListCell<V, Self, ListEntry>, ListEntry extends AbstractListListEntry<V, Self, ListEntry>>
+   public abstract static class AbstractListCell<V, Self extends AbstractListCell<V, Self, ListEntry>, ListEntry extends AbstractListListEntry<V, Self, ListEntry>>
 	  extends BaseListCell<V> {
 		private final ListEntry listEntry;
 		protected boolean isFocusedMatch = false;
@@ -87,10 +87,10 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		private INavigableTarget lastSelectedSubTarget;
 		private int index = -1;
 		
-		public AbstractListCell(ListEntry listEntry) {
+		protected AbstractListCell(ListEntry listEntry) {
 			this.listEntry = listEntry;
-			this.setErrorSupplier(() -> Optional.ofNullable(listEntry.cellErrorSupplier)
-			  .flatMap(cellErrorFn -> cellErrorFn.apply(index, this.getValue())));
+			setErrorSupplier(() -> Optional.ofNullable(listEntry.cellErrorSupplier)
+			  .flatMap(cellErrorFn -> cellErrorFn.apply(index, getValue())));
 		}
 		
 		protected ListEntry getListEntry() {

@@ -1,6 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.gui.widget.DynamicElementListWidget.ElementEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -12,23 +12,29 @@ import org.apache.commons.lang3.tuple.Pair;
 @OnlyIn(value = Dist.CLIENT)
 public abstract class DynamicElementListWidget<E extends ElementEntry>
   extends DynamicNewSmoothScrollingEntryListWidget<E> {
-	public DynamicElementListWidget(
-	  Minecraft client, int width, int height, int top, int bottom,
-	  ResourceLocation backgroundLocation
-	) {
+	protected DynamicElementListWidget(
+      Minecraft client, int width, int height, int top, int bottom,
+      ResourceLocation backgroundLocation
+   ) {
 		super(client, width, height, top, bottom, backgroundLocation);
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		boolean change = super.changeFocus(focus);
-		if (change) ensureFocusedVisible();
-		return change;
+
+	@Override
+	public void setFocused(boolean focused) {
+		super.setFocused(focused);
+		// if (focused) ensureFocusedVisible();
 	}
+
+	// @Override public boolean changeFocus(boolean focus) {
+	// 	boolean change = super.changeFocus(focus);
+	// 	if (change) ensureFocusedVisible();
+	// 	return change;
+	// }
 	
-	@OnlyIn(value = Dist.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public static abstract class ElementEntry
 	  extends ListEntry
-	  implements IExtendedDragAwareNestedGuiEventHandler {
+	  implements ContainerEventHandlerEx {
 		private GuiEventListener focused;
 		private boolean dragging;
 		private Pair<Integer, GuiEventListener> dragged = null;

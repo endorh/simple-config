@@ -208,7 +208,8 @@ public class MinecraftServerConfigWrapper {
 			addFlag("enable-status", yesNo(true));
 			add("motd", string("A Minecraft Server"), (s, m) -> {
 				s.setMotd(m);
-				s.getStatus().setDescription(Component.literal(m));
+
+				// s.getStatus().setDescription(Component.literal(m));
 			});
 			addFlag("hide-online-players", yesNo(false));
 			

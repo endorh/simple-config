@@ -174,7 +174,7 @@ public abstract class ScrollingHandler {
 			float bottomC = (hovered ? 0.67f : 0.5f) * scrollBarAlphaOffset;
 			float topC = (hovered ? 0.87f : 0.67f) * scrollBarAlphaOffset;
 			// @formatter:off
-			RenderSystem.disableTexture();
+			// RenderSystem.activeTexture(0); // TODO: Disable texture (?)
 			RenderSystem.enableBlend();
 			RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ZERO, DestFactor.ONE);
 			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
@@ -202,7 +202,6 @@ public abstract class ScrollingHandler {
 			buffer.vertex(maxX - 1, minY, 0.0).color(topC, topC, topC, alpha).endVertex();
 			buffer.vertex(minX, minY, 0.0).color(topC, topC, topC, alpha).endVertex();
 			tessellator.end();
-			RenderSystem.enableTexture();
 			RenderSystem.disableBlend();
 			// @formatter:on
 		}

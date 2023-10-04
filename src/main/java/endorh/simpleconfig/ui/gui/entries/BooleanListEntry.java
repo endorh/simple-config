@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.gui.components.Button;
@@ -57,7 +56,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		if (!isFocused)
-			WidgetUtils.forceUnFocus(buttonWidget);
+         ((GuiEventListener) buttonWidget).setFocused(false);
 	}
 	
 	@Override

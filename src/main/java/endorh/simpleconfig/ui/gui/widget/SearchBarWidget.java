@@ -9,10 +9,10 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.SearchBar;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced.search;
+import endorh.simpleconfig.ui.api.AbstractContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.IDialogCapableScreen;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.api.Tooltip;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
@@ -20,15 +20,17 @@ import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.PatternTypeWrapper;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.StringTypeWrapper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -41,14 +43,14 @@ import java.util.stream.Collectors;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
-public class SearchBarWidget extends AbstractContainerEventHandler implements IOverlayRenderer, NarratableEntry {
+public class SearchBarWidget extends AbstractContainerEventHandlerEx implements IOverlayRenderer, NarratableEntry {
 	protected static Component[] CASE_SENSITIVE_TOOLTIP = {
 	  Component.translatable("simpleconfig.ui.search.case_sensitive"),
 	  Component.translatable("key.modifier.alt").append(" + C").withStyle(ChatFormatting.GRAY)};
-	protected static Component[] REGEX_TOOLTIP = new Component[] {
+	protected static Component[] REGEX_TOOLTIP = {
 	  Component.translatable("simpleconfig.ui.search.regex"),
 	  Component.translatable("key.modifier.alt").append(" + R").withStyle(ChatFormatting.GRAY)};
-	protected static Component[] FILTER_TOOLTIP = new Component[] {
+	protected static Component[] FILTER_TOOLTIP = {
 	  Component.translatable("simpleconfig.ui.search.filter"),
 	  Component.translatable("key.modifier.alt").append(" + F").withStyle(ChatFormatting.GRAY)};
 	
@@ -73,11 +75,13 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 	protected List<GuiEventListener> expandedListeners;
 	protected List<GuiEventListener> regexListeners;
 	protected List<GuiEventListener> closedListeners;
-	
+
+	protected GuiEventListener focused;
+
 	protected boolean overMatch = false;
 	protected int currentMatch = 0;
 	protected int totalMatches = 0;
-	
+
 	protected boolean caseSensitive = search.search_case_sensitive;
 	protected boolean regex = search.search_regex;
 	protected boolean filter = search.search_filter;
@@ -235,8 +239,8 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 		}
 		makeQuery();
 		setFocused(getComboBox());
-		if (!getComboBox().isFocused()) getComboBox().changeFocus(true);
-		if (getOtherComboBox().isFocused()) getOtherComboBox().changeFocus(true);
+		if (!getComboBox().isFocused()) getComboBox().setFocused(true);
+		if (getOtherComboBox().isFocused()) getOtherComboBox().setFocused(true);
 	}
 	
 	protected ComboBoxWidget<?> getComboBox() {
@@ -280,7 +284,7 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 		final ComboBoxWidget<?> comboBox = getComboBox();
 		setFocused(comboBox);
 		if (!comboBox.isFocused())
-			comboBox.changeFocus(true);
+			comboBox.setFocused(true);
 		comboBox.selectAll();
 		handler.selectMatch(currentMatch);
 		screen.addOverlay(overlay, this, 50);
@@ -317,8 +321,8 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 		if (!expanded) return false;
 		drawBackground(mStack, mouseX, mouseY, delta);
 		final ComboBoxWidget<?> comboBox = getComboBox();
-		setFocused(comboBox);
-		if (!comboBox.isFocused() && !isFilter())
+		if (isFocused()) setFocused(comboBox);
+		if (isFocused() && !comboBox.isFocused() && !isFilter())
 			comboBox.setFocused(true);
 		positionExpanded(mStack, mouseX, mouseY, delta);
 		renderExpanded(mStack, mouseX, mouseY, delta);
@@ -416,6 +420,7 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 			return true;
 		} else if (isExpanded()) {
 			close();
+			handler.focusResults();
 			return true;
 		}
 		return false;
@@ -430,12 +435,13 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 				case GLFW.GLFW_KEY_ESCAPE:
 					if (expanded) {
 						close();
+						handler.focusResults();
 						return true;
 					}
 					break;
 				case GLFW.GLFW_KEY_ENTER:
 					if (isFilter() || Screen.hasControlDown()) {
-						WidgetUtils.forceUnFocus(getComboBox());
+                  ((GuiEventListener) getComboBox()).setFocused(false);
 						handler.focusResults();
 					} else {
 						next(!Screen.hasShiftDown());
@@ -463,20 +469,23 @@ public class SearchBarWidget extends AbstractContainerEventHandler implements IO
 	public boolean isEmpty() {
 		return getComboBox().getText().isEmpty();
 	}
-	
+
+	@Override public void setFocused(boolean focus) {
+		if (focus) setFocused(getComboBox());
+		else setFocused(null);
+	}
+
 	@Override public @NotNull List<? extends GuiEventListener> children() {
 		return isExpanded()? regex? regexListeners : expandedListeners : closedListeners;
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		if (isExpanded()) {
-			final boolean result = getComboBox().changeFocus(focus);
-			if (!result) {
-				if (isFilter()) handler.focusResults();
-				else close();
-			}
-			return result;
-		} else return open.changeFocus(focus);
+
+	@Nullable @Override public ComponentPath getCurrentFocusPath() {
+		return super.getCurrentFocusPath();
+	}
+
+	@Override public @Nullable ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+		if (!isExpanded()) return super.nextFocusPath(e);
+		return ComponentPath.path(this, getComboBox().nextFocusPath(e));
 	}
 	
 	public void refresh() {

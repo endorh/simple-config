@@ -45,8 +45,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -75,7 +77,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.lang.Math.min;
 import static net.minecraft.util.Mth.clamp;
 
@@ -93,6 +94,8 @@ import static net.minecraft.util.Mth.clamp;
 			scrollAmount = clamp(scrollAmount, 0.0);
 		}
 	};
+	protected List<? extends GuiEventListener> searchModeChildren;
+	protected List<? extends GuiEventListener> reportedChildren = super.children();
 	protected Map<ConfigCategory, ListWidget<AbstractConfigField<?>>> listWidgets;
 	protected ListWidget<AbstractConfigField<?>> listWidget;
 	protected Component displayTitle;
@@ -249,7 +252,11 @@ import static net.minecraft.util.Mth.clamp;
 		  ButtonAction.of(() -> addDialog(getControlsDialog()))
 			 .tooltip(Component.translatable("simpleconfig.ui.controls")));
 	}
-	
+
+	@Override public List<? extends GuiEventListener> children() {
+		return reportedChildren;
+	}
+
 	@NotNull private MultiFunctionIconButton createModeButton(EditType type) {
 		return new ConfigModeButton(this, type);
 	}
@@ -334,11 +341,11 @@ import static net.minecraft.util.Mth.clamp;
 		addWidget(searchBar);
 		
 		int bx = 24;
-		pos(editFileButton, bx, 2);
+		editFileButton.setPosition(bx, 2);
 		bx += 20 + 4;
-		pos(undoButton, bx, 2);
+		undoButton.setPosition(bx, 2);
 		bx += 20;
-		pos(redoButton, bx, 2);
+		redoButton.setPosition(bx, 2);
 		bx += 20 + 4;
 		addRenderableWidget(editFileButton);
 		if (hasUndoButtons()) {
@@ -370,7 +377,7 @@ import static net.minecraft.util.Mth.clamp;
 			modeButtons.forEach(b -> b.setExactWidth(20));
 		
 		for (MultiFunctionIconButton b: modeButtons) {
-			pos(b, bx, 2);
+			b.setPosition(bx, 2);
 			bx += b.getWidth();
 			addRenderableWidget(b);
 		}
@@ -383,7 +390,9 @@ import static net.minecraft.util.Mth.clamp;
 		
 		if (isEditingConfigHotKey()) {
 			int textFieldWidth = clamp(width / 5, 100, 300);
-			pos(editedHotKeyNameTextField, width / 2 - textFieldWidth / 2, 8, textFieldWidth, 12);
+			editedHotKeyNameTextField.setPosition(width / 2 - textFieldWidth / 2, 8);
+			((AbstractWidget) editedHotKeyNameTextField).setWidth(textFieldWidth);
+			editedHotKeyNameTextField.setHeight(12);
 			addRenderableWidget(editedHotKeyNameTextField);
 		}
 		
@@ -391,7 +400,7 @@ import static net.minecraft.util.Mth.clamp;
 		if (!isEditingConfigHotKey()) {
 			int presetPickerWidth = clamp(width / 3, 80, 250);
 			presetPickerWidget.setPosition(width - presetPickerWidth - 24, 2, presetPickerWidth);
-			pos(hotKeyButton, width - 22, 2);
+			hotKeyButton.setPosition(width - 22, 2);
 			addWidget(presetPickerWidget);
 			addRenderableWidget(hotKeyButton);
 			titleEndX = presetPickerWidget.getX() - 4;
@@ -407,7 +416,7 @@ import static net.minecraft.util.Mth.clamp;
 			tabsBounds = new Rectangle(0, 24, width, 24);
 			tabsLeftBounds = new Rectangle(0, 24, 18, 24);
 			tabsRightBounds = new Rectangle(width - 18, 24, 18, 24);
-			pos(buttonLeftTab, 4, 27);
+			buttonLeftTab.setPosition(4, 27);
 			addWidget(buttonLeftTab);
 			addWidget(buttonRightTab);
 			tabButtons.clear();
@@ -422,7 +431,7 @@ import static net.minecraft.util.Mth.clamp;
 			}
 			tabsMaximumScrolled = ww + 2;
 			tabButtons.forEach(this::addWidget);
-			pos(buttonRightTab, width - 16, 27);
+			buttonRightTab.setPosition(width - 16, 27);
 		} else tabsBounds = tabsLeftBounds = tabsRightBounds = new Rectangle();
 		
 		// Content
@@ -461,19 +470,21 @@ import static net.minecraft.util.Mth.clamp;
 		int buttonWidths = min(200, (width - 88) / 3);
 		int cX = width / 2;
 		by = height - 24;
-		pos(quitButton, cX - buttonWidths - 2, by, buttonWidths);
+		quitButton.setPosition(cX - buttonWidths - 2, by);
+		quitButton.setWidth(buttonWidths);
 		addRenderableWidget(quitButton);
-		pos(saveButton, cX + 2, by, buttonWidths);
+		saveButton.setPosition(cX + 2, by);
+		saveButton.setWidth(buttonWidths);
 		addRenderableWidget(saveButton);
 		saveButton.active = isEdited();
 		
 		// Right buttons
 		by = height - 21;
 		if (!modId.equals(SimpleConfigMod.MOD_ID)) {
-			pos(settingsButton, width - 41, by);
+			settingsButton.setPosition(width - 41, by);
 			addRenderableWidget(settingsButton);
 		}
-		pos(keyboardButton, width - 21, by);
+		keyboardButton.setPosition(width - 21, by);
 		addRenderableWidget(keyboardButton);
 		
 		// Update UI mode
@@ -488,6 +499,12 @@ import static net.minecraft.util.Mth.clamp;
 			scheduledGUIState = null;
 			loadConfigScreenGUIState(state);
 		}
+
+		// This would be unnecessary if we had a proper menu bar component
+		searchModeChildren = super.children().stream().filter(l ->
+			l != presetPickerWidget && l != editFileButton && l != hotKeyButton
+			&& l != selectionToolbar && !modeButtons.contains(l)
+		).toList();
 	}
 	
 	public ListWidget<AbstractConfigField<?>> getListWidget(ConfigCategory category) {
@@ -779,6 +796,8 @@ import static net.minecraft.util.Mth.clamp;
 	@Override protected void recomputeFocus() {
 		if (searchBar.isExpanded() && !hasDialogs())
 			setFocused(searchBar);
+		if (getFocused() instanceof ListWidget<?> && getFocused() != getListWidget(getSelectedCategory()))
+         setFocused(getListWidget(getSelectedCategory()));
 	}
 	
 	@Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -838,6 +857,7 @@ import static net.minecraft.util.Mth.clamp;
 		} else if (KeyBindings.SEARCH.isActiveAndMatches(key)) {
 			searchBar.open();
 			setFocused(searchBar);
+			searchBar.setFocused(true);
 			playFeedbackTap(1F);
 			return true;
 			// History key bindings second
@@ -890,10 +910,10 @@ import static net.minecraft.util.Mth.clamp;
 						GuiEventListener focused = entry.getFocused();
 						if (focused != button) {
 							if (focused instanceof AbstractWidget && ((AbstractWidget) focused).isFocused())
-								WidgetUtils.forceUnFocus(focused);
+                        focused.setFocused(false);
 							if (entry.children().contains(button))
 								entry.setFocused(button);
-							WidgetUtils.forceFocus(button);
+							((GuiEventListener) button).setFocused(true);
 						}
 						if (button.click(0)) return true;
 					}
@@ -979,7 +999,7 @@ import static net.minecraft.util.Mth.clamp;
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
 		final int smX = suppressHover ? -1 : mouseX;
 		final int smY = suppressHover ? -1 : mouseY;
-		if (getFocused() == null || getFocused() == searchBar && !searchBar.isExpanded())
+		if (getFocused() == null)
 			setFocused(listWidget);
 		if (isShowingTabs()) {
 			tabsScroller.updatePosition(delta * 3.0f);
@@ -991,7 +1011,7 @@ import static net.minecraft.util.Mth.clamp;
 		}
 		if (isTransparentBackground()) {
 			fillGradient(mStack, 0, 0, width, height, 0xa0101010, 0xb0101010);
-		} else renderDirtBackground(0);
+		} else renderDirtBackground(mStack);
 		listWidget.render(mStack, smX, smY, delta);
 		
 		if (!isEditingConfigHotKey()) {
@@ -1029,7 +1049,17 @@ import static net.minecraft.util.Mth.clamp;
 	public Component getDisplayedTitle() {
 		return displayTitle;
 	}
-	
+
+	@Override public @Nullable ComponentPath handleTabNavigation(FocusNavigationEvent.TabNavigation e) {
+		if (searchBar.isExpanded()) {
+			reportedChildren = searchModeChildren;
+			ComponentPath path = super.handleTabNavigation(e);
+			reportedChildren = super.children();
+			return path;
+		}
+		return super.handleTabNavigation(e);
+	}
+
 	public @Nullable INavigableTarget getNext(
 	  Predicate<INavigableTarget> predicate, boolean forwards, boolean preferSameCategory
 	) {
@@ -1133,7 +1163,7 @@ import static net.minecraft.util.Mth.clamp;
 		RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ZERO, DestFactor.ONE);
 		RenderSystem.enableBlend();
 		RenderSystem.disableDepthTest();
-		RenderSystem.disableTexture();
+		RenderSystem.setShaderTexture(0, 0);
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
 		// @formatter:off
@@ -1150,7 +1180,6 @@ import static net.minecraft.util.Mth.clamp;
 		bb.vertex(matrix, (float) (tabsBounds.getMinX() + 20), (float) (tabsBounds.getMaxY() - 4), 0F).color(0, 0, 0, lightColor).endVertex();
 		tessellator.end();
 		// @formatter:on
-		RenderSystem.enableTexture();
 		RenderSystem.disableBlend();
 	}
 	
@@ -1297,7 +1326,7 @@ import static net.minecraft.util.Mth.clamp;
 		}
 		
 		@Override public int getItemWidth() {
-			return (right - left) - 80;
+			return right - left - 80;
 		}
 		
 		@Override public int getFieldWidth() {
@@ -1395,15 +1424,14 @@ import static net.minecraft.util.Mth.clamp;
 		  PoseStack mStack, double xStart, double yStart, double xEnd, double yEnd,
 		  int colorStart, int colorEnd
 		) {
-			RenderSystem.disableTexture();
+			RenderSystem.setShaderTexture(0, 0);
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 			AbstractConfigScreen.fillGradient(
 			  mStack, xStart, yStart, xEnd, yEnd,
-			  getBlitOffset(), colorStart, colorEnd);
+			  0, colorStart, colorEnd);
 			RenderSystem.disableBlend();
-			RenderSystem.enableTexture();
 		}
 		
 		@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -1496,11 +1524,13 @@ import static net.minecraft.util.Mth.clamp;
 	@Override public void selectMatch(int idx) {
 		listWidget.changeFocusedMatch(idx);
 	}
-	
+
 	@Override public void focusResults() {
+		ComponentPath path = getCurrentFocusPath();
+		if (path != null) path.applyFocus(false);
 		setFocused(listWidget);
 	}
-	
+
 	public static class TooltipSearchBarWidget extends SearchBarWidget {
 		protected static Component[] TOOLTIP_SEARCH_TOOLTIP = {
 		  Component.translatable("simpleconfig.ui.search.tooltip"),
@@ -1621,8 +1651,8 @@ import static net.minecraft.util.Mth.clamp;
 					screen.saveHotkey();
 				} else {
 					boolean hasErrors = screen.hasErrors();
-					if (hasErrors && !advanced.allow_save_with_errors) return;
 					if (hasErrors) {
+						if (!advanced.allow_save_with_errors) return; // Unreachable guard for good measure
 						screen.addDialog(ConfirmDialog.create(Component.translatable(
 						  "simpleconfig.ui.save_with_errors.dialog.title"), d -> {
 							d.setBody(splitTtc("simpleconfig.ui.save_with_errors.dialog.body"));

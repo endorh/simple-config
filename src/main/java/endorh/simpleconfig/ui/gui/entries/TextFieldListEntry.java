@@ -6,7 +6,6 @@ import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IChildListEntry;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import net.minecraft.client.GameNarrator;
@@ -179,8 +178,8 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 			return true;
 		if (isExpandable() && button == 0 && isMouseOverLabel(mouseX, mouseY)) {
 			setExpanded(!isExpanded());
-			WidgetUtils.forceUnFocus(getFocused());
-			textFieldWidget.setFocused(true);
+         getFocused().setFocused(false);
+         textFieldWidget.setFocused(true);
 			setFocused(textFieldWidget);
 			playFeedbackTap(1F);
 			return true;

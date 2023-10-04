@@ -2,11 +2,15 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
+import endorh.simpleconfig.ui.api.RedirectPath;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Generic interface useful for layout controllers.<br>
@@ -31,11 +35,6 @@ public interface IPositionableRenderable extends Renderable, GuiEventListener {
 	
 	int getHeight();
 	void setHeight(int h);
-	
-	default boolean isFocused() {
-		return false;
-	}
-	default void setFocused(boolean focused) {}
 	
 	default boolean isActive() {
 		return true;
@@ -165,11 +164,22 @@ public interface IPositionableRenderable extends Renderable, GuiEventListener {
 		@Override public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
 			return widget.keyReleased(keyCode, scanCode, modifiers);
 		}
+
+		@Nullable @Override public ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+			ComponentPath path = widget.nextFocusPath(e);
+			return path != null? RedirectPath.redirect(this, path) : null;
+		}
+		@Nullable @Override public ComponentPath getCurrentFocusPath() {
+			ComponentPath path = widget.getCurrentFocusPath();
+			return path != null? RedirectPath.redirect(this, path) : null;
+		}
+
+		@Override public @NotNull ScreenRectangle getRectangle() {
+			return widget.getRectangle();
+		}
+
 		@Override public boolean charTyped(char codePoint, int modifiers) {
 			return widget.charTyped(codePoint, modifiers);
-		}
-		@Override public boolean changeFocus(boolean focus) {
-			return widget.changeFocus(focus);
 		}
 		@Override public boolean isMouseOver(double mouseX, double mouseY) {
 			return widget.isMouseOver(mouseX, mouseY);
@@ -179,7 +189,7 @@ public interface IPositionableRenderable extends Renderable, GuiEventListener {
 			return widget.isFocused();
 		}
 		@Override public void setFocused(boolean focused) {
-			WidgetUtils.forceSetFocus(widget, focused);
+			((GuiEventListener) widget).setFocused(focused);
 		}
 		
 		@Override public boolean isActive() {
@@ -278,12 +288,20 @@ public interface IPositionableRenderable extends Renderable, GuiEventListener {
 		@Override default boolean charTyped(char codePoint, int modifiers) {
 			return getDelegate().charTyped(codePoint, modifiers);
 		}
-		
-		@Override default boolean changeFocus(boolean focus) {
-			return getDelegate().changeFocus(focus);
-		}
 		@Override default boolean isMouseOver(double mouseX, double mouseY) {
 			return getDelegate().isMouseOver(mouseX, mouseY);
+		}
+
+		@Nullable @Override default ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+			ComponentPath path = getDelegate().nextFocusPath(e);
+			return path != null ? RedirectPath.redirect(this, path) : null;
+		}
+		@Nullable @Override default ComponentPath getCurrentFocusPath() {
+			ComponentPath path = getDelegate().getCurrentFocusPath();
+			return path != null ? RedirectPath.redirect(this, path) : null;
+		}
+		@Override default @NotNull ScreenRectangle getRectangle() {
+			return getDelegate().getRectangle();
 		}
 	}
 }

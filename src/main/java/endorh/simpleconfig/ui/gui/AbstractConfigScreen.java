@@ -30,8 +30,13 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.impl.EditHistory;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent.ArrowNavigation;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent.TabNavigation;
+import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.ClickEvent;
@@ -61,7 +66,7 @@ import static endorh.simpleconfig.SimpleConfigMod.CLIENT_CONFIG;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 
 public abstract class AbstractConfigScreen extends Screen
-  implements ConfigScreen, IExtendedDragAwareNestedGuiEventHandler,
+  implements ConfigScreen, ContainerEventHandlerEx,
              IExternalChangeHandler, IEntryHolder, IDialogCapableScreen {
 	private static final Logger LOGGER = LogManager.getLogger();
 	protected final ResourceLocation backgroundLocation;
@@ -521,7 +526,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (handleModalMouseReleased(mouseX, mouseY, button)) return true;
 		if (handleOverlaysMouseReleased(mouseX, mouseY, button)) return true;
 		if (handleDialogsMouseReleased(mouseX, mouseY, button)) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseReleased(mouseX, mouseY, button);
+		return ContainerEventHandlerEx.super.mouseReleased(mouseX, mouseY, button);
 	}
 	
 	@Override public boolean mouseDragged(
@@ -529,7 +534,7 @@ public abstract class AbstractConfigScreen extends Screen
 	) {
 		if (handleDialogsMouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
 		if (handleOverlaysMouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseDragged(
+		return ContainerEventHandlerEx.super.mouseDragged(
 		  mouseX, mouseY, button, dragX, dragY);
 	}
 	
@@ -555,7 +560,7 @@ public abstract class AbstractConfigScreen extends Screen
 		    || handleOverlaysMouseClicked(mouseX, mouseY, button)
 		    || getDragged() != null)
 			return true;
-		return IExtendedDragAwareNestedGuiEventHandler.super.mouseClicked(mouseX, mouseY, button);
+		return ContainerEventHandlerEx.super.mouseClicked(mouseX, mouseY, button);
 	}
 	
 	protected void recomputeFocus() {}
@@ -570,7 +575,7 @@ public abstract class AbstractConfigScreen extends Screen
 		if (handleModalKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (handleDialogsKeyPressed(keyCode, scanCode, modifiers)) return true;
 		if (getDragged() != null) return true; // Suppress
-		if ( keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			if (handleOverlaysEscapeKey())
 				return true;
 			if (isEditingConfigHotKey()) {
@@ -584,7 +589,40 @@ public abstract class AbstractConfigScreen extends Screen
 		}
 		if (screenKeyPressed(keyCode, scanCode, modifiers))
 			return true;
-		return super.keyPressed(keyCode, scanCode, modifiers);
+
+		// `super` method inlined since Screen calls `super.nextFocusPath` unreasonably
+		// (not that the focus mess that is `SimpleConfigScreen` is any prettier)
+		if (keyCode == 256 && shouldCloseOnEsc()) {
+			onClose();
+			return true;
+		// ContainerEventHandler.super.keyPressed(keyCode, scanCode, modifiers);
+		} else if (getFocused() != null && getFocused().keyPressed(keyCode, scanCode, modifiers)) {
+			return true;
+		} else {
+			FocusNavigationEvent event = switch (keyCode) {
+				case GLFW.GLFW_KEY_TAB -> new TabNavigation(!hasShiftDown());
+				case GLFW.GLFW_KEY_BACKSPACE -> null;
+				case GLFW.GLFW_KEY_INSERT    -> null;
+				case GLFW.GLFW_KEY_DELETE    -> null;
+				default -> null;
+				case GLFW.GLFW_KEY_RIGHT -> new ArrowNavigation(ScreenDirection.RIGHT);
+				case GLFW.GLFW_KEY_LEFT  -> new ArrowNavigation(ScreenDirection.LEFT);
+				case GLFW.GLFW_KEY_DOWN  -> new ArrowNavigation(ScreenDirection.DOWN);
+				case GLFW.GLFW_KEY_UP    -> new ArrowNavigation(ScreenDirection.UP);
+			};
+
+			if (event != null) {
+				ComponentPath path = nextFocusPath(event);
+				if (path == null && event instanceof TabNavigation) {
+					ComponentPath current = getCurrentFocusPath();
+					if (current != null) current.applyFocus(false);
+					path = nextFocusPath(event);
+				}
+				if (path != null) changeFocus(path);
+			}
+
+			return false;
+		}
 	}
 	
 	protected boolean canSave() {

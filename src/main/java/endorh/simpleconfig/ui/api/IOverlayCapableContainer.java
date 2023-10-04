@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  *    <li>{@link #handleOverlaysMouseScrolled(double, double, double)}</li>
  *    <li>{@link #handleOverlaysEscapeKey()}</li>
  *    <li>{@link #handleOverlaysDragEnd(double, double, int)} (if also extends from
- *    {@link IExtendedDragAwareNestedGuiEventHandler})</li>
+ *    {@link ContainerEventHandlerEx})</li>
  * </ul>.
  * Additionally, implementations may also call {@link #shouldOverlaysSuppressHover(int, int)} in
  * their {@code render} method, to check if they should pass (-1, -1) as the mouse coordinates

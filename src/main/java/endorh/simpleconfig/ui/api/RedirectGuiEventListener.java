@@ -1,9 +1,11 @@
 package endorh.simpleconfig.ui.api;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * Redirects all {@link GuiEventListener} related events to a given target.<br>
  * Convenient to replace event listeners in multiple queues.
  */
-public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListener, Renderable {
+public class RedirectGuiEventListener implements GuiEventListenerEx, Renderable {
 	private @Nullable GuiEventListener target;
 	public RedirectGuiEventListener(@Nullable GuiEventListener target) {
 		this.target = target;
@@ -45,7 +47,7 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 	) {
 		if (target == null) return false;
 		// Hide non-left click drag events if not aware
-		if (button != 0 && !(target instanceof IExtendedDragAwareGuiEventListener)) return false;
+		if (button != 0 && !(target instanceof GuiEventListenerEx)) return false;
 		return target.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 	
@@ -68,24 +70,44 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 		if (target == null) return false;
 		return target.charTyped(codePoint, modifiers);
 	}
-	
-	@Override public boolean changeFocus(boolean focus) {
-		if (target == null) return false;
-		return target.changeFocus(focus);
+
+	@Nullable @Override public ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+		if (target == null) return null;
+		ComponentPath path = target.nextFocusPath(e);
+		if (path == null) return null;
+		return RedirectPath.redirect(this, path);
+	}
+
+	@Nullable @Override public ComponentPath getCurrentFocusPath() {
+		if (target == null) return null;
+		ComponentPath path = target.getCurrentFocusPath();
+		if (path == null) return null;
+		return RedirectPath.redirect(this, path);
+	}
+
+	@Override public @NotNull ScreenRectangle getRectangle() {
+		return target != null? target.getRectangle() : ScreenRectangle.empty();
+	}
+
+	@Override public void setFocused(boolean focus) {
+		if (target != null) target.setFocused(focus);
+	}
+	@Override public boolean isFocused() {
+		return target != null && target.isFocused();
 	}
 	
 	@Override public boolean isMouseOver(double mouseX, double mouseY) {
 		if (target == null) return false;
 		return target.isMouseOver(mouseX, mouseY);
 	}
-	
-	// IExtendedDragAwareGuiEventListener methods
-	
+
+	// GuiEventListenerEx methods
+
 	@Override public void endDrag(double mouseX, double mouseY, int button) {
-		if (target instanceof IExtendedDragAwareGuiEventListener)
-			((IExtendedDragAwareGuiEventListener) target).endDrag(mouseX, mouseY, button);
+		if (target instanceof GuiEventListenerEx)
+			((GuiEventListenerEx) target).endDrag(mouseX, mouseY, button);
 	}
-	
+
 	// IRenderable methods
 	
 	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
@@ -96,10 +118,10 @@ public class RedirectGuiEventListener implements IExtendedDragAwareGuiEventListe
 	// Widget methods
 	
 	public int getWidth() {
-		return target instanceof AbstractWidget? ((AbstractWidget) target).getWidth() : 0;
+		return target == null ? 0 : target.getRectangle().width();
 	}
 	
 	public int getHeight() {
-		return target instanceof AbstractWidget? ((AbstractWidget) target).getHeight() : 0;
+		return target == null ? 0 : target.getRectangle().height();
 	}
 }

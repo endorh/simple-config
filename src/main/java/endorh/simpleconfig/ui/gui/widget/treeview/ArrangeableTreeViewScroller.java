@@ -34,7 +34,7 @@ public class ArrangeableTreeViewScroller extends ScrollingContainerWidget {
 				int textY = tree.area.getCenterY() - tree.getPlaceHolderHeight() / 2;
 				if (caption != null) textY += caption.getHeight() / 2;
 				textY = max(textY, tree.area.getY() + (caption != null? caption.getHeight() : 0) + 4);
-				font.drawWordWrap(placeHolder, textX, textY, maxWidth, 0xE0E0E0E0);
+				font.drawWordWrap(mStack, placeHolder, textX, textY, maxWidth, 0xE0E0E0E0);
 			}
 		} else root.render(mStack, x, y, w, mouseX, mouseY, delta);
 	}

@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.core.AbstractConfigEntry;
@@ -75,8 +76,12 @@ public class SimpleConfigValueArgumentType implements ArgumentType<String> {
 		String key = context.getArgument("key", String.class);
 		SimpleConfigImpl config = getConfig(context);
 		if (config == null) return Suggestions.empty();
-		AbstractConfigEntry<?, ?, ?> entry = config.getEntry(key);
-		return entry.addCommandSuggestions(builder)? builder.buildFuture() : Suggestions.empty();
+		try {
+			AbstractConfigEntry<?, ?, ?> entry = config.getEntry(key);
+			return entry.addCommandSuggestions(builder)? builder.buildFuture() : Suggestions.empty();
+		} catch (SimpleConfig.NoSuchConfigEntryError e) {
+			return Suggestions.empty();
+		}
 	}
 	
 	public static class Info implements ArgumentTypeInfo<SimpleConfigValueArgumentType, Info.Template> {

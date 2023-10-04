@@ -29,7 +29,7 @@ public class ToggleAnimator {
 	}
 	
 	public void resetTarget(boolean onOff) {
-		this.target = onOff? 1F : 0F;
+		target = onOff? 1F : 0F;
 		lastProgress = 1F - target;
 		lastChange = System.currentTimeMillis();
 	}

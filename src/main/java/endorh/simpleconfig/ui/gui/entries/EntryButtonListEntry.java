@@ -7,7 +7,6 @@ import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.IEntryHolder;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
@@ -61,7 +60,7 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	@Override public void updateFocused(boolean isFocused) {
 		super.updateFocused(isFocused);
 		entry.updateFocused(isFocused);
-		if (!isFocused) WidgetUtils.forceUnFocus(button);
+		if (!isFocused) ((GuiEventListener) button).setFocused(false);
 	}
 	
 	@Override protected boolean computeIsEdited() {
@@ -96,7 +95,8 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 			case 262: // Right
 				if (getFocused() == entry) {
 					setFocused(button);
-					WidgetUtils.forceTransferFocus(entry, button);
+					((GuiEventListener) entry).setFocused(false);
+					((GuiEventListener) button).setFocused(true);
 					playFeedbackTap(0.4F);
 					return true;
 				}
@@ -104,7 +104,8 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 			case 263: // Left
 				if (getFocused() == button) {
 					setFocused(entry);
-					WidgetUtils.forceTransferFocus(button, entry);
+					((GuiEventListener) button).setFocused(false);
+					((GuiEventListener) entry).setFocused(true);
 					playFeedbackTap(0.4F);
 					return true;
 				}

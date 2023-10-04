@@ -15,10 +15,12 @@ import endorh.simpleconfig.ui.gui.widget.*;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -89,6 +91,74 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		  .icon(SimpleConfigIcons.Entries.CLOSE_X)
 		  .tooltip(Collections::emptyList));
 		previewListeners.add(acceptButton);
+	}
+
+	@Override
+	public @Nullable ComponentPath getCurrentFocusPath() {
+		return wrapPath(super.getCurrentFocusPath());
+	}
+
+	@Override
+	public @Nullable ComponentPath nextFocusPath(@NotNull FocusNavigationEvent e) {
+		return wrapPath(super.nextFocusPath(e));
+	}
+
+	public static ComponentPath wrapPath(ComponentPath path) {
+		if (path instanceof ComponentPath.Path p) {
+			GuiEventListener entry = path.component();
+			if (entry instanceof AbstractConfigListEntry<?>)
+				return EntryPath.entryPath((AbstractConfigListEntry<?>) entry, p.childPath());
+		} else if (path instanceof ComponentPath.Leaf l) {
+			GuiEventListener entry = path.component();
+			if (entry instanceof AbstractConfigListEntry<?>)
+				return EntryLeafPath.entryLeaf((AbstractConfigListEntry<?>) entry);
+		}
+		return path;
+	}
+
+	public record EntryPath(
+		@NotNull AbstractConfigListEntry<?> entry,
+		@NotNull ComponentPath childPath
+	) implements ComponentPath {
+		public static EntryPath entryPath(@NotNull AbstractConfigListEntry<?> entry, @NotNull ComponentPath childPath) {
+			return new EntryPath(entry, childPath);
+		}
+
+		@Override
+		public @NotNull GuiEventListener component() {
+			return entry;
+		}
+
+		@Override
+		public void applyFocus(boolean focused) {
+			if (focused) {
+				if (!(childPath.component() instanceof AbstractConfigListEntry<?>)) {
+					entry.navigate();
+					ComponentPath curr = entry.getCurrentFocusPath();
+					if (curr != null) curr.applyFocus(false);
+				} else entry.setFocused(true);
+				entry.setFocused(childPath.component());
+			} else entry.setFocused(false);
+			childPath.applyFocus(focused);
+		}
+	}
+
+	// Adapter from Mojang's focus path to our `navigate` recursive focus update
+	public record EntryLeafPath(@NotNull AbstractConfigListEntry<?> entry) implements ComponentPath {
+		public static EntryLeafPath entryLeaf(@NotNull AbstractConfigListEntry<?> entry) {
+			return new EntryLeafPath(entry);
+		}
+
+		@Override
+		public @NotNull GuiEventListener component() {
+			return entry;
+		}
+
+		@Override
+		public void applyFocus(boolean focused) {
+			if (focused) entry.navigate();
+         else entry.setFocused(false);
+		}
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {

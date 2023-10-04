@@ -3,8 +3,12 @@ package endorh.simpleconfig.ui.api;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.AbstractDialog;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent.TabNavigation;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
@@ -29,6 +33,7 @@ import java.util.List;
  * Implementations should also add the hooks required by {@link IOverlayCapableContainer},
  * {@link IModalInputCapableScreen} and {@link IMultiTooltipScreen}.
  */
+@OnlyIn(Dist.CLIENT)
 public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalInputCapableScreen, IMultiTooltipScreen {
 	SortedDialogCollection getDialogs();
 	
@@ -132,7 +137,7 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		}
 		return false;
 	}
-	
+
 	default boolean handleDialogsKeyReleased(int keyCode, int scanCode, int modifiers) {
 		AbstractDialog last = getDialogs().getLast();
 		if (last != null) {
@@ -141,7 +146,7 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		}
 		return false;
 	}
-	
+
 	default boolean handleDialogsEscapeKey() {
 		AbstractDialog last = getDialogs().getLast();
 		if (last != null) {
@@ -150,11 +155,22 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		}
 		return false;
 	}
-	
+
 	default boolean handleDialogsChangeFocus(boolean forward) {
 		AbstractDialog last = getDialogs().getLast();
 		if (last != null) {
-			if (!last.changeFocus(forward)) last.changeFocus(forward);
+			TabNavigation e = new TabNavigation(forward);
+			ComponentPath path = last.nextFocusPath(e);
+			if (path == null) {
+				ComponentPath pre = last.getCurrentFocusPath();
+				if (pre != null) pre.applyFocus(false);
+				path = last.nextFocusPath(e);
+			}
+			if (path != null) {
+				ComponentPath pre = last.getCurrentFocusPath();
+				if (pre != null) pre.applyFocus(false);
+				path.applyFocus(true);
+			}
 			return true;
 		}
 		return false;

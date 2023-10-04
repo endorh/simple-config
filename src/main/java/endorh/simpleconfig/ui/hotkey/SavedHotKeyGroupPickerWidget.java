@@ -15,7 +15,6 @@ import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.gui.ConfirmDialog;
 import endorh.simpleconfig.ui.gui.InfoDialog;
 import endorh.simpleconfig.ui.gui.ProgressDialog;
-import endorh.simpleconfig.ui.gui.WidgetUtils;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
@@ -61,7 +60,6 @@ import java.util.stream.Stream;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.paragraph;
 import static endorh.simpleconfig.api.SimpleConfigTextUtil.splitTtc;
 import static endorh.simpleconfig.core.SimpleConfigPaths.LOCAL_HOTKEYS_DIR;
-import static endorh.simpleconfig.ui.gui.WidgetUtils.pos;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler implements IRectanglePositionableRenderable {
@@ -134,7 +132,8 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		if (focused) {
 			setFocused(selector);
 			selector.setFocused(true);
-		} else WidgetUtils.forceUnFocus(this);
+		}
+		super.setFocused(focused);
 	}
 	
 	@Override public Rectangle getArea() {
@@ -335,10 +334,14 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 			update();
 		}
 		Rectangle area = getArea();
-		pos(selector, area.x + 1, area.y + 2, area.width - 42, area.height - 4);
-		pos(loadButton, area.getMaxX() - 40, area.y);
-		pos(saveButton, area.getMaxX() - 20, area.y);
-		
+		selector.setPosition(area.x + 1, area.y + 2);
+		selector.setWidth(area.width - 42);
+		selector.setHeight(area.height - 4);
+		int x1 = area.getMaxX() - 40;
+		loadButton.setPosition(x1, area.y);
+		int x = area.getMaxX() - 20;
+		saveButton.setPosition(x, area.y);
+
 		selector.render(mStack, mouseX, mouseY, partialTicks);
 		loadButton.render(mStack, mouseX, mouseY, partialTicks);
 		saveButton.render(mStack, mouseX, mouseY, partialTicks);

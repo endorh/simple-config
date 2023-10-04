@@ -24,7 +24,8 @@ import net.minecraftforge.forgespi.language.IModInfo;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
+import java.awt.*;
+import java.util.List;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -50,9 +51,10 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 		  .withBackground("textures/block/bookshelf.png")
 		  .n(
 			 group("menu", true)
-				.add("add_pause_menu_button", yesNo(true))
-				.add("menu_button_position", option(PauseMenuButtonPosition.SPLIT_OPTIONS_BUTTON)
-				  .editable(g -> g.getGUIBoolean("add_pause_menu_button")))
+				// Since 1.19.4 Forge already adds a Mods button to the menu
+				// .add("add_pause_menu_button", yesNo(true))
+				// .add("menu_button_position", option(PauseMenuButtonPosition.SPLIT_OPTIONS_BUTTON)
+				//   .editable(g -> g.getGUIBoolean("add_pause_menu_button")))
 			   .add("options_button_behaviour", option(SECONDARY_CLICK))
 			   .add("add_options_menu_button", yesNo(true))
 			   .add("options_menu_button_position", option(OptionsMenuButtonPosition.TOP_LEFT_CORNER)
@@ -167,8 +169,8 @@ import static endorh.simpleconfig.config.CommonConfig.HotKeyLogLocation.*;
 	}
 	
 	@Bind public static class menu {
-		@Bind public static boolean add_pause_menu_button;
-		@Bind public static PauseMenuButtonPosition menu_button_position;
+		public static boolean add_pause_menu_button = false;
+		public static PauseMenuButtonPosition menu_button_position = PauseMenuButtonPosition.LEFT_OF_OPTIONS_BUTTON;
 		@Bind public static OptionsButtonBehaviour options_button_behaviour;
 		@Bind public static boolean add_options_menu_button;
 		@Bind public static OptionsMenuButtonPosition options_menu_button_position;

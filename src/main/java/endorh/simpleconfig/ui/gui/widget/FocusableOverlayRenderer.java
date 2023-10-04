@@ -2,7 +2,7 @@ package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
-import endorh.simpleconfig.ui.api.IExtendedDragAwareNestedGuiEventHandler;
+import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
@@ -15,7 +15,7 @@ import java.util.List;
 
 public abstract class FocusableOverlayRenderer extends AbstractContainerEventHandler
   implements IRectanglePositionableRenderable,
-             IExtendedDragAwareNestedGuiEventHandler,
+   ContainerEventHandlerEx,
              IOverlayRenderer {
 	private final Rectangle area = new Rectangle();
 	private boolean hidden = false;

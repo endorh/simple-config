@@ -11,7 +11,9 @@ import endorh.simpleconfig.ui.gui.SimpleConfigScreen.ListWidget.EntryDragAction.
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -458,16 +460,20 @@ public class CaptionedSubCategoryListEntry<
 			return GuiEventListener.super.keyPressed(keyCode, scanCode, modifiers);
 		}
 		
-		@Override public boolean changeFocus(boolean focus) {
-			return focused = !focused;
-		}
-		
-		public boolean isFocused() {
+		@Override public boolean isFocused() {
 			return focused;
 		}
 		
-		public void setFocused(boolean focused) {
+		@Override public void setFocused(boolean focused) {
 			this.focused = focused;
+		}
+
+		@Override public @Nullable ComponentPath nextFocusPath(FocusNavigationEvent e) {
+			return isFocused()? null : ComponentPath.leaf(this);
+		}
+
+		@Override public @Nullable ComponentPath getCurrentFocusPath() {
+			return GuiEventListener.super.getCurrentFocusPath();
 		}
 	}
 }

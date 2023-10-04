@@ -88,7 +88,7 @@ public class ToggleImageButton extends ImageButton {
 		return false;
 	}
 	
-	@Override public void renderButton(
+	@Override public void renderWidget(
 	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
 	) {
 		Icon icon = tintedIcon == null? this.icon : tintedIcon;
