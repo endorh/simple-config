@@ -1,11 +1,10 @@
 package endorh.simpleconfig.api.ui.icon;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceLocation;
@@ -37,10 +36,10 @@ import static java.lang.Math.min;
  *    <li>{@link #bindTexture()}, if you need to swap textures.</li>
  *    <li>{@link #getU()}, for animation purposes.</li>
  *    <li>{@link #getV()}, for animation purposes.</li>
- *    <li>{@link #blit(PoseStack, int, int, int, int, float, float, int, int, int, int)}, to alter the main rendering logic</li>
- *    <li>{@link #renderCentered(PoseStack, int, int, int, int, int)}, if the above hooks aren't enough</li>
- *    <li>{@link #renderStretch(PoseStack, int, int, int, int, int)}, if the above hooks aren't enough</li>
- *    <li>{@link #renderFill(PoseStack, int, int, int, int, int)}, if the above hooks aren't enough</li>
+ *    <li>{@link #blit(GuiGraphics, int, int, int, int, float, float, int, int, int, int)}, to alter the main rendering logic</li>
+ *    <li>{@link #renderCentered(GuiGraphics, int, int, int, int, int)}, if the above hooks aren't enough</li>
+ *    <li>{@link #renderStretch(GuiGraphics, int, int, int, int, int)}, if the above hooks aren't enough</li>
+ *    <li>{@link #renderFill(GuiGraphics, int, int, int, int, int)}, if the above hooks aren't enough</li>
  * </ul>
  */
 public class Icon {
@@ -51,8 +50,8 @@ public class Icon {
 	  new ResourceLocation(SimpleConfig.MOD_ID, "textures/gui/simpleconfig/empty"),
 	  0, 0, 0, 0, 0, 0
 	) { // @formatter:off
-		@Override public void renderCentered(@NotNull PoseStack m, int x, int y, int w, int h, int level) {}
-		@Override public void renderStretch(@NotNull PoseStack m, int x, int y, int w, int h, int level) {}
+		@Override public void renderCentered(@NotNull GuiGraphics m, int x, int y, int w, int h, int level) {}
+		@Override public void renderStretch(@NotNull GuiGraphics m, int x, int y, int w, int h, int level) {}
 		@Override public void bindTexture() {}
 	}; // @formatter:on
 	
@@ -149,22 +148,22 @@ public class Icon {
 		return level;
 	}
 	
-	public void renderCentered(@NotNull PoseStack mStack, @NotNull Rectangle rect) {
-		renderCentered(mStack, rect, 0);
+	public void renderCentered(@NotNull GuiGraphics gg, @NotNull Rectangle rect) {
+		renderCentered(gg, rect, 0);
 	}
 	
 	public void renderCentered(
-	  @NotNull PoseStack mStack, int x, int y, int w, int h
+	  @NotNull GuiGraphics gg, int x, int y, int w, int h
 	) {
-		renderCentered(mStack, x, y, w, h, 0);
+		renderCentered(gg, x, y, w, h, 0);
 	}
 	
-	public void renderCentered(@NotNull PoseStack mStack, @NotNull Rectangle rect, int level) {
+	public void renderCentered(@NotNull GuiGraphics mStack, @NotNull Rectangle rect, int level) {
 		renderCentered(mStack, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderCentered(
-	  @NotNull PoseStack mStack, int x, int y, int w, int h, int level
+	  @NotNull GuiGraphics mStack, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		int xx = x + w / 2 - this.w / 2;
@@ -181,22 +180,22 @@ public class Icon {
 		afterRender(level);
 	}
 	
-	public void renderStretch(@NotNull PoseStack mStack, @NotNull Rectangle rect) {
-		renderStretch(mStack, rect, 0);
+	public void renderStretch(@NotNull GuiGraphics gg, @NotNull Rectangle rect) {
+		renderStretch(gg, rect, 0);
 	}
 	
 	public void renderStretch(
-	  @NotNull PoseStack mStack, int x, int y, int w, int h
+	  @NotNull GuiGraphics gg, int x, int y, int w, int h
 	) {
-		renderStretch(mStack, x, y, w, h, 0);
+		renderStretch(gg, x, y, w, h, 0);
 	}
 	
-	public void renderStretch(@NotNull PoseStack mStack, @NotNull Rectangle rect, int level) {
-		renderStretch(mStack, rect.x, rect.y, rect.width, rect.height, level);
+	public void renderStretch(@NotNull GuiGraphics gg, @NotNull Rectangle rect, int level) {
+		renderStretch(gg, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderStretch(
-	  @NotNull PoseStack mStack, int x, int y, int w, int h, int level
+	  @NotNull GuiGraphics mStack, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		final int l = translateLevel(level);
@@ -205,22 +204,22 @@ public class Icon {
 		afterRender(level);
 	}
 	
-	public void renderFill(@NotNull PoseStack mStack, @NotNull Rectangle rect) {
-		renderFill(mStack, rect, 0);
+	public void renderFill(@NotNull GuiGraphics gg, @NotNull Rectangle rect) {
+		renderFill(gg, rect, 0);
 	}
 	
 	public void renderFill(
-	  @NotNull PoseStack mStack, int x, int y, int w, int h
+	  @NotNull GuiGraphics gg, int x, int y, int w, int h
 	) {
-		renderFill(mStack, x, y, w, h, 0);
+		renderFill(gg, x, y, w, h, 0);
 	}
 	
-	public void renderFill(@NotNull PoseStack mStack, @NotNull Rectangle rect, int level) {
-		renderFill(mStack, rect.x, rect.y, rect.width, rect.height, level);
+	public void renderFill(@NotNull GuiGraphics gg, @NotNull Rectangle rect, int level) {
+		renderFill(gg, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderFill(
-	  @NotNull PoseStack mStack, int x, int y, int w, int h, int level
+	  @NotNull GuiGraphics gg, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		final int l = translateLevel(level);
@@ -229,15 +228,15 @@ public class Icon {
 		int xx, yy, xw, yh;
 		for (xx = x; xx < x + w - this.w; xx += this.w) {
 			for (yy = y; yy < y + h - this.h; yy += this.h)
-				blit(mStack, xx, yy, this.w, this.h, u, v, this.w, this.h, tw, th);
+				blit(gg, xx, yy, this.w, this.h, u, v, this.w, this.h, tw, th);
 			yh = y + h - yy;
-			blit(mStack, xx, yy, this.w, yh, u, v, this.w, yh, tw, th);
+			blit(gg, xx, yy, this.w, yh, u, v, this.w, yh, tw, th);
 		}
 		xw = x + w - xx;
 		for (yy = y; yy < y + h - this.h; yy += this.h)
-			blit(mStack, xx, yy, xw, this.h, u, v, xw, this.h, tw, th);
+			blit(gg, xx, yy, xw, this.h, u, v, xw, this.h, tw, th);
 		yh = y + h - yy;
-		blit(mStack, xx, yy, xw, yh, u, v, xw, yh, tw, th);
+		blit(gg, xx, yy, xw, yh, u, v, xw, yh, tw, th);
 		afterRender(level);
 	}
 	
@@ -271,11 +270,11 @@ public class Icon {
 	}
 	
 	protected void blit(
-	  PoseStack mStack, int x, int y, int w, int h, float u, float v,
+	  GuiGraphics mStack, int x, int y, int w, int h, float u, float v,
 	  int uw, int vh, int tw, int th
 	) {
 		RenderSystem.enableBlend();
-		GuiComponent.blit(mStack, x, y, w, h, u, v, uw, vh, tw, th);
+		mStack.blit(getTexture(), x, y, w, h, u, v, uw, vh, tw, th);
 		RenderSystem.disableBlend();
 	}
 	

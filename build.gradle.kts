@@ -12,7 +12,7 @@ import java.util.*
 plugins {
     `java-library`
     kotlin("jvm") version "1.8.0"
-    id("net.minecraftforge.gradle")
+    id("net.neoforged.gradle") version "6.0.18+" //version "[6.0.13, 6.2)"
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("simpleconfig.antlr-conventions")
     id("simpleconfig.minecraft-conventions")
@@ -32,9 +32,9 @@ object V {
     val api = "1.0.2"
     val kotlinApi = api
     val mod = api
-    val minecraft = "1.19.4"
-    val parchment = "2023.06.26"
-    val forge = "45.1.19"
+    val minecraft = "1.20.1"
+    val parchment = "2023.09.03"
+    val forge = "47.1.79"
     val minecraftForge = "$minecraft-$forge"
     val minecraftMod = "$minecraft-$mod"
     object mappings {
@@ -44,9 +44,9 @@ object V {
     
     // Dependencies
     val yaml = "1.33"
-    val jei = "13.1.0.16"
-    val kotlin = "1.8.0"
-    val kotlinForForge = "4.2.0"
+    val jei = "15.2.0.27"
+    val kotlin = "1.8.22"
+    val kotlinForForge = "4.5.0"
 }
 
 val vendor = "Endor H"
@@ -297,7 +297,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
     
     // Minecraft
-    minecraft("net.minecraftforge:forge:${V.minecraftForge}")
+    minecraft("net.neoforged:forge:${V.minecraftForge}")
     
     // API source set
     implementation(apiSourceSet.output)
@@ -317,10 +317,10 @@ dependencies {
     // runtimeOnly(fg.deobf("curse.maven:smart-completion-782653:4284525"))
     
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4496718"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4766090"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462894"))
+    // runtimeOnly(fg.deobf("curse.maven:configured-457570:4462894"))
     
     // Zombie Awareness (multi-file support)
     // runtimeOnly(fg.deobf("curse.maven:coroutil-237749:3928997"))

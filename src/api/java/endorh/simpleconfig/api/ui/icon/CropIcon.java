@@ -1,6 +1,7 @@
 package endorh.simpleconfig.api.ui.icon;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +21,7 @@ public class CropIcon extends Icon {
 	protected final int cV;
 	protected final int cW;
 	protected final int cH;
-	
+
 	public CropIcon(
 	  ResourceLocation texture, int u, int v, int w, int h, int lX, int lY, int tw, int th,
 	  boolean twoLevel, int tint, int cU, int cV, int cW, int cH
@@ -31,14 +32,14 @@ public class CropIcon extends Icon {
 		this.cW = cW;
 		this.cH = cH;
 	}
-	
+
 	@Override public @NotNull Icon withTint(int tint) {
 		return new CropIcon(
 		  getTexture(), u, v, w, h, levelOffsetX, levelOffsetY,
 		  tw, th, twoLevel, tint, cU, cV, cW, cH);
 	}
-	
-	@Override public void renderCentered(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+
+	@Override public void renderCentered(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		int xx = x + w / 2 - this.w / 2;
 		int yy = y + h / 2 - this.h / 2;
@@ -51,11 +52,11 @@ public class CropIcon extends Icon {
 		int ww = min(w - cU, getCropW());
 		int hh = min(h - cV, getCropH());
 		blit(
-		  mStack, max(x, xx) + cU, max(y, yy) + cV, ww, hh,
+		  gg, max(x, xx) + cU, max(y, yy) + cV, ww, hh,
 		  u + cU, v + cV, ww, hh, tw, th);
 		afterRender(level);
 	}
-	
+
 	@Override public void renderStretch(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		int l = translateLevel(level);
@@ -71,7 +72,7 @@ public class CropIcon extends Icon {
 		  u + cU, v + cV, cW, cH, tw, th);
 		afterRender(level);
 	}
-	
+
 	@Override public void renderFill(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
 		// Overridden to compute crop only once
 		beforeRender(level);
@@ -96,7 +97,7 @@ public class CropIcon extends Icon {
 		blit(mStack, xx, yy, xw, yh, u, v, xw, yh, tw, th);
 		afterRender(level);
 	}
-	
+
 	public int getCropU() {
 		return cU;
 	}
