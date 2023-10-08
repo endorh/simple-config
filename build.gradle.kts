@@ -428,7 +428,9 @@ val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     // TODO: This shouldn't be necessary
+    dependsOn("generateGrammarSource")
     dependsOn("generateApiGrammarSource")
+    dependsOn("generateKotlinApiGrammarSource")
 }
 
 val apiJarTask = tasks.register<Jar>("apiJar") {
