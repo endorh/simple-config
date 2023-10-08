@@ -431,6 +431,7 @@ val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
 
     // TODO: This shouldn't be necessary
     dependsOn("prepareGenerateGrammarSource")
+    dependsOn("generateGrammarSource")
     dependsOn("generateApiGrammarSource")
     dependsOn("generateKotlinApiGrammarSource")
 }
