@@ -5,6 +5,7 @@ import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.entry.BooleanEntryBuilder;
 import endorh.simpleconfig.api.entry.DoubleEntryBuilder;
 import endorh.simpleconfig.api.entry.IntegerEntryBuilder;
 import endorh.simpleconfig.api.entry.OptionEntryBuilder;
@@ -23,6 +24,7 @@ import net.minecraft.client.OptionInstance.LazyEnum;
 import net.minecraft.client.OptionInstance.SliderableValueSet;
 import net.minecraft.client.OptionInstance.TooltipSupplier;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.screens.CreditsAndAttributionScreen;
 import net.minecraft.client.gui.screens.controls.KeyBindsScreen;
 import net.minecraft.client.resources.language.LanguageInfo;
 import net.minecraft.client.tutorial.TutorialSteps;
@@ -114,6 +116,7 @@ public class MinecraftClientConfigWrapper {
 		private final MinecraftConfigValueBuilder vb = new MinecraftConfigValueBuilder();
 		
 		private void addEntries() {
+			Minecraft mc = Minecraft.getInstance();
 			with(category("controls").withIcon(MinecraftOptions.CONTROLS).withColor(0x808080F0), () -> {
 				with(group("mouse", true), () -> {
 					wrapDouble(options.sensitivity());
@@ -127,10 +130,9 @@ public class MinecraftClientConfigWrapper {
 				wrapBool(options.toggleSprint());
 				wrapBool(options.autoJump());
 				wrapBool(options.operatorItemsTab());
-				target.add("keyMappings", button(() -> {
-					Minecraft mc = Minecraft.getInstance();
-					mc.setScreen(new KeyBindsScreen(mc.screen, mc.options));
-				}).label("simpleconfig.ui.open"));
+				target.add("keyMappings", button(
+					() -> mc.setScreen(new KeyBindsScreen(mc.screen, mc.options))
+				).label("simpleconfig.ui.open"));
 			});
 			with(category("graphics").withIcon(MinecraftOptions.GRAPHICS).withColor(0x8080F0A0), () -> {
 				wrapInt(options.fov());
@@ -159,6 +161,9 @@ public class MinecraftClientConfigWrapper {
 				wrapDouble(options.fovEffectScale());
 				wrapDouble(options.darknessEffectScale());
 				wrapDouble(options.screenEffectScale());
+
+				wrapDouble(options.glintSpeed());
+				wrapDouble(options.glintStrength());
 				
 				wrapBool(options.fullscreen());
 				wrapInt("overrideWidth", 0);
@@ -212,16 +217,21 @@ public class MinecraftClientConfigWrapper {
 			with(category("online").withIcon(MinecraftOptions.ONLINE).withColor(0x80F0A080), () -> {
 				wrapBool(options.allowServerListing());
 				wrapBool(options.realmsNotifications());
-				wrapBool(options.telemetryOptInExtra());
 			});
 			with(category("accessibility").withIcon(
 			  MinecraftOptions.ACCESSIBILITY).withColor(0x80E0E0FF), () -> {
 				wrapOption(options.narrator());
+				wrapDouble(options.notificationDisplayTime());
+				wrapBool(options.highContrast());
 				wrapBool(options.hideLightningFlash());
 				wrapBool(options.darkMojangStudiosBackground());
 				wrapDouble(options.panoramaSpeed());
+				wrapDouble(options.damageTiltStrength());
+				wrapDouble(options.glintSpeed());
+				wrapDouble(options.glintStrength());
 			});
 			with(category("advanced").withIcon(MinecraftOptions.ADVANCED), () -> {
+				wrapBool(options.telemetryOptInExtra(), b -> b.editable(mc::allowsTelemetry));
 				wrapBool(options.reducedDebugInfo());
 				wrapBool("pauseOnLostFocus", true);
 				wrapBool("advancedItemTooltips", false);
@@ -236,6 +246,11 @@ public class MinecraftClientConfigWrapper {
 				wrapBool("skipRealms32bitWarning", false);
 				wrapString("lastServer", "");
 				wrapBool("joinedFirstServer", false);
+
+				target.add("credits_and_attribution", cast(button(
+					() -> mc.setScreen(new CreditsAndAttributionScreen(mc.screen))
+					).label("simpleconfig.ui.open")
+				).translation("options.credits_and_attribution"));
 			});
 		}
 		
@@ -248,7 +263,7 @@ public class MinecraftClientConfigWrapper {
 				  ).toPath().normalize())));
 				return builder.buildAndRegister(null, vb);
 			} catch (RuntimeException e) {
-				e.printStackTrace();
+				LOGGER.error(e);
 				throw e;
 			}
 		}
@@ -347,11 +362,15 @@ public class MinecraftClientConfigWrapper {
 				add(opt, b);
 			}
 		}
-		
-		private void wrapBool(OptionInstance<Boolean> opt) {
+
+		private void wrapBool(OptionInstance<Boolean> opt, Function<BooleanEntryBuilder, BooleanEntryBuilder> modifier) {
 			Function<Boolean, Component> stringifier = getStringifier(opt);
-			add(opt, bool(getInitialValue(opt))
-			  .text(b -> patchBoolean(stringifier.apply(b))));
+			add(opt, modifier.apply(bool(getInitialValue(opt))
+				.text(b -> patchBoolean(stringifier.apply(b)))));
+		}
+
+		private void wrapBool(OptionInstance<Boolean> opt) {
+			wrapBool( opt, b -> b);
 		}
 		
 		private static Component patchBoolean(Component c) {
