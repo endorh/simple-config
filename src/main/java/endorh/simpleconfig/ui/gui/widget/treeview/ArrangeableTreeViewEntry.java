@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -12,6 +11,7 @@ import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableAction.WidgetDragBroadcastableAction;
 import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragBroadcastableWidget;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -440,11 +440,11 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 	}
 	
 	public void renderBackground(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		ArrangeableTreeView<E> tree = getTree();
 		if (tree.isDraggingEntries() && tree.isSelected(this)) {
-			ArrangeableTreeView.fill(mStack, x, y, x + w, y + h, 0x64646480);
+			gg.fill(x, y, x + w, y + h, 0x64646480);
 			return;
 		}
 		E parent = getParent();
@@ -452,25 +452,25 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		int r = tree.getX() + tree.getWidth();
 		int b = y + h;
 		if (tree.isSelected(this))
-			fill(mStack, l, y, r, b, 0x64646480);
+			gg.fill(l, y, r, b, 0x64646480);
 		if (parent != null && parent.getFocusedSubEntry() == this && getFocusedSubEntry() == null)
-			drawBorderRect(mStack, l, y, r, b, 1, 0x80808080, 0);
+			drawBorderRect(gg, l, y, r, b, 1, 0x80808080, 0);
 		if (DEBUG_DRAG) {
 			if (tree.getDraggedOver() == this)
-				drawBorderRect(mStack, l - 1, y - 1, r + 1, b + 1, 1, 0x8000FF00, 0);
+				drawBorderRect(gg, l - 1, y - 1, r + 1, b + 1, 1, 0x8000FF00, 0);
 			if (tree.getDraggedOverParent() == this && parent != null)
-				drawBorderRect(mStack, l - 2, y - 2, r + 2, b + 2, 1, 0x80FFFF00, 0);
+				drawBorderRect(gg, l - 2, y - 2, r + 2, b + 2, 1, 0x80FFFF00, 0);
 		}
 	}
 	
 	public void render(
-	  PoseStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int width, int mouseX, int mouseY, float delta
 	) {
 		Point pos = interpolatePosition(x, y);
 		int ix = pos.getX();
 		int iy = pos.getY();
 		int height = getOwnHeight();
-		renderBackground(mStack, ix, iy, width, height, mouseX, mouseY, delta);
+		renderBackground(gg, ix, iy, width, height, mouseX, mouseY, delta);
 		if (!subEntries.isEmpty() && height < 10) height = 10;
 		area.setBounds(ix, iy, width, height);
 		
@@ -478,12 +478,12 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 		int yy = y;
 		if (p != null) {
 			if (!subEntries.isEmpty() || isForceRenderAsGroup()) SimpleConfigIcons.Widgets.TREE_ARROW.renderCentered(
-			  mStack, ix, iy, 16, height, isExpanded()? 1 : 0);
+			  gg, ix, iy, 16, height, isExpanded()? 1 : 0);
 			if (isSelectable()) SimpleConfigIcons.Widgets.TREE_DRAG_HANDLE.renderCentered(
-			  mStack, ix + 16, iy, 8, height);
+			  gg, ix + 16, iy, 8, height);
 			int padding = getVerticalPadding();
 			renderContent(
-			  mStack, ix + 24, iy + padding, width - 24, height - 2 * padding,
+			  gg, ix + 24, iy + padding, width - 24, height - 2 * padding,
 			  mouseX, mouseY, delta);
 			yy += height;
 		}
@@ -496,32 +496,32 @@ public abstract class ArrangeableTreeViewEntry<E extends ArrangeableTreeViewEntr
 			  tree.getX(), y, tree.getWidth(), (int) (e * getTotalHeight(false, false))));
 			{
 				if (hasDragPreview && tree.getDraggedOverParent() == this) {
-					renderDragPreview(mStack, yy);
+					renderDragPreview(gg, yy);
 					yy += 20;
 					hasDragPreview = false;
 				}
 				for (ArrangeableTreeViewEntry<E> subCell: subEntries) {
 					if (!subCell.isHidden() || isHidden()) {
-						subCell.render(mStack, x + indent, yy, width - indent, mouseX, mouseY, delta);
+						subCell.render(gg, x + indent, yy, width - indent, mouseX, mouseY, delta);
 						yy += subCell.getTotalHeight(false, false);
 					}
 				}
 			}
 			if (e < 1F) ScissorsHandler.INSTANCE.popScissor();
 		}
-		if (hasDragPreview) renderDragPreview(mStack, yy);
+		if (hasDragPreview) renderDragPreview(gg, yy);
 	}
 	
-	protected void renderDragPreview(PoseStack mStack, int y) {
+	protected void renderDragPreview(GuiGraphics gg, int y) {
 		ArrangeableTreeView<E> tree = getTree();
 		int destX = tree.getDraggedOverParent().getArea().x + tree.getIndent();
-		drawBorderRect(mStack, destX, y, tree.area.getMaxX(), y + 20, 1, 0x8080A0FF, 0x646480FF);
+		drawBorderRect(gg, destX, y, tree.area.getMaxX(), y + 20, 1, 0x8080A0FF, 0x646480FF);
 		SimpleConfigIcons.Widgets.TREE_DRAG_HANDLE.renderCentered(
-		  mStack, destX + 16, y, 8, 20);
+		  gg, destX + 16, y, 8, 20);
 	}
 	
 	public abstract void renderContent(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
 	
 	public boolean isForceRenderAsGroup() {
 		return false;

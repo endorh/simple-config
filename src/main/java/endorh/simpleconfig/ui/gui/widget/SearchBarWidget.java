@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ConfigEntryHolder;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
@@ -22,6 +21,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -316,31 +316,31 @@ public class SearchBarWidget extends AbstractContainerEventHandlerEx implements 
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (!expanded) return false;
-		drawBackground(mStack, mouseX, mouseY, delta);
+		drawBackground(gg, mouseX, mouseY, delta);
 		final ComboBoxWidget<?> comboBox = getComboBox();
 		if (isFocused()) setFocused(comboBox);
 		if (isFocused() && !comboBox.isFocused() && !isFilter())
 			comboBox.setFocused(true);
-		positionExpanded(mStack, mouseX, mouseY, delta);
-		renderExpanded(mStack, mouseX, mouseY, delta);
+		positionExpanded(gg, mouseX, mouseY, delta);
+		renderExpanded(gg, mouseX, mouseY, delta);
 		final Optional<Component[]> tt = getTooltip(mouseX, mouseY);
 		tt.ifPresent(t -> screen.addTooltip(Tooltip.of(Point.of(mouseX, mouseY), t)));
 		return true;
 	}
 	
-	public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		final ComboBoxWidget<?> comboBox = getComboBox();
 		overlay.setBounds(x, y, w, comboBox.isDropDownShown()? h + comboBox.getDropDownHeight() : h);
 		if (!expanded) {
-			positionNotExpanded(mStack, mouseX, mouseY, delta);
-			renderNotExpanded(mStack, mouseX, mouseY, delta);
+			positionNotExpanded(gg, mouseX, mouseY, delta);
+			renderNotExpanded(gg, mouseX, mouseY, delta);
 		}
 	}
 	
-	protected void positionExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	protected void positionExpanded(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		int textY = y + 8;
 		final Font font = Minecraft.getInstance().font;
 		final String text =
@@ -366,31 +366,31 @@ public class SearchBarWidget extends AbstractContainerEventHandlerEx implements 
 		comboBox.setY(y + 3);
 		regexComboBox.setX(bx + 2);
 		regexComboBox.setY(y + 3);
-		if (!filter)font.drawShadow(
-		  mStack, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
+		if (!filter) gg.drawString( // TODO: shadow
+		  font, text, textX, textY, overMatch ? 0xffffff42 : 0xffe0e0e0);
 	}
 	
-	protected void positionNotExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	protected void positionNotExpanded(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		open.setX(x + 2);
 		open.setY(y + 2);
 	}
 	
-	protected void renderExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderExpanded(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (regex)
-			regexComboBox.render(mStack, mouseX, mouseY, delta);
-		else comboBox.render(mStack, mouseX, mouseY, delta);
-		for (ToggleImageButton b : optionButtons) b.render(mStack, mouseX, mouseY, delta);
-		up.render(mStack, mouseX, mouseY, delta);
-		down.render(mStack, mouseX, mouseY, delta);
-		close.render(mStack, mouseX, mouseY, delta);
+			regexComboBox.render(gg, mouseX, mouseY, delta);
+		else comboBox.render(gg, mouseX, mouseY, delta);
+		for (ToggleImageButton b : optionButtons) b.render(gg, mouseX, mouseY, delta);
+		up.render(gg, mouseX, mouseY, delta);
+		down.render(gg, mouseX, mouseY, delta);
+		close.render(gg, mouseX, mouseY, delta);
 	}
 	
-	protected void renderNotExpanded(PoseStack mStack, int mouseX, int mouseY, float delta) {
-		open.render(mStack, mouseX, mouseY, delta);
+	protected void renderNotExpanded(GuiGraphics gg, int mouseX, int mouseY, float delta) {
+		open.render(gg, mouseX, mouseY, delta);
 	}
 	
-	protected void drawBackground(PoseStack mStack, int mouseX, int mouseY, float delta) {
-		fill(mStack, x, y, x + w, y + h, 0xFF343434);
+	protected void drawBackground(GuiGraphics gg, int mouseX, int mouseY, float delta) {
+		gg.fill(x, y, x + w, y + h, 0xFF343434);
 	}
 	
 	@Override public boolean charTyped(char codePoint, int modifiers) {

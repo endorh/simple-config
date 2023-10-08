@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
@@ -12,6 +11,7 @@ import endorh.simpleconfig.ui.gui.widget.treeview.DragBroadcastableControl.DragB
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -320,18 +320,18 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	
 	// Rendering
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
 		ArrangeableTreeViewCaption<E> caption = getCaption();
 		area.setBounds(x, y, w, h);
 		int pad = getPadding();
-		if (!transparent) renderLayout(mStack, mouseX, mouseY, delta);
+		if (!transparent) renderLayout(gg, mouseX, mouseY, delta);
 		int captionHeight = caption != null? caption.getHeight() + getCaptionSeparation() : 0;
 		scroller.area.setBounds(
 		  x + pad, y + pad + captionHeight, w - pad * 2,
 		  h - captionHeight - pad * 2);
-		if (caption != null) caption.render(mStack, mouseX, mouseY, delta);
-		scroller.render(mStack, mouseX, mouseY, delta);
+		if (caption != null) caption.render(gg, mouseX, mouseY, delta);
+		scroller.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public int getPadding() {
@@ -342,19 +342,19 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		return 1;
 	}
 	
-	public void renderLayout(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void renderLayout(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		Rectangle area = getArea();
-		fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), fillColor);
-		drawBorderRect(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), 1, borderColor, 0);
+		gg.fill(area.x, area.y, area.getMaxX(), area.getMaxY(), fillColor);
+		drawBorderRect(gg, area.x, area.y, area.getMaxX(), area.getMaxY(), 1, borderColor, 0);
 		ArrangeableTreeViewCaption<E> caption = getCaption();
 		if (caption != null) {
 			int h = caption.getHeight();
-			fill(mStack, area.x + 1, area.y + h + 1, area.getMaxX() - 1, area.y + h + 2, borderColor);
+			gg.fill(area.x + 1, area.y + h + 1, area.getMaxX() - 1, area.y + h + 2, borderColor);
 		}
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		overlayArea.setBounds(area.x - 128, area.y - 128, area.width + 256, area.height + 256);
 		if (!isDraggingEntries() || area != overlayArea) return false;
@@ -366,7 +366,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 		int draggedHeight = 48;
 		int dragX = Mth.clamp(mouseX + getDragOffsetX(), overlayArea.x, overlayArea.getMaxX() - draggedWidth);
 		int dragY = Mth.clamp(mouseY + getDragOffsetY(), overlayArea.y, overlayArea.getMaxY() - draggedHeight);
-		renderDragged(mStack, dragX, dragY, draggedWidth, mouseX, mouseY, delta);
+		renderDragged(gg, dragX, dragY, draggedWidth, mouseX, mouseY, delta);
 		
 		double autoScroll = 0.0;
 		int top = getY();
@@ -384,7 +384,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 	}
 	
 	public void renderDragged(
-	  PoseStack mStack, int x, int y, int w, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int mouseX, int mouseY, float delta
 	) {
 		if (isDraggingEntries()) {
 			int yy = y;
@@ -393,7 +393,7 @@ public class ArrangeableTreeView<E extends ArrangeableTreeViewEntry<E>> extends 
 				boolean expanded = cell.isExpanded();
 				cell.setExpanded(false, false);
 				cell.cancelAnimations();
-				cell.render(mStack, x, yy, w, mouseX, mouseY, delta);
+				cell.render(gg, x, yy, w, mouseX, mouseY, delta);
 				yy += cell.getTotalHeight(false, true);
 				cell.setExpanded(expanded, false);
 			}

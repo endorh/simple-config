@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.SimpleConfigGroup;
@@ -17,6 +16,7 @@ import endorh.simpleconfig.ui.gui.widget.treeview.ArrangeableTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyManager.ConfigHotKeyGroup;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -156,14 +156,14 @@ public class HotKeyListDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public void renderInner(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		ConfigHotKeyTreeView treeView = getTreeView();
 		treeView.setX(x);
 		treeView.setY(y);
 		treeView.setWidth(w);
 		treeView.setHeight(h - 4);
-		treeView.render(mStack, mouseX, mouseY, delta);
+		treeView.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override public int getInnerHeight() {

@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.GameNarrator;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -61,7 +61,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	
 	@Override
 	public Boolean getDisplayedValue() {
-		return this.displayedValue;
+		return displayedValue;
 	}
 	
 	@Override public void setDisplayedValue(Boolean value) {
@@ -75,7 +75,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		buttonWidget.active = shouldRenderEditable();
 		buttonWidget.setX(x);
@@ -83,7 +83,7 @@ public class BooleanListEntry extends TooltipListEntry<Boolean> implements IChil
 		buttonWidget.setWidth(w);
 		buttonWidget.setHeight(h);
 		buttonWidget.setMessage(getYesNoText(displayedValue));
-		buttonWidget.render(mStack, mouseX, mouseY, delta);
+		buttonWidget.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public Component getYesNoText(boolean bool) {

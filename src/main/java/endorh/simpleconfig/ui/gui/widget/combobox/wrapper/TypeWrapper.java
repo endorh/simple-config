@@ -5,6 +5,7 @@ import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -52,13 +53,14 @@ public interface TypeWrapper<T> {
 	 * and renders it if present.
 	 */
 	default void renderIcon(
-	  @Nullable T element, String text, @NotNull PoseStack mStack, int x, int y, int w, int h,
-	  int blitOffset, int mouseX, int mouseY, float delta
+      @Nullable T element, String text, @NotNull GuiGraphics gg, int x, int y, int w, int h,
+      int blitOffset, int mouseX, int mouseY, float delta
 	) {
+		PoseStack mStack = gg.pose();
 		mStack.pushPose(); {
 			mStack.translate(0D, 0D, blitOffset);
 			final Optional<Icon> opt = getIcon(element, text);
-			opt.ifPresent(icon -> icon.renderCentered(mStack, x, y, w, h));
+			opt.ifPresent(i -> i.renderCentered(gg, x, y, w, h));
 		} mStack.popPose();
 	}
 	

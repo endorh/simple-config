@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
@@ -41,11 +41,11 @@ public class EnumListEntry<E extends Enum<?>> extends SelectionListEntry<E> {
 	}
 	
 	@Override protected void renderField(
-	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
-	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+      int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		super.renderField(
-		  mStack, fieldX, fieldY, fieldWidth, fieldHeight, x, y,
+		  gg, fieldX, fieldY, fieldWidth, fieldHeight, x, y,
 		  entryWidth, entryHeight, index, mouseX, mouseY, delta);
 		if (enumTooltipProvider != null && !getEntryList().isDragging()
 		    && fieldArea.contains(mouseX, mouseY)) {

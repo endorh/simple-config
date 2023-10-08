@@ -5,7 +5,6 @@ import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -17,6 +16,7 @@ import endorh.simpleconfig.ui.impl.EasingMethod.EasingMethodImpl;
 import endorh.simpleconfig.ui.math.impl.PointHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -223,7 +223,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	}
 	
 	@Override
-	public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		long time = System.currentTimeMillis();
 		double[] target = {this.target};
 		double prev = scroll;
@@ -242,7 +242,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 				scrollTo(scroll < 0 ? 0 : maxScroll, true);
 			else this.target = Mth.clamp(this.target, 0, maxScroll);
 		}
-		super.render(mStack, mouseX, mouseY, delta);
+		super.render(gg, mouseX, mouseY, delta);
 		if (scrollTargetEntry != null) {
 			followedEntry = scrollTargetEntry;
 			scrollTo(entryScroll(scrollTargetEntry));
@@ -253,12 +253,12 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 	
 	@Override
 	protected void renderScrollBar(
-	  PoseStack matrices, Tesselator tessellator, BufferBuilder buffer, int maxScroll,
-	  int sbMinX, int sbMaxX
+		GuiGraphics gg, Tesselator tessellator, BufferBuilder buffer, int maxScroll,
+		int sbMinX, int sbMaxX
 	) {
 		if (!smoothScrolling) {
 			super.renderScrollBar(
-			  matrices, tessellator, buffer, maxScroll, sbMinX, sbMaxX);
+				gg, tessellator, buffer, maxScroll, sbMinX, sbMaxX);
 		} else if (maxScroll > 0) {
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 			RenderSystem.disableDepthTest();
@@ -278,7 +278,7 @@ public abstract class DynamicNewSmoothScrollingEntryListWidget<E extends ListEnt
 			  top), bottom - height);
 			int bc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 168 : 128;
 			int tc = new Rectangle(sbMinX, minY, sbMaxX - sbMinX, height).contains(PointHelper.ofMouse()) ? 222 : 172;
-			Matrix4f matrix = matrices.last().pose();
+			Matrix4f matrix = gg.pose().last().pose();
 			// @formatter:off
 			buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 			buffer.vertex(matrix, (float) sbMinX, (float) bottom, 0F).color(0, 0, 0, 255).endVertex();

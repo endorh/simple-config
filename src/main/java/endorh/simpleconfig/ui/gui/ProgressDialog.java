@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.apache.logging.log4j.LogManager;
@@ -121,7 +121,7 @@ public class ProgressDialog extends ConfirmDialog {
 	}
 	
 	@Override public void renderInner(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		update();
 		
@@ -129,7 +129,7 @@ public class ProgressDialog extends ConfirmDialog {
 		int ty = y + 4;
 		for (List<FormattedCharSequence> line : lines) {
 			for (FormattedCharSequence l : line) {
-				font.drawShadow(mStack, l, tx, ty, bodyColor);
+				gg.drawString(font, l, tx, ty, bodyColor); // TODO: shadow
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;

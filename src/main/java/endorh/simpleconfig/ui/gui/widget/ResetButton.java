@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -14,6 +13,7 @@ import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -69,7 +69,7 @@ public class ResetButton extends MultiFunctionImageButton
 		       isGroup() ? confirm.group_reset : confirm.reset;
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		int x = getX();
 		int y = getY();
 		if (dragging) {
@@ -82,7 +82,7 @@ public class ResetButton extends MultiFunctionImageButton
 		overlay.setBounds(ScissorsHandler.INSTANCE.getScissorsAreas().stream().reduce(overlay, Rectangle::intersection));
 		if (overlay.isEmpty())
 			overlay.setBounds(0, 0, 0, 0);
-		super.render(mStack, mouseX, mouseY, delta);
+		super.render(gg, mouseX, mouseY, delta);
 		if (isFocused() && !active && entry != null) {
 			entry.setFocused(false);
 			setFocused(false);
@@ -254,33 +254,33 @@ public class ResetButton extends MultiFunctionImageButton
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (!dragging && !confirming) return false;
 		getScreen().removeTooltips(area);
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		RenderSystem.enableBlend();
-		fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), 0x80FF4242);
-		fill(mStack, area.x + 2, area.y + 2, area.getMaxX() - 2, area.getMaxY() - 2, 0xFFFF6464);
+		gg.fill(area.x, area.y, area.getMaxX(), area.getMaxY(), 0x80FF4242);
+		gg.fill(area.x + 2, area.y + 2, area.getMaxX() - 2, area.getMaxY() - 2, 0xFFFF6464);
 		int x = getX();
 		int y = getY();
 		if (dragging) {
-			defaultIcon.renderStretch(mStack, x, y, width, height, 0);
+			defaultIcon.renderStretch(gg, x, y, width, height, 0);
 			if (Minecraft.getInstance().font.isBidirectional()) {
-				Buttons.CONFIRM_DRAG_RIGHT.renderStretch(mStack, x + width, y, 40, 20);
-				defaultIcon.renderStretch(mStack, x + width + 40, y, width, height, 0);
+				Buttons.CONFIRM_DRAG_RIGHT.renderStretch(gg, x + width, y, 40, 20);
+				defaultIcon.renderStretch(gg, x + width + 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
-					fill(mStack, x + width, y, x + 2 * width + 40, y + height, 0x64FF4242);
+					gg.fill(x + width, y, x + 2 * width + 40, y + height, 0x64FF4242);
 			} else {
-				Buttons.CONFIRM_DRAG_LEFT.renderStretch(mStack, x - 40, y, 40, 20);
-				defaultIcon.renderStretch(mStack, x - width - 40, y, width, height, 0);
+				Buttons.CONFIRM_DRAG_LEFT.renderStretch(gg, x - 40, y, 40, 20);
+				defaultIcon.renderStretch(gg, x - width - 40, y, width, height, 0);
 				if (abs(dragOffset) >= width + 40)
-					fill(mStack, x - 40, y, x + width, y + height, 0x64FF4242);
+					gg.fill(x - 40, y, x + width, y + height, 0x64FF4242);
 			}
 		}
-		defaultIcon.renderStretch(mStack, x + dragOffset, y, width, height, 2);
+		defaultIcon.renderStretch(gg, x + dragOffset, y, width, height, 2);
 		if (confirming)
-			fill(mStack, x + dragOffset, y, x + width, y + height, 0x64FF4242);
+			gg.fill(x + dragOffset, y, x + width, y + height, 0x64FF4242);
 		return true;
 	}
 	
@@ -297,12 +297,12 @@ public class ResetButton extends MultiFunctionImageButton
 		super.setFocused(focused);
 	}
 	
-	@Override public List<Component> getTooltip() {
+	@Override public List<Component> getTooltipContents() {
 		if (isGroup()) return isRestore()? restoreTooltipGroup : resetTooltipGroup;
 		return isRestore()? restoreTooltip : resetTooltip;
 	}
 	
 	public Optional<List<Component>> getTooltip(int mouseX, int mouseY) {
-		return isMouseOver(mouseX, mouseY)? Optional.of(getTooltip()) : Optional.empty();
+		return isMouseOver(mouseX, mouseY)? Optional.of(getTooltipContents()) : Optional.empty();
 	}
 }

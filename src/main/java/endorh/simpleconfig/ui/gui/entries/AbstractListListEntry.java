@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.api.INavigableTarget;
 import endorh.simpleconfig.ui.gui.entries.AbstractListListEntry.AbstractListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -164,10 +164,10 @@ public abstract class AbstractListListEntry<T, C extends AbstractListCell<T, C, 
 		}
 		
 		@Override public void renderCell(
-		  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
-		  int mouseY, boolean isSelected, float delta
+         GuiGraphics gg, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
+         int mouseY, boolean isSelected, float delta
 		) {
-			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
+			super.renderCell(gg, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
 			ListEntry listEntry = getListEntry();
 			DynamicEntryListWidget<?> entryList = listEntry.getEntryList();
 			rowArea.setBounds(entryList.left, cellArea.y, entryList.right - entryList.left, cellArea.height);

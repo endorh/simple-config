@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.EntryPairListListEntry.EntryPairCell;
@@ -9,6 +8,7 @@ import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.network.chat.Component;
@@ -216,22 +216,22 @@ public class EntryPairListListEntry<
 		
 		@Override
 		public void renderCell(
-		  PoseStack mStack, int index, int x, int y, int cellWidth,
-		  int cellHeight, int mouseX, int mouseY, boolean isHovered, float delta
+			GuiGraphics gg, int index, int x, int y, int cellWidth,
+			int cellHeight, int mouseX, int mouseY, boolean isHovered, float delta
 		) {
-			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
+			super.renderCell(gg, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			keyOverlayColor = hasError() ? errorFilter : noFilter;
 			final Font fr = Minecraft.getInstance().font;
 			int keyX = fr.isBidirectional() ? x + cellWidth - 150 - keyOffset : x + keyOffset;
-			valueEntry.render(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
+			valueEntry.render(gg, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isHovered, delta);
 			final EntryPairListListEntry<K, V, KE, E> listEntry = getListEntry();
-			keyEntry.renderChild(mStack, keyX, y, listEntry.getKeyFieldWidth(), 20, mouseX, mouseY, delta);
-			fill(mStack, keyX, y, keyX + listEntry.getKeyFieldWidth(), y + 20, keyOverlayColor);
+			keyEntry.renderChild(gg, keyX, y, listEntry.getKeyFieldWidth(), 20, mouseX, mouseY, delta);
+			gg.fill(keyX, y, keyX + listEntry.getKeyFieldWidth(), y + 20, keyOverlayColor);
 		}
 		
 		@Override public void renderLabel(
-		  PoseStack mStack, Component label, int textX, int index, int x, int y, int cellWidth,
-		  int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
+			GuiGraphics gg, Component label, int textX, int index, int x, int y, int cellWidth,
+			int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 		) {}
 		
 		@Override public Component getLabel() {

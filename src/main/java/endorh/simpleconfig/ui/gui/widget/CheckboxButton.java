@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.NotNull;
@@ -44,18 +44,18 @@ public class CheckboxButton extends ToggleImageButton {
 	}
 	
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
+      @NotNull GuiGraphics gg, int mouseX, int mouseY, float delta
 	) {
 		final int w = width;
 		width = 18;
-		super.renderWidget(mStack, mouseX, mouseY, delta);
+		super.renderWidget(gg, mouseX, mouseY, delta);
 		width = w;
 		if (label != null) {
 			final Font font = Minecraft.getInstance().font;
 			final List<FormattedCharSequence> lines =
 			  font.split(label, width - 24);
 			if (!lines.isEmpty())
-				font.drawShadow(mStack, lines.get(0), getX() + 22, getY() + 6, textColor);
+				gg.drawString(Minecraft.getInstance().font, lines.get(0), getX() + 22, getY() + 6, textColor); // TODO: shadow
 		}
 	}
 	

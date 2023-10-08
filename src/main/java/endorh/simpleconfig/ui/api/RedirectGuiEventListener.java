@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -110,9 +110,9 @@ public class RedirectGuiEventListener implements GuiEventListenerEx, Renderable 
 
 	// IRenderable methods
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (target instanceof Renderable)
-			((Renderable) target).render(mStack, mouseX, mouseY, delta);
+			((Renderable) target).render(gg, mouseX, mouseY, delta);
 	}
 	
 	// Widget methods

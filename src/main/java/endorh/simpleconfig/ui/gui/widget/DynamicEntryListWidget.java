@@ -6,7 +6,6 @@ import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import endorh.simpleconfig.SimpleConfigMod;
@@ -19,7 +18,7 @@ import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget.ListEntry;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
@@ -261,21 +260,21 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	protected void clickedHeader(int mouseX, int mouseY) {}
 	
 	protected void renderHeader(
-	  PoseStack matrices, int rowLeft, int startY, Tesselator tessellator
+		GuiGraphics matrices, int rowLeft, int startY, Tesselator tessellator
 	) {}
 	
 	protected void drawBackground() {}
 	
-	protected void renderDecorations(PoseStack mStack, int mouseX, int mouseY) {}
+	protected void renderDecorations(GuiGraphics gg, int mouseX, int mouseY) {}
 	
 	protected void renderBackBackground(
-	  PoseStack mStack, BufferBuilder buffer, Tesselator tessellator
+		GuiGraphics gg, BufferBuilder buffer, Tesselator tessellator
 	) {
 		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 		RenderSystem.setShaderTexture(0, backgroundLocation);
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		// RenderSystem.setShaderColor(32F/255F, 32F/255F, 32F/255F, 1F);
-		Matrix4f matrix = mStack.last().pose();
+		Matrix4f matrix = gg.pose().last().pose();
 		int scroll = (int) getScroll();
 		float div = 32F;
 		buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
@@ -292,7 +291,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		entries.forEach(ListEntry::tick);
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		drawBackground();
 		int scrollBarPosition = getScrollBarPosition();
 		int scrollBarEnd = scrollBarPosition + 6;
@@ -300,32 +299,32 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		// Render background
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
-		renderBackBackground(mStack, bb, tessellator);
+		renderBackBackground(gg, bb, tessellator);
 		
 		// Render list
 		int rowLeft = getRowLeft();
 		int startY = top + 4 - (int) getScroll();
-		if (renderSelection) renderHeader(mStack, rowLeft, startY, tessellator);
+		if (renderSelection) renderHeader(gg, rowLeft, startY, tessellator);
 		
 		ScissorsHandler.INSTANCE.pushScissor(new Rectangle(0, top, width, bottom - top)); {
-			renderList(mStack, rowLeft, startY, mouseX, mouseY, delta);
+			renderList(gg, rowLeft, startY, mouseX, mouseY, delta);
 		} ScissorsHandler.INSTANCE.popScissor();
 		
 		RenderSystem.disableDepthTest();
 		
 		// Render top and bottom segments
-		renderBarBackground(mStack, 0, top, 255, 255);
-		renderBarBackground(mStack, bottom, height, 255, 255);
+		renderBarBackground(gg, 0, top, 255, 255);
+		renderBarBackground(gg, bottom, height, 255, 255);
 		
 		// Render scrollbar
-		renderScrollBar(mStack, tessellator, bb, getMaxScroll(), scrollBarPosition, scrollBarEnd);
+		renderScrollBar(gg, tessellator, bb, getMaxScroll(), scrollBarPosition, scrollBarEnd);
 		
 		// Render top and bottom shadows
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		RenderSystem.enableBlend();
 		RenderSystem.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
 		RenderSystem.setShaderTexture(0, 0);
-		Matrix4f m = mStack.last().pose();
+		Matrix4f m = gg.pose().last().pose();
 		// @formatter:off
 		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 		bb.vertex(m, (float)     0, (float) (top + 4), 0F).color(0, 0, 0,   0).endVertex();
@@ -342,14 +341,14 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		// @formatter:on
 		
 		// Render decorations
-		renderDecorations(mStack, mouseX, mouseY);
+		renderDecorations(gg, mouseX, mouseY);
 
 		RenderSystem.disableBlend();
 	}
 	
 	protected void renderScrollBar(
-	  PoseStack matrices, Tesselator tessellator, BufferBuilder bb, int maxScroll,
-	  int sbMinX, int sbMaxX
+		GuiGraphics gg, Tesselator tessellator, BufferBuilder bb, int maxScroll,
+		int sbMinX, int sbMaxX
 	) {
 		if (maxScroll > 0) {
 			int sbHeight = (bottom - top) * (bottom - top) / getMaxScrollPosition();
@@ -357,7 +356,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 			int sbMinY = (int) getScroll() * (bottom - top - sbHeight) / maxScroll + top;
 			if (sbMinY < top) sbMinY = top;
 			int alpha = 190;
-			Matrix4f m = matrices.last().pose();
+			Matrix4f m = gg.pose().last().pose();
 			// @formatter:off
 			bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 			bb.vertex(m, (float) sbMinX, (float) bottom, 0F).uv(0F, 1F).color(0, 0, 0, alpha).endVertex();
@@ -593,7 +592,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	protected void renderList(
-	  PoseStack mStack, int startX, int startY, int mouseX, int mouseY, float delta
+		GuiGraphics gg, int startX, int startY, int mouseX, int mouseY, float delta
 	) {
 		int itemCount = getItemCount();
 		int yy = startY + headerHeight;
@@ -604,28 +603,28 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 				int itemWidth = getItemWidth();
 				int x = getRowLeft();
 				renderItem(
-				  mStack, item, renderIndex, x, yy, itemWidth, itemHeight, mouseX, mouseY,
+				  gg, item, renderIndex, x, yy, itemWidth, itemHeight, mouseX, mouseY,
 				  isMouseOver(mouseX, mouseY) && item.isMouseOver(mouseX, mouseY), delta);
 				yy += item.getItemHeight();
 			}
 		}
 		if (yy == startY + headerHeight)
-			renderEmptyPlaceHolder(mStack, mouseX, mouseY, delta);
+			renderEmptyPlaceHolder(gg, mouseX, mouseY, delta);
 	}
 	
 	protected MutableComponent getEmptyPlaceHolder() {
 		return Component.translatable("simpleconfig.ui.no_entries");
 	}
 	
-	protected void renderEmptyPlaceHolder(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderEmptyPlaceHolder(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		MutableComponent text = getEmptyPlaceHolder();
 		Font font = Minecraft.getInstance().font;
-		drawCenteredString(mStack, font, text, (left + right) / 2, (top + bottom) / 2, 0xF0A0A0A0);
+		gg.drawCenteredString(font, text, (left + right) / 2, (top + bottom) / 2, 0xF0A0A0A0);
 	}
 	
 	protected void renderItem(
-	  PoseStack matrices, E item, int index, int x, int y, int entryWidth, int entryHeight,
-	  int mouseX, int mouseY, boolean isHovered, float delta
+		GuiGraphics matrices, E item, int index, int x, int y, int entryWidth, int entryHeight,
+		int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		item.render(matrices, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 	}
@@ -667,7 +666,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		return false;
 	}
 	protected void renderBarBackground(
-	  PoseStack matrices, int y1, int y2, int alpha1, int alpha2
+		GuiGraphics gg, int y1, int y2, int alpha1, int alpha2
 	) {
 		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 		RenderSystem.setShaderTexture(0, backgroundLocation);
@@ -676,7 +675,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		RenderSystem.enableBlend();
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder buffer = tessellator.getBuilder();
-		Matrix4f matrix = matrices.last().pose();
+		Matrix4f matrix = gg.pose().last().pose();
 		float div = 32F;
 		buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		// @formatter:off
@@ -763,7 +762,7 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 	}
 	
 	@OnlyIn(value = Dist.CLIENT)
-	public static abstract class ListEntry extends GuiComponent implements ISeekableComponent, INavigableTarget {
+	public static abstract class ListEntry implements ISeekableComponent, INavigableTarget {
 		private @Nullable DynamicEntryListWidget<?> entryList = null;
 		
 		public boolean isShown() {
@@ -773,8 +772,8 @@ public abstract class DynamicEntryListWidget<E extends ListEntry>
 		public void tick() {}
 		
 		public abstract void render(
-		  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
-		  boolean isHovered, float delta);
+			GuiGraphics gg, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+			boolean isHovered, float delta);
 		
 		public DynamicEntryListWidget<?> getEntryList() {
 			if (entryList == null)

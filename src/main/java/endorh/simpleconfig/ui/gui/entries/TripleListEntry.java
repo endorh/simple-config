@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Triple;
@@ -97,7 +97,7 @@ public class TripleListEntry<
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		int leftIconWidth = leftIcon != null? leftIcon.w : 4;
 		int rightIconWidth = rightIcon != null? rightIcon.w : 4;
@@ -106,15 +106,15 @@ public class TripleListEntry<
 		int rightWidth = (int) (entriesWidth * min(rightWeight, 1F - leftWeight));
 		int middleWidth = (int) (entriesWidth * max(0F, 1F - leftWeight - rightWeight));
 		if (leftIcon != null)
-			leftIcon.renderCentered(mStack, x + leftWidth, y, leftIcon.w, h);
+			leftIcon.renderCentered(gg, x + leftWidth, y, leftIcon.w, h);
 		if (rightIcon != null)
-			rightIcon.renderCentered(mStack, x + leftWidth, y, rightIcon.w, h);
+			rightIcon.renderCentered(gg, x + leftWidth, y, rightIcon.w, h);
 		leftEntry.renderChild(
-		  mStack, x, y, leftWidth, h, mouseX, mouseY, delta);
+		  gg, x, y, leftWidth, h, mouseX, mouseY, delta);
 		middleEntry.renderChild(
-		  mStack, x + leftWidth + leftIconWidth, y, middleWidth, h, mouseX, mouseY, delta);
+		  gg, x + leftWidth + leftIconWidth, y, middleWidth, h, mouseX, mouseY, delta);
 		rightEntry.renderChild(
-		  mStack, x + leftWidth + leftIconWidth + middleWidth + rightIconWidth, y,
+		  gg, x + leftWidth + leftIconWidth + middleWidth + rightIconWidth, y,
 		  rightWidth, h, mouseX, mouseY, delta);
 	}
 	

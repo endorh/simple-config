@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
@@ -12,6 +11,7 @@ import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
@@ -137,14 +137,14 @@ public class CaptionedSubCategoryListEntry<
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+      int mouseY, boolean isHovered, float delta
 	) {
 		label.setFocused(isFocused() && getFocused() == label);
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		SimpleConfigIcons.Entries.EXPAND.renderCentered(
-		  mStack, x - 15, y + 5, 9, 9,
+		  gg, x - 15, y + 5, 9, 9,
 		  (label.area.contains(mouseX, mouseY) ? 2 : 0) + (isExpanded() ? 1 : 0));
 		final boolean animating = expandAnimator.isInProgress();
 		if (isExpanded() || animating) {
@@ -157,25 +157,25 @@ public class CaptionedSubCategoryListEntry<
 			for (AbstractConfigListEntry<?> entry : entries) {
 				if (entry.isShown()) {
 					entry.render(
-					  mStack, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
+					  gg, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
 					  mouseX, mouseY, isHovered && getFocused() == entry, delta);
 					yy += entry.getItemHeight();
 				}
 			}
 			if (animating) ScissorsHandler.INSTANCE.popScissor();
 		}
-		label.render(mStack, mouseX, mouseY, delta);
+		label.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override protected void renderField(
-	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
-	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+      int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
-		super.renderField(mStack, fieldX, fieldY, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index, mouseX, mouseY, delta);
+		super.renderField(gg, fieldX, fieldY, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index, mouseX, mouseY, delta);
 		label.area.setBounds(x - 24, y, captionEntry != null ? entryWidth - fieldWidth - 5 : entryWidth - 2, 20);
 		if (captionEntry != null) {
 			captionEntry.renderChild(
-			  mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
+			  gg, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
 			captionEntryArea.setBounds(fieldX, fieldY, fieldWidth, fieldHeight);
 		} else captionEntryArea.setBounds(0, 0, 0, 0);
 	}
@@ -414,9 +414,9 @@ public class CaptionedSubCategoryListEntry<
 			return expandable;
 		}
 		
-		public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+		public void render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 			if (focused && !expandable.isPreviewingExternal())
-				drawBorder(mStack, area.x + 4, area.y, area.width, area.height, 1, focusedColor);
+				drawBorder(gg, area.x + 4, area.y, area.width, area.height, 1, focusedColor);
 		}
 		
 		@Override public boolean isMouseOver(double mouseX, double mouseY) {

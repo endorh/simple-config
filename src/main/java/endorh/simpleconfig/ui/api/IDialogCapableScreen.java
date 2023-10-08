@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.AbstractDialog;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent.TabNavigation;
 import net.minecraft.client.gui.screens.Screen;
@@ -50,18 +51,19 @@ public interface IDialogCapableScreen extends IOverlayCapableContainer, IModalIn
 		getDialogs().remove(dialog);
 	}
 	
-	default void renderDialogs(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	default void renderDialogs(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		SortedDialogCollection dialogs = getDialogs();
 		dialogs.update();
 		List<AbstractDialog> current = dialogs.getDialogs();
 		int size = current.size();
 		int count = 1;
+		PoseStack mStack = gg.pose();
 		for (AbstractDialog dialog : current) {
 			mStack.pushPose(); {
 				mStack.translate(0D, 0D, count * 100D);
 				int mX = count == size? mouseX : -1;
 				int mY = count == size? mouseY : -1;
-				if (!dialog.render(mStack, mX, mY, delta))
+				if (!dialog.render(gg, mX, mY, delta))
 					dialogs.remove(dialog);
 				count++;
 			} mStack.popPose();

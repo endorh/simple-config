@@ -7,6 +7,7 @@ import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.GameRenderer;
@@ -80,7 +81,7 @@ public interface Tooltip {
 	List<FormattedCharSequence> getText();
 	
 	/**
-	 * Is called from {@link #render(Screen, PoseStack)}.<br>
+	 * Is called from {@link #render(Screen, GuiGraphics)}.<br>
 	 * Not pure, can only be called once.
 	 */
 	@Internal default void adjustForScreen(
@@ -107,7 +108,7 @@ public interface Tooltip {
 		} else if (point.y < enforcedMargin) point.y = enforcedMargin;
 	}
 	
-	default void render(Screen screen, PoseStack mStack) {
+	default void render(Screen screen, GuiGraphics gg) {
 		List<ClientTooltipComponent> text = getText().stream()
 		  .map(ClientTooltipComponent::create).toList();
 		if (text.isEmpty()) return;
@@ -138,7 +139,8 @@ public interface Tooltip {
 		BufferBuilder bb = tesselator.getBuilder();
 		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-		
+
+		PoseStack mStack = gg.pose();
 		mStack.pushPose();
 		Matrix4f m = mStack.last().pose();
 		// @formatter:off
@@ -174,7 +176,7 @@ public interface Tooltip {
 		lineY = y;
 		for (int l = 0; l < text.size(); ++l) {
 			ClientTooltipComponent line = text.get(l);
-			line.renderImage(font, x, lineY, mStack, itemRenderer); // FIXME: Removed parameter
+			line.renderImage(font, x, lineY, gg);
 			lineY += line.getHeight() + (l == 0? 2 : 0);
 		}
 		// itemRenderer.blitOffset = prevIRBlitOffset; // FIXME

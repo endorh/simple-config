@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -10,6 +9,7 @@ import endorh.simpleconfig.ui.gui.widget.ColorDisplayWidget;
 import endorh.simpleconfig.ui.gui.widget.ColorPickerWidget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
@@ -88,7 +88,7 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (last != getDisplayedValue()) {
 			last = getDisplayedValue();
@@ -106,9 +106,9 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 		}
 		// An offset of 3 matches the visual offset with the reset button (2 + 1 (border))
 		final int offset = colorDisplayWidget.getWidth() + 3;
-		super.renderChildEntry(mStack, font.isBidirectional()? x : x + offset, y, w - offset, h, mouseX, mouseY, delta);
+		super.renderChildEntry(gg, font.isBidirectional()? x : x + offset, y, w - offset, h, mouseX, mouseY, delta);
 		colorDisplayWidget.setX(x);
-		colorDisplayWidget.render(mStack, mouseX, mouseY, delta);
+		colorDisplayWidget.render(gg, mouseX, mouseY, delta);
 		if (isColorPickerVisible()) {
 			final int cpw = colorPicker.getWidth(), cph = colorPicker.getHeight();
 			final int ww = window.getGuiScaledWidth();
@@ -126,14 +126,14 @@ public class ColorListEntry extends TextFieldListEntry<Integer> {
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area != reportedColorPickerRectangle)
-			return super.renderOverlay(mStack, area, mouseX, mouseY, delta);
+			return super.renderOverlay(gg, area, mouseX, mouseY, delta);
 		if (!isColorPickerVisible())
 			return false;
 		getScreen().removeTooltips(area);
-		colorPicker.render(mStack, mouseX, mouseY, delta);
+		colorPicker.render(gg, mouseX, mouseY, delta);
 		return true;
 	}
 	

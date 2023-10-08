@@ -1,6 +1,5 @@
 package endorh.simpleconfig.api.ui.icon;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +56,7 @@ public class CropIcon extends Icon {
 		afterRender(level);
 	}
 
-	@Override public void renderStretch(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderStretch(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		int l = translateLevel(level);
 		int u = getU() + l * levelOffsetX;
@@ -67,13 +66,13 @@ public class CropIcon extends Icon {
 		int cW = getCropW();
 		int cH = getCropH();
 		blit(
-		  mStack, x + round(cU * w / (float) this.w), y + round(cV * h / (float) this.h),
+		  gg, x + round(cU * w / (float) this.w), y + round(cV * h / (float) this.h),
 		  round(cW * w / (float) this.w), round(cH * h / (float) this.h),
 		  u + cU, v + cV, cW, cH, tw, th);
 		afterRender(level);
 	}
 
-	@Override public void renderFill(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderFill(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		// Overridden to compute crop only once
 		beforeRender(level);
 		int l = translateLevel(level);
@@ -86,15 +85,15 @@ public class CropIcon extends Icon {
 		int xx, yy, xw, yh;
 		for (xx = x + cU; xx < x + cU + w - this.w; xx += this.w) {
 			for (yy = y + cV; yy < y + cV + h - this.h; yy += this.h)
-				blit(mStack, xx, yy, cW, cH, u, v, cW, cH, tw, th);
+				blit(gg, xx, yy, cW, cH, u, v, cW, cH, tw, th);
 			yh = min(cH, y + h - yy - cV);
-			blit(mStack, xx, yy, cW, yh, u, v, cW, yh, tw, th);
+			blit(gg, xx, yy, cW, yh, u, v, cW, yh, tw, th);
 		}
 		xw = min(cW, x + w - xx - cU);
 		for (yy = y + cV; yy < y + cV + h - this.h; yy += this.h)
-			blit(mStack, xx, yy, xw, cH, u, v, xw, cH, tw, th);
+			blit(gg, xx, yy, xw, cH, u, v, xw, cH, tw, th);
 		yh = min(cH, y + h - yy - cV);
-		blit(mStack, xx, yy, xw, yh, u, v, xw, yh, tw, th);
+		blit(gg, xx, yy, xw, yh, u, v, xw, yh, tw, th);
 		afterRender(level);
 	}
 

@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.ConfigCategory;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionIconButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraftforge.api.distmarker.Dist;
@@ -55,7 +55,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		updateColors();
 	}
 	
-	@Override public List<Component> getTooltip() {
+	@Override public List<Component> getTooltipContents() {
 		if (descriptionSupplier != null && (!isSelected() || isHovered))
 			return Lists.newArrayList(descriptionSupplier.get().orElse(new Component[0]));
 		return Collections.emptyList();
@@ -76,7 +76,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 	}
 	
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
+      @NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks
 	) {
 		int c = category.getColor();
 		if (c != lastColor) {
@@ -86,7 +86,7 @@ public class ConfigCategoryButton extends MultiFunctionIconButton {
 		if (isSelected()) {
 			defaultTint = lastLight;
 		} else defaultTint = lastDark;
-		super.renderWidget(mStack, mouseX, mouseY, partialTicks);
+		super.renderWidget(gg, mouseX, mouseY, partialTicks);
 	}
 	
 	public boolean isSelected() {

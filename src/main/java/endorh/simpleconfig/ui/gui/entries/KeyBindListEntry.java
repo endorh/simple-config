@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.ui.gui.widget.KeyBindButton;
 import endorh.simpleconfig.ui.hotkey.ExtendedKeyBindImpl;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -84,12 +84,12 @@ public class KeyBindListEntry extends TooltipListEntry<KeyBindMapping> implement
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		hotKeyButton.setActive(shouldRenderEditable());
 		hotKeyButton.setPosition(x, y, w);
 		hotKeyButton.setHeight(h);
-		hotKeyButton.render(mStack, mouseX, mouseY, delta);
+		hotKeyButton.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {

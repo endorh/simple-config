@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.widget;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -10,6 +9,7 @@ import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.ButtonActionBuilder;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
@@ -145,7 +145,7 @@ public class MultiFunctionImageButton extends ImageButton {
 	}
 
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
+		@NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks
 	) {
 		updateState();
 		final ButtonAction action = activeAction;
@@ -153,9 +153,9 @@ public class MultiFunctionImageButton extends ImageButton {
 		
 		Icon icon = action.icon != null? action.icon.get() : null;
 		if (icon == null) icon = defaultIcon;
-		icon.renderStretch(mStack, getX(), getY(), width, height, level);
+		icon.renderStretch(gg, getX(), getY(), width, height, level);
 		if (isHoveredOrFocused())
-			renderToolTip(mStack, mouseX, mouseY);
+			renderToolTip(gg, mouseX, mouseY);
 	}
 
 	public static class BelowAboveOrAsideTooltipPositioner implements ClientTooltipPositioner {
@@ -165,22 +165,24 @@ public class MultiFunctionImageButton extends ImageButton {
 			this.widget = widget;
 		}
 
-		@Override public @NotNull Vector2ic positionTooltip(@NotNull Screen screen, int x, int y, int tooltipWidth, int tooltipHeight) {
+		@Override
+		public @NotNull Vector2ic positionTooltip(int sw, int screen, int x, int y, int tw, int th) {
 			if (!widget.isMouseOver(x - 12, y + 12)) {
 				return new Vector2i(
 					widget.getX() + widget.getWidth() / 2,
-					widget.getY() < 64? widget.getY() + widget.getHeight() : widget.getY());
-            } else return new Vector2i(x - 12, y + 12);
+					widget.getY() < 64 ? widget.getY() + widget.getHeight() : widget.getY());
+			} else return new Vector2i(x - 12, y + 12);
 		}
+
 	}
 
 	@Override protected @NotNull ClientTooltipPositioner createTooltipPositioner() {
 		return new BelowAboveOrAsideTooltipPositioner(this);
 	}
 
-	public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
+	public void renderToolTip(@NotNull GuiGraphics gg, int mouseX, int mouseY) {
 		// TODO: Adapt to the new Mojang way to position tooltips
-		final List<Component> ls = getTooltip();
+		final List<Component> ls = getTooltipContents();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
@@ -191,11 +193,11 @@ public class MultiFunctionImageButton extends ImageButton {
 				  Rectangle.of(getX(), getY(), width, height),
 				  Point.of(tooltipX, tooltipY), ls
 				).asKeyboardTooltip(!hovered));
-			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
+			} else if (screen != null) gg.renderComponentTooltip(Minecraft.getInstance().font, ls, tooltipX, tooltipY);
 		}
 	}
 	
-	public List<Component> getTooltip() {
+	public List<Component> getTooltipContents() {
 		ButtonAction action = activeAction;
 		return (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 	}

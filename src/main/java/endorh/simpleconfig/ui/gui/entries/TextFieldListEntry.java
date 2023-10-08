@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.TextFormatter;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -10,6 +9,7 @@ import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -95,14 +95,14 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+      int mouseY, boolean isHovered, float delta
 	) {
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		labelArea.setBounds(x - 15, y, entryWidth, 24);
 		if (isExpandable()) {
 			SimpleConfigIcons.Entries.TEXT_EXPAND.renderCentered(
-			  mStack, x - 15, y + 5, 9, 9,
+			  gg, x - 15, y + 5, 9, 9,
 			  (isExpanded()? 1 : 0) + (
 			    isMouseOverLabel(mouseX, mouseY) && !textFieldWidget.isMouseOver(mouseX, mouseY)
 			    && !sideButtonReference.isMouseOver(mouseX, mouseY)? 2 : 0));
@@ -114,13 +114,13 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override protected void renderField(
-	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
-	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+      int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		float p = expandAnimator.getEaseOut();
 		int expandedX = Minecraft.getInstance().font.isBidirectional()? fieldX : x + 14;
 		renderChild(
-		  mStack, (int) Mth.lerp(p, fieldX, expandedX),
+		  gg, (int) Mth.lerp(p, fieldX, expandedX),
 		  isHeadless()? fieldY : (int) Mth.lerp(p, fieldY, y + 24),
 		  (int) Mth.lerp(p, fieldWidth,
 		             isHeadless()? entryWidth - 16 - resetButton.getWidth() : entryWidth - 14),
@@ -128,7 +128,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		textFieldWidget.setEditable(shouldRenderEditable());
 		// Text fields render the border outside, so we inset it 1px to match other controls
@@ -136,7 +136,7 @@ public abstract class TextFieldListEntry<V> extends TooltipListEntry<V> implemen
 		textFieldWidget.setY(y + 1);
 		textFieldWidget.setWidth(w - 2);
 		textFieldWidget.setHeight(h - 2);
-		textFieldWidget.render(mStack, mouseX, mouseY, delta);
+		textFieldWidget.render(gg, mouseX, mouseY, delta);
 	}
 	
 	protected boolean isMouseOverLabel(double mouseX, double mouseY) {

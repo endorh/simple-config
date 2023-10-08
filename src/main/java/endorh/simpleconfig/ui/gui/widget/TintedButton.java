@@ -12,6 +12,7 @@ import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.OverlayInjector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -71,12 +72,12 @@ public class TintedButton extends Button {
 		super(x, y, width, height, title, pressedAction, createNarration);
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		area.setBounds(getX(), getY(), getWidth(), getHeight());
-		super.render(mStack, mouseX, mouseY, delta);
+		super.render(gg, mouseX, mouseY, delta);
 	}
 	
-	@Override public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderWidget(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		Minecraft mc = Minecraft.getInstance();
 		Font font = mc.font;
 		int level = getTextureLevel();
@@ -87,18 +88,19 @@ public class TintedButton extends Button {
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.enableDepthTest();
-		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, getX(), getY(), width, height, level);
-		renderTint(mStack, getX(), getY(), getX() + width / 2 * 2, getY() + height);
+		Backgrounds.BUTTON_BACKGROUND.renderStretch(gg, getX(), getY(), width, height, level);
+		renderTint(gg, getX(), getY(), getX() + width / 2 * 2, getY() + height);
 		int fgColor = getFGColor();
 		Component message = getMessage();
 		int contentWidth = font.width(message);
 		contentArea.setBounds(area.x + 4, area.y, area.width - 8, area.height);
+		PoseStack mStack = gg.pose();
 		mStack.pushPose(); {
 			if (contentWidth < width - 8) mStack.translate((width - 8 - contentWidth) / 2.0, 0.0, 0.0);
 			if (contentWidth > width - 8) {
 				ScissorsHandler.INSTANCE.withScissor(
-				  contentArea, () -> drawString(
-					 mStack, font, message, getX() + 4, getY() + (height - 8) / 2,
+				  contentArea, () -> gg.drawString(
+					 font, message, getX() + 4, getY() + (height - 8) / 2,
 					 fgColor | Mth.ceil(alpha * 255F) << 24));
 				if (isMouseOver(mouseX, mouseY) && !overlay.isRendering()) {
 					Screen screen = mc.screen;
@@ -112,22 +114,22 @@ public class TintedButton extends Button {
 				}
 			} else {
 				if (overlayArea != null) overlayArea.setBounds(getX(), getY(), width, height + 1);
-				drawString(
-				  mStack, font, message, getX() + 4, getY() + (height - 8) / 2,
+				gg.drawString(
+				  font, message, getX() + 4, getY() + (height - 8) / 2,
 				  fgColor | Mth.ceil(alpha * 255F) << 24);
 			}
 		} mStack.popPose();
-		if (isHoveredOrFocused()) renderToolTip(mStack, mouseX, mouseY);
+		if (isHoveredOrFocused()) renderToolTip(gg, mouseX, mouseY);
 	}
 
 	protected int getTextureLevel() {
 		return !active? 0 : isHoveredOrFocused()? 2 : 1;
 	}
 
-	protected void renderTint(@NotNull PoseStack mStack, int x, int y, int xm, int ym) {
+	protected void renderTint(@NotNull GuiGraphics gg, int x, int y, int xm, int ym) {
 		// The 2-patch button texture blit implementation floors width to even numbers
 		if (tintColor != 0) {
-			fill(mStack, x, y, xm, ym,
+			gg.fill(x, y, xm, ym,
 				getEffectiveTintColor());
 		}
 	}
@@ -136,13 +138,13 @@ public class TintedButton extends Button {
 		return active ? tintColor : tintColor & 0xFFFFFF | (tintColor >> 24 & 0xFF) / 4 << 24;
 	}
 
-	public List<Component> getTooltip() {
+	public List<Component> getTooltipContents() {
 		return Collections.emptyList();
 	}
 
-	public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
+	public void renderToolTip(@NotNull GuiGraphics gg, int mouseX, int mouseY) {
 		// TODO: Adapt to the new Mojang way to position tooltips
-		final List<Component> ls = getTooltip();
+		final List<Component> ls = getTooltipContents();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
@@ -153,7 +155,7 @@ public class TintedButton extends Button {
 					Rectangle.of(getX(), getY(), width, height),
 					Point.of(tooltipX, tooltipY), ls
 				).asKeyboardTooltip(!hovered));
-			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
+			} else if (screen != null) gg.renderComponentTooltip(Minecraft.getInstance().font, ls, tooltipX, tooltipY);
 		}
 	}
 	
@@ -177,7 +179,7 @@ public class TintedButton extends Button {
 		}
 		
 		@Override public boolean renderOverlay(
-		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+			GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 		) {
 			if (!button.isMouseOver(mouseX, mouseY)) {
 				button.overlayArea = null;
@@ -204,8 +206,8 @@ public class TintedButton extends Button {
 			button.setHeight(area.height);
 			this.area.setBounds(area.x, area.y, ww, area.height);
 			ScissorsHandler.INSTANCE.withSingleScissor(
-			  this.area, () -> button.render(mStack, mouseX, mouseY, delta));
-			button.render(mStack, mouseX, mouseY, delta);
+			  this.area, () -> button.render(gg, mouseX, mouseY, delta));
+			button.render(gg, mouseX, mouseY, delta);
 			button.setPosition(x, y);
 			button.setWidth(w);
 			button.setHeight(h);

@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.ui.api.EntryError;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -9,6 +8,7 @@ import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -63,8 +63,8 @@ public class TextListEntry extends TooltipListEntry<Void> {
 	}
 	
 	@Override protected void renderTitle(
-	  PoseStack mStack, Component title, float textX, int index, int x, int y, int entryWidth,
-	  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, Component title, float textX, int index, int x, int y, int entryWidth,
+      int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		final Component text = getText();
 		if (savedWidth != entryWidth || savedX != x || savedY != y
@@ -79,15 +79,14 @@ public class TextListEntry extends TooltipListEntry<Void> {
 		int yy = y + 4;
 		int lineHeight = getLineHeightWithMargin();
 		for (FormattedCharSequence string : wrappedLines) {
-			Minecraft.getInstance().font.drawShadow(
-			  mStack, string, (float) x, (float) yy, color);
+			gg.drawString(font, string, x, yy, color);
 			Objects.requireNonNull(Minecraft.getInstance().font);
 			yy += lineHeight;
 		}
 		Style style = getTextAt(mouseX, mouseY);
 		AbstractConfigScreen configScreen = getScreen();
 		if (style != null)
-			configScreen.renderComponentHoverEffect(mStack, style, mouseX, mouseY);
+			gg.renderComponentHoverEffect(font, style, mouseX, mouseY);
 	}
 	
 	public int getLineHeight() {

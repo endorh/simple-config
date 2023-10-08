@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod.KeyBindings;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.ui.icon.Icon;
@@ -24,6 +23,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
@@ -75,7 +75,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 	}
 	
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
+      @NotNull GuiGraphics gg, int mouseX, int mouseY, float delta
 	) {
 		width = screen.width;
 		height = 19;
@@ -134,17 +134,17 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 	}
 	
 	protected void renderBox(
-	  PoseStack mStack, StatusState state, int boxX, int mouseX, int mouseY
+      GuiGraphics gg, StatusState state, int boxX, int mouseX, int mouseY
 	) {
 		StatusStyle style = state.getStyle(screen);
 		Icon icon = style.icon();
 		if (icon == null) icon = Icon.EMPTY;
 		int y = getY();
-		fill(mStack, boxX, y, boxX + height, y + height, style.backgroundColor());
-		fill(mStack, boxX, y, boxX + height, y + 1, style.borderColor());
-		fill(mStack, boxX, y + height - 1, boxX + height, y + height, style.borderColor());
-		fill(mStack, boxX + height - 1, y + 1, boxX + height, y + height - 1, style.borderColor());
-		icon.renderCentered(mStack, boxX + 2, y + 2, 15, 15);
+		gg.fill(boxX, y, boxX + height, y + height, style.backgroundColor());
+		gg.fill(boxX, y, boxX + height, y + 1, style.borderColor());
+		gg.fill(boxX, y + height - 1, boxX + height, y + height, style.borderColor());
+		gg.fill(boxX + height - 1, y + 1, boxX + height, y + height - 1, style.borderColor());
+		icon.renderCentered(gg, boxX + 2, y + 2, 15, 15);
 		
 		if (isMouseOver(mouseX, mouseY) && mouseX >= boxX && mouseX < boxX + height) {
 			List<Component> tooltip = Stream.concat(
@@ -158,7 +158,7 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (activeStates.isEmpty()) {
 			claimed = false;
@@ -172,28 +172,28 @@ public class StatusDisplayBar extends AbstractWidget implements IOverlayRenderer
 		StatusStyle style = activeState.getStyle(screen);
 		int x = getX();
 		int y = getY();
-		fillGradient(mStack, x, y - 4, x + width, y, 0x00000000, shadowColor);
+		gg.fillGradient(x, y - 4, x + width, y, 0x00000000, shadowColor);
 		
 		int l = x;
 		for (int i = activeStates.size() - 1; i >= 1; i--) {
 			StatusState state = activeStates.get(i);
-			renderBox(mStack, state, l, mouseX, mouseY);
+			renderBox(gg, state, l, mouseX, mouseY);
 			l += height;
 		}
 		
-		fill(mStack, l, y, x + width, y + height, style.backgroundColor());
-		fill(mStack, l, y, x + width, y + 1, style.borderColor());
-		fill(mStack, l, y + height - 1, x + width, y + height, style.borderColor());
+		gg.fill(l, y, x + width, y + height, style.backgroundColor());
+		gg.fill(l, y, x + width, y + 1, style.borderColor());
+		gg.fill(l, y + height - 1, x + width, y + height, style.borderColor());
 		if (style.icon != null)
-			style.icon.renderCentered(mStack, l + 2, y + 2, 15, 15);
+			style.icon.renderCentered(gg, l + 2, y + 2, 15, 15);
 		Component title = activeState.getTitle(screen);
-		drawString(mStack, font, title, l + 19, y + 6, 0xFFE0E0E0);
+		gg.drawString(font, title, l + 19, y + 6, 0xFFE0E0E0);
 		if (hasDialog()) {
 			dialogButton.setX(x + width - 17);
 			dialogButton.setY(y + 2);
 			dialogButton.visible = true;
 		} else dialogButton.visible = false;
-		dialogButton.render(mStack, mouseX, mouseY, delta);
+		dialogButton.render(gg, mouseX, mouseY, delta);
 		
 		if (isMouseOver(mouseX, mouseY) && mouseX >= l && !dialogButton.isMouseOver(mouseX, mouseY)) {
 			List<Component> tooltip = activeState.getTooltip(screen, false);

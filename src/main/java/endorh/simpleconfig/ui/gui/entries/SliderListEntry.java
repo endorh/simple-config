@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.entry.RangedEntryBuilder.InvertibleDouble2DoubleFunction;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -12,6 +11,7 @@ import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -214,14 +214,14 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
-	  int mouseX, int mouseY, boolean isHovered, float delta
+		GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight,
+		int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		
 		if (canUseTextField() && !isTextFieldEnforced()) {
 			SimpleConfigIcons.Entries.SLIDER_EDIT.renderCentered(
-			  mStack, x - 15, y + 5, 9, 9,
+			  gg, x - 15, y + 5, 9, 9,
 			  (isTextFieldShown()? 1 : 0) + (
 				 entryArea.contains(mouseX, mouseY)
 			    && !sliderWidget.isMouseOver(mouseX, mouseY)
@@ -235,14 +235,14 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+		GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (showText && !isTextFieldEnforced() && (!canUseTextField() || getFocused() != textFieldEntry))
 			setTextFieldShown(false, false);
 		if (isTextFieldShown()) {
 			textFieldEntry.updateFocused(isFocused() && getFocused() == textFieldEntry);
 			textFieldEntry.setEditable(shouldRenderEditable());
-			textFieldEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
+			textFieldEntry.renderChild(gg, x, y, w, h, mouseX, mouseY, delta);
 			if (textFieldEntry.getErrorMessage().isEmpty() || isTextFieldEnforced()) {
 				V value = textFieldEntry.getDisplayedValue();
 				if (value != null) setDisplayedValue(value);
@@ -253,7 +253,7 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			sliderWidget.setY(y);
 			sliderWidget.setWidth(w);
 			sliderWidget.setHeight(h);
-			sliderWidget.render(mStack, mouseX, mouseY, delta);
+			sliderWidget.render(gg, mouseX, mouseY, delta);
 		}
 	}
 	
@@ -393,31 +393,30 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			return isEditable() && super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 		}
 		
-		protected void renderBg(@NotNull PoseStack mStack, @NotNull Minecraft mc, int mouseX, int mouseY) {
-			RenderSystem.setShaderTexture(0, SLIDER_LOCATION);
+		protected void renderBg(@NotNull GuiGraphics gg, @NotNull Minecraft mc, int mouseX, int mouseY) {
 			if (clamped) {
 				RenderSystem.setShaderColor(1F, 0.7F, 0.5F, 1F);
 			} else RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			int bw = clamped? 4 : 8;
 			int vOffset = (isHoveredOrFocused()? 3 : 2) * 20;
-			blitNineSliced(mStack, getX() + (int) (value * (double) (width - bw)), getY(), bw, 20, 20, 4, 200, 20, 0, vOffset);
+			gg.blitNineSliced(SLIDER_LOCATION, getX() + (int) (value * (double) (width - bw)), getY(), bw, 20, 20, 4, 200, 20, 0, vOffset);
 		}
 		
 		@Override
-		public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+		public void renderWidget(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 			Minecraft mc = Minecraft.getInstance();
 			Font font = mc.font;
 			RenderSystem.setShader(GameRenderer::getPositionTexShader);
-			RenderSystem.setShaderTexture(0, SLIDER_LOCATION);
 			if (clamped) {
 				RenderSystem.setShaderColor(1F, 0.7F, 0.5F, alpha);
 			} else RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 			RenderSystem.enableDepthTest();
-			blit(mStack, getX(), getY(), 0, 0, width / 2, height);
-			blit(mStack, getX() + width / 2, getY(), 200 - width / 2, 0, width / 2, height);
-			renderBg(mStack, mc, mouseX, mouseY);
+			// TODO: Use TextureAtlasSprite
+			gg.blit(SLIDER_LOCATION, getX(), getY(), 0, 0, 0, width / 2, height, 256, 256);
+			gg.blit(SLIDER_LOCATION, getX() + width / 2, getY(), 0, 200 - width / 2, 0, width / 2, height, 256, 256);
+			renderBg(gg, mc, mouseX, mouseY);
 			int color = getFGColor();
 			FormattedText message = getMessage();
 			if (font.width(message) > width - 8 && !isHoveredOrFocused())
@@ -425,9 +424,9 @@ public abstract class SliderListEntry<V extends Comparable<V>>
 			FormattedCharSequence seq = font.split(message, Integer.MAX_VALUE).get(0);
 			int textWidth = font.width(seq);
 			int textX = Mth.clamp(getX() + (width - textWidth) / 2, 4, getScreen().width - 4 - textWidth);
-			drawString(
-			  mStack, font, seq, textX, getY() + (height - 8) / 2,
-			  color | Mth.ceil(alpha * 255F) << 24);;
+			gg.drawString(
+				font, seq, textX, getY() + (height - 8) / 2,
+				color | Mth.ceil(alpha * 255F) << 24);
 			if (clamped) RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		}
 		

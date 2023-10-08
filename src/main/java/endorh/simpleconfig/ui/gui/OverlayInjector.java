@@ -9,6 +9,7 @@ import endorh.simpleconfig.ui.api.IOverlayCapableContainer.OverlayTicket;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.SortedOverlayCollection;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -41,11 +42,12 @@ public class OverlayInjector {
 	@SubscribeEvent public static void onRenderScreen(ScreenEvent.Render.Post event) {
 		final SortedOverlayCollection sortedOverlays = getOverlays(event.getScreen());
 		if (sortedOverlays == null) return;
-		PoseStack mStack = event.getPoseStack();
+		GuiGraphics gg = event.getGuiGraphics();
 		int mouseX = event.getMouseX();
 		int mouseY = event.getMouseY();
 		float delta = event.getPartialTick();
 		final List<OverlayTicket> removed = new LinkedList<>();
+		PoseStack mStack = gg.pose();
 		mStack.pushPose(); {
 			mStack.translate(0D, 0D, 100D);
 			Screen screen = Minecraft.getInstance().screen;
@@ -54,7 +56,7 @@ public class OverlayInjector {
 			for (OverlayTicket ticket: sortedOverlays) {
 				if (tScreen != null) tScreen.removeTooltips(ticket.area);
 				ScissorsHandler.INSTANCE.pushScissor(ticket.area);
-				if (!ticket.renderer.renderOverlay(mStack, ticket.area, mouseX, mouseY, delta))
+				if (!ticket.renderer.renderOverlay(gg, ticket.area, mouseX, mouseY, delta))
 					removed.add(ticket);
 				ScissorsHandler.INSTANCE.popScissor();
 			}

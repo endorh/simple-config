@@ -9,6 +9,7 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Color;
 import endorh.simpleconfig.config.ClientConfig.advanced;
 import net.minecraft.client.GameNarrator;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.util.Mth;
@@ -114,7 +115,7 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	@Override
-	public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
+	public void renderWidget(@NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
@@ -152,20 +153,20 @@ public class ColorPickerWidget extends AbstractWidget {
 		historyBar.w = palette.x - margin - historyBar.x;
 		historyBar.h = unit;
 		
-		drawBox(mStack, getX(), getY(), width, height);
+		drawBox(gg, getX(), getY(), width, height);
 		for (SubWidget subWidget : subWidgets)
-			subWidget.render(mStack, mouseX, mouseY);
+			subWidget.render(gg, mouseX, mouseY);
 	}
 	
-	protected void drawBox(PoseStack mStack, int x, int y, int w, int h) {
-		fill(mStack, x, y, x + w, y + h, colorBorder);
-		fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, colorBg);
+	protected void drawBox(GuiGraphics gg, int x, int y, int w, int h) {
+		gg.fill(x, y, x + w, y + h, colorBorder);
+		gg.fill(x + 1, y + 1, x + w - 1, y + h - 1, colorBg);
 	}
 	
-	protected boolean drawBox(PoseStack mStack, int x, int y, int w, int h, int mX, int mY) {
+	protected boolean drawBox(GuiGraphics gg, int x, int y, int w, int h, int mX, int mY) {
 		final boolean hovered = mX >= x && mX < x + w && mY >= y && mY < y + h;
-		fill(mStack, x, y, x + w, y + h, hovered ? colorBorderHover : colorBorder);
-		fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, colorBg);
+		gg.fill(x, y, x + w, y + h, hovered ? colorBorderHover : colorBorder);
+		gg.fill(x + 1, y + 1, x + w - 1, y + h - 1, colorBg);
 		return hovered;
 	}
 	
@@ -263,7 +264,7 @@ public class ColorPickerWidget extends AbstractWidget {
 			return x <= mouseX && mouseX < x + w && y <= mouseY && mouseY < y + h;
 		}
 		
-		public abstract void render(PoseStack mStack, int mX, int mY);
+		public abstract void render(GuiGraphics gg, int mX, int mY);
 		public boolean onClick(double mouseX, double mouseY, int button) {
 			return false;
 		}
@@ -271,19 +272,20 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	public class BrightnessSaturationControl extends SubWidget {
-		@Override public void render(PoseStack mStack, int mX, int mY) {
-			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
+		@Override public void render(GuiGraphics gg, int mX, int mY) {
+			drawBox(gg, x - 1, y - 1, w + 2, h + 2, mX, mY);
+			PoseStack mStack = gg.pose();
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				mStack.pushPose(); {
 					mStack.mulPose(Axis.ZP.rotationDegrees(-90F));
-					fillGradient(mStack, -h, 0, 0, w, 0xFFFFFFFF,
-					             Color.ofHSB(lastHue, 1F, 1F).getOpaque());
+					gg.fillGradient(-h, 0, 0, w, 0xFFFFFFFF,
+						Color.ofHSB(lastHue, 1F, 1F).getOpaque());
 				} mStack.popPose();
-				fillGradient(mStack, 0, 0, w, h, 0x00000000, 0xFF000000);
+				gg.fillGradient(0, 0, w, h, 0x00000000, 0xFF000000);
 				int cX = (int) (lastSaturation * (w - 1)) - 5;
 				int cY = (int) ((1F - value.getBrightness()) * (h - 1)) - 5;
-				SimpleConfigIcons.ColorPicker.POINTER.renderCentered(mStack, cX, cY, 11, 11, isMouseOver(mX, mY)? 1 : 0);
+				SimpleConfigIcons.ColorPicker.POINTER.renderCentered(gg, cX, cY, 11, 11, isMouseOver(mX, mY)? 1 : 0);
 			} mStack.popPose();
 		}
 		
@@ -309,8 +311,9 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	public class HueBar extends SubWidget {
-		@Override public void render(PoseStack mStack, int mX, int mY) {
-			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
+		@Override public void render(GuiGraphics gg, int mX, int mY) {
+			drawBox(gg, x - 1, y - 1, w + 2, h + 2, mX, mY);
+			PoseStack mStack = gg.pose();
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w > h) {
@@ -320,17 +323,17 @@ public class ColorPickerWidget extends AbstractWidget {
 					h = w - h;
 					w = w - h;
 				}
-				fillGradient(mStack, 0, 0, w, h / 6, 0xFFFF0000, 0xFFFFFF00);
-				fillGradient(mStack, 0, h / 6, w, 2 * h / 6, 0xFFFFFF00, 0xFF00FF00);
-				fillGradient(mStack, 0, 2 * h / 6, w, 3 * h / 6, 0xFF00FF00, 0xFF00FFFF);
-				fillGradient(mStack, 0, 3 * h / 6, w, 4 * h / 6, 0xFF00FFFF, 0xFF0000FF);
-				fillGradient(mStack, 0, 4 * h / 6, w, 5 * h / 6, 0xFF0000FF, 0xFFFF00FF);
-				fillGradient(mStack, 0, 5 * h / 6, w, h, 0xFFFF00FF, 0xFFFF0000);
+				gg.fillGradient(0, 0, w, h / 6, 0xFFFF0000, 0xFFFFFF00);
+				gg.fillGradient(0, h / 6, w, 2 * h / 6, 0xFFFFFF00, 0xFF00FF00);
+				gg.fillGradient(0, 2 * h / 6, w, 3 * h / 6, 0xFF00FF00, 0xFF00FFFF);
+				gg.fillGradient(0, 3 * h / 6, w, 4 * h / 6, 0xFF00FFFF, 0xFF0000FF);
+				gg.fillGradient(0, 4 * h / 6, w, 5 * h / 6, 0xFF0000FF, 0xFFFF00FF);
+				gg.fillGradient(0, 5 * h / 6, w, h, 0xFFFF00FF, 0xFFFF0000);
 				
 				int level = isMouseOver(mX, mY) ? 1 : 0;
 				int aY = (int) (lastHue * (h - 1)) - 3;
-				SimpleConfigIcons.ColorPicker.ARROW_RIGHT.renderCentered(mStack, -1, aY, 5, 7, level);
-				SimpleConfigIcons.ColorPicker.ARROW_LEFT.renderCentered(mStack, w - 4, aY, 5, 7, level);
+				SimpleConfigIcons.ColorPicker.ARROW_RIGHT.renderCentered(gg, -1, aY, 5, 7, level);
+				SimpleConfigIcons.ColorPicker.ARROW_LEFT.renderCentered(gg, w - 4, aY, 5, 7, level);
 			} mStack.popPose();
 		}
 		
@@ -354,9 +357,10 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	public class TransparencyBar extends SubWidget {
-		@Override public void render(PoseStack mStack, int mX, int mY) {
-			drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
-			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, w, h);
+		@Override public void render(GuiGraphics gg, int mX, int mY) {
+			drawBox(gg, x - 1, y - 1, w + 2, h + 2, mX, mY);
+			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(gg, x, y, w, h);
+			PoseStack mStack = gg.pose();
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w > h) {
@@ -366,12 +370,12 @@ public class ColorPickerWidget extends AbstractWidget {
 					h = w - h;
 					w = w - h;
 				}
-				fillGradient(mStack, 0, 0, w, h, value.getOpaque(), value.getColor() & 0x00FFFFFF);
+				gg.fillGradient(0, 0, w, h, value.getOpaque(), value.getColor() & 0x00FFFFFF);
 				
 				int level = isMouseOver(mX, mY)? 1 : 0;
-				int aY = (int) (((255 - value.getAlpha()) / 255F) * (h - 1)) - 3;
-				SimpleConfigIcons.ColorPicker.ARROW_RIGHT.renderCentered(mStack, -1, aY, 5, 7, level);
-				SimpleConfigIcons.ColorPicker.ARROW_LEFT.renderCentered(mStack, w - 4, aY, 5, 7, level);
+				int aY = (int) ((255 - value.getAlpha()) / 255F * (h - 1)) - 3;
+				SimpleConfigIcons.ColorPicker.ARROW_RIGHT.renderCentered(gg, -1, aY, 5, 7, level);
+				SimpleConfigIcons.ColorPicker.ARROW_LEFT.renderCentered(gg, w - 4, aY, 5, 7, level);
 			} mStack.popPose();
 		}
 		
@@ -395,9 +399,10 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	public class HistoryBar extends SubWidget {
-		@Override public void render(PoseStack mStack, int mX, int mY) {
-			final boolean hovered = drawBox(mStack, x - 1, y - 1, w + 2, h + 2, mX, mY);
-			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, w, h);
+		@Override public void render(GuiGraphics gg, int mX, int mY) {
+			final boolean hovered = drawBox(gg, x - 1, y - 1, w + 2, h + 2, mX, mY);
+			SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(gg, x, y, w, h);
+			PoseStack mStack = gg.pose();
 			mStack.pushPose(); {
 				mStack.translate(x, y, 0D);
 				if (w < h) {
@@ -409,11 +414,11 @@ public class ColorPickerWidget extends AbstractWidget {
 				final List<Color> history = getShownHistory();
 				Function<Color, Integer> toInt = allowAlpha ? Color::getColor : Color::getOpaque;
 				for (int i = 0; i < shownHistorySize; i++)
-					fill(mStack, i * w / n, 0, (i + 1) * w / n, h, toInt.apply(history.get(i)));
-				fill(mStack, (n - 2) * w / n, 0, (n - 1) * w / n, h, toInt.apply(historyMemory != null? historyMemory : value));
-				fill(mStack, (n - 1) * w / n, 0, w, h, toInt.apply(initial));
-				fill(mStack, (n - 2) * w / n, 0, (n - 2) * w / n + 1, h, hovered? colorBorderHover : colorBorder);
-				fill(mStack, (n - 1) * w / n, 0, (n - 1) * w / n + 1, h, hovered? colorBorderHover : colorBorder);
+					gg.fill(i * w / n, 0, (i + 1) * w / n, h, toInt.apply(history.get(i)));
+				gg.fill((n - 2) * w / n, 0, (n - 1) * w / n, h, toInt.apply(historyMemory != null? historyMemory : value));
+				gg.fill((n - 1) * w / n, 0, w, h, toInt.apply(initial));
+				gg.fill((n - 2) * w / n, 0, (n - 2) * w / n + 1, h, hovered? colorBorderHover : colorBorder);
+				gg.fill((n - 1) * w / n, 0, (n - 1) * w / n + 1, h, hovered? colorBorderHover : colorBorder);
 			} mStack.popPose();
 		}
 		
@@ -458,24 +463,24 @@ public class ColorPickerWidget extends AbstractWidget {
 	}
 	
 	public class Palette extends SubWidget {
-		@Override public void render(PoseStack mStack, int mX, int mY) {
-			fill(mStack, x, y, x + 1, y + h, colorBorder);
+		@Override public void render(GuiGraphics gg, int mX, int mY) {
+			gg.fill(x, y, x + 1, y + h, colorBorder);
 			final Map<Integer, java.awt.Color> saved_colors = advanced.color_picker_saved_colors;
 			paletteRows = (h + margin) / (unit + margin);
 			for (int i = 0; i < paletteRows; i++) {
 				int rY = y + i * (unit + margin);
-				drawPaletteEntry(saved_colors.get(2 * i), mStack, x + margin + 1, rY, mX, mY);
-				drawPaletteEntry(saved_colors.get(2 * i + 1), mStack, x + 2 * margin + unit + 1, rY, mX, mY);
+				drawPaletteEntry(saved_colors.get(2 * i), gg, x + margin + 1, rY, mX, mY);
+				drawPaletteEntry(saved_colors.get(2 * i + 1), gg, x + 2 * margin + unit + 1, rY, mX, mY);
 			}
 		}
 		
-		protected void drawPaletteEntry(java.awt.Color color, PoseStack mStack, int x, int y, int mX, int mY) {
-			drawBox(mStack, x - 1, y - 1, unit + 2, unit + 2, mX, mY);
+		protected void drawPaletteEntry(java.awt.Color color, GuiGraphics gg, int x, int y, int mX, int mY) {
+			drawBox(gg, x - 1, y - 1, unit + 2, unit + 2, mX, mY);
 			if (color == null) {
-				SimpleConfigIcons.ColorPicker.DIAGONAL_TEXTURE.renderFill(mStack, x, y, unit, unit);
+				SimpleConfigIcons.ColorPicker.DIAGONAL_TEXTURE.renderFill(gg, x, y, unit, unit);
 			} else {
-				SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(mStack, x, y, unit, unit);
-				fill(mStack, x, y, x + unit, y + unit, color.getRGB());
+				SimpleConfigIcons.ColorPicker.CHESS_BOARD.renderFill(gg, x, y, unit, unit);
+				gg.fill(x, y, x + unit, y + unit, color.getRGB());
 			}
 		}
 		

@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
@@ -81,16 +81,16 @@ public class PairListEntry<
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		int iconWidth = middleIcon != null? middleIcon.w : 4;
 		int leftWidth = (int) ((w - iconWidth) * splitPos);
 		if (middleIcon != null)
-			middleIcon.renderCentered(mStack, x + leftWidth, y, middleIcon.w, h);
+			middleIcon.renderCentered(gg, x + leftWidth, y, middleIcon.w, h);
 		leftEntry.renderChild(
-		  mStack, x, y, leftWidth, h, mouseX, mouseY, delta);
+		  gg, x, y, leftWidth, h, mouseX, mouseY, delta);
 		rightEntry.renderChild(
-		  mStack, x + leftWidth + iconWidth, y, w - iconWidth - leftWidth, h,
+		  gg, x + leftWidth + iconWidth, y, w - iconWidth - leftWidth, h,
 		  mouseX, mouseY, delta);
 	}
 	

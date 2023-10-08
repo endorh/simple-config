@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.NestedListListEntry.NestedListCell;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -157,19 +157,19 @@ public class NestedListListEntry<T, Inner extends AbstractConfigListEntry<T>>
 		}
 		
 		@Override public void renderCell(
-		  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
-		  int mouseX, int mouseY, boolean isSelected, float delta
+         GuiGraphics gg, int index, int x, int y, int cellWidth, int cellHeight,
+         int mouseX, int mouseY, boolean isSelected, float delta
 		) {
-			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
-			nestedEntry.render(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
+			super.renderCell(gg, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
+			nestedEntry.render(gg, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
 		}
 		
 		@Override public void renderLabel(
-		  PoseStack mStack, Component label, int textX, int index, int x, int y, int cellWidth,
-		  int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
+         GuiGraphics gg, Component label, int textX, int index, int x, int y, int cellWidth,
+         int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 		) {
 			super.renderLabel(
-			  mStack, label, textX, index, x, y,
+			  gg, label, textX, index, x, y,
 			  cellWidth, nestedEntry.getCaptionHeight(), mouseX, mouseY, isSelected, delta);
 		}
 		

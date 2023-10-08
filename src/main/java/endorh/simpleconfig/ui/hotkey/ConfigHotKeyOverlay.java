@@ -1,13 +1,12 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.config.ClientConfig.hotkey_log.overlay;
 import endorh.simpleconfig.config.ClientConfig.hotkey_log.toast;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
@@ -50,12 +49,12 @@ public class ConfigHotKeyOverlay {
 	
 	@SubscribeEvent public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
 		if (event.getOverlay() == VanillaGuiOverlay.AIR_LEVEL.type()) {
-			PoseStack mStack = event.getPoseStack();
+			GuiGraphics gg = event.getGuiGraphics();
 			long time = System.currentTimeMillis();
 			Component msg = toastMessage;
 			if (msg != null) {
 				if (time - toastTimestamp > toast.display_time_ms) toastMessage = null;
-				renderToastMessage(mStack, msg);
+				renderToastMessage(gg, msg);
 			}
 			Window window = event.getWindow();
 			int w = window.getGuiScaledWidth();
@@ -73,13 +72,13 @@ public class ConfigHotKeyOverlay {
 					b -= message.getHeight();
 					if (time - message.getTimestamp() > duration) {
 						iter.remove();
-					} else message.render(mStack, w, b, maxWidth);
+					} else message.render(gg, w, b, maxWidth);
 				}
 			}
 		}
 	}
 	
-	private static void renderToastMessage(PoseStack mStack, Component message) {
+	private static void renderToastMessage(GuiGraphics gg, Component message) {
 		int duration = max(0, toast.display_time_ms - FADE_OUT);
 		long time = System.currentTimeMillis() - toastTimestamp;
 		if (time >= duration + FADE_OUT) return;
@@ -95,9 +94,9 @@ public class ConfigHotKeyOverlay {
 		int opacity = (int) (0xFF * (toast.background_opacity * 0.9F + 0.1F));
 		int backgroundColor = alpha(opacity << 24, alpha);
 		int textColor = alpha(0xE0E0E0E0, alpha);
-		GuiComponent.fill(mStack, textX - 2, textY - 1, textX + width + 4,
+		gg.fill(textX - 2, textY - 1, textX + width + 4,
 		     textY + font.lineHeight + 2, backgroundColor);
-		GuiComponent.drawString(mStack, font, message, textX, textY, textColor);
+		gg.drawString(font, message, textX, textY, textColor);
 	}
 	
 	public static class QueuedHotKeyMessage {
@@ -129,7 +128,7 @@ public class ConfigHotKeyOverlay {
 			if (time - timestamp < duration) timestamp = time - duration;
 		}
 		
-		public void render(PoseStack mStack, int r, int y, int maxWidth) {
+		public void render(GuiGraphics gg, int r, int y, int maxWidth) {
 			int duration = max(0, overlay.display_time_ms - FADE_OUT);
 			long time = System.currentTimeMillis() - getTimestamp();
 			if (time >= duration + FADE_OUT) return;
@@ -147,23 +146,23 @@ public class ConfigHotKeyOverlay {
 			int opacity = (int) (0xFF * (overlay.background_opacity * 0.9F + 0.1F));
 			int backgroundColor = alpha(opacity << 24, alpha);
 			int textColor = alpha(0xE0E0E0E0, alpha);
-			GuiComponent.fill(mStack, x, y, r, y + h, backgroundColor);
-			drawStringTrimmed(mStack, title, width - 2, x + 1, y + 1, textColor);
+			gg.fill(x, y, r, y + h, backgroundColor);
+			drawStringTrimmed(gg, title, width - 2, x + 1, y + 1, textColor);
 			y += lH;
 			x += 12;
 			width -= 12;
 			for (Component m: messages) {
-				drawStringTrimmed(mStack, m, width - 2, x + 1, y + 1, textColor);
+				drawStringTrimmed(gg, m, width - 2, x + 1, y + 1, textColor);
 				y += lH;
 			}
 		}
 		
 		private void drawStringTrimmed(
-		  PoseStack mStack, Component text, int width, float x, float y, int color
+         GuiGraphics gg, Component text, int width, float x, float y, int color
 		) {
 			Font font = Minecraft.getInstance().font;
 			FormattedCharSequence line = font.split(text, width).get(0);
-			font.draw(mStack, line, x, y, color);
+			gg.drawString(font, line, (int) x, (int) y, color);
 		}
 		
 		private int getHeight() {

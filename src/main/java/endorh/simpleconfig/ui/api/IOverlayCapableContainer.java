@@ -3,6 +3,7 @@ package endorh.simpleconfig.ui.api;
 import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
  * <br><br>
  * In addition to implementing the {@link #getSortedOverlays()} method as a final property,
  * implementations must insert hook calls in the respective methods to <ul>
- *    <li>{@link #renderOverlays(PoseStack, int, int, float)}</li>
+ *    <li>{@link #renderOverlays(GuiGraphics, int, int, float)}</li>
  *    <li>{@link #handleOverlaysMouseClicked(double, double, int)}</li>
  *    <li>{@link #handleOverlaysMouseReleased(double, double, int)}</li>
  *    <li>{@link #handleOverlaysMouseDragged(double, double, int, double, double)}</li>
@@ -45,7 +46,7 @@ public interface IOverlayCapableContainer {
 		 *         {@code false} if the overlay should be removed.
 		 */
 		boolean renderOverlay(
-		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta);
+         GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta);
 		
 		/**
 		 * Called when a click event happens within an overlay
@@ -213,9 +214,10 @@ public interface IOverlayCapableContainer {
 		return false;
 	}
 	
-	default void renderOverlays(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	default void renderOverlays(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
 		final List<OverlayTicket> removed = new LinkedList<>();
+		PoseStack mStack = gg.pose();
 		mStack.pushPose(); {
 			mStack.translate(0D, 0D, 100D);
 			Screen screen = Minecraft.getInstance().screen;
@@ -224,7 +226,7 @@ public interface IOverlayCapableContainer {
 			for (OverlayTicket ticket : sortedOverlays) {
 				if (tScreen != null) tScreen.removeTooltips(ticket.area);
 				ScissorsHandler.INSTANCE.pushScissor(ticket.area);
-				if (!ticket.renderer.renderOverlay(mStack, ticket.area, mouseX, mouseY, delta))
+				if (!ticket.renderer.renderOverlay(gg, ticket.area, mouseX, mouseY, delta))
 					removed.add(ticket);
 				ScissorsHandler.INSTANCE.popScissor();
 			}

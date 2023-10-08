@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
@@ -10,6 +9,7 @@ import endorh.simpleconfig.ui.api.IEntryHolder;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -115,21 +115,21 @@ public class EntryButtonListEntry<V, Entry extends AbstractConfigListEntry<V> & 
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+      int mouseY, boolean isHovered, float delta
 	) {
 		entry.setEditable(isEditable());
 		entry.setPreviewingExternal(isPreviewingExternal());
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
-		entry.renderChild(mStack, x, y, w - 22, h, mouseX, mouseY, delta);
+		entry.renderChild(gg, x, y, w - 22, h, mouseX, mouseY, delta);
 		button.setX(x + w - 20);
 		button.setY(y);
-		button.render(mStack, mouseX, mouseY, delta);
+		button.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override public void navigate() {

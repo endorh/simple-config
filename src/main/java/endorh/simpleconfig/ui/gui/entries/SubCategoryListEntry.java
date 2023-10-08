@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.AbstractConfigListEntry;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
@@ -10,6 +9,7 @@ import endorh.simpleconfig.ui.hotkey.HotKeyAction;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import endorh.simpleconfig.ui.impl.builders.FieldBuilder;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -48,7 +48,7 @@ public class SubCategoryListEntry extends CaptionedSubCategoryListEntry<Void, Vo
 			super(title);
 		}
 		@Override public void renderChildEntry(
-		  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+         GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 		) {}
 		@Override public Rectangle getRowArea() {
 			return null;

@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.widget.ScrollingContainerWidget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
 import static java.lang.Math.max;
@@ -18,7 +18,7 @@ public class ArrangeableTreeViewScroller extends ScrollingContainerWidget {
 	}
 	
 	@Override public void renderInner(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		ArrangeableTreeView<?> tree = getTree();
 		ArrangeableTreeViewEntry<?> root = tree.getRoot();
@@ -34,9 +34,9 @@ public class ArrangeableTreeViewScroller extends ScrollingContainerWidget {
 				int textY = tree.area.getCenterY() - tree.getPlaceHolderHeight() / 2;
 				if (caption != null) textY += caption.getHeight() / 2;
 				textY = max(textY, tree.area.getY() + (caption != null? caption.getHeight() : 0) + 4);
-				font.drawWordWrap(mStack, placeHolder, textX, textY, maxWidth, 0xE0E0E0E0);
+				gg.drawWordWrap(font, placeHolder, textX, textY, maxWidth, 0xE0E0E0E0);
 			}
-		} else root.render(mStack, x, y, w, mouseX, mouseY, delta);
+		} else root.render(gg, x, y, w, mouseX, mouseY, delta);
 	}
 	
 	@Override public int getInnerHeight() {

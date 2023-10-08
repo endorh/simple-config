@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfigTextUtil;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -17,6 +16,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.SearchBarWidget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -100,10 +100,10 @@ public abstract class TooltipListEntry<T> extends AbstractConfigListEntry<T> {
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+      int mouseY, boolean isHovered, float delta
 	) {
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		Optional<Component[]> tooltip;
 		if (getScreen().isShowingHelp() && getEntryList().getSelectedEntry() == this) {
 			getTooltip().ifPresent(

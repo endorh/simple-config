@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.GlStateManager.LogicOp;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import endorh.simpleconfig.api.ui.TextFormatter;
@@ -13,6 +12,7 @@ import net.minecraft.Util;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -484,15 +484,15 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		return relX < (left + right) * 0.5? floor: floor + 1;
 	}
 	
-	@Override public void renderWidget(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void renderWidget(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (isVisible()) {
 			boolean bordered = isBordered();
 			if (bordered) {
 				int borderColor = isHoveredOrFocused()
 				                  ? 0xFF000000 | this.borderColor & 0xFFFFFF
 				                  : 0xA0000000 | this.borderColor & 0xFFFFFF;
-				fill(mStack, getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, borderColor);
-				fill(mStack, getX(), getY(), getX() + width, getY() + height, 0xFF000000);
+				gg.fill(getX() - 1, getY() - 1, getX() + width + 1, getY() + height + 1, borderColor);
+				gg.fill(getX(), getY(), getX() + width, getY() + height, 0xFF000000);
 			}
 			
 			int color = isEditable() ? textColor : textColorUneditable;
@@ -515,16 +515,16 @@ public class TextFieldWidgetEx extends AbstractWidget {
 			
 			// Render text
 			if (!shown.isEmpty())
-				font.drawShadow(mStack, displayedText, textX, textY, color);
+				gg.drawString(font, displayedText, textX, textY, color); // TODO: shadow
 			
 			// Render hint
 			Component hint = hintProvider != null? hintProvider.apply(value).orElse(null) : null;
 			if (relCaret == shown.length() && hint != null)
-				font.drawShadow(mStack, hint, caretX, textY, 0xFF808080);
+				gg.drawString(font, hint, caretX, textY, 0xFF808080);
 			
 			// Render caret
 			if (showCaret) {
-				renderCaret(mStack, caretX, textY - 2, 1, 12);
+				renderCaret(gg, caretX, textY - 2, 1, 12);
 			}
 			
 			// Render selection
@@ -532,18 +532,18 @@ public class TextFieldWidgetEx extends AbstractWidget {
 				if (relAnchor > fitLength) relAnchor = fitLength;
 				if (relAnchor < 0) relAnchor = 0;
 				int aX = textX + font.width(subText(displayedText, 0, relAnchor)) - 1;
-				renderSelection(mStack, caretX, textY - 3, aX, textY + 2 + 9);
+				renderSelection(gg, caretX, textY - 3, aX, textY + 2 + 9);
 			}
 		}
 	}
 	
-	protected void renderCaret(PoseStack mStack, int x, int y, int w, int h) {
+	protected void renderCaret(GuiGraphics gg, int x, int y, int w, int h) {
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(LogicOp.OR_REVERSE);
-		Matrix4f m = mStack.last().pose();
+		Matrix4f m = gg.pose().last().pose();
 		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
 		bb.vertex(m,     x, y + h, 0F).endVertex();
 		bb.vertex(m, x + w, y + h, 0F).endVertex();
@@ -553,7 +553,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 		RenderSystem.disableColorLogicOp();
 	}
 	
-	protected void renderSelection(PoseStack mStack, int sX, int sY, int eX, int eY) {
+	protected void renderSelection(GuiGraphics gg, int sX, int sY, int eX, int eY) {
 		if (sX < eX) {
 			int swap = sX;
 			sX = eX;
@@ -570,7 +570,7 @@ public class TextFieldWidgetEx extends AbstractWidget {
 
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(LogicOp.XOR);
-		fill(mStack, sX, sY, eX, eY, 0xFF000080);
+		gg.fill(sX, sY, eX, eY, 0xFF000080);
 		RenderSystem.disableColorLogicOp();
 	}
 	

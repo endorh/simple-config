@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -37,7 +37,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 	@Override public void setDisplayedValue(Runnable value) {}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		button.setMessage(buttonLabelSupplier.get());
 		button.active = shouldRenderEditable();
@@ -45,7 +45,7 @@ public class ButtonListEntry extends TooltipListEntry<Runnable> implements IChil
 		button.setY(y);
 		button.setWidth(w);
 		button.setHeight(h);
-		button.render(mStack, mouseX, mouseY, delta);
+		button.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {

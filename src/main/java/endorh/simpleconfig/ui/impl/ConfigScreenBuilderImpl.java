@@ -10,7 +10,6 @@ import endorh.simpleconfig.ui.gui.SimpleConfigScreen;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKey;
 import endorh.simpleconfig.ui.impl.builders.ConfigCategoryBuilderImpl;
 import net.minecraft.Util;
-import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -34,7 +33,7 @@ import java.util.function.Consumer;
 	protected Component title = Component.translatable("simpleconfig.config.title");
 	protected boolean editable = true;
 	protected boolean transparentBackground = false;
-	protected ResourceLocation defaultBackground = GuiComponent.BACKGROUND_LOCATION;
+	protected ResourceLocation defaultBackground = new ResourceLocation("textures/gui/options_background.png");
 	protected Consumer<Screen> afterInitConsumer = screen -> {};
 	protected final EnumMap<EditType, Map<String, ConfigCategoryBuilder>> categories =
 	  Util.make(new EnumMap<>(EditType.class), m -> {

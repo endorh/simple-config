@@ -1,8 +1,8 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.widget.CheckboxButton;
 import endorh.simpleconfig.ui.gui.widget.TintedButton;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -125,13 +125,13 @@ public class ConfirmDialog extends AbstractButtonDialog {
 	}
 	
 	@Override public void renderInner(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		int tx = x + 4;
 		int ty = y + 4;
 		for (List<FormattedCharSequence> line : lines) {
 			for (FormattedCharSequence l : line) {
-				font.drawShadow(mStack, l, tx, ty, bodyColor);
+				gg.drawString(font, l, tx, ty, bodyColor); // TODO: shadow (drawShadow)
 				ty += lineHeight;
 			}
 			ty += paragraphMarginDown;
@@ -141,7 +141,7 @@ public class ConfirmDialog extends AbstractButtonDialog {
 			checkBox.setX(x + 8);
 			checkBox.setY(ty + 2);
 			checkBox.setWidth(w - 16);
-			checkBox.render(mStack, mouseX, mouseY, delta);
+			checkBox.render(gg, mouseX, mouseY, delta);
 			ty += 22;
 		}
 	}

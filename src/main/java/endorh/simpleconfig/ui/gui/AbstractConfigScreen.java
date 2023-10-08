@@ -7,7 +7,6 @@ import com.mojang.blaze3d.platform.InputConstants.Key;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import endorh.simpleconfig.SimpleConfigMod;
@@ -31,6 +30,7 @@ import endorh.simpleconfig.ui.impl.EditHistory;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -156,8 +156,8 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public static void fillGradient(
-	  PoseStack mStack, double xStart, double yStart, double xEnd, double yEnd,
-	  int blitOffset, int from, int to
+      GuiGraphics gg, double xStart, double yStart, double xEnd, double yEnd,
+      int blitOffset, int from, int to
 	) {
 		float fa = (float) (from >> 24 & 0xFF) / 255F;
 		float fr = (float) (from >> 16 & 0xFF) / 255F;
@@ -171,7 +171,7 @@ public abstract class AbstractConfigScreen extends Screen
 		BufferBuilder bb = tessellator.getBuilder();
 		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 		// @formatter:off
-		final Matrix4f m = mStack.last().pose();
+		final Matrix4f m = gg.pose().last().pose();
 		bb.vertex(m, (float) xEnd,   (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
 		bb.vertex(m, (float) xStart, (float) yStart, (float) blitOffset).color(fr, fg, fb, fa).endVertex();
 		bb.vertex(m, (float) xStart, (float) yEnd,   (float) blitOffset).color(tr, tg, tb, ta).endVertex();
@@ -199,20 +199,20 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public static void drawBorderRect(
-	  PoseStack mStack, Rectangle area, int w, int color, int innerColor
+      GuiGraphics gg, Rectangle area, int w, int color, int innerColor
 	) {
-		drawBorderRect(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), w, color, innerColor);
+		drawBorderRect(gg, area.x, area.y, area.getMaxX(), area.getMaxY(), w, color, innerColor);
 	}
 	
 	public static void drawBorderRect(
-	  PoseStack mStack, int l, int t, int r, int b, int w, int color, int innerColor
+      GuiGraphics gg, int l, int t, int r, int b, int w, int color, int innerColor
 	) {
-		fill(mStack, l, t, r, t + w, color);
-		fill(mStack, l, b - w, r, b, color);
-		fill(mStack, l, t + w, l + w, b - w, color);
-		fill(mStack, r - w, t + w, r, b - w, color);
+		gg.fill(l, t, r, t + w, color);
+		gg.fill(l, b - w, r, b, color);
+		gg.fill(l, t + w, l + w, b - w, color);
+		gg.fill(r - w, t + w, r, b - w, color);
 		if (innerColor != 0)
-			fill(mStack, l + w, t + w, r - w, b - w, innerColor);
+			gg.fill(l + w, t + w, r - w, b - w, innerColor);
 	}
 	
 	@Override public void setSavingRunnable(@Nullable Runnable savingRunnable) {
@@ -712,20 +712,20 @@ public abstract class AbstractConfigScreen extends Screen
 		return null;
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
-		super.render(mStack, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
-		renderOverlays(mStack, mouseX, mouseY, delta);
+		super.render(gg, suppressHover ? -1 : mouseX, suppressHover ? -1 : mouseY, delta);
+		renderOverlays(gg, mouseX, mouseY, delta);
 		if (hasDialog) tooltips.clear();
-		renderDialogs(mStack, mouseX, mouseY, delta);
-		renderTooltips(mStack, mouseX, mouseY, delta);
+		renderDialogs(gg, mouseX, mouseY, delta);
+		renderTooltips(gg, mouseX, mouseY, delta);
 	}
 	
-	protected void renderTooltips(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	protected void renderTooltips(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		for (Tooltip tooltip : tooltips)
 			if (!tooltip.isFromKeyboard() || tooltips.size() == 1)
-				tooltip.render(this, mStack);
+				tooltip.render(this, gg);
 		tooltips.clear();
 	}
 	
@@ -737,12 +737,6 @@ public abstract class AbstractConfigScreen extends Screen
 		final List<Tooltip> removed =
 		  tooltips.stream().filter(t -> area.contains(t.getPoint())).toList();
 		return tooltips.removeAll(removed);
-	}
-	
-	@Override public void renderComponentHoverEffect(
-	  @NotNull PoseStack matrices, Style style, int x, int y
-	) {
-		super.renderComponentHoverEffect(matrices, style, x, y);
 	}
 	
 	@Override public boolean handleComponentClicked(@Nullable Style style) {
@@ -884,15 +878,15 @@ public abstract class AbstractConfigScreen extends Screen
 	}
 	
 	public static void fill(
-	  PoseStack mStack, ResourceLocation texture, float tw, float th,
-	  float x, float y, float w, float h, int tint
+      GuiGraphics gg, ResourceLocation texture, float tw, float th,
+      float x, float y, float w, float h, int tint
 	) {
 		float r = tint >> 16 & 0xFF, g = tint >> 8 & 0xFF, b = tint & 0xFF, a = tint >> 24;
 		RenderSystem.setShaderTexture(0, texture);
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder buffer = tessellator.getBuilder();
-		Matrix4f m = mStack.last().pose();
+		Matrix4f m = gg.pose().last().pose();
 		buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		// @formatter:off
 		buffer.vertex(m,     x,     y, 0F).uv(     x  / tw,      y  / th).color(r, g, b, a).endVertex();

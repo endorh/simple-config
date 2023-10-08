@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettingsBuilder;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping.KeyBindActivation;
@@ -17,6 +16,7 @@ import endorh.simpleconfig.ui.gui.widget.SelectorButton.BooleanButton;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -167,11 +167,11 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 		return area;
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (overlayShown) positionOverlay();
 		icon.setHighlight(isFocused() || isMouseOver(mouseX, mouseY) || overlayShown);
 		if (icon.getSettings() != settings) icon.setSettings(settings);
-		super.render(mStack, mouseX, mouseY, delta);
+		super.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public List<Component> getHint() {
@@ -277,9 +277,9 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			preventFurtherCheckBox.setToggle(settings.preventFurther());
 		}
 		
-		@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+		@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 			Rectangle area = getArea();
-			drawBorderRect(mStack, area, 1, 0xEEEEEEEE, 0xEE242424);
+			drawBorderRect(gg, area, 1, 0xEEEEEEEE, 0xEE242424);
 			Font font = Minecraft.getInstance().font;
 			int to = 10 - (font.lineHeight + 1) / 2;
 			int xx = area.x + 4;
@@ -288,37 +288,37 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			int bx = area.getMaxX() - bw - 4;
 			List<Component> tooltip = null;
 			boolean tooltipInXRange = mouseX >= xx + 2 && mouseX < bx - 2;
-			drawString(mStack, font, getLabel("activation"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("activation"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("activation");
 			activationButton.setPosition(bx, yy);
 			((AbstractWidget) activationButton).setWidth(bw);
 			yy += 22;
-			drawString(mStack, font, getLabel("context"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("context"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("context");
 			contextButton.setPosition(bx, yy);
 			((AbstractWidget) contextButton).setWidth(bw);
 			yy += 22;
-			drawString(mStack, font, getLabel("allow_extra_keys"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("allow_extra_keys"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("allow_extra_keys");
 			allowExtraKeysCheckBox.setPosition(bx, yy);
 			((AbstractWidget) allowExtraKeysCheckBox).setWidth(bw);
 			yy += 22;
-			drawString(mStack, font, getLabel("order_sensitive"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("order_sensitive"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("order_sensitive");
 			orderSensitiveCheckBox.setPosition(bx, yy);
 			((AbstractWidget) orderSensitiveCheckBox).setWidth(bw);
 			yy += 22;
-			drawString(mStack, font, getLabel("exclusive"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("exclusive"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("exclusive");
 			exclusiveCheckBox.setPosition(bx, yy);
 			((AbstractWidget) exclusiveCheckBox).setWidth(bw);
 			yy += 22;
-			drawString(mStack, font, getLabel("match_by_char"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("match_by_char"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("match_by_char");
 			matchByCharCheckBox.setPosition(bx, yy);
 			((AbstractWidget) matchByCharCheckBox).setWidth(bw);
 			yy += 22;
-			drawString(mStack, font, getLabel("prevent_further"), xx + 2, yy + to, 0xE0E0E0E0);
+			gg.drawString(font, getLabel("prevent_further"), xx + 2, yy + to, 0xE0E0E0E0);
 			if (tooltipInXRange && mouseY >= yy + 2 && mouseY < yy + 18) tooltip = getTooltip("prevent_further");
 			preventFurtherCheckBox.setPosition(bx, yy);
 			((AbstractWidget) preventFurtherCheckBox).setWidth(bw);
@@ -333,13 +333,13 @@ public class KeyBindSettingsButton extends MultiFunctionImageButton {
 			matchByCharCheckBox.setTintColor(def.matchByChar() != matchByCharCheckBox.getToggle()? editedColor : defaultColor);
 			preventFurtherCheckBox.setTintColor(def.preventFurther() != preventFurtherCheckBox.getToggle()? editedColor : defaultColor);
 			
-			activationButton.render(mStack, mouseX, mouseY, delta);
-			contextButton.render(mStack, mouseX, mouseY, delta);
-			allowExtraKeysCheckBox.render(mStack, mouseX, mouseY, delta);
-			orderSensitiveCheckBox.render(mStack, mouseX, mouseY, delta);
-			exclusiveCheckBox.render(mStack, mouseX, mouseY, delta);
-			matchByCharCheckBox.render(mStack, mouseX, mouseY, delta);
-			preventFurtherCheckBox.render(mStack, mouseX, mouseY, delta);
+			activationButton.render(gg, mouseX, mouseY, delta);
+			contextButton.render(gg, mouseX, mouseY, delta);
+			allowExtraKeysCheckBox.render(gg, mouseX, mouseY, delta);
+			orderSensitiveCheckBox.render(gg, mouseX, mouseY, delta);
+			exclusiveCheckBox.render(gg, mouseX, mouseY, delta);
+			matchByCharCheckBox.render(gg, mouseX, mouseY, delta);
+			preventFurtherCheckBox.render(gg, mouseX, mouseY, delta);
 			
 			if (tooltip != null) renderTooltip(tooltip, mouseX, mouseY);
 		}

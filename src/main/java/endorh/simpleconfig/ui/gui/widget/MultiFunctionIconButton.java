@@ -15,6 +15,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction.B
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.Modifier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -131,7 +132,7 @@ public class MultiFunctionIconButton extends TintedButton {
 	}
 	
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
+      @NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks
 	) {
 		activeAction = actions.stream().filter(
 		  p -> p.getLeft().isActive()
@@ -162,25 +163,26 @@ public class MultiFunctionIconButton extends TintedButton {
 		
 		RenderSystem.setShaderTexture(0, WIDGETS_LOCATION);
 		int level = getTextureLevel();
-		Backgrounds.BUTTON_BACKGROUND.renderStretch(mStack, getX(), getY(), width, height, level);
-		renderTint(mStack, getX(), getY(), getX() + width, getY() + height);
+		Backgrounds.BUTTON_BACKGROUND.renderStretch(gg, getX(), getY(), width, height, level);
+		renderTint(gg, getX(), getY(), getX() + width, getY() + height);
 		int color = getFGColor();
 		contentArea.setBounds(area.x + 2, area.y + 2, area.width - 4, area.height - 4);
+		PoseStack mStack = gg.pose();
 		mStack.pushPose(); {
 			if (contentWidth < width) mStack.translate((width - contentWidth) / 2.0, 0.0, 0.0);
 			if (icon != Icon.EMPTY) {
 				RenderSystem.setShaderColor(0.1F, 0.1F, 0.1F, 0.8F);
-				icon.renderCentered(mStack, getX() + 1, getY() + 1, 20, 20);
+				icon.renderCentered(gg, getX() + 1, getY() + 1, 20, 20);
 				float intensity = active ? 1F : 0.3F;
 				RenderSystem.setShaderColor(intensity, intensity, intensity, 1F);
-				icon.renderCentered(mStack, getX(), getY(), 20, 20);
+				icon.renderCentered(gg, getX(), getY(), 20, 20);
 			}
 			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 			if (width > iconWidth) {
 				if (contentWidth > width && !suppressHoverPeek) {
 					ScissorsHandler.INSTANCE.withScissor(
-					  contentArea, () -> drawString(
-						 mStack, font, title, getX() + iconWidth, getY() + (height - 8) / 2,
+					  contentArea, () -> gg.drawString(
+						 font, title, getX() + iconWidth, getY() + (height - 8) / 2,
 						 color | Mth.ceil(alpha * 255.0F) << 24));
 					if (isMouseOver(mouseX, mouseY) && !overlay.isRendering()) {
 						Screen screen = mc.screen;
@@ -194,14 +196,14 @@ public class MultiFunctionIconButton extends TintedButton {
 					}
 				} else {
 					if (overlayArea != null) overlayArea.setBounds(getX(), getY(), width, height + 1);
-					drawString(
-					  mStack, font, title, getX() + iconWidth, getY() + (height - 8) / 2,
+					gg.drawString(
+					  font, title, getX() + iconWidth, getY() + (height - 8) / 2,
 					  color | Mth.ceil(alpha * 255.0F) << 24);
 				}
 			}
 		} mStack.popPose();
 		
-		if (isHoveredOrFocused()) renderToolTip(mStack, mouseX, mouseY);
+		if (isHoveredOrFocused()) renderToolTip(gg, mouseX, mouseY);
 	}
 	
 	public boolean isSuppressHoverPeek() {
@@ -213,8 +215,8 @@ public class MultiFunctionIconButton extends TintedButton {
 		if (suppressHoverPeek) overlayArea = null;
 	}
 	
-	@Override public void renderToolTip(@NotNull PoseStack mStack, int mouseX, int mouseY) {
-		final List<Component> ls = getTooltip();
+	@Override public void renderToolTip(@NotNull GuiGraphics gg, int mouseX, int mouseY) {
+		final List<Component> ls = getTooltipContents();
 		if (!ls.isEmpty()) {
 			final Screen screen = Minecraft.getInstance().screen;
 			boolean hovered = isMouseOver(mouseX, mouseY);
@@ -224,12 +226,12 @@ public class MultiFunctionIconButton extends TintedButton {
 				ts.addTooltip(Tooltip.of(
 				  area, Point.of(tooltipX, tooltipY), ls
 				).asKeyboardTooltip(!hovered));
-			} else if (screen != null) screen.renderComponentTooltip(mStack, ls, tooltipX, tooltipY);
+			} else if (screen != null) gg.renderComponentTooltip(Minecraft.getInstance().font, ls, tooltipX, tooltipY);
 		}
 	}
 	
 	@Override
-	public List<Component> getTooltip() {
+	public List<Component> getTooltipContents() {
 		ButtonAction action = activeAction;
 		return (action.tooltipSupplier != null? action.tooltipSupplier : defaultTooltip).get();
 	}
@@ -333,7 +335,7 @@ public class MultiFunctionIconButton extends TintedButton {
 		}
 		
 		@Override public boolean renderOverlay(
-		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+         GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 		) {
 			if (!button.isMouseOver(mouseX, mouseY) || button.overlayArea == null) {
 				button.overlayArea = null;
@@ -362,7 +364,7 @@ public class MultiFunctionIconButton extends TintedButton {
 			button.setExactWidth(w);
 			this.area.setBounds(area.x, area.y, w, area.height);
 			ScissorsHandler.INSTANCE.withSingleScissor(
-			  this.area, () -> button.render(mStack, mouseX, mouseY, delta));
+			  this.area, () -> button.render(gg, mouseX, mouseY, delta));
 			button.setX(x);
 			button.setY(y);
 			button.minWidth = minW;

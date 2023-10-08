@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
@@ -15,6 +14,7 @@ import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
 import endorh.simpleconfig.ui.gui.widget.RectangleAnimator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -113,45 +113,45 @@ public abstract class AbstractDialog
 		animatedArea = areaAnimator.getCurrentEaseOut();
 	}
 	
-	public boolean render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public boolean render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (isCancelled()) return false;
 		layout();
 		animateLayout();
 		boolean hideHover = shouldOverlaysSuppressHover(mouseX, mouseY);
 		int mX = hideHover? -1 : mouseX, mY = hideHover? -1 : mouseY;
-		renderBackground(mStack, mX, mY, delta);
-		renderTitle(mStack, mX, mY, delta);
-		renderBody(mStack, mX, mY, delta);
-		renderOverlays(mStack, mouseX, mouseY, delta);
+		renderBackground(gg, mX, mY, delta);
+		renderTitle(gg, mX, mY, delta);
+		renderBody(gg, mX, mY, delta);
+		renderOverlays(gg, mouseX, mouseY, delta);
 		return true;
 	}
 	
-	public void renderTitle(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void renderTitle(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		int x = getX(), y = getY(), w = getWidth();
-		fill(mStack, x + 1, y + 1, x + w - 1, y + 23, backgroundOverlayColor);
-		fill(mStack, x + 1, y + 23, x + w - 1, y + 24, subBorderColor);
+		gg.fill(x + 1, y + 1, x + w - 1, y + 23, backgroundOverlayColor);
+		gg.fill(x + 1, y + 23, x + w - 1, y + 24, subBorderColor);
 		int tx = x + 8;
 		if (icon != null && icon != Icon.EMPTY) {
 			tx += 18;
-			icon.renderCentered(mStack, x + 2, y + 2, 20, 20);
+			icon.renderCentered(gg, x + 2, y + 2, 20, 20);
 		}
-		drawString(mStack, font, title, tx, y + 8, titleColor);
+		gg.drawString(font, title, tx, y + 8, titleColor);
 		if (canCopyText())
-			copyTextButton.render(mStack, mouseX, mouseY, delta);
+			copyTextButton.render(gg, mouseX, mouseY, delta);
 	}
 	
-	public void renderBackground(PoseStack mStack, int mouseX, int mouseY, float delta) {
-		fill(mStack, 0, 0, getScreen().width, getScreen().height, screenColor);
+	public void renderBackground(GuiGraphics gg, int mouseX, int mouseY, float delta) {
+		gg.fill(0, 0, getScreen().width, getScreen().height, screenColor);
 		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
-		fill(mStack, x - 8, y - 8, x + w + 8, y + h + 8, 0x24242424);
-		fill(mStack, x - 6, y - 6, x + w + 6, y + h + 6, 0x48242424);
-		fill(mStack, x - 4, y - 4, x + w + 4, y + h + 4, 0x80242424);
-		fill(mStack, x - 2, y - 2, x + w + 2, y + h + 2, 0xa0242424);
-		fill(mStack, x, y, x + w, y + h, borderColor);
-		fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, backgroundColor);
+		gg.fill(x - 8, y - 8, x + w + 8, y + h + 8, 0x24242424);
+		gg.fill(x - 6, y - 6, x + w + 6, y + h + 6, 0x48242424);
+		gg.fill(x - 4, y - 4, x + w + 4, y + h + 4, 0x80242424);
+		gg.fill(x - 2, y - 2, x + w + 2, y + h + 2, 0xa0242424);
+		gg.fill(x, y, x + w, y + h, borderColor);
+		gg.fill(x + 1, y + 1, x + w - 1, y + h - 1, backgroundColor);
 	}
 	
-	public abstract void renderBody(PoseStack mStack, int mouseX, int mouseY, float delta);
+	public abstract void renderBody(GuiGraphics gg, int mouseX, int mouseY, float delta);
 	
 	public boolean isMouseInside(double mouseX, double mouseY) {
 		int x = getX(), y = getY();

@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.entries;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -14,6 +13,7 @@ import endorh.simpleconfig.ui.gui.entries.CaptionedSubCategoryListEntry.CaptionW
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.ToggleAnimator;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -139,16 +139,16 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+      int mouseY, boolean isHovered, float delta
 	) {
 		label.setFocused(isFocused() && getFocused() == label);
 		super.renderEntry(
-		  mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		  gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		Icon icon = this.icon != null? this.icon : SimpleConfigIcons.Entries.EXPAND;
 		icon.renderCentered(
-		  mStack, x - 20, y, 18, 18,
+		  gg, x - 20, y, 18, 18,
 		  this.icon != null? 0 : (label.area.contains(mouseX, mouseY)? 2 : 0) + (isExpanded()? 1 : 0));
 		final boolean animating = expandAnimator.isInProgress();
 		if (isExpanded() || animating) {
@@ -161,28 +161,28 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 			for (AbstractConfigListEntry<?> entry: entries.values()) {
 				if (entry.isShown() && entry != captionEntry) {
 					entry.render(
-					  mStack, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
+					  gg, -1, x + 14, yy, entryWidth - 14, entry.getItemHeight(),
 					  mouseX, mouseY, isHovered && getFocused() == entry, delta);
 					yy += entry.getItemHeight();
 				}
 			}
 			if (animating) ScissorsHandler.INSTANCE.popScissor();
 		}
-		label.render(mStack, mouseX, mouseY, delta);
+		label.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override protected void renderField(
-	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
-	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+      int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		super.renderField(
-		  mStack, fieldX, fieldY, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index,
+		  gg, fieldX, fieldY, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index,
 		  mouseX, mouseY, delta);
 		label.area.setBounds(
 		  x - 24, y, captionEntry != null? entryWidth - fieldWidth - 5 : entryWidth - 2, 20);
 		if (captionEntry != null) {
 			((IChildListEntry) captionEntry).renderChild(
-			  mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
+			  gg, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
 			captionEntryArea.setBounds(fieldX, fieldY, fieldWidth, fieldHeight);
 		} else captionEntryArea.setBounds(0, 0, 0, 0);
 	}

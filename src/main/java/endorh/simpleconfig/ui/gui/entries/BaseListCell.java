@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.EntryError;
@@ -10,6 +9,7 @@ import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
@@ -93,8 +93,8 @@ public abstract class BaseListCell<T> extends AbstractContainerEventHandler
 	}
 	
 	public void render(
-	  PoseStack mStack, int index, int x, int y, int listY, int cellWidth, int cellHeight,
-	  int mouseX, int mouseY, boolean isSelected, float delta
+      GuiGraphics gg, int index, int x, int y, int listY, int cellWidth, int cellHeight,
+      int mouseX, int mouseY, boolean isSelected, float delta
 	) {
 		if (listY >= 0 && listY != lastListY) {
 			offsetAnimator.setOutputRange(lastListY != -1? offsetAnimator.getEaseOut() : listY, listY);
@@ -104,20 +104,20 @@ public abstract class BaseListCell<T> extends AbstractContainerEventHandler
 		int offset = listY >= 0? (int) offsetAnimator.getEaseOut() - listY : 0;
 		cellArea.setBounds(x, y + getCellAreaOffset(), cellWidth, cellHeight - 4);
 		renderCell(
-		  mStack, index, x, y + offset, cellWidth, cellHeight,
+		  gg, index, x, y + offset, cellWidth, cellHeight,
 		  mouseX, mouseY, isSelected, delta);
 	}
 	
 	public void renderCell(
-	  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight,
-	  int mouseX, int mouseY, boolean isSelected, float delta
+      GuiGraphics gg, int index, int x, int y, int cellWidth, int cellHeight,
+      int mouseX, int mouseY, boolean isSelected, float delta
 	) {
 		Component label = getLabel();
 		if (label != Component.empty()) {
 			Font font = Minecraft.getInstance().font;
 			int textX = font.isBidirectional() ? x + cellWidth - font.width(label) : x;
 			renderLabel(
-			  mStack, label, textX, index, x, y, cellWidth, cellHeight,
+			  gg, label, textX, index, x, y, cellWidth, cellHeight,
 			  mouseX, mouseY, isSelected, delta);
 		}
 		long time = System.currentTimeMillis();
@@ -125,19 +125,19 @@ public abstract class BaseListCell<T> extends AbstractContainerEventHandler
 		if (t < 1000L) {
 			int color = focusHighlightColor;
 			final int offset = getCellAreaOffset();
-			fill(mStack, 16, y + offset, x + cellWidth, y + getCellHeight() + offset - 4,
+			gg.fill(16, y + offset, x + cellWidth, y + getCellHeight() + offset - 4,
 			     color & 0xFFFFFF | (int) ((color >> 24 & 0xFF) * (min(1000, 1000 - t) / 1000D)) << 24);
 		}
 	}
 	
 	public void renderLabel(
-	  PoseStack mStack, Component label, int textX, int index, int x, int y,
-	  int cellWidth, int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
+      GuiGraphics gg, Component label, int textX, int index, int x, int y,
+      int cellWidth, int cellHeight, int mouseX, int mouseY, boolean isSelected, float delta
 	) {
 		Font font = Minecraft.getInstance().font;
-		font.drawShadow(
-		  mStack, label.getVisualOrderText(), textX,
-		  (float) y + cellHeight / 2F - font.lineHeight / 2F, getPreferredTextColor());
+		gg.drawString( // TODO: shadow
+			font, label, textX,
+			y + cellHeight / 2 - font.lineHeight / 2, getPreferredTextColor());
 	}
 	
 	public Component getLabel() {

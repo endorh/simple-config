@@ -3,7 +3,6 @@ package endorh.simpleconfig.ui.gui.widget;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.api.ui.icon.Icon;
@@ -21,6 +20,7 @@ import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.SimpleComboBoxModel;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -209,7 +209,7 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		}
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		final long time = System.currentTimeMillis();
 		if ((selector.isFocused() || lastUpdate == 0L) && time - lastUpdate > updateCooldown) {
 			lastUpdate = time;
@@ -217,9 +217,9 @@ public class PresetPickerWidget extends AbstractContainerEventHandler implements
 		}
 		position();
 		selector.active = getHandler() != null && screen.isEditable();
-		selector.render(mStack, mouseX, mouseY, delta);
-		loadButton.render(mStack, mouseX, mouseY, delta);
-		saveButton.render(mStack, mouseX, mouseY, delta);
+		selector.render(gg, mouseX, mouseY, delta);
+		loadButton.render(gg, mouseX, mouseY, delta);
+		saveButton.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public List<Preset> getKnownPresets(Type type) {

@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
@@ -19,6 +18,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -426,11 +426,11 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override protected void renderTitle(
-	  PoseStack mStack, Component title, float textX, int index, int x, int y, int entryWidth,
-	  int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, Component title, float textX, int index, int x, int y, int entryWidth,
+      int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		super.renderTitle(
-		  mStack, title, textX + (areCaptionControlsEnabled()? isDeleteButtonEnabled()? 26 : 13 : 0),
+		  gg, title, textX + (areCaptionControlsEnabled()? isDeleteButtonEnabled()? 26 : 13 : 0),
 		  index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 	}
 	
@@ -444,8 +444,8 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
-	  int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight, int mouseX,
+      int mouseY, boolean isHovered, float delta
 	) {
 		if (isDragging() && !isEditable()) endDrag(mouseX, mouseY, -1);
 		if (!isHeadless())
@@ -454,7 +454,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			mouseX = dragMouseX;
 			mouseY = dragMouseY;
 		}
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		//noinspection unchecked
 		BaseListCell<T> focused =
 		  !expanded || getFocused() == null ||
@@ -463,13 +463,13 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		boolean insideCreateNew = isInsideCreateNew(mouseX, mouseY);
 		boolean insideDelete = isInsideDelete(mouseX, mouseY);
 		SimpleConfigIcons.Lists.EXPAND.renderCentered(
-		  mStack, x - 15, y + 5, 9, 9,
+		  gg, x - 15, y + 5, 9, 9,
 		  (label.isMouseOver(mouseX, mouseY) && !insideCreateNew && !insideDelete
 		   ? 2 : 0) + (expanded ? 1 : 0));
 		if (areCaptionControlsEnabled()) {
-			SimpleConfigIcons.Lists.ADD.renderCentered(mStack, x - 15 + 13, y + 5, 9, 9, insideCreateNew? 2 : 1);
+			SimpleConfigIcons.Lists.ADD.renderCentered(gg, x - 15 + 13, y + 5, 9, 9, insideCreateNew? 2 : 1);
 			if (isDeleteButtonEnabled())
-				SimpleConfigIcons.Lists.REMOVE.renderCentered(mStack, x - 15 + 26, y + 5, 9, 9, focused == null ? 0 : insideDelete ? 2 : 1);
+				SimpleConfigIcons.Lists.REMOVE.renderCentered(gg, x - 15 + 26, y + 5, 9, 9, focused == null ? 0 : insideDelete ? 2 : 1);
 		}
 		caret = cursor = cellControlsY = hoverCursor = -1;
 		final boolean animating = expandAnimator.isInProgress();
@@ -477,7 +477,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			if (animating) ScissorsHandler.INSTANCE.pushScissor(
 			  new Rectangle(entryArea.x, entryArea.y, entryArea.width, getItemHeight()));
 			if (cells.isEmpty())
-				placeholder.render(mStack, mouseX, mouseY, delta);
+				placeholder.render(gg, mouseX, mouseY, delta);
 			int i = 0;
 			int yy = y + 24;
 			int o = cells.isEmpty()? 0 : cells.get(0).getCellAreaOffset();
@@ -485,7 +485,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			                    ? cells.get(dragCursor).getCellHeight() : 0;
 			if (mouseY < yy && (mouseY >= yy - 6 || dragCursor != -1)) {
 				if (dragCursor != -1) {
-					renderDragPlaceHolder(mStack, x, yy + o, entryWidth, draggedHeight - 4);
+					renderDragPlaceHolder(gg, x, yy + o, entryWidth, draggedHeight - 4);
 					yy += draggedHeight;
 				}
 				if (dragCursor != 0) {
@@ -519,12 +519,12 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					} else if (i != dragCursor) {
 						if (mY - draggingOffset < o + ch / 2) {
 							caret = i;
-							renderDragPlaceHolder(mStack, x, yy + o, entryWidth, draggedHeight - 4);
+							renderDragPlaceHolder(gg, x, yy + o, entryWidth, draggedHeight - 4);
 							yy += draggedHeight;
 							cellControlsY = yy + o - 7;
 						} else if (mY - draggingOffset + draggedHeight > o + ch / 2) {
 							caret = i + 1;
-							renderDragPlaceHolder(mStack, x, yy + o + ch, entryWidth, draggedHeight - 4);
+							renderDragPlaceHolder(gg, x, yy + o + ch, entryWidth, draggedHeight - 4);
 							yo += draggedHeight;
 							cellControlsY = yy + o + ch - 7;
 						}
@@ -538,7 +538,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 					  entryWidth, ch + abs(o));
 				} else {
 					cell.render(
-					  mStack, i, x + 14, yy, yy - y, entryWidth - 14, ch, mouseX, mouseY,
+					  gg, i, x + 14, yy, yy - y, entryWidth - 14, ch, mouseX, mouseY,
 					  isFocused() && getFocused() == cell, delta);
 					yy += ch + yo;
 				}
@@ -546,7 +546,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			}
 			if (dragCursor != -1) {
 				if (mouseY >= yy) {
-					renderDragPlaceHolder(mStack, x, yy, entryWidth, draggedHeight - 4);
+					renderDragPlaceHolder(gg, x, yy, entryWidth, draggedHeight - 4);
 					if (dragCursor < cells.size() - 1) {
 						caret = i;
 						cellControlsY = yy + o - 7;
@@ -556,34 +556,34 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			           && (getScreen().getDragged() == null
 			               || getScreen().getDragged().getLeft() != 2)) {
 				if (caret != -1) {
-					SimpleConfigIcons.Lists.INSERT_ARROW.renderCentered(mStack, x - 26, cellControlsY, 12, 9, isInsideInsert(mouseX, mouseY) ? 1 : 0);
+					SimpleConfigIcons.Lists.INSERT_ARROW.renderCentered(gg, x - 26, cellControlsY, 12, 9, isInsideInsert(mouseX, mouseY) ? 1 : 0);
 					if (!childDrawsLine) {
-						fill(mStack, x - 14, cellControlsY + 3, x - 1 + entryWidth + 1, cellControlsY + 6, 0x24FFFFFF);
-						fill(mStack, x - 14, cellControlsY + 4, x - 1 + entryWidth + 1, cellControlsY + 5, 0x64FFFFFF);
+						gg.fill(x - 14, cellControlsY + 3, x - 1 + entryWidth + 1, cellControlsY + 6, 0x24FFFFFF);
+						gg.fill(x - 14, cellControlsY + 4, x - 1 + entryWidth + 1, cellControlsY + 5, 0x64FFFFFF);
 					}
 				} else if (cursor != -1) {
-					SimpleConfigIcons.Lists.DELETE_ARROW.renderCentered(mStack, x - 26, cellControlsY, 12, 9, isInsideRemove(mouseX, mouseY) ? 1 : 0);
+					SimpleConfigIcons.Lists.DELETE_ARROW.renderCentered(gg, x - 26, cellControlsY, 12, 9, isInsideRemove(mouseX, mouseY) ? 1 : 0);
 					if (cursor > 0)
-						SimpleConfigIcons.Lists.UP_ARROW.renderCentered(mStack, x - 10, cellControlsY, 7, 4, isInsideUp(mouseX, mouseY) ? 1 : 0);
+						SimpleConfigIcons.Lists.UP_ARROW.renderCentered(gg, x - 10, cellControlsY, 7, 4, isInsideUp(mouseX, mouseY) ? 1 : 0);
 					if (cursor < cells.size() - 1)
-						SimpleConfigIcons.Lists.DOWN_ARROW.renderCentered(mStack, x - 10, cellControlsY + 5, 7, 4, isInsideDown(mouseX, mouseY) ? 1 : 0);
+						SimpleConfigIcons.Lists.DOWN_ARROW.renderCentered(gg, x - 10, cellControlsY + 5, 7, 4, isInsideDown(mouseX, mouseY) ? 1 : 0);
 				}
 			}
 			if (animating)
 				ScissorsHandler.INSTANCE.popScissor();
 		}
-		if (!isHeadless()) label.render(mStack, mouseX, mouseY, delta);
+		if (!isHeadless()) label.render(gg, mouseX, mouseY, delta);
 	}
 	
-	protected void renderDragPlaceHolder(PoseStack mStack, int x, int y, int width, int height) {
-		fill(mStack, x, y, x + width, y + height, dragPlaceHolderColor);
+	protected void renderDragPlaceHolder(GuiGraphics gg, int x, int y, int width, int height) {
+		gg.fill(x, y, x + width, y + height, dragPlaceHolderColor);
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area != dragOverlayRectangle)
-			return super.renderOverlay(mStack, area, mouseX, mouseY, delta);
+			return super.renderOverlay(gg, area, mouseX, mouseY, delta);
 		if (dragCursor < 0 || dragCursor >= cells.size()) return false;
 		dragMouseX = mouseX;
 		dragMouseY = mouseY;
@@ -591,10 +591,10 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 		final int cellHeight = cell.getCellHeight();
 		final int o = cell.getCellAreaOffset();
 		final int decorationY = area.y + max(0, o);
-		fill(mStack, area.x, decorationY, area.getMaxX(),
+		gg.fill(area.x, decorationY, area.getMaxX(),
 		     decorationY + cellHeight - 4, dragOverlayBackground);
 		cell.render(
-		  mStack, dragCursor, area.x + 14, area.y + max(0, -o), -1,
+		  gg, dragCursor, area.x + 14, area.y + max(0, -o), -1,
 		  area.width - 14, cellHeight, mouseX, mouseY,
 		  getEntryList().getFocusedItem() != null && getEntryList().getFocusedItem().equals(this)
 		  && getFocused() != null && getFocused().equals(cell), delta);
@@ -834,7 +834,7 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			this.listEntry = listEntry;
 		}
 		
-		public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+		public void render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 			final BaseListEntry<?, ?, ?> listEntry = getListEntry();
 			final Rectangle area = listEntry.entryArea;
 			x = area.x + 16;
@@ -845,16 +845,16 @@ public abstract class BaseListEntry<T, C extends BaseListCell<T>, Self extends B
 			final List<FormattedCharSequence> lines = font.split(text, w);
 			int tw = font.width(lines.get(0)) + 4;
 			if (isMouseInside(mouseX, mouseY))
-				fill(mStack, x + 1, y + 1, x + tw - 1, y + h - 1, hoveredBgColor);
+				gg.fill(x + 1, y + 1, x + tw - 1, y + h - 1, hoveredBgColor);
 			if (focused) {
-				fill(mStack, x, y, x + tw, y + 1, borderColor);
-				fill(mStack, x, y + 1, x + 1, y + h - 1, borderColor);
-				fill(mStack, x + tw - 1, y + 1, x + tw, y + h - 1, borderColor);
-				fill(mStack, x, y + h - 1, x + tw, y + h, borderColor);
+				gg.fill(x, y, x + tw, y + 1, borderColor);
+				gg.fill(x, y + 1, x + 1, y + h - 1, borderColor);
+				gg.fill(x + tw - 1, y + 1, x + tw, y + h - 1, borderColor);
+				gg.fill(x, y + h - 1, x + tw, y + h, borderColor);
 			}
 			if (!lines.isEmpty()) {
-				font.drawShadow(
-				  mStack, lines.get(0), x + 2, y + 2,
+				gg.drawString( // TODO: shadow
+				  font, lines.get(0), x + 2, y + 2,
 				  isMouseInside(mouseX, mouseY)? hoveredTextColor : textColor);
 			}
 		}

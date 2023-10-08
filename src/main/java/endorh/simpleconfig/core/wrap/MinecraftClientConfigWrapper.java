@@ -82,6 +82,7 @@ public class MinecraftClientConfigWrapper {
 	}
 	
 	private static class MinecraftOptionsWrapperBuilder {
+		// TODO: Update
 		private static final Map<String, String> SRG_NAMES = Util.make(new HashMap<>(), m -> {
 			m.put("resourcePacks", "f_92117_");
 			m.put("incompatibleResourcePacks", "f_92118_");

@@ -1,7 +1,7 @@
 package endorh.simpleconfig.ui.gui.widget.combobox.wrapper;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -29,15 +29,17 @@ public class ItemTypeWrapper extends RegistryObjectTypeWrapper<Item> {
 	}
 	
 	@Override public void renderIcon(
-	  @Nullable Item element, String text, @NotNull PoseStack mStack, int x, int y,
-	  int w, int h, int blitOffset, int mouseX, int mouseY, float delta
+      @Nullable Item element, String text, @NotNull GuiGraphics gg, int x, int y,
+      int w, int h, int blitOffset, int mouseX, int mouseY, float delta
 	) {
 		if (element != null) {
 			ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
 			// float prevBlitOffset = itemRenderer.blitOffset;
 			// itemRenderer.blitOffset = blitOffset;
-			itemRenderer.renderGuiItem(mStack, new ItemStack(element), x + 2, y + 2);
+			// TODO: Fix?
+			gg.renderItem(new ItemStack(element), x + 2, y + 2);
+			// itemRenderer.renderGuiItem(gg, new ItemStack(element), x + 2, y + 2);
 			// itemRenderer.blitOffset = prevBlitOffset;
-		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(mStack, x, y, w, h);
+		} else if (!text.isEmpty()) ICON_ERROR.renderCentered(gg, x, y, w, h);
 	}
 }

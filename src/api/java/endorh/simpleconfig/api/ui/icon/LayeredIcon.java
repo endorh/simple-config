@@ -1,7 +1,7 @@
 package endorh.simpleconfig.api.ui.icon;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.LayeredIcon.IIconLayer;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,31 +36,31 @@ public abstract class LayeredIcon<L extends IIconLayer> extends Icon {
 		return level;
 	}
 	
-	@Override public void renderCentered(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderCentered(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		for (L layer : getRenderedLayers()) if (layer.isVisible()) {
 			beforeRenderLayer(layer);
-			layer.getIcon().renderCentered(mStack, x, y, w, h, translateLevel(level));
+			layer.getIcon().renderCentered(gg, x, y, w, h, translateLevel(level));
 			afterRenderLayer(layer);
 		}
 		afterRender(level);
 	}
 	
-	@Override public void renderStretch(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderStretch(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		for (L layer : getRenderedLayers()) if (layer.isVisible()) {
 			beforeRenderLayer(layer);
-			layer.getIcon().renderStretch(mStack, x, y, w, h, translateLevel(level));
+			layer.getIcon().renderStretch(gg, x, y, w, h, translateLevel(level));
 			afterRenderLayer(layer);
 		}
 		afterRender(level);
 	}
 	
-	@Override public void renderFill(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderFill(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		for (L layer : getRenderedLayers()) if (layer.isVisible()) {
 			beforeRenderLayer(layer);
-			layer.getIcon().renderFill(mStack, x, y, w, h, translateLevel(level));
+			layer.getIcon().renderFill(gg, x, y, w, h, translateLevel(level));
 			afterRenderLayer(layer);
 		}
 		afterRender(level);

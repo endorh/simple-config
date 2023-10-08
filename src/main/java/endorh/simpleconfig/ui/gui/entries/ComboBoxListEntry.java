@@ -1,13 +1,13 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Point;
 import endorh.simpleconfig.ui.api.IChildListEntry;
 import endorh.simpleconfig.ui.api.Tooltip;
 import endorh.simpleconfig.ui.gui.widget.combobox.ComboBoxWidget;
 import endorh.simpleconfig.ui.gui.widget.combobox.IComboBoxModel;
 import endorh.simpleconfig.ui.gui.widget.combobox.wrapper.TypeWrapper;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -55,7 +55,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		comboBox.setEnabled(shouldRenderEditable());
 		comboBox.setRestrictedToSuggestions(!isSuggestionMode());
@@ -65,7 +65,7 @@ public class ComboBoxListEntry<T> extends TooltipListEntry<T> implements IChildL
 		comboBox.setWidth(w - 2);
 		comboBox.setHeight(h - 2);
 		comboBox.setDropDownHeight(min(120, getEntryList().bottom - getEntryList().top - 32));
-		comboBox.render(mStack, mouseX, mouseY, delta);
+		comboBox.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override public void updateFocused(boolean isFocused) {

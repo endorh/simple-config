@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
@@ -27,6 +26,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
@@ -168,10 +168,10 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			return 20;
 		}
 		
-		@Override public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+		@Override public void render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 			int width = getTree().getWidth();
 			savedHotKeyGroupPickerWidget.setWidth(Mth.clamp((int) (width * 0.45), 90, 300));
-			super.render(mStack, mouseX, mouseY, delta);
+			super.render(gg, mouseX, mouseY, delta);
 		}
 	}
 	
@@ -285,14 +285,14 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			@Override public void render(
-			  PoseStack mStack, int x, int y, int width, int mouseX, int mouseY, float delta
+            GuiGraphics gg, int x, int y, int width, int mouseX, int mouseY, float delta
 			) {
 				if (getParent().getFocusedSubEntry() != this) setExpanded(false);
-				super.render(mStack, x, y, width, mouseX, mouseY, delta);
+				super.render(gg, x, y, width, mouseX, mouseY, delta);
 			}
 			
 			@Override public void renderContent(
-			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+            GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				int hotKeyButtonWidth = min(150, (w - 46) / 2);
 				hotKeyButton.setPosition(x, y, hotKeyButtonWidth);
@@ -301,7 +301,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				textField.setHeight(h - 10);
 				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
-				renderAll(mStack, mouseX, mouseY, delta,
+				renderAll(gg, mouseX, mouseY, delta,
 				          hotKeyButton, textField, enabledCheckbox);
 			}
 		}
@@ -337,20 +337,20 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			@Override public void renderContent(
-			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+            GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				editButton.setPosition(x + 2, y + 1);
 				editButton.setWidth(18);
 				editButton.setHeight(18);
-				editButton.render(mStack, mouseX, mouseY, delta);
+				editButton.render(gg, mouseX, mouseY, delta);
 				
 				int count = getCount();
 				Font font = Minecraft.getInstance().font;
 				
 				int textX = x + 24;
 				int textY = y + h / 2 - font.lineHeight / 2;
-				drawString(
-				  mStack, font, getDisplayText(),
+				gg.drawString(
+				  font, getDisplayText(),
 				  textX, textY, count == 0? 0xE0A0A0A0 : 0xE0E0E0E0);
 				ConfigHotKeyTreeView tree = getTree();
 				if (textX <= mouseX && mouseX < tree.getArea().getMaxX()
@@ -490,7 +490,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 			}
 			
 			@Override public void renderContent(
-			  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+            GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 			) {
 				int hotKeyButtonWidth = min(140, (int) (w * 0.4));
 				textField.setPosition(x + 4, y + 6);
@@ -499,7 +499,7 @@ public class ConfigHotKeyTreeView extends ArrangeableTreeView<ConfigHotKeyTreeVi
 				hotKeyButton.setPosition(x + w - 24 - hotKeyButtonWidth, y, hotKeyButtonWidth);
 				enabledCheckbox.setPosition(x + w - 22, y + 1);
 				
-				renderAll(mStack, mouseX, mouseY, delta,
+				renderAll(gg, mouseX, mouseY, delta,
 				          textField, hotKeyButton, enabledCheckbox);
 			}
 			

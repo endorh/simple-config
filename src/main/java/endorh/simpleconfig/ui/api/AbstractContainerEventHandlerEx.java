@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.api;
 
-import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -9,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 
 @OnlyIn(Dist.CLIENT)
-public abstract class AbstractContainerEventHandlerEx extends GuiComponent implements ContainerEventHandlerEx {
+public abstract class AbstractContainerEventHandlerEx implements ContainerEventHandlerEx {
    private @Nullable GuiEventListener focused;
    private @Nullable Pair<Integer, GuiEventListener> dragged;
 

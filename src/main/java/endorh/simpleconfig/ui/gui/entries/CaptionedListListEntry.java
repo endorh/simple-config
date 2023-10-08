@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.*;
 import endorh.simpleconfig.ui.gui.entries.BaseListEntry.ListCaptionWidget;
 import endorh.simpleconfig.ui.gui.widget.ResetButton;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -55,23 +55,23 @@ public class CaptionedListListEntry<
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
-	  int mouseX, int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight,
+      int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		listEntry.render(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		listEntry.render(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 	}
 	
 	@Override protected void renderField(
-	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
-	  int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int fieldX, int fieldY, int fieldWidth, int fieldHeight, int x, int y,
+      int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
-		captionEntry.renderChild(mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
+		captionEntry.renderChild(gg, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
 		label.setFocused(isFocused() && getFocused() == label);
 		label.area.setBounds(x - 24, y, entryWidth - fieldWidth - 5, 20);
-		label.render(mStack, mouseX, mouseY, delta);
+		label.render(gg, mouseX, mouseY, delta);
 		final ResetButton resetButton = getResetButton();
-		if (resetButton != null) resetButton.render(mStack, mouseX, mouseY, delta);
+		if (resetButton != null) resetButton.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override protected void doExpandParents(AbstractConfigField<?> entry) {

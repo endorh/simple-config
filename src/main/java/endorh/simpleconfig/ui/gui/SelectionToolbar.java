@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.ui.api.AbstractConfigField;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton;
 import endorh.simpleconfig.ui.gui.widget.MultiFunctionImageButton.ButtonAction;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -60,14 +60,14 @@ public class SelectionToolbar extends AbstractContainerEventHandler implements N
 		addButton(acceptButton);
 	}
 	
-	public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (visible) {
 			int xx = x;
 			for (AbstractWidget button : buttons) {
 				button.setX(xx);
 				button.setY(y);
 				xx += button.getWidth();
-				button.render(mStack, mouseX, mouseY, delta);
+				button.render(gg, mouseX, mouseY, delta);
 			}
 			height = 20;
 			width = xx - x;

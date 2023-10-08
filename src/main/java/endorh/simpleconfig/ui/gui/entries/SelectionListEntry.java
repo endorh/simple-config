@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.gui.entries;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.config.ClientConfig.advanced;
@@ -17,6 +16,7 @@ import endorh.simpleconfig.ui.hotkey.HotKeyActionType;
 import endorh.simpleconfig.ui.hotkey.HotKeyActionTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -68,7 +68,8 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				  setFocused(true);
 			  }
 			  final int s = values.size();
-			  if (0 <= b && b <= 1) {
+			  if (b < 0) b = 0;
+			  if (b <= 1) {
 				  int step = b == 0 ^ Screen.hasShiftDown()? 1 : -1;
 				  displayedIndex = (displayedIndex + step + s) % s;
 			  }
@@ -98,13 +99,13 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 	}
 	
 	@Override public void renderChildEntry(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 	) {
 		if (isEditingHotKeyAction()) {
 			HotKeyActionType<T, ?> type = getHotKeyActionType();
 			if (type == HotKeyActionTypes.ENUM_ADD) {
 				intEntry.shouldRenderEditable();
-				intEntry.renderChild(mStack, x, y, w, h, mouseX, mouseY, delta);
+				intEntry.renderChild(gg, x, y, w, h, mouseX, mouseY, delta);
 				return;
 			}
 		}
@@ -112,7 +113,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		buttonWidget.setY(y);
 		buttonWidget.setExactWidth(w);
 		buttonWidget.setHeight(h);
-		buttonWidget.render(mStack, mouseX, mouseY, delta);
+		buttonWidget.render(gg, mouseX, mouseY, delta);
 	}
 	
 	@Override public Optional<Component[]> getTooltip(int mouseX, int mouseY) {
@@ -227,7 +228,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 		}
 		
 		@Override public boolean renderOverlay(
-		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+         GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 		) {
 			if (cancelled) return false;
 			if (startY == -1)
@@ -240,19 +241,19 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				Rectangle rect = new Rectangle(
 						button.getX(), button.getY() + mouseY - startY - round(startIndex * bh * p),
 				  area.width, round(Mth.lerp(p, bh, bh * values.size())));
-				renderOverlayShadow(mStack, area, mouseX, mouseY, delta, rect);
+				renderOverlayShadow(gg, area, mouseX, mouseY, delta, rect);
 				ScissorsHandler.INSTANCE.withSingleScissor(
-				  rect, () -> doRenderOverlay(mStack, area, mouseX, mouseY, delta));
+				  rect, () -> doRenderOverlay(gg, area, mouseX, mouseY, delta));
 			} else {
-				renderOverlayShadow(mStack, area, mouseX, mouseY, delta, null);
-				doRenderOverlay(mStack, area, mouseX, mouseY, delta);
+				renderOverlayShadow(gg, area, mouseX, mouseY, delta, null);
+				doRenderOverlay(gg, area, mouseX, mouseY, delta);
 			}
 			return true;
 		}
 		
 		public void renderOverlayShadow(
-		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta,
-		  @Nullable Rectangle overlayArea
+         GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta,
+         @Nullable Rectangle overlayArea
 		) {
 			if (overlayArea == null) {
 				MultiFunctionIconButton button = entry.buttonWidget;
@@ -266,14 +267,14 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 			}
 			final Rectangle r = overlayArea;
 			ScissorsHandler.INSTANCE.withoutScissors(() -> {
-				for (int i = 4; i > 0; i--) fill(
-				  mStack, r.x - i, r.y - i, r.getMaxX() + i, r.getMaxY() + i,
+				for (int i = 4; i > 0; i--) gg.fill(
+				  r.x - i, r.y - i, r.getMaxX() + i, r.getMaxY() + i,
 				  (int) ((4 - i + 1) / 4F * 0.8F * 255F) << 24 | 0x161616);
 			});
 		}
 		
 		public void doRenderOverlay(
-		  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+         GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 		) {
 			MultiFunctionIconButton button = entry.buttonWidget;
 			ImmutableList<T> values = entry.values;
@@ -289,7 +290,7 @@ public class SelectionListEntry<T> extends TooltipListEntry<T> implements IChild
 				button.setPosition(area.x, y);
 				((AbstractWidget) button).setWidth(area.width);
 				entry.setDisplayedValue(value);
-				button.render(mStack, -1, -1, delta);
+				button.render(gg, -1, -1, delta);
 				y += bh;
 			}
 			((GuiEventListener) button).setFocused(prevFocused);

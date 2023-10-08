@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.hotkey;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Buttons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Hotkeys;
@@ -29,6 +28,7 @@ import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEn
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyTreeView.ConfigHotKeyTreeViewEntry.ConfigHotKeyTreeViewGroupEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.player.LocalPlayer;
@@ -326,7 +326,7 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 	}
 	
 	@Override public void render(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
+      @NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks
 	) {
 		long time = System.currentTimeMillis();
 		if (time - lastUpdate > UPDATE_INTERVAL) {
@@ -342,9 +342,9 @@ public class SavedHotKeyGroupPickerWidget extends AbstractContainerEventHandler 
 		int x = area.getMaxX() - 20;
 		saveButton.setPosition(x, area.y);
 
-		selector.render(mStack, mouseX, mouseY, partialTicks);
-		loadButton.render(mStack, mouseX, mouseY, partialTicks);
-		saveButton.render(mStack, mouseX, mouseY, partialTicks);
+		selector.render(gg, mouseX, mouseY, partialTicks);
+		loadButton.render(gg, mouseX, mouseY, partialTicks);
+		saveButton.render(gg, mouseX, mouseY, partialTicks);
 	}
 	
 	protected void update() {

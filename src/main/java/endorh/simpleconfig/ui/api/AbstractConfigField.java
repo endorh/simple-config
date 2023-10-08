@@ -2,7 +2,6 @@ package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
 import com.ibm.icu.impl.Pair;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.SimpleConfig.Type;
@@ -22,7 +21,7 @@ import endorh.simpleconfig.ui.hotkey.SimpleHotKeyActionType.SimpleHotKeyAction;
 import endorh.simpleconfig.ui.impl.ISeekableComponent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -299,6 +298,13 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 				setDisplayedValue(value);
 		});
 	}
+
+	public void setDisplayedValueTransparently(T value) {
+		runTransparentAction(() -> {
+			if (isDisplayingValue())
+				setDisplayedValue(value);
+		});
+	}
 	
 	public T getDisplayedValue() {
 		return getValue();
@@ -529,7 +535,7 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		getScreen().getHistory().preserveState(this);
 		return true;
 	}
-	
+
 	public void updateFocused(boolean isFocused) {
 		if (isFocused && !isFocused()) {
 			//noinspection SuspiciousMethodCalls
@@ -540,8 +546,8 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 		setFocused(isFocused);
 		if (!isFocused) {
 			final GuiEventListener listener = getFocused();
-			if (listener instanceof AbstractWidget && ((AbstractWidget) listener).isFocused())
-            listener.setFocused(false);
+			if (listener != null && listener.isFocused())
+				listener.setFocused(false);
 			setFocused(null);
 		}
 	}
@@ -666,12 +672,12 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	@Override public void render(
-	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {
-		renderBg(mStack, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
-		renderEntry(mStack, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
-		renderEntryOverlay(mStack, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
+		renderBg(gg, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
+		renderEntry(gg, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
+		renderEntryOverlay(gg, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
 	}
 	
 	@Override public DynamicEntryListWidget<?> getEntryList() {
@@ -692,43 +698,44 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	public void renderBg(
-	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {
 		AbstractConfigScreen screen = getScreen();
 		if (matchesSearch() && !screen.getSearchBar().isFilter())
-			fill(mStack, 0, y, screen.width, y + getCaptionHeight(),
+			gg.fill(0, y, screen.width, y + getCaptionHeight(),
 			     isFocusedMatch()? focusedMatchColor : matchColor);
 		final long t = System.currentTimeMillis() - lastFocusHighlightTime - focusHighlightLength;
 		if (t < 1000) {
 			int color = focusHighlightColor;
-			fill(mStack, 0, y, screen.width, y + getCaptionHeight(),
+			gg.fill(0, y, screen.width, y + getCaptionHeight(),
 			     color & 0xFFFFFF | (int) ((color >> 24 & 0xFF) * (min(1000, 1000 - t) / 1000D)) << 24);
 		}
 	}
 	
 	@Internal public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {}
 	
 	public void renderEntryOverlay(
-	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {
 		if (isSelected())
-			renderSelectionOverlay(mStack, index, y, x, w, h, mouseX, mouseY, isHovered, delta);
+			renderSelectionOverlay(gg, index, y, x, w, h, mouseX, mouseY, isHovered, delta);
 	}
 	
 	protected void renderSelectionOverlay(
-	  PoseStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int y, int x, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {
-		fill(mStack, 2, y - 2, x + w, y + h - 2, selectionColor);
+		gg.fill(2, y - 2, x + w, y + h - 2, selectionColor);
 	}
 	
 	@Override public void claimFocus() {
 		getScreen().setSelectedCategory(getCategory());
+		updateFocused(true);
 		AbstractConfigField<?> parent = getParentEntry();
 		List<AbstractConfigField<?>> parents = Lists.newArrayList();
 		parents.add(this);
@@ -869,15 +876,15 @@ public abstract class AbstractConfigField<T> extends DynamicElementListWidget.El
 	}
 	
 	protected static void drawBorder(
-	  PoseStack mStack, int x, int y, int w, int h, int borderWidth, int color
+      GuiGraphics gg, int x, int y, int w, int h, int borderWidth, int color
 	) {
 		int maxX = x + w;
 		int maxY = y + h;
 		int bw = min(min(borderWidth, w), h);
-		fill(mStack, x, y, maxX, y + bw, color);
-		fill(mStack, x, y + bw, x + bw, maxY - bw, color);
-		fill(mStack, maxX - bw, y + bw, maxX, maxY - bw, color);
-		fill(mStack, x, maxY - bw, maxX, maxY, color);
+		gg.fill(x, y, maxX, y + bw, color);
+		gg.fill(x, y + bw, x + bw, maxY - bw, color);
+		gg.fill(maxX - bw, y + bw, maxX, maxY - bw, color);
+		gg.fill(x, maxY - bw, maxX, maxY, color);
 	}
 	
 	public HotKeyActionButton<T> getHotKeyActionTypeButton() {

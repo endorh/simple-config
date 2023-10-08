@@ -1,6 +1,5 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBind;
 import endorh.simpleconfig.api.ui.hotkey.ExtendedKeyBindSettings;
 import endorh.simpleconfig.api.ui.hotkey.KeyBindMapping;
@@ -28,6 +27,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -380,7 +380,7 @@ public class KeyBindButton extends AbstractContainerEventHandler
 		return tooltip;
 	}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		button.setPosition(area.x, area.y);
 		button.setExactWidth(area.width - 22);
 		int x = area.getMaxX() - 20;
@@ -388,10 +388,10 @@ public class KeyBindButton extends AbstractContainerEventHandler
 		cancelButton.setPosition(x, area.y);
 		settingsButton.setWarning(!overlaps.isEmpty());
 		
-		button.render(mStack, mouseX, mouseY, delta);
+		button.render(gg, mouseX, mouseY, delta);
 		if (isCapturingModalInput()) {
-			cancelButton.render(mStack, mouseX, mouseY, delta);
-		} else settingsButton.render(mStack, mouseX, mouseY, delta);
+			cancelButton.render(gg, mouseX, mouseY, delta);
+		} else settingsButton.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public int getExtraHeight() {

@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.RedirectPath;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -136,9 +136,9 @@ public interface IPositionableRenderable extends Renderable, GuiEventListener {
 		}
 		
 		@Override public void render(
-		  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
+         @NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks
 		) {
-			widget.render(mStack, mouseX, mouseY, partialTicks);
+			widget.render(gg, mouseX, mouseY, partialTicks);
 		}
 		
 		@Override public void mouseMoved(double xPos, double mouseY) {
@@ -258,8 +258,8 @@ public interface IPositionableRenderable extends Renderable, GuiEventListener {
 			getDelegate().setDimensions(w, h);
 		}
 		
-		@Override default void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
-			getDelegate().render(mStack, mouseX, mouseY, partialTicks);
+		@Override default void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks) {
+			getDelegate().render(gg, mouseX, mouseY, partialTicks);
 		}
 		
 		@Override default boolean mouseClicked(double mouseX, double mouseY, int button) {

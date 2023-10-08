@@ -409,7 +409,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		private static final PacketDistributor<ServerPlayer> EXCEPT = new PacketDistributor<>(
 		  (distributor, supplier) -> packet -> {
 			  final ServerPlayer exception = supplier.get();
-			  final MinecraftServer server = exception.level.getServer();
+			  final MinecraftServer server = exception.level().getServer();
 			  if (server == null) return;
 			  server.getPlayerList().getPlayers()
 				 .stream().filter(p -> exception != p)
@@ -418,7 +418,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 		private static final PacketDistributor<ServerPlayer> OPS_EXCEPT = new PacketDistributor<>(
 		  (distributor, supplier) -> packet -> {
 			  final ServerPlayer exception = supplier.get();
-			  final MinecraftServer server = exception.level.getServer();
+			  final MinecraftServer server = exception.level().getServer();
 			  if (server == null) return;
 			  server.getPlayerList().getPlayers()
 			    .stream().filter(p -> exception != p && p.hasPermissions(2))

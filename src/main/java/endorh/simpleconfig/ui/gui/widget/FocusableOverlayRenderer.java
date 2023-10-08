@@ -1,10 +1,10 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.IOverlayCapableContainer.IOverlayRenderer;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,14 +24,14 @@ public abstract class FocusableOverlayRenderer extends AbstractContainerEventHan
 	protected List<GuiEventListener> listeners = new ArrayList<>();
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area != getArea()) return false;
 		if (hidden) {
 			hidden = false;
 			return false;
 		}
-		render(mStack, mouseX, mouseY, delta);
+		render(gg, mouseX, mouseY, delta);
 		return true;
 	}
 	

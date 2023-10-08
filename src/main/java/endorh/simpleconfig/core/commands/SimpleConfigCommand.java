@@ -250,8 +250,9 @@ public class SimpleConfigCommand {
 				src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected"));
 				LOGGER.error("Couldn't serialize entry value for command: {}", entry.getGlobalPath());
 			}
-			src.sendSuccess(Component.translatable("simpleconfig.command.msg.get",
-			                                       formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
+			MutableComponent msg = Component.translatable("simpleconfig.command.msg.get",
+				formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60));
+			src.sendSuccess(() -> msg, false);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
@@ -278,8 +279,9 @@ public class SimpleConfigCommand {
 				src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected"));
 				LOGGER.error("Couldn't serialize entry value for command: {}", entry.getGlobalPath());
 			}
-			src.sendSuccess(Component.translatable("simpleconfig.command.msg.get",
-			                                       formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60)), false);
+			MutableComponent msg = Component.translatable("simpleconfig.command.msg.get",
+				formatKey(modId, key, type, 50), formatValue(base, type, key, serialized, 60));
+			src.sendSuccess(() -> msg, false);
 			return 0;
 		} catch (NoSuchConfigEntryError e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
@@ -330,9 +332,9 @@ public class SimpleConfigCommand {
 			MutableComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
-			src.sendSuccess(Component.translatable(
-			  "simpleconfig.command.msg.set",
-			  formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
+			MutableComponent msg = Component.translatable("simpleconfig.command.msg.set",
+				formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue);
+			src.sendSuccess(() -> msg, false);
 			broadcastToOtherOperators(player, Component.translatable(
 			  "simpleconfig.command.msg.set.remote",
 			  playerName(player), formatKey(modId, key, type, 40), undoLink, formatPrev, formatvalue));
@@ -388,8 +390,9 @@ public class SimpleConfigCommand {
 			MutableComponent undoLink = genUndoLink(undoCommand),
 			  formatvalue = formatValue(base, type, key, value, valueWidth),
 			  formatPrev = formatValue(base, type, key, prev, prevWidth);
-			src.sendSuccess(Component.translatable("simpleconfig.command.msg.set",
-			                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue), false);
+			MutableComponent msg = Component.translatable("simpleconfig.command.msg.set",
+				formatKey(modId, key, type, 45), undoLink, formatPrev, formatvalue);
+			src.sendSuccess(() -> msg, false);
 			// The file watcher isn't always reliable
 			config.update();
 			// config.save();
@@ -433,8 +436,9 @@ public class SimpleConfigCommand {
 				  formatValue(base, type, key, prev, prevWidth);
 				MutableComponent formatValue =
 				  formatValue(base, type, key, value, valueWidth);
-				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset",
-				                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
+				MutableComponent msg = Component.translatable("simpleconfig.command.msg.reset",
+					formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue);
+				src.sendSuccess(() -> msg, false);
 				broadcastToOtherOperators(player, Component.translatable("simpleconfig.command.msg.reset.remote",
 				  playerName(player), formatKey(modId, key, type, 40), undoLink, formatPrev, formatValue));
 				// The file watcher isn't always reliable
@@ -444,8 +448,9 @@ public class SimpleConfigCommand {
 				group.reset();
 				MutableComponent count = Component.literal(String.valueOf(group.getPaths(false).size()))
 				  .withStyle(ChatFormatting.DARK_AQUA);
-				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset_group",
-				                                       formatKey(modId, key, type, 45), count), false);
+				MutableComponent msg = Component.translatable("simpleconfig.command.msg.reset_group",
+					formatKey(modId, key, type, 45), count);
+				src.sendSuccess(() -> msg, false);
 				broadcastToOtherOperators(player, Component.translatable("simpleconfig.command.msg.reset_group.remote",
 				  playerName(player), formatKey(modId, key, type, 45), count));
 				// The file watcher isn't always reliable
@@ -485,8 +490,9 @@ public class SimpleConfigCommand {
 				  formatValue(base, type, key, prev, prevWidth);
 				MutableComponent formatValue =
 				  formatValue(base, type, key, value, valueWidth);
-				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset",
-				                                       formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue), false);
+				MutableComponent msg = Component.translatable("simpleconfig.command.msg.reset",
+					formatKey(modId, key, type, 45), undoLink, formatPrev, formatValue);
+				src.sendSuccess(() -> msg, false);
 				// The file watcher isn't always reliable
 				config.update();
 			} else if (config.hasChild(key)) {
@@ -494,8 +500,9 @@ public class SimpleConfigCommand {
 				group.reset();
 				MutableComponent count = Component.literal(String.valueOf(group.getPaths(false).size()))
 				  .withStyle(ChatFormatting.DARK_AQUA);
-				src.sendSuccess(Component.translatable("simpleconfig.command.msg.reset_group",
-				                                       formatKey(modId, key, type, 45), count), false);
+				MutableComponent msg = Component.translatable("simpleconfig.command.msg.reset_group",
+					formatKey(modId, key, type, 45), count);
+				src.sendSuccess(() -> msg, false);
 				// The file watcher isn't always reliable
 				config.update();
 			} else throw new NoSuchConfigEntryError(key);

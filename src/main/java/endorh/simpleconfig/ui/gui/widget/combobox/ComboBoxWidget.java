@@ -24,6 +24,7 @@ import net.minecraft.client.GameNarrator;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -197,11 +198,12 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+		GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (!isDropDownShown())
 			return false;
-		
+
+		PoseStack mStack = gg.pose();
 		mStack.pushPose();{
 			final int maxScroll = getMaxDropDownScroll();
 			final double prev = dropDownScroll;
@@ -215,10 +217,10 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			
 			area = dropDownRectangle;
 			final int borderColor = isFocused() ? focusedBorderColor : this.borderColor;
-			fill(mStack, area.x, area.y, area.getMaxX(), area.getMaxY(), borderColor);
-			fill(mStack, area.x + 1, area.y, area.getMaxX() - 1, area.getMaxY() - 1, backgroundColor);
-			fill(
-			  mStack, area.x + 1, area.y, area.getMaxX() - 1, area.y + 1,
+			gg.fill(area.x, area.y, area.getMaxX(), area.getMaxY(), borderColor);
+			gg.fill(area.x + 1, area.y, area.getMaxX() - 1, area.getMaxY() - 1, backgroundColor);
+			gg.fill(
+			  area.x + 1, area.y, area.getMaxX() - 1, area.y + 1,
 			  borderColor & 0xFFFFFF | borderColor / 2 & 0xFF000000);
 			
 			int suggestionWidth = area.width - 2;
@@ -236,14 +238,14 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				int yy = area.y + 1 - (int) dropDownScroll % suggestionHeight;
 				for (int i = firstIdx; i <= lastIdx; i++) {
 					renderSuggestion(
-					  i, lastSortedSuggestions.get(i), mStack, area.x + 1, yy,
+					  i, lastSortedSuggestions.get(i), gg, area.x + 1, yy,
 					  suggestionWidth, suggestionHeight, mouseX, mouseY, delta, i == suggestionCursor);
 					yy += suggestionHeight;
 				}
 				
 				if (showScrollbar) {
 					final int scrollBarX = area.getMaxX() - 6;
-					fill(mStack, scrollBarX, area.y + 1, scrollBarX + 5, area.getMaxY(), 0x80646464);
+					gg.fill(scrollBarX, area.y + 1, scrollBarX + 5, area.getMaxY(), 0x80646464);
 					int thumbHeight =
 					  max(20, (area.height - 2) / (lastSortedSuggestions.size() * suggestionHeight));
 					int thumbY = area.y + 1 + (int) round(
@@ -252,37 +254,37 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 						|| mouseX >= scrollBarX && mouseX < scrollBarX + 5
 						&& mouseY >= thumbY && mouseY < thumbY + thumbHeight
 					? 0x96BDBDBD : 0x96808080;
-					fill(
-					  mStack, scrollBarX, thumbY, area.getMaxX() - 1, thumbY + thumbHeight, thumbColor);
+					gg.fill(
+					  scrollBarX, thumbY, area.getMaxX() - 1, thumbY + thumbHeight, thumbColor);
 				}
 			} else {
 				final Optional<Component> opt = suggestionProvider.getPlaceHolder(typeWrapper, text);
 				if (opt.isPresent()) {
 					drawTextComponent(
-					  opt.get(), mStack, area.x + 4, area.y + 2,
+					  opt.get(), gg, area.x + 4, area.y + 2,
 					  area.width - 2, 10, 0xFFE0E0E0);
 				} else setDropDownShown(false);
 			}
 			
-			fill(mStack, area.x + 1, area.y, area.getMaxX() - 1, area.y + 1, borderColor);
-			fill(mStack, area.x + 1, area.getMaxY() - 1, area.getMaxX() - 1, area.getMaxY(), borderColor);
+			gg.fill(area.x + 1, area.y, area.getMaxX() - 1, area.y + 1, borderColor);
+			gg.fill(area.x + 1, area.getMaxY() - 1, area.getMaxX() - 1, area.getMaxY(), borderColor);
 			
 		} mStack.popPose();
 		return true;
 	}
 	
 	protected void renderSuggestion(
-	  int i, T suggestion, PoseStack mStack, int x, int y, int w, int h,
-	  int mouseX, int mouseY, float delta, boolean selected
+		int i, T suggestion, GuiGraphics gg, int x, int y, int w, int h,
+		int mouseX, int mouseY, float delta, boolean selected
 	) {
 		boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
 		if (selected) {
-			fill(mStack, x, y, x + w, y + 1, 0xA0E0E0E0);
-			fill(mStack, x, y + h - 1, x + w, y + h, 0xA0E0E0E0);
-			fill(mStack, x, y + 1, x + 1, y + h - 1, 0xA0E0E0E0);
-			fill(mStack, x + w - 1, y + 1, x + w, y + h - 1, 0xA0E0E0E0);
-			fill(mStack, x + 1, y + 1, x + w - 1, y + h - 1, hovered? 0x80646464 : 0x80484848);
-		} else fill(mStack, x, y, x + w, y + h, hovered? 0x80646464 : 0x80242424);
+			gg.fill(x, y, x + w, y + 1, 0xA0E0E0E0);
+			gg.fill(x, y + h - 1, x + w, y + h, 0xA0E0E0E0);
+			gg.fill(x, y + 1, x + 1, y + h - 1, 0xA0E0E0E0);
+			gg.fill(x + w - 1, y + 1, x + w, y + h - 1, 0xA0E0E0E0);
+			gg.fill(x + 1, y + 1, x + w - 1, y + h - 1, hovered? 0x80646464 : 0x80484848);
+		} else gg.fill(x, y, x + w, y + h, hovered? 0x80646464 : 0x80242424);
 		
 		int textX = x + 2;
 		int textY = y;
@@ -290,7 +292,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		final int iconWidth = getIconWidth();
 		if (typeWrapper.hasIcon()) {
 			typeWrapper.renderIcon(
-			  suggestion, typeWrapper.getName(suggestion), mStack, x, y,
+			  suggestion, typeWrapper.getName(suggestion), gg, x, y,
 			  iconWidth, min(iconHeight, h), 200, mouseX, mouseY, delta);
 			textX += iconWidth;
 			textY += (iconHeight - 10) / 2;
@@ -305,15 +307,15 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			textW -= iconWidth;
 		
 		drawTextComponent(
-		  name, mStack, textX, textY + 1, textW, 10, 0xffffffff);
+		  name, gg, textX, textY + 1, textW, 10, 0xffffffff);
 	}
 	
 	protected void drawTextComponent(
-	  Component component, PoseStack mStack, int x, int y, int w, int h, int color
+		Component component, GuiGraphics gg, int x, int y, int w, int h, int color
 	) {
 		final List<FormattedCharSequence> processors = font.split(component, w);
 		if (!processors.isEmpty())
-			font.drawShadow(mStack, processors.get(0), (float) x, (float) y, color);
+			gg.drawString(font, processors.get(0), x, y, color); // TODO: shadow
 	}
 	
 	@Override public boolean overlayMouseScrolled(Rectangle area, double mouseX, double mouseY, double amount) {
@@ -438,10 +440,6 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				draggingDropDownScrollBar = false;
 			}
 		}
-	}
-
-	protected void commitSetDropDownShown() {
-
 	}
 	
 	public List<T> getShownSuggestions() {
@@ -1058,12 +1056,6 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	@Override public void setFocused(boolean focused) {
 		boolean prev = isFocused();
 		super.setFocused(focused);
-		// The new AbstractContainerEventHandler impl calls `setFocused(false)` -> `setFocused(true)` on click,
-		// so we only hide the drop-down on the next frame after `setFocused(false)`
-		if (!focused)
-			setDropDownShown(false, true);
-		else if (pendingDropDownShownChange && dropDownShown)
-			setDropDownShown(true);
 		boolean actual = isFocused();
 		if (prev != actual) onFocusedChanged(actual);
 	}
@@ -1086,7 +1078,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 	}
 	
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float delta
+		@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta
 	) {
 		if (pendingDropDownShownChange)
 			setDropDownShown(!dropDownShown);
@@ -1097,10 +1089,10 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		updateSuggestions();
 		if (shouldDrawBackground()) {
 			int color = isHoveredOrFocused() ? focusedBorderColor : borderColor;
-			fill(mStack, x - 1, y - 1, x + width + 1, y + height + 1, color);
-			fill(mStack, x, y, x + width, y + height, backgroundColor);
+			gg.fill(x - 1, y - 1, x + width + 1, y + height + 1, color);
+			gg.fill(x, y, x + width, y + height, backgroundColor);
 			if (!isRestrictedToSuggestions())
-				fill(mStack, x + width - arrowWidth - 1, y, x + width - arrowWidth, y + height, color);
+				gg.fill(x + width - arrowWidth - 1, y, x + width - arrowWidth, y + height, color);
 		}
 		
 		if (!isFocused() || !canShowDropDown())
@@ -1144,7 +1136,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 			
 			// Render text
 			if (!shown.isEmpty())
-				endTextX += font.drawShadow(mStack, displayedText, textX, textY, color);
+				endTextX += gg.drawString(font, displayedText, textX, textY, color); // TODO: shadow
 			
 			// Render autocompletion
 			if (isDropDownShown() && autoCompleteValue != null) {
@@ -1153,48 +1145,47 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				  autoComplete.startsWith(text)
 				  ? autoComplete.substring(text.length()) : "→" + autoComplete;
 				shownAutocomplete = font.plainSubstrByWidth(shownAutocomplete, innerWidth - endTextX + textX);
-				font.drawShadow(
-				  mStack, shownAutocomplete, (float) endTextX, (float) textY, 0x96808080);
+				gg.drawString(font, shownAutocomplete, endTextX, textY, 0x96808080); // TODO: shadow
 			}
 			
 			// Render caret
 			if (showCaret) {
-				renderCaret(mStack, caretX, textY - 2, 1, 12);
+				renderCaret(gg, caretX, textY - 2, 1, 12);
 			}
 			
 			// Render selection
 			if (relAnchor != relCaret) {
 				if (relAnchor > fitLength) relAnchor = fitLength;
 				int anchorX = textX + font.width(shown.substring(0, relAnchor));
-				renderSelection(mStack, caretX, textY - 3, anchorX - 1, textY + 2 + 9);
+				renderSelection(gg, caretX, textY - 3, anchorX - 1, textY + 2 + 9);
 			}
 		} else if (text.isEmpty() && value == null) {
 			// Render hint
 			drawTextComponent(hint.copy().withStyle(ChatFormatting.GRAY),
-			  mStack, textX, textY, innerWidth, 10, 0x96FFFFFF);
+			  gg, textX, textY, innerWidth, 10, 0x96FFFFFF);
 		} else if (value != null) {
 			// Render value
 			Component display = typeWrapper.getDisplayName(value);
 			if (!isEnabled()) display = display.copy().withStyle(ChatFormatting.GRAY);
-			drawTextComponent(display, mStack, textX, textY, innerWidth, 10, 0xFFE0E0E0);
+			drawTextComponent(display, gg, textX, textY, innerWidth, 10, 0xFFE0E0E0);
 		} else {
 			// Render text
 			MutableComponent displayedText = subText(getDisplayedText(), hScroll);
 			displayedText = subText(
 			  displayedText, 0, font.substrByWidth(displayedText, innerWidth).getString().length());
-			font.drawShadow(mStack, displayedText, textX, textY, color);
+			gg.drawString(font, displayedText, textX, textY, color); // TODO: shadow
 		}
 		
 		if (hasIcon) {
 			RenderSystem.setShaderColor(1F, 1F, 1F, isEnabled()? 1F : 0.7F);
 			typeWrapper.renderIcon(
-			  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, mStack,
+			  autoCompleteValue != null && isDropDownShown()? autoCompleteValue : value, text, gg,
 			  iconX, iconY, iconWidth, iconHeight, 0, mouseX, mouseY, delta);
 			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		}
 		
 		int arrowX = x + width - arrowWidth, arrowY = y;
-		renderArrow(mStack, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHoveredOrFocused() ? x : arrowX);
+		renderArrow(gg, arrowX, arrowY, arrowWidth, height, mouseX, mouseY, isRestrictedToSuggestions() && isHoveredOrFocused() ? x : arrowX);
 		
 		if (isShowHelpTooltips() && value != null
 		    && isMouseOver(mouseX, mouseY) && !isMouseOverArrow(mouseX, mouseY)) {
@@ -1205,18 +1196,18 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 					tooltipConsumer.renderTooltip(tooltip, mouseX, mouseY);
 				} else if (screen instanceof IMultiTooltipScreen ts) {
 					ts.addTooltip(Tooltip.of(area, Point.of(mouseX, mouseY), tooltip));
-				} else ((Screen) screen).renderComponentTooltip(mStack, tooltip, mouseX, mouseY);
+				} else gg.renderComponentTooltip(font, tooltip, mouseX, mouseY);
 			}
 		}
 	}
 	
-	protected void renderCaret(PoseStack mStack, int x, int y, int w, int h) {
+	protected void renderCaret(GuiGraphics gg, int x, int y, int w, int h) {
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder bb = tessellator.getBuilder();
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(LogicOp.OR_REVERSE);
-		Matrix4f m = mStack.last().pose();
+		Matrix4f m = gg.pose().last().pose();
 		bb.begin(Mode.QUADS, DefaultVertexFormat.POSITION);
 		bb.vertex(m,     x, y + h, 0F).endVertex();
 		bb.vertex(m, x + w, y + h, 0F).endVertex();
@@ -1238,21 +1229,21 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 		       && mouseY >= iconY && mouseY < iconY + iconHeight;
 	}
 	
-	protected void renderArrow(PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, int backgroundX) {
+	protected void renderArrow(GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, int backgroundX) {
 		final boolean hovered = mouseX >= backgroundX && mouseX < x + w && mouseY >= y && mouseY < y + h;
 		int arrowBackground = hovered ? 0x80646464 : 0x80242424;
 		if (backgroundX == mouseX || hovered)
-			fill(mStack, backgroundX, y, x + w, y + h, arrowBackground);
+			gg.fill(backgroundX, y, x + w, y + h, arrowBackground);
 		RenderSystem.setShaderColor(1F, 1F, 1F, canShowDropDown()? 1F : 0.7F);
 		SimpleConfigIcons.ComboBox.DROP_DOWN_ARROW.renderCentered(
-		  mStack, x, y + (h - 10) / 2, 10, 10, isDropDownShown()? 1 : 0);
+		  gg, x, y + (h - 10) / 2, 10, 10, isDropDownShown()? 1 : 0);
 		RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 	}
 	
 	/**
 	 * Draws the blue selection box.
 	 */
-	protected void renderSelection(PoseStack mStack, int sX, int sY, int eX, int eY) {
+	protected void renderSelection(GuiGraphics gg, int sX, int sY, int eX, int eY) {
 		if (sX < eX) {
 			final int swap = sX;
 			sX = eX;
@@ -1270,7 +1261,7 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(LogicOp.XOR);
-		fill(mStack, sX, sY, eX, eY, 0xFF000080);
+		gg.fill(sX, sY, eX, eY, 0xFF000080);
 		RenderSystem.disableColorLogicOp();
 	}
 	
@@ -1343,14 +1334,17 @@ public class ComboBoxWidget<T> extends AbstractWidget implements IOverlayRendere
 				setText("");
 				if (isAutoDropDown())
 					setDropDownShown(true);
-			}
+			} else if (pendingDropDownShownChange && dropDownShown)
+				setDropDownShown(true);
 		} else {
 			if (isRestrictedToSuggestions()) {
 				if (value != null) {
 					setText(typeWrapper.getName(value));
 				} else setText("");
 			}
-			setDropDownShown(false);
+			// The new AbstractContainerEventHandler impl calls `setFocused(false)` -> `setFocused(true)` on click,
+			// so we only hide the drop-down on the next frame after `setFocused(false)`
+			setDropDownShown(false, true);
 		}
 	}
 	

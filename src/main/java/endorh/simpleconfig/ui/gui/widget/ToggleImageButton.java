@@ -1,9 +1,9 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.SimpleConfigMod;
 import endorh.simpleconfig.api.ui.icon.Icon;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -89,19 +89,19 @@ public class ToggleImageButton extends ImageButton {
 	}
 	
 	@Override public void renderWidget(
-	  @NotNull PoseStack mStack, int mouseX, int mouseY, float partialTicks
+      @NotNull GuiGraphics gg, int mouseX, int mouseY, float partialTicks
 	) {
 		Icon icon = tintedIcon == null? this.icon : tintedIcon;
 		int x = getX();
 		int y = getY();
-		icon.renderStretch(mStack, x, y, width, height, isToggle() ? 1 : 0);
+		icon.renderStretch(gg, x, y, width, height, isToggle() ? 1 : 0);
 		if (isMouseOver(mouseX, mouseY))
-			fill(mStack, x, y, x + width, y + height, hoverOverlayColor);
+			gg.fill(x, y, x + width, y + height, hoverOverlayColor);
 		if (isFocused()) {
-			fill(mStack, x, y, x + width, y + 1, borderColor);
-			fill(mStack, x, y + 1, x + 1, y + height - 1, borderColor);
-			fill(mStack, x + width - 1, y + 1, x + width, y + height - 1, borderColor);
-			fill(mStack, x, y + height - 1, x + width, y + height, borderColor);
+			gg.fill(x, y, x + width, y + 1, borderColor);
+			gg.fill(x, y + 1, x + 1, y + height - 1, borderColor);
+			gg.fill(x + width - 1, y + 1, x + width, y + height - 1, borderColor);
+			gg.fill(x, y + height - 1, x + width, y + height, borderColor);
 		}
 	}
 	

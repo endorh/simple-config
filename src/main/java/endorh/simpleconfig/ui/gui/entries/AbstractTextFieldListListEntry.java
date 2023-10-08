@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.entries;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.gui.entries.AbstractTextFieldListListEntry.AbstractTextFieldListCell;
 import endorh.simpleconfig.ui.gui.widget.DynamicEntryListWidget;
 import endorh.simpleconfig.ui.gui.widget.TextFieldWidgetEx;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
@@ -43,7 +43,7 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			  GameNarrator.NO_TITLE
 			) {
 				@Override
-				public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
+				public void render(@NotNull GuiGraphics matrices, int mouseX, int mouseY, float delta) {
 					setFocused(isSelected);
 					super.render(matrices, mouseX, mouseY, delta);
 				}
@@ -76,10 +76,10 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 		}
 		
 		@Override public void renderCell(
-		  PoseStack mStack, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
-		  int mouseY, boolean isSelected, float delta
+         GuiGraphics gg, int index, int x, int y, int cellWidth, int cellHeight, int mouseX,
+         int mouseY, boolean isSelected, float delta
 		) {
-			super.renderCell(mStack, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
+			super.renderCell(gg, index, x, y, cellWidth, cellHeight, mouseX, mouseY, isSelected, delta);
 			Font font = Minecraft.getInstance().font;
 			ListEntry listEntry = getListEntry();
 			
@@ -91,18 +91,14 @@ public abstract class AbstractTextFieldListListEntry<T, C extends AbstractTextFi
 			widget.setY(y + 1);
 			widget.setEditable(editable);
 			
-			widget.render(mStack, mouseX, mouseY, delta);
-			if (isSelected && editable) {
-				AbstractTextFieldListCell.fill(
-				  mStack, fieldX, y + 12, x + cellWidth, y + 13,
-				  hasError() ? 0xffff5555 : 0xffe0e0e0);
-			}
+			widget.render(gg, mouseX, mouseY, delta);
+			if (isSelected && editable) gg.fill(
+            fieldX, y + 12, x + cellWidth, y + 13,
+            hasError() ? 0xFFFF5555 : 0xFFE0E0E0);
 			
-			if (matchedText != null) {
-				fill(
-				  mStack, fieldX, y - 2, x + fieldWidth, y + cellHeight - 2,
-				  isFocusedMatch()? 0x64FFBD42 : 0x64FFFF42);
-			}
+			if (matchedText != null) gg.fill(
+            fieldX, y - 2, x + fieldWidth, y + cellHeight - 2,
+            isFocusedMatch() ? 0x64FFBD42 : 0x64FFFF42);
 		}
 		
 		@Override public @NotNull List<? extends GuiEventListener> children() {

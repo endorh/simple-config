@@ -1,12 +1,12 @@
 package endorh.simpleconfig.ui.gui.widget.treeview;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.ui.api.AbstractContainerEventHandlerEx;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -94,7 +94,7 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		return 24;
 	}
 	
-	public void render(PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		ArrangeableTreeView<E> tree = getTree();
 		int pad = tree.getPadding();
 		int x = tree.getX() + pad, y = tree.getY() + pad;
@@ -104,7 +104,7 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		for (IPositionableRenderable control: controls) {
 			if (!focused || control != getFocused()) control.setFocused(false);
 			control.setPosition(x, y);
-			control.render(mStack, mouseX, mouseY, delta);
+			control.render(gg, mouseX, mouseY, delta);
 			x += control.getWidth() + 2;
 		}
 		int minX = x;
@@ -115,7 +115,7 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 			if (!skip) {
 				if (!focused || control != getFocused()) control.setFocused(false);
 				control.setPosition(x, y);
-				control.render(mStack, mouseX, mouseY, delta);
+				control.render(gg, mouseX, mouseY, delta);
 				if (x <= minX) skip = true;
 			} else {
 				control.setFocused(false);
@@ -124,8 +124,8 @@ public abstract class ArrangeableTreeViewCaption<E extends ArrangeableTreeViewEn
 		}
 		int maxX = x;
 		if (maxX - minX > 16) {
-			font.drawWordWrap(
-				mStack, getTitle(), minX + 4, y + (height - font.lineHeight) / 2,
+			gg.drawWordWrap(
+				font, getTitle(), minX + 4, y + (height - font.lineHeight) / 2,
 				maxX - minX - 8, getTitleColor());
 		}
 	}

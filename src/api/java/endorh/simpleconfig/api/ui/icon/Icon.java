@@ -158,12 +158,12 @@ public class Icon {
 		renderCentered(gg, x, y, w, h, 0);
 	}
 	
-	public void renderCentered(@NotNull GuiGraphics mStack, @NotNull Rectangle rect, int level) {
-		renderCentered(mStack, rect.x, rect.y, rect.width, rect.height, level);
+	public void renderCentered(@NotNull GuiGraphics gg, @NotNull Rectangle rect, int level) {
+		renderCentered(gg, rect.x, rect.y, rect.width, rect.height, level);
 	}
 	
 	public void renderCentered(
-	  @NotNull GuiGraphics mStack, int x, int y, int w, int h, int level
+	  @NotNull GuiGraphics gg, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		int xx = x + w / 2 - this.w / 2;
@@ -175,7 +175,7 @@ public class Icon {
 		u = max(u + x - xx, u) + l * levelOffsetX;
 		v = max(v + y - yy, v) + l * levelOffsetY;
 		blit(
-		  mStack, max(x, xx), max(y, yy), ww, hh,
+		  gg, max(x, xx), max(y, yy), ww, hh,
 		  u, v, ww, hh, tw, th);
 		afterRender(level);
 	}
@@ -195,11 +195,11 @@ public class Icon {
 	}
 	
 	public void renderStretch(
-	  @NotNull GuiGraphics mStack, int x, int y, int w, int h, int level
+	  @NotNull GuiGraphics gg, int x, int y, int w, int h, int level
 	) {
 		beforeRender(level);
 		final int l = translateLevel(level);
-		blit(mStack, x, y, w, h, getU() + l * levelOffsetX, getV() + l * levelOffsetY,
+		blit(gg, x, y, w, h, getU() + l * levelOffsetX, getV() + l * levelOffsetY,
 		     this.w, this.h, tw, th);
 		afterRender(level);
 	}
@@ -270,11 +270,11 @@ public class Icon {
 	}
 	
 	protected void blit(
-	  GuiGraphics mStack, int x, int y, int w, int h, float u, float v,
+	  GuiGraphics gg, int x, int y, int w, int h, float u, float v,
 	  int uw, int vh, int tw, int th
 	) {
 		RenderSystem.enableBlend();
-		mStack.blit(getTexture(), x, y, w, h, u, v, uw, vh, tw, th);
+		gg.blit(getTexture(), x, y, w, h, u, v, uw, vh, tw, th);
 		RenderSystem.disableBlend();
 	}
 	

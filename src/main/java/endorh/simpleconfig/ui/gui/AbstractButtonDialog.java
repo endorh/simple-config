@@ -1,23 +1,18 @@
 package endorh.simpleconfig.ui.gui;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.gui.widget.ScrollingContainerWidget;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -81,17 +76,17 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	}
 	
 	@Override public void renderBody(
-	  PoseStack mStack, int mouseX, int mouseY, float delta
+		GuiGraphics gg, int mouseX, int mouseY, float delta
 	) {
 		int x = getX(), y = getY(), w = getWidth(), h = getHeight();
-		fill(mStack, x + 1, y + h - 27, x + w - 1, y + h - 1, backgroundOverlayColor);
-		fill(mStack, x + 1, y + h - 28, x + w - 1, y + h - 27, subBorderColor);
-		scroller.render(mStack, mouseX, mouseY, delta);
-		for (AbstractWidget button : buttons) button.render(mStack, mouseX, mouseY, delta);
+		gg.fill(x + 1, y + h - 27, x + w - 1, y + h - 1, backgroundOverlayColor);
+		gg.fill(x + 1, y + h - 28, x + w - 1, y + h - 27, subBorderColor);
+		scroller.render(gg, mouseX, mouseY, delta);
+		for (AbstractWidget button : buttons) button.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public abstract void renderInner(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
+		GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
 	
 	public @Nullable Style getInnerTextAt(int x, int y, int w, int h, double mX, double mY) {
 		return null;
@@ -130,12 +125,6 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 	public abstract int getInnerHeight();
 	
 	public static class DialogScrollingContainerWidget extends ScrollingContainerWidget {
-		private static final Method Screen$renderComponentHoverEffect =
-		  ObfuscationReflectionHelper.findMethod(
-			 Screen.class, "m_96570_",
-			 PoseStack.class, Style.class, int.class, int.class);
-		private static final Logger LOGGER = LogManager.getLogger();
-		private static boolean loggedReflectionError = false;
 		
 		protected final AbstractButtonDialog dialog;
 		
@@ -146,29 +135,20 @@ public abstract class AbstractButtonDialog extends AbstractDialog {
 			this.dialog = dialog;
 		}
 		
-		@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
-			super.render(mStack, mouseX, mouseY, delta);
+		@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
+			super.render(gg, mouseX, mouseY, delta);
 			Rectangle area = getArea();
 			final Style style = dialog.getInnerTextAt(
 			  area.x, (int) round(area.y - scrollAmount),
 			  area.width - 8, area.height, mouseX, mouseY);
-			if (style != null) {
-				try {
-					Screen$renderComponentHoverEffect.invoke(
-					  dialog.getScreen(), mStack, style, mouseX, mouseY);
-				} catch (IllegalAccessException | InvocationTargetException e) {
-					if (!loggedReflectionError) {
-						loggedReflectionError = true;
-						LOGGER.error("Reflective invocation error: ", e);
-					}
-				}
-			}
+			if (style != null) gg.renderComponentHoverEffect(
+				Minecraft.getInstance().font, style, mouseX, mouseY);
 		}
 		
 		@Override public void renderInner(
-		  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta
+			GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta
 		) {
-			dialog.renderInner(mStack, x, y, w, h, mouseX, mouseY, delta);
+			dialog.renderInner(gg, x, y, w, h, mouseX, mouseY, delta);
 		}
 		
 		@Override public boolean mouseClicked(double mouseX, double mouseY, int button) {

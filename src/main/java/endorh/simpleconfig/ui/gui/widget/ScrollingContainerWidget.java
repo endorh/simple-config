@@ -1,11 +1,11 @@
 package endorh.simpleconfig.ui.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.ui.math.Rectangle;
 import endorh.simpleconfig.ui.api.ContainerEventHandlerEx;
 import endorh.simpleconfig.ui.api.ScissorsHandler;
 import endorh.simpleconfig.ui.api.ScrollingHandler;
 import endorh.simpleconfig.ui.gui.widget.IPositionableRenderable.IRectanglePositionableRenderable;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.util.Mth;
@@ -65,19 +65,19 @@ public abstract class ScrollingContainerWidget extends ScrollingHandler
 	
 	public void position() {}
 	
-	@Override public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	@Override public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		updateScroll();
 		position();
 		ScissorsHandler.INSTANCE.pushScissor(area);
 		renderInner(
-		  mStack, area.x, (int) round(area.y - scrollAmount),
+		  gg, area.x, (int) round(area.y - scrollAmount),
 		  area.width - 8, area.height, mouseX, mouseY, delta);
 		ScissorsHandler.INSTANCE.popScissor();
 		renderScrollBar();
 	}
 	
 	public abstract void renderInner(
-	  PoseStack mStack, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
+      GuiGraphics gg, int x, int y, int w, int h, int mouseX, int mouseY, float delta);
 	
 	public abstract int getInnerHeight();
 	

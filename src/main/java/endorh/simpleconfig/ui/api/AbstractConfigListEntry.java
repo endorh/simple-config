@@ -1,7 +1,6 @@
 package endorh.simpleconfig.ui.api;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.vertex.PoseStack;
 import endorh.simpleconfig.api.EntryTag;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.math.Rectangle;
@@ -17,6 +16,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -254,10 +254,10 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override public void renderEntry(
-	  PoseStack mStack, int index, int x, int y, int entryWidth, int entryHeight,
-	  int mouseX, int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int entryWidth, int entryHeight,
+      int mouseX, int mouseY, boolean isHovered, float delta
 	) {
-		super.renderEntry(mStack, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
+		super.renderEntry(gg, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		entryArea.setBounds(x, y, entryWidth, entryHeight);
 		final DynamicEntryListWidget<?> parent = getEntryList();
 		rowArea.setBounds(parent.left, entryArea.y, parent.right - parent.left, getFieldHeight());
@@ -268,7 +268,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		  getScreen().isSelecting()
 		  || selectionCheckbox.isMouseOver(mouseX, selectionCheckbox.getY() + 1)
 		     && getEntryList().getArea().contains(mouseX, mouseY))) {
-			selectionCheckbox.render(mStack, mouseX, mouseY, delta);
+			selectionCheckbox.render(gg, mouseX, mouseY, delta);
 		}
 		ResetButton resetButton = getResetButton();
 		Font font = Minecraft.getInstance().font;
@@ -279,7 +279,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			Component title = getDisplayedTitle();
 			float textX = (float) (font.isBidirectional() ? x + entryWidth - font.width(title) : x);
 			renderTitle(
-			  mStack, title, textX, index, x, y, entryWidth, entryHeight,
+			  gg, title, textX, index, x, y, entryWidth, entryHeight,
 			  mouseX, mouseY, isHovered, delta);
 		}
 		
@@ -292,7 +292,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			hotKeyActionButton.setY(y);
 			hotKeyActionButton.setX(font.isBidirectional() ? x : x + entryWidth - hotKeyActionButton.getWidth());
 			fieldX += font.isBidirectional()? hotKeyActionButton.getWidth() : 0;
-			hotKeyActionButton.render(mStack, mouseX, mouseY, delta);
+			hotKeyActionButton.render(gg, mouseX, mouseY, delta);
 		} else if (resetButton != null && !ctrlDown) {
 			sideButtonReference.setTarget(this.resetButton);
 			resetButtonOffset = resetButton.getWidth() + 2;
@@ -301,14 +301,14 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			resetButton.setX(font.isBidirectional() ? x : x + entryWidth - resetButton.getWidth());
 			fieldX += font.isBidirectional()? resetButton.getWidth() : 0;
 			if (isDisplayingValue())
-				resetButton.render(mStack, mouseX, mouseY, delta);
+				resetButton.render(gg, mouseX, mouseY, delta);
 		}
 		Optional<ImageButton> opt = getMarginButton();
 		ImageButton marginButton = isPreviewingExternal()? mergeButton : opt.orElse(mergeButton);
 		marginButton.setX(x + entryWidth + 8);
 		marginButton.setY(y);
 		if (opt.isPresent())
-			marginButton.render(mStack, mouseX, mouseY, delta);
+			marginButton.render(gg, mouseX, mouseY, delta);
 		if (hasExternalDiff()) {
 			if (isPreviewingExternal()) {
 				int cH = max(0, getCaptionHeight());
@@ -321,7 +321,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			if (isPreviewingExternal()) setPreviewingExternal(false);
 		}
 		fieldArea.setBounds(fieldX, y, fieldWidth, fieldHeight);
-		renderField(mStack, fieldX, y, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index, mouseX, mouseY, delta);
+		renderField(gg, fieldX, y, fieldWidth, fieldHeight, x, y, entryWidth, entryHeight, index, mouseX, mouseY, delta);
 		Rectangle selectionArea = getSelectionArea();
 		if (selectionArea.contains(mouseX, mouseY)) {
 			if (parent instanceof SimpleConfigScreen.ListWidget) {
@@ -367,7 +367,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override public boolean renderOverlay(
-	  PoseStack mStack, Rectangle area, int mouseX, int mouseY, float delta
+      GuiGraphics gg, Rectangle area, int mouseX, int mouseY, float delta
 	) {
 		if (area == previewOverlayRectangle) {
 			if (!isPreviewingExternal()) return false;
@@ -390,45 +390,45 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			ScissorsHandler.INSTANCE.pushScissor(entryList.getArea()); {
 				// Shadow
 				if (cH > 0) {
-					fill(mStack, l - 2, t - 2, cX, t, externalPreviewShadowColor);
-					fill(mStack, cX + cW, t - 2, r + 2, t, externalPreviewShadowColor);
-					fill(mStack, cX - 2, cY, cX, t - 2, externalPreviewShadowColor);
-					fill(mStack, cX + cW, cY, cX + cW + 2, t - 2, externalPreviewShadowColor);
-					fill(mStack, cX - 2, cY - 2, cX + cW + 2, cY, externalPreviewShadowColor);
-				} else fill(mStack, l - 2, t - 2, r + 2, t, externalPreviewShadowColor);
-				fill(mStack, l - 2, b, r + 2, b + 2, externalPreviewShadowColor);
-				fill(mStack, l - 2, t, l, b, externalPreviewShadowColor);
-				fill(mStack, r, t, r + 2, b, externalPreviewShadowColor);
+					gg.fill(l - 2, t - 2, cX, t, externalPreviewShadowColor);
+					gg.fill(cX + cW, t - 2, r + 2, t, externalPreviewShadowColor);
+					gg.fill(cX - 2, cY, cX, t - 2, externalPreviewShadowColor);
+					gg.fill(cX + cW, cY, cX + cW + 2, t - 2, externalPreviewShadowColor);
+					gg.fill(cX - 2, cY - 2, cX + cW + 2, cY, externalPreviewShadowColor);
+				} else gg.fill(l - 2, t - 2, r + 2, t, externalPreviewShadowColor);
+				gg.fill(l - 2, b, r + 2, b + 2, externalPreviewShadowColor);
+				gg.fill(l - 2, t, l, b, externalPreviewShadowColor);
+				gg.fill(r, t, r + 2, b, externalPreviewShadowColor);
 				
 				// Outer border
 				if (cH > 0) {
-					fill(mStack, l, t, cX + 2, t + 2, externalPreviewBorderColor);
-					fill(mStack, cX + cW - 2, t, r, t + 2, externalPreviewBorderColor);
-					fill(mStack, cX, cY + 2, cX + 2, t, externalPreviewBorderColor);
-					fill(mStack, cX + cW - 2, cY + 2, cX + cW, t, externalPreviewBorderColor);
-					fill(mStack, cX, cY, cX + cW, cY + 2, externalPreviewBorderColor);
-				} else fill(mStack, l, t, r, t + 2, externalPreviewBorderColor);
-				fill(mStack, l, b - 2, r, b, externalPreviewBorderColor);
-				fill(mStack, l, t + 2, l + 2, b - 2, externalPreviewBorderColor);
-				fill(mStack, r - 2, t + 2, r, b - 2, externalPreviewBorderColor);
+					gg.fill(l, t, cX + 2, t + 2, externalPreviewBorderColor);
+					gg.fill(cX + cW - 2, t, r, t + 2, externalPreviewBorderColor);
+					gg.fill(cX, cY + 2, cX + 2, t, externalPreviewBorderColor);
+					gg.fill(cX + cW - 2, cY + 2, cX + cW, t, externalPreviewBorderColor);
+					gg.fill(cX, cY, cX + cW, cY + 2, externalPreviewBorderColor);
+				} else gg.fill(l, t, r, t + 2, externalPreviewBorderColor);
+				gg.fill(l, b - 2, r, b, externalPreviewBorderColor);
+				gg.fill(l, t + 2, l + 2, b - 2, externalPreviewBorderColor);
+				gg.fill(r - 2, t + 2, r, b - 2, externalPreviewBorderColor);
 				
 				// Inner border
-				fill(mStack, l + 2, t + 2, r - 2, t + 4, externalPreviewBgColor);
-				fill(mStack, l + 2, b - 4, r - 2, b - 2, externalPreviewBgColor);
-				fill(mStack, l + 2, t + 4, l + 4, b - 4, externalPreviewBgColor);
-				fill(mStack, r - 32, t + 4, r - 2, b - 4, externalPreviewBgColor);
+				gg.fill(l + 2, t + 2, r - 2, t + 4, externalPreviewBgColor);
+				gg.fill(l + 2, b - 4, r - 2, b - 2, externalPreviewBgColor);
+				gg.fill(l + 2, t + 4, l + 4, b - 4, externalPreviewBgColor);
+				gg.fill(r - 32, t + 4, r - 2, b - 4, externalPreviewBgColor);
 				
 				// Caption
-				fill(mStack, cX + 2, cY + 2, cX + cW - 2, t + 2, externalPreviewBgColor);
-				font.drawShadow(
-				  mStack, font.split(caption, fW - 16).get(0), cX + 6, cY + 8,
+				gg.fill(cX + 2, cY + 2, cX + cW - 2, t + 2, externalPreviewBgColor);
+				gg.drawString( // TODO: shadow
+				  font, font.split(caption, fW - 16).get(0), cX + 6, cY + 8,
 				  externalPreviewTextColor);
 				
 				// Controls
 				acceptButton.setX(resetButton.getX());
 				acceptButton.setY(resetButton.getY());
-				acceptButton.render(mStack, mouseX, mouseY, delta);
-				mergeButton.render(mStack, mouseX, mouseY, delta);
+				acceptButton.render(gg, mouseX, mouseY, delta);
+				mergeButton.render(gg, mouseX, mouseY, delta);
 			} ScissorsHandler.INSTANCE.popScissor();
 			return true;
 		}
@@ -458,39 +458,39 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 	}
 	
 	@Override public void renderBg(
-	  PoseStack mStack, int index, int x, int y, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int x, int y, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {
 		if (isPreviewingExternal()) {
-			fill(
-			  mStack, previewOverlayRectangle.x + 8, previewOverlayRectangle.y + 32 + 2,
+			gg.fill(
+			  previewOverlayRectangle.x + 8, previewOverlayRectangle.y + 32 + 2,
 			  previewOverlayRectangle.getMaxX() - 36, previewOverlayRectangle.getMaxY() - 4 + 2,
 			  externalPreviewBgColor);
 		}
-		super.renderBg(mStack, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
+		super.renderBg(gg, index, x, y, w, h, mouseX, mouseY, isHovered, delta);
 	}
 	
 	protected void renderField(
-	  PoseStack mStack, int fieldX, int fieldY, int fieldWidth, int fieldHeight,
-	  int x, int y, int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
+      GuiGraphics gg, int fieldX, int fieldY, int fieldWidth, int fieldHeight,
+      int x, int y, int entryWidth, int entryHeight, int index, int mouseX, int mouseY, float delta
 	) {
 		if (this instanceof IChildListEntry) {
 			((IChildListEntry) this).renderChild(
-			  mStack, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
+			  gg, fieldX, fieldY, fieldWidth, fieldHeight, mouseX, mouseY, delta);
 		}
 	}
 	
 	@Override protected void renderSelectionOverlay(
-	  PoseStack mStack, int index, int y, int x, int w, int h, int mouseX, int mouseY,
-	  boolean isHovered, float delta
+      GuiGraphics gg, int index, int y, int x, int w, int h, int mouseX, int mouseY,
+      boolean isHovered, float delta
 	) {
 		Rectangle area = getSelectionArea();
-		fill(mStack, area.x, area.y - 2, area.getMaxX(), area.getMaxY() + 2, selectionColor);
+		gg.fill(area.x, area.y - 2, area.getMaxX(), area.getMaxY() + 2, selectionColor);
 	}
 	
 	protected void renderTitle(
-	  PoseStack mStack, Component title, float textX, int index, int x, int y,
-	  int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
+      GuiGraphics gg, Component title, float textX, int index, int x, int y,
+      int entryWidth, int entryHeight, int mouseX, int mouseY, boolean isHovered, float delta
 	) {
 		Font font = Minecraft.getInstance().font;
 		NavigableSet<EntryTag> entryFlags = getEntryTags();
@@ -499,7 +499,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 		boolean hoveredTitle = mouseY >= y + 4 && mouseY < y + 16 && mouseX > textX && mouseX < textX + textW;
 		if (hoveredTitle) textW = font.width(title);
 		MutableComponent text = subText(title, 0, font.substrByWidth(title, textW).getString().length());
-		font.drawShadow(mStack, text, textX, (float) y + 6, getPreferredTextColor());
+		gg.drawString(font, text, (int) textX, y + 6, getPreferredTextColor()); // TODO: Shadow
 		if (!entryFlags.isEmpty()) {
 			int tW = font.width(text);
 			int flagsX;
@@ -514,7 +514,7 @@ public abstract class AbstractConfigListEntry<T> extends AbstractConfigField<T>
 			flagsRectangle.setBounds(flagsX, flagsY, flagsW, 14);
 			int xx = flagsX;
 			for (EntryTag entryFlag : font.isBidirectional()? entryFlags.descendingSet() : entryFlags) {
-				entryFlag.getIcon().renderCentered(mStack, xx, flagsY, 14, 14);
+				entryFlag.getIcon().renderCentered(gg, xx, flagsY, 14, 14);
 				xx += 14;
 			}
 		}

@@ -46,6 +46,7 @@ import net.minecraft.Util;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -993,7 +994,7 @@ import static net.minecraft.util.Mth.clamp;
 	}
 	
 	@Override
-	public void render(@NotNull PoseStack mStack, int mouseX, int mouseY, float delta) {
+	public void render(@NotNull GuiGraphics gg, int mouseX, int mouseY, float delta) {
 		if (minecraft == null) return;
 		final boolean hasDialog = hasDialogs();
 		boolean suppressHover = hasDialog || shouldOverlaysSuppressHover(mouseX, mouseY);
@@ -1010,18 +1011,18 @@ import static net.minecraft.util.Mth.clamp;
 			}
 		}
 		if (isTransparentBackground()) {
-			fillGradient(mStack, 0, 0, width, height, 0xa0101010, 0xb0101010);
-		} else renderDirtBackground(mStack);
-		listWidget.render(mStack, smX, smY, delta);
+			gg.fillGradient(0, 0, width, height, 0xa0101010, 0xb0101010);
+		} else renderDirtBackground(gg);
+		listWidget.render(gg, smX, smY, delta);
 		
 		if (!isEditingConfigHotKey()) {
 			final Component title = getDisplayedTitle();
 			if (isSelecting()) {
-				selectionToolbar.render(mStack, smX, smY, delta);
-				drawString(
-				  mStack, font, Component.translatable("simpleconfig.ui.n_selected", Component.literal(String.valueOf(selectedEntries.size())).withStyle(ChatFormatting.AQUA)),
+				selectionToolbar.render(gg, smX, smY, delta);
+				gg.drawString(
+				  font, Component.translatable("simpleconfig.ui.n_selected", Component.literal(String.valueOf(selectedEntries.size())).withStyle(ChatFormatting.AQUA)),
 				  selectionToolbar.x + selectionToolbar.width + 6, 8, 0xFFFFFFFF);
-			} else drawCenteredString(mStack, font, title, (titleStartX + titleEndX) / 2, 8, 0xFFFFFFFF);
+			} else gg.drawCenteredString(font, title, (titleStartX + titleEndX) / 2, 8, 0xFFFFFFFF);
 		}
 		if (isShowingTabs()) {
 			Rectangle r = new Rectangle(tabsBounds.x + 20, tabsBounds.y, tabsBounds.width - 40, tabsBounds.height);
@@ -1029,21 +1030,21 @@ import static net.minecraft.util.Mth.clamp;
 			int smtX = suppressHoverTabs? -1 : smX;
 			int smtY = suppressHoverTabs? -1 : smY;
 			ScissorsHandler.INSTANCE.pushScissor(r); {
-				fillGradient(mStack, r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
-				drawTabsShades(mStack, 0, isTransparentBackground() ? 120 : 255);
-				tabButtons.forEach(widget -> widget.render(mStack, smtX, smtY, delta));
+				gg.fillGradient(r.x, r.y, r.getMaxX(), r.getMaxY(), 0x68000000, 0x68000000);
+				drawTabsShades(gg, 0, isTransparentBackground() ? 120 : 255);
+				tabButtons.forEach(widget -> widget.render(gg, smtX, smtY, delta));
 			} ScissorsHandler.INSTANCE.popScissor();
-			buttonLeftTab.render(mStack, smX, smY, delta);
-			buttonRightTab.render(mStack, smX, smY, delta);
+			buttonLeftTab.render(gg, smX, smY, delta);
+			buttonRightTab.render(gg, smX, smY, delta);
 		}
-		searchBar.render(mStack, smX, smY, delta);
+		searchBar.render(gg, smX, smY, delta);
 		if (listWidget.isScrollingNow())
 			removeTooltips(
 			  new Rectangle(listWidget.left, listWidget.top, listWidget.width, listWidget.height));
 		if (!isEditingConfigHotKey()) {
-			presetPickerWidget.render(mStack, smX, smY, delta);
-		} else editedHotKeyButton.render(mStack, smX, smY, delta);
-		super.render(mStack, mouseX, mouseY, delta);
+			presetPickerWidget.render(gg, smX, smY, delta);
+		} else editedHotKeyButton.render(gg, smX, smY, delta);
+		super.render(gg, mouseX, mouseY, delta);
 	}
 	
 	public Component getDisplayedTitle() {
@@ -1153,9 +1154,9 @@ import static net.minecraft.util.Mth.clamp;
 	}
 	
 	@SuppressWarnings("SameParameterValue" ) private void drawTabsShades(
-	  PoseStack mStack, int lightColor, int darkColor
+		GuiGraphics gg, int lightColor, int darkColor
 	) {
-		drawTabsShades(mStack.last().pose(), lightColor, darkColor);
+		drawTabsShades(gg.pose().last().pose(), lightColor, darkColor);
 	}
 	
 	private void drawTabsShades(Matrix4f matrix, int lightColor, int darkColor) {
@@ -1346,22 +1347,23 @@ import static net.minecraft.util.Mth.clamp;
 		}
 		
 		@Override protected void renderItem(
-		  PoseStack matrices, R item, int index, int x, int y, int entryWidth, int entryHeight,
-		  int mouseX, int mouseY, boolean isHovered, float delta
+			GuiGraphics matrices, R item, int index, int x, int y, int entryWidth, int entryHeight,
+			int mouseX, int mouseY, boolean isHovered, float delta
 		) {
 			item.updateFocused(getFocusedItem() == item);
 			super.renderItem(matrices, item, index, x, y, entryWidth, entryHeight, mouseX, mouseY, isHovered, delta);
 		}
 		
 		@Override protected void renderList(
-		  PoseStack mStack, int startX, int startY, int mouseX, int mouseY, float delta
+			GuiGraphics gg, int startX, int startY, int mouseX, int mouseY, float delta
 		) {
 			boolean animated = tabSlideAnimator.isInProgress();
+			PoseStack mStack = gg.pose();
 			if (animated) {
 				mStack.pushPose();
 				mStack.translate(-tabSlideAnimator.getEaseOut(), 0, 0);
 			}
-			/* mStack */ {
+			/* gg */ {
 				// Needs to be checked even when the mouse is not moved (due to the mouse wheel)
 				if (entryDragAction != null) entryDragAction.applyToList(this, mouseX, mouseY);
 				long timePast;
@@ -1372,10 +1374,10 @@ import static net.minecraft.util.Mth.clamp;
 					  255.0 - (double) (min((float) (timePast - 200L), 500F) / 500F) * 255.0);
 					alpha = alpha * 36 / 255 << 24;
 					fillGradient(
-					  mStack, currentX, currentY, currentX + currentWidth,
+					  gg, currentX, currentY, currentX + currentWidth,
 					  currentY + currentHeight, 0xFFFFFF | alpha, 0xFFFFFF | alpha);
 				}
-				super.renderList(mStack, startX, startY, mouseX, mouseY, delta);
+				super.renderList(gg, startX, startY, mouseX, mouseY, delta);
 				if (isDragging() || thisTimeTarget != null && !thisTimeTarget.contains(mouseX, mouseY))
 					thisTimeTarget = null;
 				if (thisTimeTarget != null && isMouseOver(mouseX, mouseY))
@@ -1421,15 +1423,15 @@ import static net.minecraft.util.Mth.clamp;
 		}
 		
 		protected void fillGradient(
-		  PoseStack mStack, double xStart, double yStart, double xEnd, double yEnd,
-		  int colorStart, int colorEnd
+			GuiGraphics gg, double xStart, double yStart, double xEnd, double yEnd,
+			int colorStart, int colorEnd
 		) {
 			RenderSystem.setShaderTexture(0, 0);
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 			AbstractConfigScreen.fillGradient(
-			  mStack, xStart, yStart, xEnd, yEnd,
+			  gg, xStart, yStart, xEnd, yEnd,
 			  0, colorStart, colorEnd);
 			RenderSystem.disableBlend();
 		}
@@ -1469,24 +1471,24 @@ import static net.minecraft.util.Mth.clamp;
 		
 		@Override
 		protected void renderBackBackground(
-		  PoseStack mStack, BufferBuilder buffer, Tesselator tessellator
+			GuiGraphics gg, BufferBuilder buffer, Tesselator tessellator
 		) {
 			if (!screen.isTransparentBackground()) {
-				super.renderBackBackground(mStack, buffer, tessellator);
+				super.renderBackBackground(gg, buffer, tessellator);
 			} else {
-				fillGradient(mStack, 0, top, width, bottom, 0x68000000, 0x68000000);
+				fillGradient(gg, 0, top, width, bottom, 0x68000000, 0x68000000);
 			}
 		}
 		
 		@Override
 		protected void renderBarBackground(
-		  PoseStack mStack, int y1, int y2, int alpha1, int alpha2
+			GuiGraphics gg, int y1, int y2, int alpha1, int alpha2
 		) {
 			if (!screen.isTransparentBackground()) {
-				super.renderBarBackground(mStack, y1, y2, alpha1, alpha2);
+				super.renderBarBackground(gg, y1, y2, alpha1, alpha2);
 			}
 			if (screen.isEditingConfigHotKey()) {
-				fill(mStack, 0, y1, width, y2, 0x4880A0FF);
+				gg.fill(0, y1, width, y2, 0x4880A0FF);
 			}
 		}
 		

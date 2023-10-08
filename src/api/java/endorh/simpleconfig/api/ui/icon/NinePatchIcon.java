@@ -1,6 +1,6 @@
 package endorh.simpleconfig.api.ui.icon;
 
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,11 +30,11 @@ public class NinePatchIcon extends Icon {
 		this.ih = ih;
 	}
 	
-	@Override public void renderCentered(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
-		renderStretch(mStack, x, y, w, h, level);
+	@Override public void renderCentered(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
+		renderStretch(gg, x, y, w, h, level);
 	}
 	
-	@Override public void renderStretch(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
+	@Override public void renderStretch(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
 		beforeRender(level);
 		final int l = translateLevel(level);
 		int u = getU() + l * levelOffsetX;
@@ -55,42 +55,42 @@ public class NinePatchIcon extends Icon {
 		int iV = h - uh - bh;
 		
 		if (uh > 0) {
-			if (lw > 0) blit(mStack, x, y, lw, uh, u, v, lw, uh, tw, th);
-			if (iU > 0) blitFill(mStack, x + lw, y, iU, uh, u + iu, v, iw, uh, tw, th);
-			if (rw > 0) blit(mStack, x + w - rw, y, rw, uh, u + iu + iw, v, rw, uh, tw, th);
+			if (lw > 0) blit(gg, x, y, lw, uh, u, v, lw, uh, tw, th);
+			if (iU > 0) blitFill(gg, x + lw, y, iU, uh, u + iu, v, iw, uh, tw, th);
+			if (rw > 0) blit(gg, x + w - rw, y, rw, uh, u + iu + iw, v, rw, uh, tw, th);
 		}
 		if (iV > 0) {
-			if (lw > 0) blitFill(mStack, x, y + uh, lw, iV, u, v + iv, lw, ih, tw, th);
-			if (iU > 0) blitFill(mStack, x + lw, y + uh, iU, iV, u + iu, v + iv, iw, ih, tw, th);
-			if (rw > 0) blitFill(mStack, x + w - rw, y + uh, rw, iV, u + iu + iw, v + iv, rw, ih, tw, th);
+			if (lw > 0) blitFill(gg, x, y + uh, lw, iV, u, v + iv, lw, ih, tw, th);
+			if (iU > 0) blitFill(gg, x + lw, y + uh, iU, iV, u + iu, v + iv, iw, ih, tw, th);
+			if (rw > 0) blitFill(gg, x + w - rw, y + uh, rw, iV, u + iu + iw, v + iv, rw, ih, tw, th);
 		}
 		if (bh > 0) {
-			if (lw > 0) blit(mStack, x, y + h - bh, lw, bh, u, v + iv + ih, lw, bh, tw, th);
-			if (iU > 0) blitFill(mStack, x + lw, y + h - bh, iU, bh, u + iu, v + iv + ih, iw, bh, tw, th);
-			if (rw > 0) blit(mStack, x + w - rw, y + h - bh, rw, bh, u + iu + iw, v + iv + ih, rw, bh, tw, th);
+			if (lw > 0) blit(gg, x, y + h - bh, lw, bh, u, v + iv + ih, lw, bh, tw, th);
+			if (iU > 0) blitFill(gg, x + lw, y + h - bh, iU, bh, u + iu, v + iv + ih, iw, bh, tw, th);
+			if (rw > 0) blit(gg, x + w - rw, y + h - bh, rw, bh, u + iu + iw, v + iv + ih, rw, bh, tw, th);
 		}
 		afterRender(level);
 	}
 	
-	@Override public void renderFill(@NotNull PoseStack mStack, int x, int y, int w, int h, int level) {
-		renderStretch(mStack, x, y, w, h, level);
+	@Override public void renderFill(@NotNull GuiGraphics gg, int x, int y, int w, int h, int level) {
+		renderStretch(gg, x, y, w, h, level);
 	}
 	
 	protected void blitFill(
-	  PoseStack mStack, int x, int y, int w, int h, int u, int v, int uw, int vh, int tw, int th
+		GuiGraphics gg, int x, int y, int w, int h, int u, int v, int uw, int vh, int tw, int th
 	) {
 		int xx, yy;
 		for (xx = x; xx < x + w - uw; xx += uw) {
 			for (yy = y; yy < y + h - vh; yy += vh)
-				blit(mStack, xx, yy, uw, vh, u, v, uw, vh, tw, th);
+				blit(gg, xx, yy, uw, vh, u, v, uw, vh, tw, th);
 			int yh = y + h - yy;
-			blit(mStack, xx, yy, uw, yh, u, v, uw, yh, tw, th);
+			blit(gg, xx, yy, uw, yh, u, v, uw, yh, tw, th);
 		}
 		int xw = x + w - xx;
 		for (yy = y; yy < y + h - vh; yy += vh)
-			blit(mStack, xx, yy, xw, vh, u, v, xw, vh, tw, th);
+			blit(gg, xx, yy, xw, vh, u, v, xw, vh, tw, th);
 		int yh = y + h - yy;
-		blit(mStack, xx, yy, xw, yh, u, v, xw, yh, tw, th);
+		blit(gg, xx, yy, xw, yh, u, v, xw, yh, tw, th);
 	}
 	
 	@Override public @NotNull Icon withTint(int tint) {
