@@ -126,6 +126,7 @@ public class MinecraftClientConfigWrapper {
 				wrapBool(options.toggleCrouch());
 				wrapBool(options.toggleSprint());
 				wrapBool(options.autoJump());
+				wrapBool(options.operatorItemsTab());
 				target.add("keyMappings", button(() -> {
 					Minecraft mc = Minecraft.getInstance();
 					mc.setScreen(new KeyBindsScreen(mc.screen, mc.options));
@@ -189,7 +190,6 @@ public class MinecraftClientConfigWrapper {
 				
 				wrapBool(options.chatLinks());
 				wrapBool(options.chatLinksPrompt());
-				// wrapOption(options.chatPreview()); // Removed?
 				wrapBool(options.onlyShowSecureChat());
 				wrapBool(options.hideMatchedNames());
 			});
@@ -212,12 +212,14 @@ public class MinecraftClientConfigWrapper {
 			with(category("online").withIcon(MinecraftOptions.ONLINE).withColor(0x80F0A080), () -> {
 				wrapBool(options.allowServerListing());
 				wrapBool(options.realmsNotifications());
+				wrapBool(options.telemetryOptInExtra());
 			});
 			with(category("accessibility").withIcon(
 			  MinecraftOptions.ACCESSIBILITY).withColor(0x80E0E0FF), () -> {
 				wrapOption(options.narrator());
 				wrapBool(options.hideLightningFlash());
 				wrapBool(options.darkMojangStudiosBackground());
+				wrapDouble(options.panoramaSpeed());
 			});
 			with(category("advanced").withIcon(MinecraftOptions.ADVANCED), () -> {
 				wrapBool(options.reducedDebugInfo());
