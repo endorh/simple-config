@@ -24,6 +24,7 @@ import net.minecraft.client.OptionInstance.LazyEnum;
 import net.minecraft.client.OptionInstance.SliderableValueSet;
 import net.minecraft.client.OptionInstance.TooltipSupplier;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.screens.CreditsAndAttributionScreen;
 import net.minecraft.client.gui.screens.controls.KeyBindsScreen;
 import net.minecraft.client.resources.language.LanguageInfo;
 import net.minecraft.client.tutorial.TutorialSteps;
@@ -161,7 +162,10 @@ public class MinecraftClientConfigWrapper {
 				wrapDouble(options.fovEffectScale());
 				wrapDouble(options.darknessEffectScale());
 				wrapDouble(options.screenEffectScale());
-				
+
+				wrapDouble(options.glintSpeed());
+				wrapDouble(options.glintStrength());
+
 				wrapBool(options.fullscreen());
 				wrapInt("overrideWidth", 0);
 				wrapInt("overrideHeight", 0);
@@ -218,9 +222,14 @@ public class MinecraftClientConfigWrapper {
 			with(category("accessibility").withIcon(
 			  MinecraftOptions.ACCESSIBILITY).withColor(0x80E0E0FF), () -> {
 				wrapOption(options.narrator());
+				wrapDouble(options.notificationDisplayTime());
+				wrapBool(options.highContrast());
 				wrapBool(options.hideLightningFlash());
 				wrapBool(options.darkMojangStudiosBackground());
 				wrapDouble(options.panoramaSpeed());
+				wrapDouble(options.damageTiltStrength());
+				wrapDouble(options.glintSpeed());
+				wrapDouble(options.glintStrength());
 			});
 			with(category("advanced").withIcon(MinecraftOptions.ADVANCED), () -> {
 				wrapBool(options.telemetryOptInExtra(), b -> b.editable(mc::allowsTelemetry));
@@ -238,6 +247,11 @@ public class MinecraftClientConfigWrapper {
 				wrapBool("skipRealms32bitWarning", false);
 				wrapString("lastServer", "");
 				wrapBool("joinedFirstServer", false);
+
+				target.add("credits_and_attribution", cast(button(
+					() -> mc.setScreen(new CreditsAndAttributionScreen(mc.screen))
+					).label("simpleconfig.ui.open")
+				).translation("options.credits_and_attribution"));
 			});
 		}
 		
@@ -349,11 +363,11 @@ public class MinecraftClientConfigWrapper {
 				add(opt, b);
 			}
 		}
-		
+
 		private void wrapBool(OptionInstance<Boolean> opt, Function<BooleanEntryBuilder, BooleanEntryBuilder> modifier) {
 			Function<Boolean, Component> stringifier = getStringifier(opt);
 			add(opt, modifier.apply(bool(getInitialValue(opt))
-			  .text(b -> patchBoolean(stringifier.apply(b)))));
+				.text(b -> patchBoolean(stringifier.apply(b)))));
 		}
 
 		private void wrapBool(OptionInstance<Boolean> opt) {
