@@ -13,22 +13,25 @@ val modId = "simpleconfigtest"
 val modGroup = "endorh.simpleconfig"
 
 object V {
-    val api = "1.0.0"
-    val mod = "1.0.0"
-    val minecraft = "1.19.3"
-    val forge = "44.1.0"
+    val api = "1.0.2"
+    val kotlinApi = api
+    val mod = api
+    val minecraft = "1.20.1"
+    val parchment = "2023.09.03"
+    val forge = "47.1.79"
     val minecraftForge = "$minecraft-$forge"
     val minecraftMod = "$minecraft-$mod"
+
     object mappings {
-        val channel = "official"
-        val version = V.minecraft
+        val channel = "parchment"
+        val version = "${parchment}-${minecraft}"
     }
-    
+
     // Dependencies
-    val simpleConfig = "1.0.+"
-    
-    // Integration
-    val jei = "12.4.0.22"
+    val yaml = "1.33"
+    val jei = "15.2.0.27"
+    val kotlin = "1.8.22"
+    val kotlinForForge = "4.5.0"
 }
 
 // License
@@ -135,8 +138,8 @@ dependencies {
     implementation("org.jetbrains:annotations:23.0.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
     
-    // Use the latest version of Minecraft Forge
-    minecraft("net.minecraftforge:forge:${V.minecraftForge}")
+    // Use the latest version of NeoForged
+    minecraft("net.neoforged:forge:${V.minecraftForge}")
     
     // Simple Config
     compileOnly(rootProject.sourceSets["api"].output)
@@ -147,10 +150,10 @@ dependencies {
     
     // Testing dependencies
     // Catalogue
-    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4171025"))
+    runtimeOnly(fg.deobf("curse.maven:catalogue-459701:4766090"))
     
     // Configured
-    runtimeOnly(fg.deobf("curse.maven:configured-457570:4462839"))
+    // runtimeOnly(fg.deobf("curse.maven:configured-457570:4462894"))
     
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-${V.minecraft}-forge:${V.jei}"))

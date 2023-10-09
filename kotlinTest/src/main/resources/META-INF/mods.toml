@@ -23,6 +23,6 @@ Example mod that uses Kotlin for Forge with the Simple Konfig API.
 [[dependencies.simplekonfig]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19,1.20)"
+    versionRange="[1.20,1.21)"
     ordering="NONE"
     side="BOTH"

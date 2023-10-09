@@ -20,13 +20,13 @@ Example mod that uses the Simple Config Declarative Java API.
 [[dependencies.simpleconfigtest]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19,1.20)"
+    versionRange="[1.20,1.21)"
     ordering="NONE"
     side="BOTH"
 # [[dependencies.simpleconfigtest]]
 #     modId="simpleconfig"
 #     mandatory=true
-#     versionRange="[1.19,1.20)"
+#     versionRange="[1.20,1.21)"
 #     ordering="NONE"
 #     side="BOTH"
 # Does not depend on Simple Config
