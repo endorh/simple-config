@@ -465,6 +465,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	 */
 	@SubscribeEvent
 	protected void onModConfigEvent(final ModConfigEvent event) {
+		if (event instanceof ModConfigEvent.Unloading) return;
 		final ModConfig c = event.getConfig();
 		if (c == getModConfig() || getExtraModConfigs().containsValue(c)) {
 			bake();

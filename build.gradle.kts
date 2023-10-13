@@ -29,7 +29,7 @@ val githubRepo = "endorh/simple-config"
 
 val antlrVersion: String by extra
 object V {
-    val api = "1.0.3"
+    val api = "1.0.4"
     val kotlinApi = api
     val mod = api
     val minecraft = "1.20.1"
