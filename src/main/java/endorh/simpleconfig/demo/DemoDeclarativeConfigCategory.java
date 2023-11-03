@@ -28,11 +28,12 @@ import net.minecraft.network.chat.MutableComponent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
-import java.awt.Color;
+import java.awt.*;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -208,7 +209,9 @@ public class DemoDeclarativeConfigCategory {
 		// In addition, float and double entries support @Bake.Scale
 		// This entry is editable in m/s, but the value stored is in m/tick,
 		//   as it's divided by 20 before being stored
-		@Entry @Scale(1./20) public static float speed;
+		// The scale is also used to correctly configure the default value,
+		//   which in this case would be 10 m/s (the equivalent of 0.5 m/tick)
+		@Entry @Scale(1./20) public static float speed = 0.5F;
 		
 		// Every field can declare an error supplier, appending the suffix `$error` to its name
 		//   This can also be done in the builder, by using the '.error(...)' method on the entry
