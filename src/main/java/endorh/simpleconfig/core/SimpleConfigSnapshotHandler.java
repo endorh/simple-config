@@ -163,11 +163,12 @@ class SimpleConfigSnapshotHandler implements IConfigSnapshotHandler, IRemoteConf
 		externalChangeHandler = handler;
 	}
 	
-	public void notifyExternalChanges(SimpleConfigImpl config) {
+	@Override public void notifyExternalChanges(SimpleConfig config) {
+		SimpleConfigImpl c = (SimpleConfigImpl) config;
 		if (externalChangeHandler != null) {
-			if (configMap.containsValue(config)) {
-				config.loadGUIExternalChanges();
-				externalChangeHandler.handleExternalChange(config.getType().asEditType(false));
+			if (configMap.containsValue(c)) {
+				c.loadGUIExternalChanges();
+				externalChangeHandler.handleExternalChange(c.getType().asEditType(false));
 			}
 		}
 	}
