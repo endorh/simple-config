@@ -194,7 +194,12 @@ public class ServerConfig {
 		@Bind public static List<Pair<String, Boolean>> hotkey_rules;
 		
 		// Permission for datapacks
-		@Bind public static ConfigPermission datapack_permission;
+		// We set the field initially to EDIT_SERVER_CONFIG to allow datapacks to edit server config
+		//   on world creation, before the config has been first loaded, since at world creation time
+		//   we can safely assume trust is given to the datapack
+		// I'm unsure if this can be somehow exploited by datapacks at early loading stages, but
+		//   denying this permission is a rare use case to begin with
+		@Bind public static ConfigPermission datapack_permission = ConfigPermission.EDIT_SERVER_CONFIG;
 		@Bind public static boolean broadcast_datapack_config_changes;
 		
 		@OnlyIn(Dist.CLIENT)

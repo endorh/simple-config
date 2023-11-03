@@ -29,7 +29,7 @@ val githubRepo = "endorh/simple-config"
 
 val antlrVersion: String by extra
 object V {
-    val api = "1.0.4"
+    val api = "1.0.5"
     val kotlinApi = api
     val mod = api
     val minecraft = "1.20.1"
@@ -328,6 +328,9 @@ dependencies {
     
     // JEI
     runtimeOnly(fg.deobf("mezz.jei:jei-${V.minecraft}-forge:${V.jei}"))
+
+    // Artifacts (custom game rules) // untestable in dev environment
+    // runtimeOnly(fg.deobf("curse.maven:artifacts-312353:4747012"))
 }
 
 // Tasks -----------------------------------------------------------------------
@@ -433,6 +436,7 @@ val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
     dependsOn("prepareGenerateGrammarSource")
     dependsOn("generateApiGrammarSource")
     dependsOn("generateKotlinApiGrammarSource")
+    dependsOn("generateGrammarSource")
 }
 
 val apiJarTask = tasks.register<Jar>("apiJar") {

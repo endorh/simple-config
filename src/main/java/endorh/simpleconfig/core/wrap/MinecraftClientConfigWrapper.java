@@ -471,13 +471,17 @@ public class MinecraftClientConfigWrapper {
 		}
 		
 		private void addEntry(String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder) {
-			if (caption) {
-				if (target instanceof ConfigGroupBuilder group) {
-					group.caption(name, castAtom(entryBuilder));
-					caption = false;
-				} else throw new IllegalStateException(
-				  "Cannot add caption outside a group: " + name);
-			} else target.add(name, entryBuilder);
+			try {
+				if (caption) {
+					if (target instanceof ConfigGroupBuilder group) {
+						group.caption(name, castAtom(entryBuilder));
+						caption = false;
+					} else throw new IllegalStateException(
+						"Cannot add caption outside a group: " + name);
+				} else target.add(name, entryBuilder);
+			} catch (RuntimeException e) {
+				LOGGER.error("Error wrapping Minecraft option: " + name, e);
+			}
 		}
 		
 		@SuppressWarnings("unchecked") private <T extends ConfigEntryBuilder<?, ?, ?, ?> & AtomicEntryBuilder> T castAtom(
