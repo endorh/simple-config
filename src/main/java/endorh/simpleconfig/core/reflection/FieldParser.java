@@ -46,9 +46,10 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.util.List;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -172,8 +173,8 @@ public class FieldParser {
 		}).orElse(b));
 		
 		// @Bake.Scale
-		dec(FloatEntryBuilder.class, Bake.Scale.class, (a, b) -> b.bakeScale((float) a.value()));
-		dec(DoubleEntryBuilder.class, Bake.Scale.class, (a, b) -> b.bakeScale(a.value()));
+		dec(FloatEntryBuilder.class, Bake.Scale.class, (a, b) -> b.withValue(b.getValue() / (float) a.value()).bakeScale((float) a.value()));
+		dec(DoubleEntryBuilder.class, Bake.Scale.class, (a, b) -> b.withValue(b.getValue() / a.value()).bakeScale(a.value()));
 		
 		// @HasAlpha
 		dec(ColorEntryBuilder.class, HasAlpha.class, (a, b) -> b.alpha(a.value()));

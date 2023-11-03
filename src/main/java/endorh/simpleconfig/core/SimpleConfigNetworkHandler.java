@@ -10,6 +10,7 @@ import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.config.ServerConfig.permissions;
 import endorh.simpleconfig.core.wrap.MinecraftServerConfigWrapper;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler.IExternalChangeHandler;
 import endorh.simpleconfig.ui.gui.widget.PresetPickerWidget.Preset;
 import endorh.simpleconfig.ui.hotkey.ConfigHotKeyLogger;
@@ -771,7 +772,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			CompletableFuture<CommentedConfig> future = CSimpleConfigRequestServerCommonConfigPacket.FUTURES.remove(modId);
 			if (future == null) {
 				SimpleConfigImpl config = SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.COMMON);
-				SimpleConfigSnapshotHandler snapshotHandler = config.getSnapshotHandler();
+				IConfigSnapshotHandler snapshotHandler = config.getSnapshotHandler();
 				if (snapshotHandler == null) {
 					LOGGER.warn("No snapshot handler for mod \"" + modId + "\"");
 					sendUnsubscribeMessage();
