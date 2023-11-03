@@ -175,7 +175,7 @@ public class MinecraftServerConfigWrapper {
 				          ? s -> delegates.forEach(d -> d.bind((DedicatedServer) s))
 				          : null);
 			} catch (RuntimeException e) {
-				e.printStackTrace();
+				LOGGER.error(e);
 				throw e;
 			}
 		}
@@ -185,21 +185,25 @@ public class MinecraftServerConfigWrapper {
 		private static final Map<GameRules.Key<IntegerValue>, ConfigEntryBuilder<Integer, ?, ?, ?>> OVERRIDES = Util.make(new HashMap<>(), m -> {
 			m.put(GameRules.RULE_MAX_ENTITY_CRAMMING, number(24).sliderRange(1, 256).sliderMap(pow(2)));
 			m.put(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE, percent(100));
-			m.put(GameRules.RULE_RANDOMTICKING, number(3, 0, 3000).sliderMap(expMap(8)));
-			m.put(GameRules.RULE_SPAWN_RADIUS, number(10, 0, 64).sliderMap(pow(2)));
+			m.put(GameRules.RULE_RANDOMTICKING, number(3).sliderRange(0, 3000).sliderMap(expMap(8)));
+			m.put(GameRules.RULE_SPAWN_RADIUS, number(10).sliderRange(0, 64).sliderMap(pow(2)));
 		});
 		private void addGameRuleEntries() {
 			if (GAME_RULE_TYPES == null) throw new IllegalStateException(
 			  "Cannot access GameRules#GAME_RULE_TYPES");
 			GAME_RULE_TYPES.forEach((k, t) -> {
-				Value<?> rule = t.createRule();
-				if (rule instanceof GameRules.BooleanValue v) {
-					boolean defValue = v.get();
-					add(k, yesNo(defValue));
-				} else if (rule instanceof GameRules.IntegerValue v) {
-					int defValue = v.get();
-					ConfigEntryBuilder<Integer, ?, ?, ?> override = OVERRIDES.get(k);
-					add(k, override != null? override.withValue(defValue) : number(defValue));
+				try {
+					Value<?> rule = t.createRule();
+					if (rule instanceof GameRules.BooleanValue v) {
+						boolean defValue = v.get();
+						add(k, yesNo(defValue));
+					} else if (rule instanceof GameRules.IntegerValue v) {
+						int defValue = v.get();
+						ConfigEntryBuilder<Integer, ?, ?, ?> override = OVERRIDES.get(k);
+						add(k, override != null? override.withValue(defValue) : number(defValue));
+					}
+				} catch (RuntimeException e) {
+					LOGGER.error("Error wrapping game rule: " + k.getId(), e);
 				}
 			});
 		}
@@ -318,6 +322,13 @@ public class MinecraftServerConfigWrapper {
 		}
 		
 		private void addEntry(String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder) {
+			ConfigEntryHolderBuilder<?> prevTarget = null;
+			if (name.contains(".")) {
+				AbstractSimpleConfigEntryHolderBuilder<?> t = (AbstractSimpleConfigEntryHolderBuilder<?>) target;
+				prevTarget = target;
+				target = t.getOrCreateHolderBuilder(name.substring(0, name.lastIndexOf('.')), true);
+				name = name.substring(name.lastIndexOf('.') + 1);
+			}
 			if (caption) {
 				if (target instanceof ConfigGroupBuilder group) {
 					group.caption(name, castAtom(entryBuilder));
@@ -325,6 +336,7 @@ public class MinecraftServerConfigWrapper {
 				} else throw new IllegalStateException(
 				  "Cannot add caption outside a group: " + name);
 			} else target.add(name, entryBuilder);
+			if (prevTarget != null) target = prevTarget;
 		}
 		
 		@SuppressWarnings("unchecked")

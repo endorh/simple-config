@@ -17,6 +17,7 @@ import endorh.simpleconfig.core.SimpleConfigNetworkHandler.SSimpleConfigSyncPack
 import endorh.simpleconfig.ui.api.ConfigCategoryBuilder;
 import endorh.simpleconfig.ui.api.ConfigFieldBuilder;
 import endorh.simpleconfig.ui.api.ConfigScreenBuilder;
+import endorh.simpleconfig.ui.api.ConfigScreenBuilder.IConfigSnapshotHandler;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
 import endorh.simpleconfig.yaml.NodeComments;
 import endorh.simpleconfig.yaml.SimpleConfigCommentedYamlFormat;
@@ -108,7 +109,7 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	protected @Nullable ResourceLocation background;
 	protected boolean transparent;
 	@OnlyIn(Dist.CLIENT) protected @Nullable AbstractConfigScreen gui;
-	protected @Nullable SimpleConfigSnapshotHandler snapshotHandler;
+	protected @Nullable IConfigSnapshotHandler snapshotHandler;
 	protected Set<Player> remoteListeners = new HashSet<>();
 	private ModConfig modConfig;
 	private Map<String, ModConfig> extraModConfigs;
@@ -330,13 +331,13 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 	}
 	
 	@OnlyIn(Dist.CLIENT) protected void setGUI(
-	  AbstractConfigScreen gui, @Nullable SimpleConfigSnapshotHandler handler
+	  AbstractConfigScreen gui, @Nullable IConfigSnapshotHandler handler
 	) {
 		this.gui = gui;
 		snapshotHandler = handler;
 	}
 	
-	protected @Nullable SimpleConfigSnapshotHandler getSnapshotHandler() {
+	protected @Nullable IConfigSnapshotHandler getSnapshotHandler() {
 		return snapshotHandler;
 	}
 	
@@ -472,20 +473,20 @@ public class SimpleConfigImpl extends AbstractSimpleConfigEntryHolder implements
 				DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER, () -> this::syncToClients);
 			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
 				synchronized (this) {
-					SimpleConfigSnapshotHandler handler = getSnapshotHandler();
+					IConfigSnapshotHandler handler = getSnapshotHandler();
 					if (handler != null) handler.notifyExternalChanges(this);
 				}
 			});
 		}
 	}
 	
-	@Override public SimpleConfigCategoryImpl getCategory(String name) {
+	@Override public @NotNull SimpleConfigCategoryImpl getCategory(String name) {
 		if (!categories.containsKey(name))
 			throw new NoSuchConfigCategoryError(getPath() + "." + name);
 		return categories.get(name);
 	}
 	
-	@Override public SimpleConfigGroupImpl getGroup(String path) {
+	@Override public @NotNull SimpleConfigGroupImpl getGroup(String path) {
 		if (path.contains(".")) {
 			final String[] split = path.split("\\.", 2);
 			if (groups.containsKey(split[0]))
