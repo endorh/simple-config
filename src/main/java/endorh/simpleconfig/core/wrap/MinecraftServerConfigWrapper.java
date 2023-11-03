@@ -175,7 +175,7 @@ public class MinecraftServerConfigWrapper {
 				          ? s -> delegates.forEach(d -> d.bind((DedicatedServer) s))
 				          : null);
 			} catch (RuntimeException e) {
-				e.printStackTrace();
+				LOGGER.error(e);
 				throw e;
 			}
 		}
@@ -184,22 +184,26 @@ public class MinecraftServerConfigWrapper {
 		  ObfuscationReflectionHelper.getPrivateValue(GameRules.class, null, "field_223623_z");
 		private static final Map<GameRules.RuleKey<IntegerValue>, ConfigEntryBuilder<Integer, ?, ?, ?>> OVERRIDES = Util.make(new HashMap<>(), m -> {
 			m.put(GameRules.MAX_ENTITY_CRAMMING, number(24).sliderRange(1, 256).sliderMap(pow(2)));
-			m.put(GameRules.RANDOM_TICK_SPEED, number(3, 0, 3000).sliderMap(expMap(8)));
-			m.put(GameRules.SPAWN_RADIUS, number(10, 0, 64).sliderMap(pow(2)));
+			m.put(GameRules.RANDOM_TICK_SPEED, number(3).sliderRange(0, 3000).sliderMap(expMap(8)));
+			m.put(GameRules.SPAWN_RADIUS, number(10).sliderRange(0, 64).sliderMap(pow(2)));
 		});
 		private void addGameRuleEntries() {
 			if (GAME_RULES == null) throw new IllegalStateException(
 			  "Cannot access GameRules#GAME_RULES");
 			GAME_RULES.forEach((k, t) -> {
-				RuleValue<?> rule = t.createValue();
-				if (rule instanceof GameRules.BooleanValue) {
-					boolean defValue = ((BooleanValue) rule).get();
-					add(k, yesNo(defValue));
-				} else if (rule instanceof GameRules.IntegerValue) {
-					int defValue = ((IntegerValue) rule).get();
-					ConfigEntryBuilder<Integer, ?, ?, ?> override = OVERRIDES.get(k);
-					add(k, override != null? override.withValue(defValue) : number(defValue));
-				}
+            try {
+               RuleValue<?> rule = t.createValue();
+               if (rule instanceof GameRules.BooleanValue) {
+                  boolean defValue = ((BooleanValue) rule).get();
+                  add(k, yesNo(defValue));
+               } else if (rule instanceof GameRules.IntegerValue) {
+                  int defValue = ((IntegerValue) rule).get();
+                  ConfigEntryBuilder<Integer, ?, ?, ?> override = OVERRIDES.get(k);
+                  add(k, override != null ? override.withValue(defValue) : number(defValue));
+               }
+            } catch (RuntimeException e) {
+               LOGGER.error("Error wrapping game rule: " + k.getName(), e);
+            }
 			});
 		}
 		
@@ -309,6 +313,13 @@ public class MinecraftServerConfigWrapper {
 		}
 		
 		private void addEntry(String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder) {
+			ConfigEntryHolderBuilder<?> prevTarget = null;
+			if (name.contains(".")) {
+				AbstractSimpleConfigEntryHolderBuilder<?> t = (AbstractSimpleConfigEntryHolderBuilder<?>) target;
+				prevTarget = target;
+				target = t.getOrCreateHolderBuilder(name.substring(0, name.lastIndexOf('.')), true);
+				name = name.substring(name.lastIndexOf('.') + 1);
+			}
 			if (caption) {
 				if (target instanceof ConfigGroupBuilder) {
 					((ConfigGroupBuilder) target).caption(name, castAtom(entryBuilder));
@@ -316,6 +327,7 @@ public class MinecraftServerConfigWrapper {
 				} else throw new IllegalStateException(
 				  "Cannot add caption outside a group: " + name);
 			} else target.add(name, entryBuilder);
+			if (prevTarget != null) target = prevTarget;
 		}
 		
 		@SuppressWarnings("unchecked")
@@ -465,7 +477,7 @@ public class MinecraftServerConfigWrapper {
 			  GameRules.IntegerValue.class, "field_223566_a");
 			private static final Method GameRules$RuleValue$notifyChange = ObfuscationReflectionHelper.findMethod(
 			  GameRules.RuleValue.class, "func_223556_a", MinecraftServer.class);
-			
+
 			private final GameRules.RuleKey<V> key;
 			private final Function<V, T> getter;
 			private final BiConsumer<V, T> setter;

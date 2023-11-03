@@ -51,6 +51,30 @@ public abstract class AbstractSimpleConfigEntryHolderBuilder<Builder extends Con
 	@SuppressWarnings("unchecked") protected <T> List<BackingField<T, ?>> getSecondaryBackingFields(String name) {
 		return (List<BackingField<T, ?>>) (List<?>) secondaryBackingFields.get(name);
 	}
+
+	@Internal public ConfigEntryHolderBuilder<?> getOrCreateHolderBuilder(String name) {
+		return getOrCreateHolderBuilder(name, false);
+	}
+
+	@Internal public ConfigEntryHolderBuilder<?> getOrCreateHolderBuilder(String name, boolean preferCreateCategory) {
+		return getOrCreateHolderBuilder(name, preferCreateCategory, false);
+	}
+
+	@Internal public ConfigEntryHolderBuilder<?> getOrCreateHolderBuilder(String name, boolean preferCreateCategory, boolean createExpanded) {
+		return getOrCreateHolderBuilder(name, preferCreateCategory, createExpanded, 0);
+	}
+
+	@Internal public ConfigEntryHolderBuilder<?> getOrCreateHolderBuilder(String name, boolean preferCreateCategory, boolean createExpanded, int createIndex) {
+		String[] split = name.split("\\.", 2);
+		GroupBuilder group = groups.get(split[0]);
+		if (group == null) {
+			if (entries.containsKey(split[0])) throw new IllegalArgumentException(
+				"Cannot create config group \"" + split[0] + "\" as an entry with the same name already exists!");
+         group = new GroupBuilder(split[0], createExpanded);
+			n(group, createIndex);
+		}
+		return split.length == 2? group.getOrCreateHolderBuilder(split[1], false, createExpanded, createIndex) : group;
+	}
 	
 	protected void checkName(String name) {
 		if (name.contains("."))

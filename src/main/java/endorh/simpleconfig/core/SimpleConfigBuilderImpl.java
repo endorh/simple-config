@@ -176,7 +176,27 @@ public class SimpleConfigBuilderImpl
 	@Override protected boolean hasEntry(String name) {
 		return entries.containsKey(name);
 	}
-	
+
+	@Override public ConfigEntryHolderBuilder<?> getOrCreateHolderBuilder(String name, boolean preferCreateCategory, boolean createExpanded, int createIndex) {
+		String[] split = name.split("\\.", 2);
+		AbstractSimpleConfigEntryHolderBuilder<?> sub = categories.get(split[0]);
+		if (sub == null) sub = groups.get(split[0]);
+		if (sub == null) {
+			if (entries.containsKey(split[0])) throw new IllegalArgumentException(
+				"Cannot create config group \"" + split[0] + "\" as an entry with the same name already exists!");
+			if (preferCreateCategory) {
+				CategoryBuilder c = new CategoryBuilder(split[0]);
+				n(c, createIndex);
+				sub = c;
+			} else {
+				GroupBuilder g = new GroupBuilder(split[0], createExpanded);
+				n(g, createIndex);
+				sub = g;
+			}
+		}
+		return split.length == 2? sub.getOrCreateHolderBuilder(split[1], false, createExpanded, createIndex) : sub;
+	}
+
 	protected String translation(String name) {
 		return modId + ".config." + path + "." + name;
 	}
@@ -633,7 +653,7 @@ public class SimpleConfigBuilderImpl
 	}
 	
 	@Internal public @NotNull SimpleConfigBuilderImpl markAsWrapper() {
-		this.isWrapper = true;
+		isWrapper = true;
 		return this;
 	}
 	

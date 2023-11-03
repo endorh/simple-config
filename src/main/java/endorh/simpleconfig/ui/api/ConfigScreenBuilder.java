@@ -1,6 +1,7 @@
 package endorh.simpleconfig.ui.api;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
+import endorh.simpleconfig.api.SimpleConfig;
 import endorh.simpleconfig.api.SimpleConfig.EditType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
 import endorh.simpleconfig.ui.gui.AbstractConfigScreen;
@@ -126,6 +127,7 @@ public interface ConfigScreenBuilder {
 		List<Preset> getResourcePresets();
 		IExternalChangeHandler getExternalChangeHandler();
 		void setExternalChangeHandler(IExternalChangeHandler handler);
+		void notifyExternalChanges(SimpleConfig config);
 		
 		interface IExternalChangeHandler {
 			void handleExternalChange(EditType type);

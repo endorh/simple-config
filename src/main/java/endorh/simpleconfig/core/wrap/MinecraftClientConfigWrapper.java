@@ -336,7 +336,7 @@ public class MinecraftClientConfigWrapper {
 		) {
 			wrapEnum(opt, getter, null);
 		}
-		
+
 		private <E extends Enum<E>> void wrapEnum(
 		  IteratableOption opt, Function<GameSettings, E> getter,
 		  @Nullable Function<E, ITextComponent> display
@@ -345,18 +345,18 @@ public class MinecraftClientConfigWrapper {
 			List<E> values = Arrays.asList(initial.getDeclaringClass().getEnumConstants());
 			wrapOption(opt, getter, null, display, values);
 		}
-		
+
 		private void wrapBool(IteratableOption opt,  Function<GameSettings, Boolean> getter, BiConsumer<GameSettings, Boolean> setter) {
 			wrapOption(opt, getter, setter, Lists.newArrayList(false, true));
 		}
-		
+
 		private <T> void wrapOption(
 		  IteratableOption opt, Function<GameSettings, T> getter,
 		  @Nullable BiConsumer<GameSettings, T> setter, List<T> values
 		) {
 			wrapOption(opt, getter, setter, null, values);
 		}
-		
+
 		private <T> void wrapOption(
 		  IteratableOption opt, Function<GameSettings, T> getter,
 		  @Nullable BiConsumer<GameSettings, T> setter,
@@ -384,7 +384,7 @@ public class MinecraftClientConfigWrapper {
 			  .withDelegate(new MinecraftIteratableOptionEntryDelegate<>(opt, getter, setter));
 			target.add(getID(opt), bb);
 		}
-		
+
 		private <T> Function<T, ITextComponent> getDisplayer(
 		  IteratableOption opt, List<T> values, BiConsumer<GameSettings, T> setter,
 		  BiFunction<GameSettings, IteratableOption, ITextComponent> getText,
@@ -404,7 +404,7 @@ public class MinecraftClientConfigWrapper {
 			}
 			return t -> map.getOrDefault(t, new StringTextComponent(t.toString()));
 		}
-		
+
 		private void wrapBool(BooleanOption opt) {
 			BooleanEntryBuilder b = onOff(getInitialValue(opt));
 			add(opt, b);
@@ -494,13 +494,16 @@ public class MinecraftClientConfigWrapper {
 		}
 		
 		private void addEntry(String name, ConfigEntryBuilder<?, ?, ?, ?> entryBuilder) {
-			if (caption) {
+			try {if (caption) {
 				if (target instanceof ConfigGroupBuilder) {
-					((ConfigGroupBuilder) target).caption(name, castAtom(entryBuilder));
-					caption = false;
-				} else throw new IllegalStateException(
-				  "Cannot add caption outside a group: " + name);
-			} else target.add(name, entryBuilder);
+						((ConfigGroupBuilder) target).caption(name, castAtom(entryBuilder));
+						caption = false;
+					} else throw new IllegalStateException(
+						"Cannot add caption outside a group: " + name);
+				} else target.add(name, entryBuilder);
+			} catch (RuntimeException e) {
+				LOGGER.error("Error wrapping Minecraft option: " + name, e);
+			}
 		}
 		
 		@SuppressWarnings("unchecked") private <T extends ConfigEntryBuilder<?, ?, ?, ?> & AtomicEntryBuilder> T castAtom(
@@ -557,7 +560,7 @@ public class MinecraftClientConfigWrapper {
 				return extractValue(c);
 			};
 		}
-		
+
 		private ITextComponent extractValue(ITextComponent label) {
 			if (label instanceof TranslationTextComponent) {
 				TranslationTextComponent tc = (TranslationTextComponent) label;
@@ -637,15 +640,15 @@ public class MinecraftClientConfigWrapper {
 	
 	public static class MinecraftBooleanOptionEntryDelegate implements ConfigEntryDelegate<Boolean> {
 		private final BooleanOption option;
-		
+
 		public MinecraftBooleanOptionEntryDelegate(BooleanOption option) {
 			this.option = option;
 		}
-		
+
 		@Override public Boolean getValue() {
 			return option.get(Minecraft.getInstance().gameSettings);
 		}
-		
+
 		@Override public void setValue(Boolean value) {
 			if (getValue().equals(value)) return;
 			GameSettings options = Minecraft.getInstance().gameSettings;
