@@ -44,6 +44,8 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,6 +62,7 @@ import static java.util.Collections.synchronizedMap;
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = SimpleConfigMod.MOD_ID)
 public final class SimpleConfigGUIManagerImpl implements SimpleConfigGUIManager {
+	private static final Logger LOGGER = LogManager.getLogger();
 	public static final SimpleConfigGUIManagerImpl INSTANCE = new SimpleConfigGUIManagerImpl();
 	private static final String MINECRAFT_MOD_ID = "minecraft";
 	
@@ -315,12 +318,15 @@ public final class SimpleConfigGUIManagerImpl implements SimpleConfigGUIManager 
 		int x = gui.width / 2 - (gui instanceof TitleScreen? 100 : 102);
 		int y = gui instanceof TitleScreen? gui.height / 4 + 48 + 72 + 12 : gui.height / 4 + 96 - 16;
 		int width = 98;
-		return widgets.stream()
+		Optional<Button> opt = widgets.stream()
 		  .filter(l -> l instanceof Button).map(l -> (Button) l)
-		  .filter(b -> b.getMessage() instanceof TranslatableComponent tc
+			.filter(b -> b.getMessage() instanceof TranslatableComponent tc
 		               && "menu.options".equals(tc.getKey())
-		  ).findFirst()
-		  .filter(b -> !checkDimensions || b.x == x && b.y == y && b.getWidth() == width);
+			).findFirst()
+			.filter(b -> !checkDimensions || b.x == x && b.y == y && b.getWidth() == width);
+		if (opt.isEmpty())
+			LOGGER.debug("Couldn't find options button in " + gui.getClass().getCanonicalName());
+		return opt;
 	}
 	
 	private Button lastOptionsButton = null;
@@ -334,59 +340,65 @@ public final class SimpleConfigGUIManagerImpl implements SimpleConfigGUIManager 
 		 */
 		@SubscribeEvent
 		public static void onGuiInit(InitScreenEvent.Post event) {
-			if (!INSTANCE.addButton || !menu.add_pause_menu_button)
+			if ((!INSTANCE.addButton || !menu.add_pause_menu_button) && menu.options_button_behaviour == OptionsButtonBehaviour.DEFAULT)
 				return;
 			final Screen gui = event.getScreen();
+			boolean hasMinecraftOptionsGui = INSTANCE.hasConfigGUI(MINECRAFT_MOD_ID);
 			if (gui instanceof PauseScreen) {
-				if (INSTANCE.hasConfigGUI(MINECRAFT_MOD_ID))
+				if (hasMinecraftOptionsGui)
 					getOptionsButton(gui, event.getListenersList(), false)
 					  .ifPresent(b -> INSTANCE.lastOptionsButton = b);
-				// Coordinates taken from IngameMenuScreen#addButtons
-				int w = 20, h = 20, x, y;
-				switch (menu.menu_button_position) {
-					case TOP_LEFT_CORNER:
-						x = 8;
-						y = 8;
-						break;
-					case TOP_RIGHT_CORNER:
-						x = gui.width - 28;
-						y = 8;
-						break;
-					case BOTTOM_LEFT_CORNER:
-						x = 8;
-						y = gui.height - 28;
-						break;
-					case BOTTOM_RIGHT_CORNER:
-						x = gui.width - 28;
-						y = gui.height - 28;
-						break;
-					case SPLIT_OPTIONS_BUTTON:
-						Optional<Button> opt = getOptionsButton(gui, event.getListenersList(), true);
-						if (opt.isPresent()) {
-							Button options = opt.get();
-							options.setWidth(options.getWidth() - 20 - 4);
-							// Coordinates taken from IngameMenuScreen#addButtons
-							x = gui.width / 2 - 102 + 98 - 20;
-							y = gui.height / 4 + 96 - 16;
+				if (INSTANCE.addButton && menu.add_pause_menu_button) {
+					// Coordinates taken from IngameMenuScreen#addButtons
+					int w = 20, h = 20, x, y;
+					switch (menu.menu_button_position) {
+						case TOP_LEFT_CORNER:
+							x = 8;
+							y = 8;
 							break;
-						} // else fallthrough
-					case LEFT_OF_OPTIONS_BUTTON:
-					default:
-						// Coordinates taken from IngameMenuScreen#addButtons
-						x = gui.width / 2 - 102 - w - 4;
-						y = gui.height / 4 + 96 - 16;
+						case TOP_RIGHT_CORNER:
+							x = gui.width - 28;
+							y = 8;
+							break;
+						case BOTTOM_LEFT_CORNER:
+							x = 8;
+							y = gui.height - 28;
+							break;
+						case BOTTOM_RIGHT_CORNER:
+							x = gui.width - 28;
+							y = gui.height - 28;
+							break;
+						case SPLIT_OPTIONS_BUTTON:
+							Optional<Button> opt = getOptionsButton(gui, event.getListenersList(), true);
+							if (opt.isPresent()) {
+								Button options = opt.get();
+								options.setWidth(options.getWidth() - 20 - 4);
+								// Coordinates taken from IngameMenuScreen#addButtons
+								x = gui.width / 2 - 102 + 98 - 20;
+								y = gui.height / 4 + 96 - 16;
+								break;
+							} // else fallthrough
+						case LEFT_OF_OPTIONS_BUTTON:
+						default:
+							// Coordinates taken from IngameMenuScreen#addButtons
+							x = gui.width / 2 - 102 - w - 4;
+							y = gui.height / 4 + 96 - 16;
+					}
+
+					Button modOptions = new ImageButton(
+						x, y, w, h, 0, 0, 20,
+						new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/menu.png"),
+						32, 64, p -> INSTANCE.showModListGUI());
+					event.addListener(modOptions);
 				}
-				
-				Button modOptions = new ImageButton(
-				  x, y, w, h, 0, 0, 20,
-				  new ResourceLocation(SimpleConfigMod.MOD_ID, "textures/gui/simpleconfig/menu.png"),
-				  32, 64, p -> INSTANCE.showModListGUI());
-				event.addListener(modOptions);
-			} else if (gui instanceof TitleScreen && INSTANCE.hasConfigGUI(MINECRAFT_MOD_ID)) {
+			} else if (gui instanceof TitleScreen && hasMinecraftOptionsGui) {
 				getOptionsButton(gui, event.getListenersList(), false)
 				  .ifPresent(b -> INSTANCE.lastOptionsButton = b);
-			} else if (menu.add_options_menu_button && gui instanceof OptionsScreen os &&
-			           INSTANCE.hasConfigGUI(MINECRAFT_MOD_ID)) {
+			} else if (
+				gui instanceof OptionsScreen os
+				&& INSTANCE.addButton && menu.add_options_menu_button
+				&& hasMinecraftOptionsGui
+			) {
 				MultiFunctionImageButton b = MultiFunctionImageButton.of(
 				  Buttons.GEAR, ButtonAction.of(
 					 () -> Minecraft.getInstance().setScreen(

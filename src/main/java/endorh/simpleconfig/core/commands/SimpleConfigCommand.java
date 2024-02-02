@@ -231,7 +231,7 @@ public class SimpleConfigCommand {
 		Entity entity = src.getEntity();
 		return entity instanceof ServerPlayer player? player : null;
 	}
-	
+
 	private static ConfigPermission getConfigPermission(CommandSourceStack src, String modId) {
 		ServerPlayer player = getPlayer(src);
 		return player != null
@@ -266,7 +266,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error getting config entry", e);
 		}
 		return 1;
 	}
@@ -296,7 +296,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error getting config entry", e);
 		}
 		return 1;
 	}
@@ -362,7 +362,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error setting config entry", e);
 		}
 		return 1;
 	}
@@ -423,7 +423,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error setting config entry", e);
 		}
 		return 1;
 	}
@@ -487,7 +487,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error resetting config entry", e);
 		}
 		return 1;
 	}
@@ -540,7 +540,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error resetting config entry", e);
 		}
 		return 1;
 	}

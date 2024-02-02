@@ -19,7 +19,8 @@ public class BeanFieldBuilder<B> extends FieldBuilder<B, BeanListEntry<B>, BeanF
 	protected final Map<String, FieldBuilder<?, ?, ?>> entries = Maps.newLinkedHashMap();
 	protected @Nullable String caption;
 	protected @Nullable Function<B, Icon> iconProvider;
-	
+	protected @Nullable Boolean overrideEquals;
+
 	public BeanFieldBuilder(
 	  BeanProxy<B> proxy, ConfigFieldBuilder builder, Component name, B value
 	) {
@@ -54,10 +55,21 @@ public class BeanFieldBuilder<B> extends FieldBuilder<B, BeanListEntry<B>, BeanF
 	public BeanFieldBuilder<B> withIcon(@Nullable Icon icon) {
 		return withIcon(icon != null? b -> icon : null);
 	}
+
+	public BeanFieldBuilder<B> overrideEquals(@Nullable Boolean overrideEquals) {
+		this.overrideEquals = overrideEquals;
+		return this;
+	}
+
+	public BeanFieldBuilder<B> overrideEquals() {
+		return overrideEquals(true);
+	}
 	
 	@Override protected BeanListEntry<B> buildEntry() {
 		LinkedHashMap<String, AbstractConfigListEntry<?>> entries = new LinkedHashMap<>();
 		this.entries.forEach((name, b) -> entries.put(name, b.build()));
-		return new BeanListEntry<>(fieldNameKey, value, proxy, entries, caption, iconProvider);
+		BeanListEntry<B> entry = new BeanListEntry<>(fieldNameKey, value, proxy, entries, caption, iconProvider);
+		if (overrideEquals != null) entry.setOverrideEquals(overrideEquals);
+		return entry;
 	}
 }

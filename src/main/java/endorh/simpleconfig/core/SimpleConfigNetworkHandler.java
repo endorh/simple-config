@@ -696,6 +696,7 @@ import static endorh.simpleconfig.core.SimpleConfigSnapshotHandler.failedFuture;
 			if (!Minecraft.getInstance().isLocalServer()) {
 				try {
 					tryUpdateConfig(SimpleConfigImpl.getConfig(modId, SimpleConfig.Type.SERVER), snapshot, false);
+					LOGGER.debug("Updated server config for mod \"" + modId + "\"");
 				} catch (ConfigUpdateReflectionError e) {
 					LOGGER.error("Error updating client config for mod \"" + modId + "\"", e);
 					sendMessage(new TranslatableComponent(
