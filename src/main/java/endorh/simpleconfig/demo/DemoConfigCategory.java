@@ -21,11 +21,13 @@ import endorh.simpleconfig.core.SimpleConfigGroupImpl;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -37,9 +39,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
+import java.awt.*;
 import java.beans.Transient;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
@@ -318,6 +321,7 @@ public class DemoConfigCategory {
 		            .add("nbt_compound", compoundTag(nbt))
 		            // NBT tag entries also accept `Tag` values as well as `CompoundTag`s
 		            .add("nbt_value", tag(StringTag.valueOf("NBT")))
+		            .add("command_argument", commandArgument(EntityArgument.entity(), "@r[distance=0..10]"))
 		            // It is also possible to use custom String serializable entries
 		            //   You may either pass an IConfigEntrySerializer,
 		            //   make the type implement ISerializableConfigEntry, or

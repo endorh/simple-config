@@ -336,11 +336,11 @@ public abstract class AbstractConfigEntry<V, Config, Gui> implements IGUIEntry {
 		return presentation.recover(value);
 	}
 	
-	protected void put(CommentedConfig config, Config value) {
+	@Internal public void put(CommentedConfig config, Config value) {
 		config.set(name, forActualConfig(value));
 	}
 	
-	protected Config get(CommentedConfig config) {
+	@Internal public Config get(CommentedConfig config) {
 		return fromActualConfig(config.getOrElse(name, forActualConfig(forConfig(defValue))));
 	}
 	

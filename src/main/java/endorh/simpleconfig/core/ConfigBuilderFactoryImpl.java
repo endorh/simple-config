@@ -1,9 +1,13 @@
 package endorh.simpleconfig.core;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import endorh.simpleconfig.api.*;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.command.ParsedArgument;
 import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.api.range.DoubleRange;
 import endorh.simpleconfig.api.range.FloatRange;
@@ -31,7 +35,8 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.awt.Color;
+import java.awt.*;
+import java.util.List;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -365,6 +370,10 @@ import static java.lang.Math.round;
 	@Override public <B> @NotNull BeanEntryBuilder<B> bean(B value) {
 		return BeanEntry.Builder.create(value);
 	}
+
+	@Override public @NotNull CommentedConfigEntryBuilder nightConfig(CommentedConfig config) {
+		return new CommentedConfigEntry.Builder(config);
+	}
 	
 	// Convenience Minecraft entries
 	
@@ -437,7 +446,22 @@ import static java.lang.Math.round;
 	@Override public @NotNull FluidNameEntry.Builder fluidName(Fluid value) {
 		return fluidName(ForgeRegistries.FLUIDS.getKey(value));
 	}
-	
+
+	// Commands
+
+	@Override public @NotNull <A, T extends ArgumentType<A>> CommandArgumentEntryBuilder<A, T> commandArgument(T type, ParsedArgument<A> value) {
+		return new CommandArgumentEntry.Builder<>(value, type);
+	}
+
+	@Override public @NotNull <A, T extends ArgumentType<A>> CommandArgumentEntryBuilder<A, T> commandArgument(T type, String value) {
+		try {
+			return commandArgument(type, ParsedArgument.parse(type, value));
+		} catch (CommandSyntaxException e) {
+			throw new IllegalArgumentException(
+				"Invalid default value for entry: \"" + value + "\" (" + e.getMessage() + ")", e);
+		}
+	}
+
 	// List entries
 	
 	@Override public @NotNull StringListEntry.Builder stringList(List<String> value) {
