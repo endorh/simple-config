@@ -1,7 +1,10 @@
 package endorh.simpleconfig.api;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.mojang.brigadier.arguments.ArgumentType;
 import endorh.simpleconfig.api.ConfigBuilderFactory.PresetBuilder;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.command.ParsedArgument;
 import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.api.range.DoubleRange;
 import endorh.simpleconfig.api.range.FloatRange;
@@ -26,7 +29,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.awt.Color;
+import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
@@ -673,11 +676,22 @@ public final class ConfigBuilderFactoryProxy {
 	/**
 	 * Java Bean entry.<br>
 	 * Use the builder's methods to define entries to edit the bean's properties.<br>
-	 * Most useful for bean lists or maps, rather than as singleton entries.
+	 * Most useful for bean {@link #list}s or {@link #map}s, rather than as singleton entries.
 	 * @param <B> Class of the bean. Must conform to the {@code JavaBean} specification.
 	 */
 	@Contract(pure=true) public static <B> @NotNull BeanEntryBuilder<B> bean(B value) {
 		return getFactory().bean(value);
+	}
+
+	/**
+	 * Night Config's CommentedConfig entry, with a set of defined properties,
+	 * similar to a {@link #bean} entry.<br>
+	 * <br>
+	 * This entry type is used internally to wrap some mods' configs and its use is not recommended.<br>
+	 * Instead, use a {@link #bean} or a {@link #map} entry, depending on your needs.
+	 */
+	@Contract(pure=true) public static @NotNull CommentedConfigEntryBuilder nightConfig(CommentedConfig config) {
+		return getFactory().nightConfig(config);
 	}
 	
 	// Minecraft specific types
@@ -846,6 +860,32 @@ public final class ConfigBuilderFactoryProxy {
 	 */
 	@Contract(pure=true) public static @NotNull FluidNameEntryBuilder fluidName(Fluid value) {
 		return getFactory().fluidName(value); 
+	}
+
+	// Commands
+
+	/**
+	 * Command argument entry.<br>
+	 * Use an {@link ArgumentType} to configure restrictions on this entry.<br>
+	 * <br>
+	 * The entry's type is {@link ParsedArgument}, which holds both the argument's value and its
+	 * original text representation, since Minecraft command argument types don't define
+	 * serialization methods.<br>
+	 */
+	@Contract(pure=true) public static <A, T extends ArgumentType<A>> @NotNull CommandArgumentEntryBuilder<A, T> commandArgument(T type, ParsedArgument<A> value) {
+		return getFactory().commandArgument(type, value);
+	}
+
+	/**
+	 * Command argument entry.<br>
+	 * Use an {@link ArgumentType} to configure restrictions on this entry.<br>
+	 * <br>
+	 * The entry's type is {@link ParsedArgument}, which holds both the argument's value and its
+	 * original text representation, since Minecraft command argument types don't define
+	 * serialization methods.<br>
+	 */
+	@Contract(pure=true) public static <A, T extends ArgumentType<A>> @NotNull CommandArgumentEntryBuilder<A, T> commandArgument(T type, String value) {
+		return getFactory().commandArgument(type, value);
 	}
 	
 	// Specific lists (for `String`s and `Number` types)

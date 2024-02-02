@@ -197,9 +197,9 @@ public class TextEntry extends AbstractConfigEntry<Void, Void, Void> {
 		throw new IllegalArgumentException("Text entries do not have a value");
 	}
 	
-	@Override protected void put(CommentedConfig config, Void value) {}
+	@Override public void put(CommentedConfig config, Void value) {}
 	
-	@Override protected Void get(CommentedConfig config) {
+	@Override public Void get(CommentedConfig config) {
 		return null;
 	}
 	
