@@ -100,8 +100,8 @@ public abstract class GUIOnlyEntry<V, Gui, Self extends GUIOnlyEntry<V, Gui, Sel
 		};
 	}
 	
-	@Override protected void put(CommentedConfig config, Void value) {}
-	@Override protected Void get(CommentedConfig config) {
+	@Override public void put(CommentedConfig config, Void value) {}
+	@Override public Void get(CommentedConfig config) {
 		return null;
 	}
 }

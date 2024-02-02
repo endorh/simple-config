@@ -92,6 +92,14 @@ public class BeanListEntry<B> extends TooltipListEntry<B> implements IExpandable
 		//   config bean object, so we make up for it
 		isOverrideEquals = !proxy.createFrom(value).equals(value);
 	}
+
+	public boolean isOverrideEquals() {
+		return isOverrideEquals;
+	}
+
+	public void setOverrideEquals(boolean overrideEquals) {
+		isOverrideEquals = overrideEquals;
+	}
 	
 	@Override public B getDisplayedValue() {
 		return proxy.createFromGUI(getDefaultValue(), Maps.transformValues(

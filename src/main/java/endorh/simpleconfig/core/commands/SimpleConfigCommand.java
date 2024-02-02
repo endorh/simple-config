@@ -258,7 +258,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error getting config entry", e);
 		}
 		return 1;
 	}
@@ -287,7 +287,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 60)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error getting config entry", e);
 		}
 		return 1;
 	}
@@ -347,7 +347,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error setting config entry", e);
 		}
 		return 1;
 	}
@@ -403,7 +403,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.invalid_value", entry.getConfigCommentTooltip()));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error setting config entry", e);
 		}
 		return 1;
 	}
@@ -461,7 +461,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error resetting config entry", e);
 		}
 		return 1;
 	}
@@ -511,7 +511,7 @@ public class SimpleConfigCommand {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.no_such_entry", formatKey(modId, key, type, 50)));
 		} catch (RuntimeException e) {
 			src.sendFailure(Component.translatable("simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error resetting config entry", e);
 		}
 		return 1;
 	}

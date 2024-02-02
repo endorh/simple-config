@@ -29,7 +29,7 @@ val githubRepo = "endorh/simple-config"
 
 val antlrVersion: String by extra
 object V {
-    val api = "1.0.5"
+    val api = "1.0.6"
     val kotlinApi = api
     val mod = api
     val minecraft = "1.20.1"
@@ -106,7 +106,7 @@ val modProperties = mapOf(
     "update_json"   to updateJson,
     "logo_file"     to logoFile,
     "description"   to modDescription,
-    "group"         to group,
+    "group"         to modGroup,
     "class_name"    to classname,
     "group_slashed" to groupSlashed,
 )
@@ -331,6 +331,13 @@ dependencies {
 
     // Artifacts (custom game rules) // untestable in dev environment
     // runtimeOnly(fg.deobf("curse.maven:artifacts-312353:4747012"))
+
+    // Sleep Tight (issue #4)
+    runtimeOnly(fg.deobf("curse.maven:moonlight-499980:4856807"))
+    runtimeOnly(fg.deobf("curse.maven:sleep-tight-817564:4816600"))
+
+    // Bad Mobs (issue #5)
+    runtimeOnly(fg.deobf("curse.maven:bad-mobs-233258:4866066"))
 }
 
 // Tasks -----------------------------------------------------------------------
@@ -518,6 +525,7 @@ publishing {
         register<MavenPublication>("mod") {
             artifactId = "$modId-${V.minecraft}"
             version = V.mod
+            group = modGroup
     
             artifact(reobfShadowJarTask.get())
             artifact(apiJarTask.get())
