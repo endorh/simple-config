@@ -1,6 +1,9 @@
 package endorh.simpleconfig.api;
 
+import com.electronwill.nightconfig.core.CommentedConfig;
+import com.mojang.brigadier.arguments.ArgumentType;
 import endorh.simpleconfig.api.SimpleConfig.Type;
+import endorh.simpleconfig.api.command.ParsedArgument;
 import endorh.simpleconfig.api.entry.*;
 import endorh.simpleconfig.api.range.DoubleRange;
 import endorh.simpleconfig.api.range.FloatRange;
@@ -21,7 +24,8 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.awt.Color;
+import java.awt.*;
+import java.util.List;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -163,6 +167,8 @@ public interface ConfigBuilderFactory {
 	<V extends ISerializableConfigEntry<V>> @NotNull ISerializableEntryBuilder<V> entry(V value);
 	
 	<B> @NotNull BeanEntryBuilder<B> bean(B value);
+
+	@NotNull CommentedConfigEntryBuilder nightConfig(CommentedConfig config);
 	
 	// Convenience Minecraft entries
 	
@@ -188,6 +194,11 @@ public interface ConfigBuilderFactory {
 	@NotNull FluidEntryBuilder fluid(@Nullable Fluid value);
 	@NotNull FluidNameEntryBuilder fluidName(@Nullable ResourceLocation value);
 	@NotNull FluidNameEntryBuilder fluidName(Fluid value);
+
+	// Commands
+
+	@NotNull <A, T extends ArgumentType<A>> CommandArgumentEntryBuilder<A, T> commandArgument(T type, ParsedArgument<A> value);
+	@NotNull <A, T extends ArgumentType<A>> CommandArgumentEntryBuilder<A, T> commandArgument(T type, String value);
 	
 	// List entries
 	

@@ -20,6 +20,7 @@ import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons;
 import endorh.simpleconfig.api.ui.icon.SimpleConfigIcons.Entries;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
+import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
@@ -40,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.Color;
 import java.beans.Transient;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
@@ -318,6 +320,7 @@ public class DemoConfigCategory {
 		            .add("nbt_compound", nbtTag(nbt))
 		            // NBT value entries also accept INBT values as well as CompoundNBT s
 		            .add("nbt_value", nbtValue(StringNBT.valueOf("NBT")))
+		            .add("command_argument", commandArgument(EntityArgument.entity(), "@r[distance=0..10]"))
 		            // It is also possible to use custom String serializable entries
 		            //   You may either pass an IConfigEntrySerializer,
 		            //   make the type implement ISerializableConfigEntry, or

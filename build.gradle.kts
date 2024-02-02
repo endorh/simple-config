@@ -26,7 +26,7 @@ val githubRepo = "endorh/simple-config"
 
 val antlrVersion: String by extra
 object V {
-    val api = "1.0.5"
+    val api = "1.0.6"
     val kotlinApi = api
     val mod = api
     val minecraft = "1.16.5"
@@ -102,7 +102,7 @@ val modProperties = mapOf(
     "update_json"   to updateJson,
     "logo_file"     to logoFile,
     "description"   to modDescription,
-    "group"         to group,
+    "group"         to modGroup,
     "class_name"    to classname,
     "group_slashed" to groupSlashed,
 )
@@ -470,7 +470,8 @@ publishing {
         register<MavenPublication>("mod") {
             artifactId = "$modId-${V.minecraft}"
             version = V.mod
-    
+            group = modGroup
+
             artifact(reobfShadowJarTask.get())
             artifact(apiJarTask.get())
             artifact(kotlinApiJarTask.get())

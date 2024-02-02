@@ -767,6 +767,8 @@
   "simpleconfig.config.client.demo.entries.serializable.item_name:help": "Item entries can also allow unknown items\n§7(For example, belonging to unloaded mods)",
   "simpleconfig.config.client.demo.entries.serializable.nbt_compound": "NBT compound",
   "simpleconfig.config.client.demo.entries.serializable.nbt_value": "NBT value (or compound)",
+  "simpleconfig.config.client.demo.entries.serializable.command_argument": "Command Argument",
+  "simpleconfig.config.client.demo.entries.serializable.command_argument:help": "Entries can hold specific argument types\n§7In this case, this entry only accepts single-entity selectors",
   "simpleconfig.config.client.demo.entries.serializable.pair": "Custom Pair",
   "simpleconfig.config.client.demo.entries.serializable.pair:help": "Modders may define their own string serializers\n§7This is just an example, if you just want a pair or triple, please use the built-in ones instead\n§7Only use serializable types for types that have a natural representation in text form\n§7Most players will prefer editing bean entries instead",
   "simpleconfig.config.client.demo.entries.serializable.bean": "Java Bean",

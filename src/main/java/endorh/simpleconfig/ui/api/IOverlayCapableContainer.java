@@ -120,7 +120,7 @@ public interface IOverlayCapableContainer {
 	SortedOverlayCollection getSortedOverlays();
 	
 	default void addOverlay(Rectangle area, IOverlayRenderer overlayRenderer, int priority) {
-		getSortedOverlays().add(area, overlayRenderer, priority);
+		getSortedOverlays().addDeferred(area, overlayRenderer, priority);
 	}
 	
 	default void addOverlay(Rectangle area, IOverlayRenderer overlayRenderer) {
@@ -215,6 +215,7 @@ public interface IOverlayCapableContainer {
 	
 	default void renderOverlays(MatrixStack mStack, int mouseX, int mouseY, float delta) {
 		final SortedOverlayCollection sortedOverlays = getSortedOverlays();
+		sortedOverlays.commitPending();
 		final List<OverlayTicket> removed = new LinkedList<>();
 		mStack.push(); {
 			mStack.translate(0D, 0D, 100D);
@@ -283,8 +284,16 @@ public interface IOverlayCapableContainer {
 	class SortedOverlayCollection implements Iterable<OverlayTicket> {
 		int count = 0;
 		protected TreeSet<OverlayTicket> tree = new TreeSet<>();
+		protected Collection<OverlayTicket> pendingAdded = new LinkedList<>();
 		@Nullable protected IOverlayRenderer dragTarget = null;
-		
+
+		public void addDeferred(Rectangle area, IOverlayRenderer renderer, int priority) {
+			pendingAdded.add(new OverlayTicket(priority, count++, area, renderer));
+		}
+		public void addDeferred(OverlayTicket ticket) {
+			pendingAdded.add(new OverlayTicket(ticket.priority, count++, ticket.area, ticket.renderer));
+		}
+
 		public boolean add(Rectangle area, IOverlayRenderer renderer, int priority) {
 			return tree.add(new OverlayTicket(priority, count++, area, renderer));
 		}
@@ -296,12 +305,15 @@ public interface IOverlayCapableContainer {
 		}
 		
 		public boolean remove(OverlayTicket ticket) {
+			pendingAdded.remove(ticket);
 			return tree.remove(ticket);
 		}
 		public boolean removeAll(Collection<? extends OverlayTicket> collection) {
+			pendingAdded.removeAll(collection);
 			return tree.removeAll(collection);
 		}
 		public void clear() {
+			pendingAdded.clear();
 			tree.clear();
 			count = 0;
 		}
@@ -312,7 +324,12 @@ public interface IOverlayCapableContainer {
 		public boolean isEmpty() {
 			return tree.isEmpty();
 		}
-		@NotNull @Override public Iterator<OverlayTicket> iterator() {
+
+		public void commitPending() {
+			addAll(pendingAdded);
+			pendingAdded.clear();
+		}
+		@Override public @NotNull Iterator<OverlayTicket> iterator() {
 			return tree.iterator();
 		}
 		public Iterable<OverlayTicket> descending() {

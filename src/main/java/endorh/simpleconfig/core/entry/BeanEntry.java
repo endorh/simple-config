@@ -23,6 +23,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +69,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		private static final Map<Class<?>, Boolean> NON_REFLEXIVE_TYPES = new HashMap<>();
 		private final Class<B> beanType;
 		private final Map<String, AbstractConfigEntryBuilder<?, ?, ?, ?, ?, ?>> entries = new LinkedHashMap<>();
-		private String caption;
+		private @Nullable String caption = null;
 		private @Nullable Function<B, Icon> iconProvider = null;
 		private boolean allowUneditableProperties = false;
 		
@@ -355,7 +356,7 @@ public class BeanEntry<B> extends AbstractConfigEntry<B, Map<String, Object>, B>
 		return Optional.of(decorate(fieldBuilder));
 	}
 	
-	private static <
+	@Internal public static <
 	  B, KG, E extends AbstractConfigListEntry<KG> & IChildListEntry,
 	  FB extends FieldBuilder<KG, E, FB>
 	> void addCaption(

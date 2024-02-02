@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -16,17 +17,17 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 	protected long lastUpdate = 0L;
 	protected long updateCooldown = 250L;
 	protected @Nullable Function<String, ITextComponent> placeholder = null;
-	
-	public SimpleComboBoxModel(
-	  @NotNull List<T> suggestions
-	) {
-		this.suggestions = () -> suggestions;
+
+	public SimpleComboBoxModel() {
+		this(Collections.emptyList());
 	}
 	
-	public SimpleComboBoxModel(
-	  @NotNull Supplier<List<T>> suggestionSupplier
-	) {
-		this.suggestions = suggestionSupplier;
+	public SimpleComboBoxModel(@NotNull List<T> suggestions) {
+		this(() -> suggestions);
+	}
+	
+	public SimpleComboBoxModel(@NotNull Supplier<List<T>> suggestionSupplier) {
+		suggestions = suggestionSupplier;
 	}
 	
 	@Override public Optional<List<T>> updateSuggestions(
@@ -36,7 +37,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 		if (time - lastUpdate < updateCooldown)
 			return Optional.empty();
 		lastUpdate = time;
-		return Optional.of(new ArrayList<>(this.suggestions.get()));
+		return Optional.of(new ArrayList<>(suggestions.get()));
 	}
 	
 	@Override public Optional<ITextComponent> getPlaceHolder(
@@ -51,7 +52,7 @@ public class SimpleComboBoxModel<T> extends AbstractComboBoxModel<T> {
 	 * Defaults to 500ms.
 	 */
 	public void setUpdateCooldown(long cooldownMs) {
-		this.updateCooldown = cooldownMs;
+		updateCooldown = cooldownMs;
 	}
 	
 	public void setPlaceholder(@Nullable Function<String, ITextComponent> getter) {
