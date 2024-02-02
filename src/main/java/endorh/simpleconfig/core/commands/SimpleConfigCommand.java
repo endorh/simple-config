@@ -60,7 +60,7 @@ public class SimpleConfigCommand {
 	private static final DynamicCommandExceptionType NO_PERMISSION = new DynamicCommandExceptionType(
 	  m -> new TranslatableComponent("simpleconfig.command.error.no_permission", m));
 	private static final Logger LOGGER = LogManager.getLogger();
-	
+
 	// Styles
 	private Style keyStyle = Style.EMPTY.withColor(TextColor.fromRgb(0xA080C0)).withItalic(true);
 	private Style modNameStyle = Style.EMPTY.applyFormat(ChatFormatting.AQUA).withBold(false);
@@ -68,7 +68,7 @@ public class SimpleConfigCommand {
 	private Style valueStyle = Style.EMPTY.applyFormat(ChatFormatting.DARK_AQUA);
 	private Style undoStyle = Style.EMPTY.applyFormat(ChatFormatting.BLUE);
 	private Style copyStyle = Style.EMPTY.withColor(TextColor.fromRgb(0x808080));
-	
+
 	protected boolean isRemote() {
 		return true;
 	}
@@ -160,7 +160,7 @@ public class SimpleConfigCommand {
 		Entity entity = src.getEntity();
 		return entity instanceof ServerPlayer player? player : null;
 	}
-	
+
 	private static ConfigPermission getConfigPermission(CommandSourceStack src, String modId) {
 		ServerPlayer player = getPlayer(src);
 		return player != null
@@ -201,7 +201,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.get.unexpected", formatKey(modId, key, type, 40)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error getting config entry", e);
 		}
 		return 1;
 	}
@@ -267,7 +267,7 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.set.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error setting config entry", e);
 		}
 		return 1;
 	}
@@ -331,11 +331,11 @@ public class SimpleConfigCommand {
 		} catch (RuntimeException e) {
 			src.sendFailure(new TranslatableComponent(
 			  "simpleconfig.command.error.reset.unexpected", formatKey(modId, key, type, 20)));
-			LOGGER.error(e);
+			LOGGER.error("Unexpected error resetting config entry", e);
 		}
 		return 1;
 	}
-	
+
 	// Feedback -------------------------------------------------------
 	
 	public static void broadcastToOtherOperators(@Nullable Player player, Component message) {
@@ -497,7 +497,7 @@ public class SimpleConfigCommand {
 			return b.toString();
 		}
 	}
-	
+
 	// Styles ---------------------------------------------------------
 	
 	public Style getKeyStyle() {
