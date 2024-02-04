@@ -399,6 +399,9 @@ fun ShadowJar.configureShadowJar() {
         include(dependency("org.antlr:antlr4-runtime:$antlrVersion"))
         include(dependency("org.yaml:snakeyaml:${V.yaml}"))
     }
+
+    // Exclude Maven metadata from ANTLR 4
+    exclude("META-INF/maven/**")
     
     val shadowRoot = "${project.group}.shadowed"
     val relocatedPackages = listOf(
