@@ -14,7 +14,8 @@ public record ParsedArgument<A>(A value, String text) {
       return text;
    }
 
-   public static <A> @Nullable ParsedArgument<A> tryParse(ArgumentType<A> type, String text) {
+   public static <A> @Nullable ParsedArgument<A> tryParse(ArgumentType<A> type, @Nullable String text) {
+      if (text == null) return null;
       StringReader reader = new StringReader(text);
       try {
          A parsed = type.parse(reader);

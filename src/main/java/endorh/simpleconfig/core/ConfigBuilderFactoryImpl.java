@@ -453,7 +453,7 @@ import static java.lang.Math.round;
 		return new CommandArgumentEntry.Builder<>(value, type);
 	}
 
-	@Override public @NotNull <A, T extends ArgumentType<A>> CommandArgumentEntryBuilder<A, T> commandArgument(T type, String value) {
+	@Override public @NotNull <A, T extends ArgumentType<A>> CommandArgumentEntryBuilder<A, T> commandArgument(T type, @NotNull String value) {
 		try {
 			return commandArgument(type, ParsedArgument.parse(type, value));
 		} catch (CommandSyntaxException e) {
