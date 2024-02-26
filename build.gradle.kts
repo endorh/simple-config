@@ -368,16 +368,14 @@ fun ShadowJar.configureShadowJar() {
     relocatedPackages.forEach { relocate(it, "$shadowRoot.$it") }
 }
 
-tasks.shadowJar {
-    setArchive("deobf")
-    
-    configureShadowJar()
-}
+val shadowJarReobf = reobf.create("shadowJar")
 
-val reobfShadowJarTask = tasks.register<ShadowJar>("reobfShadowJar") {
+tasks.shadowJar {
     setArchive("") // Replace default jar
     
     configureShadowJar()
+
+    finalizedBy(shadowJarReobf)
 }
 
 val sourcesJarTask = tasks.register<Jar>("sourcesJar") {
@@ -433,9 +431,6 @@ tasks.processResources {
     }
 }
 
-val reobfShadowJar by reobf.creating
-reobfShadowJarTask.configure { finalizedBy(reobfShadowJar) }
-
 val reobfJar = reobf.create("jar")
 tasks.jar { finalizedBy(reobfJar) }
 
@@ -445,10 +440,9 @@ artifacts {
     operator fun Configuration.invoke(
       artifact: Any, action: Action<in ConfigurablePublishArtifact> = Action {}
     ) = add(name, artifact, action)
-    
-    deobfShadowJar(tasks.shadowJar.get())
+
+    archives(tasks.shadowJar.get())
     apiJar(apiJarTask.get())
-    archives(reobfShadowJarTask.get())
     archives(apiJarTask.get())
     archives(kotlinApiJarTask.get())
     archives(sourcesJarTask.get())
@@ -475,7 +469,7 @@ publishing {
             version = V.mod
             group = modGroup
 
-            artifact(reobfShadowJarTask.get())
+            artifact(tasks.shadowJar.get())
             artifact(apiJarTask.get())
             artifact(kotlinApiJarTask.get())
             artifact(sourcesJarTask.get())
